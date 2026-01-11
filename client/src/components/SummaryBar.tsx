@@ -1,7 +1,8 @@
 import {useCharacter} from "@/CharacterContext/CharacterContext.tsx";
 import { Box, Paper, TextField, Typography } from '@mui/material';
-import { morkBorgColors } from '../theme/morkBorgTheme';
+import { customStyles } from '../theme/morkBorgTheme';
 import type { ReactNode } from 'react';
+import {useTranslation} from 'react-i18next';
 
 interface SummaryStatProps {
     label: string;
@@ -9,15 +10,8 @@ interface SummaryStatProps {
 }
 
 const SummaryStat = ({ label, children }: SummaryStatProps) => (
-    <Box
-        sx={{
-            p: 2,
-            textAlign: 'center',
-            borderRight: `1px solid ${morkBorgColors.grey}`,
-            '&:last-child': { borderRight: 'none' },
-        }}
-    >
-        <Typography variant="subtitle2" color="secondary" sx={{ mb: 0.5 }}>
+    <Box sx={customStyles.summaryStat}>
+        <Typography variant="subtitle2" color="secondary" sx={customStyles.summaryStatLabel}>
             {label}
         </Typography>
         {children}
@@ -26,6 +20,7 @@ const SummaryStat = ({ label, children }: SummaryStatProps) => (
 
 export default function SummaryBar() {
     const { character, updateField } = useCharacter();
+    const {t} = useTranslation();
 
     const currentHp = character?.current_hp ?? 0;
     const maxHp = character?.max_hp ?? 1;
@@ -38,99 +33,52 @@ export default function SummaryBar() {
     const toHit = 12;
 
     return (
-        <Paper
-            sx={{
-                display: 'grid',
-                gridTemplateColumns: {
-                    xs: 'repeat(3, 1fr)',
-                    sm: '2fr repeat(5, 1fr)'
-                },
-                mb: 2.5,
-                position: 'relative',
-                '&::before': {
-                    content: '""',
-                    position: 'absolute',
-                    left: 0,
-                    top: 0,
-                    bottom: 0,
-                    width: 6,
-                    bgcolor: 'secondary.main',
-                },
-            }}
-        >
-            <SummaryStat label="Hit Points">
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5 }}>
+        <Paper sx={customStyles.summaryBarPaper}>
+            <SummaryStat label={t('stats.hitPoints')}>
+                <Box sx={customStyles.hpContainer}>
                     <TextField
                         type="number"
                         value={currentHp}
                         onChange={(e) => updateField('current_hp', parseInt(e.target.value) || 0)}
-                        sx={{
-                            width: 45,
-                            '& .MuiOutlinedInput-root': {
-                                bgcolor: 'secondary.main',
-                                '& input': {
-                                    color: morkBorgColors.black,
-                                    textAlign: 'center',
-                                    fontFamily: "'Bebas Neue', sans-serif",
-                                    fontSize: '1.4rem',
-                                    p: 0.5,
-                                },
-                            },
-                        }}
+                        sx={customStyles.hpInput}
                         size="small"
                     />
-                    <Typography sx={{ color: morkBorgColors.white, fontFamily: "'Bebas Neue'" }}>
+                    <Typography sx={customStyles.hpDivider}>
                         /
                     </Typography>
-                    <Box
-                        sx={{
-                            width: 45,
-                            height: 40,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            border: `2px solid ${morkBorgColors.pink}`,
-                            borderRadius: 1,
-                        }}
-                    >
-                        <Typography
-                            sx={{
-                                color: morkBorgColors.pink,
-                                fontFamily: "'Bebas Neue', sans-serif",
-                                fontSize: '1.2rem',
-                            }}
-                        >
+                    <Box sx={customStyles.maxHpBox}>
+                        <Typography sx={customStyles.maxHpText}>
                             {maxHp}
                         </Typography>
                     </Box>
                 </Box>
             </SummaryStat>
 
-            <SummaryStat label="To Dodge">
+            <SummaryStat label={t('stats.toDodge')}>
                 <Typography variant="h3" color="primary">
                     {toDodge}
                 </Typography>
             </SummaryStat>
 
-            <SummaryStat label="To Hit">
+            <SummaryStat label={t('stats.toHit')}>
                 <Typography variant="h3" color="primary">
                     {toHit}
                 </Typography>
             </SummaryStat>
 
-            <SummaryStat label="Omens">
+            <SummaryStat label={t('stats.omens')}>
                 <Typography variant="h3" color="primary">
                     {omens}
                 </Typography>
             </SummaryStat>
 
-            <SummaryStat label="Silver">
+            <SummaryStat label={t('stats.silver')}>
                 <Typography variant="h3" color="primary">
                     {silver}
                 </Typography>
             </SummaryStat>
 
-            <SummaryStat label="Armor">
+            <SummaryStat label={t('stats.armor')}>
                 <Typography variant="h3" color="primary">
                     {armorTier || '−'}
                 </Typography>

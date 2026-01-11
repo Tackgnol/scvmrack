@@ -1,0 +1,216 @@
+{
+  "app": {
+    "title": "Scvm Grinder",
+    "subtitle": "Karta Postaci"
+  },
+  "stats": {
+    "hitPoints": "Punkty Życia",
+    "toDodge": "Unik",
+    "toHit": "Trafienie",
+    "omens": "Omeny",
+    "silver": "Srebro",
+    "armor": "Pancerz",
+    "encumbrance": "Obciążenie",
+    "armorTier": "Poziom Pancerza"
+  },
+  "attributes": {
+    "agility": "Zwinność",
+    "presence": "Obecność",
+    "strength": "Siła",
+    "toughness": "Wytrzymałość",
+    "agilityDesc": "Obrona, Inicjatywa",
+    "presenceDesc": "Ataki, Moce",
+    "strengthDesc": "Walka wręcz, Udźwig",
+    "toughnessDesc": "PŻ, Wytrzymałość"
+  },
+  "equipment": {
+    "weapon": "Broń",
+    "armorLabel": "Pancerz",
+    "onHand": "Pod Ręką",
+    "storedItems": "Schowane Przedmioty",
+    "readyItemPlaceholder": "Gotowy przedmiot...",
+    "itemDescriptionPlaceholder": "Opis przedmiotu...",
+    "unarmed": "Gołe pięści",
+    "unarmored": "Golas",
+    "none": "Brak",
+    "itemDetails": "Szczegóły Przedmiotu",
+    "itemName": "Nazwa Przedmiotu",
+    "quantity": "Ilość",
+    "backpack": "Plecak",
+    "sell": "Sprzedaj +{{amount}}",
+    "drop": "Wyrzuć",
+    "save": "Zapisz",
+    "equippedGear": "Wyposażenie",
+    "namePlaceholder": "Nazwa...",
+    "detailPlaceholder": "Szczegół...",
+    "offHand": "DRUGA RĘKA",
+    "other": "INNE",
+    "damagePlaceholder": "Obrażenia: d6",
+    "offHandPlaceholder": "+1 obrona / d4",
+    "tierPlaceholder": "Poziom: -d4",
+    "effectPlaceholder": "Efekt...",
+    "addItem": "Dodaj Przedmiot",
+    "searchPlaceholder": "Szukaj wyposażenia...",
+    "typeToSearch": "Pisz aby szukać...",
+    "noResults": "Nie znaleziono przedmiotów",
+    "unequip": "Zdejmij",
+    "selectArmor": "Wybierz",
+    "selectWeapon": "Wybierz"
+  },
+  "character": {
+    "name": "Imię",
+    "class": "Klasa",
+    "origin": "Pochodzenie",
+    "originPlaceholder": "Skąd się wziął ten nieszczęśnik?",
+    "abilities": "Atrybuty",
+    "classAbilities": "Zdolności Klasowe",
+    "abilityName": "Nazwa Zdolności",
+    "description": "Opis",
+    "noCharacterLoaded": "Nie udało się załadować postaci",
+    "traitDescription": "{{trait1}} i {{trait2}} {{className}}"
+  },
+  "traits": {
+    "title": "Cechy i Dolegliwości",
+    "trait1": "Cecha 1",
+    "trait2": "Cecha 2",
+    "habit": "Nawyk",
+    "bodyDescription": "Opis Ciała"
+  },
+  "notes": {
+    "title": "Notatki i Nieszczęścia",
+    "placeholder": "Wypisz tu swoje grzechy..."
+  },
+  "footer": {
+    "worldEnding": "Świat Się Kończy"
+  },
+  "actions": {
+    "generateNew": "Generuj Nową",
+    "testModal": "Testuj Modal"
+  },
+  "powers": {
+    "title": "Moce",
+    "noScrollsOrPowers" : "Brak zwojów i mocy"
+  },
+  "auth": {
+    "login": "Zaloguj",
+    "signup": "Zarejestruj",
+    "logout": "Wyloguj",
+    "profile": "Profil",
+    "email": "Email",
+    "password": "Hasło",
+    "name": "Imię",
+    "passwordHint": "Minimum 8 znaków",
+    "loginFailed": "Logowanie nie powiodło się. Sprawdź dane.",
+    "signupFailed": "Rejestracja nie powiodła się. Spróbuj ponownie.",
+    "loginSignup": "Zaloguj / Zarejestruj",
+    "claimTitle": "Zapisać postać?",
+    "claimPrompt": "Masz postać \"{{characterName}}\". Czy chcesz ją zapisać na swoim koncie?",
+    "claimYes": "Tak, zapisz",
+    "claimNo": "Nie, zacznij od nowa",
+    "claimFailed": "Nie udało się zapisać postaci. Spróbuj ponownie.",
+    "guestCharacterNotice": "{{characterName}} zostanie zapisana na Twoim koncie po rejestracji."
+  },
+  "session": {
+    "expiresWarning": "Twoja sesja gościa wygasa za {{days}} dni. Zarejestruj się, aby zachować postać na zawsze!",
+    "expiresWarning_one": "Twoja sesja gościa wygasa jutro! Zarejestruj się, aby zachować postać na zawsze!",
+    "signUpKeepForever": "Zarejestruj się",
+    "extend7Days": "Przedłuż o 7 dni",
+    "extended": "Sesja przedłużona! Wróć w ciągu 7 dni, aby zachować postać.",
+    "extendFailed": "Nie udało się przedłużyć sesji. Spróbuj ponownie.",
+    "loggedOut": "Wylogowano.",
+    "createNewCharacter": "Stwórz nową postać"
+  },
+  "status": {
+    "saving": "Zapisywanie...",
+    "saved": "Zapisano",
+    "synced": "Zsynchronizowano",
+    "guest": "Gość",
+    "guestSession": "Sesja gościa - zarejestruj się, aby zachować postać",
+    "connectionError": "Błąd połączenia"
+  },
+  "common": {
+    "close": "Zamknij",
+    "back": "Wróć",
+    "backToHome": "Powrót do strony głównej"
+  },
+  "nav": {
+    "home": "Karta",
+    "characters": "Scvmy",
+    "faq": "Co?",
+    "release": "Zmiany"
+  },
+  "characters": {
+    "title": "Twoje Postacie",
+    "loginRequired": "Musisz być zalogowany, aby zobaczyć swoje postacie.",
+    "noCharacters": "Nie masz jeszcze żadnych postaci. Stwórz swojego pierwszego scvma!",
+    "createFirst": "Stwórz Postać",
+    "loadError": "Nie udało się załadować postaci"
+  },
+  "faq": {
+    "title": "Często Zadawane Pytania",
+    "whatIsMorkBorg": {
+      "q": "Czym jest MÖRK BORG?",
+      "a": "MÖRK BORG to doom metalowy album w formie gry. Lekka w zasadach, ciężka w sztuce gra RPG o zagubionych duszach szukających odkupienia w ponurym świecie. Gra jest wydawana przez Free League Publishing."
+    },
+    "whatIsScvmGrinder": {
+      "q": "Czym jest Scvm Grinder?",
+      "a": "Scvm Grinder to darmowa karta postaci i generator dla MÖRK BORG. Pomaga tworzyć postacie, śledzić statystyki i zarządzać wyposażeniem podczas gry."
+    },
+    "isItFree": {
+      "q": "Czy to jest darmowe?",
+      "a": "Tak! Scvm Grinder jest całkowicie darmowy. Możesz tworzyć i zapisywać postacie bez płacenia."
+    },
+    "guestVsAccount": {
+      "q": "Czy potrzebuję konta?",
+      "a": "Nie! Możesz używać Scvm Grinder jako gość. Twoja postać będzie zapisana przez 7 dni. Jeśli założysz konto, twoje postacie są zapisywane na stałe i możesz je używać z dowolnego urządzenia."
+    },
+    "howToSave": {
+      "q": "Jak zapisać moją postać?",
+      "a": "Postacie są zapisywane automatycznie przy każdej zmianie. Jako gość, twoja postać jest przechowywana przez 7 dni. Zarejestruj się, aby zachować postacie na zawsze."
+    },
+    "multipleCharacters": {
+      "q": "Czy mogę mieć wiele postaci?",
+      "a": "Tak! Z kontem możesz tworzyć i przełączać się między wieloma postaciami. Lista postaci jest dostępna z menu."
+    },
+    "mobileSupport": {
+      "q": "Czy działa na telefonie?",
+      "a": "Tak! Scvm Grinder jest zaprojektowany do działania na telefonach, tabletach i komputerach. Używaj go przy stole lub w podróży."
+    },
+    "offlineUse": {
+      "q": "Czy mogę używać offline?",
+      "a": "Obecnie Scvm Grinder wymaga połączenia z internetem. Wsparcie offline może zostać dodane w przyszłości."
+    },
+    "bugReport": {
+      "q": "Znalazłem błąd! Jak go zgłosić?",
+      "a": "Zgłoś błędy przez GitHub issues lub skontaktuj się z nami bezpośrednio. Doceniamy pomoc w ulepszaniu Scvm Grinder!"
+    },
+    "morkBorgCredit": "MÖRK BORG jest © Free League Publishing. To jest niezależny projekt fanowski."
+  },
+  "release": {
+    "title": "Historia Zmian",
+    "typeMajor": "Duża",
+    "typeMinor": "Mała",
+    "typePatch": "Poprawka",
+    "moreUpdates": "Więcej aktualizacji wkrótce. Świat się kończy, ale my dalej dostarczamy.",
+    "v100": {
+      "auth": "Konta użytkowników z weryfikacją email",
+      "magicLink": "Logowanie przez magiczny link",
+      "guestSessions": "Sesje gości z 7-dniowym przechowywaniem",
+      "characterClaim": "Przejmowanie postaci gości po rejestracji",
+      "multiChar": "Wiele postaci na konto",
+      "i18n": "Wsparcie języka polskiego i angielskiego"
+    },
+    "v090": {
+      "equipment": "System zarządzania wyposażeniem",
+      "powers": "Śledzenie mocy i zwojów",
+      "notes": "Sekcja notatek postaci",
+      "autoSave": "Auto-zapis z opóźnieniem"
+    },
+    "v080": {
+      "generator": "Generator losowych postaci",
+      "classes": "Wszystkie podstawowe klasy MÖRK BORG",
+      "stats": "Śledzenie statystyk i modyfikatorów",
+      "theme": "Ciemny motyw inspirowany MÖRK BORG"
+    }
+  }
+}

@@ -1,5 +1,6 @@
 import { Box } from '@mui/material';
 import type { ReactNode } from 'react';
+import { customStyles } from '@/theme/morkBorgTheme';
 
 interface FlagContainerProps {
     children: ReactNode;
@@ -7,13 +8,7 @@ interface FlagContainerProps {
 
 export function FlagContainer({ children }: FlagContainerProps) {
     return (
-        <Box
-            sx={{
-                display: 'flex',
-                gap: 1,
-                alignItems: 'center',
-            }}
-        >
+        <Box sx={customStyles.flagContainer}>
             {children}
         </Box>
     );

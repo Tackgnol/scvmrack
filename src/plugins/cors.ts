@@ -2,13 +2,19 @@ import fp from 'fastify-plugin';
 import cors, { FastifyCorsOptions } from '@fastify/cors';
 
 export default fp<FastifyCorsOptions>(async (fastify) => {
-    await fastify.register(cors, {
+    fastify.register(cors, {
         origin: [
-            'http://localhost:5173',
-            'http://127.0.0.1:5173',
-            // Add production URL later
+            process.env.CLIENT_ORIGIN,
+            process.env.CLIENT_GATEWAY
+        ].filter((origin): origin is string => !!origin),
+
+        methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        allowedHeaders: [
+            "Content-Type",
+            "Authorization",
+            "X-Requested-With"
         ],
         credentials: true,
-        methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+        maxAge: 86400
     });
 });

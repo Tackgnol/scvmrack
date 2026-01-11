@@ -24,27 +24,35 @@ export interface CharacterFull {
     silver: number;
     omens: number;
     // JSONB data
-    abilities: string[]; // Array of translation keys
-    equipment: Array<{ key: string; tags?: string[] }>;
-    equipped_weapons: Array<{ key: string }>;
-    equipped_armor: { key: string } | null;
+    abilities: Array<{ key: string; name: string; description: string }>;
+    equipment: Array<{ key: string; name: string; description: string; tags: string[]; dice: string[]; uses?: number }>;
+    storage: Array<{ key: string; name: string; description: string; tags: string[]; dice: string[] }>;
+    equipped_weapons: Array<{ key: string; name: string; description: string; dice: string[]; tags: string[] }>;
+    equipped_armor: { key: string; name: string; description: string; dice: string[]; max_tier: number; tags: string[] } | null;
     created_at: string;
     updated_at: string;
 }
 
 export interface CharacterUpdate {
+    abilities?: Array<{ key?: string; name: string; description: string }>;
     name?: string;
     current_hp?: number;
     omens?: number;
     silver?: number;
-    equipment?: any[];
-    equipped_weapons?: any[];
-    equipped_armor?: any | null;
-    strength: number;
-    agility: number;
-    presence: number;
-    toughness: number;
-    abilities: Ability[]
+    equipment?: Array<{ key?: string; name?: string; description?: string }>;
+    storage?: Array<{ key?: string; name?: string; description?: string }>;  // NEW
+    equipped_weapons?: Array<{ name?: string; description?: string; dice?: number[] }>;
+    equipped_armor?: { name?: string; description?: string; max_tier?: number; dice?: number[] };
+    agility?: number;
+    strength?: number;
+    presence?: number;
+    toughness?: number;
+    trait1?: string;
+    trait2?: string;
+    habit?: string;
+    body_description?: string;
+    origin?: string;
+    notes?:string;
 }
 
 export interface GenerateCharacterParams {

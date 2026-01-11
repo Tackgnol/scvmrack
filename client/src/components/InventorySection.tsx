@@ -1,428 +1,198 @@
+import { useState, useMemo, useEffect } from 'react';
 import { useCharacter } from "@/CharacterContext/CharacterContext.tsx";
-import { Box, Paper, TextField, Typography, Modal, IconButton } from '@mui/material';
-import { useState } from 'react';
-import type { ChangeEvent } from 'react';
-import { morkBorgColors } from '../theme/morkBorgTheme';
+import { ItemSearchHit } from "@/hooks/useEquipmentSearch.ts";
+import ItemAutocomplete from "@components/ItemAutocomplete.tsx";
+import { Box, Modal, Paper, TextField, Typography, Button } from '@mui/material';
+import {  customStyles } from '../theme/morkBorgTheme';
+import { useTranslation } from 'react-i18next';
+
+// --- Types ---
+
+type EquipmentItem = {
+    name?: string;
+    description?: string;
+    key?: string;
+    uses?: boolean[];
+    comments?: string;
+    tags?: string[];
+};
+
+type AggregatedItem = {
+    item: EquipmentItem;
+    indices: number[];
+    quantity: number;
+};
 
 interface ItemSlotProps {
-    item: { name: string; description?: string; key?: string; quantity?: number } | null;
-    onChange: (name: string, description: string, quantity: number) => void;
-    onDelete: () => void;
-    onMoveToStorage: () => void;
-    variant?: 'default' | 'onhand';
+    aggregated: AggregatedItem;
+    onUpdate: (indices: number[], updated: EquipmentItem) => void;
+    onDelete: (indices: number[]) => void;
+    onMove: (indices: number[]) => void;
+    onAdjustQuantity: (item: EquipmentItem, newTotal: number, currentIndices: number[]) => void;
+    location: 'equipment' | 'storage';
 }
 
-function ItemSlot({ item, onChange, onDelete, onMoveToStorage, variant = 'default' }: ItemSlotProps) {
-    const isOnHand = variant === 'onhand';
+// --- Utilities ---
+
+const aggregateItems = (items: (EquipmentItem | null)[]): AggregatedItem[] => {
+    const groups: Map<string, AggregatedItem> = new Map();
+
+    items.forEach((item, index) => {
+        if (!item) return;
+        const groupKey = (item.name || 'Unknown').toLowerCase();
+        const existing = groups.get(groupKey);
+
+        if (existing) {
+            existing.indices.push(index);
+            existing.quantity += 1;
+            if (item.comments && !existing.item.comments?.includes(item.comments)) {
+                existing.item.comments = existing.item.comments
+                    ? `${existing.item.comments}\n${item.comments}`
+                    : item.comments;
+            }
+        } else {
+            groups.set(groupKey, {
+                item: { ...item },
+                indices: [index],
+                quantity: 1,
+            });
+        }
+    });
+
+    return Array.from(groups.values());
+};
+
+// --- Components ---
+
+function ItemSlot({
+                      aggregated,
+                      onUpdate,
+                      onDelete,
+                      onMove,
+                      onAdjustQuantity,
+                      location
+                  }: ItemSlotProps) {
+    const { t } = useTranslation();
+    const { item, indices, quantity } = aggregated;
+    const isOnHand = location === 'equipment';
+    const moveLabel = isOnHand ? t('equipment.moveToStorage') : t('equipment.moveToOnHand');
+
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [editName, setEditName] = useState(item?.name ?? '');
-    const [editDescription, setEditDescription] = useState(item?.description ?? '');
-    const [editQuantity, setEditQuantity] = useState(item?.quantity ?? 1);
-    const { character, updateField } = useCharacter();
+
+    // Local state for the form
+    const [editName, setEditName] = useState(item.name ?? '');
+    const [editDescription, setEditDescription] = useState(item.description ?? '');
+    const [editComments, setEditComments] = useState(item.comments ?? '');
+    const [localQuantity, setLocalQuantity] = useState(quantity);
+
+    // Sync state whenever the modal opens or the underlying data changes
+    useEffect(() => {
+        if (isModalOpen) {
+            setEditName(item.name ?? '');
+            setEditDescription(item.description ?? '');
+            setEditComments(item.comments ?? '');
+            setLocalQuantity(quantity);
+        }
+    }, [isModalOpen, item, quantity]);
+
+    const { character, updateField, equipWeapon, equipArmor } = useCharacter();
+
+    const tags = item.tags ?? [];
+    const isArmor = tags.includes('armor');
+    const isWeaponOrShield = tags.includes('weapon') || tags.includes('shield');
 
     const handleSave = () => {
-        onChange(editName, editDescription, editQuantity);
+        if (localQuantity !== quantity) {
+            onAdjustQuantity(item, localQuantity, indices);
+        }
+        onUpdate(indices, {
+            ...item,
+            name: editName,
+            description: editDescription,
+            comments: editComments,
+        });
         setIsModalOpen(false);
     };
 
     const handleSell = () => {
         const itemValue = 10;
         if (character) {
-            updateField('silver', (character.silver || 0) + (itemValue * editQuantity));
+            updateField('silver', (character.silver || 0) + (itemValue * quantity));
         }
-        onDelete();
-        setIsModalOpen(false);
-    };
-
-    const handleDrop = () => {
-        onDelete();
-        setIsModalOpen(false);
-    };
-
-    const handleMove = () => {
-        onMoveToStorage();
+        onDelete(indices);
         setIsModalOpen(false);
     };
 
     return (
         <>
-            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
-                {item?.quantity && item.quantity > 1 && (
-                    <Box
-                        sx={{
-                            bgcolor: morkBorgColors.yellow,
-                            color: morkBorgColors.black,
-                            fontFamily: "'Bebas Neue', sans-serif",
-                            fontSize: '0.9rem',
-                            width: 28,
-                            height: 28,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            borderRadius: '50%',
-                            border: `2px solid ${morkBorgColors.black}`,
-                            fontWeight: 'bold',
-                            flexShrink: 0,
-                            mt: 0.5,
-                        }}
-                    >
-                        {item.quantity}×
-                    </Box>
+            <Box onClick={() => setIsModalOpen(true)} sx={customStyles.inventorySection.itemSlot}>
+                {quantity > 1 && (
+                    <Box sx={quantityBadgeStyle}>{quantity}×</Box>
                 )}
 
-                <Box sx={{ flex: 1 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                        <TextField
-                            placeholder={isOnHand ? 'Ready item...' : 'Stored item...'}
-                            value={item?.name ?? ''}
-                            onChange={(e: ChangeEvent<HTMLInputElement>) => onChange(e.target.value, item?.description ?? '', item?.quantity ?? 1)}
-                            variant={isOnHand ? 'standard' : 'outlined'}
-                            size="small"
-                            fullWidth
-                            sx={{
-                                '& .MuiOutlinedInput-root': {
-                                    bgcolor: morkBorgColors.grey,
-                                    fontSize: '0.8rem',
-                                },
-                                '& .MuiInput-root': {
-                                    bgcolor: 'transparent',
-                                    color: morkBorgColors.white,
-                                    fontSize: '0.85rem',
-                                    '&::before': { borderColor: morkBorgColors.grey },
-                                    '&::after': { borderColor: morkBorgColors.pink },
-                                },
-                            }}
-                        />
-                        {item?.name && (
-                            <IconButton
-                                size="small"
-                                onClick={() => {
-                                    setEditName(item.name);
-                                    setEditDescription(item.description ?? '');
-                                    setEditQuantity(item.quantity ?? 1);
-                                    setIsModalOpen(true);
-                                }}
-                                sx={{
-                                    color: morkBorgColors.yellow,
-                                    bgcolor: morkBorgColors.grey,
-                                    width: 24,
-                                    height: 24,
-                                    fontSize: '0.9rem',
-                                    '&:hover': {
-                                        bgcolor: morkBorgColors.pink,
-                                        color: morkBorgColors.black,
-                                    },
-                                }}
-                            >
-                                ⋯
-                            </IconButton>
-                        )}
-                    </Box>
-
-                    <TextField
-                        fullWidth
-                        multiline
-                        placeholder="Item description..."
-                        value={item?.description ?? ''}
-                        onChange={(e: ChangeEvent<HTMLInputElement>) => onChange(item?.name ?? '', e.target.value, item?.quantity ?? 1)}
-                        variant="standard"
-                        size="small"
-                        sx={{
-                            mt: 0.5,
-                            '& .MuiInput-root': {
-                                fontSize: '0.7rem',
-                                color: morkBorgColors.white,
-                                opacity: 0.8,
-                                '&::before': { borderColor: 'transparent' },
-                                '&:hover:not(.Mui-disabled):before': { borderColor: morkBorgColors.grey },
-                                '&::after': { borderColor: morkBorgColors.yellow },
-                            },
-                        }}
-                    />
+                <Box sx={customStyles.inventorySection.itemContent}>
+                    <Typography variant="h6" sx={customStyles.inventorySection.itemName}>
+                        {item.name}
+                    </Typography>
+                    {item.description && (
+                        <Typography variant="body2" sx={customStyles.inventorySection.itemDescription}>
+                            {item.description}
+                        </Typography>
+                    )}
                 </Box>
             </Box>
 
-            <Modal
-                open={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
-                sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                }}
-            >
-                <Paper
-                    sx={{
-                        p: 3,
-                        maxWidth: 500,
-                        width: '90%',
-                        bgcolor: morkBorgColors.black,
-                        border: `3px solid ${morkBorgColors.pink}`,
-                        boxShadow: `8px 8px 0 ${morkBorgColors.yellow}`,
-                        maxHeight: '90vh',
-                        overflow: 'auto',
-                    }}
-                >
-                    <Typography
-                        variant="h5"
-                        sx={{
-                            color: morkBorgColors.pink,
-                            fontFamily: "'Permanent Marker', cursive",
-                            mb: 2,
-                            textTransform: 'uppercase',
-                        }}
-                    >
-                        Item Details
+            <Modal open={isModalOpen} onClose={() => setIsModalOpen(false)}>
+                <Paper sx={modalPaperStyle}>
+                    <Typography variant="h5" sx={modalHeaderStyle}>
+                        {editName || t('equipment.itemDetails')}
                     </Typography>
 
-                    <TextField
-                        fullWidth
-                        label="Item Name"
-                        value={editName}
-                        onChange={(e) => setEditName(e.target.value)}
-                        variant="standard"
-                        sx={{
-                            mb: 2,
-                            '& .MuiInput-root': {
-                                color: morkBorgColors.yellow,
-                                fontSize: '1.1rem',
-                                '&:before': { borderBottomColor: '#504c4c' },
-                                '&:hover:not(.Mui-disabled):before': { borderBottomColor: morkBorgColors.yellow },
-                                '&:after': { borderBottomColor: morkBorgColors.yellow },
-                            },
-                            '& .MuiInputLabel-root': {
-                                color: '#f5f5f5',
-                                '&.Mui-focused': { color: morkBorgColors.yellow },
-                            },
-                        }}
-                    />
+                    <Box sx={customStyles.inventorySection.modalContent}>
+                        <TextField
+                            fullWidth
+                            label={t('equipment.itemName')}
+                            value={editName}
+                            onChange={(e) => setEditName(e.target.value)}
+                            sx={modalInputStyles}
+                        />
 
-                    <Box sx={{ mb: 2 }}>
-                        <Typography
-                            sx={{
-                                color: '#f5f5f5',
-                                fontSize: '0.75rem',
-                                mb: 1,
-                            }}
-                        >
-                            Quantity
-                        </Typography>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                            <Box
-                                component="button"
-                                onClick={() => setEditQuantity(Math.max(1, editQuantity - 1))}
-                                sx={{
-                                    bgcolor: morkBorgColors.grey,
-                                    color: morkBorgColors.white,
-                                    border: `2px solid ${morkBorgColors.black}`,
-                                    borderRadius: 1,
-                                    width: 36,
-                                    height: 36,
-                                    cursor: 'pointer',
-                                    fontFamily: "'Permanent Marker', cursive",
-                                    fontSize: '1.2rem',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    transition: 'all 0.2s',
-                                    '&:hover': {
-                                        bgcolor: morkBorgColors.pink,
-                                        color: morkBorgColors.black,
-                                    },
-                                }}
-                            >
-                                −
-                            </Box>
-                            <Typography
-                                sx={{
-                                    color: morkBorgColors.yellow,
-                                    fontFamily: "'Bebas Neue', sans-serif",
-                                    fontSize: '1.8rem',
-                                    minWidth: 50,
-                                    textAlign: 'center',
-                                }}
-                            >
-                                {editQuantity}
+                        {/* Quantity UI */}
+                        <Box>
+                            <Typography sx={customStyles.inventorySection.quantityLabel}>
+                                {t('equipment.quantity')}
                             </Typography>
-                            <Box
-                                component="button"
-                                onClick={() => setEditQuantity(editQuantity + 1)}
-                                sx={{
-                                    bgcolor: morkBorgColors.grey,
-                                    color: morkBorgColors.white,
-                                    border: `2px solid ${morkBorgColors.black}`,
-                                    borderRadius: 1,
-                                    width: 36,
-                                    height: 36,
-                                    cursor: 'pointer',
-                                    fontFamily: "'Permanent Marker', cursive",
-                                    fontSize: '1.2rem',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    transition: 'all 0.2s',
-                                    '&:hover': {
-                                        bgcolor: morkBorgColors.pink,
-                                        color: morkBorgColors.black,
-                                    },
-                                }}
-                            >
-                                +
+                            <Box sx={customStyles.inventorySection.quantityControls}>
+                                <Button onClick={() => setLocalQuantity(Math.max(1, localQuantity - 1))} sx={counterBtnStyle}>−</Button>
+                                <Typography sx={customStyles.inventorySection.quantityNumber}>{localQuantity}</Typography>
+                                <Button onClick={() => setLocalQuantity(localQuantity + 1)} sx={counterBtnStyle}>+</Button>
                             </Box>
                         </Box>
-                    </Box>
 
-                    <TextField
-                        fullWidth
-                        multiline
-                        rows={3}
-                        label="Description"
-                        value={editDescription}
-                        onChange={(e) => setEditDescription(e.target.value)}
-                        variant="standard"
-                        placeholder="What does this item do?"
-                        sx={{
-                            mb: 3,
-                            '& .MuiInput-root': {
-                                color: '#f5f5f5',
-                                '&:before': { borderBottomColor: '#504c4c' },
-                                '&:hover:not(.Mui-disabled):before': { borderBottomColor: morkBorgColors.yellow },
-                                '&:after': { borderBottomColor: morkBorgColors.yellow },
-                            },
-                            '& .MuiInputLabel-root': {
-                                color: '#f5f5f5',
-                                '&.Mui-focused': { color: morkBorgColors.yellow },
-                            },
-                        }}
-                    />
+                        <TextField fullWidth multiline rows={2} label={t('character.description')} value={editDescription} onChange={(e) => setEditDescription(e.target.value)} sx={modalInputStyles} />
+                        <TextField fullWidth multiline rows={2} label="Comments / Notes" value={editComments} onChange={(e) => setEditComments(e.target.value)} sx={modalInputStyles} />
 
-                    <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
-                        <Box
-                            component="button"
-                            onClick={handleMove}
-                            sx={{
-                                flex: 1,
-                                bgcolor: 'transparent',
-                                color: morkBorgColors.yellow,
-                                border: `2px solid ${morkBorgColors.yellow}`,
-                                borderRadius: 1,
-                                px: 2,
-                                py: 1,
-                                cursor: 'pointer',
-                                fontFamily: "'Permanent Marker', cursive",
-                                fontSize: '0.85rem',
-                                transition: 'all 0.2s',
-                                '&:hover': {
-                                    bgcolor: morkBorgColors.yellow,
-                                    color: morkBorgColors.black,
-                                },
-                            }}
-                        >
-                            {isOnHand ? 'Backpack' : 'On Hand'}
-                        </Box>
-
-                        <Box
-                            component="button"
-                            onClick={handleSell}
-                            sx={{
-                                flex: 1,
-                                bgcolor: 'transparent',
-                                color: morkBorgColors.white,
-                                border: `2px solid ${morkBorgColors.white}`,
-                                borderRadius: 1,
-                                px: 2,
-                                py: 1,
-                                cursor: 'pointer',
-                                fontFamily: "'Permanent Marker', cursive",
-                                fontSize: '0.85rem',
-                                transition: 'all 0.2s',
-                                '&:hover': {
-                                    bgcolor: morkBorgColors.white,
-                                    color: morkBorgColors.black,
-                                },
-                            }}
-                        >
-                            Sell +{10 * editQuantity}
-                        </Box>
-
-                        <Box
-                            component="button"
-                            onClick={handleDrop}
-                            sx={{
-                                flex: 1,
-                                bgcolor: 'transparent',
-                                color: morkBorgColors.pink,
-                                border: `2px solid ${morkBorgColors.pink}`,
-                                borderRadius: 1,
-                                px: 2,
-                                py: 1,
-                                cursor: 'pointer',
-                                fontFamily: "'Permanent Marker', cursive",
-                                fontSize: '0.85rem',
-                                transition: 'all 0.2s',
-                                '&:hover': {
-                                    bgcolor: morkBorgColors.pink,
-                                    color: morkBorgColors.black,
-                                },
-                            }}
-                        >
-                            Drop
-                        </Box>
-                    </Box>
-
-                    <Box
-                        sx={{
-                            borderTop: `2px solid ${morkBorgColors.grey}`,
-                            pt: 2,
-                        }}
-                    >
-                        <Box sx={{ display: 'flex', gap: 1 }}>
-                            <Box
-                                component="button"
-                                onClick={handleSave}
-                                sx={{
-                                    flex: 1,
-                                    bgcolor: morkBorgColors.yellow,
-                                    color: morkBorgColors.black,
-                                    border: `2px solid ${morkBorgColors.black}`,
-                                    borderRadius: 1,
-                                    px: 2,
-                                    py: 1.2,
-                                    cursor: 'pointer',
-                                    fontFamily: "'Permanent Marker', cursive",
-                                    fontSize: '1rem',
-                                    transition: 'all 0.2s',
-                                    '&:hover': {
-                                        transform: 'translate(-2px, -2px)',
-                                        boxShadow: `3px 3px 0 ${morkBorgColors.black}`,
-                                    },
-                                }}
-                            >
-                                Save
+                        {isOnHand && (isArmor || isWeaponOrShield) && (
+                            <Box sx={customStyles.inventorySection.equipButtons}>
+                                {isArmor && <Button onClick={() => { equipArmor(indices[0]); setIsModalOpen(false); }} sx={equipBtnStyle} fullWidth>EQUIP ARMOR</Button>}
+                                {isWeaponOrShield && (
+                                    <>
+                                        <Button onClick={() => { equipWeapon(indices[0], 0); setIsModalOpen(false); }} sx={equipBtnStyle} fullWidth>EQUIP SLOT 1</Button>
+                                        <Button onClick={() => { equipWeapon(indices[0], 1); setIsModalOpen(false); }} sx={equipBtnStyle} fullWidth>EQUIP SLOT 2</Button>
+                                    </>
+                                )}
                             </Box>
-                            <Box
-                                component="button"
-                                onClick={() => setIsModalOpen(false)}
-                                sx={{
-                                    flex: 1,
-                                    bgcolor: morkBorgColors.grey,
-                                    color: morkBorgColors.white,
-                                    border: `2px solid ${morkBorgColors.black}`,
-                                    borderRadius: 1,
-                                    px: 2,
-                                    py: 1.2,
-                                    cursor: 'pointer',
-                                    fontFamily: "'Permanent Marker', cursive",
-                                    fontSize: '1rem',
-                                    transition: 'all 0.2s',
-                                    '&:hover': {
-                                        transform: 'translate(-2px, -2px)',
-                                        boxShadow: `3px 3px 0 ${morkBorgColors.black}`,
-                                    },
-                                }}
-                            >
-                                Cancel
-                            </Box>
+                        )}
+
+                        <Box sx={customStyles.inventorySection.actionButtons}>
+                            <Button onClick={() => { onMove(indices); setIsModalOpen(false); }} sx={actionBtnStyle}>{moveLabel}</Button>
+                            <Button onClick={handleSell} sx={actionBtnStyle}>{t('equipment.sell', { amount: 10 * localQuantity })}</Button>
+                            <Button onClick={() => { onDelete(indices); setIsModalOpen(false); }} sx={{ ...actionBtnStyle, ...customStyles.inventorySection.dropButton }}>{t('equipment.drop')}</Button>
+                        </Box>
+
+                        <Box sx={customStyles.inventorySection.modalFooter}>
+                            <Button onClick={handleSave} fullWidth sx={saveBtnStyle}>{t('equipment.save')}</Button>
+                            <Button onClick={() => setIsModalOpen(false)} sx={customStyles.inventorySection.cancelButton}>{t('actions.cancel')}</Button>
                         </Box>
                     </Box>
                 </Paper>
@@ -432,48 +202,82 @@ function ItemSlot({ item, onChange, onDelete, onMoveToStorage, variant = 'defaul
 }
 
 export function OnHandSection() {
-    const { character, updateField } = useCharacter();
-    const onHand = character?.equipment?.slice(0, 4) ?? [];
+    const { t } = useTranslation();
+    const { character, updateEquipmentItem, removeEquipmentItem, moveToStorage, addEquipmentItem } = useCharacter();
 
-    const handleUpdate = (index: number, name: string, description: string, quantity: number) => {
-        const newEquipment = [...(character?.equipment ?? [])];
-        newEquipment[index] = {
-            ...newEquipment[index],
-            name,
-            description,
-            quantity,
-            key: newEquipment[index]?.key ?? `custom-${index}`,
-        };
-        updateField('equipment', newEquipment);
+    const equipment = character?.equipment ?? [];
+    const aggregated = useMemo(() => aggregateItems(equipment), [equipment]);
+
+    const handleAdjustQuantity = (item: EquipmentItem, newTotal: number, currentIndices: number[]) => {
+        const diff = newTotal - currentIndices.length;
+        if (diff > 0) {
+            for (let i = 0; i < diff; i++) addEquipmentItem({ ...item });
+        } else if (diff < 0) {
+            // Remove from the end to keep indices stable during the loop
+            [...currentIndices].slice(newTotal).reverse().forEach(idx => removeEquipmentItem(idx));
+        }
     };
 
-    const handleDelete = (index: number) => {
-        const newEquipment = [...(character?.equipment ?? [])];
-        newEquipment.splice(index, 1);
-        updateField('equipment', newEquipment);
-    };
-
-    const handleMoveToBackpack = (index: number) => {
-        const newEquipment = [...(character?.equipment ?? [])];
-        const [item] = newEquipment.splice(index, 1);
-        newEquipment.push(item);
-        updateField('equipment', newEquipment);
+    const handleAddItem = async (hit: ItemSearchHit) => {
+        const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/equipment/${hit.item_type}/${hit.id}`);
+        if (!response.ok) return;
+        const fullItem = await response.json();
+        addEquipmentItem({ ...fullItem, name: fullItem.name ?? hit.name, uses: [] });
     };
 
     return (
-        <Paper sx={{ p: 2.5, mb: 2.5, bgcolor: morkBorgColors.pink, boxShadow: `5px 5px 0 ${morkBorgColors.black}` }}>
-            <Typography variant="h3" sx={{ color: morkBorgColors.black, borderBottom: `4px solid ${morkBorgColors.black}`, pb: 0.5, mb: 1.5, display: 'inline-block' }}>
-                On Hand
-            </Typography>
-            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 1.25 }}>
-                {onHand.map((item, index) => (
-                    <Paper key={index} sx={{ p: 1.25 }}>
+        <Paper sx={sectionPaperStyle}>
+            <Typography variant="h3" sx={customStyles.inventorySection.sectionTitle}>{t('equipment.onHand')}</Typography>
+            <Box sx={customStyles.inventorySection.itemsGrid}>
+                {aggregated.map((group) => (
+                    <Paper key={group.item.name} sx={itemRowStyle}>
                         <ItemSlot
-                            item={item}
-                            onChange={(name, desc, qty) => handleUpdate(index, name, desc, qty)}
-                            onDelete={() => handleDelete(index)}
-                            onMoveToStorage={() => handleMoveToBackpack(index)}
-                            variant="onhand"
+                            aggregated={group}
+                            onUpdate={(indices, updated) => indices.forEach(idx => updateEquipmentItem(idx, updated))}
+                            onDelete={(indices) => [...indices].reverse().forEach(idx => removeEquipmentItem(idx))}
+                            onMove={(indices) => [...indices].reverse().forEach(idx => moveToStorage(idx))}
+                            onAdjustQuantity={handleAdjustQuantity}
+                            location="equipment"
+                        />
+                    </Paper>
+                ))}
+            </Box>
+            <Box sx={customStyles.inventorySection.addItemSection}>
+                <ItemAutocomplete onSelect={handleAddItem} placeholder={t('equipment.searchPlaceholder')} />
+            </Box>
+        </Paper>
+    );
+}
+
+export function StorageSection() {
+    const { t } = useTranslation();
+    const { character, updateStorageItem, removeStorageItem, moveToEquipment, addStorageItem } = useCharacter();
+
+    const storage = character?.storage ?? [];
+    const aggregated = useMemo(() => aggregateItems(storage), [storage]);
+
+    const handleAdjustQuantity = (item: EquipmentItem, newTotal: number, currentIndices: number[]) => {
+        const diff = newTotal - currentIndices.length;
+        if (diff > 0) {
+            for (let i = 0; i < diff; i++) addStorageItem({ ...item });
+        } else if (diff < 0) {
+            [...currentIndices].slice(newTotal).reverse().forEach(idx => removeStorageItem(idx));
+        }
+    };
+
+    return (
+        <Paper sx={sectionPaperStyle}>
+            <Typography variant="h3" sx={customStyles.inventorySection.sectionTitle}>{t('equipment.storedItems')}</Typography>
+            <Box sx={customStyles.inventorySection.itemsGrid}>
+                {aggregated.map((group) => (
+                    <Paper key={group.item.name} sx={itemRowStyle}>
+                        <ItemSlot
+                            aggregated={group}
+                            onUpdate={(indices, updated) => indices.forEach(idx => updateStorageItem(idx, updated))}
+                            onDelete={(indices) => [...indices].reverse().forEach(idx => removeStorageItem(idx))}
+                            onMove={(indices) => [...indices].reverse().forEach(idx => moveToEquipment(idx))}
+                            onAdjustQuantity={handleAdjustQuantity}
+                            location="storage"
                         />
                     </Paper>
                 ))}
@@ -482,54 +286,21 @@ export function OnHandSection() {
     );
 }
 
-export function BackpackSection() {
-    const { character, updateField } = useCharacter();
-    const backpack = character?.equipment?.slice(4) ?? [];
+export const BackpackSection = StorageSection;
 
-    const handleUpdate = (index: number, name: string, description: string, quantity: number) => {
-        const actualIndex = index + 4;
-        const newEquipment = [...(character?.equipment ?? [])];
-        newEquipment[actualIndex] = {
-            ...newEquipment[actualIndex],
-            name,
-            description,
-            quantity,
-            key: newEquipment[actualIndex]?.key ?? `custom-${actualIndex}`,
-        };
-        updateField('equipment', newEquipment);
-    };
+// --- Styles ---
 
-    const handleDelete = (index: number) => {
-        const actualIndex = index + 4;
-        const newEquipment = [...(character?.equipment ?? [])];
-        newEquipment.splice(actualIndex, 1);
-        updateField('equipment', newEquipment);
-    };
+const sectionPaperStyle = customStyles.paper.section;
+const itemRowStyle = customStyles.paper.itemRow;
+const modalPaperStyle = { ...customStyles.modal.paper, minWidth: 320, maxWidth: '90vw' };
+const modalHeaderStyle = customStyles.modal.header;
 
-    const handleMoveToOnHand = (index: number) => {
-        const actualIndex = index + 4;
-        const newEquipment = [...(character?.equipment ?? [])];
-        const [item] = newEquipment.splice(actualIndex, 1);
-        newEquipment.splice(0, 0, item);
-        updateField('equipment', newEquipment);
-    };
+const quantityBadgeStyle = customStyles.quantityBadge;
 
-    return (
-        <Paper sx={{ p: 2.5, mb: 2.5, border: `3px solid ${morkBorgColors.yellow}`, position: 'relative', '&::before': { content: '"CART / BACKPACK"', position: 'absolute', top: -12, left: 15, bgcolor: morkBorgColors.yellow, color: morkBorgColors.black, fontFamily: "'Antonio', sans-serif", fontSize: '0.6rem', letterSpacing: '0.3em', px: 1.25, py: 0.4 } }}>
-            <Typography variant="h3" sx={{ color: morkBorgColors.white, borderBottom: `4px solid ${morkBorgColors.yellow}`, pb: 0.5, mb: 1.5, display: 'inline-block' }}>
-                Stored Items
-            </Typography>
-            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 1 }}>
-                {backpack.map((item, index) => (
-                    <ItemSlot
-                        key={index}
-                        item={item}
-                        onChange={(name, desc, qty) => handleUpdate(index, name, desc, qty)}
-                        onDelete={() => handleDelete(index)}
-                        onMoveToStorage={() => handleMoveToOnHand(index)}
-                    />
-                ))}
-            </Box>
-        </Paper>
-    );
-}
+
+const modalInputStyles = customStyles.modal.input;
+
+const counterBtnStyle = customStyles.buttons.counter;
+const actionBtnStyle = customStyles.buttons.action;
+const equipBtnStyle = customStyles.buttons.equip;
+const saveBtnStyle = customStyles.buttons.save;

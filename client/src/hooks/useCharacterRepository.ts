@@ -1,24 +1,29 @@
-import {$api} from "@/api";
-import {CharacterResponse, UpdateMutationContext} from "@/hooks/models.ts";
-import {getCharacterKey} from "@/hooks/utils.ts";
-import {useQueryClient} from "@tanstack/react-query";
-import {useCallback} from "react";
+import { $api } from "@/api";
+import {PathsCharactersIdGetParametersQueryLocale} from "@/api/schema.ts";
 
-export function useCharacterRepository(characterId: string | null, locale: 'en' | 'pl' = 'en') {
+import { CharacterResponse, UpdateMutationContext } from "@/hooks/models.ts";
+import {getApiLocale, getCharacterKey} from "@/hooks/utils.ts";
+import { useQueryClient } from "@tanstack/react-query";
+import { useCallback } from "react";
+
+export function useCharacterRepository(characterId: string | null, locale?: string) {
     const queryClient = useQueryClient();
+    const trimmedLocale =getApiLocale<PathsCharactersIdGetParametersQueryLocale>(locale);
 
+    // ---- Character Query ----
     const characterQuery = $api.useQuery(
         'get',
         '/characters/{id}',
         {
             params: {
                 path: { id: characterId! },
-                query: { locale }
+                query: { locale: trimmedLocale }
             }
         },
         { enabled: !!characterId }
     );
 
+    // ---- Create Character ----
     const createCharacter = $api.useMutation('post', '/characters/new', {
         onSuccess: (character) => {
             if (!character?.id) return;
@@ -29,6 +34,7 @@ export function useCharacterRepository(characterId: string | null, locale: 'en' 
         }
     });
 
+    // ---- Update Character (with rollback support) ----
     const updateCharacter = $api.useMutation('patch', '/characters/{id}', {
         onMutate: async (vars) => {
             const key = getCharacterKey(vars.params.path.id, locale);
@@ -50,16 +56,25 @@ export function useCharacterRepository(characterId: string | null, locale: 'en' 
         }
     });
 
+    // ---- Claim Character (guest -> authenticated) ----
+    const claimCharacter = $api.useMutation('post', '/characters/{id}/claim' as any, {
+        onSuccess: (_data, vars) => {
+            // Invalidate to refetch with new ownership
+            queryClient.invalidateQueries({
+                queryKey: getCharacterKey((vars as any).params.path.id, locale)
+            });
+        }
+    });
+
+    // ---- Refetch Character ----
     const refetchCharacter = useCallback(
         () => {
             if (!characterId) return;
-
-            // Just invalidate with the same key - the query will refetch with the new locale from the hook parameter
             queryClient.invalidateQueries({
                 queryKey: getCharacterKey(characterId, locale)
             });
         },
-        [characterId, queryClient]
+        [characterId, queryClient, locale]
     );
 
     return {
@@ -69,6 +84,7 @@ export function useCharacterRepository(characterId: string | null, locale: 'en' 
 
         createCharacter,
         updateCharacter,
+        claimCharacter,
         refetchCharacter,
         getCharacterKey
     };

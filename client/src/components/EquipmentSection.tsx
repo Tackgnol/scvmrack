@@ -1,144 +1,225 @@
-import {useCharacter} from "@/CharacterContext/CharacterContext.tsx";
-import type {GearSlotProps} from '@/types';
-import {Box, TextField, Typography} from '@mui/material';
-import type {ChangeEvent} from 'react';
-import {morkBorgColors} from '../theme/morkBorgTheme';
+import { useCharacter } from "@/CharacterContext/CharacterContext.tsx";
+import { ItemSearchHit } from "@/hooks/useEquipmentSearch";
+import ItemAutocomplete from "@components/ItemAutocomplete.tsx";
+import {
+    Box,
+    Button,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogTitle,
+    Divider,
+    TextField,
+    Typography
+} from '@mui/material';
+import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { customStyles } from '../theme/morkBorgTheme';
 
-function GearSlot({
-                      label,
-                      name,
-                      detail,
-                      onNameChange,
-                      onDetailChange,
-                      detailPlaceholder,
-                  }: GearSlotProps) {
+interface GearSlotProps {
+    label: string;
+    name?: string;
+    detail?: string;
+    onClick: () => void;
+}
+
+// 1. Gear Slot is strictly display only (No TextFields)
+function GearSlot({ label, name, detail, onClick }: GearSlotProps) {
+    const isEmpty = !name;
+    console.log('gearslot')
     return (
-        <Box
-            sx={{
-                bgcolor: morkBorgColors.white,
-                borderLeft: `5px solid ${morkBorgColors.pink}`,
-                p: 1.5,
-                position: 'relative',
-            }}
-        >
-            <Typography
-                variant="subtitle2"
-                sx={{
-                    position: 'absolute',
-                    top: 5,
-                    right: 10,
-                    color: morkBorgColors.pink,
-                    fontSize: '0.55rem',
-                }}
-            >
+        <Box onClick={onClick} sx={customStyles.gearSlot.base}>
+            <Typography variant="subtitle2" sx={customStyles.gearSlot.label}>
                 {label}
             </Typography>
 
-            <TextField
-                placeholder="Name..."
-                value={name ?? ''}
-                onChange={(e: ChangeEvent<HTMLInputElement>) => onNameChange(e.target.value)}
-                variant="standard"
-                fullWidth
-                sx={{
-                    '& .MuiInput-root': {
-                        color: morkBorgColors.black,
-                        fontSize: '0.9rem',
-                        '&::before': {borderColor: morkBorgColors.black},
-                        '&::after': {borderColor: morkBorgColors.pink},
-                    },
-                    '& .MuiInput-input::placeholder': {color: '#888', opacity: 1},
-                }}
-            />
+            <Typography variant="h6" sx={isEmpty ? customStyles.gearSlot.nameEmpty : customStyles.gearSlot.nameFilled}>
+                {isEmpty ? "Empty Slot" : name}
+            </Typography>
 
-            {onDetailChange && (
-                <TextField
-                    placeholder={detailPlaceholder || 'Detail...'}
-                    value={detail ?? ''}
-                    onChange={(e: ChangeEvent<HTMLInputElement>) => onDetailChange(e.target.value)}
-                    variant="standard"
-                    fullWidth
-                    sx={{
-                        mt: 0.5,
-                        '& .MuiInput-root': {
-                            color: morkBorgColors.black,
-                            fontSize: '0.75rem',
-                            fontStyle: 'italic',
-                            '&::before': {borderColor: '#aaa', borderStyle: 'dashed'},
-                            '&::after': {borderColor: morkBorgColors.pink},
-                        },
-                        '& .MuiInput-input::placeholder': {color: '#888', opacity: 1},
-                    }}
-                />
+            {/* 2. Only show detail if it exists */}
+            {!isEmpty && detail && (
+                <Typography variant="body2" sx={customStyles.gearSlot.detail}>
+                    {detail}
+                </Typography>
             )}
         </Box>
     );
 }
 
 export function EquipmentSection() {
-    const {character, updateWeaponField, updateArmorField } = useCharacter();
+    const { character, updateWeaponField, updateArmorField } = useCharacter();
+    const { t } = useTranslation();
 
-    const weapon = character?.equipped_weapons?.[0];
-    const offhand = character?.equipped_weapons?.[1];
+    // 4. Second section Item check (Empty for now)
+    const specialItems: string[] = [];
+
+    // Modal State
+    const [modalOpen, setModalOpen] = useState(false);
+    const [editingSlot, setEditingSlot] = useState<{
+        type: 'weapon' | 'armor' | 'other';
+        index?: number;
+        title: string;
+        name: string;
+        description: string;
+        comments: string; // 7. Free text field 'comments'
+    }>({ type: 'weapon', title: '', name: '', description: '', comments: '' });
+
+    const weapon0 = character?.equipped_weapons?.[0];
+    const weapon1 = character?.equipped_weapons?.[1];
     const armor = character?.equipped_armor;
 
+    const handleSlotClick = (
+        type: 'weapon' | 'armor' | 'other',
+        item: { name?: string; description?: string, comments?: string },
+        title: string,
+        index?: number
+    ) => {
+        setEditingSlot({
+            type,
+            index,
+            title,
+            name: item.name || '',
+            description: item.description || '',
+            comments: item.comments || '' // Load existing comments if available
+        });
+        setModalOpen(true);
+    };
+
+    const handleSave = () => {
+        if (editingSlot.type === 'weapon' && typeof editingSlot.index === 'number') {
+            updateWeaponField(editingSlot.index, 'name', editingSlot.name);
+            updateWeaponField(editingSlot.index, 'description', editingSlot.description);
+            // Ideally: updateWeaponField(editingSlot.index, 'comments', editingSlot.comments);
+        } else if (editingSlot.type === 'armor') {
+            updateArmorField('name', editingSlot.name);
+            updateArmorField('description', editingSlot.description);
+        }
+        setModalOpen(false);
+    };
+
+    // 3. Add Item Logic
+    const handleAutocompleteSelect = (item: ItemSearchHit) => {
+        // Find first empty weapon slot
+        const w0Empty = !character?.equipped_weapons?.[0]?.name;
+        const w1Empty = !character?.equipped_weapons?.[1]?.name;
+
+        let targetIndex = 0;
+        if (!w0Empty && w1Empty) targetIndex = 1;
+        // If both full, default to 0 (overwrite)
+
+        updateWeaponField(targetIndex, 'name', item.name);
+        updateWeaponField(targetIndex, 'description', item.description || '');
+    };
+
     return (
-        <Box sx={{mb: 2.5}}>
-            <Typography
-                variant="h3"
-                color="secondary"
-                sx={{
-                    borderBottom: `4px solid ${morkBorgColors.pink}`,
-                    pb: 0.5,
-                    mb: 1.5,
-                    display: 'inline-block',
-                }}
-            >
-                Equipped Gear
+        <Box sx={customStyles.equipmentSection.container}>
+            <Typography variant="h3" color="secondary" sx={customStyles.equipmentSection.sectionTitle}>
+                {t('equipment.equippedGear')}
             </Typography>
 
-            <Box
-                sx={{
-                    display: 'grid',
-                    gridTemplateColumns: {xs: '1fr', sm: '1fr 1fr'},
-                    gap: 1.25,
-                }}
-            >
+            <Box sx={customStyles.equipmentSection.gearGrid}>
                 <GearSlot
-                    label="WEAPON"
-                    name={weapon?.name ?? ''}
-                    detail={weapon?.description}
-                    onNameChange={(v) => updateWeaponField(0, 'name', v)}
-                    onDetailChange={(v) => updateWeaponField(0, 'description', v)}
-                    detailPlaceholder="Damage: d6"
+                    label={t('equipment.weapon').toUpperCase()}
+                    name={weapon0?.name}
+                    detail={weapon0?.description}
+                    onClick={() => handleSlotClick('weapon', weapon0 || {}, t('equipment.weapon'), 0)}
                 />
                 <GearSlot
-                    label="OFF-HAND"
-                    name={offhand?.name ?? ''}
-                    detail={offhand?.description}
-                    onNameChange={(v) => updateWeaponField(1, 'name', v)}
-                    onDetailChange={(v) => updateWeaponField(1, 'description', v)}
-                    detailPlaceholder="+1 defense / d4"
+                    label={t('equipment.offHand')}
+                    name={weapon1?.name}
+                    detail={weapon1?.description}
+                    onClick={() => handleSlotClick('weapon', weapon1 || {}, t('equipment.offHand'), 1)}
                 />
                 <GearSlot
-                    label="ARMOR"
-                    name={armor?.name ?? ''}
+                    label={t('equipment.armorLabel').toUpperCase()}
+                    name={armor?.name}
                     detail={armor?.description}
-                    onNameChange={(v) => updateArmorField('name', v)}
-                    onDetailChange={(v) => updateArmorField('description', v)}
-                    detailPlaceholder="Tier: -d4"
+                    onClick={() => handleSlotClick('armor', armor || {}, t('equipment.armorLabel'))}
                 />
-                <GearSlot
-                    label="OTHER"
-                    name=""
-                    detail=""
-                    onNameChange={() => {
-                    }}
-                    onDetailChange={() => {
-                    }}
-                    detailPlaceholder="Effect..."
+
+                {/* 4. Second Section (Other) only appears if items exist */}
+                {specialItems.length > 0 && (
+                    <GearSlot
+                        label={t('equipment.other')}
+                        name=""
+                        detail=""
+                        onClick={() => handleSlotClick('other', {}, t('equipment.other'))}
+                    />
+                )}
+            </Box>
+
+            {/* 5. Autocomplete Header and Space */}
+            <Box sx={customStyles.equipmentSection.addItemsSection}>
+                <Divider sx={customStyles.equipmentSection.addItemsDivider} />
+                <Typography variant="h5" sx={customStyles.equipmentSection.addItemsTitle}>
+                    {t('equipment.addItems') || "Add New Items"}
+                </Typography>
+
+                <ItemAutocomplete
+                    onSelect={handleAutocompleteSelect}
+                    placeholder="Search equipment database..."
                 />
             </Box>
+
+            {/* Modal */}
+            <Dialog
+                open={modalOpen}
+                onClose={() => setModalOpen(false)}
+                fullWidth
+                maxWidth="xs"
+                PaperProps={{ sx: customStyles.equipmentSection.dialogPaper }}
+            >
+                <DialogTitle sx={customStyles.equipmentSection.dialogTitle}>
+                    Edit {editingSlot.title}
+                </DialogTitle>
+                <DialogContent sx={customStyles.equipmentSection.dialogContent}>
+                    <TextField
+                        autoFocus
+                        label="Name"
+                        value={editingSlot.name}
+                        onChange={(e) => setEditingSlot(prev => ({ ...prev, name: e.target.value }))}
+                        variant="outlined"
+                        fullWidth
+                        sx={customStyles.equipmentModalInput}
+                    />
+                    <TextField
+                        label="Description / Damage"
+                        value={editingSlot.description}
+                        onChange={(e) => setEditingSlot(prev => ({ ...prev, description: e.target.value }))}
+                        variant="outlined"
+                        fullWidth
+                        multiline
+                        rows={2}
+                        sx={customStyles.equipmentModalInput}
+                    />
+
+                    {/* 7. Requested Comments Field */}
+                    <TextField
+                        label="Comments / Notes"
+                        value={editingSlot.comments}
+                        onChange={(e) => setEditingSlot(prev => ({ ...prev, comments: e.target.value }))}
+                        variant="outlined"
+                        fullWidth
+                        multiline
+                        rows={3}
+                        placeholder="Add your custom notes here..."
+                        sx={customStyles.equipmentModalInput}
+                    />
+                </DialogContent>
+                <DialogActions sx={customStyles.equipmentSection.dialogActions}>
+                    <Button onClick={() => setModalOpen(false)} sx={customStyles.equipmentSection.cancelButton}>
+                        Cancel
+                    </Button>
+                    <Button
+                        onClick={handleSave}
+                        variant="contained"
+                        sx={customStyles.equipmentSection.saveButton}
+                    >
+                        Save
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </Box>
     );
 }
