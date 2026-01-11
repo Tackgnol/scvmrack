@@ -37,112 +37,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Default Response */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Default Response */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Default Response */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
-        options?: never;
-        head?: never;
-        patch: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Default Response */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
-        trace?: never;
-    };
     "/health": {
         parameters: {
             query?: never;
@@ -176,6 +70,207 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/auth/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/{*}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    "*": string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    "*": string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    "*": string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    "*": string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    "*": string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        head: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    "*": string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    "*": string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        trace: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    "*": string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+    };
     "/characters/new": {
         parameters: {
             query?: never;
@@ -189,8 +284,7 @@ export interface paths {
         post: {
             parameters: {
                 query?: {
-                    /** @description Locale (en, pl) */
-                    locale?: string;
+                    locale?: PathsCharactersNewPostParametersQueryLocale;
                 };
                 header?: never;
                 path?: never;
@@ -232,7 +326,9 @@ export interface paths {
                             body_description?: string;
                             trait1?: string;
                             trait2?: string;
+                            notes?: string;
                             abilities?: {
+                                key?: string;
                                 name?: string;
                                 description?: string;
                             }[];
@@ -240,6 +336,17 @@ export interface paths {
                                 key?: string;
                                 name?: string;
                                 description?: string;
+                                uses?: boolean[];
+                                dice?: number[];
+                                tags?: string[];
+                            }[];
+                            storage?: {
+                                key?: string;
+                                name?: string;
+                                description?: string;
+                                uses?: boolean[];
+                                dice?: number[];
+                                tags?: string[];
                             }[];
                             equipped_weapons?: {
                                 key?: string;
@@ -260,6 +367,17 @@ export interface paths {
                             created_at?: string;
                             /** Format: date-time */
                             updated_at?: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error?: string;
                         };
                     };
                 };
@@ -293,8 +411,7 @@ export interface paths {
         get: {
             parameters: {
                 query?: {
-                    /** @description Locale (en, pl) */
-                    locale?: string;
+                    locale?: PathsCharactersIdGetParametersQueryLocale;
                 };
                 header?: never;
                 path: {
@@ -332,7 +449,9 @@ export interface paths {
                             body_description?: string;
                             trait1?: string;
                             trait2?: string;
+                            notes?: string;
                             abilities?: {
+                                key?: string;
                                 name?: string;
                                 description?: string;
                             }[];
@@ -340,6 +459,17 @@ export interface paths {
                                 key?: string;
                                 name?: string;
                                 description?: string;
+                                uses?: boolean[];
+                                dice?: number[];
+                                tags?: string[];
+                            }[];
+                            storage?: {
+                                key?: string;
+                                name?: string;
+                                description?: string;
+                                uses?: boolean[];
+                                dice?: number[];
+                                tags?: string[];
                             }[];
                             equipped_weapons?: {
                                 key?: string;
@@ -360,6 +490,28 @@ export interface paths {
                             created_at?: string;
                             /** Format: date-time */
                             updated_at?: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error?: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error?: string;
                         };
                     };
                 };
@@ -409,6 +561,28 @@ export interface paths {
                     content?: never;
                 };
                 /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error?: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error?: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
                 404: {
                     headers: {
                         [name: string]: unknown;
@@ -438,8 +612,7 @@ export interface paths {
         patch: {
             parameters: {
                 query?: {
-                    /** @description Locale (en, pl) */
-                    locale?: string;
+                    locale?: PathsCharactersIdPatchParametersQueryLocale;
                 };
                 header?: never;
                 path: {
@@ -452,12 +625,41 @@ export interface paths {
                     "application/json": {
                         name?: string;
                         current_hp?: number;
+                        max_hp?: number;
                         omens?: number;
+                        max_omens?: number;
                         silver?: number;
+                        strength?: number;
+                        agility?: number;
+                        presence?: number;
+                        toughness?: number;
+                        trait1?: string;
+                        trait2?: string;
+                        habit?: string;
+                        tale?: string;
+                        body_description?: string;
+                        origin?: string;
+                        notes?: string;
+                        abilities?: {
+                            key?: string;
+                            name?: string;
+                            description?: string;
+                        }[];
                         equipment?: {
                             key?: string;
                             name?: string;
                             description?: string;
+                            uses?: boolean[];
+                            dice?: number[];
+                            tags?: string[];
+                        }[];
+                        storage?: {
+                            key?: string;
+                            name?: string;
+                            description?: string;
+                            uses?: boolean[];
+                            dice?: number[];
+                            tags?: string[];
                         }[];
                         equipped_weapons?: {
                             key?: string;
@@ -474,10 +676,6 @@ export interface paths {
                             max_tier?: number;
                             tags?: string[];
                         } | null;
-                        abilities?: {
-                            name?: string;
-                            description?: string;
-                        }[];
                     };
                 };
             };
@@ -510,7 +708,9 @@ export interface paths {
                             body_description?: string;
                             trait1?: string;
                             trait2?: string;
+                            notes?: string;
                             abilities?: {
+                                key?: string;
                                 name?: string;
                                 description?: string;
                             }[];
@@ -518,6 +718,17 @@ export interface paths {
                                 key?: string;
                                 name?: string;
                                 description?: string;
+                                uses?: boolean[];
+                                dice?: number[];
+                                tags?: string[];
+                            }[];
+                            storage?: {
+                                key?: string;
+                                name?: string;
+                                description?: string;
+                                uses?: boolean[];
+                                dice?: number[];
+                                tags?: string[];
                             }[];
                             equipped_weapons?: {
                                 key?: string;
@@ -553,6 +764,28 @@ export interface paths {
                     };
                 };
                 /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error?: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error?: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
                 404: {
                     headers: {
                         [name: string]: unknown;
@@ -578,6 +811,370 @@ export interface paths {
         };
         trace?: never;
     };
+    "/characters/{id}/claim": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Claim a guest character for authenticated user */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error?: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error?: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error?: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error?: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error?: string;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/characters": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description List characters for current session/user */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id?: string;
+                            name?: string;
+                            class_id?: number;
+                            class_name?: string;
+                            class_description?: string;
+                            origin?: string;
+                            strength?: number;
+                            agility?: number;
+                            presence?: number;
+                            toughness?: number;
+                            max_hp?: number;
+                            current_hp?: number;
+                            omens?: number;
+                            max_omens?: number;
+                            silver?: number;
+                            habit?: string;
+                            tale?: string;
+                            body_description?: string;
+                            trait1?: string;
+                            trait2?: string;
+                            notes?: string;
+                            abilities?: {
+                                key?: string;
+                                name?: string;
+                                description?: string;
+                            }[];
+                            equipment?: {
+                                key?: string;
+                                name?: string;
+                                description?: string;
+                                uses?: boolean[];
+                                dice?: number[];
+                                tags?: string[];
+                            }[];
+                            storage?: {
+                                key?: string;
+                                name?: string;
+                                description?: string;
+                                uses?: boolean[];
+                                dice?: number[];
+                                tags?: string[];
+                            }[];
+                            equipped_weapons?: {
+                                key?: string;
+                                name?: string;
+                                description?: string;
+                                dice?: number[];
+                                tags?: string[];
+                            }[];
+                            equipped_armor?: {
+                                key?: string;
+                                name?: string;
+                                description?: string;
+                                dice?: number[];
+                                max_tier?: number;
+                                tags?: string[];
+                            } | null;
+                            /** Format: date-time */
+                            created_at?: string;
+                            /** Format: date-time */
+                            updated_at?: string;
+                        }[];
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error?: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error?: string;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/equipment/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Search items with fuzzy matching and locale awareness */
+        get: {
+            parameters: {
+                query?: {
+                    q?: string;
+                    locale?: string;
+                    limit?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            item_type?: string;
+                            id?: number;
+                            key?: string;
+                            name?: string;
+                        }[];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/equipment/{itemType}/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Fetch full item by type and id */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    itemType: string;
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/session/info": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/session/extend": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -589,4 +1186,16 @@ export interface components {
     pathItems: never;
 }
 export type $defs = Record<string, never>;
+export enum PathsCharactersNewPostParametersQueryLocale {
+    en = "en",
+    pl = "pl"
+}
+export enum PathsCharactersIdGetParametersQueryLocale {
+    en = "en",
+    pl = "pl"
+}
+export enum PathsCharactersIdPatchParametersQueryLocale {
+    en = "en",
+    pl = "pl"
+}
 export type operations = Record<string, never>;

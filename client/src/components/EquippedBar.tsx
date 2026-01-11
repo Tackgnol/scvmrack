@@ -1,46 +1,42 @@
-
 import {useCharacter} from "@/CharacterContext/CharacterContext.tsx";
-import { Box, Paper, Typography } from '@mui/material';
-import { morkBorgColors } from '../theme/morkBorgTheme';
+import {Box, Divider, Menu, MenuItem, Typography} from '@mui/material';
+import {MouseEvent, useMemo, useState} from 'react';
+import {useTranslation} from 'react-i18next';
+import { customStyles} from '../theme/morkBorgTheme';
+import { StyledEquipmentCard } from './EquippedBar.styled';
 
 interface EquippedQuickProps {
     icon: string;
     type: string;
     name: string;
     detail?: string;
+    noneName: string;
+    onClick?: (event: MouseEvent<HTMLElement>) => void;
 }
 
-function EquippedQuick({ icon, type, name, detail }: EquippedQuickProps) {
+function EquippedQuick({icon, type, name, detail, noneName, onClick}: EquippedQuickProps) {
     return (
-        <Paper sx={{ p: 1.5, display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            <Typography sx={{ fontSize: '1.5rem' }}>{icon}</Typography>
-            <Box sx={{ flex: 1 }}>
-                <Typography variant="subtitle2" color="secondary" sx={{ fontSize: '0.55rem' }}>
+        <StyledEquipmentCard onClick={onClick} hasClick={!!onClick}>
+            <Typography sx={customStyles.equippedBar.icon}>{icon}</Typography>
+            <Box sx={customStyles.equippedBar.contentBox}>
+                <Typography variant="subtitle2" color="secondary" sx={customStyles.equippedBar.typeLabel}>
                     {type}
                 </Typography>
-                <Typography
-                    variant="h4"
-                    sx={{ color: morkBorgColors.white, fontSize: '1.1rem', mt: 0.25 }}
-                >
-                    {name || 'None'}
+                <Typography variant="h4" noWrap sx={customStyles.equippedBar.itemName}>
+                    {name || noneName}
                 </Typography>
                 {detail && (
-                    <Typography
-                        variant="subtitle2"
-                        sx={{ color: morkBorgColors.yellow, fontSize: '0.7rem' }}
-                    >
+                    <Typography variant="subtitle2" sx={customStyles.equippedBar.itemDetail}>
                         {detail}
                     </Typography>
                 )}
             </Box>
-        </Paper>
+        </StyledEquipmentCard>
     );
 }
 
-// Format dice array like [6] -> "d6" or [6, 6] -> "2d6"
 function formatDice(dice?: number[]): string {
     if (!dice || dice.length === 0) return '';
-    // Group same dice together
     const counts: Record<number, number> = {};
     dice.forEach((d) => {
         counts[d] = (counts[d] || 0) + 1;
@@ -51,39 +47,150 @@ function formatDice(dice?: number[]): string {
 }
 
 export default function EquippedBar() {
-    const { character } = useCharacter();
+    // These methods come from your updated useCurrentCharacter / useCharacterEditor hooks
+    const {
+        character,
+        equipWeapon,
+        unequipWeapon,
+        equipArmor,
+        unequipArmor
+    } = useCharacter();
 
-    // Get first equipped weapon (or undefined)
-    const weapon = character?.equipped_weapons?.[0];
-    const armor = character?.equipped_armor;
+    const {t} = useTranslation();
 
-    const weaponName = weapon?.name ?? 'Unarmed';
-    const weaponDamage = weapon?.dice ? formatDice(weapon.dice) : 'd2';
+    const [weaponAnchor, setWeaponAnchor] = useState<null | HTMLElement>(null);
+    const [armorAnchor, setArmorAnchor] = useState<null | HTMLElement>(null);
+    const [activeWeaponSlot, setActiveWeaponSlot] = useState<number>(0);
 
-    const armorName = armor?.name ?? 'Unarmored';
-    const armorProtection = armor?.dice ? `-${formatDice(armor.dice)}` : '−';
+    // 1. Data Selectors - We map inventory to include original index for the hooks
+    const inventory = character?.equipment || [];
+
+    const inventoryWeapons = useMemo(() =>
+            inventory
+                .map((item, index) => ({item, index}))
+                .filter(entry => entry.item.tags?.includes('weapon')),
+        [inventory]
+    );
+
+    const inventoryArmor = useMemo(() =>
+            inventory
+                .map((item, index) => ({item, index}))
+                .filter(entry => entry.item.tags?.includes('armor')),
+        [inventory]
+    );
+
+    const equippedWeapons = character?.equipped_weapons || [null, null];
+    const mainWeapon = equippedWeapons[0];
+    const offhandWeapon = equippedWeapons[1];
+    const equippedArmor = character?.equipped_armor;
+
+    // 2. Simple Handlers calling our new hooks
+    const openWeaponMenu = (event: MouseEvent<HTMLElement>, slot: number) => {
+        setActiveWeaponSlot(slot);
+        setWeaponAnchor(event.currentTarget);
+    };
+
+    const handleSelectWeapon = (equipmentIndex: number) => {
+        equipWeapon(equipmentIndex, activeWeaponSlot);
+        setWeaponAnchor(null);
+    };
+
+    const handleSelectArmor = (equipmentIndex: number) => {
+        equipArmor(equipmentIndex);
+        setArmorAnchor(null);
+    };
 
     return (
-        <Box
-            sx={{
-                display: 'grid',
-                gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
-                gap: 1.25,
-                mb: 2.5,
-            }}
-        >
+        <Box sx={customStyles.equippedBar.container}>
+
+            {/* Main Weapon Slot */}
             <EquippedQuick
                 icon="⚔"
-                type="Weapon"
-                name={weaponName}
-                detail={weaponDamage}
+                type={t('equipment.weapon')}
+                name={mainWeapon?.name ?? t('equipment.unarmed')}
+                detail={mainWeapon?.dice ? formatDice(mainWeapon.dice) : 'd2'}
+                noneName={t('equipment.none')}
+                onClick={(e) => openWeaponMenu(e, 0)}
             />
+
+            {/* Off-hand Slot */}
+            {offhandWeapon && (<EquippedQuick
+                icon="⚚"
+                type={t('equipment.offHand')}
+                name={offhandWeapon?.name ?? t('equipment.none')}
+                detail={offhandWeapon?.dice ? formatDice(offhandWeapon.dice) : ''}
+                noneName={t('equipment.none')}
+                onClick={(e) => openWeaponMenu(e, 1)}
+            />)}
+
+            {/* Armor Slot */}
             <EquippedQuick
                 icon="🛡"
-                type="Armor"
-                name={armorName}
-                detail={armorProtection}
+                type={t('equipment.armorLabel')}
+                name={equippedArmor?.name ?? t('equipment.unarmored')}
+                detail={equippedArmor?.dice ? `-${formatDice(equippedArmor.dice)}` : '−'}
+                noneName={t('equipment.none')}
+                onClick={(e) => setArmorAnchor(e.currentTarget)}
             />
+
+            {/* Weapon Selection Menu */}
+            <Menu anchorEl={weaponAnchor} open={Boolean(weaponAnchor)} onClose={() => setWeaponAnchor(null)}
+                  PaperProps={{sx: menuPaperStyle}}>
+
+                {/* Unequip Option */}
+                {equippedWeapons[activeWeaponSlot]?.key && (
+                    <MenuItem
+                        onClick={() => {
+                            unequipWeapon(activeWeaponSlot);
+                            setWeaponAnchor(null);
+                        }}
+                        sx={{...menuItemStyle, ...customStyles.equippedBar.menuUnequipItem}}
+                    >
+                        {t('equipment.unequip')} {equippedWeapons[activeWeaponSlot]?.name}
+                    </MenuItem>
+                )}
+
+                {inventoryWeapons.length !== 0 && <Divider sx={customStyles.equippedBar.menuDivider}/>}
+
+
+                {inventoryWeapons.map(({item, index}) => (
+                    <MenuItem key={`${item.key}-${index}`} onClick={() => handleSelectWeapon(index)} sx={menuItemStyle}>
+                        <Typography sx={customStyles.equippedBar.menuItemName}>{item.name}</Typography>
+                        <Typography variant="caption" sx={customStyles.equippedBar.menuItemDescription}>{item.description}</Typography>
+                    </MenuItem>
+                ))}
+            </Menu>
+
+            <Menu anchorEl={armorAnchor} open={Boolean(armorAnchor)} onClose={() => setArmorAnchor(null)}
+                  PaperProps={{sx: menuPaperStyle}}>
+
+                {/* Unequip Option */}
+                {equippedArmor?.key && (
+                    <MenuItem
+                        onClick={() => {
+                            unequipArmor();
+                            setArmorAnchor(null);
+                        }}
+                        sx={{...menuItemStyle, ...customStyles.equippedBar.menuUnequipItem}}
+                    >
+                        {t('equipment.unequip')} {equippedArmor.name}
+                    </MenuItem>
+                )}
+
+                {inventoryWeapons.length !== 0 && <Divider sx={customStyles.equippedBar.menuDivider}/>}
+
+
+                {inventoryArmor.map(({item, index}) => (
+                    <MenuItem key={`${item.key}-${index}`} onClick={() => handleSelectArmor(index)} sx={menuItemStyle}>
+                        <Typography sx={customStyles.equippedBar.menuItemName}>{item.name}</Typography>
+                        <Typography variant="caption" sx={customStyles.equippedBar.menuItemDescription}>{item.description}</Typography>
+                    </MenuItem>
+                ))}
+            </Menu>
         </Box>
     );
 }
+
+// Reusable Menu Styles
+const menuPaperStyle = customStyles.menu.paper;
+const menuItemStyle = customStyles.menu.item;

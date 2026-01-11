@@ -1,24 +1,27 @@
 import {useCharacter} from "@/CharacterContext/CharacterContext.tsx";
 import {Box, CircularProgress, Collapse, Paper, TextField, Typography} from '@mui/material';
 import {useState} from 'react';
-import {morkBorgColors} from '../theme/morkBorgTheme';
+import {customStyles} from '../theme/morkBorgTheme';
+import {useTranslation} from 'react-i18next';
+import { AddButton, ConfirmButton, CancelButton, BorderedContainer, BorderedGreyContainer } from './CharacterDescriptors.styled';
 
 export const CharacterDescriptors = () => {
     const {character, isLoading, updateField, updateAbilities} = useCharacter();
+    const {t} = useTranslation();
     const [newAbility, setNewAbility] = useState<{ name: string; description: string } | null>(null);
 
     if (isLoading) {
         return (
-            <Box sx={{display: 'flex', justifyContent: 'center', p: 4}}>
-                <CircularProgress sx={{color: morkBorgColors.yellow}}/>
+            <Box sx={customStyles.loadingContainer}>
+                <CircularProgress sx={customStyles.loadingSpinner}/>
             </Box>
         );
     }
 
     if (!character) {
         return (
-            <Paper sx={{p: 2.5, mb: 2.5, textAlign: 'center'}}>
-                <Typography color="secondary">No character loaded</Typography>
+            <Paper sx={customStyles.emptyStatePaper}>
+                <Typography color="secondary">{t('character.noCharacterLoaded')}</Typography>
             </Paper>
         );
     }
@@ -41,159 +44,53 @@ export const CharacterDescriptors = () => {
     return (
         <>
             {/* Class Abilities */}
-            <Paper sx={{p: 2.5, mb: 2.5, position: 'relative'}}>
-                <Box sx={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1}}>
+            <Paper sx={customStyles.characterDescriptors.paperWithRelative}>
+                <Box sx={customStyles.characterDescriptors.headerRow}>
                     <Typography variant="subtitle2" color="secondary">
-                        Class Abilities
+                        {t('character.classAbilities')}
                     </Typography>
-                    <Box sx={{display: 'flex', gap: 1}}>
+                    <Box sx={customStyles.characterDescriptors.buttonGroup}>
                         <Collapse in={!newAbility} orientation="horizontal">
-                            <Box
+                            <AddButton
                                 component="button"
                                 onClick={() => setNewAbility({name: '', description: ''})}
-                                sx={{
-                                    bgcolor: morkBorgColors.pink,
-                                    color: morkBorgColors.black,
-                                    border: `2px solid ${morkBorgColors.black}`,
-                                    borderRadius: 1,
-                                    width: 32,
-                                    height: 32,
-                                    cursor: 'pointer',
-                                    fontFamily: "'Permanent Marker', cursive",
-                                    fontSize: '1.2rem',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    transition: 'all 0.2s',
-                                    '&:hover': {
-                                        bgcolor: morkBorgColors.yellow,
-                                        transform: 'translate(-2px, -2px)',
-                                        boxShadow: `3px 3px 0 ${morkBorgColors.black}`,
-                                    },
-                                    '&:active': {
-                                        transform: 'translate(0, 0)',
-                                        boxShadow: 'none',
-                                    },
-                                }}
                             >
                                 +
-                            </Box>
+                            </AddButton>
                         </Collapse>
                         <Collapse in={!!newAbility} orientation="horizontal">
-                            <Box sx={{display: 'flex', gap: 1}}>
-                                <Box
-                                    component="button"
-                                    onClick={handleSaveNewAbility}
-                                    sx={{
-                                        bgcolor: morkBorgColors.yellow,
-                                        color: morkBorgColors.black,
-                                        border: `2px solid ${morkBorgColors.black}`,
-                                        borderRadius: 1,
-                                        width: 32,
-                                        height: 32,
-                                        cursor: 'pointer',
-                                        fontSize: '1rem',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        transition: 'all 0.2s',
-                                        '&:hover': {
-                                            transform: 'translate(-2px, -2px)',
-                                            boxShadow: `3px 3px 0 ${morkBorgColors.black}`,
-                                        },
-                                        '&:active': {
-                                            transform: 'translate(0, 0)',
-                                            boxShadow: 'none',
-                                        },
-                                    }}
-                                >
+                            <Box sx={customStyles.characterDescriptors.buttonGroup}>
+                                <ConfirmButton component="button" onClick={handleSaveNewAbility}>
                                     ✓
-                                </Box>
-                                <Box
-                                    component="button"
-                                    onClick={handleCancelNewAbility}
-                                    sx={{
-                                        bgcolor: morkBorgColors.grey,
-                                        color: morkBorgColors.white,
-                                        border: `2px solid ${morkBorgColors.black}`,
-                                        borderRadius: 1,
-                                        width: 32,
-                                        height: 32,
-                                        cursor: 'pointer',
-                                        fontSize: '1rem',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        transition: 'all 0.2s',
-                                        '&:hover': {
-                                            transform: 'translate(-2px, -2px)',
-                                            boxShadow: `3px 3px 0 ${morkBorgColors.black}`,
-                                        },
-                                        '&:active': {
-                                            transform: 'translate(0, 0)',
-                                            boxShadow: 'none',
-                                        },
-                                    }}
-                                >
+                                </ConfirmButton>
+                                <CancelButton component="button" onClick={handleCancelNewAbility}>
                                     ✕
-                                </Box>
+                                </CancelButton>
                             </Box>
                         </Collapse>
                     </Box>
                 </Box>
-                <Box
-                    sx={{
-                        p: 1.5,
-                        border: `2px solid ${morkBorgColors.pink}`,
-                        borderRadius: 1,
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: 2,
-                    }}
-                >
+                <BorderedContainer>
                     {/* New Ability Form */}
                     <Collapse in={!!newAbility}>
-                        <Box sx={{pb: 2, mb: 2, borderBottom: `2px solid ${morkBorgColors.yellow}`}}>
+                        <Box sx={customStyles.characterDescriptors.newAbilityForm}>
                             <TextField
                                 fullWidth
-                                label="Ability Name"
+                                label={t('character.abilityName')}
                                 value={newAbility?.name || ''}
                                 onChange={(e) => setNewAbility({...newAbility!, name: e.target.value})}
                                 variant="standard"
                                 autoFocus
-                                sx={{
-                                    mb: 1,
-                                    '& .MuiInput-root': {
-                                        color: morkBorgColors.yellow,
-                                        '&:before': {borderBottomColor: '#504c4c'},
-                                        '&:hover:not(.Mui-disabled):before': {borderBottomColor: morkBorgColors.yellow},
-                                        '&:after': {borderBottomColor: morkBorgColors.yellow},
-                                    },
-                                    '& .MuiInputLabel-root': {
-                                        color: '#f5f5f5',
-                                        '&.Mui-focused': {color: morkBorgColors.yellow},
-                                    },
-                                }}
+                                sx={{...customStyles.characterDescriptors.abilityNameField, ...customStyles.textField.standardYellow}}
                             />
                             <TextField
                                 fullWidth
                                 multiline
-                                label="Description"
+                                label={t('character.description')}
                                 value={newAbility?.description || ''}
                                 onChange={(e) => setNewAbility({...newAbility!, description: e.target.value})}
                                 variant="standard"
-                                sx={{
-                                    '& .MuiInput-root': {
-                                        color: '#f5f5f5',
-                                        '&:before': {borderBottomColor: '#504c4c'},
-                                        '&:hover:not(.Mui-disabled):before': {borderBottomColor: morkBorgColors.yellow},
-                                        '&:after': {borderBottomColor: morkBorgColors.yellow},
-                                    },
-                                    '& .MuiInputLabel-root': {
-                                        color: '#f5f5f5',
-                                        '&.Mui-focused': {color: morkBorgColors.yellow},
-                                    },
-                                }}
+                                sx={customStyles.textField.standard}
                             />
                         </Box>
                     </Collapse>
@@ -204,195 +101,102 @@ export const CharacterDescriptors = () => {
                             <Box key={index}>
                                 <TextField
                                     fullWidth
-                                    label="Ability Name"
+                                    label={t('character.abilityName')}
                                     value={ability.name}
                                     onChange={(e) => {
                                         const newAbilities = [...character.abilities!];
                                         newAbilities[index] = {...ability, name: e.target.value};
-                                        updateAbilities( newAbilities);
+                                        updateAbilities(newAbilities);
                                     }}
                                     variant="standard"
-                                    sx={{
-                                        mb: 1,
-                                        '& .MuiInput-root': {
-                                            color: morkBorgColors.yellow,
-                                            '&:before': {borderBottomColor: '#504c4c'},
-                                            '&:hover:not(.Mui-disabled):before': {borderBottomColor: morkBorgColors.yellow},
-                                            '&:after': {borderBottomColor: morkBorgColors.yellow},
-                                        },
-                                        '& .MuiInputLabel-root': {
-                                            color: '#f5f5f5',
-                                            '&.Mui-focused': {color: morkBorgColors.yellow},
-                                        },
-                                    }}
+                                    sx={{...customStyles.characterDescriptors.abilityNameField, ...customStyles.textField.standardYellow}}
                                 />
                                 <TextField
                                     fullWidth
                                     multiline
-                                    label="Description"
+                                    label={t('character.description')}
                                     value={ability.description}
                                     onChange={(e) => {
                                         const newAbilities = [...character.abilities!];
                                         newAbilities[index] = {...ability, description: e.target.value};
-                                        updateAbilities( newAbilities);
+                                        updateAbilities(newAbilities);
                                     }}
                                     variant="standard"
-                                    sx={{
-                                        '& .MuiInput-root': {
-                                            color: '#f5f5f5',
-                                            '&:before': {borderBottomColor: '#504c4c'},
-                                            '&:hover:not(.Mui-disabled):before': {borderBottomColor: morkBorgColors.yellow},
-                                            '&:after': {borderBottomColor: morkBorgColors.yellow},
-                                        },
-                                        '& .MuiInputLabel-root': {
-                                            color: '#f5f5f5',
-                                            '&.Mui-focused': {color: morkBorgColors.yellow},
-                                        },
-                                    }}
+                                    sx={customStyles.textField.standard}
                                 />
                                 {index < character.abilities!.length - 1 && (
-                                    <Box sx={{borderBottom: `1px solid ${morkBorgColors.grey}`, mt: 2}}/>
+                                    <Box sx={customStyles.characterDescriptors.abilitySeparator}/>
                                 )}
                             </Box>
                         ))
                     ) : !newAbility ? (
-                        <Typography variant="body2" sx={{color: morkBorgColors.white, opacity: 0.5}}>
-                            No special abilities
+                        <Typography variant="body2" sx={customStyles.characterDescriptors.emptyText}>
+                            {t('character.noSpecialAbilities')}
                         </Typography>
                     ) : null}
-                </Box>
+                </BorderedContainer>
             </Paper>
 
             {/* Traits & Afflictions */}
-            <Paper sx={{p: 2.5, mb: 2.5}}>
-                <Typography variant="subtitle2" color="secondary" sx={{mb: 1}}>
-                    Traits & Afflictions
+            <Paper sx={customStyles.characterDescriptors.paper}>
+                <Typography variant="subtitle2" color="secondary" sx={customStyles.characterDescriptors.sectionTitle}>
+                    {t('traits.title')}
                 </Typography>
-                <Box
-                    sx={{
-                        p: 1.5,
-                        border: `2px solid ${morkBorgColors.grey}`,
-                        borderRadius: 1,
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: 2,
-                    }}
-                >
+                <BorderedGreyContainer>
                     <TextField
                         fullWidth
-                        label="Trait 1"
+                        label={t('traits.trait1')}
                         value={character.trait1 || ''}
                         onChange={(e) => updateField('trait1', e.target.value)}
                         variant="standard"
-                        sx={{
-                            '& .MuiInput-root': {
-                                color: '#f5f5f5',
-                                '&:before': {borderBottomColor: '#504c4c'},
-                                '&:hover:not(.Mui-disabled):before': {borderBottomColor: morkBorgColors.yellow},
-                                '&:after': {borderBottomColor: morkBorgColors.yellow},
-                            },
-                            '& .MuiInputLabel-root': {
-                                color: '#f5f5f5',
-                                '&.Mui-focused': {color: morkBorgColors.yellow},
-                            },
-                        }}
+                        sx={customStyles.textField.standard}
                     />
 
                     <TextField
                         fullWidth
-                        label="Trait 2"
+                        label={t('traits.trait2')}
                         value={character.trait2 || ''}
                         onChange={(e) => updateField('trait2', e.target.value)}
                         variant="standard"
-                        sx={{
-                            '& .MuiInput-root': {
-                                color: '#f5f5f5',
-                                '&:before': {borderBottomColor: '#504c4c'},
-                                '&:hover:not(.Mui-disabled):before': {borderBottomColor: morkBorgColors.yellow},
-                                '&:after': {borderBottomColor: morkBorgColors.yellow},
-                            },
-                            '& .MuiInputLabel-root': {
-                                color: '#f5f5f5',
-                                '&.Mui-focused': {color: morkBorgColors.yellow},
-                            },
-                        }}
+                        sx={customStyles.textField.standard}
                     />
 
                     <TextField
                         fullWidth
-                        label="Habit"
+                        label={t('traits.habit')}
                         value={character.habit || ''}
                         onChange={(e) => updateField('habit', e.target.value)}
                         variant="standard"
-                        sx={{
-                            '& .MuiInput-root': {
-                                color: '#f5f5f5',
-                                '&:before': {borderBottomColor: '#504c4c'},
-                                '&:hover:not(.Mui-disabled):before': {borderBottomColor: morkBorgColors.yellow},
-                                '&:after': {borderBottomColor: morkBorgColors.yellow},
-                            },
-                            '& .MuiInputLabel-root': {
-                                color: '#f5f5f5',
-                                '&.Mui-focused': {color: morkBorgColors.yellow},
-                            },
-                        }}
+                        sx={customStyles.textField.standard}
                     />
 
                     <TextField
                         fullWidth
-                        label="Body Description"
+                        label={t('traits.bodyDescription')}
                         value={character.body_description || ''}
                         onChange={(e) => updateField('body_description', e.target.value)}
                         variant="standard"
-                        sx={{
-                            '& .MuiInput-root': {
-                                color: '#f5f5f5',
-                                '&:before': {borderBottomColor: '#504c4c'},
-                                '&:hover:not(.Mui-disabled):before': {borderBottomColor: morkBorgColors.yellow},
-                                '&:after': {borderBottomColor: morkBorgColors.yellow},
-                            },
-                            '& .MuiInputLabel-root': {
-                                color: '#f5f5f5',
-                                '&.Mui-focused': {color: morkBorgColors.yellow},
-                            },
-                        }}
+                        sx={customStyles.textField.standard}
                     />
-                </Box>
+                </BorderedGreyContainer>
             </Paper>
 
             {/* Origin */}
-            <Paper sx={{p: 2.5, mb: 2.5}}>
-                <Typography variant="subtitle2" color="secondary" sx={{mb: 1}}>
-                    Origin
+            <Paper sx={customStyles.characterDescriptors.paper}>
+                <Typography variant="subtitle2" color="secondary" sx={customStyles.characterDescriptors.sectionTitle}>
+                    {t('character.origin')}
                 </Typography>
-                <Box
-                    sx={{
-                        p: 1.5,
-                        border: `2px solid ${morkBorgColors.pink}`,
-                        borderRadius: 1,
-                    }}
-                >
+                <BorderedContainer>
                     <TextField
                         fullWidth
                         multiline
                         value={character.origin || ''}
                         onChange={(e) => updateField('origin', e.target.value)}
-                        placeholder="Where did this wretch come from?"
+                        placeholder={t('character.originPlaceholder')}
                         variant="standard"
-                        sx={{
-                            '& .MuiInput-root': {
-                                color: morkBorgColors.yellow,
-                                '&:before': {borderBottomColor: '#504c4c'},
-                                '&:hover:not(.Mui-disabled):before': {borderBottomColor: morkBorgColors.yellow},
-                                '&:after': {borderBottomColor: morkBorgColors.yellow},
-                            },
-                            '& .MuiInputLabel-root': {
-                                color: '#f5f5f5',
-                                '&.Mui-focused': {color: morkBorgColors.yellow},
-                            },
-                        }}
+                        sx={customStyles.textField.standardYellow}
                     />
-                </Box>
+                </BorderedContainer>
             </Paper>
         </>
     );

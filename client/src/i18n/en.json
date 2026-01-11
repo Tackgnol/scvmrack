@@ -1,0 +1,218 @@
+{
+  "app": {
+    "title": "Scvm Grinder",
+    "subtitle": "Character Sheet"
+  },
+  "stats": {
+    "hitPoints": "Hit Points",
+    "toDodge": "To Dodge",
+    "toHit": "To Hit",
+    "omens": "Omens",
+    "silver": "Silver",
+    "armor": "Armor",
+    "encumbrance": "Encumbrance",
+    "armorTier": "Armor Tier"
+  },
+  "attributes": {
+    "agility": "Agility",
+    "presence": "Presence",
+    "strength": "Strength",
+    "toughness": "Toughness",
+    "agilityDesc": "Defense, Initiative",
+    "presenceDesc": "Attacks, Powers",
+    "strengthDesc": "Melee, Carry",
+    "toughnessDesc": "HP, Endurance"
+  },
+  "equipment": {
+    "weapon": "Weapon",
+    "armorLabel": "Armor",
+    "onHand": "On Hand",
+    "storedItems": "Stored Items",
+    "readyItemPlaceholder": "Ready item...",
+    "itemDescriptionPlaceholder": "Item description...",
+    "unarmed": "Bare handed",
+    "unarmored": "Birthday suit",
+    "none": "None",
+    "itemDetails": "Item Details",
+    "itemName": "Item Name",
+    "quantity": "Quantity",
+    "backpack": "Backpack",
+    "moveToStorage": "→ To Storage",
+    "moveToOnHand": "→ To On Hand",
+    "sell": "Sell +{{amount}}",
+    "drop": "Drop",
+    "save": "Save",
+    "equippedGear": "Equipped Gear",
+    "namePlaceholder": "Name...",
+    "detailPlaceholder": "Detail...",
+    "offHand": "OFF-HAND",
+    "other": "OTHER",
+    "damagePlaceholder": "Damage: d6",
+    "offHandPlaceholder": "+1 defense / d4",
+    "tierPlaceholder": "Tier: -d4",
+    "effectPlaceholder": "Effect...",
+    "addItem": "Add Item",
+    "searchPlaceholder": "Search equipment...",
+    "typeToSearch": "Type to search...",
+    "noResults": "No equipment found",
+    "unequip": "Unequip",
+    "selectArmor": "Select armor",
+    "selectWeapon": "Select weapon"
+  },
+  "character": {
+    "name": "Name",
+    "class": "Class",
+    "origin": "Origin",
+    "originPlaceholder": "Where did this wretch come from?",
+    "abilities": "Abilities",
+    "classAbilities": "Class Abilities",
+    "abilityName": "Ability Name",
+    "description": "Description",
+    "noCharacterLoaded": "No Character loaded, refresh the page",
+    "traitDescription": "A {{trait1}} and {{trait2}} {{className}}"
+  },
+  "traits": {
+    "title": "Traits & Afflictions",
+    "trait1": "Trait 1",
+    "trait2": "Trait 2",
+    "habit": "Habit",
+    "bodyDescription": "Body Description"
+  },
+  "notes": {
+    "title": "Notes & Miseries",
+    "placeholder": "Scrawl your sins here..."
+  },
+  "footer": {
+    "worldEnding": "The World Is Ending"
+  },
+  "actions": {
+    "generateNew": "Generate New",
+    "testModal": "Test Modal"
+  },
+  "powers": {
+    "title": "Powers",
+    "noScrollsOrPowers": "No scrolls or powers"
+  },
+  "auth": {
+    "login": "Log In",
+    "signup": "Sign Up",
+    "logout": "Log Out",
+    "profile": "Profile",
+    "email": "Email",
+    "password": "Password",
+    "name": "Name",
+    "passwordHint": "Minimum 8 characters",
+    "loginFailed": "Login failed. Please check your credentials.",
+    "signupFailed": "Signup failed. Please try again.",
+    "loginSignup": "Log In / Sign Up",
+    "claimTitle": "Save Your Character?",
+    "claimPrompt": "You have a character \"{{characterName}}\". Would you like to save it to your account?",
+    "claimYes": "Yes, save it",
+    "claimNo": "No, start fresh",
+    "claimFailed": "Failed to save character. Please try again.",
+    "guestCharacterNotice": "{{characterName}} will be saved to your account after signup."
+  },
+  "session": {
+    "expiresWarning": "Your guest session expires in {{days}} days. Sign up to keep your character forever!",
+    "expiresWarning_one": "Your guest session expires tomorrow! Sign up to keep your character forever!",
+    "signUpKeepForever": "Sign Up - Keep Forever",
+    "extend7Days": "Extend 7 Days",
+    "extended": "Session extended! Come back within 7 days to keep your character.",
+    "extendFailed": "Failed to extend session. Please try again.",
+    "loggedOut": "You've been logged out.",
+    "createNewCharacter": "Create new character"
+  },
+  "status": {
+    "saving": "Saving...",
+    "saved": "Saved",
+    "synced": "Synced",
+    "guest": "Guest",
+    "guestSession": "Guest session - sign up to keep your character",
+    "connectionError": "Connection error"
+  },
+  "common": {
+    "close": "Close",
+    "back": "Back",
+    "backToHome": "Back to Home"
+  },
+  "nav": {
+    "home": "Sheet",
+    "characters": "Scvms",
+    "faq": "Wtf?",
+    "release": "log"
+  },
+  "characters": {
+    "title": "Your Characters",
+    "loginRequired": "You need to be logged in to view your characters.",
+    "noCharacters": "No characters yet. Create your first scvm!",
+    "createFirst": "Create Character",
+    "loadError": "Failed to load characters"
+  },
+  "faq": {
+    "title": "Frequently Asked Questions",
+    "whatIsMorkBorg": {
+      "q": "What is MÖRK BORG?",
+      "a": "MÖRK BORG is a doom metal album of a game. A rules-light, art-heavy tabletop RPG about lost souls seeking redemption in a bleak world. The game is published by Free League Publishing."
+    },
+    "whatIsScvmGrinder": {
+      "q": "What is Scvm Grinder?",
+      "a": "Scvm Grinder is a free character sheet and generator for MÖRK BORG. It helps you create characters, track stats, and manage equipment during your games."
+    },
+    "isItFree": {
+      "q": "Is this free?",
+      "a": "Yes! Scvm Grinder is completely free to use. You can create and save characters without paying anything."
+    },
+    "guestVsAccount": {
+      "q": "Do I need an account?",
+      "a": "No! You can use Scvm Grinder as a guest. Your character will be saved for 7 days. If you create an account, your characters are saved permanently and you can access them from any device."
+    },
+    "howToSave": {
+      "q": "How do I save my character?",
+      "a": "Characters are saved automatically as you make changes. As a guest, your character is stored for 7 days. Sign up for a free account to keep your characters forever."
+    },
+    "multipleCharacters": {
+      "q": "Can I have multiple characters?",
+      "a": "Yes! With an account, you can create and switch between multiple characters. Access your character list from the menu."
+    },
+    "mobileSupport": {
+      "q": "Does it work on mobile?",
+      "a": "Yes! Scvm Grinder is designed to work on phones, tablets, and desktops. Use it at the table or on the go."
+    },
+    "offlineUse": {
+      "q": "Can I use it offline?",
+      "a": "Currently, Scvm Grinder requires an internet connection. Offline support may be added in the future."
+    },
+    "bugReport": {
+      "q": "I found a bug! How do I report it?",
+      "a": "Please report bugs via GitHub issues or contact us directly. We appreciate your help making Scvm Grinder better!"
+    },
+    "morkBorgCredit": "MÖRK BORG is © Free League Publishing. This is an independent fan project."
+  },
+  "release": {
+    "title": "Release Notes",
+    "typeMajor": "Major",
+    "typeMinor": "Minor",
+    "typePatch": "Patch",
+    "moreUpdates": "More updates coming soon. The world is ending, but we keep shipping.",
+    "v100": {
+      "auth": "User accounts with email verification",
+      "magicLink": "Magic link login",
+      "guestSessions": "Guest sessions with 7-day persistence",
+      "characterClaim": "Claim guest characters after signup",
+      "multiChar": "Multiple characters per account",
+      "i18n": "Polish and English language support"
+    },
+    "v090": {
+      "equipment": "Equipment management system",
+      "powers": "Powers and scrolls tracking",
+      "notes": "Character notes section",
+      "autoSave": "Auto-save with debouncing"
+    },
+    "v080": {
+      "generator": "Random character generator",
+      "classes": "All core MÖRK BORG classes",
+      "stats": "Stat tracking and modifiers",
+      "theme": "MÖRK BORG-inspired dark theme"
+    }
+  }
+}

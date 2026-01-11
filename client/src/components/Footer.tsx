@@ -1,57 +1,24 @@
 import {Box, Button, Paper, Typography} from "@mui/material";
-import {morkBorgColors} from "@theme/morkBorgTheme.ts";
+import {customStyles} from "@theme/morkBorgTheme.ts";
+import {Trans, useTranslation} from 'react-i18next';
 
 interface FooterProps {
-    onOpenModal: () => void;
     onGenerateNew: () => void;
 }
 
-export default function Footer({onOpenModal, onGenerateNew}: FooterProps) {
+export default function Footer({onGenerateNew}: FooterProps) {
+    const {t} = useTranslation();
+
     return (
-        <Paper sx={{textAlign: 'center', p: 3}}>
-            <Typography
-                variant="h3"
-                sx={{
-                    color: morkBorgColors.yellow,
-                    letterSpacing: '0.3em',
-                    '& span': {color: morkBorgColors.pink},
-                }}
-            >
-                The <span>World</span> Is <span>Ending</span>
+        <Paper sx={customStyles.footer.paper}>
+            <Typography variant="h3" sx={customStyles.footer.title}>
+                <Trans i18nKey="footer.worldEnding">
+                    The <span>World</span> Is <span>Ending</span>
+                </Trans>
             </Typography>
-            <Box sx={{display: 'flex', gap: 2, justifyContent: 'center', mt: 2}}>
-                <Button
-                    onClick={onGenerateNew}
-                    sx={{
-                        bgcolor: morkBorgColors.pink,
-                        border: `2px solid ${morkBorgColors.black}`,
-                        color: morkBorgColors.black,
-                        fontFamily: "'Antonio', sans-serif",
-                        fontSize: '0.7rem',
-                        letterSpacing: '0.2em',
-                        '&:hover': {
-                            bgcolor: morkBorgColors.yellow,
-                        },
-                    }}
-                >
-                    Generate New
-                </Button>
-                <Button
-                    onClick={onOpenModal}
-                    sx={{
-                        bgcolor: morkBorgColors.grey,
-                        border: `2px solid ${morkBorgColors.yellow}`,
-                        color: morkBorgColors.yellow,
-                        fontFamily: "'Antonio', sans-serif",
-                        fontSize: '0.7rem',
-                        letterSpacing: '0.2em',
-                        '&:hover': {
-                            bgcolor: morkBorgColors.yellow,
-                            color: morkBorgColors.black,
-                        },
-                    }}
-                >
-                    Test Modal
+            <Box sx={customStyles.footer.buttonContainer}>
+                <Button onClick={onGenerateNew} sx={customStyles.footerButton}>
+                    {t('actions.generateNew')}
                 </Button>
             </Box>
         </Paper>

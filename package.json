@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "This project was bootstrapped with Fastify-CLI.",
   "main": "app.ts",
+  "type": "module",
   "directories": {
     "test": "test"
   },
@@ -12,26 +13,36 @@
     "build:ts": "tsc",
     "watch:ts": "tsc -w",
     "dev": "npm run build:ts && concurrently -k -p \"[{name}]\" -n \"TypeScript,App\" -c \"yellow.bold,cyan.bold\" \"npm:watch:ts\" \"npm:dev:start\"",
-    "dev:start": "fastify start --ignore-watch=.ts$ -w -l info -P dist/app.js"
+    "dev:start": "fastify start --ignore-watch=.ts$ -w -l info -P dist/app.js",
+    "deploy:prepare": "npm run build:ts && cd client && npm run build && cd .. && node scripts/prepare-deploy.js",
+    "deploy:env": "node scripts/parse-env.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "@fastify/autoload": "^6.0.0",
+    "@fastify/cookie": "^11.0.2",
     "@fastify/cors": "^11.2.0",
+    "@fastify/helmet": "^13.0.2",
     "@fastify/postgres": "^6.0.0",
+    "@fastify/rate-limit": "^10.3.0",
     "@fastify/sensible": "^6.0.0",
     "@fastify/swagger": "^9.0.0",
     "@fastify/swagger-ui": "^5.0.0",
+    "better-auth": "^1.4.13",
     "fastify": "^5.0.0",
     "fastify-cli": "^7.4.1",
     "fastify-plugin": "^5.1.0",
-    "pg": "^8.16.3"
+    "nodemailer": "^7.0.12",
+    "pg": "^8.16.3",
+    "validator": "^13.15.26"
   },
   "devDependencies": {
     "@types/node": "^24.0.8",
+    "@types/nodemailer": "^7.0.5",
     "@types/pg": "^8.16.0",
+    "@types/validator": "^13.15.10",
     "c8": "^10.1.2",
     "concurrently": "^9.0.0",
     "fastify-tsconfig": "^3.0.0",

@@ -8,7 +8,7 @@ import {
   type ButtonProps,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-import { morkBorgColors } from '../theme/morkBorgTheme';
+import { customStyles } from '../theme/morkBorgTheme';
 import type { MorkBorgModalProps, ModalButtonProps } from '../types';
 
 export default function MorkBorgModal({
@@ -25,44 +25,19 @@ export default function MorkBorgModal({
       onClose={onClose}
       maxWidth={maxWidth}
       fullWidth
-      PaperProps={{
-        sx: {
-          bgcolor: morkBorgColors.black,
-          border: `4px solid ${morkBorgColors.yellow}`,
-          boxShadow: `10px 10px 0 ${morkBorgColors.pink}`,
-        },
-      }}
+      PaperProps={{ sx: customStyles.morkBorgModal.dialogPaper }}
     >
-      <DialogTitle
-        sx={{
-          bgcolor: morkBorgColors.yellow,
-          color: morkBorgColors.black,
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          pr: 1,
-        }}
-      >
+      <DialogTitle sx={customStyles.morkBorgModal.dialogTitle}>
         {title}
-        <IconButton
-          onClick={onClose}
-          sx={{
-            bgcolor: morkBorgColors.black,
-            color: morkBorgColors.yellow,
-            '&:hover': {
-              bgcolor: morkBorgColors.pink,
-              color: morkBorgColors.black,
-            },
-          }}
-        >
+        <IconButton onClick={onClose} sx={customStyles.morkBorgModal.closeButton}>
           <CloseIcon />
         </IconButton>
       </DialogTitle>
 
-      <DialogContent sx={{ pt: 3 }}>{children}</DialogContent>
+      <DialogContent sx={customStyles.morkBorgModal.dialogContent}>{children}</DialogContent>
 
       {actions && (
-        <DialogActions sx={{ p: 2, borderTop: `2px solid ${morkBorgColors.grey}` }}>
+        <DialogActions sx={customStyles.morkBorgModal.dialogActions}>
           {actions}
         </DialogActions>
       )}
@@ -76,33 +51,8 @@ export function ModalButton({
   children,
   ...props
 }: ModalButtonProps & Omit<ButtonProps, 'variant'>) {
-  const styles = {
-    primary: {
-      bgcolor: morkBorgColors.pink,
-      color: morkBorgColors.black,
-      '&:hover': { bgcolor: morkBorgColors.yellow },
-    },
-    secondary: {
-      bgcolor: morkBorgColors.grey,
-      color: morkBorgColors.white,
-      border: `2px solid ${morkBorgColors.white}`,
-      '&:hover': {
-        bgcolor: morkBorgColors.white,
-        color: morkBorgColors.black,
-      },
-    },
-    danger: {
-      bgcolor: '#8b0000',
-      color: morkBorgColors.white,
-      '&:hover': {
-        bgcolor: morkBorgColors.pink,
-        color: morkBorgColors.black,
-      },
-    },
-  };
-
   return (
-    <Button sx={styles[variant]} {...props}>
+    <Button sx={customStyles.modalButton[variant]} {...props}>
       {children}
     </Button>
   );

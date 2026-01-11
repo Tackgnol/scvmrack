@@ -1,0 +1,71 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: secret
+      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: secret
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./init:/docker-entrypoint-initdb.d
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U p1002_scmgrinder"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: user
+      POSTGRES_DB: user
+      DATABASE_HOST: 'db'
+      PORT: 3000
+      CLIENT_ORIGIN: 'http://localhost:5173'
+      BETTER_AUTH_SECRET: secret
+      BETTER_AUTH_URL: 'http://localhost:5173'
+      EMAIL_PEPPER: secret
+      EMAIL_ENCRYPTION_KEY: secret
+      MAIL_USER: secret
+      MAIL_PASS: secret
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./src:/app/src
+
+  # --- SCHEMA DIFF TOOLS (--profile ops) ---
+  atlas-dev-db:
+    image: postgres:16-alpine
+    profiles: ["ops"]
+    environment:
+      POSTGRES_PASSWORD: password
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 1s
+      timeout: 5s
+      retries: 10
+
+  schema-diff:
+    image: arigaio/atlas:latest-alpine
+    profiles: ["ops"]
+    volumes:
+      - ./:/data
+    depends_on:
+      atlas-dev-db:
+        condition: service_healthy
+      db:
+        condition: service_started
+    command: >
+      schema diff
+      --from file:///data/init/02-schema/001_tables.sql
+      --to postgres://p1002_scmgrinder:p1002_scmgrinder@db:5432/p1002_scmgrinder?sslmode=disable
+      --dev-url postgres://postgres:password@atlas-dev-db:5432/postgres?sslmode=disable
+
+volumes:
+  pgdata:
