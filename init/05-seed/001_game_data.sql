@@ -1,0 +1,9 @@
+-- Seed data placeholder
+-- Generate this file from production with:
+--   npm run db:dump-seed
+--
+-- Tables to seed: classes, abilities, origins, armors, weapons, equipment,
+--   pets, names, body_descriptions, habits, tales, traits, translations
+--
+-- After seeding, refresh the materialized view:
+--   REFRESH MATERIALIZED VIEW item_search;
