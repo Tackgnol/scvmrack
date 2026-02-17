@@ -81,7 +81,6 @@ export function buildRequestFromPatches(
     for (const patch of patches) {
         switch (patch.kind) {
             case 'simple':
-            case 'armor':
             case 'weapon':
             case 'abilities':
                 result = {...result, ...patchToRequest(patch)};
@@ -115,6 +114,9 @@ export function buildRequestFromPatches(
                 needsWeapons = true;
                 break;
             case 'equip-armor':
+            case 'armor':
+                needsArmor = true;
+                break;
             case 'unequip-armor':
                 needsEquipment = true;
                 needsArmor = true;

@@ -27,7 +27,7 @@ export type CharacterUpdateRequest = NonNullable<paths['/characters/{id}']['patc
 
 export type OptimisticPatch =
     | { kind: 'simple'; field: SimpleField; value: number | string }
-    | { kind: 'armor'; field: string; value: string }
+    | { kind: 'armor'; field: string; value: string | number }
     | { kind: 'weapon'; index: number; field: string; value: string }
     | { kind: 'equipment-item'; index: number; item: EquipmentItem }
     | { kind: 'equipment-add'; item: EquipmentItem }

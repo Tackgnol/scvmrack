@@ -45,32 +45,43 @@ const equipment: FastifyPluginAsync = async (fastify) => {
                 name: string;
             }>(
                 `
-                    SELECT DISTINCT ON (s.item_type, s.id)
-                        s.item_type,
-                        s.id,
-                        s.key,
-                        -- Display name: Use the version in user's locale if it exists, 
-                        -- otherwise use the one that matched the search.
-                        COALESCE(target.name, s.name) AS name
-                    FROM item_search s
-                        -- Self-join to find the name in the requested locale
-                        LEFT JOIN item_search target
-                    ON s.id = target.id
-                        AND s.item_type = target.item_type
-                        AND target.locale = $2
-                    WHERE (
-                        s.document @@ plainto_tsquery('simple', unaccent($1))
-                       OR
-                        s.normalized_name % lower(unaccent($1))
-                       OR
-                        s.normalized_name LIKE (lower(unaccent($1)) || '%')
+                    WITH ranked_matches AS (
+                        SELECT
+                            s.item_type,
+                            s.id,
+                            s.key,
+                            s.name,
+                            s.locale,
+                            ts_rank(s.document, plainto_tsquery('simple', unaccent($1))) AS ts_score,
+                            similarity(s.normalized_name, lower(unaccent($1))) AS sim_score
+                        FROM item_search s
+                        WHERE (
+                                  s.document @@ plainto_tsquery('simple', unaccent($1))
+                                  OR s.normalized_name % lower(unaccent($1))
+                                  OR s.normalized_name LIKE (lower(unaccent($1)) || '%')
+                                  )
+                    ),
+                         best_matches AS (
+                             SELECT DISTINCT ON (item_type, id)
+                        item_type,
+                        id,
+                        key,
+                        ts_score,
+                        sim_score
+                    FROM ranked_matches
+                    ORDER BY item_type, id, ts_score DESC, sim_score DESC
                         )
-                    ORDER BY
-                        s.item_type,
-                        s.id,
-                        -- Prioritize the best matches
-                        ts_rank(s.document, plainto_tsquery('simple', unaccent($1))) DESC,
-                        similarity(s.normalized_name, lower(unaccent($1))) DESC
+                    SELECT
+                        b.item_type,
+                        b.id,
+                        b.key,
+                        COALESCE(t.name, b.key) AS name
+                    FROM best_matches b
+                             LEFT JOIN item_search t
+                                       ON t.id = b.id
+                                           AND t.item_type = b.item_type
+                                           AND t.locale = $2
+                    ORDER BY b.ts_score DESC, b.sim_score DESC
                         LIMIT $3
                 `,
                 [q, locale, limit]

@@ -637,6 +637,9 @@ export const customStyles = {
     paper: {
       p: 1.5,
       textAlign: 'center' as const,
+      flexDirection: 'column',
+      display:'flex',
+      alignItems: 'center'
     },
     label: {
       mb: 0.75,
@@ -781,8 +784,8 @@ export const customStyles = {
   summaryBarPaper: {
     display: 'grid',
     gridTemplateColumns: {
-      xs: 'repeat(3, 1fr)',
-      sm: '2fr repeat(5, 1fr)',
+      xs: 'repeat(2, 1fr)',
+      sm: 'repeat(4, 1fr)',
     },
     mb: 2.5,
     position: 'relative' as const,

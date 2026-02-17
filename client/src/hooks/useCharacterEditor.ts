@@ -89,7 +89,7 @@ export function useCharacterEditor(
 
     // Armor updates
     const updateArmorField = useCallback(
-        (field: string, value: string) => {
+        (field: string, value: string | number) => {
             queuePatch({ kind: 'armor', field, value });
         },
         [queuePatch]

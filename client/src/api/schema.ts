@@ -339,6 +339,8 @@ export interface paths {
                                 uses?: boolean[];
                                 dice?: number[];
                                 tags?: string[];
+                                max_tier?: number;
+                                current_tier?: number;
                             }[];
                             storage?: {
                                 key?: string;
@@ -347,6 +349,8 @@ export interface paths {
                                 uses?: boolean[];
                                 dice?: number[];
                                 tags?: string[];
+                                max_tier?: number;
+                                current_tier?: number;
                             }[];
                             equipped_weapons?: {
                                 key?: string;
@@ -361,6 +365,7 @@ export interface paths {
                                 description?: string;
                                 dice?: number[];
                                 max_tier?: number;
+                                current_tier?: number;
                                 tags?: string[];
                             } | null;
                             /** Format: date-time */
@@ -462,6 +467,8 @@ export interface paths {
                                 uses?: boolean[];
                                 dice?: number[];
                                 tags?: string[];
+                                max_tier?: number;
+                                current_tier?: number;
                             }[];
                             storage?: {
                                 key?: string;
@@ -470,6 +477,8 @@ export interface paths {
                                 uses?: boolean[];
                                 dice?: number[];
                                 tags?: string[];
+                                max_tier?: number;
+                                current_tier?: number;
                             }[];
                             equipped_weapons?: {
                                 key?: string;
@@ -484,6 +493,7 @@ export interface paths {
                                 description?: string;
                                 dice?: number[];
                                 max_tier?: number;
+                                current_tier?: number;
                                 tags?: string[];
                             } | null;
                             /** Format: date-time */
@@ -652,6 +662,8 @@ export interface paths {
                             uses?: boolean[];
                             dice?: number[];
                             tags?: string[];
+                            max_tier?: number;
+                            current_tier?: number;
                         }[];
                         storage?: {
                             key?: string;
@@ -660,6 +672,8 @@ export interface paths {
                             uses?: boolean[];
                             dice?: number[];
                             tags?: string[];
+                            max_tier?: number;
+                            current_tier?: number;
                         }[];
                         equipped_weapons?: {
                             key?: string;
@@ -674,6 +688,7 @@ export interface paths {
                             description?: string;
                             dice?: number[];
                             max_tier?: number;
+                            current_tier?: number;
                             tags?: string[];
                         } | null;
                     };
@@ -721,6 +736,8 @@ export interface paths {
                                 uses?: boolean[];
                                 dice?: number[];
                                 tags?: string[];
+                                max_tier?: number;
+                                current_tier?: number;
                             }[];
                             storage?: {
                                 key?: string;
@@ -729,6 +746,8 @@ export interface paths {
                                 uses?: boolean[];
                                 dice?: number[];
                                 tags?: string[];
+                                max_tier?: number;
+                                current_tier?: number;
                             }[];
                             equipped_weapons?: {
                                 key?: string;
@@ -743,6 +762,7 @@ export interface paths {
                                 description?: string;
                                 dice?: number[];
                                 max_tier?: number;
+                                current_tier?: number;
                                 tags?: string[];
                             } | null;
                             /** Format: date-time */
@@ -964,6 +984,8 @@ export interface paths {
                                 uses?: boolean[];
                                 dice?: number[];
                                 tags?: string[];
+                                max_tier?: number;
+                                current_tier?: number;
                             }[];
                             storage?: {
                                 key?: string;
@@ -972,6 +994,8 @@ export interface paths {
                                 uses?: boolean[];
                                 dice?: number[];
                                 tags?: string[];
+                                max_tier?: number;
+                                current_tier?: number;
                             }[];
                             equipped_weapons?: {
                                 key?: string;
@@ -986,6 +1010,7 @@ export interface paths {
                                 description?: string;
                                 dice?: number[];
                                 max_tier?: number;
+                                current_tier?: number;
                                 tags?: string[];
                             } | null;
                             /** Format: date-time */
