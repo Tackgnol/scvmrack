@@ -74,6 +74,8 @@ export default function PowersSection() {
         .map((item, index) => ({item, equipmentIndex: index}))
         .filter(({item}) => item.key?.startsWith('scroll.'));
 
+    console.log(scrollsWithIndices);
+
     if (scrollsWithIndices.length === 0) {
         return (
             <Paper sx={customStyles.powersSection.paper}>

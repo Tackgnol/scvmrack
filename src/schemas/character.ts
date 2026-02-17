@@ -44,7 +44,9 @@ const EquipmentItemSchema = {
             type: 'array',
             items: {type: 'string', maxLength: 50},
             maxItems: 10
-        }
+        },
+        max_tier: {type: 'integer', minimum: 0, maximum: 4},
+        current_tier: {type: 'integer', minimum: 0, maximum: 4},
     }
 };
 
@@ -91,6 +93,7 @@ const ArmorSchema = {
             maxItems: 5
         },
         max_tier: {type: 'integer', minimum: 0, maximum: 4},
+        current_tier: {type: 'integer', minimum: 0, maximum: 4},
         tags: {
             type: 'array',
             items: {type: 'string', maxLength: 50},
