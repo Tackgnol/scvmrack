@@ -24,10 +24,12 @@ export default function SummaryBar() {
 
     const encumbrance = character?.equipment?.length ?? 0;
 
-    // Defense values (will add calculation later)
-    const toDodge = 12;
-    const toHit = 12;
-    const toCast = 12;
+    // Use DR values from backend (calculated with all modifiers)
+    // Cast to any since the schema might not have these fields yet
+    const char = character as any;
+    const toDodge = char?.dr_to_dodge ?? 12 - (character?.agility ?? 10);
+    const toHitMelee = char?.dr_to_melee ?? 12 - (character?.strength ?? 10);
+    const toHitRanged = char?.dr_to_ranged ?? 12 - (character?.presence ?? 10);
 
     return (
         <Paper sx={customStyles.summaryBarPaper}>
@@ -37,15 +39,15 @@ export default function SummaryBar() {
                 </Typography>
             </SummaryStat>
 
-            <SummaryStat label={t('stats.toHit')}>
+            <SummaryStat label={t('stats.toHitMelee')}>
                 <Typography variant="h3" color="primary">
-                    {toHit}
+                    {toHitMelee}
                 </Typography>
             </SummaryStat>
 
-            <SummaryStat label={t('stats.toCast')}>
+            <SummaryStat label={t('stats.toHitRanged')}>
                 <Typography variant="h3" color="primary">
-                    {toCast}
+                    {toHitRanged}
                 </Typography>
             </SummaryStat>
 

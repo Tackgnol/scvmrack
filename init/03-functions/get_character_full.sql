@@ -37,6 +37,11 @@ RETURNS TABLE (
     storage jsonb,
     equipped_weapons jsonb,
     equipped_armor jsonb,
+    modifiers jsonb,
+    computed_modifiers jsonb,
+    dr_to_dodge int,
+    dr_to_melee int,
+    dr_to_ranged int,
     created_at timestamptz,
     updated_at timestamptz
 ) AS $$
@@ -47,6 +52,10 @@ result RECORD;
     resolved_weapons jsonb;
     resolved_armor jsonb;
     resolved_abilities jsonb;
+    resolved_computed_modifiers jsonb;
+    dr_to_dodge int;
+    dr_to_melee int;
+    dr_to_ranged int;
 BEGIN
     -- 1. Fetch base character data with translations
 SELECT
@@ -235,6 +244,84 @@ FROM jsonb_array_elements(result.abilities) ab
          LEFT JOIN translations t ON t.key = ab->>'key' AND t.locale = p_locale
     LEFT JOIN translations td ON td.key = (ab->>'key') || '.description' AND td.locale = p_locale;
 
+    -- 7. Computed Modifiers - from equipped armor, weapons, and pets in equipment
+    -- 7a: From equipped armor
+    SELECT COALESCE(jsonb_agg(
+        m || jsonb_build_object(
+            'origin', 'armor',
+            'origin_key', 'armor.' || a.key,
+            'origin_name', COALESCE(t.value, a.key)
+        )
+    ), '[]'::jsonb)
+    INTO resolved_computed_modifiers
+    FROM armors a
+    CROSS JOIN LATERAL jsonb_array_elements(a.modifiers) m
+    LEFT JOIN translations t ON t.key = a.key AND t.locale = p_locale
+    WHERE a.key = result.equipped_armor->>'key';
+
+    -- 7b: From equipped weapons (append)
+    IF result.equipped_weapons IS NOT NULL AND jsonb_array_length(result.equipped_weapons) > 0 THEN
+        resolved_computed_modifiers := resolved_computed_modifiers || (
+            SELECT COALESCE(jsonb_agg(
+                m || jsonb_build_object(
+                    'origin', 'weapon',
+                    'origin_key', 'weapon.' || w.key,
+                    'origin_name', COALESCE(t.value, w.key)
+                )
+            ), '[]'::jsonb)
+            FROM weapons w
+            CROSS JOIN LATERAL jsonb_array_elements(w.modifiers) m
+            LEFT JOIN translations t ON t.key = w.key AND t.locale = p_locale
+            WHERE w.key IN (SELECT jsonb_array_elements_text(jsonb_agg(ew->>'key')) FROM jsonb_array_elements(result.equipped_weapons) ew)
+        );
+    END IF;
+
+    -- 7c: From pets in equipment (append)
+    IF result.equipment IS NOT NULL THEN
+        resolved_computed_modifiers := resolved_computed_modifiers || (
+            SELECT COALESCE(jsonb_agg(
+                p.buff || jsonb_build_object(
+                    'origin', 'pet',
+                    'origin_key', 'pet.' || p.key,
+                    'origin_name', COALESCE(t.value, p.key)
+                )
+            ), '[]'::jsonb)
+            FROM pets p
+            LEFT JOIN translations t ON t.key = p.key AND t.locale = p_locale
+            WHERE p.key IN (
+                SELECT eq->>'key'
+                FROM jsonb_array_elements(result.equipment) eq
+                WHERE eq->>'key' LIKE 'pet.%'
+            )
+        );
+    END IF;
+
+    -- 8: Calculate DR values
+    -- MÖRK BORG: Roll d20 + ability + modifiers, need to meet or beat DR
+    -- DR = 12 - ability + modifiers (bonuses make it easier = lower DR)
+    -- Ability is stored directly as the modifier value (10 = +0)
+    dr_to_dodge := 12 - result.agility + COALESCE(
+        (SELECT sum((m->>'value')::int)
+        FROM jsonb_array_elements(COALESCE(result.modifiers, '[]'::jsonb) || COALESCE(resolved_computed_modifiers, '[]'::jsonb)) m
+        WHERE m->>'statistic' = 'agility'
+        AND NOT (m->>'exclude')::jsonb ?| ARRAY['defence', 'buff']),
+        0
+    );
+    dr_to_melee := 12 - result.strength + COALESCE(
+        (SELECT sum((m->>'value')::int)
+        FROM jsonb_array_elements(COALESCE(result.modifiers, '[]'::jsonb) || COALESCE(resolved_computed_modifiers, '[]'::jsonb)) m
+        WHERE m->>'statistic' = 'strength'
+        AND NOT (m->>'exclude')::jsonb ?| ARRAY['melee', 'buff']),
+        0
+    );
+    dr_to_ranged := 12 - result.presence + COALESCE(
+        (SELECT sum((m->>'value')::int)
+        FROM jsonb_array_elements(COALESCE(result.modifiers, '[]'::jsonb) || COALESCE(resolved_computed_modifiers, '[]'::jsonb)) m
+        WHERE m->>'statistic' = 'presence'
+        AND NOT (m->>'exclude')::jsonb ?| ARRAY['ranged', 'buff']),
+        0
+    );
+
 -- Final return
 RETURN QUERY SELECT
         result.id,
@@ -263,6 +350,11 @@ RETURN QUERY SELECT
         COALESCE(resolved_storage, '[]'::jsonb),
         COALESCE(resolved_weapons, '[]'::jsonb),
         resolved_armor,
+        COALESCE(result.modifiers, '[]'::jsonb),
+        COALESCE(resolved_computed_modifiers, '[]'::jsonb),
+        dr_to_dodge,
+        dr_to_melee,
+        dr_to_ranged,
         result.created_at::timestamptz,
         result.updated_at::timestamptz;
 END;

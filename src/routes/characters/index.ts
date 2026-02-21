@@ -210,13 +210,13 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
         const updates = sanitizeCharacterUpdate(request.body as Record<string, unknown>);
 
         // Fields that are JSONB and need special handling
-        const jsonbFields = ['abilities', 'equipment', 'storage', 'equipped_weapons', 'equipped_armor'];
+        const jsonbFields = ['abilities', 'equipment', 'storage', 'equipped_weapons', 'equipped_armor', 'modifiers'];
 
         const allowedFields = [
             'abilities',
             'name', 'current_hp', 'omens', 'silver',
             'equipment', 'storage',
-            'equipped_weapons', 'equipped_armor',
+            'equipped_weapons', 'equipped_armor', 'modifiers',
             'agility', 'strength', 'presence', 'toughness',
             'trait1', 'trait2', 'habit', 'body_description', 'origin',
             'notes'

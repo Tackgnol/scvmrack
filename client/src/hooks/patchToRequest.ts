@@ -121,6 +121,11 @@ export function buildRequestFromPatches(
                 needsEquipment = true;
                 needsArmor = true;
                 break;
+            case 'modifier-add':
+            case 'modifier-remove':
+            case 'modifier-update':
+                (result as any).modifiers = currentCharacter.modifiers;
+                break;
         }
     }
 

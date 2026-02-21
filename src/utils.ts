@@ -81,7 +81,7 @@ export function sanitizeCharacterUpdate(updates: Record<string, unknown>): Recor
     };
 
     // JSONB fields
-    const jsonbFields = ['abilities', 'equipment', 'storage', 'equipped_weapons', 'equipped_armor'];
+    const jsonbFields = ['abilities', 'equipment', 'storage', 'equipped_weapons', 'equipped_armor', 'modifiers'];
 
     const sanitized: Record<string, unknown> = {};
 

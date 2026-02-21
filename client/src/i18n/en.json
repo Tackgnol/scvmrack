@@ -6,13 +6,51 @@
   "stats": {
     "hitPoints": "Hit Points",
     "toDodge": "To Dodge",
-    "toHit": "To Hit",
+    "toHitMelee": "To Hit (Melee)",
+    "toHitRanged": "To Hit (Ranged)",
     "toCast": "To Cast",
     "omens": "Omens",
     "silver": "Silver",
     "armor": "Armor",
     "encumbrance": "Encumbrance",
     "armorTier": "Armor Tier"
+  },
+  "modifiers": {
+    "title": "Active Effects",
+    "fromEquipment": "From Equipment",
+    "noModifiers": "No active modifiers",
+    "addModifier": "Add",
+    "name": "Name",
+    "value": "Value",
+    "scope": "Scope",
+    "comment": "Comment",
+    "commentPlaceholder": "Comment (optional)",
+    "namePlaceholder": "Modifier name...",
+    "scopes": {
+      "all": "All tests",
+      "combat": "Combat only",
+      "defence": "Defence only",
+      "melee": "Melee only",
+      "ranged": "Ranged only",
+      "powers": "Powers only"
+    },
+    "exclude": {
+      "title": "Exclusions",
+      "description": "This modifier does NOT apply to:",
+      "melee": "Melee attacks",
+      "ranged": "Ranged attacks",
+      "defence": "Defence rolls",
+      "cast": "Power casting",
+      "ability": "Ability tests",
+      "test": "Generic tests",
+      "heal": "Healing",
+      "buff": "Buffs",
+      "item": "Item usage"
+    },
+    "modal": {
+      "title": "Add Modifier"
+    },
+    "advancedTooltip": "Advanced modifier options"
   },
   "attributes": {
     "agility": "Agility",
@@ -134,7 +172,9 @@
   "common": {
     "close": "Close",
     "back": "Back",
-    "backToHome": "Back to Home"
+    "backToHome": "Back to Home",
+    "cancel": "Cancel",
+    "apply": "Apply"
   },
   "nav": {
     "home": "Sheet",

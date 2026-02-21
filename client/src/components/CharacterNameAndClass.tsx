@@ -1,6 +1,6 @@
 import {useCharacter} from "@/CharacterContext/CharacterContext.tsx";
 import {Box, CircularProgress, Paper, Typography} from '@mui/material';
-import {morkBorgColors, customStyles} from '../theme/morkBorgTheme';
+import { customStyles} from '../theme/morkBorgTheme';
 import {Trans, useTranslation} from 'react-i18next';
 
 export const CharacterNameAndClass = () => {

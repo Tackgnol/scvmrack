@@ -18,12 +18,15 @@ export type SimpleField =
     | 'body_description'
     | 'origin'
     | 'notes'
+    | 'modifiers'
 
 export type Character = NonNullable<
     paths['/characters/{id}']['get']['responses']['200']['content']['application/json']
 >;
 export type CharacterResponse = NonNullable<paths['/characters/{id}']['get']['responses']['200']['content']['application/json']>;
-export type CharacterUpdateRequest = NonNullable<paths['/characters/{id}']['patch']['requestBody']>['content']['application/json'];
+
+type PatchRequestBody = NonNullable<paths['/characters/{id}']['patch']['requestBody']>['content']['application/json'];
+export type CharacterUpdateRequest = PatchRequestBody;
 
 export type OptimisticPatch =
     | { kind: 'simple'; field: SimpleField; value: number | string }
@@ -45,6 +48,9 @@ export type OptimisticPatch =
     | { kind: 'unequip-weapon'; slotIndex: number }
     | { kind: 'equip-armor'; equipmentIndex: number }
     | { kind: 'unequip-armor' }
+    | { kind: 'modifier-add'; modifier: CustomModifier }
+    | { kind: 'modifier-remove'; modifierId: string }
+    | { kind: 'modifier-update'; modifierId: string; modifier: Partial<CustomModifier> }
 
 
 export type UpdateMutationContext = {
@@ -64,6 +70,20 @@ export type ArmorItem = NonNullable<Character['equipped_armor']>;
 
 /** Ability */
 export type Ability = NonNullable<Character['abilities']>[number];
+
+/** Custom modifier (player-created) */
+export type CustomModifier = NonNullable<Character['modifiers']>[number];
+
+/** Computed modifier (from equipped items) */
+export type ComputedModifier = NonNullable<Character['computed_modifiers']>[number];
+
+/** Base modifier shape for DR computation - use primitives for flexibility */
+export type BaseModifier = {
+    value?: number;
+    source?: string;
+    statistic?: 'agility' | 'strength' | 'presence' | 'toughness';
+    exclude?: string[];
+};
 
 /** API Error response */
 export type ApiError = {
