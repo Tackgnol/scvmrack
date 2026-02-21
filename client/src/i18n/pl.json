@@ -6,13 +6,51 @@
   "stats": {
     "hitPoints": "Punkty Życia",
     "toDodge": "Unik",
-    "toHit": "Trafienie",
+    "toHitMelee": "Trafienie (Wręcz)",
+    "toHitRanged": "Trafienie (Dystans)",
     "toCast": "Czar",
     "omens": "Omeny",
     "silver": "Srebro",
     "armor": "Pancerz",
     "encumbrance": "Obciążenie",
     "armorTier": "Poziom Pancerza"
+  },
+  "modifiers": {
+    "title": "Aktywne Efekty",
+    "fromEquipment": "Z Wyposażenia",
+    "noModifiers": "Brak aktywnych modyfikatorów",
+    "addModifier": "Dodaj",
+    "name": "Nazwa",
+    "value": "Wartość",
+    "comment": "Komentarz",
+    "scope": "Zakres",
+    "commentPlaceholder": "Komentarz (opcjonalnie)",
+    "namePlaceholder": "Nazwa modyfikatora...",
+    "scopes": {
+      "all": "Wszystkie testy",
+      "combat": "Tylko walka",
+      "defence": "Tylko obrona",
+      "melee": "Tylko walka wręcz",
+      "ranged": "Tylko dystansowe",
+      "powers": "Tylko moce"
+    },
+    "exclude": {
+      "title": "Wykluczenia",
+      "description": "Gdzie ten modyfikator obowiązuje:",
+      "melee": "Ataki wręcz",
+      "ranged": "Ataki dystansowe",
+      "defence": "Testy obrony",
+      "cast": "Rzucanie mocy",
+      "ability": "Testy umiejętności",
+      "test": "Testy ogólne",
+      "heal": "Leczenie",
+      "buff": "Wzmocnienia",
+      "item": "Użycie przedmiotów"
+    },
+    "modal": {
+      "title": "Dodaj Modyfikator"
+    },
+    "advancedTooltip": "Zaawansowane opcje modyfikatora"
   },
   "attributes": {
     "agility": "Zwinność",
@@ -90,7 +128,7 @@
   },
   "powers": {
     "title": "Moce",
-    "noScrollsOrPowers" : "Brak zwojów i mocy"
+    "noScrollsOrPowers": "Brak zwojów i mocy"
   },
   "auth": {
     "login": "Zaloguj",

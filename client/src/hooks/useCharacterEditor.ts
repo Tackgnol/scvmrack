@@ -1,6 +1,6 @@
 import { $api } from "@/api";
 import { applyOptimisticPatch } from "@/hooks/applyOptimisticPatch.ts";
-import {CharacterResponse, EquipmentItem, OptimisticPatch, SimpleField} from "@/hooks/models.ts";
+import {CharacterResponse, CustomModifier, EquipmentItem, OptimisticPatch, SimpleField} from "@/hooks/models.ts";
 import { buildRequestFromPatches } from "@/hooks/patchToRequest.ts";
 import {useSnackbar} from "@/SnackbarContext/SnackbarProvider.tsx";
 import {MutationObserverErrorResult, useQueryClient} from "@tanstack/react-query";
@@ -207,6 +207,19 @@ export function useCharacterEditor(
         queuePatch({ kind: 'unequip-armor' });
     }, [queuePatch]);
 
+    // Modifier operations
+    const addModifier = useCallback((modifier: CustomModifier) => {
+        queuePatch({ kind: 'modifier-add', modifier });
+    }, [queuePatch]);
+
+    const removeModifier = useCallback((modifierId: string) => {
+        queuePatch({ kind: 'modifier-remove', modifierId });
+    }, [queuePatch]);
+
+    const updateModifier = useCallback((modifierId: string, modifier: Partial<CustomModifier>) => {
+        queuePatch({ kind: 'modifier-update', modifierId, modifier });
+    }, [queuePatch]);
+
     return {
         queuePatch,
         flush,
@@ -243,6 +256,11 @@ export function useCharacterEditor(
         unequipWeapon,
         equipArmor,
         unequipArmor,
+
+        // Modifiers
+        addModifier,
+        removeModifier,
+        updateModifier,
 
         // Original isSaving logic preserved
         isSaving: pending.length > 0 || updateCharacter.isPending

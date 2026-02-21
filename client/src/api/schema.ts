@@ -368,6 +368,27 @@ export interface paths {
                                 current_tier?: number;
                                 tags?: string[];
                             } | null;
+                            modifiers?: {
+                                id?: string;
+                                name?: string;
+                                value?: number;
+                                source?: string;
+                                /** @enum {string} */
+                                statistic?: PathsCharactersNewPostResponses201ContentApplicationJsonModifiersStatistic;
+                                exclude?: string[];
+                                comment?: string;
+                            }[];
+                            computed_modifiers?: {
+                                value?: number;
+                                source?: string;
+                                /** @enum {string} */
+                                statistic?: PathsCharactersNewPostResponses201ContentApplicationJsonComputed_modifiersStatistic;
+                                exclude?: string[];
+                                /** @enum {string} */
+                                origin?: PathsCharactersNewPostResponses201ContentApplicationJsonComputed_modifiersOrigin;
+                                origin_key?: string;
+                                origin_name?: string;
+                            }[];
                             /** Format: date-time */
                             created_at?: string;
                             /** Format: date-time */
@@ -496,6 +517,27 @@ export interface paths {
                                 current_tier?: number;
                                 tags?: string[];
                             } | null;
+                            modifiers?: {
+                                id?: string;
+                                name?: string;
+                                value?: number;
+                                source?: string;
+                                /** @enum {string} */
+                                statistic?: PathsCharactersIdGetResponses200ContentApplicationJsonModifiersStatistic;
+                                exclude?: string[];
+                                comment?: string;
+                            }[];
+                            computed_modifiers?: {
+                                value?: number;
+                                source?: string;
+                                /** @enum {string} */
+                                statistic?: PathsCharactersIdGetResponses200ContentApplicationJsonComputed_modifiersStatistic;
+                                exclude?: string[];
+                                /** @enum {string} */
+                                origin?: PathsCharactersIdGetResponses200ContentApplicationJsonComputed_modifiersOrigin;
+                                origin_key?: string;
+                                origin_name?: string;
+                            }[];
                             /** Format: date-time */
                             created_at?: string;
                             /** Format: date-time */
@@ -691,6 +733,16 @@ export interface paths {
                             current_tier?: number;
                             tags?: string[];
                         } | null;
+                        modifiers?: {
+                            id?: string;
+                            name?: string;
+                            value?: number;
+                            source?: string;
+                            /** @enum {string} */
+                            statistic?: PathsCharactersIdPatchRequestBodyApplicationJsonModifiersStatistic;
+                            exclude?: string[];
+                            comment?: string;
+                        }[];
                     };
                 };
             };
@@ -765,6 +817,27 @@ export interface paths {
                                 current_tier?: number;
                                 tags?: string[];
                             } | null;
+                            modifiers?: {
+                                id?: string;
+                                name?: string;
+                                value?: number;
+                                source?: string;
+                                /** @enum {string} */
+                                statistic?: PathsCharactersIdPatchResponses200ContentApplicationJsonModifiersStatistic;
+                                exclude?: string[];
+                                comment?: string;
+                            }[];
+                            computed_modifiers?: {
+                                value?: number;
+                                source?: string;
+                                /** @enum {string} */
+                                statistic?: PathsCharactersIdPatchResponses200ContentApplicationJsonComputed_modifiersStatistic;
+                                exclude?: string[];
+                                /** @enum {string} */
+                                origin?: PathsCharactersIdPatchResponses200ContentApplicationJsonComputed_modifiersOrigin;
+                                origin_key?: string;
+                                origin_name?: string;
+                            }[];
                             /** Format: date-time */
                             created_at?: string;
                             /** Format: date-time */
@@ -1013,6 +1086,27 @@ export interface paths {
                                 current_tier?: number;
                                 tags?: string[];
                             } | null;
+                            modifiers?: {
+                                id?: string;
+                                name?: string;
+                                value?: number;
+                                source?: string;
+                                /** @enum {string} */
+                                statistic?: PathsCharactersGetResponses200ContentApplicationJsonModifiersStatistic;
+                                exclude?: string[];
+                                comment?: string;
+                            }[];
+                            computed_modifiers?: {
+                                value?: number;
+                                source?: string;
+                                /** @enum {string} */
+                                statistic?: PathsCharactersGetResponses200ContentApplicationJsonComputed_modifiersStatistic;
+                                exclude?: string[];
+                                /** @enum {string} */
+                                origin?: PathsCharactersGetResponses200ContentApplicationJsonComputed_modifiersOrigin;
+                                origin_key?: string;
+                                origin_name?: string;
+                            }[];
                             /** Format: date-time */
                             created_at?: string;
                             /** Format: date-time */
@@ -1215,12 +1309,86 @@ export enum PathsCharactersNewPostParametersQueryLocale {
     en = "en",
     pl = "pl"
 }
+export enum PathsCharactersNewPostResponses201ContentApplicationJsonModifiersStatistic {
+    agility = "agility",
+    strength = "strength",
+    presence = "presence",
+    toughness = "toughness"
+}
+export enum PathsCharactersNewPostResponses201ContentApplicationJsonComputed_modifiersStatistic {
+    agility = "agility",
+    strength = "strength",
+    presence = "presence",
+    toughness = "toughness"
+}
+export enum PathsCharactersNewPostResponses201ContentApplicationJsonComputed_modifiersOrigin {
+    armor = "armor",
+    weapon = "weapon",
+    pet = "pet"
+}
 export enum PathsCharactersIdGetParametersQueryLocale {
     en = "en",
     pl = "pl"
 }
+export enum PathsCharactersIdGetResponses200ContentApplicationJsonModifiersStatistic {
+    agility = "agility",
+    strength = "strength",
+    presence = "presence",
+    toughness = "toughness"
+}
+export enum PathsCharactersIdGetResponses200ContentApplicationJsonComputed_modifiersStatistic {
+    agility = "agility",
+    strength = "strength",
+    presence = "presence",
+    toughness = "toughness"
+}
+export enum PathsCharactersIdGetResponses200ContentApplicationJsonComputed_modifiersOrigin {
+    armor = "armor",
+    weapon = "weapon",
+    pet = "pet"
+}
 export enum PathsCharactersIdPatchParametersQueryLocale {
     en = "en",
     pl = "pl"
+}
+export enum PathsCharactersIdPatchRequestBodyApplicationJsonModifiersStatistic {
+    agility = "agility",
+    strength = "strength",
+    presence = "presence",
+    toughness = "toughness"
+}
+export enum PathsCharactersIdPatchResponses200ContentApplicationJsonModifiersStatistic {
+    agility = "agility",
+    strength = "strength",
+    presence = "presence",
+    toughness = "toughness"
+}
+export enum PathsCharactersIdPatchResponses200ContentApplicationJsonComputed_modifiersStatistic {
+    agility = "agility",
+    strength = "strength",
+    presence = "presence",
+    toughness = "toughness"
+}
+export enum PathsCharactersIdPatchResponses200ContentApplicationJsonComputed_modifiersOrigin {
+    armor = "armor",
+    weapon = "weapon",
+    pet = "pet"
+}
+export enum PathsCharactersGetResponses200ContentApplicationJsonModifiersStatistic {
+    agility = "agility",
+    strength = "strength",
+    presence = "presence",
+    toughness = "toughness"
+}
+export enum PathsCharactersGetResponses200ContentApplicationJsonComputed_modifiersStatistic {
+    agility = "agility",
+    strength = "strength",
+    presence = "presence",
+    toughness = "toughness"
+}
+export enum PathsCharactersGetResponses200ContentApplicationJsonComputed_modifiersOrigin {
+    armor = "armor",
+    weapon = "weapon",
+    pet = "pet"
 }
 export type operations = Record<string, never>;

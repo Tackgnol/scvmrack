@@ -102,6 +102,40 @@ const ArmorSchema = {
     }
 };
 
+// Custom modifier schema (player-created)
+const ModifierSchemaDefs = {
+    type: 'object',
+    additionalProperties: false,
+    properties: {
+        id: {type: 'string', maxLength: 36},
+        name: {type: 'string', maxLength: 255},
+        value: {type: 'number'},
+        source: {type: 'string', maxLength: 255},
+        statistic: {type: 'string', enum: ['agility', 'strength', 'presence', 'toughness']},
+        exclude: {type: 'array', items: {type: 'string', maxLength: 50}, maxItems: 15},
+        comment: {type: 'string', maxLength: 500}
+    }
+};
+
+// Computed modifier schema (from equipped items)
+const ComputedModifierSchemaDefs = {
+    type: 'object',
+    additionalProperties: false,
+    properties: {
+        value: {type: 'number'},
+        source: {type: 'string', maxLength: 255},
+        statistic: {type: 'string', enum: ['agility', 'strength', 'presence', 'toughness']},
+        exclude: {type: 'array', items: {type: 'string', maxLength: 50}, maxItems: 15},
+        origin: {type: 'string', enum: ['armor', 'weapon', 'pet']},
+        origin_key: {type: 'string', maxLength: 255},
+        origin_name: {type: 'string', maxLength: 255}
+    }
+};
+
+// Aliases for backwards compatibility
+const ModifierSchema = ModifierSchemaDefs;
+const ComputedModifierSchema = ComputedModifierSchemaDefs;
+
 export const UpdateBodySchema = {
     type: 'object',
     additionalProperties: false,  // Reject unknown fields
@@ -148,6 +182,11 @@ export const UpdateBodySchema = {
                 ArmorSchema,
                 {type: 'null'}
             ]
+        },
+        modifiers: {
+            type: 'array',
+            items: ModifierSchema,
+            maxItems: 30
         }
     }
 };
@@ -181,6 +220,11 @@ export const CharacterSchema = {
         storage: {type: 'array', items: EquipmentItemSchema},
         equipped_weapons: {type: 'array', items: WeaponSchema},
         equipped_armor: {oneOf: [ArmorSchema, {type: 'null'}]},
+        modifiers: {type: 'array', items: ModifierSchema},
+        computed_modifiers: {type: 'array', items: ComputedModifierSchema},
+        dr_to_dodge: {type: 'integer'},
+        dr_to_melee: {type: 'integer'},
+        dr_to_ranged: {type: 'integer'},
         created_at: {type: 'string', format: 'date-time'},
         updated_at: {type: 'string', format: 'date-time'}
     }

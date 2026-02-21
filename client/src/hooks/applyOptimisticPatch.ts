@@ -223,5 +223,24 @@ export function applyOptimisticPatch(
                 equipment: [...(character.equipment ?? []), item]
             };
         }
+
+        case 'modifier-add': {
+            return {
+                ...character,
+                modifiers: [...(character.modifiers ?? []), patch.modifier]
+            };
+        }
+
+        case 'modifier-remove': {
+            const next = (character.modifiers ?? []).filter(m => m.id !== patch.modifierId);
+            return {...character, modifiers: next};
+        }
+
+        case 'modifier-update': {
+            const next = (character.modifiers ?? []).map(m =>
+                m.id === patch.modifierId ? {...m, ...patch.modifier} : m
+            );
+            return {...character, modifiers: next};
+        }
     }
 }
