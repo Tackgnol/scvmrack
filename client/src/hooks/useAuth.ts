@@ -34,12 +34,19 @@ export interface SignInCredentials {
     email: string;
     password: string;
     rememberMe?: boolean;
+    turnstileToken?: string;
 }
 
 export interface SignUpCredentials {
     email: string;
     password: string;
     name: string;
+    turnstileToken?: string;
+}
+
+export interface MagicLinkCredentials {
+    email: string;
+    turnstileToken?: string;
 }
 
 // ============================================
@@ -76,11 +83,17 @@ export function useAuth() {
     // Sign in
     const signIn = useMutation({
         mutationFn: async (creds: SignInCredentials) => {
-            const { data, error } = await authClient.signIn.email({
+            const payload: Record<string, unknown> = {
                 email: creds.email,
                 password: creds.password,
                 rememberMe: creds.rememberMe ?? true,
-            });
+            };
+
+            if (creds.turnstileToken) {
+                payload.turnstileToken = creds.turnstileToken;
+            }
+
+            const { data, error } = await authClient.signIn.email(payload as any);
             if (error) throw error;
             return data;
         },
@@ -92,7 +105,17 @@ export function useAuth() {
     // Sign up
     const signUp = useMutation({
         mutationFn: async (creds: SignUpCredentials) => {
-            const { data, error } = await authClient.signUp.email(creds);
+            const payload: Record<string, unknown> = {
+                email: creds.email,
+                password: creds.password,
+                name: creds.name,
+            };
+
+            if (creds.turnstileToken) {
+                payload.turnstileToken = creds.turnstileToken;
+            }
+
+            const { data, error } = await authClient.signUp.email(payload as any);
             if (error) throw error;
             return data;
         },
@@ -126,13 +149,19 @@ export function useAuth() {
     // });
 
     const signInMagicLink = useMutation({
-        mutationFn: async (email: string) => {
+        mutationFn: async ({ email, turnstileToken }: MagicLinkCredentials) => {
             // We pass the email. The server interceptor in index.ts
             // will handle hashing it before Better Auth sees it.
-            const { data, error } = await authClient.signIn.magicLink({
+            const payload: Record<string, unknown> = {
                 email,
                 callbackURL: "/", // Where to redirect after clicking link
-            });
+            };
+
+            if (turnstileToken) {
+                payload.turnstileToken = turnstileToken;
+            }
+
+            const { data, error } = await authClient.signIn.magicLink(payload as any);
 
             if (error) throw error;
             return data;
