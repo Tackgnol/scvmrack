@@ -40,6 +40,7 @@ export function useItemSearch(options: { debounceMs?: number; limit?: number } =
     const {i18n} = useTranslation();
 
     const [query, setQuery] = useState('');
+    const trimmedQuery = query.trim();
     const [debouncedQuery] = useDebounce(query.trim(), debounceMs);
 
     const enabled = debouncedQuery.length > 0;
@@ -65,7 +66,7 @@ export function useItemSearch(options: { debounceMs?: number; limit?: number } =
     };
 
     return {
-        results: data ?? [],
+        results: trimmedQuery.length === 0 ? [] : (data ?? []),
         isLoading,
         error: error instanceof Error ? error.message : null,
         search: setQuery,

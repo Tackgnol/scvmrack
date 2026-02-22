@@ -17,11 +17,12 @@ export function Flag({locale}: FlagProps) {
 
     return (
         <StyledFlagButton
-            component="button"
+            type="button"
             onClick={handleChange}
             isActive={isActive}
             isUK={isUK}
             countryCode={countryCode}
+            aria-label={locale === 'en' ? 'English' : 'Polski'}
         />
     );
 }

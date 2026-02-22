@@ -29,6 +29,8 @@ export interface CharacterFull {
     storage: Array<{ key: string; name: string; description: string; tags: string[]; dice: string[] }>;
     equipped_weapons: Array<{ key: string; name: string; description: string; dice: string[]; tags: string[] }>;
     equipped_armor: { key: string; name: string; description: string; dice: string[]; max_tier: number; tags: string[] } | null;
+    encumbrance?: number;
+    max_encumbrance?: number;
     created_at: string;
     updated_at: string;
 }

@@ -12,6 +12,17 @@ import type { CharacterFull, CharacterUpdate, GenerateCharacterParams } from '..
 import { query, queryOne } from '../../services/db.js';
 import type { AppSession } from '../../plugins/guestSession.js';
 
+type CharacterListRow = {
+    id: string;
+    name: string;
+    class_id: number | null;
+    class_name: string;
+    current_hp: number;
+    max_hp: number;
+    created_at: string;
+    updated_at: string;
+};
+
 // ============================================
 // Helper: Check character access
 // ============================================
@@ -50,6 +61,23 @@ async function checkCharacterAccess(
     }
 
     return { allowed: true };
+}
+
+function resolveListLocale(acceptLanguage: unknown): 'en' | 'pl' {
+    if (typeof acceptLanguage !== 'string' || acceptLanguage.length === 0) {
+        return 'en';
+    }
+
+    const primaryTag = acceptLanguage.split(',')[0]?.trim().toLowerCase();
+    if (!primaryTag) {
+        return 'en';
+    }
+
+    if (primaryTag === 'pl' || primaryTag.startsWith('pl-')) {
+        return 'pl';
+    }
+
+    return 'en';
 }
 
 const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
@@ -152,7 +180,6 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
                 'SELECT * FROM get_character_full($1, $2)',
                 [id, locale]
             );
-            console.log(character);
             if (!character) {
                 return reply.status(404).send({ error: 'Character not found' });
             }
@@ -354,31 +381,58 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
         },
     }, async (request, reply) => {
         const session = request.appSession;
+        const locale = resolveListLocale(request.headers['accept-language']);
 
         if (!session) {
             return reply.status(401).send({ error: 'Session required' });
         }
 
         try {
-            let characters;
+            let characters: CharacterListRow[];
 
             if (session.userId) {
                 // Authenticated: get all owned characters
                 // Also include unclaimed characters from their guest session
-                characters = await query<CharacterFull>(
-                    `SELECT c.* FROM characters c
+                characters = await query<CharacterListRow>(
+                    `SELECT
+                        c.id,
+                        c.name,
+                        c.class_id,
+                        COALESCE(t_class_name.value, cl.name) AS class_name,
+                        c.current_hp,
+                        c.max_hp,
+                        c.created_at,
+                        c.updated_at
+                     FROM characters c
+                     LEFT JOIN classes cl ON cl.id = c.class_id
+                     LEFT JOIN translations t_class_name
+                        ON t_class_name.key = cl.name_key
+                       AND t_class_name.locale = $3
                      WHERE c.user_id = $1
                         OR (c.session_id = $2 AND c.user_id IS NULL)
                      ORDER BY c.updated_at DESC`,
-                    [session.userId, session.guestSessionId]
+                    [session.userId, session.guestSessionId, locale]
                 );
             } else {
                 // Guest: get characters for this session only
-                characters = await query<CharacterFull>(
-                    `SELECT c.* FROM characters c
+                characters = await query<CharacterListRow>(
+                    `SELECT
+                        c.id,
+                        c.name,
+                        c.class_id,
+                        COALESCE(t_class_name.value, cl.name) AS class_name,
+                        c.current_hp,
+                        c.max_hp,
+                        c.created_at,
+                        c.updated_at
+                     FROM characters c
+                     LEFT JOIN classes cl ON cl.id = c.class_id
+                     LEFT JOIN translations t_class_name
+                        ON t_class_name.key = cl.name_key
+                       AND t_class_name.locale = $2
                      WHERE c.session_id = $1 AND c.user_id IS NULL
                      ORDER BY c.updated_at DESC`,
-                    [session.id]
+                    [session.id, locale]
                 );
             }
 

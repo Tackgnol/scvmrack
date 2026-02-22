@@ -129,16 +129,44 @@ CREATE OR REPLACE FUNCTION resolve_character_abilities(
     LEFT JOIN translations td ON td.key = (ab->>'key') || '.description' AND td.locale = p_locale;
 $$;
 
+DROP FUNCTION IF EXISTS resolve_character_computed_modifiers(jsonb, jsonb, jsonb, text);
+DROP FUNCTION IF EXISTS resolve_character_computed_modifiers(jsonb, jsonb, jsonb, int, text);
+
 CREATE OR REPLACE FUNCTION resolve_character_computed_modifiers(
     p_equipped_armor jsonb,
     p_equipped_weapons jsonb,
     p_equipment jsonb,
+    p_strength int,
     p_locale text
 ) RETURNS jsonb
     LANGUAGE plpgsql AS $$
 DECLARE
     v_result jsonb := '[]'::jsonb;
+    v_strength_modifier int;
+    v_max_encumbrance int;
+    v_encumbrance int;
+    v_encumbrance_label text;
+    v_over_capacity_source text;
+    v_double_capacity_source text;
 BEGIN
+    v_strength_modifier := CASE
+        -- Backward compatibility: if DB already stores a direct modifier, use it as-is.
+        WHEN p_strength BETWEEN -6 AND 6 THEN p_strength
+        ELSE roll_to_modifier(p_strength)
+    END;
+    v_max_encumbrance := GREATEST(0, 8 + v_strength_modifier);
+    v_encumbrance := COALESCE(jsonb_array_length(COALESCE(p_equipment, '[]'::jsonb)), 0);
+
+    IF p_locale = 'pl' THEN
+        v_encumbrance_label := 'Obciążenie';
+        v_over_capacity_source := 'Przeciążenie: -2 do wszystkich testów Zręczności';
+        v_double_capacity_source := 'Nie da się nieść więcej niż dwa razy tyle, ile wynosi twój udźwig';
+    ELSE
+        v_encumbrance_label := 'Encumbrance';
+        v_over_capacity_source := 'Over capacity: -2 Agility to all tests';
+        v_double_capacity_source := 'It is impossible to carry more than twice your capacity';
+    END IF;
+
     v_result := v_result || (
         SELECT COALESCE(jsonb_agg(
             m || jsonb_build_object(
@@ -187,6 +215,34 @@ BEGIN
                 SELECT eq->>'key'
                 FROM jsonb_array_elements(p_equipment) eq
                 WHERE eq->>'key' LIKE 'pet.%'
+            )
+        );
+    END IF;
+
+    IF v_encumbrance > v_max_encumbrance THEN
+        v_result := v_result || jsonb_build_array(
+            jsonb_build_object(
+                'value', -2,
+                'source', v_over_capacity_source,
+                'statistic', 'agility',
+                'exclude', '[]'::jsonb,
+                'origin', 'system',
+                'origin_key', 'system.encumbrance.over_capacity',
+                'origin_name', v_encumbrance_label
+            )
+        );
+    END IF;
+
+    IF v_encumbrance > (v_max_encumbrance * 2) THEN
+        v_result := v_result || jsonb_build_array(
+            jsonb_build_object(
+                'value', 0,
+                'source', v_double_capacity_source,
+                'statistic', 'strength',
+                'exclude', '[]'::jsonb,
+                'origin', 'system',
+                'origin_key', 'system.encumbrance.double_capacity',
+                'origin_name', v_double_capacity_source
             )
         );
     END IF;
@@ -256,6 +312,8 @@ RETURNS TABLE (
     equipped_armor jsonb,
     modifiers jsonb,
     computed_modifiers jsonb,
+    encumbrance int,
+    max_encumbrance int,
     dr_to_dodge int,
     dr_to_melee int,
     dr_to_ranged int,
@@ -270,6 +328,9 @@ DECLARE
     resolved_armor jsonb;
     resolved_abilities jsonb;
     resolved_computed_modifiers jsonb;
+    encumbrance int;
+    max_encumbrance int;
+    strength_modifier int;
     dr_to_dodge int;
     dr_to_melee int;
     dr_to_ranged int;
@@ -311,8 +372,17 @@ BEGIN
         result.equipped_armor,
         result.equipped_weapons,
         result.equipment,
+        result.strength,
         p_locale
     );
+
+    encumbrance := COALESCE(jsonb_array_length(COALESCE(result.equipment, '[]'::jsonb)), 0);
+    strength_modifier := CASE
+        -- Backward compatibility: if DB already stores a direct modifier, use it as-is.
+        WHEN result.strength BETWEEN -6 AND 6 THEN result.strength
+        ELSE roll_to_modifier(result.strength)
+    END;
+    max_encumbrance := GREATEST(0, 8 + strength_modifier);
 
     dr_to_dodge := calculate_character_dr(
         result.agility,
@@ -363,6 +433,8 @@ BEGIN
         resolved_armor,
         COALESCE(result.modifiers, '[]'::jsonb),
         COALESCE(resolved_computed_modifiers, '[]'::jsonb),
+        encumbrance,
+        max_encumbrance,
         dr_to_dodge,
         dr_to_melee,
         dr_to_ranged,

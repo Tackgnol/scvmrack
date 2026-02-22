@@ -13,7 +13,7 @@ const transporter = nodemailer.createTransport({
 export const sendEmail = async (mail: string, subject: string, html: string) => {
 
     await transporter.sendMail({
-        from: `"Your App" <${process.env.MAIL_USER}>`,
+        from: `"Scvmgrinder" <${process.env.MAIL_USER}>`,
         to: mail,
         subject,
         html,

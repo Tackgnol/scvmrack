@@ -1,4 +1,4 @@
-import { $api } from "@/api";
+import { $api, characterKeys } from "@/api";
 import {PathsCharactersIdGetParametersQueryLocale} from "@/api/schema.ts";
 
 import { CharacterResponse, UpdateMutationContext } from "@/hooks/models.ts";
@@ -31,6 +31,9 @@ export function useCharacterRepository(characterId: string | null, locale?: stri
                 getCharacterKey(character.id, locale),
                 character
             );
+            queryClient.invalidateQueries({
+                queryKey: characterKeys.list()
+            });
         }
     });
 
@@ -53,6 +56,9 @@ export function useCharacterRepository(characterId: string | null, locale?: stri
             queryClient.invalidateQueries({
                 queryKey: getCharacterKey(vars.params.path.id, locale)
             });
+            queryClient.invalidateQueries({
+                queryKey: characterKeys.list()
+            });
         }
     });
 
@@ -62,6 +68,9 @@ export function useCharacterRepository(characterId: string | null, locale?: stri
             // Invalidate to refetch with new ownership
             queryClient.invalidateQueries({
                 queryKey: getCharacterKey((vars as any).params.path.id, locale)
+            });
+            queryClient.invalidateQueries({
+                queryKey: characterKeys.list()
             });
         }
     });

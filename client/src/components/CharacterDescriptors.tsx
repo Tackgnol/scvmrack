@@ -51,19 +51,16 @@ export const CharacterDescriptors = () => {
                     </Typography>
                     <Box sx={customStyles.characterDescriptors.buttonGroup}>
                         <Collapse in={!newAbility} orientation="horizontal">
-                            <AddButton
-                                component="button"
-                                onClick={() => setNewAbility({name: '', description: ''})}
-                            >
+                            <AddButton onClick={() => setNewAbility({name: '', description: ''})}>
                                 +
                             </AddButton>
                         </Collapse>
                         <Collapse in={!!newAbility} orientation="horizontal">
                             <Box sx={customStyles.characterDescriptors.buttonGroup}>
-                                <ConfirmButton component="button" onClick={handleSaveNewAbility}>
+                                <ConfirmButton onClick={handleSaveNewAbility}>
                                     ✓
                                 </ConfirmButton>
-                                <CancelButton component="button" onClick={handleCancelNewAbility}>
+                                <CancelButton onClick={handleCancelNewAbility}>
                                     ✕
                                 </CancelButton>
                             </Box>

@@ -17,25 +17,45 @@ export default function ItemAutocomplete({
                                          }: ItemAutocompleteProps) {
     const {t} = useTranslation();
     const [inputValue, setInputValue] = useState('');
+    const [selectedValue, setSelectedValue] = useState<ItemSearchHit | null>(null);
     const {results, isLoading, search, clearResults} = useItemSearch({limit: 15});
 
-    const handleInputChange = (_: SyntheticEvent, value: string) => {
+    const resetAutocomplete = () => {
+        setSelectedValue(null);
+        setInputValue('');
+        clearResults();
+    };
+
+    const handleInputChange = (_: SyntheticEvent, value: string, reason: string) => {
+        if (reason === 'reset') {
+            return;
+        }
+
+        if (reason === 'clear') {
+            resetAutocomplete();
+            return;
+        }
+
         setInputValue(value);
         if (value.length >= 2) search(value);
         else clearResults();
     };
 
     const handleSelect = (_: SyntheticEvent, value: ItemSearchHit | null) => {
-        if (!value) return;
+        if (!value) {
+            resetAutocomplete();
+            return;
+        }
+
         onSelect(value);
-        setInputValue('');
-        clearResults();
+        resetAutocomplete();
     };
 
     return (
         <Autocomplete
             options={results}
             loading={isLoading}
+            value={selectedValue}
             inputValue={inputValue}
             onInputChange={handleInputChange}
             onChange={handleSelect}
