@@ -122,7 +122,8 @@
     "placeholder": "Scrawl your sins here..."
   },
   "footer": {
-    "worldEnding": "The World Is Ending"
+    "worldEnding": "The World Is Ending",
+    "legalNotice": "Created by Adam Koscielniak, all rights reserved 2026, Compatible with Mork Borg. <privacyLink>Review your privacy settings</privacyLink>"
   },
   "actions": {
     "generateNew": "Generate New",
@@ -228,6 +229,25 @@
       "a": "Please report bugs via GitHub issues or contact us directly. We appreciate your help making Scvm Grinder better!"
     },
     "morkBorgCredit": "MÖRK BORG is © Free League Publishing. This is an independent fan project."
+  },
+  "privacy": {
+    "title": "BLOOD OATH",
+    "subtitle": "Data, Tracking, and Storage Notice",
+    "sections": {
+      "storage": "Browser storage is required for core operation. We store technical and gameplay data on your device, including language settings, session flags, active character references, and privacy preferences.",
+      "backend": "Character and gameplay content that you enter in this app is transmitted to and stored on our backend services, including guest sessions. This storage occurs even if you do not create an account.",
+      "analytics": "If analytics is enabled below, Google Analytics is used to process usage events and page activity. You can disable analytics at any time without losing core app functionality.",
+      "sensitiveData": "Do not enter sensitive personal data in character fields. By continuing to use this app, you acknowledge and accept this notice."
+    },
+    "analyticsToggle": "Enable Google Analytics tracking",
+    "analyticsEnabledState": "Analytics is currently enabled. You may disable it now or later in this panel.",
+    "analyticsDisabledState": "Analytics is currently disabled. Core app features continue to work.",
+    "consentConfirmation": "Selecting \"{{action}}\" confirms your agreement to this notice.",
+    "actions": {
+      "initialSave": "I Understand & Save",
+      "savePreferences": "Save Preferences",
+      "close": "Close"
+    }
   },
   "release": {
     "title": "Release Notes",

@@ -1,4 +1,5 @@
 import { createRouter, createRootRoute, createRoute } from '@tanstack/react-router';
+import { appHistory } from '@/router/history';
 import { RootLayout } from '@/router/layout';
 import { CharacterPage } from '@/pages/CharacterPage';
 import { CharactersListPage } from '@/pages/CharactersListPage';
@@ -45,7 +46,10 @@ const routeTree = rootRoute.addChildren([
 ]);
 
 
-export const router = createRouter({ routeTree });
+export const router = createRouter({
+    routeTree,
+    history: appHistory,
+});
 
 
 declare module '@tanstack/react-router' {
