@@ -1881,8 +1881,6 @@ export const morkBorgTheme = createTheme({
   components: {
     MuiCssBaseline: {
       styleOverrides: `
-        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Antonio:wght@400;700&family=Permanent+Marker&display=swap');
-        
         body {
           background-color: ${morkBorgColors.yellow};
         }

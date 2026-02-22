@@ -1,4 +1,6 @@
 import {authKeys} from "@/api";
+import { trackEvent } from '@/analytics/googleAnalytics';
+import { navigateToLoggedOut } from '@/router/navigation';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {magicLinkClient} from "better-auth/client/plugins";
 import { createAuthClient } from "better-auth/react";
@@ -35,6 +37,9 @@ export interface SignInCredentials {
     password: string;
     rememberMe?: boolean;
     turnstileToken?: string;
+    locale?: string;
+    wasGuest?: boolean;
+    hadGuestCharacter?: boolean;
 }
 
 export interface SignUpCredentials {
@@ -42,11 +47,17 @@ export interface SignUpCredentials {
     password: string;
     name: string;
     turnstileToken?: string;
+    locale?: string;
+    wasGuest?: boolean;
+    hadGuestCharacter?: boolean;
 }
 
 export interface MagicLinkCredentials {
     email: string;
     turnstileToken?: string;
+    locale?: string;
+    wasGuest?: boolean;
+    hadGuestCharacter?: boolean;
 }
 
 // ============================================
@@ -97,7 +108,14 @@ export function useAuth() {
             if (error) throw error;
             return data;
         },
-        onSuccess: () => {
+        onSuccess: (_data, vars) => {
+            trackEvent('login', {
+                method: 'password',
+                locale: vars.locale ?? 'unknown',
+                used_turnstile: Boolean(vars.turnstileToken),
+                was_guest: Boolean(vars.wasGuest),
+                had_guest_character: Boolean(vars.hadGuestCharacter),
+            });
             queryClient.invalidateQueries({ queryKey: authKeys.all });
         },
     });
@@ -119,7 +137,14 @@ export function useAuth() {
             if (error) throw error;
             return data;
         },
-        onSuccess: () => {
+        onSuccess: (_data, vars) => {
+            trackEvent('sign_up', {
+                method: 'email_password',
+                locale: vars.locale ?? 'unknown',
+                used_turnstile: Boolean(vars.turnstileToken),
+                was_guest: Boolean(vars.wasGuest),
+                had_guest_character: Boolean(vars.hadGuestCharacter),
+            });
             queryClient.invalidateQueries({ queryKey: authKeys.all });
         },
     });
@@ -133,7 +158,7 @@ export function useAuth() {
         onSuccess: () => {
             queryClient.setQueryData(authKeys.session(), null);
             queryClient.setQueryData(authKeys.me(), null);
-            window.location.href = '/?logged-out=true';
+            void navigateToLoggedOut();
         },
     });
 
@@ -165,6 +190,15 @@ export function useAuth() {
 
             if (error) throw error;
             return data;
+        },
+        onSuccess: (_data, vars) => {
+            trackEvent('login_magic_link_requested', {
+                method: 'magic_link',
+                locale: vars.locale ?? 'unknown',
+                used_turnstile: Boolean(vars.turnstileToken),
+                was_guest: Boolean(vars.wasGuest),
+                had_guest_character: Boolean(vars.hadGuestCharacter),
+            });
         },
         // Note: We don't invalidate queries here because the user
         // isn't logged in until they click the link in their email.

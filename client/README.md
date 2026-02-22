@@ -60,6 +60,17 @@ src/
 - **Modifier system** with stat targeting and comments
 - **Custom modal** component matching the Mörk Borg aesthetic
 
+## Google Analytics
+
+Set `VITE_GA_MEASUREMENT_ID` in your frontend environment to enable Google Analytics 4 tracking:
+
+```bash
+VITE_GA_MEASUREMENT_ID=G-XXXXXXXXXX
+```
+
+The app initializes the `analytics` library with the `@analytics/google-analytics` plugin and tracks page views for SPA route changes.
+It also tracks auth/character actions with GA events: `login`, `sign_up`, `login_magic_link_requested`, `generate_character`, `claim_character`, and `claim_character_skipped`.
+
 ## Color Palette
 
 ```typescript

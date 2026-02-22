@@ -1,4 +1,6 @@
+import { trackEvent } from '@/analytics/googleAnalytics';
 import { useAuth } from "@/hooks/useAuth.ts";
+import { useTurnstileChallenge } from '@/hooks/useTurnstileChallenge';
 import { useState, useEffect, useCallback } from "react";
 import {
     Modal,
@@ -24,12 +26,17 @@ const PENDING_CLAIM_KEY = "pending-claim-character-id";
 interface AuthModalProps {
     open: boolean;
     onClose: () => void;
+    sessionExpiredNotice?: boolean;
 }
 
 type TabValue = "login" | "signup";
 
-export function AuthModal({ open, onClose }: AuthModalProps) {
-    const { t } = useTranslation();
+export function AuthModal({
+    open,
+    onClose,
+    sessionExpiredNotice = false,
+}: AuthModalProps) {
+    const { t, i18n } = useTranslation();
     const {
         user,
         isAuthenticated,
@@ -50,32 +57,22 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
     const [showClaimPrompt, setShowClaimPrompt] = useState(false);
     const [showVerifyEmail, setShowVerifyEmail] = useState(false);
     const [magicLinkSent, setMagicLinkSent] = useState(false);
-    const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
-    const [turnstileResetSignal, setTurnstileResetSignal] = useState(0);
     const turnstileSiteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY;
     const turnstileEnabled = Boolean(turnstileSiteKey);
-
-    const resetTurnstile = useCallback(() => {
-        setTurnstileToken(null);
-        setTurnstileResetSignal((prev) => prev + 1);
+    const turnstileMissingToken = useCallback(() => {
+        setError("Please verify that you are human.");
     }, []);
-
-    const onTurnstileTokenChange = useCallback((token: string | null) => {
-        setTurnstileToken(token);
-    }, []);
-
-    const ensureTurnstileToken = useCallback(() => {
-        if (!turnstileEnabled) {
-            return true;
-        }
-
-        if (!turnstileToken) {
-            setError("Please verify that you are human.");
-            return false;
-        }
-
-        return true;
-    }, [turnstileEnabled, turnstileToken]);
+    const {
+        token: turnstileToken,
+        resetSignal: turnstileResetSignal,
+        onTokenChange: onTurnstileTokenChange,
+        reset: resetTurnstile,
+        ensureToken: ensureTurnstileToken,
+    } = useTurnstileChallenge({
+        enabled: turnstileEnabled,
+        onMissingToken: turnstileMissingToken,
+    });
+    const analyticsLocale = i18n.resolvedLanguage ?? i18n.language ?? 'unknown';
 
     // Check for pending claim on mount / when user becomes verified
     useEffect(() => {
@@ -119,7 +116,14 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
         }
 
         try {
-            await signIn.mutateAsync({ email, password, turnstileToken: turnstileToken ?? undefined });
+            await signIn.mutateAsync({
+                email,
+                password,
+                turnstileToken: turnstileToken ?? undefined,
+                locale: analyticsLocale,
+                wasGuest: isGuest,
+                hadGuestCharacter: Boolean(characterId),
+            });
 
             // If user was guest with a character, offer to claim it
             if (isGuest && character) {
@@ -152,7 +156,13 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
             if (isGuest && characterId) {
                 localStorage.setItem(PENDING_CLAIM_KEY, characterId);
             }
-            await signInMagicLink.mutateAsync({ email, turnstileToken: turnstileToken ?? undefined });
+            await signInMagicLink.mutateAsync({
+                email,
+                turnstileToken: turnstileToken ?? undefined,
+                locale: analyticsLocale,
+                wasGuest: isGuest,
+                hadGuestCharacter: Boolean(characterId),
+            });
             setMagicLinkSent(true);
         } catch (err) {
             setError(err instanceof Error ? err.message : t("auth.magicLinkFailed"));
@@ -177,7 +187,15 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
                 localStorage.setItem(PENDING_CLAIM_KEY, characterId);
             }
 
-            await signUp.mutateAsync({ email, password, name, turnstileToken: turnstileToken ?? undefined });
+            await signUp.mutateAsync({
+                email,
+                password,
+                name,
+                turnstileToken: turnstileToken ?? undefined,
+                locale: analyticsLocale,
+                wasGuest: isGuest,
+                hadGuestCharacter: Boolean(characterId),
+            });
 
             // Show "check your email" instead of claim prompt
             setShowVerifyEmail(true);
@@ -200,6 +218,11 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
                 setError(err instanceof Error ? err.message : t("auth.claimFailed"));
                 return;
             }
+        } else {
+            trackEvent('claim_character_skipped', {
+                locale: analyticsLocale,
+                had_guest_character: Boolean(characterId),
+            });
         }
         // Clear pending claim
         localStorage.removeItem(PENDING_CLAIM_KEY);
@@ -358,6 +381,11 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
                     <Tab value="login" label={t("auth.login")} />
                     <Tab value="signup" label={t("auth.signup")} />
                 </Tabs>
+                {sessionExpiredNotice && (
+                    <Alert severity="warning" sx={customStyles.authModal.infoAlert}>
+                        {t("auth.sessionExpired", "Your session expired. Sign in again to continue.")}
+                    </Alert>
+                )}
 
                 {tab === "login" && (
                     <Box>

@@ -120,7 +120,8 @@
     "placeholder": "Wypisz tu swoje grzechy..."
   },
   "footer": {
-    "worldEnding": "Świat Się Kończy"
+    "worldEnding": "Świat Się Kończy",
+    "legalNotice": "Stworzone przez Adama Kościelniaka, wszelkie prawa zastrzeżone 2026, kompatybilne z Mork Borg. <privacyLink>Sprawdź ustawienia prywatności</privacyLink>"
   },
   "actions": {
     "generateNew": "Generuj Nową",
@@ -224,6 +225,25 @@
       "a": "Zgłoś błędy przez GitHub issues lub skontaktuj się z nami bezpośrednio. Doceniamy pomoc w ulepszaniu Scvm Grinder!"
     },
     "morkBorgCredit": "MÖRK BORG jest © Free League Publishing. To jest niezależny projekt fanowski."
+  },
+  "privacy": {
+    "title": "KRWAWA PRZYSIĘGA",
+    "subtitle": "Informacja o Danych, Śledzeniu i Przechowywaniu",
+    "sections": {
+      "storage": "Pamięć przeglądarki jest wymagana do działania aplikacji. Przechowujemy na Twoim urządzeniu dane techniczne i dotyczące rozgrywki, w tym ustawienia języka, flagi sesji, identyfikatory aktywnej postaci oraz preferencje prywatności.",
+      "backend": "Treści postaci i dane rozgrywki wpisane w aplikacji są przesyłane i przechowywane na naszych usługach backendowych, także w sesjach gościa. Dzieje się to również wtedy, gdy nie zakładasz konta.",
+      "analytics": "Jeśli poniżej włączysz analitykę, Google Analytics będzie przetwarzać zdarzenia użycia i aktywność stron. Możesz wyłączyć analitykę w dowolnym momencie bez utraty podstawowych funkcji aplikacji.",
+      "sensitiveData": "Nie wpisuj danych wrażliwych w polach postaci. Dalsze korzystanie z aplikacji oznacza potwierdzenie i akceptację tej informacji."
+    },
+    "analyticsToggle": "Włącz śledzenie Google Analytics",
+    "analyticsEnabledState": "Analityka jest obecnie włączona. Możesz ją wyłączyć teraz lub później w tym panelu.",
+    "analyticsDisabledState": "Analityka jest obecnie wyłączona. Podstawowe funkcje aplikacji nadal działają.",
+    "consentConfirmation": "Wybranie „{{action}}” potwierdza Twoją zgodę na tę informację.",
+    "actions": {
+      "initialSave": "Rozumiem i zapisuję",
+      "savePreferences": "Zapisz preferencje",
+      "close": "Zamknij"
+    }
   },
   "release": {
     "title": "Historia Zmian",

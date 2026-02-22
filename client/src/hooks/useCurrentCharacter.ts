@@ -1,15 +1,25 @@
 import {PathsCharactersNewPostParametersQueryLocale} from "@/api/schema.ts";
+import { trackEvent } from '@/analytics/googleAnalytics';
 import {useAuth} from "@/hooks/useAuth.ts";
 import { useCharacterEditor } from "@/hooks/useCharacterEditor.ts";
 import { useCharacterId } from "@/hooks/useCharacterId.ts";
 import { useCharacterRepository } from "@/hooks/useCharacterRepository.ts";
+import { appHistory } from '@/router/history';
+import { hasCurrentSearchParam, LOGGED_OUT_QUERY_PARAM } from '@/router/navigation';
 import { useSessionStatus } from "@/hooks/useSessionStatus.ts";
 import {getApiLocale} from "@/hooks/utils.ts";
 import {useSnackbar} from "@/SnackbarContext/SnackbarProvider.tsx";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import { useTranslation } from "react-i18next";
 
+const subscribeToHistory = (onStoreChange: () => void): (() => void) => {
+    return appHistory.subscribe(() => onStoreChange());
+};
+
+const getLoggedOutSnapshot = (): boolean => {
+    return hasCurrentSearchParam(LOGGED_OUT_QUERY_PARAM);
+};
 
 export function useCurrentCharacter() {
     const { characterId, setCharacterId } = useCharacterId();
@@ -17,8 +27,11 @@ export function useCurrentCharacter() {
     const trimmedLocale = getApiLocale<PathsCharactersNewPostParametersQueryLocale>(locale);
     const { showSuccess, showError } = useSnackbar();
 
-    const isJustLoggedOut = typeof window !== 'undefined'
-        && new URLSearchParams(window.location.search).has('logged-out');
+    const isJustLoggedOut = useSyncExternalStore(
+        subscribeToHistory,
+        getLoggedOutSnapshot,
+        () => false
+    );
 
     // Auth state
     const { isAuthenticated, isGuest, isLoading: authLoading } = useAuth();
@@ -65,9 +78,19 @@ export function useCurrentCharacter() {
             repo.createCharacter.mutate({
                 body: { class_id: id },
                 params: { query: { locale: trimmedLocale } }
+            }, {
+                onSuccess: () => {
+                    trackEvent('generate_character', {
+                        source: 'manual',
+                        locale: trimmedLocale,
+                        class_id: id,
+                        is_authenticated: isAuthenticated,
+                        is_guest: isGuest,
+                    });
+                },
             });
         },
-        [editor, repo.createCharacter, trimmedLocale]
+        [editor, repo.createCharacter, trimmedLocale, isAuthenticated, isGuest]
     );
 
     // ---- Change locale (original logic) ----
@@ -91,6 +114,11 @@ export function useCurrentCharacter() {
             await repo.claimCharacter.mutateAsync({
                 params: { path: { id: characterId } }
             } as any);
+            trackEvent('claim_character', {
+                locale: trimmedLocale,
+                was_guest: isGuest,
+                is_authenticated: isAuthenticated,
+            });
             showSuccess("Character saved to your account!");
         } catch (err) {
             showError(`Failed to claim character: ${err instanceof Error ? err.message : "Unknown error"}`);
@@ -98,7 +126,7 @@ export function useCurrentCharacter() {
         } finally {
             setIsClaiming(false);
         }
-    }, [characterId, repo.claimCharacter, showSuccess, showError]);
+    }, [characterId, repo.claimCharacter, showSuccess, showError, trimmedLocale, isGuest, isAuthenticated]);
 
     return {
         // Original returns

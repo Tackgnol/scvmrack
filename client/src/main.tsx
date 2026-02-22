@@ -1,5 +1,6 @@
 import { CharacterProvider } from "@/CharacterContext/CharacterContext";
 import { SnackbarProvider } from "@/SnackbarContext/SnackbarProvider";
+import { initializeAnalyticsConsent } from '@/analytics/googleAnalytics';
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RouterProvider } from '@tanstack/react-router';
 import React from 'react';
@@ -17,6 +18,8 @@ const queryClient = new QueryClient({
         },
     },
 });
+
+initializeAnalyticsConsent();
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
     <React.StrictMode>

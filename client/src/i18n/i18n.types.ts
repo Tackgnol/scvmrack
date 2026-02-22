@@ -82,6 +82,7 @@ export interface TranslationKeys {
     };
     footer: {
         worldEnding: string;
+        legalNotice: string;
     };
     actions: {
         generateNew: string;
@@ -133,6 +134,25 @@ export interface TranslationKeys {
         loggedOut: string;
         createNewCharacter: string;
     };
+    privacy: {
+        title: string;
+        subtitle: string;
+        sections: {
+            storage: string;
+            backend: string;
+            analytics: string;
+            sensitiveData: string;
+        };
+        analyticsToggle: string;
+        analyticsEnabledState: string;
+        analyticsDisabledState: string;
+        consentConfirmation: string;
+        actions: {
+            initialSave: string;
+            savePreferences: string;
+            close: string;
+        };
+    };
     status: {
         saving: string;
         saved: string;
@@ -160,6 +180,7 @@ export type TranslationKey =
     | `powers.${keyof TranslationKeys['powers']}`
     | `auth.${keyof TranslationKeys['auth']}`
     | `session.${keyof TranslationKeys['session']}`
+    | `privacy.${keyof TranslationKeys['privacy']}`
     | `status.${keyof TranslationKeys['status']}`
     | `common.${keyof TranslationKeys['common']}`;
 

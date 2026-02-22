@@ -1,5 +1,6 @@
 import createClient, { type Middleware } from "openapi-fetch";
 import createQueryClient from "openapi-react-query";
+import { navigateToSessionExpired } from '@/router/navigation';
 import type { paths } from "./schema.ts";
 // ============================================
 // Auth Query Keys
@@ -25,12 +26,12 @@ export const characterKeys = {
 // ============================================
 let isRedirecting = false;
 
-function redirectToLogin() {
+function redirectToSessionExpired() {
     if (isRedirecting) return;
     isRedirecting = true;
 
     setTimeout(() => {
-        window.location.href = "/login?expired=true";
+        void navigateToSessionExpired();
     }, 100);
 }
 
@@ -69,10 +70,10 @@ const authMiddleware: Middleware = {
 
         const requestKey = `${request.method}:${url.pathname}`;
 
-        // Already retried? Redirect to login
+        // Already retried? Redirect to session-expired flow
         if (pendingRetries.has(requestKey)) {
             pendingRetries.delete(requestKey);
-            redirectToLogin();
+            redirectToSessionExpired();
             return response;
         }
 
@@ -87,7 +88,7 @@ const authMiddleware: Middleware = {
         pendingRetries.delete(requestKey);
 
         if (retryResponse.status === 401) {
-            redirectToLogin();
+            redirectToSessionExpired();
         }
 
         return retryResponse;

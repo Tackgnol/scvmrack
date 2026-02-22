@@ -1,4 +1,5 @@
 import { Alert, Button } from "@mui/material";
+import { clearCurrentSearchParam, LOGGED_OUT_QUERY_PARAM } from '@/router/navigation';
 import { useTranslation } from "react-i18next";
 import { customStyles } from "@theme/morkBorgTheme";
 
@@ -9,9 +10,8 @@ interface Props {
 export function LoggedOutBanner({ onCreateCharacter }: Props) {
     const { t } = useTranslation();
 
-    const handleCreate = () => {
-        // Clear the URL param
-        window.history.replaceState({}, '', '/');
+    const handleCreate = async () => {
+        await clearCurrentSearchParam(LOGGED_OUT_QUERY_PARAM);
         onCreateCharacter();
     };
 
