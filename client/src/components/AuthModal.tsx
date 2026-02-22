@@ -1,5 +1,5 @@
 import { useAuth } from "@/hooks/useAuth.ts";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
     Modal,
     Box,
@@ -17,6 +17,7 @@ import CloseIcon from "@mui/icons-material/Close";
 import { useTranslation } from "react-i18next";
 import { useCurrentCharacter } from "@/hooks/useCurrentCharacter";
 import { morkBorgColors, customStyles } from "@theme/morkBorgTheme";
+import { TurnstileWidget } from "./TurnstileWidget";
 
 const PENDING_CLAIM_KEY = "pending-claim-character-id";
 
@@ -49,6 +50,32 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
     const [showClaimPrompt, setShowClaimPrompt] = useState(false);
     const [showVerifyEmail, setShowVerifyEmail] = useState(false);
     const [magicLinkSent, setMagicLinkSent] = useState(false);
+    const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+    const [turnstileResetSignal, setTurnstileResetSignal] = useState(0);
+    const turnstileSiteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY;
+    const turnstileEnabled = Boolean(turnstileSiteKey);
+
+    const resetTurnstile = useCallback(() => {
+        setTurnstileToken(null);
+        setTurnstileResetSignal((prev) => prev + 1);
+    }, []);
+
+    const onTurnstileTokenChange = useCallback((token: string | null) => {
+        setTurnstileToken(token);
+    }, []);
+
+    const ensureTurnstileToken = useCallback(() => {
+        if (!turnstileEnabled) {
+            return true;
+        }
+
+        if (!turnstileToken) {
+            setError("Please verify that you are human.");
+            return false;
+        }
+
+        return true;
+    }, [turnstileEnabled, turnstileToken]);
 
     // Check for pending claim on mount / when user becomes verified
     useEffect(() => {
@@ -71,6 +98,7 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
             setShowVerifyEmail(false);
             setTab("login");
             setMagicLinkSent(false);
+            resetTurnstile();
 
             // Check if we should show claim prompt (user just verified via email link)
             if (isAuthenticated && user?.emailVerified) {
@@ -80,14 +108,18 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
                 }
             }
         }
-    }, [open, isAuthenticated, user?.emailVerified]);
+    }, [open, isAuthenticated, user?.emailVerified, resetTurnstile]);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         setError(null);
 
+        if (!ensureTurnstileToken()) {
+            return;
+        }
+
         try {
-            await signIn.mutateAsync({ email, password });
+            await signIn.mutateAsync({ email, password, turnstileToken: turnstileToken ?? undefined });
 
             // If user was guest with a character, offer to claim it
             if (isGuest && character) {
@@ -97,6 +129,10 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
             }
         } catch (err) {
             setError(err instanceof Error ? err.message : t("auth.loginFailed"));
+        } finally {
+            if (turnstileEnabled) {
+                resetTurnstile();
+            }
         }
     };
 
@@ -106,15 +142,24 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
             return;
         }
         setError(null);
+
+        if (!ensureTurnstileToken()) {
+            return;
+        }
+
         try {
             // Store pending claim before magic link (user will be logged in after clicking)
             if (isGuest && characterId) {
                 localStorage.setItem(PENDING_CLAIM_KEY, characterId);
             }
-            await signInMagicLink.mutateAsync(email);
+            await signInMagicLink.mutateAsync({ email, turnstileToken: turnstileToken ?? undefined });
             setMagicLinkSent(true);
         } catch (err) {
             setError(err instanceof Error ? err.message : t("auth.magicLinkFailed"));
+        } finally {
+            if (turnstileEnabled) {
+                resetTurnstile();
+            }
         }
     };
 
@@ -122,13 +167,17 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
         e.preventDefault();
         setError(null);
 
+        if (!ensureTurnstileToken()) {
+            return;
+        }
+
         try {
             // Store pending claim BEFORE signup
             if (isGuest && characterId) {
                 localStorage.setItem(PENDING_CLAIM_KEY, characterId);
             }
 
-            await signUp.mutateAsync({ email, password, name });
+            await signUp.mutateAsync({ email, password, name, turnstileToken: turnstileToken ?? undefined });
 
             // Show "check your email" instead of claim prompt
             setShowVerifyEmail(true);
@@ -136,6 +185,10 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
             // Clear pending claim on error
             localStorage.removeItem(PENDING_CLAIM_KEY);
             setError(err instanceof Error ? err.message : t("auth.signupFailed"));
+        } finally {
+            if (turnstileEnabled) {
+                resetTurnstile();
+            }
         }
     };
 
@@ -298,6 +351,7 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
                         setTab(v);
                         setError(null);
                         setMagicLinkSent(false);
+                        resetTurnstile();
                     }}
                     sx={customStyles.authModal.titleMarginLarge}
                 >
@@ -339,6 +393,13 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
                                     required
                                     sx={customStyles.authModal.textFieldLast}
                                 />
+                                {turnstileEnabled && (
+                                    <TurnstileWidget
+                                        siteKey={turnstileSiteKey!}
+                                        onTokenChange={onTurnstileTokenChange}
+                                        resetSignal={turnstileResetSignal}
+                                    />
+                                )}
                                 <Button
                                     type="submit"
                                     variant="contained"
@@ -408,6 +469,13 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
                                     characterName: character.name || "Your character",
                                 })}
                             </Alert>
+                        )}
+                        {turnstileEnabled && (
+                            <TurnstileWidget
+                                siteKey={turnstileSiteKey!}
+                                onTokenChange={onTurnstileTokenChange}
+                                resetSignal={turnstileResetSignal}
+                            />
                         )}
                         <Button
                             type="submit"

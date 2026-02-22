@@ -2,8 +2,11 @@ import { FastifyPluginAsync } from 'fastify';
 import {queryOne} from "../../services/db.js";
 import {decryptEmail, generateEmailBlindIndex} from "../../services/crypto.js";
 import auth from '../../services/auth.js';
+import {isTurnstileEnabled, verifyTurnstileToken} from "../../services/turnstile.js";
 
 const authRoutes: FastifyPluginAsync = async (fastify): Promise<void> => {
+    const protectedAuthPaths = ['/sign-in/email', '/sign-up/email', '/sign-in/magic-link'];
+
     fastify.get('/me', async (request, reply) => {
         try {
             const session = await auth.api.getSession({
@@ -54,6 +57,29 @@ const authRoutes: FastifyPluginAsync = async (fastify): Promise<void> => {
 
             let body = request.body as Record<string, any> | undefined;
             let plainEmail: string | undefined;
+            const requestPath = request.url.split('?')[0];
+            const requiresTurnstile = request.method === 'POST'
+                && protectedAuthPaths.some((path) => requestPath.includes(path));
+
+            if (requiresTurnstile && isTurnstileEnabled()) {
+                const turnstileToken = typeof body?.turnstileToken === 'string'
+                    ? body.turnstileToken
+                    : '';
+
+                if (!turnstileToken) {
+                    return reply.status(400).send({ error: 'Captcha verification is required' });
+                }
+
+                const verification = await verifyTurnstileToken(turnstileToken, request.ip);
+                if (!verification.success) {
+                    request.log.warn({ errorCodes: verification.errorCodes }, 'Turnstile verification failed');
+                    return reply.status(400).send({ error: 'Captcha verification failed' });
+                }
+            }
+
+            if (body && 'turnstileToken' in body) {
+                delete body.turnstileToken;
+            }
 
             if (body?.email && typeof body.email === 'string') {
                 const isMagicLink = request.url.includes('magic-link');

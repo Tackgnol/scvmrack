@@ -5,6 +5,223 @@
 -- This file defines only the canonical (uuid, text) signature.
 -- The cleanup migration handles dropping the stale overload on prod.
 
+-- Shared resolver for equipment/storage item arrays.
+CREATE OR REPLACE FUNCTION resolve_character_inventory_items(
+    p_items jsonb,
+    p_locale text,
+    p_scroll_default_uses boolean DEFAULT false
+) RETURNS jsonb
+    LANGUAGE sql AS $$
+    SELECT COALESCE(jsonb_agg(
+        jsonb_build_object(
+            'key', item->>'key',
+            'name', COALESCE(t.value, item->>'name', item->>'key'),
+            'description', COALESCE(td.value, item->>'description', ''),
+            'tags', (
+                SELECT COALESCE(jsonb_agg(DISTINCT tag_val), '[]'::jsonb)
+                FROM (
+                    SELECT jsonb_array_elements_text(item->'tags') AS tag_val
+                    WHERE item ? 'tags' AND jsonb_typeof(item->'tags') = 'array'
+                    UNION ALL
+                    SELECT jsonb_array_elements_text(to_jsonb(w.tags)) AS tag_val WHERE w.tags IS NOT NULL
+                    UNION ALL
+                    SELECT jsonb_array_elements_text(to_jsonb(a.tags)) AS tag_val WHERE a.tags IS NOT NULL
+                    UNION ALL
+                    SELECT jsonb_array_elements_text(to_jsonb(e_m.tags)) AS tag_val WHERE e_m.tags IS NOT NULL
+                ) tags_sub
+            ),
+            'dice', (
+                SELECT COALESCE(jsonb_agg(DISTINCT dice_val), '[]'::jsonb)
+                FROM (
+                    SELECT jsonb_array_elements_text(item->'dice') AS dice_val
+                    WHERE item ? 'dice' AND jsonb_typeof(item->'dice') = 'array'
+                    UNION ALL
+                    SELECT jsonb_array_elements_text(to_jsonb(w.dice)) AS dice_val WHERE w.dice IS NOT NULL
+                    UNION ALL
+                    SELECT jsonb_array_elements_text(to_jsonb(a.dice)) AS dice_val WHERE a.dice IS NOT NULL
+                ) dice_sub
+            ),
+            'uses', CASE
+                WHEN item->'uses' IS NOT NULL
+                    AND jsonb_typeof(item->'uses') = 'array'
+                    AND jsonb_array_length(item->'uses') > 0 THEN item->'uses'
+                WHEN p_scroll_default_uses AND item->>'key' LIKE 'scroll.%' THEN '[false,false,false,false]'::jsonb
+                ELSE COALESCE(item->'uses', '[]'::jsonb)
+            END
+        ) || CASE
+            WHEN a.key IS NOT NULL THEN jsonb_build_object(
+                'max_tier', a.max_tier,
+                'current_tier', COALESCE((item->>'current_tier')::int, a.max_tier)
+            )
+            ELSE '{}'::jsonb
+        END
+    ), '[]'::jsonb)
+    FROM jsonb_array_elements(COALESCE(p_items, '[]'::jsonb)) item
+    LEFT JOIN weapons w ON w.key = item->>'key'
+    LEFT JOIN armors a ON a.key = item->>'key'
+    LEFT JOIN equipment e_m ON e_m.key = item->>'key'
+    LEFT JOIN translations t ON t.key = item->>'key' AND t.locale = p_locale
+    LEFT JOIN translations td ON td.key = (item->>'key') || '.description' AND td.locale = p_locale;
+$$;
+
+CREATE OR REPLACE FUNCTION resolve_character_equipped_weapons(
+    p_items jsonb,
+    p_locale text
+) RETURNS jsonb
+    LANGUAGE sql AS $$
+    SELECT COALESCE(jsonb_agg(
+        jsonb_build_object(
+            'key', ew->>'key',
+            'name', COALESCE(t.value, ew->>'key'),
+            'description', COALESCE(td.value, ''),
+            'dice', COALESCE(to_jsonb(w.dice), '[]'::jsonb),
+            'tags', COALESCE(to_jsonb(w.tags), '[]'::jsonb)
+        )
+    ), '[]'::jsonb)
+    FROM jsonb_array_elements(COALESCE(p_items, '[]'::jsonb)) ew
+    LEFT JOIN weapons w ON w.key = ew->>'key'
+    LEFT JOIN translations t ON t.key = ew->>'key' AND t.locale = p_locale
+    LEFT JOIN translations td ON td.key = (ew->>'key') || '.description' AND td.locale = p_locale;
+$$;
+
+CREATE OR REPLACE FUNCTION resolve_character_equipped_armor(
+    p_item jsonb,
+    p_locale text
+) RETURNS jsonb
+    LANGUAGE sql AS $$
+    SELECT CASE
+        WHEN p_item IS NULL THEN NULL
+        ELSE (
+            SELECT jsonb_build_object(
+                'key', p_item->>'key',
+                'name', COALESCE(t.value, p_item->>'key'),
+                'description', COALESCE(td.value, ''),
+                'dice', COALESCE(to_jsonb(a.dice), '[]'::jsonb),
+                'max_tier', a.max_tier,
+                'current_tier', COALESCE((p_item->>'current_tier')::int, a.max_tier),
+                'tags', COALESCE(to_jsonb(a.tags), '[]'::jsonb)
+            )
+            FROM armors a
+            LEFT JOIN translations t ON t.key = p_item->>'key' AND t.locale = p_locale
+            LEFT JOIN translations td ON td.key = (p_item->>'key') || '.description' AND td.locale = p_locale
+            WHERE a.key = p_item->>'key'
+        )
+    END;
+$$;
+
+CREATE OR REPLACE FUNCTION resolve_character_abilities(
+    p_abilities jsonb,
+    p_locale text
+) RETURNS jsonb
+    LANGUAGE sql AS $$
+    SELECT COALESCE(jsonb_agg(
+        CASE
+            WHEN ab->>'key' IS NOT NULL THEN jsonb_build_object(
+                'key', ab->>'key',
+                'name', COALESCE(t.value, ab->>'key'),
+                'description', COALESCE(td.value, '')
+            )
+            ELSE ab
+        END
+    ), '[]'::jsonb)
+    FROM jsonb_array_elements(COALESCE(p_abilities, '[]'::jsonb)) ab
+    LEFT JOIN translations t ON t.key = ab->>'key' AND t.locale = p_locale
+    LEFT JOIN translations td ON td.key = (ab->>'key') || '.description' AND td.locale = p_locale;
+$$;
+
+CREATE OR REPLACE FUNCTION resolve_character_computed_modifiers(
+    p_equipped_armor jsonb,
+    p_equipped_weapons jsonb,
+    p_equipment jsonb,
+    p_locale text
+) RETURNS jsonb
+    LANGUAGE plpgsql AS $$
+DECLARE
+    v_result jsonb := '[]'::jsonb;
+BEGIN
+    v_result := v_result || (
+        SELECT COALESCE(jsonb_agg(
+            m || jsonb_build_object(
+                'origin', 'armor',
+                'origin_key', 'armor.' || a.key,
+                'origin_name', COALESCE(t.value, a.key)
+            )
+        ), '[]'::jsonb)
+        FROM armors a
+        CROSS JOIN LATERAL jsonb_array_elements(a.modifiers) m
+        LEFT JOIN translations t ON t.key = a.key AND t.locale = p_locale
+        WHERE a.key = p_equipped_armor->>'key'
+    );
+
+    IF p_equipped_weapons IS NOT NULL AND jsonb_array_length(p_equipped_weapons) > 0 THEN
+        v_result := v_result || (
+            SELECT COALESCE(jsonb_agg(
+                m || jsonb_build_object(
+                    'origin', 'weapon',
+                    'origin_key', 'weapon.' || w.key,
+                    'origin_name', COALESCE(t.value, w.key)
+                )
+            ), '[]'::jsonb)
+            FROM weapons w
+            CROSS JOIN LATERAL jsonb_array_elements(w.modifiers) m
+            LEFT JOIN translations t ON t.key = w.key AND t.locale = p_locale
+            WHERE w.key IN (
+                SELECT ew->>'key'
+                FROM jsonb_array_elements(p_equipped_weapons) ew
+            )
+        );
+    END IF;
+
+    IF p_equipment IS NOT NULL THEN
+        v_result := v_result || (
+            SELECT COALESCE(jsonb_agg(
+                p.buff || jsonb_build_object(
+                    'origin', 'pet',
+                    'origin_key', 'pet.' || p.key,
+                    'origin_name', COALESCE(t.value, p.key)
+                )
+            ), '[]'::jsonb)
+            FROM pets p
+            LEFT JOIN translations t ON t.key = p.key AND t.locale = p_locale
+            WHERE p.key IN (
+                SELECT eq->>'key'
+                FROM jsonb_array_elements(p_equipment) eq
+                WHERE eq->>'key' LIKE 'pet.%'
+            )
+        );
+    END IF;
+
+    RETURN COALESCE(v_result, '[]'::jsonb);
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION calculate_character_dr(
+    p_ability int,
+    p_all_modifiers jsonb,
+    p_statistic text,
+    p_excluded text[]
+) RETURNS int
+    LANGUAGE sql AS $$
+    SELECT 12
+        - (
+            CASE
+                -- Backward compatibility: if DB already stores a direct modifier, use it as-is.
+                WHEN p_ability BETWEEN -6 AND 6 THEN p_ability
+                -- Current model stores raw ability scores (typically 3..18), so convert to modifier.
+                ELSE roll_to_modifier(p_ability)
+            END
+        )
+        - COALESCE(
+        (
+            SELECT SUM((m->>'value')::int)
+            FROM jsonb_array_elements(COALESCE(p_all_modifiers, '[]'::jsonb)) m
+            WHERE m->>'statistic' = p_statistic
+              AND NOT COALESCE(m->'exclude', '[]'::jsonb) ?| p_excluded
+        ),
+        0
+    );
+$$;
+
 -- Drop ALL overloads to ensure clean state
 DROP FUNCTION IF EXISTS get_character_full(uuid, text);
 DROP FUNCTION IF EXISTS get_character_full(uuid, character varying);
@@ -46,7 +263,7 @@ RETURNS TABLE (
     updated_at timestamptz
 ) AS $$
 DECLARE
-result RECORD;
+    result RECORD;
     resolved_equipment jsonb;
     resolved_storage jsonb;
     resolved_weapons jsonb;
@@ -57,273 +274,67 @@ result RECORD;
     dr_to_melee int;
     dr_to_ranged int;
 BEGIN
-    -- 1. Fetch base character data with translations
-SELECT
-    c.*,
-    COALESCE(t_class_name.value, cl.name) as class_name_trans,
-    COALESCE(t_class_desc.value, cl.appendix) as class_description_trans,
-    COALESCE(t_origin.value, c.origin) as origin_trans,
-    COALESCE(t_habit.value, c.habit) as habit_trans,
-    COALESCE(t_tale.value, c.tale) as tale_trans,
-    COALESCE(t_body.value, c.body_description) as body_trans,
-    COALESCE(t_trait1.value, c.trait1) as trait1_trans,
-    COALESCE(t_trait2.value, c.trait2) as trait2_trans
-INTO result
-FROM characters c
-         LEFT JOIN classes cl ON c.class_id = cl.id
-         LEFT JOIN translations t_class_name ON t_class_name.key = cl.name_key AND t_class_name.locale = p_locale
-         LEFT JOIN translations t_class_desc ON t_class_desc.key = cl.description_key AND t_class_desc.locale = p_locale
-         LEFT JOIN translations t_origin ON c.origin = t_origin.key AND t_origin.locale = p_locale
-         LEFT JOIN translations t_body ON c.body_description = t_body.key AND t_body.locale = p_locale
-         LEFT JOIN translations t_trait1 ON c.trait1 = t_trait1.key AND t_trait1.locale = p_locale
-         LEFT JOIN translations t_trait2 ON c.trait2 = t_trait2.key AND t_trait2.locale = p_locale
-         LEFT JOIN translations t_habit ON c.habit = t_habit.key AND t_habit.locale = p_locale
-         LEFT JOIN translations t_tale ON c.tale = t_tale.key AND t_tale.locale = p_locale
-WHERE c.id = p_id;
+    SELECT
+        c.*,
+        COALESCE(t_class_name.value, cl.name) AS class_name_trans,
+        COALESCE(t_class_desc.value, cl.appendix) AS class_description_trans,
+        COALESCE(t_origin.value, c.origin) AS origin_trans,
+        COALESCE(t_habit.value, c.habit) AS habit_trans,
+        COALESCE(t_tale.value, c.tale) AS tale_trans,
+        COALESCE(t_body.value, c.body_description) AS body_trans,
+        COALESCE(t_trait1.value, c.trait1) AS trait1_trans,
+        COALESCE(t_trait2.value, c.trait2) AS trait2_trans
+    INTO result
+    FROM characters c
+    LEFT JOIN classes cl ON c.class_id = cl.id
+    LEFT JOIN translations t_class_name ON t_class_name.key = cl.name_key AND t_class_name.locale = p_locale
+    LEFT JOIN translations t_class_desc ON t_class_desc.key = cl.description_key AND t_class_desc.locale = p_locale
+    LEFT JOIN translations t_origin ON c.origin = t_origin.key AND t_origin.locale = p_locale
+    LEFT JOIN translations t_body ON c.body_description = t_body.key AND t_body.locale = p_locale
+    LEFT JOIN translations t_trait1 ON c.trait1 = t_trait1.key AND t_trait1.locale = p_locale
+    LEFT JOIN translations t_trait2 ON c.trait2 = t_trait2.key AND t_trait2.locale = p_locale
+    LEFT JOIN translations t_habit ON c.habit = t_habit.key AND t_habit.locale = p_locale
+    LEFT JOIN translations t_tale ON c.tale = t_tale.key AND t_tale.locale = p_locale
+    WHERE c.id = p_id;
 
-IF result IS NULL THEN RETURN; END IF;
-
-    -- 2. Equipment - reads from stored JSONB first, falls back to master tables
-    --    Preserves: uses (scrolls), current_tier/max_tier (armor items)
-SELECT jsonb_agg(
-               jsonb_build_object(
-                       'key', eq->>'key',
-                       'name', COALESCE(t.value, eq->>'name', eq->>'key'),
-                       'description', COALESCE(td.value, eq->>'description', ''),
-                       'tags',
-                       (
-                           SELECT COALESCE(jsonb_agg(DISTINCT tag_val), '[]'::jsonb)
-                           FROM (
-                                    SELECT jsonb_array_elements_text(eq->'tags') AS tag_val
-                                        WHERE eq ? 'tags' AND jsonb_typeof(eq->'tags') = 'array'
-                                    UNION ALL
-                                    SELECT jsonb_array_elements_text(to_jsonb(w.tags)) AS tag_val WHERE w.tags IS NOT NULL
-                                    UNION ALL
-                                    SELECT jsonb_array_elements_text(to_jsonb(a.tags)) AS tag_val WHERE a.tags IS NOT NULL
-                                    UNION ALL
-                                    SELECT jsonb_array_elements_text(to_jsonb(e_m.tags)) AS tag_val WHERE e_m.tags IS NOT NULL
-                                ) tags_sub
-                       ),
-                       'dice',
-                       (
-                           SELECT COALESCE(jsonb_agg(DISTINCT dice_val), '[]'::jsonb)
-                           FROM (
-                                    SELECT jsonb_array_elements_text(eq->'dice') AS dice_val
-                                        WHERE eq ? 'dice' AND jsonb_typeof(eq->'dice') = 'array'
-                                    UNION ALL
-                                    SELECT jsonb_array_elements_text(to_jsonb(w.dice)) AS dice_val WHERE w.dice IS NOT NULL
-                                    UNION ALL
-                                    SELECT jsonb_array_elements_text(to_jsonb(a.dice)) AS dice_val WHERE a.dice IS NOT NULL
-                                ) dice_sub
-                       ),
-                       'uses', CASE
-                                   WHEN eq->'uses' IS NOT NULL AND jsonb_array_length(eq->'uses') > 0 THEN eq->'uses'
-                                   WHEN eq->>'key' LIKE 'scroll.%' THEN '[false,false,false,false]'::jsonb
-                ELSE '[]'::jsonb
-            END
-               )
-                   -- Append current_tier/max_tier for armor items in inventory
-                   || CASE
-                          WHEN a.key IS NOT NULL THEN
-                              jsonb_build_object(
-                                      'max_tier', a.max_tier,
-                                      'current_tier', COALESCE((eq->>'current_tier')::int, a.max_tier)
-                              )
-                          ELSE '{}'::jsonb
-                   END
-       )
-INTO resolved_equipment
-FROM jsonb_array_elements(result.equipment) eq
-         LEFT JOIN weapons w ON w.key = eq->>'key'
-    LEFT JOIN armors a ON a.key = eq->>'key'
-    LEFT JOIN equipment e_m ON e_m.key = eq->>'key'
-    LEFT JOIN translations t ON t.key = eq->>'key' AND t.locale = p_locale
-    LEFT JOIN translations td ON td.key = (eq->>'key') || '.description' AND td.locale = p_locale;
-
--- 3. Storage - same logic as equipment
-SELECT jsonb_agg(
-               jsonb_build_object(
-                       'key', st->>'key',
-                       'name', COALESCE(t.value, st->>'name', st->>'key'),
-                       'description', COALESCE(td.value, st->>'description', ''),
-                       'tags',
-                       (
-                           SELECT COALESCE(jsonb_agg(DISTINCT tag_val), '[]'::jsonb)
-                           FROM (
-                                    SELECT jsonb_array_elements_text(st->'tags') AS tag_val
-                                        WHERE st ? 'tags' AND jsonb_typeof(st->'tags') = 'array'
-                                    UNION ALL
-                                    SELECT jsonb_array_elements_text(to_jsonb(w.tags)) AS tag_val WHERE w.tags IS NOT NULL
-                                    UNION ALL
-                                    SELECT jsonb_array_elements_text(to_jsonb(a.tags)) AS tag_val WHERE a.tags IS NOT NULL
-                                    UNION ALL
-                                    SELECT jsonb_array_elements_text(to_jsonb(e_m.tags)) AS tag_val WHERE e_m.tags IS NOT NULL
-                                ) tags_sub
-                       ),
-                       'dice',
-                       (
-                           SELECT COALESCE(jsonb_agg(DISTINCT dice_val), '[]'::jsonb)
-                           FROM (
-                                    SELECT jsonb_array_elements_text(st->'dice') AS dice_val
-                                        WHERE st ? 'dice' AND jsonb_typeof(st->'dice') = 'array'
-                                    UNION ALL
-                                    SELECT jsonb_array_elements_text(to_jsonb(w.dice)) AS dice_val WHERE w.dice IS NOT NULL
-                                    UNION ALL
-                                    SELECT jsonb_array_elements_text(to_jsonb(a.dice)) AS dice_val WHERE a.dice IS NOT NULL
-                                ) dice_sub
-                       ),
-                       'uses', COALESCE(st->'uses', '[]'::jsonb)
-               )
-                   -- Append current_tier/max_tier for armor items in storage
-                   || CASE
-                          WHEN a.key IS NOT NULL THEN
-                              jsonb_build_object(
-                                      'max_tier', a.max_tier,
-                                      'current_tier', COALESCE((st->>'current_tier')::int, a.max_tier)
-                              )
-                          ELSE '{}'::jsonb
-                   END
-       )
-INTO resolved_storage
-FROM jsonb_array_elements(result.storage) st
-         LEFT JOIN weapons w ON w.key = st->>'key'
-    LEFT JOIN armors a ON a.key = st->>'key'
-    LEFT JOIN equipment e_m ON e_m.key = st->>'key'
-    LEFT JOIN translations t ON t.key = st->>'key' AND t.locale = p_locale
-    LEFT JOIN translations td ON td.key = (st->>'key') || '.description' AND td.locale = p_locale;
-
--- 4. Equipped Weapons
-SELECT jsonb_agg(
-               jsonb_build_object(
-                       'key', ew->>'key',
-                       'name', COALESCE(t.value, ew->>'key'),
-                       'description', COALESCE(td.value, ''),
-                       'dice', COALESCE(to_jsonb(w.dice), '[]'::jsonb),
-                       'tags', COALESCE(to_jsonb(w.tags), '[]'::jsonb)
-               )
-       )
-INTO resolved_weapons
-FROM jsonb_array_elements(result.equipped_weapons) ew
-         LEFT JOIN weapons w ON w.key = ew->>'key'
-    LEFT JOIN translations t ON t.key = ew->>'key' AND t.locale = p_locale
-    LEFT JOIN translations td ON td.key = (ew->>'key') || '.description' AND td.locale = p_locale;
-
--- 5. Equipped Armor - includes current_tier with fallback to max_tier
-IF result.equipped_armor IS NOT NULL THEN
-SELECT jsonb_build_object(
-               'key', result.equipped_armor->>'key',
-               'name', COALESCE(t.value, result.equipped_armor->>'key'),
-               'description', COALESCE(td.value, ''),
-               'dice', COALESCE(to_jsonb(a.dice), '[]'::jsonb),
-               'max_tier', a.max_tier,
-               'current_tier', COALESCE(
-                       (result.equipped_armor->>'current_tier')::int,
-                       a.max_tier
-                               ),
-               'tags', COALESCE(to_jsonb(a.tags), '[]'::jsonb)
-       )
-INTO resolved_armor
-FROM armors a
-         LEFT JOIN translations t ON t.key = result.equipped_armor->>'key' AND t.locale = p_locale
-    LEFT JOIN translations td ON td.key = (result.equipped_armor->>'key') || '.description' AND td.locale = p_locale
-WHERE a.key = result.equipped_armor->>'key';
-END IF;
-
-    -- 6. Abilities
-SELECT jsonb_agg(
-               CASE WHEN ab->>'key' IS NOT NULL THEN
-                   jsonb_build_object(
-                   'key', ab->>'key',
-                   'name', COALESCE(t.value, ab->>'key'),
-                   'description', COALESCE(td.value, '')
-                   )
-                   ELSE ab END
-       )
-INTO resolved_abilities
-FROM jsonb_array_elements(result.abilities) ab
-         LEFT JOIN translations t ON t.key = ab->>'key' AND t.locale = p_locale
-    LEFT JOIN translations td ON td.key = (ab->>'key') || '.description' AND td.locale = p_locale;
-
-    -- 7. Computed Modifiers - from equipped armor, weapons, and pets in equipment
-    -- 7a: From equipped armor
-    SELECT COALESCE(jsonb_agg(
-        m || jsonb_build_object(
-            'origin', 'armor',
-            'origin_key', 'armor.' || a.key,
-            'origin_name', COALESCE(t.value, a.key)
-        )
-    ), '[]'::jsonb)
-    INTO resolved_computed_modifiers
-    FROM armors a
-    CROSS JOIN LATERAL jsonb_array_elements(a.modifiers) m
-    LEFT JOIN translations t ON t.key = a.key AND t.locale = p_locale
-    WHERE a.key = result.equipped_armor->>'key';
-
-    -- 7b: From equipped weapons (append)
-    IF result.equipped_weapons IS NOT NULL AND jsonb_array_length(result.equipped_weapons) > 0 THEN
-        resolved_computed_modifiers := resolved_computed_modifiers || (
-            SELECT COALESCE(jsonb_agg(
-                m || jsonb_build_object(
-                    'origin', 'weapon',
-                    'origin_key', 'weapon.' || w.key,
-                    'origin_name', COALESCE(t.value, w.key)
-                )
-            ), '[]'::jsonb)
-            FROM weapons w
-            CROSS JOIN LATERAL jsonb_array_elements(w.modifiers) m
-            LEFT JOIN translations t ON t.key = w.key AND t.locale = p_locale
-            WHERE w.key IN (SELECT jsonb_array_elements_text(jsonb_agg(ew->>'key')) FROM jsonb_array_elements(result.equipped_weapons) ew)
-        );
+    IF result IS NULL THEN
+        RETURN;
     END IF;
 
-    -- 7c: From pets in equipment (append)
-    IF result.equipment IS NOT NULL THEN
-        resolved_computed_modifiers := resolved_computed_modifiers || (
-            SELECT COALESCE(jsonb_agg(
-                p.buff || jsonb_build_object(
-                    'origin', 'pet',
-                    'origin_key', 'pet.' || p.key,
-                    'origin_name', COALESCE(t.value, p.key)
-                )
-            ), '[]'::jsonb)
-            FROM pets p
-            LEFT JOIN translations t ON t.key = p.key AND t.locale = p_locale
-            WHERE p.key IN (
-                SELECT eq->>'key'
-                FROM jsonb_array_elements(result.equipment) eq
-                WHERE eq->>'key' LIKE 'pet.%'
-            )
-        );
-    END IF;
+    resolved_equipment := resolve_character_inventory_items(result.equipment, p_locale, true);
+    resolved_storage := resolve_character_inventory_items(result.storage, p_locale, false);
+    resolved_weapons := resolve_character_equipped_weapons(result.equipped_weapons, p_locale);
+    resolved_armor := resolve_character_equipped_armor(result.equipped_armor, p_locale);
+    resolved_abilities := resolve_character_abilities(result.abilities, p_locale);
 
-    -- 8: Calculate DR values
-    -- MÖRK BORG: Roll d20 + ability + modifiers, need to meet or beat DR
-    -- DR = 12 - ability + modifiers (bonuses make it easier = lower DR)
-    -- Ability is stored directly as the modifier value (10 = +0)
-    dr_to_dodge := 12 - result.agility + COALESCE(
-        (SELECT sum((m->>'value')::int)
-        FROM jsonb_array_elements(COALESCE(result.modifiers, '[]'::jsonb) || COALESCE(resolved_computed_modifiers, '[]'::jsonb)) m
-        WHERE m->>'statistic' = 'agility'
-        AND NOT (m->>'exclude')::jsonb ?| ARRAY['defence', 'buff']),
-        0
-    );
-    dr_to_melee := 12 - result.strength + COALESCE(
-        (SELECT sum((m->>'value')::int)
-        FROM jsonb_array_elements(COALESCE(result.modifiers, '[]'::jsonb) || COALESCE(resolved_computed_modifiers, '[]'::jsonb)) m
-        WHERE m->>'statistic' = 'strength'
-        AND NOT (m->>'exclude')::jsonb ?| ARRAY['melee', 'buff']),
-        0
-    );
-    dr_to_ranged := 12 - result.presence + COALESCE(
-        (SELECT sum((m->>'value')::int)
-        FROM jsonb_array_elements(COALESCE(result.modifiers, '[]'::jsonb) || COALESCE(resolved_computed_modifiers, '[]'::jsonb)) m
-        WHERE m->>'statistic' = 'presence'
-        AND NOT (m->>'exclude')::jsonb ?| ARRAY['ranged', 'buff']),
-        0
+    resolved_computed_modifiers := resolve_character_computed_modifiers(
+        result.equipped_armor,
+        result.equipped_weapons,
+        result.equipment,
+        p_locale
     );
 
--- Final return
-RETURN QUERY SELECT
+    dr_to_dodge := calculate_character_dr(
+        result.agility,
+        COALESCE(result.modifiers, '[]'::jsonb) || COALESCE(resolved_computed_modifiers, '[]'::jsonb),
+        'agility',
+        ARRAY['defence']
+    );
+    dr_to_melee := calculate_character_dr(
+        result.strength,
+        COALESCE(result.modifiers, '[]'::jsonb) || COALESCE(resolved_computed_modifiers, '[]'::jsonb),
+        'strength',
+        ARRAY['melee']
+    );
+    dr_to_ranged := calculate_character_dr(
+        result.presence,
+        COALESCE(result.modifiers, '[]'::jsonb) || COALESCE(resolved_computed_modifiers, '[]'::jsonb),
+        'presence',
+        ARRAY['ranged']
+    );
+
+    RETURN QUERY
+    SELECT
         result.id,
         result.name::text,
         result.class_id,

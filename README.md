@@ -18,6 +18,17 @@ For production mode
 
 Run the test cases.
 
+## Bot Protection (Cloudflare Turnstile)
+
+This project supports free captcha protection for auth endpoints (`sign-in`, `sign-up`, `magic-link`) using Cloudflare Turnstile.
+
+Set these variables:
+
+- Backend `.env`: `TURNSTILE_SECRET_KEY=your_turnstile_secret`
+- Frontend `client/.env`: `VITE_TURNSTILE_SITE_KEY=your_turnstile_site_key`
+
+If those keys are empty, captcha validation is skipped.
+
 ## Learn More
 
 To learn Fastify, check out the [Fastify documentation](https://fastify.dev/docs/latest/).
