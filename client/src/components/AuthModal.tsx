@@ -487,7 +487,7 @@ export function AuthModal({
                             onChange={(e) => setPassword(e.target.value)}
                             fullWidth
                             required
-                            inputProps={{ minLength: 8 }}
+                            slotProps={{ htmlInput: { minLength: 8 } }}
                             helperText={t("auth.passwordHint")}
                             sx={customStyles.authModal.textFieldLast}
                         />

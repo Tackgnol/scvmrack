@@ -67,17 +67,19 @@ export function PrivacyNoticeDrawer() {
                 keepMounted: true,
                 disableEscapeKeyDown: isFirstNotice,
             }}
-            PaperProps={{
-                sx: {
-                    width: { xs: '100%', sm: PRIVACY_DRAWER_WIDTH },
-                    maxWidth: '100%',
-                    bgcolor: morkBorgColors.black,
-                    color: morkBorgColors.white,
-                    borderLeft: `4px solid ${morkBorgColors.yellow}`,
-                    p: 3,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 2,
+            slotProps={{
+                paper: {
+                    sx: {
+                        width: { xs: '100%', sm: PRIVACY_DRAWER_WIDTH },
+                        maxWidth: '100%',
+                        bgcolor: morkBorgColors.black,
+                        color: morkBorgColors.white,
+                        borderLeft: `4px solid ${morkBorgColors.yellow}`,
+                        p: 3,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 2,
+                    },
                 },
             }}
         >

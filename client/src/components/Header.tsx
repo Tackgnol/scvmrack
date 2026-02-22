@@ -157,11 +157,13 @@ export default function Header() {
                 anchor="right"
                 open={mobileMenuOpen}
                 onClose={() => setMobileMenuOpen(false)}
-                PaperProps={{
-                    sx: {
-                        ...customStyles.drawer.paper,
-                        ...customStyles.header.drawerPaper,
-                    }
+                slotProps={{
+                    paper: {
+                        sx: {
+                            ...customStyles.drawer.paper,
+                            ...customStyles.header.drawerPaper,
+                        },
+                    },
                 }}
             >
                 <Box sx={customStyles.header.drawerHeader}>
