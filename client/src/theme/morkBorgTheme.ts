@@ -1,5 +1,5 @@
 import { createTheme } from '@mui/material/styles';
-import type { MorkBorgColors, StatColorMap } from '../types';
+import type { MorkBorgColors, StatColorMap } from '@/types';
 
 // Mork Borg color palette
 export const morkBorgColors: MorkBorgColors = {
