@@ -39,7 +39,7 @@
     }
   },
   "modifiers": {
-    "title": "Active Effects",
+    "title": "Modifiers",
     "fromEquipment": "From Equipment",
     "noModifiers": "No active modifiers",
     "addModifier": "Add",
@@ -127,6 +127,7 @@
     "tierPlaceholder": "Tier: -d4",
     "effectPlaceholder": "Effect...",
     "addItem": "Add Item",
+    "addItems": "Add Items",
     "searchPlaceholder": "Search equipment...",
     "typeToSearch": "Type to search...",
     "noResults": "No equipment found",
@@ -144,7 +145,13 @@
     "abilityName": "Ability Name",
     "description": "Description",
     "noCharacterLoaded": "No Character loaded, refresh the page",
-    "traitDescription": "A {{trait1}} and {{trait2}} {{className}}"
+    "traitDescription": "A {{trait1}} and {{trait2}} {{className}}",
+    "unnamedWretch": "Unnamed Wretch",
+    "mysterious": "mysterious",
+    "unknown": "unknown",
+    "wretch": "wretch",
+    "classless": "Classless",
+    "noSpecialAbilities": "No special abilities"
   },
   "traits": {
     "title": "Traits & Afflictions",
@@ -163,11 +170,13 @@
   },
   "actions": {
     "generateNew": "Generate New",
-    "testModal": "Test Modal"
+    "testModal": "Test Modal",
+    "cancel": "Cancel"
   },
   "powers": {
     "title": "Powers",
-    "noScrollsOrPowers": "No scrolls or powers"
+    "noScrollsOrPowers": "No scrolls or powers",
+    "unknownScroll": "Unknown Scroll"
   },
   "auth": {
     "login": "Log In",
@@ -186,7 +195,20 @@
     "claimYes": "Yes, save it",
     "claimNo": "No, start fresh",
     "claimFailed": "Failed to save character. Please try again.",
-    "guestCharacterNotice": "{{characterName}} will be saved to your account after signup."
+    "guestCharacterNotice": "{{characterName}} will be saved to your account after signup.",
+    "verified": "Verified",
+    "emailNotVerified": "Your email is not verified. Check your inbox for a verification link.",
+    "verifyEmailTitle": "Check Your Email",
+    "verifyEmailDesc": "We've sent a verification link to your email. Click it to complete your registration.",
+    "characterWillBeSaved": "{{characterName}} will be saved to your account after verification.",
+    "checkEmailTitle": "Magic Link Sent",
+    "checkEmailDesc": "A magic link has been sent to your email.",
+    "tryAgain": "Back to Login",
+    "or": "OR",
+    "sendMagicLink": "Email me a Magic Link",
+    "magicLinkFailed": "Failed to send magic link. Please try again.",
+    "emailRequired": "Email is required for magic links",
+    "sessionExpired": "Your session expired. Sign in again to continue."
   },
   "session": {
     "expiresWarning": "Your guest session expires in {{days}} days. Sign up to keep your character forever!",

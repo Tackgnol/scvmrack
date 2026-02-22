@@ -1239,6 +1239,7 @@ export const customStyles = {
   // Mork Borg Modal styles
   morkBorgModal: {
     dialogPaper: {
+      gap: 3,
       bgcolor: morkBorgColors.black,
       border: `4px solid ${morkBorgColors.yellow}`,
       boxShadow: `10px 10px 0 ${morkBorgColors.pink}`,
@@ -1261,6 +1262,9 @@ export const customStyles = {
     },
     dialogContent: {
       pt: 3,
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 2,
     },
     dialogActions: {
       p: 2,
