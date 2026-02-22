@@ -11,7 +11,7 @@ import PersonIcon from "@mui/icons-material/Person";
 import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
 import SyncIcon from "@mui/icons-material/Sync";
 import {Box, Chip, Drawer, IconButton, Paper, Typography, useMediaQuery, useTheme} from "@mui/material";
-import {Link, useRouterState} from "@tanstack/react-router";
+import { useRouterState} from "@tanstack/react-router";
 import {customStyles} from "@theme/morkBorgTheme";
 import {useCallback, useEffect, useState} from "react";
 import {useTranslation} from "react-i18next";
@@ -37,7 +37,6 @@ function NavLink({to, text, onClick, fullWidth}: {
 
     return (
         <StyledNavLink
-            component={Link}
             to={to}
             onClick={onClick}
             isActive={isActive}

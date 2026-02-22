@@ -1,4 +1,5 @@
 import { Box, styled } from "@mui/material";
+import { Link } from "@tanstack/react-router";
 import { morkBorgColors, customStyles } from "@theme/morkBorgTheme";
 
 export const BoneIconContainer = styled(Box)({
@@ -47,11 +48,30 @@ interface StyledNavLinkProps {
     fullWidth?: boolean;
 }
 
-export const StyledNavLink = styled(Box, {
+export const StyledNavLink = styled(Link, {
     shouldForwardProp: (prop) => prop !== 'isActive' && prop !== 'fullWidth',
 })<StyledNavLinkProps>(({ isActive, fullWidth }) => ({
     ...customStyles.navLink.base,
     width: fullWidth ? '100%' : 100,
+    transitionProperty: 'box-shadow, color, border-color, background-color, opacity, transform',
+    transitionDuration: '320ms',
+    transitionTimingFunction: 'cubic-bezier(0.22, 1, 0.36, 1)',
+    backfaceVisibility: 'hidden',
+    opacity: isActive ? 1 : 0.93,
     ...(isActive ? customStyles.navLink.active : customStyles.navLink.inactive),
-    '&:hover': customStyles.navLink.hover,
+    '&:hover': {
+        ...customStyles.navLink.hover,
+        // Keep transform stable on hover to avoid compositing flicker.
+        transform: isActive ? customStyles.navLink.active.transform : customStyles.navLink.inactive.transform,
+        opacity: 1,
+        backgroundColor: '#151515',
+    },
+    '&:focus-visible': {
+        opacity: 1,
+        outline: `2px solid ${morkBorgColors.yellow}`,
+        outlineOffset: 2,
+    },
+    '@media (prefers-reduced-motion: reduce)': {
+        transitionDuration: '0ms',
+    },
 }));

@@ -15,11 +15,35 @@
     "encumbrance": "Encumbrance",
     "armorTier": "Armor Tier"
   },
+  "omensModal": {
+    "title": "Omens",
+    "use": "Use Omen",
+    "add": "Add Omen",
+    "rules": {
+      "maxDamage": "† Deal maximum damage with an attack",
+      "reroll": "† Reroll a dice roll (yours or someone else's)",
+      "lowerDamage": "† Lower damage dealt to you by d6",
+      "neutralize": "† Neutralize a Crit or Fumble",
+      "lowerDr": "† Lower one test's DR by -4"
+    }
+  },
+  "deathModal": {
+    "title": "It's not over...yet",
+    "rollPrompt": "Roll a d4",
+    "close": "Close",
+    "rules": {
+      "one": "1 → Fall unconscious for d4 rounds; then awaken with d4 HP.",
+      "two": "2 → Roll a d6: 1-5 = Broken or severed limb. 6 = Lost eye. Can't act for d4 rounds; then become active with d4 HP.",
+      "three": "3 → Haemorrhage: death in two hours unless treated. All tests are DR16 the first hour; then DR18 the last hour.",
+      "four": "4 → Dead. Lose one HP."
+    }
+  },
   "modifiers": {
     "title": "Active Effects",
     "fromEquipment": "From Equipment",
     "noModifiers": "No active modifiers",
     "addModifier": "Add",
+    "saveModifier": "Save",
     "name": "Name",
     "value": "Value",
     "scope": "Scope",
@@ -35,8 +59,8 @@
       "powers": "Powers only"
     },
     "exclude": {
-      "title": "Exclusions",
-      "description": "This modifier does NOT apply to:",
+      "title": "Applies To",
+      "description": "This modifier applies to:",
       "melee": "Melee attacks",
       "ranged": "Ranged attacks",
       "defence": "Defence rolls",
@@ -48,7 +72,19 @@
       "item": "Item usage"
     },
     "modal": {
-      "title": "Add Modifier"
+      "title": "Add Modifier",
+      "editTitle": "Edit Modifier"
+    },
+    "computed": {
+      "from": "From {{name}}",
+      "appliesTo": "Applies to",
+      "none": "No tests",
+      "unknownOrigin": "Unknown source",
+      "modal": {
+        "title": "Effect Details",
+        "source": "Source",
+        "effect": "Effect"
+      }
     },
     "advancedTooltip": "Advanced modifier options"
   },
@@ -188,7 +224,23 @@
     "loginRequired": "You need to be logged in to view your characters.",
     "noCharacters": "No characters yet. Create your first scvm!",
     "createFirst": "Create Character",
-    "loadError": "Failed to load characters"
+    "loadError": "Failed to load characters",
+    "columns": {
+      "name": "Name",
+      "class": "Class",
+      "hp": "HP",
+      "updated": "Updated",
+      "actions": "Actions"
+    },
+    "open": "Open",
+    "delete": "Delete",
+    "deleting": "Deleting...",
+    "creating": "Creating...",
+    "deleteConfirm": "Delete \"{{name}}\"?",
+    "deleteError": "Failed to delete character",
+    "createError": "Failed to create character",
+    "unknownClass": "Unknown",
+    "unnamed": "Unnamed Scvm"
   },
   "faq": {
     "title": "Frequently Asked Questions",

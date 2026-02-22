@@ -1,8 +1,10 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useCharacter } from "@/CharacterContext/CharacterContext.tsx";
 import { ItemSearchHit } from "@/hooks/useEquipmentSearch.ts";
+import { aggregateItems, type AggregatedItem } from "@/utils/aggregateItems";
+import AnimatedNumber from "@components/AnimatedNumber.tsx";
 import ItemAutocomplete from "@components/ItemAutocomplete.tsx";
-import { Box, Modal, Paper, TextField, Typography, Button } from '@mui/material';
+import { Box, Modal, Paper, TextField, Typography, Button, Grow } from '@mui/material';
 import {  customStyles } from '../theme/morkBorgTheme';
 import { useTranslation } from 'react-i18next';
 
@@ -17,50 +19,14 @@ type EquipmentItem = {
     tags?: string[];
 };
 
-type AggregatedItem = {
-    item: EquipmentItem;
-    indices: number[];
-    quantity: number;
-};
-
 interface ItemSlotProps {
-    aggregated: AggregatedItem;
+    aggregated: AggregatedItem<EquipmentItem>;
     onUpdate: (indices: number[], updated: EquipmentItem) => void;
     onDelete: (indices: number[]) => void;
     onMove: (indices: number[]) => void;
     onAdjustQuantity: (item: EquipmentItem, newTotal: number, currentIndices: number[]) => void;
     location: 'equipment' | 'storage';
 }
-
-// --- Utilities ---
-
-const aggregateItems = (items: (EquipmentItem | null)[]): AggregatedItem[] => {
-    const groups: Map<string, AggregatedItem> = new Map();
-
-    items.forEach((item, index) => {
-        if (!item) return;
-        const groupKey = (item.name || 'Unknown').toLowerCase();
-        const existing = groups.get(groupKey);
-
-        if (existing) {
-            existing.indices.push(index);
-            existing.quantity += 1;
-            if (item.comments && !existing.item.comments?.includes(item.comments)) {
-                existing.item.comments = existing.item.comments
-                    ? `${existing.item.comments}\n${item.comments}`
-                    : item.comments;
-            }
-        } else {
-            groups.set(groupKey, {
-                item: { ...item },
-                indices: [index],
-                quantity: 1,
-            });
-        }
-    });
-
-    return Array.from(groups.values());
-};
 
 // --- Components ---
 
@@ -84,6 +50,7 @@ function ItemSlot({
     const [editDescription, setEditDescription] = useState(item.description ?? '');
     const [editComments, setEditComments] = useState(item.comments ?? '');
     const [localQuantity, setLocalQuantity] = useState(quantity);
+    const quantityCacheKey = `${location}:${item.key ?? item.name ?? 'item'}:${indices[0] ?? 0}`;
 
     // Sync state whenever the modal opens or the underlying data changes
     useEffect(() => {
@@ -102,15 +69,26 @@ function ItemSlot({
     const isWeaponOrShield = tags.includes('weapon') || tags.includes('shield');
 
     const handleSave = () => {
-        if (localQuantity !== quantity) {
-            onAdjustQuantity(item, localQuantity, indices);
-        }
-        onUpdate(indices, {
+        const updatedItem: EquipmentItem = {
             ...item,
             name: editName,
             description: editDescription,
             comments: editComments,
-        });
+        };
+
+        if (localQuantity !== quantity) {
+            // Adjust quantity first using the edited item as template.
+            onAdjustQuantity(updatedItem, localQuantity, indices);
+        }
+
+        // Only update indices that should still exist after quantity change.
+        const retainedCount = Math.min(indices.length, localQuantity);
+        const retainedIndices = indices.slice(0, retainedCount);
+
+        if (retainedIndices.length > 0) {
+            onUpdate(retainedIndices, updatedItem);
+        }
+
         setIsModalOpen(false);
     };
 
@@ -126,9 +104,12 @@ function ItemSlot({
     return (
         <>
             <Box onClick={() => setIsModalOpen(true)} sx={customStyles.inventorySection.itemSlot}>
-                {quantity > 1 && (
-                    <Box sx={quantityBadgeStyle}>{quantity}×</Box>
-                )}
+                <Grow in={quantity > 1} mountOnEnter unmountOnExit timeout={{enter: 180, exit: 120}}>
+                    <Box sx={quantityBadgeStyle}>
+                        <AnimatedNumber value={quantity} cacheKey={`${quantityCacheKey}:slot`} durationMs={220} />
+                        ×
+                    </Box>
+                </Grow>
 
                 <Box sx={customStyles.inventorySection.itemContent}>
                     <Typography variant="h6" sx={customStyles.inventorySection.itemName}>
@@ -164,7 +145,9 @@ function ItemSlot({
                             </Typography>
                             <Box sx={customStyles.inventorySection.quantityControls}>
                                 <Button onClick={() => setLocalQuantity(Math.max(1, localQuantity - 1))} sx={counterBtnStyle}>−</Button>
-                                <Typography sx={customStyles.inventorySection.quantityNumber}>{localQuantity}</Typography>
+                                <Typography sx={customStyles.inventorySection.quantityNumber}>
+                                    <AnimatedNumber value={localQuantity} cacheKey={`${quantityCacheKey}:modal`} durationMs={220} />
+                                </Typography>
                                 <Button onClick={() => setLocalQuantity(localQuantity + 1)} sx={counterBtnStyle}>+</Button>
                             </Box>
                         </Box>

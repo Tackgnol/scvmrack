@@ -15,11 +15,35 @@
     "encumbrance": "Obciążenie",
     "armorTier": "Poziom Pancerza"
   },
+  "omensModal": {
+    "title": "Omeny",
+    "use": "Użyj Omenu",
+    "add": "Dodaj Omen",
+    "rules": {
+      "maxDamage": "† Zadaj maksymalne obrażenia atakiem",
+      "reroll": "† Przerzuć rzut kością (swój lub czyjś)",
+      "lowerDamage": "† Zmniejsz obrażenia zadane tobie o d6",
+      "neutralize": "† Zneutralizuj Krytyk lub Fumble",
+      "lowerDr": "† Obniż DR jednego testu o -4"
+    }
+  },
+  "deathModal": {
+    "title": "To jeszcze nie koniec...",
+    "rollPrompt": "Rzuć d4",
+    "close": "Zamknij",
+    "rules": {
+      "one": "1 → Tracisz przytomność na d4 rund; potem budzisz się z d4 PŻ.",
+      "two": "2 → Rzuć d6: 1-5 = Złamana lub odcięta kończyna. 6 = Utracone oko. Nie możesz działać przez d4 rundy; potem wracasz z d4 PŻ.",
+      "three": "3 → Krwotok: śmierć w ciągu dwóch godzin, jeśli nikt cię nie opatrzy. Wszystkie testy mają DR16 przez pierwszą godzinę, potem DR18 przez ostatnią.",
+      "four": "4 → Martwy. Tracisz 1 PŻ."
+    }
+  },
   "modifiers": {
     "title": "Aktywne Efekty",
     "fromEquipment": "Z Wyposażenia",
     "noModifiers": "Brak aktywnych modyfikatorów",
     "addModifier": "Dodaj",
+    "saveModifier": "Zapisz",
     "name": "Nazwa",
     "value": "Wartość",
     "comment": "Komentarz",
@@ -35,8 +59,8 @@
       "powers": "Tylko moce"
     },
     "exclude": {
-      "title": "Wykluczenia",
-      "description": "Gdzie ten modyfikator obowiązuje:",
+      "title": "Zastosowanie",
+      "description": "Gdzie ten modyfikator ma zastosowanie:",
       "melee": "Ataki wręcz",
       "ranged": "Ataki dystansowe",
       "defence": "Testy obrony",
@@ -48,7 +72,19 @@
       "item": "Użycie przedmiotów"
     },
     "modal": {
-      "title": "Dodaj Modyfikator"
+      "title": "Dodaj Modyfikator",
+      "editTitle": "Edytuj Modyfikator"
+    },
+    "computed": {
+      "from": "Źródło: {{name}}",
+      "appliesTo": "Dotyczy",
+      "none": "Nie dotyczy żadnych testów",
+      "unknownOrigin": "Nieznane źródło",
+      "modal": {
+        "title": "Szczegóły Efektu",
+        "source": "Źródło",
+        "effect": "Efekt"
+      }
     },
     "advancedTooltip": "Zaawansowane opcje modyfikatora"
   },
@@ -184,7 +220,23 @@
     "loginRequired": "Musisz być zalogowany, aby zobaczyć swoje postacie.",
     "noCharacters": "Nie masz jeszcze żadnych postaci. Stwórz swojego pierwszego scvma!",
     "createFirst": "Stwórz Postać",
-    "loadError": "Nie udało się załadować postaci"
+    "loadError": "Nie udało się załadować postaci",
+    "columns": {
+      "name": "Imię",
+      "class": "Klasa",
+      "hp": "PŻ",
+      "updated": "Aktualizacja",
+      "actions": "Akcje"
+    },
+    "open": "Otwórz",
+    "delete": "Usuń",
+    "deleting": "Usuwanie...",
+    "creating": "Tworzenie...",
+    "deleteConfirm": "Usunąć „{{name}}”?",
+    "deleteError": "Nie udało się usunąć postaci",
+    "createError": "Nie udało się utworzyć postaci",
+    "unknownClass": "Nieznana",
+    "unnamed": "Bezimienny Scvm"
   },
   "faq": {
     "title": "Często Zadawane Pytania",

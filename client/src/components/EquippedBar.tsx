@@ -1,4 +1,5 @@
 import {useCharacter} from "@/CharacterContext/CharacterContext.tsx";
+import { aggregateItems } from "@/utils/aggregateItems";
 import {Box, Divider, Menu, MenuItem, Typography} from '@mui/material';
 import {MouseEvent, useMemo, useState} from 'react';
 import {useTranslation} from 'react-i18next';
@@ -65,18 +66,30 @@ export default function EquippedBar() {
     // 1. Data Selectors - We map inventory to include original index for the hooks
     const inventory = character?.equipment || [];
 
-    const inventoryWeapons = useMemo(() =>
-            inventory
-                .map((item, index) => ({item, index}))
-                .filter(entry => entry.item.tags?.includes('weapon')),
-        [inventory]
+    const groupedInventory = useMemo(() => aggregateItems(inventory), [inventory]);
+
+    const inventoryWeapons = useMemo(
+        () =>
+            groupedInventory
+                .filter((entry) => entry.item.tags?.includes('weapon'))
+                .map((entry) => ({
+                    item: entry.item,
+                    index: entry.indices[0],
+                    quantity: entry.quantity,
+                })),
+        [groupedInventory]
     );
 
-    const inventoryArmor = useMemo(() =>
-            inventory
-                .map((item, index) => ({item, index}))
-                .filter(entry => entry.item.tags?.includes('armor')),
-        [inventory]
+    const inventoryArmor = useMemo(
+        () =>
+            groupedInventory
+                .filter((entry) => entry.item.tags?.includes('armor'))
+                .map((entry) => ({
+                    item: entry.item,
+                    index: entry.indices[0],
+                    quantity: entry.quantity,
+                })),
+        [groupedInventory]
     );
 
     const equippedWeapons = character?.equipped_weapons || [null, null];
@@ -153,9 +166,11 @@ export default function EquippedBar() {
                 {inventoryWeapons.length !== 0 && <Divider sx={customStyles.equippedBar.menuDivider}/>}
 
 
-                {inventoryWeapons.map(({item, index}) => (
+                {inventoryWeapons.map(({item, index, quantity}) => (
                     <MenuItem key={`${item.key}-${index}`} onClick={() => handleSelectWeapon(index)} sx={menuItemStyle}>
-                        <Typography sx={customStyles.equippedBar.menuItemName}>{item.name}</Typography>
+                        <Typography sx={customStyles.equippedBar.menuItemName}>
+                            {item.name} {quantity > 1 ? `x${quantity}` : ''}
+                        </Typography>
                         <Typography variant="caption" sx={customStyles.equippedBar.menuItemDescription}>{item.description}</Typography>
                     </MenuItem>
                 ))}
@@ -177,12 +192,14 @@ export default function EquippedBar() {
                     </MenuItem>
                 )}
 
-                {inventoryWeapons.length !== 0 && <Divider sx={customStyles.equippedBar.menuDivider}/>}
+                {inventoryArmor.length !== 0 && <Divider sx={customStyles.equippedBar.menuDivider}/>}
 
 
-                {inventoryArmor.map(({item, index}) => (
+                {inventoryArmor.map(({item, index, quantity}) => (
                     <MenuItem key={`${item.key}-${index}`} onClick={() => handleSelectArmor(index)} sx={menuItemStyle}>
-                        <Typography sx={customStyles.equippedBar.menuItemName}>{item.name}</Typography>
+                        <Typography sx={customStyles.equippedBar.menuItemName}>
+                            {item.name} {quantity > 1 ? `x${quantity}` : ''}
+                        </Typography>
                         <Typography variant="caption" sx={customStyles.equippedBar.menuItemDescription}>{item.description}</Typography>
                     </MenuItem>
                 ))}

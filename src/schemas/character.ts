@@ -126,7 +126,7 @@ const ComputedModifierSchemaDefs = {
         source: {type: 'string', maxLength: 255},
         statistic: {type: 'string', enum: ['agility', 'strength', 'presence', 'toughness']},
         exclude: {type: 'array', items: {type: 'string', maxLength: 50}, maxItems: 15},
-        origin: {type: 'string', enum: ['armor', 'weapon', 'pet']},
+        origin: {type: 'string', enum: ['armor', 'weapon', 'pet', 'system']},
         origin_key: {type: 'string', maxLength: 255},
         origin_name: {type: 'string', maxLength: 255}
     }
@@ -222,6 +222,8 @@ export const CharacterSchema = {
         equipped_armor: {oneOf: [ArmorSchema, {type: 'null'}]},
         modifiers: {type: 'array', items: ModifierSchema},
         computed_modifiers: {type: 'array', items: ComputedModifierSchema},
+        encumbrance: {type: 'integer'},
+        max_encumbrance: {type: 'integer'},
         dr_to_dodge: {type: 'integer'},
         dr_to_melee: {type: 'integer'},
         dr_to_ranged: {type: 'integer'},

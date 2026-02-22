@@ -389,6 +389,8 @@ export interface paths {
                                 origin_key?: string;
                                 origin_name?: string;
                             }[];
+                            encumbrance?: number;
+                            max_encumbrance?: number;
                             /** Format: date-time */
                             created_at?: string;
                             /** Format: date-time */
@@ -538,6 +540,8 @@ export interface paths {
                                 origin_key?: string;
                                 origin_name?: string;
                             }[];
+                            encumbrance?: number;
+                            max_encumbrance?: number;
                             /** Format: date-time */
                             created_at?: string;
                             /** Format: date-time */
@@ -838,6 +842,8 @@ export interface paths {
                                 origin_key?: string;
                                 origin_name?: string;
                             }[];
+                            encumbrance?: number;
+                            max_encumbrance?: number;
                             /** Format: date-time */
                             created_at?: string;
                             /** Format: date-time */
@@ -1107,6 +1113,8 @@ export interface paths {
                                 origin_key?: string;
                                 origin_name?: string;
                             }[];
+                            encumbrance?: number;
+                            max_encumbrance?: number;
                             /** Format: date-time */
                             created_at?: string;
                             /** Format: date-time */
@@ -1324,7 +1332,8 @@ export enum PathsCharactersNewPostResponses201ContentApplicationJsonComputed_mod
 export enum PathsCharactersNewPostResponses201ContentApplicationJsonComputed_modifiersOrigin {
     armor = "armor",
     weapon = "weapon",
-    pet = "pet"
+    pet = "pet",
+    system = "system"
 }
 export enum PathsCharactersIdGetParametersQueryLocale {
     en = "en",
@@ -1345,7 +1354,8 @@ export enum PathsCharactersIdGetResponses200ContentApplicationJsonComputed_modif
 export enum PathsCharactersIdGetResponses200ContentApplicationJsonComputed_modifiersOrigin {
     armor = "armor",
     weapon = "weapon",
-    pet = "pet"
+    pet = "pet",
+    system = "system"
 }
 export enum PathsCharactersIdPatchParametersQueryLocale {
     en = "en",
@@ -1372,7 +1382,8 @@ export enum PathsCharactersIdPatchResponses200ContentApplicationJsonComputed_mod
 export enum PathsCharactersIdPatchResponses200ContentApplicationJsonComputed_modifiersOrigin {
     armor = "armor",
     weapon = "weapon",
-    pet = "pet"
+    pet = "pet",
+    system = "system"
 }
 export enum PathsCharactersGetResponses200ContentApplicationJsonModifiersStatistic {
     agility = "agility",
@@ -1389,6 +1400,7 @@ export enum PathsCharactersGetResponses200ContentApplicationJsonComputed_modifie
 export enum PathsCharactersGetResponses200ContentApplicationJsonComputed_modifiersOrigin {
     armor = "armor",
     weapon = "weapon",
-    pet = "pet"
+    pet = "pet",
+    system = "system"
 }
 export type operations = Record<string, never>;

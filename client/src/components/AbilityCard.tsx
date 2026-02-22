@@ -4,23 +4,14 @@ import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
 import { customStyles } from '../theme/morkBorgTheme';
 import {useTranslation} from 'react-i18next';
+import {statToModifier} from "@/utils/stats.ts";
+import AnimatedNumber from './AnimatedNumber';
 
 type AbilityName = 'agility' | 'presence' | 'strength' | 'toughness';
 
 interface AbilityCardProps {
     ability: AbilityName;
     rotate?: number;
-}
-
-// Convert raw stat (3-18) to modifier (-3 to +3)
-function statToModifier(stat: number): number {
-    if (stat <= 4) return -3;
-    if (stat <= 6) return -2;
-    if (stat <= 8) return -1;
-    if (stat <= 12) return 0;
-    if (stat <= 14) return 1;
-    if (stat <= 16) return 2;
-    return 3;
 }
 
 export default function AbilityCard({ability, rotate = 0}: AbilityCardProps) {
@@ -35,7 +26,7 @@ export default function AbilityCard({ability, rotate = 0}: AbilityCardProps) {
     const desc = t(`attributes.${ability}Desc`);
 
     const modifier = statToModifier(value);
-    const modifierStr = modifier >= 0 ? `+${modifier}` : `${modifier}`;
+    const characterKey = character?.id ?? 'unknown';
 
     const adjustAbility = (delta: number) => {
         const newValue = Math.max(1, Math.min(20, value + delta));
@@ -78,7 +69,15 @@ export default function AbilityCard({ability, rotate = 0}: AbilityCardProps) {
             </Box>
 
             <Typography variant="h4" sx={customStyles.abilityCard.modifier}>
-                {modifierStr}
+                <AnimatedNumber
+                    value={modifier}
+                    cacheKey={`${characterKey}:ability:${ability}:modifier`}
+                    durationMs={260}
+                    format={(next) => {
+                        const rounded = Math.round(next);
+                        return rounded >= 0 ? `+${rounded}` : `${rounded}`;
+                    }}
+                />
             </Typography>
 
             <Typography variant="body2" sx={customStyles.abilityCardTwo.description}>

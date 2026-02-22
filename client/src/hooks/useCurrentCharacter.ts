@@ -21,6 +21,15 @@ const getLoggedOutSnapshot = (): boolean => {
     return hasCurrentSearchParam(LOGGED_OUT_QUERY_PARAM);
 };
 
+const getPathnameSnapshot = (): string => {
+    return appHistory.location.pathname;
+};
+
+type GenerateNewOptions = {
+    onSuccess?: (newCharacterId: string) => void;
+    onError?: (error: unknown) => void;
+};
+
 export function useCurrentCharacter() {
     const { characterId, setCharacterId } = useCharacterId();
     const { i18n: { changeLanguage, language: locale } } = useTranslation();
@@ -31,6 +40,11 @@ export function useCurrentCharacter() {
         subscribeToHistory,
         getLoggedOutSnapshot,
         () => false
+    );
+    const pathname = useSyncExternalStore(
+        subscribeToHistory,
+        getPathnameSnapshot,
+        () => '/'
     );
 
     // Auth state
@@ -53,13 +67,15 @@ export function useCurrentCharacter() {
 
     // ---- Auto-create character if none exists (original logic) ----
     useEffect(() => {
+        if (pathname !== '/') return;
+
         if (!characterId && !repo.createCharacter.isPending && !isJustLoggedOut) {
             repo.createCharacter.mutate({
                 body: {},
                 params: { query: { locale: trimmedLocale } }
             });
         }
-    }, [characterId, repo.createCharacter, trimmedLocale, isJustLoggedOut]);
+    }, [characterId, repo.createCharacter, trimmedLocale, isJustLoggedOut, pathname]);
 
     // ---- Set characterId when character is created (original logic) ----
     useEffect(() => {
@@ -71,7 +87,7 @@ export function useCurrentCharacter() {
 
     // ---- Generate new character (original logic) ----
     const generateNewCharacter = useCallback(
-        (classId?: number) => {
+        (classId?: number, options?: GenerateNewOptions) => {
             editor.flush();
             const id = classId ?? Math.floor(Math.random() * (6 - 1 + 1)) + 1;
 
@@ -79,7 +95,11 @@ export function useCurrentCharacter() {
                 body: { class_id: id },
                 params: { query: { locale: trimmedLocale } }
             }, {
-                onSuccess: () => {
+                onSuccess: (character) => {
+                    if (character?.id) {
+                        setCharacterId(character.id);
+                        options?.onSuccess?.(character.id);
+                    }
                     trackEvent('generate_character', {
                         source: 'manual',
                         locale: trimmedLocale,
@@ -88,9 +108,12 @@ export function useCurrentCharacter() {
                         is_guest: isGuest,
                     });
                 },
+                onError: (error) => {
+                    options?.onError?.(error);
+                },
             });
         },
-        [editor, repo.createCharacter, trimmedLocale, isAuthenticated, isGuest]
+        [editor, repo.createCharacter, trimmedLocale, isAuthenticated, isGuest, setCharacterId]
     );
 
     // ---- Change locale (original logic) ----
