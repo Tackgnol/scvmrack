@@ -7,7 +7,6 @@ import {
     Box,
     Button,
     Chip,
-    Grow,
     Dialog,
     DialogActions,
     DialogContent,
@@ -22,6 +21,7 @@ import {
     Typography,
     Checkbox,
 } from '@mui/material';
+import {AnimatePresence, motion, useReducedMotion} from 'motion/react';
 import {type ChangeEvent, useEffect, useRef, useState} from 'react';
 import {useTranslation} from 'react-i18next';
 import {morkBorgColors} from '../theme/morkBorgTheme';
@@ -271,6 +271,8 @@ function ComputedModifierTag({
 export default function ModifiersPanel() {
     const {character, addModifier, removeModifier, updateModifier} = useCharacter();
     const {t} = useTranslation();
+    const prefersReducedMotion = Boolean(useReducedMotion());
+    const REMOVE_ANIMATION_MS = 220;
 
     // Quick form state
     const [name, setName] = useState('');
@@ -421,7 +423,7 @@ export default function ModifiersPanel() {
             removeModifier(modifierId);
             setRemovingModifierIds(prev => prev.filter(id => id !== modifierId));
             removeTimeoutsRef.current = removeTimeoutsRef.current.filter(id => id !== timeoutId);
-        }, 180);
+        }, REMOVE_ANIMATION_MS);
 
         removeTimeoutsRef.current.push(timeoutId);
     };
@@ -448,6 +450,17 @@ export default function ModifiersPanel() {
     const computedStatisticLabel = (selectedComputedModifier?.statistic ?? 'agility').toUpperCase();
     const computedEffectText = selectedComputedModifier?.source ?? '';
     const isEditingModal = editingModifierId !== null;
+    const tileInitial = prefersReducedMotion ? false : {opacity: 0, y: 8, scale: 0.98};
+    const tileAnimate = {opacity: 1, y: 0, scale: 1};
+    const tileExit = prefersReducedMotion ? {opacity: 0} : {opacity: 0, y: 8, scale: 0.96};
+    const tileTransition = prefersReducedMotion
+        ? {duration: 0}
+        : {
+            layout: {type: 'spring', stiffness: 460, damping: 36, mass: 0.42},
+            opacity: {duration: 0.16, ease: 'easeOut'},
+            scale: {duration: 0.16, ease: 'easeOut'},
+            y: {type: 'spring', stiffness: 520, damping: 34, mass: 0.38},
+        };
     type BentoSize = 'short' | 'medium' | 'full';
     type BentoTileSpan = {col: 2 | 3 | 6; row: 1 | 2; full: boolean};
     const resolveBentoSize = (nameLength: number): BentoSize => {
@@ -505,12 +518,21 @@ export default function ModifiersPanel() {
                             gap: 1,
                         }}
                     >
-                        {computedModifiers.map((mod, idx) => {
-                            const nameLength = (mod.origin_name ?? '').trim().length;
-                            const tileSpan = getBentoTileSpan(nameLength);
-                            return (
-                                <Grow key={`${mod.origin_key ?? idx}-${idx}`} in timeout={{enter: 180}}>
+                        <AnimatePresence initial={false}>
+                            {computedModifiers.map((mod, idx) => {
+                                const nameLength = (mod.origin_name ?? '').trim().length;
+                                const tileSpan = getBentoTileSpan(nameLength);
+                                const computedKey = mod.origin_key ?? `${mod.origin_name ?? 'computed'}-${mod.statistic ?? 'agility'}-${mod.value ?? 0}-${idx}`;
+
+                                return (
                                     <Box
+                                        key={computedKey}
+                                        component={motion.div}
+                                        layout={!prefersReducedMotion}
+                                        initial={tileInitial}
+                                        animate={tileAnimate}
+                                        exit={tileExit}
+                                        transition={tileTransition}
                                         sx={{
                                             minWidth: 0,
                                             gridColumn: {xs: 'span 1', sm: `span ${tileSpan.col}`},
@@ -523,9 +545,9 @@ export default function ModifiersPanel() {
                                             isFull={tileSpan.full}
                                         />
                                     </Box>
-                                </Grow>
-                            );
-                        })}
+                                );
+                            })}
+                        </AnimatePresence>
                     </Box>
                 </Box>
             )}
@@ -547,15 +569,24 @@ export default function ModifiersPanel() {
                         {t('modifiers.noModifiers')}
                     </Typography>
                 ) : (
-                    customModifiers.map((mod, idx) => {
-                        const key = mod.id ?? `modifier-${idx}`;
-                        const isRemoving = mod.id ? removingModifierIds.includes(mod.id) : false;
-                        const nameLength = (mod.name ?? '').trim().length;
-                        const tileSpan = getBentoTileSpan(nameLength);
+                    <AnimatePresence initial={false} mode="popLayout">
+                        {customModifiers.map((mod, idx) => {
+                            const key = mod.id ?? `modifier-${idx}`;
+                            const isRemoving = mod.id ? removingModifierIds.includes(mod.id) : false;
+                            const nameLength = (mod.name ?? '').trim().length;
+                            const tileSpan = getBentoTileSpan(nameLength);
 
-                        return (
-                            <Grow key={key} in={!isRemoving} timeout={{enter: 180, exit: 180}}>
+                            if (isRemoving) return null;
+
+                            return (
                                 <Box
+                                    key={key}
+                                    component={motion.div}
+                                    layout={!prefersReducedMotion}
+                                    initial={tileInitial}
+                                    animate={tileAnimate}
+                                    exit={tileExit}
+                                    transition={tileTransition}
                                     sx={{
                                         minWidth: 0,
                                         gridColumn: {xs: 'span 1', sm: `span ${tileSpan.col}`},
@@ -569,9 +600,9 @@ export default function ModifiersPanel() {
                                         isFull={tileSpan.full}
                                     />
                                 </Box>
-                            </Grow>
-                        );
-                    })
+                            );
+                        })}
+                    </AnimatePresence>
                 )}
             </Box>
 
