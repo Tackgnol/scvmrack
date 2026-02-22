@@ -39,7 +39,7 @@
     }
   },
   "modifiers": {
-    "title": "Aktywne Efekty",
+    "title": "Modyfikatory",
     "fromEquipment": "Z Wyposażenia",
     "noModifiers": "Brak aktywnych modyfikatorów",
     "addModifier": "Dodaj",
@@ -112,6 +112,8 @@
     "itemName": "Nazwa Przedmiotu",
     "quantity": "Ilość",
     "backpack": "Plecak",
+    "moveToStorage": "→ Do Schowka",
+    "moveToOnHand": "→ Pod Rękę",
     "sell": "Sprzedaj +{{amount}}",
     "drop": "Wyrzuć",
     "save": "Zapisz",
@@ -125,6 +127,7 @@
     "tierPlaceholder": "Poziom: -d4",
     "effectPlaceholder": "Efekt...",
     "addItem": "Dodaj Przedmiot",
+    "addItems": "Dodaj Przedmioty",
     "searchPlaceholder": "Szukaj wyposażenia...",
     "typeToSearch": "Pisz aby szukać...",
     "noResults": "Nie znaleziono przedmiotów",
@@ -142,7 +145,13 @@
     "abilityName": "Nazwa Zdolności",
     "description": "Opis",
     "noCharacterLoaded": "Nie udało się załadować postaci",
-    "traitDescription": "{{trait1}} i {{trait2}} {{className}}"
+    "traitDescription": "{{trait1}} i {{trait2}} {{className}}",
+    "unnamedWretch": "Bezimienny nieszczęśnik",
+    "mysterious": "tajemniczy",
+    "unknown": "nieznany",
+    "wretch": "nieszczęśnik",
+    "classless": "Bez klasy",
+    "noSpecialAbilities": "Brak specjalnych zdolności"
   },
   "traits": {
     "title": "Cechy i Dolegliwości",
@@ -161,11 +170,13 @@
   },
   "actions": {
     "generateNew": "Generuj Nową",
-    "testModal": "Testuj Modal"
+    "testModal": "Testuj Modal",
+    "cancel": "Anuluj"
   },
   "powers": {
     "title": "Moce",
-    "noScrollsOrPowers": "Brak zwojów i mocy"
+    "noScrollsOrPowers": "Brak zwojów i mocy",
+    "unknownScroll": "Nieznany Zwój"
   },
   "auth": {
     "login": "Zaloguj",
@@ -184,7 +195,20 @@
     "claimYes": "Tak, zapisz",
     "claimNo": "Nie, zacznij od nowa",
     "claimFailed": "Nie udało się zapisać postaci. Spróbuj ponownie.",
-    "guestCharacterNotice": "{{characterName}} zostanie zapisana na Twoim koncie po rejestracji."
+    "guestCharacterNotice": "{{characterName}} zostanie zapisana na Twoim koncie po rejestracji.",
+    "verified": "Zweryfikowany",
+    "emailNotVerified": "Twój email nie jest zweryfikowany. Sprawdź skrzynkę, aby znaleźć link weryfikacyjny.",
+    "verifyEmailTitle": "Sprawdź Email",
+    "verifyEmailDesc": "Wysłaliśmy link weryfikacyjny na Twój email. Kliknij go, aby dokończyć rejestrację.",
+    "characterWillBeSaved": "{{characterName}} zostanie zapisany na Twoim koncie po weryfikacji.",
+    "checkEmailTitle": "Link Wysłany",
+    "checkEmailDesc": "Magiczny link został wysłany na Twój email.",
+    "tryAgain": "Wróć do logowania",
+    "or": "LUB",
+    "sendMagicLink": "Wyślij mi magiczny link",
+    "magicLinkFailed": "Nie udało się wysłać magicznego linku. Spróbuj ponownie.",
+    "emailRequired": "Email jest wymagany do magicznego linku",
+    "sessionExpired": "Twoja sesja wygasła. Zaloguj się ponownie, aby kontynuować."
   },
   "session": {
     "expiresWarning": "Twoja sesja gościa wygasa za {{days}} dni. Zarejestruj się, aby zachować postać na zawsze!",
@@ -207,7 +231,9 @@
   "common": {
     "close": "Zamknij",
     "back": "Wróć",
-    "backToHome": "Powrót do strony głównej"
+    "backToHome": "Powrót do strony głównej",
+    "cancel": "Anuluj",
+    "apply": "Zastosuj"
   },
   "nav": {
     "home": "Karta",

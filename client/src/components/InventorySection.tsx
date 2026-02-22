@@ -1,272 +1,475 @@
-import { useState, useMemo, useEffect } from 'react';
-import { useCharacter } from "@/CharacterContext/CharacterContext.tsx";
-import { ItemSearchHit } from "@/hooks/useEquipmentSearch.ts";
-import { aggregateItems, type AggregatedItem } from "@/utils/aggregateItems";
-import AnimatedNumber from "@components/AnimatedNumber.tsx";
-import ItemAutocomplete from "@components/ItemAutocomplete.tsx";
-import { Box, Modal, Paper, TextField, Typography, Button, Grow } from '@mui/material';
-import {  customStyles } from '../theme/morkBorgTheme';
+import { useEffect, useMemo, useState } from 'react';
+import { useCharacter } from '@/CharacterContext/CharacterContext.tsx';
+import { ItemSearchHit } from '@/hooks/useEquipmentSearch.ts';
+import { aggregateItems, type AggregatedItem } from '@/utils/aggregateItems';
+import AnimatedNumber from '@components/AnimatedNumber.tsx';
+import ItemAutocomplete from '@components/ItemAutocomplete.tsx';
+import { Box, Button, Grow, Paper, TextField, Typography } from '@mui/material';
+import { customStyles } from '../theme/morkBorgTheme';
 import { useTranslation } from 'react-i18next';
+import MorkBorgModal from './MorkBorgModal';
 
 // --- Types ---
 
 type EquipmentItem = {
-    name?: string;
-    description?: string;
-    key?: string;
-    uses?: boolean[];
-    comments?: string;
-    tags?: string[];
+  name?: string;
+  description?: string;
+  key?: string;
+  uses?: boolean[];
+  comments?: string;
+  tags?: string[];
 };
 
+type InventoryLocation = 'equipment' | 'storage';
+
 interface ItemSlotProps {
-    aggregated: AggregatedItem<EquipmentItem>;
-    onUpdate: (indices: number[], updated: EquipmentItem) => void;
-    onDelete: (indices: number[]) => void;
-    onMove: (indices: number[]) => void;
-    onAdjustQuantity: (item: EquipmentItem, newTotal: number, currentIndices: number[]) => void;
-    location: 'equipment' | 'storage';
+  aggregated: AggregatedItem<EquipmentItem>;
+  location: InventoryLocation;
+  onOpenEditor: (aggregated: AggregatedItem<EquipmentItem>) => void;
+}
+
+interface InventoryItemEditorModalProps {
+  open: boolean;
+  aggregated: AggregatedItem<EquipmentItem> | null;
+  location: InventoryLocation;
+  onClose: () => void;
+  onUpdate: (indices: number[], updated: EquipmentItem) => void;
+  onDelete: (indices: number[]) => void;
+  onMove: (indices: number[]) => void;
+  onAdjustQuantity: (
+    item: EquipmentItem,
+    newTotal: number,
+    currentIndices: number[]
+  ) => void;
+}
+
+function buildAggregateKey(aggregated: AggregatedItem<EquipmentItem>): string {
+  const namePart = (aggregated.item.name ?? 'item').toLowerCase();
+  const firstIndex = aggregated.indices[0] ?? 0;
+  return `${namePart}-${firstIndex}`;
 }
 
 // --- Components ---
 
-function ItemSlot({
-                      aggregated,
-                      onUpdate,
-                      onDelete,
-                      onMove,
-                      onAdjustQuantity,
-                      location
-                  }: ItemSlotProps) {
-    const { t } = useTranslation();
-    const { item, indices, quantity } = aggregated;
-    const isOnHand = location === 'equipment';
-    const moveLabel = isOnHand ? t('equipment.moveToStorage') : t('equipment.moveToOnHand');
+function ItemSlot({ aggregated, location, onOpenEditor }: ItemSlotProps) {
+  const { item, indices, quantity } = aggregated;
+  const quantityCacheKey = `${location}:${item.key ?? item.name ?? 'item'}:${indices[0] ?? 0}`;
 
-    const [isModalOpen, setIsModalOpen] = useState(false);
+  return (
+    <Box
+      onClick={() => onOpenEditor(aggregated)}
+      sx={customStyles.inventorySection.itemSlot}
+    >
+      <Grow
+        in={quantity > 1}
+        mountOnEnter
+        unmountOnExit
+        timeout={{ enter: 180, exit: 120 }}
+      >
+        <Box sx={quantityBadgeStyle}>
+          <AnimatedNumber
+            value={quantity}
+            cacheKey={`${quantityCacheKey}:slot`}
+            durationMs={220}
+          />
+          ×
+        </Box>
+      </Grow>
 
-    // Local state for the form
-    const [editName, setEditName] = useState(item.name ?? '');
-    const [editDescription, setEditDescription] = useState(item.description ?? '');
-    const [editComments, setEditComments] = useState(item.comments ?? '');
-    const [localQuantity, setLocalQuantity] = useState(quantity);
-    const quantityCacheKey = `${location}:${item.key ?? item.name ?? 'item'}:${indices[0] ?? 0}`;
+      <Box sx={customStyles.inventorySection.itemContent}>
+        <Typography variant="h6" sx={customStyles.inventorySection.itemName}>
+          {item.name}
+        </Typography>
+        {item.description && (
+          <Typography
+            variant="body2"
+            sx={customStyles.inventorySection.itemDescription}
+          >
+            {item.description}
+          </Typography>
+        )}
+      </Box>
+    </Box>
+  );
+}
 
-    // Sync state whenever the modal opens or the underlying data changes
-    useEffect(() => {
-        if (isModalOpen) {
-            setEditName(item.name ?? '');
-            setEditDescription(item.description ?? '');
-            setEditComments(item.comments ?? '');
-            setLocalQuantity(quantity);
-        }
-    }, [isModalOpen, item, quantity]);
+function InventoryItemEditorModal({
+  open,
+  aggregated,
+  location,
+  onClose,
+  onUpdate,
+  onDelete,
+  onMove,
+  onAdjustQuantity,
+}: InventoryItemEditorModalProps) {
+  const { t } = useTranslation();
+  const { character, updateField, equipWeapon, equipArmor } = useCharacter();
 
-    const { character, updateField, equipWeapon, equipArmor } = useCharacter();
+  const item = aggregated?.item;
+  const indices = aggregated?.indices ?? [];
+  const quantity = aggregated?.quantity ?? 1;
+  const isOnHand = location === 'equipment';
+  const moveLabel = isOnHand
+    ? t('equipment.moveToStorage')
+    : t('equipment.moveToOnHand');
 
-    const tags = item.tags ?? [];
-    const isArmor = tags.includes('armor');
-    const isWeaponOrShield = tags.includes('weapon') || tags.includes('shield');
+  const [editName, setEditName] = useState(item?.name ?? '');
+  const [editDescription, setEditDescription] = useState(
+    item?.description ?? ''
+  );
+  const [editComments, setEditComments] = useState(item?.comments ?? '');
+  const [localQuantity, setLocalQuantity] = useState(quantity);
 
-    const handleSave = () => {
-        const updatedItem: EquipmentItem = {
-            ...item,
-            name: editName,
-            description: editDescription,
-            comments: editComments,
-        };
+  useEffect(() => {
+    if (!open || !item) return;
 
-        if (localQuantity !== quantity) {
-            // Adjust quantity first using the edited item as template.
-            onAdjustQuantity(updatedItem, localQuantity, indices);
-        }
+    setEditName(item.name ?? '');
+    setEditDescription(item.description ?? '');
+    setEditComments(item.comments ?? '');
+    setLocalQuantity(quantity);
+  }, [open, item, quantity]);
 
-        // Only update indices that should still exist after quantity change.
-        const retainedCount = Math.min(indices.length, localQuantity);
-        const retainedIndices = indices.slice(0, retainedCount);
+  if (!aggregated || !item) {
+    return null;
+  }
 
-        if (retainedIndices.length > 0) {
-            onUpdate(retainedIndices, updatedItem);
-        }
+  const tags = item.tags ?? [];
+  const isArmor = tags.includes('armor');
+  const isWeaponOrShield = tags.includes('weapon') || tags.includes('shield');
+  const quantityCacheKey = `${location}:${item.key ?? item.name ?? 'item'}:${indices[0] ?? 0}`;
 
-        setIsModalOpen(false);
+  const handleSave = () => {
+    const updatedItem: EquipmentItem = {
+      ...item,
+      name: editName,
+      description: editDescription,
+      comments: editComments,
     };
 
-    const handleSell = () => {
-        const itemValue = 10;
-        if (character) {
-            updateField('silver', (character.silver || 0) + (itemValue * quantity));
-        }
-        onDelete(indices);
-        setIsModalOpen(false);
-    };
+    if (localQuantity !== quantity) {
+      onAdjustQuantity(updatedItem, localQuantity, indices);
+    }
 
-    return (
+    const retainedCount = Math.min(indices.length, localQuantity);
+    const retainedIndices = indices.slice(0, retainedCount);
+
+    if (retainedIndices.length > 0) {
+      onUpdate(retainedIndices, updatedItem);
+    }
+
+    onClose();
+  };
+
+  const handleSell = () => {
+    const itemValue = 10;
+    if (character) {
+      updateField('silver', (character.silver || 0) + itemValue * quantity);
+    }
+    onDelete(indices);
+    onClose();
+  };
+
+  return (
+    <MorkBorgModal
+      open={open}
+      onClose={onClose}
+      title={editName || t('equipment.itemDetails')}
+      maxWidth="sm"
+      actions={
         <>
-            <Box onClick={() => setIsModalOpen(true)} sx={customStyles.inventorySection.itemSlot}>
-                <Grow in={quantity > 1} mountOnEnter unmountOnExit timeout={{enter: 180, exit: 120}}>
-                    <Box sx={quantityBadgeStyle}>
-                        <AnimatedNumber value={quantity} cacheKey={`${quantityCacheKey}:slot`} durationMs={220} />
-                        ×
-                    </Box>
-                </Grow>
-
-                <Box sx={customStyles.inventorySection.itemContent}>
-                    <Typography variant="h6" sx={customStyles.inventorySection.itemName}>
-                        {item.name}
-                    </Typography>
-                    {item.description && (
-                        <Typography variant="body2" sx={customStyles.inventorySection.itemDescription}>
-                            {item.description}
-                        </Typography>
-                    )}
-                </Box>
-            </Box>
-
-            <Modal open={isModalOpen} onClose={() => setIsModalOpen(false)}>
-                <Paper sx={modalPaperStyle}>
-                    <Typography variant="h5" sx={modalHeaderStyle}>
-                        {editName || t('equipment.itemDetails')}
-                    </Typography>
-
-                    <Box sx={customStyles.inventorySection.modalContent}>
-                        <TextField
-                            fullWidth
-                            label={t('equipment.itemName')}
-                            value={editName}
-                            onChange={(e) => setEditName(e.target.value)}
-                            sx={modalInputStyles}
-                        />
-
-                        {/* Quantity UI */}
-                        <Box>
-                            <Typography sx={customStyles.inventorySection.quantityLabel}>
-                                {t('equipment.quantity')}
-                            </Typography>
-                            <Box sx={customStyles.inventorySection.quantityControls}>
-                                <Button onClick={() => setLocalQuantity(Math.max(1, localQuantity - 1))} sx={counterBtnStyle}>−</Button>
-                                <Typography sx={customStyles.inventorySection.quantityNumber}>
-                                    <AnimatedNumber value={localQuantity} cacheKey={`${quantityCacheKey}:modal`} durationMs={220} />
-                                </Typography>
-                                <Button onClick={() => setLocalQuantity(localQuantity + 1)} sx={counterBtnStyle}>+</Button>
-                            </Box>
-                        </Box>
-
-                        <TextField fullWidth multiline rows={2} label={t('character.description')} value={editDescription} onChange={(e) => setEditDescription(e.target.value)} sx={modalInputStyles} />
-                        <TextField fullWidth multiline rows={2} label="Comments / Notes" value={editComments} onChange={(e) => setEditComments(e.target.value)} sx={modalInputStyles} />
-
-                        {isOnHand && (isArmor || isWeaponOrShield) && (
-                            <Box sx={customStyles.inventorySection.equipButtons}>
-                                {isArmor && <Button onClick={() => { equipArmor(indices[0]); setIsModalOpen(false); }} sx={equipBtnStyle} fullWidth>EQUIP ARMOR</Button>}
-                                {isWeaponOrShield && (
-                                    <>
-                                        <Button onClick={() => { equipWeapon(indices[0], 0); setIsModalOpen(false); }} sx={equipBtnStyle} fullWidth>EQUIP SLOT 1</Button>
-                                        <Button onClick={() => { equipWeapon(indices[0], 1); setIsModalOpen(false); }} sx={equipBtnStyle} fullWidth>EQUIP SLOT 2</Button>
-                                    </>
-                                )}
-                            </Box>
-                        )}
-
-                        <Box sx={customStyles.inventorySection.actionButtons}>
-                            <Button onClick={() => { onMove(indices); setIsModalOpen(false); }} sx={actionBtnStyle}>{moveLabel}</Button>
-                            <Button onClick={handleSell} sx={actionBtnStyle}>{t('equipment.sell', { amount: 10 * localQuantity })}</Button>
-                            <Button onClick={() => { onDelete(indices); setIsModalOpen(false); }} sx={{ ...actionBtnStyle, ...customStyles.inventorySection.dropButton }}>{t('equipment.drop')}</Button>
-                        </Box>
-
-                        <Box sx={customStyles.inventorySection.modalFooter}>
-                            <Button onClick={handleSave} fullWidth sx={saveBtnStyle}>{t('equipment.save')}</Button>
-                            <Button onClick={() => setIsModalOpen(false)} sx={customStyles.inventorySection.cancelButton}>{t('actions.cancel')}</Button>
-                        </Box>
-                    </Box>
-                </Paper>
-            </Modal>
+          <Button onClick={onClose}>{t('actions.cancel')}</Button>
+          <Button onClick={handleSave} variant="contained">
+            {t('equipment.save')}
+          </Button>
         </>
-    );
+      }
+    >
+      <Box sx={customStyles.inventorySection.modalContent}>
+        <TextField
+          fullWidth
+          label={t('equipment.itemName')}
+          value={editName}
+          onChange={(e) => setEditName(e.target.value)}
+          sx={modalInputStyles}
+        />
+
+        <Box>
+          <Typography sx={customStyles.inventorySection.quantityLabel}>
+            {t('equipment.quantity')}
+          </Typography>
+          <Box sx={customStyles.inventorySection.quantityControls}>
+            <Button
+              onClick={() => setLocalQuantity(Math.max(1, localQuantity - 1))}
+              sx={counterBtnStyle}
+            >
+              −
+            </Button>
+            <Typography sx={customStyles.inventorySection.quantityNumber}>
+              <AnimatedNumber
+                value={localQuantity}
+                cacheKey={`${quantityCacheKey}:modal`}
+                durationMs={220}
+              />
+            </Typography>
+            <Button
+              onClick={() => setLocalQuantity(localQuantity + 1)}
+              sx={counterBtnStyle}
+            >
+              +
+            </Button>
+          </Box>
+        </Box>
+
+        <TextField
+          fullWidth
+          multiline
+          rows={2}
+          label={t('character.description')}
+          value={editDescription}
+          onChange={(e) => setEditDescription(e.target.value)}
+          sx={modalInputStyles}
+        />
+        <TextField
+          fullWidth
+          multiline
+          rows={2}
+          label="Comments / Notes"
+          value={editComments}
+          onChange={(e) => setEditComments(e.target.value)}
+          sx={modalInputStyles}
+        />
+
+        {isOnHand && (isArmor || isWeaponOrShield) && (
+          <Box sx={customStyles.inventorySection.equipButtons}>
+            {isArmor && (
+              <Button
+                onClick={() => {
+                  equipArmor(indices[0]);
+                  onClose();
+                }}
+                sx={equipBtnStyle}
+                fullWidth
+              >
+                EQUIP ARMOR
+              </Button>
+            )}
+            {isWeaponOrShield && (
+              <>
+                <Button
+                  onClick={() => {
+                    equipWeapon(indices[0], 0);
+                    onClose();
+                  }}
+                  sx={equipBtnStyle}
+                  fullWidth
+                >
+                  EQUIP SLOT 1
+                </Button>
+                <Button
+                  onClick={() => {
+                    equipWeapon(indices[0], 1);
+                    onClose();
+                  }}
+                  sx={equipBtnStyle}
+                  fullWidth
+                >
+                  EQUIP SLOT 2
+                </Button>
+              </>
+            )}
+          </Box>
+        )}
+
+        <Box sx={customStyles.inventorySection.actionButtons}>
+          <Button
+            onClick={() => {
+              onMove(indices);
+              onClose();
+            }}
+            sx={actionBtnStyle}
+          >
+            {moveLabel}
+          </Button>
+          <Button onClick={handleSell} sx={actionBtnStyle}>
+            {t('equipment.sell', { amount: 10 * localQuantity })}
+          </Button>
+          <Button
+            onClick={() => {
+              onDelete(indices);
+              onClose();
+            }}
+            sx={{
+              ...actionBtnStyle,
+              ...customStyles.inventorySection.dropButton,
+            }}
+          >
+            {t('equipment.drop')}
+          </Button>
+        </Box>
+      </Box>
+    </MorkBorgModal>
+  );
 }
 
 export function OnHandSection() {
-    const { t } = useTranslation();
-    const { character, updateEquipmentItem, removeEquipmentItem, moveToStorage, addEquipmentItem } = useCharacter();
+  const { t } = useTranslation();
+  const {
+    character,
+    updateEquipmentItem,
+    removeEquipmentItem,
+    moveToStorage,
+    addEquipmentItem,
+  } = useCharacter();
 
-    const equipment = character?.equipment ?? [];
-    const aggregated = useMemo(() => aggregateItems(equipment), [equipment]);
+  const equipment = character?.equipment ?? [];
+  const aggregated = useMemo(() => aggregateItems(equipment), [equipment]);
+  const [editingGroup, setEditingGroup] =
+    useState<AggregatedItem<EquipmentItem> | null>(null);
 
-    const handleAdjustQuantity = (item: EquipmentItem, newTotal: number, currentIndices: number[]) => {
-        const diff = newTotal - currentIndices.length;
-        if (diff > 0) {
-            for (let i = 0; i < diff; i++) addEquipmentItem({ ...item });
-        } else if (diff < 0) {
-            // Remove from the end to keep indices stable during the loop
-            [...currentIndices].slice(newTotal).reverse().forEach(idx => removeEquipmentItem(idx));
-        }
-    };
+  const handleAdjustQuantity = (
+    item: EquipmentItem,
+    newTotal: number,
+    currentIndices: number[]
+  ) => {
+    const diff = newTotal - currentIndices.length;
+    if (diff > 0) {
+      for (let i = 0; i < diff; i++) addEquipmentItem({ ...item });
+    } else if (diff < 0) {
+      [...currentIndices]
+        .slice(newTotal)
+        .reverse()
+        .forEach((idx) => removeEquipmentItem(idx));
+    }
+  };
 
-    const handleAddItem = async (hit: ItemSearchHit) => {
-        const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/equipment/${hit.item_type}/${hit.id}`);
-        if (!response.ok) return;
-        const fullItem = await response.json();
-        addEquipmentItem({ ...fullItem, name: fullItem.name ?? hit.name, uses: [] });
-    };
-
-    return (
-        <Paper sx={sectionPaperStyle}>
-            <Typography variant="h3" sx={customStyles.inventorySection.sectionTitle}>{t('equipment.onHand')}</Typography>
-            <Box sx={customStyles.inventorySection.itemsGrid}>
-                {aggregated.map((group) => (
-                    <Paper key={group.item.name} sx={itemRowStyle}>
-                        <ItemSlot
-                            aggregated={group}
-                            onUpdate={(indices, updated) => indices.forEach(idx => updateEquipmentItem(idx, updated))}
-                            onDelete={(indices) => [...indices].reverse().forEach(idx => removeEquipmentItem(idx))}
-                            onMove={(indices) => [...indices].reverse().forEach(idx => moveToStorage(idx))}
-                            onAdjustQuantity={handleAdjustQuantity}
-                            location="equipment"
-                        />
-                    </Paper>
-                ))}
-            </Box>
-            <Box sx={customStyles.inventorySection.addItemSection}>
-                <ItemAutocomplete onSelect={handleAddItem} placeholder={t('equipment.searchPlaceholder')} />
-            </Box>
-        </Paper>
+  const handleAddItem = async (hit: ItemSearchHit) => {
+    const response = await fetch(
+      `${import.meta.env.VITE_BACKEND_URL}/equipment/${hit.item_type}/${hit.id}`
     );
+    if (!response.ok) return;
+    const fullItem = await response.json();
+    addEquipmentItem({
+      ...fullItem,
+      name: fullItem.name ?? hit.name,
+      uses: [],
+    });
+  };
+
+  return (
+    <Paper sx={sectionPaperStyle}>
+      <Typography variant="h3" sx={customStyles.inventorySection.sectionTitle}>
+        {t('equipment.onHand')}
+      </Typography>
+      <Box sx={customStyles.inventorySection.itemsGrid}>
+        {aggregated.map((group) => (
+          <Paper key={buildAggregateKey(group)} sx={itemRowStyle}>
+            <ItemSlot
+              aggregated={group}
+              location="equipment"
+              onOpenEditor={setEditingGroup}
+            />
+          </Paper>
+        ))}
+      </Box>
+
+      <InventoryItemEditorModal
+        open={Boolean(editingGroup)}
+        aggregated={editingGroup}
+        location="equipment"
+        onClose={() => setEditingGroup(null)}
+        onUpdate={(indices, updated) =>
+          indices.forEach((idx) => updateEquipmentItem(idx, updated))
+        }
+        onDelete={(indices) =>
+          [...indices].reverse().forEach((idx) => removeEquipmentItem(idx))
+        }
+        onMove={(indices) =>
+          [...indices].reverse().forEach((idx) => moveToStorage(idx))
+        }
+        onAdjustQuantity={handleAdjustQuantity}
+      />
+
+      <Box sx={customStyles.inventorySection.addItemSection}>
+        <ItemAutocomplete
+          onSelect={handleAddItem}
+          placeholder={t('equipment.searchPlaceholder')}
+        />
+      </Box>
+    </Paper>
+  );
 }
 
 export function StorageSection() {
-    const { t } = useTranslation();
-    const { character, updateStorageItem, removeStorageItem, moveToEquipment, addStorageItem } = useCharacter();
+  const { t } = useTranslation();
+  const {
+    character,
+    updateStorageItem,
+    removeStorageItem,
+    moveToEquipment,
+    addStorageItem,
+  } = useCharacter();
 
-    const storage = character?.storage ?? [];
-    const aggregated = useMemo(() => aggregateItems(storage), [storage]);
+  const storage = character?.storage ?? [];
+  const aggregated = useMemo(() => aggregateItems(storage), [storage]);
+  const [editingGroup, setEditingGroup] =
+    useState<AggregatedItem<EquipmentItem> | null>(null);
 
-    const handleAdjustQuantity = (item: EquipmentItem, newTotal: number, currentIndices: number[]) => {
-        const diff = newTotal - currentIndices.length;
-        if (diff > 0) {
-            for (let i = 0; i < diff; i++) addStorageItem({ ...item });
-        } else if (diff < 0) {
-            [...currentIndices].slice(newTotal).reverse().forEach(idx => removeStorageItem(idx));
+  if (aggregated.length === 0) {
+    return null;
+  }
+
+  const handleAdjustQuantity = (
+    item: EquipmentItem,
+    newTotal: number,
+    currentIndices: number[]
+  ) => {
+    const diff = newTotal - currentIndices.length;
+    if (diff > 0) {
+      for (let i = 0; i < diff; i++) addStorageItem({ ...item });
+    } else if (diff < 0) {
+      [...currentIndices]
+        .slice(newTotal)
+        .reverse()
+        .forEach((idx) => removeStorageItem(idx));
+    }
+  };
+
+  return (
+    <Paper sx={sectionPaperStyle}>
+      <Typography variant="h3" sx={customStyles.inventorySection.sectionTitle}>
+        {t('equipment.storedItems')}
+      </Typography>
+      <Box sx={customStyles.inventorySection.itemsGrid}>
+        {aggregated.map((group) => (
+          <Paper key={buildAggregateKey(group)} sx={itemRowStyle}>
+            <ItemSlot
+              aggregated={group}
+              location="storage"
+              onOpenEditor={setEditingGroup}
+            />
+          </Paper>
+        ))}
+      </Box>
+
+      <InventoryItemEditorModal
+        open={Boolean(editingGroup)}
+        aggregated={editingGroup}
+        location="storage"
+        onClose={() => setEditingGroup(null)}
+        onUpdate={(indices, updated) =>
+          indices.forEach((idx) => updateStorageItem(idx, updated))
         }
-    };
-
-    return (
-        <Paper sx={sectionPaperStyle}>
-            <Typography variant="h3" sx={customStyles.inventorySection.sectionTitle}>{t('equipment.storedItems')}</Typography>
-            <Box sx={customStyles.inventorySection.itemsGrid}>
-                {aggregated.map((group) => (
-                    <Paper key={group.item.name} sx={itemRowStyle}>
-                        <ItemSlot
-                            aggregated={group}
-                            onUpdate={(indices, updated) => indices.forEach(idx => updateStorageItem(idx, updated))}
-                            onDelete={(indices) => [...indices].reverse().forEach(idx => removeStorageItem(idx))}
-                            onMove={(indices) => [...indices].reverse().forEach(idx => moveToEquipment(idx))}
-                            onAdjustQuantity={handleAdjustQuantity}
-                            location="storage"
-                        />
-                    </Paper>
-                ))}
-            </Box>
-        </Paper>
-    );
+        onDelete={(indices) =>
+          [...indices].reverse().forEach((idx) => removeStorageItem(idx))
+        }
+        onMove={(indices) =>
+          [...indices].reverse().forEach((idx) => moveToEquipment(idx))
+        }
+        onAdjustQuantity={handleAdjustQuantity}
+      />
+    </Paper>
+  );
 }
 
 export const BackpackSection = StorageSection;
@@ -275,15 +478,11 @@ export const BackpackSection = StorageSection;
 
 const sectionPaperStyle = customStyles.paper.section;
 const itemRowStyle = customStyles.paper.itemRow;
-const modalPaperStyle = { ...customStyles.modal.paper, minWidth: 320, maxWidth: '90vw' };
-const modalHeaderStyle = customStyles.modal.header;
 
 const quantityBadgeStyle = customStyles.quantityBadge;
-
 
 const modalInputStyles = customStyles.modal.input;
 
 const counterBtnStyle = customStyles.buttons.counter;
 const actionBtnStyle = customStyles.buttons.action;
 const equipBtnStyle = customStyles.buttons.equip;
-const saveBtnStyle = customStyles.buttons.save;
