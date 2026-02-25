@@ -44,9 +44,13 @@ const authRoutes: FastifyPluginAsync = async (fastify): Promise<void> => {
 
     fastify.all('/*', async (request, reply) => {
         try {
-            const protocol = request.protocol;
-            const host = request.headers.host;
-            const fullUrl = `${protocol}://${host}${request.url}`;
+            // Better Auth strictly checks the request URL against its configured baseURL.
+            // By using AUTH_BASE_URL (or localhost fallback) here, we ensure Better Auth 
+            // accepts the request, while still honoring the original request's Origin 
+            // via the trustedOrigins configuration for alternative domains.
+            const authBaseUrl = process.env.AUTH_BASE_URL || 'http://localhost:3000/auth';
+            const base = new URL(authBaseUrl);
+            const fullUrl = `${base.origin}${request.url}`;
 
             const headers = new Headers();
             Object.entries(request.headers).forEach(([key, value]) => {

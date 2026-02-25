@@ -65,6 +65,14 @@ export function useCurrentCharacter() {
     // Claiming state
     const [isClaiming, setIsClaiming] = useState(false);
 
+    // ---- Handle logout side effects ----
+    useEffect(() => {
+        if (isJustLoggedOut && characterId) {
+            // Force clear the character ID from context when user logs out
+            setCharacterId(null);
+        }
+    }, [isJustLoggedOut, characterId, setCharacterId]);
+
     // ---- Auto-create character if none exists (original logic) ----
     useEffect(() => {
         if (pathname !== '/') return;
@@ -126,8 +134,9 @@ export function useCurrentCharacter() {
     );
 
     // ---- Claim character (NEW - guest -> authenticated) ----
-    const claimCharacter = useCallback(async () => {
-        if (!characterId) {
+    const claimCharacter = useCallback(async (idToClaim?: string) => {
+        const targetId = idToClaim || characterId;
+        if (!targetId) {
             showError("No character to claim");
             return;
         }
@@ -135,7 +144,7 @@ export function useCurrentCharacter() {
         setIsClaiming(true);
         try {
             await repo.claimCharacter.mutateAsync({
-                params: { path: { id: characterId } }
+                params: { path: { id: targetId } }
             } as any);
             trackEvent('claim_character', {
                 locale: trimmedLocale,
@@ -143,13 +152,18 @@ export function useCurrentCharacter() {
                 is_authenticated: isAuthenticated,
             });
             showSuccess("Character saved to your account!");
+            
+            // If we successfully claimed a specific character and we don't have one active, set it
+            if (idToClaim && idToClaim !== characterId) {
+                setCharacterId(idToClaim);
+            }
         } catch (err) {
             showError(`Failed to claim character: ${err instanceof Error ? err.message : "Unknown error"}`);
             throw err;
         } finally {
             setIsClaiming(false);
         }
-    }, [characterId, repo.claimCharacter, showSuccess, showError, trimmedLocale, isGuest, isAuthenticated]);
+    }, [characterId, repo.claimCharacter, showSuccess, showError, trimmedLocale, isGuest, isAuthenticated, setCharacterId]);
 
     return {
         // Original returns

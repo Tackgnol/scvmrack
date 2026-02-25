@@ -1,10 +1,6 @@
-import { createRouter, createRootRoute, createRoute } from '@tanstack/react-router';
+import { createRouter, createRootRoute, createRoute, lazyRouteComponent } from '@tanstack/react-router';
 import { appHistory } from '@/router/history';
 import { RootLayout } from '@/router/layout';
-import { CharacterPage } from '@/pages/CharacterPage';
-import { CharactersListPage } from '@/pages/CharactersListPage';
-import { FaqPage } from '@/pages/FaqPage';
-import { ReleasePage } from '@/pages/ReleasePage';
 
 // Root route with layout
 const rootRoute = createRootRoute({
@@ -14,27 +10,27 @@ const rootRoute = createRootRoute({
 const indexRoute = createRoute({
     getParentRoute: () => rootRoute,
     path: '/',
-    component: CharacterPage,
+    component: lazyRouteComponent(() => import('@/pages/CharacterPage').then(m => ({ default: m.CharacterPage }))),
 });
 
 const charactersRoute = createRoute({
     getParentRoute: () => rootRoute,
     path: '/characters',
-    component: CharactersListPage,
+    component: lazyRouteComponent(() => import('@/pages/CharactersListPage').then(m => ({ default: m.CharactersListPage }))),
 });
 
 
 const faqRoute = createRoute({
     getParentRoute: () => rootRoute,
     path: '/faq',
-    component: FaqPage,
+    component: lazyRouteComponent(() => import('@/pages/FaqPage').then(m => ({ default: m.FaqPage }))),
 });
 
 
 const releaseRoute = createRoute({
     getParentRoute: () => rootRoute,
     path: '/release',
-    component: ReleasePage,
+    component: lazyRouteComponent(() => import('@/pages/ReleasePage').then(m => ({ default: m.ReleasePage }))),
 });
 
 
