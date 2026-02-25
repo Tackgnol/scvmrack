@@ -14,7 +14,8 @@ import {
   Divider,
 } from '@mui/material';
 import { useTranslation } from 'react-i18next';
-import { useCurrentCharacter } from '@/hooks/useCurrentCharacter';
+import { useCharacter } from '@/CharacterContext/CharacterContext';
+import { clearCurrentSearchParam, LOGGED_OUT_QUERY_PARAM } from '@/router/navigation';
 import { customStyles } from '@theme/morkBorgTheme';
 import { TurnstileWidget } from './TurnstileWidget';
 import MorkBorgModal from './MorkBorgModal';
@@ -45,8 +46,8 @@ export function AuthModal({
     signInMagicLink,
   } = useAuth();
 
-  const { character, claimCharacter, isClaiming, characterId } =
-    useCurrentCharacter();
+  const { character, claimCharacter, isClaiming, characterId, isJustLoggedOut, generateNew } =
+    useCharacter();
 
   const [tab, setTab] = useState<TabValue>('login');
   const [email, setEmail] = useState('');
@@ -56,6 +57,7 @@ export function AuthModal({
   const [showClaimPrompt, setShowClaimPrompt] = useState(false);
   const [showVerifyEmail, setShowVerifyEmail] = useState(false);
   const [magicLinkSent, setMagicLinkSent] = useState(false);
+
   const turnstileSiteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY;
   const turnstileEnabled = Boolean(turnstileSiteKey);
   const turnstileMissingToken = useCallback(() => {
@@ -212,7 +214,8 @@ export function AuthModal({
   const handleClaim = async (shouldClaim: boolean) => {
     if (shouldClaim) {
       try {
-        await claimCharacter();
+        const pendingClaimId = localStorage.getItem(PENDING_CLAIM_KEY);
+        await claimCharacter(pendingClaimId || undefined);
       } catch (err) {
         setError(err instanceof Error ? err.message : t('auth.claimFailed'));
         return;
@@ -232,6 +235,35 @@ export function AuthModal({
   const handleLogout = async () => {
     await signOut.mutateAsync();
   };
+
+  const handleCreateNew = async () => {
+    await clearCurrentSearchParam(LOGGED_OUT_QUERY_PARAM);
+    generateNew();
+    onClose();
+  };
+
+  if (isJustLoggedOut && !character) {
+    return (
+      <MorkBorgModal
+        open={open}
+        onClose={() => {}}
+        closeOnBackdrop={false}
+        showCloseButton={false}
+        maxWidth="xs"
+        title={t('session.loggedOut')}
+      >
+        <Box sx={customStyles.authModal.buttonGap}>
+          <Button
+            variant="contained"
+            fullWidth
+            onClick={handleCreateNew}
+          >
+            {t("session.createNewCharacter")}
+          </Button>
+        </Box>
+      </MorkBorgModal>
+    );
+  }
 
   if (showClaimPrompt) {
     const charName = character?.name || 'your character';
@@ -442,7 +474,7 @@ export function AuthModal({
                 type="submit"
                 variant="contained"
                 fullWidth
-                disabled={signIn.isPending}
+                disabled={signIn.isPending || (turnstileEnabled && !turnstileToken)}
               >
                 {signIn.isPending ? (
                   <CircularProgress size={24} />
@@ -461,7 +493,7 @@ export function AuthModal({
                 variant="text"
                 fullWidth
                 onClick={handleMagicLinkRequest}
-                disabled={signInMagicLink.isPending}
+                disabled={signInMagicLink.isPending || (turnstileEnabled && !turnstileToken)}
                 sx={customStyles.authModal.magicLinkButton}
               >
                 {signInMagicLink.isPending ? (
@@ -523,7 +555,7 @@ export function AuthModal({
             type="submit"
             variant="contained"
             fullWidth
-            disabled={signUp.isPending}
+            disabled={signUp.isPending || (turnstileEnabled && !turnstileToken)}
           >
             {signUp.isPending ? (
               <CircularProgress size={24} />

@@ -1,10 +1,9 @@
 import {useAuth} from "@/hooks/useAuth";
-import {useCurrentCharacter} from "@/hooks/useCurrentCharacter";
+import {useCharacter} from "@/CharacterContext/CharacterContext";
 import { useSessionExpiredFlag } from '@/hooks/useSessionExpiredFlag';
 import {Flag} from "@components/Flag";
 import {FlagContainer} from "@components/FlagContainer";
 import {AuthModal} from "@components/index";
-import {LoggedOutBanner} from "@components/LoggedOutBanner";
 import {SessionWarningBanner} from "@components/SessionWarningBanner";
 import CloudDoneIcon from "@mui/icons-material/CloudDone";
 import PersonIcon from "@mui/icons-material/Person";
@@ -50,7 +49,7 @@ function NavLink({to, text, onClick, fullWidth}: {
 export default function Header() {
     const {t} = useTranslation();
     const {user, isAuthenticated} = useAuth();
-    const {isSaving, isJustLoggedOut, generateNew, character} = useCurrentCharacter();
+    const {isSaving, isJustLoggedOut, character} = useCharacter();
     const { isSessionExpired, clearSessionExpiredFlag } = useSessionExpiredFlag();
     const [authModalOpen, setAuthModalOpen] = useState(false);
     const [sessionExpiredNotice, setSessionExpiredNotice] = useState(false);
@@ -88,6 +87,13 @@ export default function Header() {
         void clearSessionExpiredFlag();
     }, [clearSessionExpiredFlag, isAuthenticated, isSessionExpired, openAuthModal]);
 
+    // Automatically open modal if just logged out without a character
+    useEffect(() => {
+        if (isJustLoggedOut && !character && !authModalOpen) {
+            openAuthModal();
+        }
+    }, [isJustLoggedOut, character, authModalOpen, openAuthModal]);
+
     const getStatusChip = () => {
         if (isSaving) return (
             <Chip
@@ -113,7 +119,6 @@ export default function Header() {
     return (
         <>
             <SessionWarningBanner onSignUpClick={() => openAuthModal()}/>
-            {isJustLoggedOut && !character && <LoggedOutBanner onCreateCharacter={() => generateNew()}/>}
 
             <Paper sx={customStyles.header.paper}>
                 <Box sx={customStyles.header.container(isMobile)}>

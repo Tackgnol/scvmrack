@@ -158,6 +158,10 @@ export function useAuth() {
         onSuccess: () => {
             queryClient.setQueryData(authKeys.session(), null);
             queryClient.setQueryData(authKeys.me(), null);
+            
+            // Clear the active character so the next session starts fresh
+            localStorage.removeItem("mork-borg-character-id");
+            
             void navigateToLoggedOut();
         },
     });

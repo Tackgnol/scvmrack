@@ -12,7 +12,8 @@
     "lint:fix": "eslint . --ext ts,tsx --fix",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,scss,md}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,scss,md}\"",
-    "generate-api": "openapi-typescript http://localhost:3000/openapi.json -o src/api/schema.ts --enum"
+    "generate-api": "openapi-typescript http://localhost:3000/openapi.json -o src/api/schema.ts --enum",
+    "analyze": "vite build --analyze"
   },
   "dependencies": {
     "@analytics/google-analytics": "^1.1.0",
@@ -47,6 +48,7 @@
     "eslint-plugin-react-refresh": "^0.4.24",
     "openapi-typescript": "^7.10.1",
     "prettier": "^3.4.2",
+    "rollup-plugin-visualizer": "^7.0.0",
     "typescript": "^5.3.3",
     "vite": "^7.2.7"
   }

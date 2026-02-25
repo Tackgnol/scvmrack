@@ -685,21 +685,6 @@ export const customStyles = {
     },
   },
 
-  // LoggedOutBanner styles
-  loggedOutBanner: {
-    alert: {
-      mb: 2,
-      bgcolor: `${morkBorgColors.yellow}22`,
-      border: `1px solid ${morkBorgColors.yellow}`,
-      '& .MuiAlert-icon': { color: morkBorgColors.yellow },
-    },
-    button: {
-      ml: 2,
-      borderColor: morkBorgColors.yellow,
-      '&:hover': { bgcolor: `${morkBorgColors.yellow}33` },
-    },
-  },
-
   // ItemAutocomplete styles
   itemAutocomplete: {
     itemName: {
@@ -1302,7 +1287,8 @@ export const customStyles = {
   sessionWarning: {
     alert: {
       mb: 2,
-      bgcolor: `${morkBorgColors.yellow}22`,
+      bgcolor: morkBorgColors.black,
+      color: morkBorgColors.yellow,
       border: `1px solid ${morkBorgColors.yellow}`,
       '& .MuiAlert-icon': { color: morkBorgColors.yellow },
       '& .MuiAlert-message': {
@@ -1320,8 +1306,9 @@ export const customStyles = {
       flexShrink: 0,
     },
     signUpButton: {
+      color: morkBorgColors.yellow,
       borderColor: morkBorgColors.yellow,
-      '&:hover': { bgcolor: `${morkBorgColors.yellow}33` },
+      '&:hover': { bgcolor: `${morkBorgColors.yellow}33`, borderColor: morkBorgColors.yellow },
     },
   },
 

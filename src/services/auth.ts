@@ -19,7 +19,8 @@ const auth = betterAuth({
     database: pool,
     trustedOrigins: [
         "http://localhost:5173",
-        "https://scvmgrinder.tackgnol.usermd.net"
+        "https://scvmgrinder.tackgnol.usermd.net",
+        "https://scvmgrinder.rpgtools.eu.org"
     ],
     baseURL: process.env.AUTH_BASE_URL || "http://localhost:3000/auth",
     emailAndPassword: {
@@ -53,14 +54,18 @@ const auth = betterAuth({
 
                 const verificationUrl = new URL(url);
                 const callback = verificationUrl.searchParams.get("callbackURL");
-                if (!callback || callback.includes(":3000")) {
-                    verificationUrl.searchParams.set("callbackURL", process.env.CLIENT_ORIGIN ?? 'http://localhost:3000' );
+                
+                const reqOrigin = request.headers.get('origin') || request.headers.get('referer');
+                const originToUse = reqOrigin ? new URL(reqOrigin).origin : (process.env.CLIENT_ORIGIN ?? 'http://localhost:3000');
+                
+                if (!callback || callback.includes(":3000") || callback.includes("localhost")) {
+                    verificationUrl.searchParams.set("callbackURL", originToUse);
                 }
 
                 await sendEmail(
                     recipientEmail,
                     "Your Scvmgrinder login Link",
-                    magicLinkEmail(buildClientVerificationUrl(url))
+                    magicLinkEmail(buildClientVerificationUrl(verificationUrl.toString(), originToUse))
                 );
             },
         }),
@@ -100,12 +105,15 @@ const auth = betterAuth({
         sendOnSignUp: true,
         autoSignInAfterVerification: true,
 
-        sendVerificationEmail: async ({user, url}) => {
+        sendVerificationEmail: async ({user, url}, request) => {
+            const reqOrigin = request?.headers?.get('origin') || request?.headers?.get('referer');
+            const originToUse = reqOrigin ? new URL(reqOrigin).origin : (process.env.CLIENT_ORIGIN ?? 'http://localhost:3000');
+            
             const realEmail = decryptEmail((user as any).encrypted_email);
             await sendEmail(
                 realEmail,
                 "Verify your Scvmgrinder account",
-                verificationEmail(buildClientVerificationUrl(url))
+                verificationEmail(buildClientVerificationUrl(url, originToUse))
             );
         },
     },
