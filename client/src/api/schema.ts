@@ -331,6 +331,7 @@ export interface paths {
                                 key?: string;
                                 name?: string;
                                 description?: string;
+                                comment?: string;
                             }[];
                             equipment?: {
                                 key?: string;
@@ -391,6 +392,9 @@ export interface paths {
                             }[];
                             encumbrance?: number;
                             max_encumbrance?: number;
+                            dr_to_dodge?: number;
+                            dr_to_melee?: number;
+                            dr_to_ranged?: number;
                             /** Format: date-time */
                             created_at?: string;
                             /** Format: date-time */
@@ -482,6 +486,7 @@ export interface paths {
                                 key?: string;
                                 name?: string;
                                 description?: string;
+                                comment?: string;
                             }[];
                             equipment?: {
                                 key?: string;
@@ -542,6 +547,9 @@ export interface paths {
                             }[];
                             encumbrance?: number;
                             max_encumbrance?: number;
+                            dr_to_dodge?: number;
+                            dr_to_melee?: number;
+                            dr_to_ranged?: number;
                             /** Format: date-time */
                             created_at?: string;
                             /** Format: date-time */
@@ -700,6 +708,7 @@ export interface paths {
                             key?: string;
                             name?: string;
                             description?: string;
+                            comment?: string;
                         }[];
                         equipment?: {
                             key?: string;
@@ -784,6 +793,7 @@ export interface paths {
                                 key?: string;
                                 name?: string;
                                 description?: string;
+                                comment?: string;
                             }[];
                             equipment?: {
                                 key?: string;
@@ -844,6 +854,9 @@ export interface paths {
                             }[];
                             encumbrance?: number;
                             max_encumbrance?: number;
+                            dr_to_dodge?: number;
+                            dr_to_melee?: number;
+                            dr_to_ranged?: number;
                             /** Format: date-time */
                             created_at?: string;
                             /** Format: date-time */
@@ -1055,6 +1068,7 @@ export interface paths {
                                 key?: string;
                                 name?: string;
                                 description?: string;
+                                comment?: string;
                             }[];
                             equipment?: {
                                 key?: string;
@@ -1115,6 +1129,9 @@ export interface paths {
                             }[];
                             encumbrance?: number;
                             max_encumbrance?: number;
+                            dr_to_dodge?: number;
+                            dr_to_melee?: number;
+                            dr_to_ranged?: number;
                             /** Format: date-time */
                             created_at?: string;
                             /** Format: date-time */

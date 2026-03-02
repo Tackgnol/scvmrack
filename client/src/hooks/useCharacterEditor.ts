@@ -105,7 +105,7 @@ export function useCharacterEditor(
 
     // Abilities updates
     const updateAbilities = useCallback(
-        (abilities: { name?: string; description?: string }[]) => {
+        (abilities: { key?: string; name?: string; description?: string; comment?: string }[]) => {
             queuePatch({ kind: 'abilities', abilities });
         },
         [queuePatch]

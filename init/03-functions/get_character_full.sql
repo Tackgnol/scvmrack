@@ -120,7 +120,10 @@ CREATE OR REPLACE FUNCTION resolve_character_abilities(
                 'key', ab->>'key',
                 'name', COALESCE(t.value, ab->>'key'),
                 'description', COALESCE(td.value, '')
-            )
+            ) || CASE
+                WHEN ab ? 'comment' THEN jsonb_build_object('comment', ab->>'comment')
+                ELSE '{}'::jsonb
+            END
             ELSE ab
         END
     ), '[]'::jsonb)
@@ -131,12 +134,15 @@ $$;
 
 DROP FUNCTION IF EXISTS resolve_character_computed_modifiers(jsonb, jsonb, jsonb, text);
 DROP FUNCTION IF EXISTS resolve_character_computed_modifiers(jsonb, jsonb, jsonb, int, text);
+DROP FUNCTION IF EXISTS resolve_character_computed_modifiers(jsonb, jsonb, jsonb, int, int, jsonb, text);
 
 CREATE OR REPLACE FUNCTION resolve_character_computed_modifiers(
     p_equipped_armor jsonb,
     p_equipped_weapons jsonb,
     p_equipment jsonb,
     p_strength int,
+    p_class_id int,
+    p_abilities jsonb,
     p_locale text
 ) RETURNS jsonb
     LANGUAGE plpgsql AS $$
@@ -216,6 +222,29 @@ BEGIN
                 FROM jsonb_array_elements(p_equipment) eq
                 WHERE eq->>'key' LIKE 'pet.%'
             )
+        );
+    END IF;
+
+    IF p_abilities IS NOT NULL AND jsonb_array_length(p_abilities) > 0 THEN
+        v_result := v_result || (
+            SELECT COALESCE(jsonb_agg(
+                jsonb_build_object(
+                    'value', cam.value,
+                    'source', cam.source,
+                    'statistic', cam.statistic,
+                    'exclude', COALESCE(cam.exclude, '[]'::jsonb),
+                    'origin', 'system',
+                    'origin_key', 'class_ability.' || cam.ability_key,
+                    'origin_name', cam.source
+                )
+            ), '[]'::jsonb)
+            FROM class_ability_modifiers cam
+            WHERE cam.class_id = p_class_id
+              AND cam.ability_key IN (
+                SELECT ab->>'key'
+                FROM jsonb_array_elements(p_abilities) ab
+                WHERE ab ? 'key'
+              )
         );
     END IF;
 
@@ -373,6 +402,8 @@ BEGIN
         result.equipped_weapons,
         result.equipment,
         result.strength,
+        result.class_id,
+        result.abilities,
         p_locale
     );
 
