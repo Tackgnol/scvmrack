@@ -3,7 +3,6 @@ import {useCharacter} from "@/CharacterContext/CharacterContext";
 import { useSessionExpiredFlag } from '@/hooks/useSessionExpiredFlag';
 import {Flag} from "@components/Flag";
 import {FlagContainer} from "@components/FlagContainer";
-import {AuthModal} from "@components/index";
 import {SessionWarningBanner} from "@components/SessionWarningBanner";
 import CloudDoneIcon from "@mui/icons-material/CloudDone";
 import PersonIcon from "@mui/icons-material/Person";
@@ -12,9 +11,11 @@ import SyncIcon from "@mui/icons-material/Sync";
 import {Box, Chip, Drawer, IconButton, Paper, Typography, useMediaQuery, useTheme} from "@mui/material";
 import { useRouterState} from "@tanstack/react-router";
 import {customStyles} from "@theme/morkBorgTheme";
-import {useCallback, useEffect, useState} from "react";
+import {useCallback, useEffect, useState, lazy, Suspense} from "react";
 import {useTranslation} from "react-i18next";
 import { BoneIconContainer, BoneBar, StyledNavLink } from "./Header.styled";
+
+const AuthModal = lazy(() => import('./AuthModal').then(m => ({ default: m.AuthModal })));
 
 // --- The Dynamic Bone Icon (Hamburger to X) ---
 const BoneIcon = ({isOpen}: { isOpen: boolean }) => (
@@ -201,11 +202,13 @@ export default function Header() {
                 </Box>
             </Drawer>
 
-            <AuthModal
-                open={authModalOpen}
-                onClose={closeAuthModal}
-                sessionExpiredNotice={sessionExpiredNotice}
-            />
+            <Suspense fallback={null}>
+                <AuthModal
+                    open={authModalOpen}
+                    onClose={closeAuthModal}
+                    sessionExpiredNotice={sessionExpiredNotice}
+                />
+            </Suspense>
         </>
     );
 }

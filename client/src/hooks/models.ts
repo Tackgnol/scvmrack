@@ -69,7 +69,9 @@ export type WeaponItem = NonNullable<Character['equipped_weapons']>[number];
 export type ArmorItem = NonNullable<Character['equipped_armor']>;
 
 /** Ability */
-export type Ability = NonNullable<Character['abilities']>[number];
+export type Ability = NonNullable<Character['abilities']>[number] & {
+    comment?: string;
+};
 
 /** Custom modifier (player-created) */
 export type CustomModifier = NonNullable<Character['modifiers']>[number];

@@ -41,8 +41,10 @@ export function patchToRequest(
         case 'abilities':
             return {
                 abilities: patch.abilities.map(a => ({
+                    key: a.key,
                     name: a.name,
-                    description: a.description
+                    description: a.description,
+                    comment: a.comment
                 }))
             };
 

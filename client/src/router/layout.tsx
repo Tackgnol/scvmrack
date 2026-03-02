@@ -1,11 +1,13 @@
 import { AnalyticsPageTracker } from '@/analytics/AnalyticsPageTracker';
-import { PrivacyNoticeDrawer } from '@/components/PrivacyNoticeDrawer';
 import { NetworkActivityIndicator } from '@/components/NetworkActivityIndicator';
-import {Header} from "@/components";
+import Header from "@/components/Header";
 import { Outlet, useRouterState } from '@tanstack/react-router';
 import { Box, Container, CssBaseline, ThemeProvider } from '@mui/material';
 import { customStyles, morkBorgTheme } from '@/theme/morkBorgTheme';
 import { keyframes } from '@mui/system';
+import { lazy, Suspense } from 'react';
+
+const PrivacyNoticeDrawer = lazy(() => import('@/components/PrivacyNoticeDrawer').then(m => ({ default: m.PrivacyNoticeDrawer })));
 
 const routeFadeIn = keyframes`
     from {
@@ -26,7 +28,9 @@ export function RootLayout() {
     return (
         <ThemeProvider theme={morkBorgTheme}>
             <AnalyticsPageTracker />
-            <PrivacyNoticeDrawer />
+            <Suspense fallback={null}>
+                <PrivacyNoticeDrawer />
+            </Suspense>
             <CssBaseline />
             <Box sx={customStyles.layout.root}>
                 <Container maxWidth="md">

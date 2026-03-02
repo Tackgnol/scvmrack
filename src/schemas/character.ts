@@ -56,7 +56,8 @@ const AbilitySchema = {
     properties: {
         key: {type: 'string', maxLength: 100},
         name: {type: 'string', maxLength: 500},
-        description: {type: 'string', maxLength: 2000}
+        description: {type: 'string', maxLength: 2000},
+        comment: {type: 'string', maxLength: 1000}
     }
 };
 

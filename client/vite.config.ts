@@ -21,19 +21,17 @@ export default defineConfig({
     emptyOutDir: true,
     rollupOptions: {
       output: {
-        manualChunks: {
-          'mui-vendor': ['@mui/material', '@mui/icons-material', '@emotion/react', '@emotion/styled'],
-          'vendor': [
-            'react', 
-            'react-dom', 
-            'i18next', 
-            'react-i18next', 
-            'i18next-browser-languagedetector',
-            'motion',
-            'better-auth',
-            '@tanstack/react-query', 
-            '@tanstack/react-router'
-          ],
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('@mui') || id.includes('@emotion')) {
+              return 'vendor-mui';
+            }
+            if (id.includes('motion')) {
+              return 'vendor-motion';
+            }
+            // Let the bundler handle the framework core (React, TanStack, Auth)
+            // automatically to ensure correct execution order.
+          }
         },
       },
     },
