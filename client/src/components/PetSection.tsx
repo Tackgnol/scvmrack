@@ -1,0 +1,119 @@
+import { useCharacter } from '@/CharacterContext/CharacterContext.tsx';
+import { Box, Paper, Typography } from '@mui/material';
+import { useTranslation } from 'react-i18next';
+import { customStyles } from '../theme/morkBorgTheme';
+
+interface HpPipProps {
+    filled: boolean;
+    onClick: () => void;
+}
+
+function HpPip({ filled, onClick }: HpPipProps) {
+    return (
+        <Box
+            onClick={onClick}
+            sx={{
+                ...customStyles.powersSection.usePip.base,
+                ...(filled ? customStyles.powersSection.usePip.used : customStyles.powersSection.usePip.unused),
+            }}
+        />
+    );
+}
+
+function SectionLabel({ label }: { label: string }) {
+    return (
+        <Box sx={customStyles.powersSection.sectionLabel}>
+            {label}
+        </Box>
+    );
+}
+
+function isPetItem(item: { key?: string; tags?: string[] }): boolean {
+    const tags = item.tags ?? [];
+    const key = item.key ?? '';
+    return tags.includes('pet') || key.startsWith('pet.') || key.startsWith('pets.');
+}
+
+function formatActionDie(dice?: number[]): string {
+    if (!dice || dice.length === 0) {
+        return '-';
+    }
+
+    const normalized = dice
+        .map((value) => Number(value))
+        .filter((value) => Number.isFinite(value) && value > 0);
+
+    if (normalized.length === 0) {
+        return '-';
+    }
+
+    return normalized.map((value) => `d${value}`).join(' + ');
+}
+
+export default function PetSection() {
+    const { character, toggleScrollUse } = useCharacter();
+    const { t } = useTranslation();
+
+    const petsWithIndices = (character?.equipment ?? [])
+        .map((item, index) => ({ item, equipmentIndex: index }))
+        .filter(({ item }) => isPetItem(item));
+
+    if (petsWithIndices.length === 0) {
+        return null;
+    }
+
+    return (
+        <Paper sx={customStyles.powersSection.paper}>
+            <SectionLabel label={t('pets.title')} />
+            <Box sx={customStyles.powersSection.contentContainer}>
+                {petsWithIndices.map(({ item, equipmentIndex }, displayIndex) => {
+                    const hpPips = item.uses ?? [];
+                    return (
+                        <Box
+                            key={item.key ?? equipmentIndex}
+                            sx={{
+                                ...customStyles.powersSection.powerRow,
+                                gridTemplateColumns: { xs: '1fr', sm: '30px 1fr 100px 130px' },
+                            }}
+                        >
+                            <Typography sx={customStyles.powersSection.powerNumber}>
+                                {displayIndex + 1}
+                            </Typography>
+
+                            <Box>
+                                <Typography sx={customStyles.powersSection.powerName}>
+                                    {item.name ?? t('pets.unknown')}
+                                </Typography>
+                                {item.description && (
+                                    <Typography sx={customStyles.powersSection.powerDescription}>
+                                        {item.description}
+                                    </Typography>
+                                )}
+                            </Box>
+
+                            <Typography sx={customStyles.powersSection.powerDescription}>
+                                {t('pets.actionDie')}: {formatActionDie(item.dice)}
+                            </Typography>
+
+                            <Box
+                                sx={{
+                                    ...customStyles.powersSection.usePipsContainer,
+                                    flexWrap: 'wrap',
+                                    rowGap: 0.6,
+                                }}
+                            >
+                                {hpPips.map((filled, hpIndex) => (
+                                    <HpPip
+                                        key={hpIndex}
+                                        filled={filled}
+                                        onClick={() => toggleScrollUse(equipmentIndex, hpIndex)}
+                                    />
+                                ))}
+                            </Box>
+                        </Box>
+                    );
+                })}
+            </Box>
+        </Paper>
+    );
+}

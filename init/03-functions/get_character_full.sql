@@ -28,6 +28,8 @@ CREATE OR REPLACE FUNCTION resolve_character_inventory_items(
                     SELECT jsonb_array_elements_text(to_jsonb(a.tags)) AS tag_val WHERE a.tags IS NOT NULL
                     UNION ALL
                     SELECT jsonb_array_elements_text(to_jsonb(e_m.tags)) AS tag_val WHERE e_m.tags IS NOT NULL
+                    UNION ALL
+                    SELECT jsonb_array_elements_text(to_jsonb(p.tags)) AS tag_val WHERE p.tags IS NOT NULL
                 ) tags_sub
             ),
             'dice', (
@@ -39,12 +41,15 @@ CREATE OR REPLACE FUNCTION resolve_character_inventory_items(
                     SELECT jsonb_array_elements_text(to_jsonb(w.dice)) AS dice_val WHERE w.dice IS NOT NULL
                     UNION ALL
                     SELECT jsonb_array_elements_text(to_jsonb(a.dice)) AS dice_val WHERE a.dice IS NOT NULL
+                    UNION ALL
+                    SELECT jsonb_array_elements_text(to_jsonb(p.action_die)) AS dice_val WHERE p.action_die IS NOT NULL
                 ) dice_sub
             ),
             'uses', CASE
                 WHEN item->'uses' IS NOT NULL
                     AND jsonb_typeof(item->'uses') = 'array'
                     AND jsonb_array_length(item->'uses') > 0 THEN item->'uses'
+                WHEN p.hp IS NOT NULL AND p.hp > 0 THEN to_jsonb(array_fill(true, ARRAY[LEAST(p.hp, 50)]))
                 WHEN p_scroll_default_uses AND item->>'key' LIKE 'scroll.%' THEN '[false,false,false,false]'::jsonb
                 ELSE COALESCE(item->'uses', '[]'::jsonb)
             END
@@ -60,6 +65,7 @@ CREATE OR REPLACE FUNCTION resolve_character_inventory_items(
     LEFT JOIN weapons w ON w.key = item->>'key'
     LEFT JOIN armors a ON a.key = item->>'key'
     LEFT JOIN equipment e_m ON e_m.key = item->>'key'
+    LEFT JOIN pets p ON p.key = item->>'key'
     LEFT JOIN translations t ON t.key = item->>'key' AND t.locale = p_locale
     LEFT JOIN translations td ON td.key = (item->>'key') || '.description' AND td.locale = p_locale;
 $$;
@@ -216,7 +222,7 @@ BEGIN
             WHERE p.key IN (
                 SELECT eq->>'key'
                 FROM jsonb_array_elements(p_equipment) eq
-                WHERE eq->>'key' LIKE 'pet.%'
+                WHERE eq->>'key' LIKE 'pet.%' OR eq->>'key' LIKE 'pets.%'
             )
         );
     END IF;

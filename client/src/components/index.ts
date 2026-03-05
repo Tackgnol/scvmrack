@@ -6,6 +6,7 @@ export { default as ModifiersPanel } from './ModifiersPanel';
 export { EquipmentSection } from './EquipmentSection';
 export { OnHandSection, BackpackSection } from './InventorySection';
 export { default as PowersSection } from './PowersSection';
+export { default as PetSection } from './PetSection';
 export { default as MorkBorgModal, ModalButton } from './MorkBorgModal';
 export { default as Footer } from './Footer';
 export { default as Header } from './Header';

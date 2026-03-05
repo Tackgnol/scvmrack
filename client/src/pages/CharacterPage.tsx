@@ -1,5 +1,5 @@
 import {useCharacter} from "@/CharacterContext/CharacterContext";
-import {BackpackSection, EquippedBar, Footer, ModifiersPanel, OnHandSection, PowersSection, SummaryBar} from "@/components";
+import {BackpackSection, EquippedBar, Footer, ModifiersPanel, OnHandSection, PetSection, PowersSection, SummaryBar} from "@/components";
 import MorkBorgModal, {ModalButton} from "@components/MorkBorgModal";
 import {Abilities} from "@components/Abilities";
 import {CharacterDescriptors} from "@components/CharacterDescriptors";
@@ -99,6 +99,7 @@ export function CharacterPage() {
             <OnHandSection/>
             <BackpackSection/>
             <PowersSection/>
+            <PetSection/>
             <NotesSection/>
             <Footer
                 onGenerateNew={handleNew}
