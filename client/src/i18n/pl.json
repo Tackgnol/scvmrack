@@ -262,7 +262,10 @@
     "deleteError": "Nie udało się usunąć postaci",
     "createError": "Nie udało się utworzyć postaci",
     "unknownClass": "Nieznana",
-    "unnamed": "Bezimienny Scvm"
+    "unnamed": "Bezimienny Scvm",
+    "notFound": "Nie ma takiego Scvma",
+    "notFoundDescription": "Ta postać już nie istnieje. Wygenerować nową?",
+    "generateNew": "Wygeneruj nowego Scvma"
   },
   "faq": {
     "title": "Często Zadawane Pytania",

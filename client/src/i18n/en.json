@@ -262,7 +262,10 @@
     "deleteError": "Failed to delete character",
     "createError": "Failed to create character",
     "unknownClass": "Unknown",
-    "unnamed": "Unnamed Scvm"
+    "unnamed": "Unnamed Scvm",
+    "notFound": "Scvm not found",
+    "notFoundDescription": "This character no longer exists. Generate a new one?",
+    "generateNew": "Generate new Scvm"
   },
   "faq": {
     "title": "Frequently Asked Questions",

@@ -1,11 +1,14 @@
 import {useCharacter} from "@/CharacterContext/CharacterContext";
 import {BackpackSection, EquippedBar, Footer, ModifiersPanel, OnHandSection, PowersSection, SummaryBar} from "@/components";
+import MorkBorgModal, {ModalButton} from "@components/MorkBorgModal";
 import {Abilities} from "@components/Abilities";
 import {CharacterDescriptors} from "@components/CharacterDescriptors";
 import {CharacterNameAndClass} from "@components/CharacterNameAndClass";
 import NotesSection from "@components/NoteSection";
 import ResourcesRow from "@components/ResourceRow";
 import {Seo} from '@/seo/Seo';
+import {Typography} from "@mui/material";
+import {useTranslation} from "react-i18next";
 
 const homeKeywords = [
     'Mork Borg',
@@ -54,7 +57,10 @@ const homeStructuredData = {
 };
 
 export function CharacterPage() {
-    const {generateNew} = useCharacter();
+    const {generateNew, error, character, characterId, isLoading} = useCharacter();
+    const {t} = useTranslation();
+
+    const isNotFound = !!error && !character && !!characterId && !isLoading;
 
     const handleNew = () => {
         generateNew()
@@ -62,6 +68,20 @@ export function CharacterPage() {
 
     return (
         <>
+            <MorkBorgModal
+                open={isNotFound}
+                onClose={handleNew}
+                title={t('characters.notFound')}
+                closeOnBackdrop={false}
+                showCloseButton={false}
+                actions={
+                    <ModalButton variant="primary" onClick={handleNew}>
+                        {t('characters.generateNew')}
+                    </ModalButton>
+                }
+            >
+                <Typography>{t('characters.notFoundDescription')}</Typography>
+            </MorkBorgModal>
             <Seo
                 title="Mork Borg Character Sheet Interactive"
                 description="Scvm Grinder is a free interactive Mork Borg character sheet and generator. Create, edit, and save your Mörk Borg characters online."
