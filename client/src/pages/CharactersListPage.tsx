@@ -3,6 +3,8 @@ import type { paths } from "@/api/schema.ts";
 import { useCharacter } from "@/CharacterContext/CharacterContext";
 import AnimatedNumber from "@components/AnimatedNumber.tsx";
 import { useAuth } from '@/hooks/useAuth';
+import { appHistory } from '@/router/history';
+import { buildHomeCallbackUrl } from '@/router/navigation';
 import { Seo } from '@/seo/Seo';
 import { customStyles, morkBorgColors } from '@/theme/morkBorgTheme';
 import {
@@ -13,7 +15,7 @@ import {
     Stack,
     Typography,
 } from '@mui/material';
-import { Link, useNavigate } from '@tanstack/react-router';
+import { Link } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -187,7 +189,6 @@ export function CharactersListPage() {
     const { t } = useTranslation();
     const { isAuthenticated, isGuest } = useAuth();
     const { characterId, setCharacterId, generateNew } = useCharacter();
-    const navigate = useNavigate();
     const [isCreating, setIsCreating] = useState(false);
     const [deletingId, setDeletingId] = useState<string | null>(null);
     const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -202,8 +203,7 @@ export function CharactersListPage() {
 
     const handleOpenCharacter = (id?: string) => {
         if (!id) return;
-        setCharacterId(id);
-        navigate({ to: '/' });
+        void appHistory.push(buildHomeCallbackUrl(id));
     };
 
     const handleCreateNewCharacter = () => {
@@ -212,8 +212,8 @@ export function CharactersListPage() {
         setDeleteError(null);
         setIsCreating(true);
         generateNew(undefined, {
-            onSuccess: () => {
-                navigate({ to: '/' });
+            onSuccess: (newCharacterId) => {
+                void appHistory.push(buildHomeCallbackUrl(newCharacterId));
             },
             onError: () => {
                 setIsCreating(false);

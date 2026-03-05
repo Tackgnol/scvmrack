@@ -2,6 +2,8 @@ import { appHistory } from '@/router/history';
 
 export const LOGGED_OUT_QUERY_PARAM = 'logged-out';
 export const SESSION_EXPIRED_QUERY_PARAM = 'expired';
+export const CHARACTER_ID_QUERY_PARAM = 'character';
+export const CLAIM_CHARACTER_QUERY_PARAM = 'claim-character';
 
 const HOME_PATH = '/';
 
@@ -46,6 +48,59 @@ const navigateToHomeWithFlag = async (queryParam: string): Promise<void> => {
 
 export const hasCurrentSearchParam = (queryParam: string): boolean => {
     return getCurrentSearchParams().has(queryParam);
+};
+
+export const getCurrentSearchParamValue = (queryParam: string): string | null => {
+    const value = getCurrentSearchParams().get(queryParam);
+    if (!value) {
+        return null;
+    }
+
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : null;
+};
+
+export const getCurrentCharacterIdParam = (): string | null => {
+    return getCurrentSearchParamValue(CHARACTER_ID_QUERY_PARAM);
+};
+
+export const getCurrentPendingClaimCharacterId = (): string | null => {
+    return getCurrentSearchParamValue(CLAIM_CHARACTER_QUERY_PARAM);
+};
+
+export const setCurrentCharacterIdParam = async (characterId: string | null): Promise<void> => {
+    await replaceCurrentWithSearchParams((searchParams) => {
+        if (characterId) {
+            searchParams.set(CHARACTER_ID_QUERY_PARAM, characterId);
+        } else {
+            searchParams.delete(CHARACTER_ID_QUERY_PARAM);
+        }
+    });
+};
+
+export const setCurrentPendingClaimCharacterId = async (characterId: string | null): Promise<void> => {
+    await replaceCurrentWithSearchParams((searchParams) => {
+        if (characterId) {
+            searchParams.set(CLAIM_CHARACTER_QUERY_PARAM, characterId);
+        } else {
+            searchParams.delete(CLAIM_CHARACTER_QUERY_PARAM);
+        }
+    });
+};
+
+export const buildHomeCallbackUrl = (
+    characterId: string | null,
+    claimCharacterId: string | null = null
+): string => {
+    const searchParams = new URLSearchParams();
+    if (characterId) {
+        searchParams.set(CHARACTER_ID_QUERY_PARAM, characterId);
+    }
+    if (claimCharacterId) {
+        searchParams.set(CLAIM_CHARACTER_QUERY_PARAM, claimCharacterId);
+    }
+
+    return buildPath(HOME_PATH, searchParams, '');
 };
 
 export const clearCurrentSearchParam = async (queryParam: string): Promise<void> => {

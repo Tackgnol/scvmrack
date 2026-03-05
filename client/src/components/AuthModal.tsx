@@ -15,12 +15,16 @@ import {
 } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { useCharacter } from '@/CharacterContext/CharacterContext';
-import { clearCurrentSearchParam, LOGGED_OUT_QUERY_PARAM } from '@/router/navigation';
+import {
+  buildHomeCallbackUrl,
+  clearCurrentSearchParam,
+  getCurrentPendingClaimCharacterId,
+  LOGGED_OUT_QUERY_PARAM,
+  setCurrentPendingClaimCharacterId,
+} from '@/router/navigation';
 import { customStyles } from '@theme/morkBorgTheme';
 import { TurnstileWidget } from './TurnstileWidget';
 import MorkBorgModal from './MorkBorgModal';
-
-const PENDING_CLAIM_KEY = 'pending-claim-character-id';
 
 interface AuthModalProps {
   open: boolean;
@@ -78,7 +82,7 @@ export function AuthModal({
   // Check for pending claim on mount / when user becomes verified
   useEffect(() => {
     if (isAuthenticated && user?.emailVerified) {
-      const pendingClaimId = localStorage.getItem(PENDING_CLAIM_KEY);
+      const pendingClaimId = getCurrentPendingClaimCharacterId();
       if (pendingClaimId) {
         // User just verified and has a pending claim
         setShowClaimPrompt(true);
@@ -100,7 +104,7 @@ export function AuthModal({
 
       // Check if we should show claim prompt (user just verified via email link)
       if (isAuthenticated && user?.emailVerified) {
-        const pendingClaimId = localStorage.getItem(PENDING_CLAIM_KEY);
+        const pendingClaimId = getCurrentPendingClaimCharacterId();
         if (pendingClaimId) {
           setShowClaimPrompt(true);
         }
@@ -153,19 +157,20 @@ export function AuthModal({
     }
 
     try {
-      // Store pending claim before magic link (user will be logged in after clicking)
-      if (isGuest && characterId) {
-        localStorage.setItem(PENDING_CLAIM_KEY, characterId);
-      }
+      const pendingClaimId = isGuest && characterId ? characterId : null;
+      await setCurrentPendingClaimCharacterId(pendingClaimId);
+
       await signInMagicLink.mutateAsync({
         email,
         turnstileToken: turnstileToken ?? undefined,
+        callbackURL: buildHomeCallbackUrl(characterId, pendingClaimId),
         locale: analyticsLocale,
         wasGuest: isGuest,
         hadGuestCharacter: Boolean(characterId),
       });
       setMagicLinkSent(true);
     } catch (err) {
+      await setCurrentPendingClaimCharacterId(null);
       setError(err instanceof Error ? err.message : t('auth.magicLinkFailed'));
     } finally {
       if (turnstileEnabled) {
@@ -183,16 +188,15 @@ export function AuthModal({
     }
 
     try {
-      // Store pending claim BEFORE signup
-      if (isGuest && characterId) {
-        localStorage.setItem(PENDING_CLAIM_KEY, characterId);
-      }
+      const pendingClaimId = isGuest && characterId ? characterId : null;
+      await setCurrentPendingClaimCharacterId(pendingClaimId);
 
       await signUp.mutateAsync({
         email,
         password,
         name,
         turnstileToken: turnstileToken ?? undefined,
+        callbackURL: buildHomeCallbackUrl(characterId, pendingClaimId),
         locale: analyticsLocale,
         wasGuest: isGuest,
         hadGuestCharacter: Boolean(characterId),
@@ -202,7 +206,7 @@ export function AuthModal({
       setShowVerifyEmail(true);
     } catch (err) {
       // Clear pending claim on error
-      localStorage.removeItem(PENDING_CLAIM_KEY);
+      await setCurrentPendingClaimCharacterId(null);
       setError(err instanceof Error ? err.message : t('auth.signupFailed'));
     } finally {
       if (turnstileEnabled) {
@@ -214,7 +218,7 @@ export function AuthModal({
   const handleClaim = async (shouldClaim: boolean) => {
     if (shouldClaim) {
       try {
-        const pendingClaimId = localStorage.getItem(PENDING_CLAIM_KEY);
+        const pendingClaimId = getCurrentPendingClaimCharacterId();
         await claimCharacter(pendingClaimId || undefined);
       } catch (err) {
         setError(err instanceof Error ? err.message : t('auth.claimFailed'));
@@ -227,7 +231,7 @@ export function AuthModal({
       });
     }
     // Clear pending claim
-    localStorage.removeItem(PENDING_CLAIM_KEY);
+    await setCurrentPendingClaimCharacterId(null);
     setShowClaimPrompt(false);
     onClose();
   };
