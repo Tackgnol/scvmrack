@@ -178,6 +178,11 @@
     "noScrollsOrPowers": "No scrolls or powers",
     "unknownScroll": "Unknown Scroll"
   },
+  "pets": {
+    "title": "Pets",
+    "actionDie": "Action Die",
+    "unknown": "Unknown Pet"
+  },
   "auth": {
     "login": "Log In",
     "signup": "Sign Up",

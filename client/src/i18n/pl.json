@@ -178,6 +178,11 @@
     "noScrollsOrPowers": "Brak zwojów i mocy",
     "unknownScroll": "Nieznany Zwój"
   },
+  "pets": {
+    "title": "Zwierzęta",
+    "actionDie": "Kości akcji",
+    "unknown": "Nieznane zwierzę"
+  },
   "auth": {
     "login": "Zaloguj",
     "signup": "Zarejestruj",

@@ -349,10 +349,26 @@ export function OnHandSection() {
     );
     if (!response.ok) return;
     const fullItem = await response.json();
+
+    const isPet =
+      hit.item_type === 'pet' ||
+      (Array.isArray(fullItem.tags) && fullItem.tags.includes('pet'));
+
+    const actionDice = (Array.isArray(fullItem.action_die) ? fullItem.action_die : [])
+      .map((value: unknown) => Number(value))
+      .filter((value: number) => Number.isFinite(value) && value > 0);
+
+    const petHp = Number(fullItem.hp);
+    const initialUses =
+      isPet && Number.isFinite(petHp) && petHp > 0
+        ? Array.from({ length: petHp }, () => true)
+        : [];
+
     addEquipmentItem({
       ...fullItem,
       name: fullItem.name ?? hit.name,
-      uses: [],
+      dice: actionDice.length > 0 ? actionDice : fullItem.dice,
+      uses: initialUses,
     });
   };
 
