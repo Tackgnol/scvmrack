@@ -47,6 +47,7 @@ export interface SignUpCredentials {
     password: string;
     name: string;
     turnstileToken?: string;
+    callbackURL?: string;
     locale?: string;
     wasGuest?: boolean;
     hadGuestCharacter?: boolean;
@@ -55,6 +56,7 @@ export interface SignUpCredentials {
 export interface MagicLinkCredentials {
     email: string;
     turnstileToken?: string;
+    callbackURL?: string;
     locale?: string;
     wasGuest?: boolean;
     hadGuestCharacter?: boolean;
@@ -132,6 +134,9 @@ export function useAuth() {
             if (creds.turnstileToken) {
                 payload.turnstileToken = creds.turnstileToken;
             }
+            if (creds.callbackURL) {
+                payload.callbackURL = creds.callbackURL;
+            }
 
             const { data, error } = await authClient.signUp.email(payload as any);
             if (error) throw error;
@@ -158,10 +163,6 @@ export function useAuth() {
         onSuccess: () => {
             queryClient.setQueryData(authKeys.session(), null);
             queryClient.setQueryData(authKeys.me(), null);
-            
-            // Clear the active character so the next session starts fresh
-            localStorage.removeItem("mork-borg-character-id");
-            
             void navigateToLoggedOut();
         },
     });
@@ -178,12 +179,12 @@ export function useAuth() {
     // });
 
     const signInMagicLink = useMutation({
-        mutationFn: async ({ email, turnstileToken }: MagicLinkCredentials) => {
+        mutationFn: async ({ email, turnstileToken, callbackURL }: MagicLinkCredentials) => {
             // We pass the email. The server interceptor in index.ts
             // will handle hashing it before Better Auth sees it.
             const payload: Record<string, unknown> = {
                 email,
-                callbackURL: "/", // Where to redirect after clicking link
+                callbackURL: callbackURL || "/", // Where to redirect after clicking link
             };
 
             if (turnstileToken) {

@@ -1,6 +1,7 @@
 import {useAuth} from "@/hooks/useAuth";
 import {useCharacter} from "@/CharacterContext/CharacterContext";
 import { useSessionExpiredFlag } from '@/hooks/useSessionExpiredFlag';
+import { getCurrentPendingClaimCharacterId } from '@/router/navigation';
 import {Flag} from "@components/Flag";
 import {FlagContainer} from "@components/FlagContainer";
 import {SessionWarningBanner} from "@components/SessionWarningBanner";
@@ -71,7 +72,7 @@ export default function Header() {
 
     useEffect(() => {
         if (isAuthenticated && user?.emailVerified) {
-            if (localStorage.getItem('pending-claim-character-id')) {
+            if (getCurrentPendingClaimCharacterId()) {
                 openAuthModal();
             }
         }
