@@ -155,11 +155,7 @@ DECLARE
     v_over_capacity_source text;
     v_double_capacity_source text;
 BEGIN
-    v_strength_modifier := CASE
-        -- Backward compatibility: if DB already stores a direct modifier, use it as-is.
-        WHEN p_strength BETWEEN -6 AND 6 THEN p_strength
-        ELSE roll_to_modifier(p_strength)
-    END;
+    v_strength_modifier := roll_to_modifier(p_strength);
     v_max_encumbrance := GREATEST(0, 8 + v_strength_modifier);
     v_encumbrance := COALESCE(jsonb_array_length(COALESCE(p_equipment, '[]'::jsonb)), 0);
 
@@ -288,14 +284,7 @@ CREATE OR REPLACE FUNCTION calculate_character_dr(
 ) RETURNS int
     LANGUAGE sql AS $$
     SELECT 12
-        - (
-            CASE
-                -- Backward compatibility: if DB already stores a direct modifier, use it as-is.
-                WHEN p_ability BETWEEN -6 AND 6 THEN p_ability
-                -- Current model stores raw ability scores (typically 3..18), so convert to modifier.
-                ELSE roll_to_modifier(p_ability)
-            END
-        )
+        - roll_to_modifier(p_ability)
         - COALESCE(
         (
             SELECT SUM((m->>'value')::int)
@@ -408,11 +397,7 @@ BEGIN
     );
 
     encumbrance := COALESCE(jsonb_array_length(COALESCE(result.equipment, '[]'::jsonb)), 0);
-    strength_modifier := CASE
-        -- Backward compatibility: if DB already stores a direct modifier, use it as-is.
-        WHEN result.strength BETWEEN -6 AND 6 THEN result.strength
-        ELSE roll_to_modifier(result.strength)
-    END;
+    strength_modifier := roll_to_modifier(result.strength);
     max_encumbrance := GREATEST(0, 8 + strength_modifier);
 
     dr_to_dodge := calculate_character_dr(
