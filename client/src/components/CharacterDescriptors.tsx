@@ -58,6 +58,7 @@ export const CharacterDescriptors = () => {
                                     placeholder={t('modifiers.commentPlaceholder')}
                                     variant="standard"
                                     sx={customStyles.textField.standard}
+                                    inputProps={{ "data-testid": `ability-comment-${index}-input` }}
                                 />
                                 {index < character.abilities!.length - 1 && (
                                     <Box sx={customStyles.characterDescriptors.abilitySeparator}/>
@@ -85,6 +86,7 @@ export const CharacterDescriptors = () => {
                         onChange={(e) => updateField('trait1', e.target.value)}
                         variant="standard"
                         sx={customStyles.textField.standard}
+                        inputProps={{ "data-testid": "trait1-input" }}
                     />
 
                     <TextField
@@ -94,6 +96,7 @@ export const CharacterDescriptors = () => {
                         onChange={(e) => updateField('trait2', e.target.value)}
                         variant="standard"
                         sx={customStyles.textField.standard}
+                        inputProps={{ "data-testid": "trait2-input" }}
                     />
 
                     <TextField
@@ -103,6 +106,7 @@ export const CharacterDescriptors = () => {
                         onChange={(e) => updateField('habit', e.target.value)}
                         variant="standard"
                         sx={customStyles.textField.standard}
+                        inputProps={{ "data-testid": "habit-input" }}
                     />
 
                     <TextField
@@ -112,6 +116,7 @@ export const CharacterDescriptors = () => {
                         onChange={(e) => updateField('body_description', e.target.value)}
                         variant="standard"
                         sx={customStyles.textField.standard}
+                        inputProps={{ "data-testid": "body-description-input" }}
                     />
                 </BorderedGreyContainer>
             </Paper>

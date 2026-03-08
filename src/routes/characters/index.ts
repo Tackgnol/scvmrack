@@ -350,6 +350,10 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
 
             // Already claimed?
             if (character.user_id) {
+                // Idempotent: if already claimed by the same user, return success
+                if (character.user_id === session.userId) {
+                    return reply.send({ success: true });
+                }
                 return reply.status(400).send({ error: 'Character already claimed' });
             }
 

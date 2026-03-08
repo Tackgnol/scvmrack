@@ -88,6 +88,7 @@ export default function ResourcesRow() {
               }
               size="small"
               sx={customStyles.hpInput}
+              inputProps={{ "data-testid": "hp-input" }}
             />
             <Typography sx={customStyles.hpDivider}>/</Typography>
             <Box sx={customStyles.maxHpBox}>
@@ -155,6 +156,7 @@ export default function ResourcesRow() {
             }
             size="small"
             sx={customStyles.resourceInput}
+            inputProps={{ "data-testid": "silver-input" }}
           />
         </Paper>
 

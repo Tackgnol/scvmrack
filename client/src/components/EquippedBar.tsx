@@ -13,11 +13,12 @@ interface EquippedQuickProps {
     detail?: string;
     noneName: string;
     onClick?: (event: MouseEvent<HTMLElement>) => void;
+    dataTestId?: string;
 }
 
-function EquippedQuick({icon, type, name, detail, noneName, onClick}: EquippedQuickProps) {
+function EquippedQuick({icon, type, name, detail, noneName, onClick, dataTestId}: EquippedQuickProps) {
     return (
-        <StyledEquipmentCard onClick={onClick} hasClick={!!onClick}>
+        <StyledEquipmentCard onClick={onClick} hasClick={!!onClick} data-testid={dataTestId}>
             <Typography sx={customStyles.equippedBar.icon}>{icon}</Typography>
             <Box sx={customStyles.equippedBar.contentBox}>
                 <Typography variant="subtitle2" color="secondary" sx={customStyles.equippedBar.typeLabel}>
@@ -124,6 +125,7 @@ export default function EquippedBar() {
                 detail={mainWeapon?.dice ? formatDice(mainWeapon.dice) : 'd2'}
                 noneName={t('equipment.none')}
                 onClick={(e) => openWeaponMenu(e, 0)}
+                dataTestId="equipped-weapon-slot-0"
             />
 
             {/* Off-hand Slot */}
@@ -134,6 +136,7 @@ export default function EquippedBar() {
                 detail={offhandWeapon?.dice ? formatDice(offhandWeapon.dice) : ''}
                 noneName={t('equipment.none')}
                 onClick={(e) => openWeaponMenu(e, 1)}
+                dataTestId="equipped-weapon-slot-1"
             />)}
 
             {/* Armor Slot */}
@@ -144,6 +147,7 @@ export default function EquippedBar() {
                 detail={equippedArmor?.dice ? `-${formatDice(equippedArmor.dice)}` : '−'}
                 noneName={t('equipment.none')}
                 onClick={(e) => setArmorAnchor(e.currentTarget)}
+                dataTestId="equipped-armor-slot"
             />
 
             {/* Weapon Selection Menu */}
@@ -152,22 +156,24 @@ export default function EquippedBar() {
 
                 {/* Unequip Option */}
                 {equippedWeapons[activeWeaponSlot]?.key && (
+                    <>
                     <MenuItem
                         onClick={() => {
                             unequipWeapon(activeWeaponSlot);
                             setWeaponAnchor(null);
                         }}
                         sx={{...menuItemStyle, ...customStyles.equippedBar.menuUnequipItem}}
+                        data-testid="unequip-weapon-option"
                     >
                         {t('equipment.unequip')} {equippedWeapons[activeWeaponSlot]?.name}
                     </MenuItem>
+                    {inventoryWeapons.length !== 0 && <Divider sx={customStyles.equippedBar.menuDivider}/>}
+                    </>
                 )}
-
-                {inventoryWeapons.length !== 0 && <Divider sx={customStyles.equippedBar.menuDivider}/>}
 
 
                 {inventoryWeapons.map(({item, index, quantity}) => (
-                    <MenuItem key={`${item.key}-${index}`} onClick={() => handleSelectWeapon(index)} sx={menuItemStyle}>
+                    <MenuItem key={`${item.key}-${index}`} onClick={() => handleSelectWeapon(index)} sx={menuItemStyle} data-testid={`equip-weapon-option-${index}`}>
                         <Typography sx={customStyles.equippedBar.menuItemName}>
                             {item.name} {quantity > 1 ? `x${quantity}` : ''}
                         </Typography>
@@ -181,22 +187,24 @@ export default function EquippedBar() {
 
                 {/* Unequip Option */}
                 {equippedArmor?.key && (
+                    <>
                     <MenuItem
                         onClick={() => {
                             unequipArmor();
                             setArmorAnchor(null);
                         }}
                         sx={{...menuItemStyle, ...customStyles.equippedBar.menuUnequipItem}}
+                        data-testid="unequip-armor-option"
                     >
                         {t('equipment.unequip')} {equippedArmor.name}
                     </MenuItem>
+                    {inventoryArmor.length !== 0 && <Divider sx={customStyles.equippedBar.menuDivider}/>}
+                    </>
                 )}
-
-                {inventoryArmor.length !== 0 && <Divider sx={customStyles.equippedBar.menuDivider}/>}
 
 
                 {inventoryArmor.map(({item, index, quantity}) => (
-                    <MenuItem key={`${item.key}-${index}`} onClick={() => handleSelectArmor(index)} sx={menuItemStyle}>
+                    <MenuItem key={`${item.key}-${index}`} onClick={() => handleSelectArmor(index)} sx={menuItemStyle} data-testid={`equip-armor-option-${index}`}>
                         <Typography sx={customStyles.equippedBar.menuItemName}>
                             {item.name} {quantity > 1 ? `x${quantity}` : ''}
                         </Typography>

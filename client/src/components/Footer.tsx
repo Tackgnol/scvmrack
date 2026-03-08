@@ -22,7 +22,7 @@ export default function Footer({onGenerateNew}: FooterProps) {
                 </Trans>
             </Typography>
             <Box sx={customStyles.footer.buttonContainer}>
-                <Button onClick={onGenerateNew} sx={customStyles.footerButton}>
+                <Button data-testid="generate-new-button" onClick={onGenerateNew} sx={customStyles.footerButton}>
                     {t('actions.generateNew')}
                 </Button>
             </Box>

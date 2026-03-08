@@ -1,0 +1,110 @@
+services:
+  mailpit:
+    image: axllent/mailpit:latest
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "8025"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: p1002_scmgrinder
+      POSTGRES_PASSWORD: p1002_scmgrinder
+      POSTGRES_DB: p1002_scmgrinder
+    volumes:
+      - ./init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U p1002_scmgrinder"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  api:
+    image: scvmgrinder_be:e2e
+    pull_policy: never
+    build:
+      context: .
+    command: npm start
+    environment:
+      DATABASE_USER: p1002_scmgrinder
+      DATABASE_PASSWORD: p1002_scmgrinder
+      DATABASE_NAME: p1002_scmgrinder
+      DATABASE_HOST: db
+      DATABASE_PORT: 5432
+      PORT: 3000
+      NODE_ENV: test
+      CLIENT_ORIGIN: http://web:5173
+      CLIENT_GATEWAY: http://web:5173
+      BETTER_AUTH_SECRET: e2e-secret
+      BETTER_AUTH_URL: http://web:5173
+      AUTH_BASE_URL: http://api:3000/auth
+      EMAIL_PEPPER: REMOVED_SECRET
+      EMAIL_ENCRYPTION_KEY: REMOVED_SECRET
+      MAIL_HOST: mailpit
+      MAIL_PORT: 1025
+      MAIL_SECURE: "false"
+      MAIL_USER: e2e@example.com
+      MAIL_PASS: e2e
+      TURNSTILE_SECRET_KEY: ""
+    depends_on:
+      db:
+        condition: service_healthy
+      mailpit:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://localhost:3000/health').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 10s
+
+  web:
+    image: scvmgrinder_fe:e2e
+    pull_policy: never
+    build:
+      context: ./client
+    environment:
+      VITE_BACKEND_URL: ""
+      VITE_SITE_URL: http://web:5173
+      API_PROXY_TARGET: http://api:3000
+      VITE_GA_MEASUREMENT_ID: ""
+      VITE_TURNSTILE_SITE_KEY: ""
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://localhost:5173').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 10s
+
+  e2e:
+    image: scvmgrinder_e2e:latest
+    build:
+      context: .
+      dockerfile: tests/e2e/Dockerfile
+    environment:
+      PLAYWRIGHT_BASE_URL: http://web:5173
+      PLAYWRIGHT_MAILPIT_URL: http://mailpit:8025
+      PLAYWRIGHT_DEBUG: ${PLAYWRIGHT_DEBUG:-0}
+    volumes:
+      - ./tests/e2e/playwright-report:/e2e/playwright-report
+      - ./tests/e2e/test-results:/e2e/test-results
+    depends_on:
+      web:
+        condition: service_healthy

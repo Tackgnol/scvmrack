@@ -1,14 +1,14 @@
 import { $api, characterKeys } from "@/api";
-import {PathsCharactersIdGetParametersQueryLocale} from "@/api/schema.ts";
+import { PathsCharactersIdGetParametersQueryLocale } from "@/api/schema.ts";
 
 import { CharacterResponse, UpdateMutationContext } from "@/hooks/models.ts";
-import {getApiLocale, getCharacterKey} from "@/hooks/utils.ts";
+import { getApiLocale, getCharacterKey } from "@/hooks/utils.ts";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
 
 export function useCharacterRepository(characterId: string | null, locale?: string) {
     const queryClient = useQueryClient();
-    const trimmedLocale =getApiLocale<PathsCharactersIdGetParametersQueryLocale>(locale);
+    const trimmedLocale = getApiLocale<PathsCharactersIdGetParametersQueryLocale>(locale);
 
     // ---- Character Query ----
     const characterQuery = $api.useQuery(

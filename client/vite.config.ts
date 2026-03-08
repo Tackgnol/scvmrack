@@ -1,7 +1,26 @@
 import visualizer from "rollup-plugin-visualizer";
-import { defineConfig } from 'vite';
+import { defineConfig, type ProxyOptions } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
+
+const allowedHosts = (process.env.VITE_ALLOWED_HOSTS ?? 'localhost,web')
+  .split(',')
+  .map((host) => host.trim())
+  .filter(Boolean);
+
+/** Proxy API calls to the backend but let browser navigations fall through to the SPA. */
+function apiProxy(target: string, allowHtml = false): ProxyOptions {
+  return {
+    target,
+    changeOrigin: true,
+    bypass(req) {
+      if (!allowHtml && req.headers.accept?.includes('text/html')) {
+        // Fall back to serve SPA
+        return req.url;
+      }
+    },
+  };
+}
 
 export default defineConfig({
   plugins: [
@@ -44,5 +63,18 @@ export default defineConfig({
       '@theme': path.resolve(__dirname, './src/theme'),
       '@types': path.resolve(__dirname, './src/types'),
     },
+  },
+  server: {
+    allowedHosts,
+    ...(process.env.API_PROXY_TARGET && {
+      proxy: {
+        '/auth': apiProxy(process.env.API_PROXY_TARGET, true),
+        '/characters': apiProxy(process.env.API_PROXY_TARGET),
+        '/equipment': apiProxy(process.env.API_PROXY_TARGET),
+        '/session': apiProxy(process.env.API_PROXY_TARGET),
+        '/health': apiProxy(process.env.API_PROXY_TARGET),
+        '/c': apiProxy(process.env.API_PROXY_TARGET),
+      },
+    }),
   },
 });

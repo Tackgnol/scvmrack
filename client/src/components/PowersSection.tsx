@@ -14,6 +14,7 @@ function UsePip({used, onClick}: UsePipProps) {
     return (
         <Box
             onClick={onClick}
+            data-testid="power-pip"
             sx={{
                 ...customStyles.powersSection.usePip.base,
                 ...(used ? customStyles.powersSection.usePip.used : customStyles.powersSection.usePip.unused)
