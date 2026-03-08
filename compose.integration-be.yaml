@@ -1,0 +1,64 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: p1002_scmgrinder
+      POSTGRES_PASSWORD: p1002_scmgrinder
+      POSTGRES_DB: p1002_scmgrinder
+    volumes:
+      - ./init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U p1002_scmgrinder"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  api:
+    image: scvmgrinder_be:integration
+    pull_policy: never
+    build:
+      context: .
+    command: npm start
+    environment:
+      DATABASE_USER: p1002_scmgrinder
+      DATABASE_PASSWORD: p1002_scmgrinder
+      DATABASE_NAME: p1002_scmgrinder
+      DATABASE_HOST: db
+      DATABASE_PORT: 5432
+      PORT: 3000
+      NODE_ENV: test
+      CLIENT_ORIGIN: http://localhost:5173
+      CLIENT_GATEWAY: http://localhost:5173
+      BETTER_AUTH_SECRET: integration-secret
+      BETTER_AUTH_URL: http://api:3000
+      AUTH_BASE_URL: http://api:3000/auth
+      EMAIL_PEPPER: REMOVED_SECRET
+      EMAIL_ENCRYPTION_KEY: REMOVED_SECRET
+      MAIL_USER: integration@example.com
+      MAIL_PASS: integration
+      TURNSTILE_SECRET_KEY: ""
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://localhost:3000/health').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 10s
+
+  integration:
+    image: scvmgrinder_be:integration
+    pull_policy: never
+    command: npm run test:integration:be:run
+    environment:
+      E2E_BASE_URL: http://api:3000
+    depends_on:
+      api:
+        condition: service_healthy

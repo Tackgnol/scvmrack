@@ -1,0 +1,8 @@
+{
+  "name": "scvmgrinder-unit-be",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test:run": "node --import tsx --test \"**/*.test.ts\""
+  }
+}

@@ -368,7 +368,7 @@ export default function ModifiersPanel() {
     const scopeConfig = scopeIncludeOptions.find((s) => s.value === scope);
     const exclude = includesToExclude(scopeConfig?.include ?? []);
     const newModifier = {
-      id: crypto.randomUUID(),
+      id: Math.random().toString(36).substring(2, 9) + Date.now().toString(36),
       name: name.trim(),
       value,
       source: 'Player',
@@ -385,7 +385,7 @@ export default function ModifiersPanel() {
     setScope('all');
   };
 
-  const handleQuickKeyPress = (e: React.KeyboardEvent<HTMLDivElement>) => {
+  const handleQuickKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (e.key === 'Enter') handleQuickAdd();
   };
 
@@ -447,7 +447,7 @@ export default function ModifiersPanel() {
       updateModifier(editingModifierId, modifierPayload);
     } else {
       addModifier({
-        id: crypto.randomUUID(),
+        id: Math.random().toString(36).substring(2, 9) + Date.now().toString(36),
         ...modifierPayload,
       } as CustomModifier);
     }
@@ -706,9 +706,10 @@ export default function ModifiersPanel() {
           onChange={(e: ChangeEvent<HTMLInputElement>) =>
             setName(e.target.value)
           }
-          onKeyPress={handleQuickKeyPress}
+          onKeyDown={handleQuickKeyDown}
           size="small"
           sx={{ gridColumn: { xs: '1 / -1', sm: 'auto' } }}
+          inputProps={{ "data-testid": "quick-mod-name-input" }}
         />
 
         <Select
@@ -741,12 +742,13 @@ export default function ModifiersPanel() {
           onChange={(e: ChangeEvent<HTMLInputElement>) =>
             setValueStr(e.target.value)
           }
-          onKeyPress={handleQuickKeyPress}
+          onKeyDown={handleQuickKeyDown}
           size="small"
           sx={{
             gridColumn: { xs: '1 / -1', sm: 'auto' },
             width: { xs: '100%', sm: 70 },
           }}
+          inputProps={{ "data-testid": "quick-mod-value-input" }}
         />
 
         <Select
@@ -775,6 +777,7 @@ export default function ModifiersPanel() {
         <Button
           variant="contained"
           onClick={handleQuickAdd}
+          data-testid="quick-mod-add-btn"
           sx={{
             gridColumn: { xs: '1 / 2', sm: 'auto' },
             width: { xs: '100%', sm: 'auto' },
@@ -788,6 +791,7 @@ export default function ModifiersPanel() {
             onClick={handleOpenModal}
             size="small"
             aria-label={t('modifiers.advancedTooltip')}
+            data-testid="advanced-mod-btn"
             sx={{
               gridColumn: { xs: '2 / 3', sm: 'auto' },
               justifySelf: 'end',
@@ -833,6 +837,7 @@ export default function ModifiersPanel() {
               variant="contained"
               onClick={handleAdvancedSave}
               disabled={!modalName.trim()}
+              data-testid="modal-mod-save-btn"
             >
               {isEditingModal
                 ? t('modifiers.saveModifier')
@@ -853,6 +858,7 @@ export default function ModifiersPanel() {
           sx={{ mt: 0.5 }}
           InputLabelProps={{ sx: modalTextFieldLabelSx }}
           InputProps={{ sx: modalTextFieldInputSx }}
+          inputProps={{ "data-testid": "modal-mod-name-input" }}
         />
 
         {/* Statistic */}

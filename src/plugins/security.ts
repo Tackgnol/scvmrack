@@ -11,7 +11,7 @@ export default fp(async function securityPlugin(fastify: FastifyInstance) {
 
     // Rate limiting
     await fastify.register(rateLimit, {
-        max: 100,
+        max: process.env.NODE_ENV === 'test' ? 10000 : 100,
         timeWindow: '1 minute',
         // Optional: different limits for different routes
         // keyGenerator: (request) => request.ip

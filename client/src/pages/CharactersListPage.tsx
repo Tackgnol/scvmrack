@@ -281,7 +281,7 @@ export function CharactersListPage() {
                     noIndex
                 />
                 <Box sx={listStyles.guestWarning}>
-                    <Alert severity="warning" sx={customStyles.alerts.warning}>
+                    <Alert data-testid="characters-guest-warning" severity="warning" sx={customStyles.alerts.warning}>
                         {t('characters.loginRequired', 'You need to be logged in to view your characters.')}
                     </Alert>
                     <Button component={Link} to="/" variant="contained" sx={customStyles.charactersListPage.loginButton}>

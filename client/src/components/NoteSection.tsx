@@ -26,6 +26,7 @@ export default function NotesSection() {
                 rows={4}
                 fullWidth
                 sx={customStyles.notes.input}
+                inputProps={{ "data-testid": "notes-input" }}
             />
         </Box>
     );

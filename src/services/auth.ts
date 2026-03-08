@@ -108,12 +108,31 @@ const auth = betterAuth({
         sendVerificationEmail: async ({user, url}, request) => {
             const reqOrigin = request?.headers?.get('origin') || request?.headers?.get('referer');
             const originToUse = reqOrigin ? new URL(reqOrigin).origin : (process.env.CLIENT_ORIGIN ?? 'http://localhost:3000');
-            
+
+            // Embed the guest's character ID in the callbackURL so it survives
+            // the email round-trip (works even if verified in a different browser).
+            const cookieHeader = request?.headers?.get('cookie') || '';
+            const guestMatch = cookieHeader.match(/guest-session=([^;]+)/);
+            const guestSessionId = guestMatch?.[1];
+
+            let characterId: string | null = null;
+            if (guestSessionId) {
+                const { rows } = await pool.query(
+                    'SELECT id FROM characters WHERE session_id = $1 AND user_id IS NULL ORDER BY updated_at DESC LIMIT 1',
+                    [guestSessionId]
+                );
+                characterId = rows[0]?.id || null;
+            }
+
+            const verificationUrl = new URL(url);
+            const callbackPath = characterId ? `/?character=${characterId}` : '/';
+            verificationUrl.searchParams.set('callbackURL', callbackPath);
+
             const realEmail = decryptEmail((user as any).encrypted_email);
             await sendEmail(
                 realEmail,
                 "Verify your Scvmgrinder account",
-                verificationEmail(buildClientVerificationUrl(url, originToUse))
+                verificationEmail(buildClientVerificationUrl(verificationUrl.toString(), originToUse))
             );
         },
     },

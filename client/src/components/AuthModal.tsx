@@ -261,6 +261,7 @@ export function AuthModal({
             variant="contained"
             fullWidth
             onClick={handleCreateNew}
+            data-testid="create-new-character-button"
           >
             {t("session.createNewCharacter")}
           </Button>
@@ -290,6 +291,7 @@ export function AuthModal({
             onClick={() => handleClaim(true)}
             disabled={isClaiming}
             fullWidth
+            data-testid="claim-character-yes"
           >
             {isClaiming ? <CircularProgress size={24} /> : t('auth.claimYes')}
           </Button>
@@ -298,6 +300,7 @@ export function AuthModal({
             onClick={() => handleClaim(false)}
             disabled={isClaiming}
             fullWidth
+            data-testid="claim-character-no"
           >
             {t('auth.claimNo')}
           </Button>
@@ -385,6 +388,7 @@ export function AuthModal({
           onClick={handleLogout}
           disabled={signOut.isPending}
           fullWidth
+          data-testid="logout-button"
         >
           {signOut.isPending ? (
             <CircularProgress size={24} />
@@ -414,8 +418,8 @@ export function AuthModal({
         }}
         sx={customStyles.authModal.titleMarginLarge}
       >
-        <Tab value="login" label={t('auth.login')} />
-        <Tab value="signup" label={t('auth.signup')} />
+        <Tab value="login" label={t('auth.login')} data-testid="tab-login" />
+        <Tab value="signup" label={t('auth.signup')} data-testid="tab-signup" />
       </Tabs>
       {sessionExpiredNotice && (
         <Alert severity="warning" sx={customStyles.authModal.infoAlert}>
@@ -429,7 +433,7 @@ export function AuthModal({
       {tab === 'login' && (
         <Box>
           {magicLinkSent ? (
-            <Box sx={customStyles.authModal.centeredBox}>
+            <Box sx={customStyles.authModal.centeredBox} data-testid="magic-link-sent-view">
               <Typography variant="h6" sx={customStyles.authModal.title}>
                 {t('auth.checkEmailTitle', 'SOULS DISPATCHED')}
               </Typography>
@@ -457,6 +461,7 @@ export function AuthModal({
                 fullWidth
                 required
                 sx={customStyles.authModal.textField}
+                slotProps={{ htmlInput: { 'data-testid': 'login-email-input' } as any }}
               />
               <TextField
                 label={t('auth.password')}
@@ -466,6 +471,7 @@ export function AuthModal({
                 fullWidth
                 required
                 sx={customStyles.authModal.textFieldLast}
+                slotProps={{ htmlInput: { 'data-testid': 'login-password-input' } as any }}
               />
               {turnstileEnabled && (
                 <TurnstileWidget
@@ -479,6 +485,7 @@ export function AuthModal({
                 variant="contained"
                 fullWidth
                 disabled={signIn.isPending || (turnstileEnabled && !turnstileToken)}
+                data-testid="login-submit-button"
               >
                 {signIn.isPending ? (
                   <CircularProgress size={24} />
@@ -499,6 +506,7 @@ export function AuthModal({
                 onClick={handleMagicLinkRequest}
                 disabled={signInMagicLink.isPending || (turnstileEnabled && !turnstileToken)}
                 sx={customStyles.authModal.magicLinkButton}
+                data-testid="magic-link-button"
               >
                 {signInMagicLink.isPending ? (
                   <CircularProgress size={20} color="inherit" />
@@ -520,6 +528,7 @@ export function AuthModal({
             fullWidth
             required
             sx={customStyles.authModal.textField}
+            slotProps={{ htmlInput: { 'data-testid': 'signup-name-input' } as any }}
           />
           <TextField
             label={t('auth.email')}
@@ -529,6 +538,7 @@ export function AuthModal({
             fullWidth
             required
             sx={customStyles.authModal.textField}
+            slotProps={{ htmlInput: { 'data-testid': 'signup-email-input' } as any }}
           />
           <TextField
             label={t('auth.password')}
@@ -537,7 +547,7 @@ export function AuthModal({
             onChange={(e) => setPassword(e.target.value)}
             fullWidth
             required
-            slotProps={{ htmlInput: { minLength: 8 } }}
+            slotProps={{ htmlInput: { minLength: 8, 'data-testid': 'signup-password-input' } as any }}
             helperText={t('auth.passwordHint')}
             sx={customStyles.authModal.textFieldLast}
           />
@@ -560,6 +570,7 @@ export function AuthModal({
             variant="contained"
             fullWidth
             disabled={signUp.isPending || (turnstileEnabled && !turnstileToken)}
+            data-testid="signup-submit-button"
           >
             {signUp.isPending ? (
               <CircularProgress size={24} />

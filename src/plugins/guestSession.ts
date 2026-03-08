@@ -95,7 +95,6 @@ const guestSessionPlugin: FastifyPluginAsync = async (fastify): Promise<void> =>
             [newSessionId, expiresAt]
         );
 
-        // Set cookie
         reply.setCookie('guest-session', newSessionId, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',

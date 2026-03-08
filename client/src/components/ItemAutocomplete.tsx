@@ -80,6 +80,10 @@ export default function ItemAutocomplete({
                     label={label ?? t('equipment.addItem')}
                     placeholder={placeholder}
                     size="small"
+                    inputProps={{
+                        ...params.inputProps,
+                        "data-testid": "equipment-search-input"
+                    }}
                 />
             )}
         />
