@@ -66,7 +66,11 @@ function SectionLabel({label}: { label: string }) {
     );
 }
 
-export default function PowersSection() {
+interface PowersSectionProps {
+    showLabel?: boolean;
+}
+
+export default function PowersSection({ showLabel = true }: PowersSectionProps) {
     const {character, toggleScrollUse} = useCharacter();
     const {t} = useTranslation();
 
@@ -81,7 +85,7 @@ export default function PowersSection() {
 
     return (
         <Paper sx={customStyles.powersSection.paper}>
-            <SectionLabel label={t('powers.title')}/>
+            {showLabel && <SectionLabel label={t('powers.title')}/>}
             <Box sx={customStyles.powersSection.contentContainer}>
                 {scrollsWithIndices.map(({item, equipmentIndex}, displayIndex) => {
                     // Get uses from item, default to array of false

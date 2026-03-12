@@ -7,8 +7,11 @@ import {CharacterNameAndClass} from "@components/CharacterNameAndClass";
 import NotesSection from "@components/NoteSection";
 import ResourcesRow from "@components/ResourceRow";
 import {Seo} from '@/seo/Seo';
-import {Typography} from "@mui/material";
+import { customStyles } from "@/theme/morkBorgTheme";
+import {Accordion, AccordionDetails, AccordionSummary, Typography, useMediaQuery, useTheme} from "@mui/material";
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import {useTranslation} from "react-i18next";
+import type { ReactNode } from 'react';
 
 const homeKeywords = [
     'Mork Borg',
@@ -59,8 +62,49 @@ const homeStructuredData = {
 export function CharacterPage() {
     const {generateNew, error, character, characterId, isLoading} = useCharacter();
     const {t} = useTranslation();
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
     const isNotFound = !!error && !character && !!characterId && !isLoading;
+    const equipment = character?.equipment ?? [];
+    const hasScrolls = equipment.some((item) => item.key?.startsWith('scroll.'));
+    const hasPets = equipment.some((item) => {
+        const tags = item.tags ?? [];
+        const key = item.key ?? '';
+        return tags.includes('pet') || key.startsWith('pet.') || key.startsWith('pets.');
+    });
+    const hasBackpack = (character?.storage ?? []).length > 0;
+
+    const SectionAccordion = ({
+        title,
+        children,
+        defaultExpanded = !isMobile,
+        dataTestId,
+    }: {
+        title: string;
+        children: ReactNode;
+        defaultExpanded?: boolean;
+        dataTestId?: string;
+    }) => (
+        <Accordion
+            defaultExpanded={defaultExpanded}
+            disableGutters
+            sx={customStyles.collapsibleSection.accordion}
+            data-testid={dataTestId}
+        >
+            <AccordionSummary
+                expandIcon={<ExpandMoreIcon sx={customStyles.collapsibleSection.expandIcon} />}
+                sx={customStyles.collapsibleSection.summary}
+            >
+                <Typography variant="subtitle2" color="secondary" sx={customStyles.collapsibleSection.title}>
+                    {title}
+                </Typography>
+            </AccordionSummary>
+            <AccordionDetails sx={customStyles.collapsibleSection.details}>
+                {children}
+            </AccordionDetails>
+        </Accordion>
+    );
 
     const handleNew = () => {
         generateNew()
@@ -97,10 +141,24 @@ export function CharacterPage() {
             <CharacterDescriptors/>
             <ModifiersPanel/>
             <OnHandSection/>
-            <BackpackSection/>
-            <PowersSection/>
-            <PetSection/>
-            <NotesSection/>
+            {hasBackpack && (
+                <SectionAccordion title={t('equipment.storedItems')}>
+                    <BackpackSection showTitle={false}/>
+                </SectionAccordion>
+            )}
+            {hasScrolls && (
+                <SectionAccordion title={t('powers.title')}>
+                    <PowersSection showLabel={false}/>
+                </SectionAccordion>
+            )}
+            {hasPets && (
+                <SectionAccordion title={t('pets.title')}>
+                    <PetSection showLabel={false}/>
+                </SectionAccordion>
+            )}
+            <SectionAccordion title={t('notes.title')}>
+                <NotesSection showTitle={false}/>
+            </SectionAccordion>
             <Footer
                 onGenerateNew={handleNew}
             />

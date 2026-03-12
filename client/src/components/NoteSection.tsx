@@ -5,7 +5,7 @@ import {ChangeEvent} from "react";
 import {useTranslation} from 'react-i18next';
 
 
-export default function NotesSection() {
+export default function NotesSection({ showTitle = true }: { showTitle?: boolean }) {
     const {t} = useTranslation();
     const {character, updateField} = useCharacter();
 
@@ -15,9 +15,11 @@ export default function NotesSection() {
 
     return (
         <Box sx={customStyles.containers.notes}>
-            <Typography sx={customStyles.notes.title}>
-                {t('notes.title')}
-            </Typography>
+            {showTitle && (
+                <Typography sx={customStyles.notes.title}>
+                    {t('notes.title')}
+                </Typography>
+            )}
             <TextField
                 placeholder={t('notes.placeholder')}
                 value={character?.notes ?? ''}

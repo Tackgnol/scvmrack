@@ -50,7 +50,11 @@ function formatActionDie(dice?: number[]): string {
     return normalized.map((value) => `d${value}`).join(' + ');
 }
 
-export default function PetSection() {
+interface PetSectionProps {
+    showLabel?: boolean;
+}
+
+export default function PetSection({ showLabel = true }: PetSectionProps) {
     const { character, toggleScrollUse } = useCharacter();
     const { t } = useTranslation();
 
@@ -64,7 +68,7 @@ export default function PetSection() {
 
     return (
         <Paper sx={customStyles.powersSection.paper}>
-            <SectionLabel label={t('pets.title')} />
+            {showLabel && <SectionLabel label={t('pets.title')} />}
             <Box sx={customStyles.powersSection.contentContainer}>
                 {petsWithIndices.map(({ item, equipmentIndex }, displayIndex) => {
                     const hpPips = item.uses ?? [];

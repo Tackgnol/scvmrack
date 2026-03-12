@@ -1,6 +1,7 @@
 import {useCharacter} from "@/CharacterContext/CharacterContext.tsx";
 import {Ability} from "@/hooks/models.ts";
-import {Box, CircularProgress, Paper, TextField, Typography} from '@mui/material';
+import {Accordion, AccordionDetails, AccordionSummary, Box, CircularProgress, Paper, TextField, Typography, useMediaQuery, useTheme} from '@mui/material';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import {customStyles} from '../theme/morkBorgTheme';
 import {useTranslation} from 'react-i18next';
 import {BorderedContainer, BorderedGreyContainer} from './CharacterDescriptors.styled';
@@ -8,6 +9,9 @@ import {BorderedContainer, BorderedGreyContainer} from './CharacterDescriptors.s
 export const CharacterDescriptors = () => {
     const {character, isLoading, updateField, updateAbilities} = useCharacter();
     const {t} = useTranslation();
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+    const defaultExpanded = !isMobile;
 
     if (isLoading) {
         return (
@@ -74,70 +78,92 @@ export const CharacterDescriptors = () => {
             </Paper>
 
             {/* Traits & Afflictions */}
-            <Paper sx={customStyles.characterDescriptors.paper}>
-                <Typography variant="subtitle2" color="secondary" sx={customStyles.characterDescriptors.sectionTitle}>
-                    {t('traits.title')}
-                </Typography>
-                <BorderedGreyContainer>
-                    <TextField
-                        fullWidth
-                        label={t('traits.trait1')}
-                        value={character.trait1 || ''}
-                        onChange={(e) => updateField('trait1', e.target.value)}
-                        variant="standard"
-                        sx={customStyles.textField.standard}
-                        inputProps={{ "data-testid": "trait1-input" }}
-                    />
+            <Accordion
+                defaultExpanded={defaultExpanded}
+                disableGutters
+                sx={customStyles.collapsibleSection.accordion}
+            >
+                <AccordionSummary
+                    expandIcon={<ExpandMoreIcon sx={customStyles.collapsibleSection.expandIcon} />}
+                    sx={customStyles.collapsibleSection.summary}
+                >
+                    <Typography variant="subtitle2" color="secondary" sx={customStyles.characterDescriptors.sectionTitle}>
+                        {t('traits.title')}
+                    </Typography>
+                </AccordionSummary>
+                <AccordionDetails sx={customStyles.collapsibleSection.details}>
+                    <BorderedGreyContainer>
+                        <TextField
+                            fullWidth
+                            label={t('traits.trait1')}
+                            value={character.trait1 || ''}
+                            onChange={(e) => updateField('trait1', e.target.value)}
+                            variant="standard"
+                            sx={customStyles.textField.standard}
+                            inputProps={{ "data-testid": "trait1-input" }}
+                        />
 
-                    <TextField
-                        fullWidth
-                        label={t('traits.trait2')}
-                        value={character.trait2 || ''}
-                        onChange={(e) => updateField('trait2', e.target.value)}
-                        variant="standard"
-                        sx={customStyles.textField.standard}
-                        inputProps={{ "data-testid": "trait2-input" }}
-                    />
+                        <TextField
+                            fullWidth
+                            label={t('traits.trait2')}
+                            value={character.trait2 || ''}
+                            onChange={(e) => updateField('trait2', e.target.value)}
+                            variant="standard"
+                            sx={customStyles.textField.standard}
+                            inputProps={{ "data-testid": "trait2-input" }}
+                        />
 
-                    <TextField
-                        fullWidth
-                        label={t('traits.habit')}
-                        value={character.habit || ''}
-                        onChange={(e) => updateField('habit', e.target.value)}
-                        variant="standard"
-                        sx={customStyles.textField.standard}
-                        inputProps={{ "data-testid": "habit-input" }}
-                    />
+                        <TextField
+                            fullWidth
+                            label={t('traits.habit')}
+                            value={character.habit || ''}
+                            onChange={(e) => updateField('habit', e.target.value)}
+                            variant="standard"
+                            sx={customStyles.textField.standard}
+                            inputProps={{ "data-testid": "habit-input" }}
+                        />
 
-                    <TextField
-                        fullWidth
-                        label={t('traits.bodyDescription')}
-                        value={character.body_description || ''}
-                        onChange={(e) => updateField('body_description', e.target.value)}
-                        variant="standard"
-                        sx={customStyles.textField.standard}
-                        inputProps={{ "data-testid": "body-description-input" }}
-                    />
-                </BorderedGreyContainer>
-            </Paper>
+                        <TextField
+                            fullWidth
+                            label={t('traits.bodyDescription')}
+                            value={character.body_description || ''}
+                            onChange={(e) => updateField('body_description', e.target.value)}
+                            variant="standard"
+                            sx={customStyles.textField.standard}
+                            inputProps={{ "data-testid": "body-description-input" }}
+                        />
+                    </BorderedGreyContainer>
+                </AccordionDetails>
+            </Accordion>
 
             {/* Origin */}
-            <Paper sx={customStyles.characterDescriptors.paper}>
-                <Typography variant="subtitle2" color="secondary" sx={customStyles.characterDescriptors.sectionTitle}>
-                    {t('character.origin')}
-                </Typography>
-                <BorderedContainer>
-                    <TextField
-                        fullWidth
-                        multiline
-                        value={character.origin || ''}
-                        onChange={(e) => updateField('origin', e.target.value)}
-                        placeholder={t('character.originPlaceholder')}
-                        variant="standard"
-                        sx={customStyles.textField.standardYellow}
-                    />
-                </BorderedContainer>
-            </Paper>
+            <Accordion
+                defaultExpanded={defaultExpanded}
+                disableGutters
+                sx={customStyles.collapsibleSection.accordion}
+            >
+                <AccordionSummary
+                    expandIcon={<ExpandMoreIcon sx={customStyles.collapsibleSection.expandIcon} />}
+                    sx={customStyles.collapsibleSection.summary}
+                >
+                    <Typography variant="subtitle2" color="secondary" sx={customStyles.characterDescriptors.sectionTitle}>
+                        {t('character.origin')}
+                    </Typography>
+                </AccordionSummary>
+                <AccordionDetails sx={customStyles.collapsibleSection.details}>
+                    <BorderedContainer>
+                        <TextField
+                            fullWidth
+                            multiline
+                            value={character.origin || ''}
+                            onChange={(e) => updateField('origin', e.target.value)}
+                            placeholder={t('character.originPlaceholder')}
+                            variant="standard"
+                            sx={customStyles.textField.standardYellow}
+                        />
+                    </BorderedContainer>
+                </AccordionDetails>
+            </Accordion>
         </>
     );
 }
