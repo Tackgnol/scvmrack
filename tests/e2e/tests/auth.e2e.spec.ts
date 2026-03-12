@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
+import { pollEmailLink } from './utils/mailpit.js';
 
-const MAILPIT_URL = process.env.PLAYWRIGHT_MAILPIT_URL ?? 'http://mailpit:8025';
 // Pre-acknowledge the privacy notice so the drawer never opens and blocks clicks
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
@@ -11,45 +11,10 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-interface MailpitMessage {
-  ID: string;
-  Subject: string;
-  To: { Address: string; Name: string }[];
-}
-
-interface MailpitMessageDetail {
-  HTML: string;
-}
-
-async function pollVerificationUrl(email: string, maxAttempts = 10): Promise<string> {
-  for (let attempt = 0; attempt < maxAttempts; attempt++) {
-    if (attempt > 0) {
-      await new Promise((r) => setTimeout(r, 1000));
-    }
-
-    const res = await fetch(`${MAILPIT_URL}/api/v1/messages`);
-    const data = (await res.json()) as { messages: MailpitMessage[] };
-
-    const message = data.messages?.find((m) =>
-      m.To?.some((t) => t.Address.toLowerCase() === email.toLowerCase())
-    );
-
-    if (message) {
-      const detailRes = await fetch(`${MAILPIT_URL}/api/v1/message/${message.ID}`);
-      const detail = (await detailRes.json()) as MailpitMessageDetail;
-
-      const match = detail.HTML?.match(/href="([^"]*auth\/verify-email[^"]*)"/);
-      if (match) {
-        return match[1].replace(/&amp;/g, '&');
-      }
-    }
-  }
-
-  throw new Error(`Verification email for ${email} not received after ${maxAttempts} attempts`);
-}
 
 test('user can register a new account and sign in via email verification', async ({ page }) => {
   const email = `test_${Date.now()}@example.com`;
+  const testStartTime = new Date();
 
   // Load the home page; start listening for the character fetch BEFORE navigating
   const characterLoaded = page.waitForResponse(
@@ -84,7 +49,7 @@ test('user can register a new account and sign in via email verification', async
   await expect(page.getByText('Check Your Email')).toBeVisible({ timeout: 10000 });
 
   // Fetch the full verification URL from Mailpit (carries callbackURL with character ID)
-  let verifyUrl = await pollVerificationUrl(email);
+  let verifyUrl = await pollEmailLink(email, /href="([^"]*auth\/verify-email[^"]*)"/, testStartTime);
 
   // Fix callbackURL to be absolute so Better Auth redirects back to the client, not the API
   const urlObj = new URL(verifyUrl);

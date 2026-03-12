@@ -12,9 +12,9 @@ const equipment: FastifyPluginAsync = async (fastify) => {
             querystring: {
                 type: 'object',
                 properties: {
-                    q: {type: 'string'},
+                    q: {type: 'string', maxLength: 100},
                     locale: {type: 'string', default: 'en'},
-                    limit: {type: 'number', default: 20}
+                    limit: {type: 'number', default: 20, minimum: 1, maximum: 100}
                 }
             },
             response: {
@@ -112,7 +112,6 @@ const equipment: FastifyPluginAsync = async (fastify) => {
                 'SELECT get_item_full($1, $2)',
                 [itemType, id]
             );
-            console.log('results', results);
             if (results.length === 0 || results[0].get_item_full == null) {
                 return reply.status(404).send({error: 'Item not found'});
             }

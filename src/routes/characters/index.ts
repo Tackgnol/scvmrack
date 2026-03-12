@@ -87,6 +87,12 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
         Body: GenerateCharacterParams;
         Querystring: { locale?: string };
     }>('/new', {
+        config: {
+            rateLimit: {
+                max: process.env.NODE_ENV === 'test' ? 10000 : 15,
+                timeWindow: '1 minute',
+            },
+        },
         schema: {
             description: 'Generate a new random character',
             tags: ['characters'],
