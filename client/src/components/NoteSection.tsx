@@ -8,6 +8,23 @@ import {useTranslation} from 'react-i18next';
 export default function NotesSection({ showTitle = true }: { showTitle?: boolean }) {
     const {t} = useTranslation();
     const {character, updateField} = useCharacter();
+    const placeholderOptions = [
+        t('notes.placeholder'),
+        t('notes.placeholderAlt1', 'Scratches, oaths, debts.'),
+        t('notes.placeholderAlt2', 'Scrawls from the abyss.'),
+    ];
+    const characterKey = character?.id ?? '';
+    const placeholderIndex =
+        placeholderOptions.length === 0
+            ? 0
+            : Math.abs(
+                  Array.from(characterKey).reduce(
+                      (sum, ch) => sum + ch.charCodeAt(0),
+                      0
+                  )
+              ) % placeholderOptions.length;
+    const placeholderText =
+        placeholderOptions[placeholderIndex] ?? placeholderOptions[0];
 
     const handleNotesChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
         updateField('notes', e.target.value);
@@ -21,7 +38,7 @@ export default function NotesSection({ showTitle = true }: { showTitle?: boolean
                 </Typography>
             )}
             <TextField
-                placeholder={t('notes.placeholder')}
+                placeholder={placeholderText}
                 value={character?.notes ?? ''}
                 onChange={handleNotesChange}
                 multiline

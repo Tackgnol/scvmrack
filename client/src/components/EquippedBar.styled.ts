@@ -13,6 +13,11 @@ export const StyledEquipmentCard = styled(Paper, {
     contain: 'paint',
     cursor: hasClick ? 'pointer' : 'default',
     '&:hover': hasClick ? { ...customStyles.equipmentCard.hover, transform: 'none' } : {},
+    '&:active': hasClick
+        ? {
+              transform: 'translateY(1px)',
+          }
+        : {},
     '&:focus-visible': hasClick
         ? {
               outline: `2px solid ${morkBorgColors.yellow}`,

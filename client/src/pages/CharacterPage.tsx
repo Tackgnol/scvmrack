@@ -7,11 +7,12 @@ import {CharacterNameAndClass} from "@components/CharacterNameAndClass";
 import NotesSection from "@components/NoteSection";
 import ResourcesRow from "@components/ResourceRow";
 import {Seo} from '@/seo/Seo';
-import { customStyles } from "@/theme/morkBorgTheme";
+import { customStyles, morkBorgColors } from "@/theme/morkBorgTheme";
 import {Accordion, AccordionDetails, AccordionSummary, Typography, useMediaQuery, useTheme} from "@mui/material";
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import { keyframes } from '@mui/system';
 import {useTranslation} from "react-i18next";
-import type { ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 
 const homeKeywords = [
     'Mork Borg',
@@ -59,33 +60,25 @@ const homeStructuredData = {
     ],
 };
 
-export function CharacterPage() {
-    const {generateNew, error, character, characterId, isLoading} = useCharacter();
-    const {t} = useTranslation();
-    const theme = useTheme();
-    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+const deathStampAnimation = keyframes`
+    0% { opacity: 0; transform: translate(-50%, -8px) scale(0.96) rotate(-1deg); }
+    20% { opacity: 1; transform: translate(-50%, 0) scale(1) rotate(-1deg); }
+    70% { opacity: 1; transform: translate(-50%, 0) scale(1) rotate(-1deg); }
+    100% { opacity: 0; transform: translate(-50%, 6px) scale(0.98) rotate(-1deg); }
+`;
 
-    const isNotFound = !!error && !character && !!characterId && !isLoading;
-    const equipment = character?.equipment ?? [];
-    const hasScrolls = equipment.some((item) => item.key?.startsWith('scroll.'));
-    const hasPets = equipment.some((item) => {
-        const tags = item.tags ?? [];
-        const key = item.key ?? '';
-        return tags.includes('pet') || key.startsWith('pet.') || key.startsWith('pets.');
-    });
-    const hasBackpack = (character?.storage ?? []).length > 0;
-
-    const SectionAccordion = ({
-        title,
-        children,
-        defaultExpanded = !isMobile,
-        dataTestId,
-    }: {
-        title: string;
-        children: ReactNode;
-        defaultExpanded?: boolean;
-        dataTestId?: string;
-    }) => (
+function SectionAccordion({
+    title,
+    children,
+    defaultExpanded,
+    dataTestId,
+}: {
+    title: string;
+    children: ReactNode;
+    defaultExpanded: boolean;
+    dataTestId?: string;
+}) {
+    return (
         <Accordion
             defaultExpanded={defaultExpanded}
             disableGutters
@@ -105,10 +98,37 @@ export function CharacterPage() {
             </AccordionDetails>
         </Accordion>
     );
+}
+
+export function CharacterPage() {
+    const {generateNew, error, character, characterId, isLoading} = useCharacter();
+    const {t} = useTranslation();
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+    const prefersReducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
+    const [deathStampVisible, setDeathStampVisible] = useState(false);
+
+    const isNotFound = !!error && !character && !!characterId && !isLoading;
+    const equipment = character?.equipment ?? [];
+    const hasScrolls = equipment.some((item) => item.key?.startsWith('scroll.'));
+    const hasPets = equipment.some((item) => {
+        const tags = item.tags ?? [];
+        const key = item.key ?? '';
+        return tags.includes('pet') || key.startsWith('pet.') || key.startsWith('pets.');
+    });
+    const hasBackpack = (character?.storage ?? []).length > 0;
+    const defaultExpanded = !isMobile;
 
     const handleNew = () => {
+        setDeathStampVisible(true);
         generateNew()
     }
+
+    useEffect(() => {
+        if (!deathStampVisible) return;
+        const timeoutId = window.setTimeout(() => setDeathStampVisible(false), 900);
+        return () => window.clearTimeout(timeoutId);
+    }, [deathStampVisible]);
 
     return (
         <>
@@ -133,6 +153,33 @@ export function CharacterPage() {
                 keywords={homeKeywords}
                 jsonLd={homeStructuredData}
             />
+            {deathStampVisible && (
+                <Typography
+                    aria-hidden="true"
+                    sx={{
+                        position: 'fixed',
+                        top: { xs: 74, sm: 92 },
+                        left: '50%',
+                        zIndex: 1400,
+                        px: 2,
+                        py: 0.6,
+                        bgcolor: morkBorgColors.pink,
+                        color: morkBorgColors.black,
+                        border: `2px solid ${morkBorgColors.black}`,
+                        boxShadow: `4px 4px 0 ${morkBorgColors.black}`,
+                        fontFamily: "'Antonio', sans-serif",
+                        fontSize: '0.7rem',
+                        letterSpacing: '0.2em',
+                        textTransform: 'uppercase',
+                        animation: prefersReducedMotion
+                            ? 'none'
+                            : `${deathStampAnimation} 900ms cubic-bezier(0.22, 1, 0.36, 1)`,
+                        pointerEvents: 'none',
+                    }}
+                >
+                    {t('characters.deathStamp', 'Scvm fell. Another crawls out.')}
+                </Typography>
+            )}
             <SummaryBar/>
             <ResourcesRow/>
             <EquippedBar/>
@@ -142,23 +189,21 @@ export function CharacterPage() {
             <ModifiersPanel/>
             <OnHandSection/>
             {hasBackpack && (
-                <SectionAccordion title={t('equipment.storedItems')}>
+                <SectionAccordion title={t('equipment.storedItems')} defaultExpanded={defaultExpanded}>
                     <BackpackSection showTitle={false}/>
                 </SectionAccordion>
             )}
             {hasScrolls && (
-                <SectionAccordion title={t('powers.title')}>
+                <SectionAccordion title={t('powers.title')} defaultExpanded={defaultExpanded}>
                     <PowersSection showLabel={false}/>
                 </SectionAccordion>
             )}
             {hasPets && (
-                <SectionAccordion title={t('pets.title')}>
+                <SectionAccordion title={t('pets.title')} defaultExpanded={defaultExpanded}>
                     <PetSection showLabel={false}/>
                 </SectionAccordion>
             )}
-            <SectionAccordion title={t('notes.title')}>
-                <NotesSection showTitle={false}/>
-            </SectionAccordion>
+            <NotesSection />
             <Footer
                 onGenerateNew={handleNew}
             />

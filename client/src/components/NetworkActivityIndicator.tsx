@@ -1,6 +1,6 @@
 import { Box, Fade } from "@mui/material";
 import { useIsFetching, useIsMutating } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { morkBorgColors } from "@/theme/morkBorgTheme";
 import defaultIndicatorGif from "@/assets/skeleton.gif";
 
@@ -12,22 +12,49 @@ export function NetworkActivityIndicator() {
     const isBusy = isFetching + isMutating > 0;
     const [isVisible, setIsVisible] = useState(false);
     const [imageFailed, setImageFailed] = useState(false);
+    const showTimeoutRef = useRef<number | null>(null);
+    const hideTimeoutRef = useRef<number | null>(null);
+    const visibleSinceRef = useRef<number | null>(null);
 
     useEffect(() => {
-        let timer: number | undefined;
+        const SHOW_DELAY_MS = 150;
+        const MIN_VISIBLE_MS = 500;
 
         if (isBusy) {
-            timer = window.setTimeout(() => setIsVisible(true), 100);
+            if (!isVisible && showTimeoutRef.current === null) {
+                showTimeoutRef.current = window.setTimeout(() => {
+                    setIsVisible(true);
+                    visibleSinceRef.current = Date.now();
+                    showTimeoutRef.current = null;
+                }, SHOW_DELAY_MS);
+            }
         } else {
-            setIsVisible(false);
+            if (showTimeoutRef.current !== null) {
+                window.clearTimeout(showTimeoutRef.current);
+                showTimeoutRef.current = null;
+            }
+            if (isVisible) {
+                const elapsed = Date.now() - (visibleSinceRef.current ?? Date.now());
+                const remaining = Math.max(0, MIN_VISIBLE_MS - elapsed);
+                hideTimeoutRef.current = window.setTimeout(() => {
+                    setIsVisible(false);
+                    visibleSinceRef.current = null;
+                    hideTimeoutRef.current = null;
+                }, remaining);
+            }
         }
 
         return () => {
-            if (timer !== undefined) {
-                window.clearTimeout(timer);
+            if (showTimeoutRef.current !== null) {
+                window.clearTimeout(showTimeoutRef.current);
+                showTimeoutRef.current = null;
+            }
+            if (hideTimeoutRef.current !== null) {
+                window.clearTimeout(hideTimeoutRef.current);
+                hideTimeoutRef.current = null;
             }
         };
-    }, [isBusy]);
+    }, [isBusy, isVisible]);
 
     return (
         <Fade in={isVisible} timeout={{ enter: 170, exit: 220 }} unmountOnExit>

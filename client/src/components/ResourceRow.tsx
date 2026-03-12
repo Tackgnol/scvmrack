@@ -6,6 +6,7 @@ import {
   Paper,
   TextField,
   Typography,
+  useMediaQuery,
 } from '@mui/material';
 import RemoveIcon from '@mui/icons-material/Remove';
 import AddIcon from '@mui/icons-material/Add';
@@ -14,14 +15,33 @@ import { type ChangeEvent, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import AnimatedNumber from './AnimatedNumber';
 import MorkBorgModal from './MorkBorgModal';
+import { keyframes } from '@mui/system';
+
+const resourceFlash = keyframes`
+  0% { box-shadow: 0 0 0 0 rgba(255, 233, 0, 0); }
+  45% { box-shadow: 0 0 0 3px rgba(255, 233, 0, 0.45); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 233, 0, 0); }
+`;
+
+const numberPulse = keyframes`
+  0% { transform: scale(1); }
+  60% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+`;
 
 export default function ResourcesRow() {
   const { character, updateField, updateArmorField } = useCharacter();
   const { t } = useTranslation();
   const [omensModalOpen, setOmensModalOpen] = useState(false);
   const [deathModalOpen, setDeathModalOpen] = useState(false);
+  const [hpPulse, setHpPulse] = useState(false);
+  const [omensPulse, setOmensPulse] = useState(false);
+  const prefersReducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
   const previousHpRef = useRef<number | null>(null);
   const previousCharacterIdRef = useRef<string | null>(null);
+  const previousOmensRef = useRef<number | null>(null);
+  const hpPulseTimeoutRef = useRef<number | null>(null);
+  const omensPulseTimeoutRef = useRef<number | null>(null);
 
   const currentHp = character?.current_hp ?? 0;
   const maxHp = character?.max_hp ?? 1;
@@ -38,6 +58,17 @@ export default function ResourcesRow() {
     if (characterChanged) {
       previousCharacterIdRef.current = character.id;
       previousHpRef.current = null;
+      previousOmensRef.current = null;
+      if (hpPulseTimeoutRef.current) {
+        window.clearTimeout(hpPulseTimeoutRef.current);
+        hpPulseTimeoutRef.current = null;
+      }
+      if (omensPulseTimeoutRef.current) {
+        window.clearTimeout(omensPulseTimeoutRef.current);
+        omensPulseTimeoutRef.current = null;
+      }
+      setHpPulse(false);
+      setOmensPulse(false);
     }
 
     const previousHp = previousHpRef.current;
@@ -47,8 +78,40 @@ export default function ResourcesRow() {
     } else if (previousHp !== null && previousHp !== 0 && currentHp === 0) {
       setDeathModalOpen(true);
     }
+    if (
+      previousHp !== null &&
+      previousHp !== currentHp &&
+      !prefersReducedMotion
+    ) {
+      setHpPulse(true);
+      if (hpPulseTimeoutRef.current) {
+        window.clearTimeout(hpPulseTimeoutRef.current);
+      }
+      hpPulseTimeoutRef.current = window.setTimeout(
+        () => setHpPulse(false),
+        220
+      );
+    }
     previousHpRef.current = currentHp;
-  }, [character?.id, currentHp]);
+  }, [character?.id, currentHp, prefersReducedMotion]);
+
+  useEffect(() => {
+    if (previousOmensRef.current === null) {
+      previousOmensRef.current = omens;
+      return;
+    }
+    if (previousOmensRef.current !== omens && !prefersReducedMotion) {
+      setOmensPulse(true);
+      if (omensPulseTimeoutRef.current) {
+        window.clearTimeout(omensPulseTimeoutRef.current);
+      }
+      omensPulseTimeoutRef.current = window.setTimeout(
+        () => setOmensPulse(false),
+        200
+      );
+    }
+    previousOmensRef.current = omens;
+  }, [omens, prefersReducedMotion]);
 
   const handleTierChange = (delta: number) => {
     const newTier = Math.max(0, Math.min(maxTier, currentTier + delta));
@@ -71,7 +134,14 @@ export default function ResourcesRow() {
     <>
       <Box sx={customStyles.resourceRow.container}>
         {/* HP — special layout with current / max */}
-        <Paper sx={customStyles.resourceRow.paper}>
+        <Paper
+          sx={{
+            ...customStyles.resourceRow.paper,
+            ...(hpPulse && !prefersReducedMotion
+              ? { animation: `${resourceFlash} 240ms cubic-bezier(0.22, 1, 0.36, 1)` }
+              : {}),
+          }}
+        >
           <Typography
             variant="subtitle2"
             color="secondary"
@@ -129,6 +199,11 @@ export default function ResourcesRow() {
               '&:hover': {
                 bgcolor: morkBorgColors.pink,
               },
+              ...(omensPulse && !prefersReducedMotion
+                ? {
+                    animation: `${numberPulse} 180ms cubic-bezier(0.22, 1, 0.36, 1)`,
+                  }
+                : {}),
             }}
           >
             <AnimatedNumber
