@@ -1,7 +1,8 @@
 import {useCharacter} from "@/CharacterContext/CharacterContext.tsx";
 import { aggregateItems } from "@/utils/aggregateItems";
 import {Box, Divider, Menu, MenuItem, Typography} from '@mui/material';
-import {MouseEvent, useMemo, useState} from 'react';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import {KeyboardEvent, MouseEvent, useMemo, useState} from 'react';
 import {useTranslation} from 'react-i18next';
 import { customStyles} from '../theme/morkBorgTheme';
 import { StyledEquipmentCard } from './EquippedBar.styled';
@@ -14,11 +15,30 @@ interface EquippedQuickProps {
     noneName: string;
     onClick?: (event: MouseEvent<HTMLElement>) => void;
     dataTestId?: string;
+    actionLabel?: string;
 }
 
-function EquippedQuick({icon, type, name, detail, noneName, onClick, dataTestId}: EquippedQuickProps) {
+function EquippedQuick({icon, type, name, detail, noneName, onClick, dataTestId, actionLabel}: EquippedQuickProps) {
+    const hasClick = !!onClick;
+    const resolvedActionLabel = actionLabel ?? 'Change';
+    const handleKeyDown = (event: KeyboardEvent<HTMLElement>) => {
+        if (!onClick) return;
+        if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            onClick(event as unknown as MouseEvent<HTMLElement>);
+        }
+    };
+
     return (
-        <StyledEquipmentCard onClick={onClick} hasClick={!!onClick} data-testid={dataTestId}>
+        <StyledEquipmentCard
+            onClick={onClick}
+            onKeyDown={handleKeyDown}
+            hasClick={hasClick}
+            data-testid={dataTestId}
+            role={hasClick ? 'button' : undefined}
+            tabIndex={hasClick ? 0 : undefined}
+            aria-haspopup={hasClick ? 'menu' : undefined}
+        >
             <Typography sx={customStyles.equippedBar.icon}>{icon}</Typography>
             <Box sx={customStyles.equippedBar.contentBox}>
                 <Typography variant="subtitle2" color="secondary" sx={customStyles.equippedBar.typeLabel}>
@@ -33,6 +53,14 @@ function EquippedQuick({icon, type, name, detail, noneName, onClick, dataTestId}
                     </Typography>
                 )}
             </Box>
+            {hasClick && (
+                <Box sx={customStyles.equippedBar.action}>
+                    <Typography sx={customStyles.equippedBar.actionLabel}>
+                        {resolvedActionLabel}
+                    </Typography>
+                    <ChevronRightIcon sx={customStyles.equippedBar.actionIcon} />
+                </Box>
+            )}
         </StyledEquipmentCard>
     );
 }
@@ -99,7 +127,7 @@ export default function EquippedBar() {
     const equippedArmor = character?.equipped_armor;
 
     // 2. Simple Handlers calling our new hooks
-    const openWeaponMenu = (event: MouseEvent<HTMLElement>, slot: number) => {
+    const openWeaponMenu = (event: MouseEvent<HTMLElement> | KeyboardEvent<HTMLElement>, slot: number) => {
         setActiveWeaponSlot(slot);
         setWeaponAnchor(event.currentTarget);
     };
@@ -126,6 +154,7 @@ export default function EquippedBar() {
                 noneName={t('equipment.none')}
                 onClick={(e) => openWeaponMenu(e, 0)}
                 dataTestId="equipped-weapon-slot-0"
+                actionLabel={t('equipment.change', 'Change')}
             />
 
             {/* Off-hand Slot */}
@@ -137,6 +166,7 @@ export default function EquippedBar() {
                 noneName={t('equipment.none')}
                 onClick={(e) => openWeaponMenu(e, 1)}
                 dataTestId="equipped-weapon-slot-1"
+                actionLabel={t('equipment.change', 'Change')}
             />)}
 
             {/* Armor Slot */}
@@ -148,6 +178,7 @@ export default function EquippedBar() {
                 noneName={t('equipment.none')}
                 onClick={(e) => setArmorAnchor(e.currentTarget)}
                 dataTestId="equipped-armor-slot"
+                actionLabel={t('equipment.change', 'Change')}
             />
 
             {/* Weapon Selection Menu */}

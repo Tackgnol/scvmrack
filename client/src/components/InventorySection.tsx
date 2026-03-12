@@ -312,7 +312,7 @@ function InventoryItemEditorModal({
   );
 }
 
-export function OnHandSection() {
+export function OnHandSection({ showTitle = true }: { showTitle?: boolean } = {}) {
   const { t } = useTranslation();
   const {
     character,
@@ -374,9 +374,11 @@ export function OnHandSection() {
 
   return (
     <Paper sx={sectionPaperStyle}>
-      <Typography variant="h3" sx={customStyles.inventorySection.sectionTitle}>
-        {t('equipment.onHand')}
-      </Typography>
+      {showTitle && (
+        <Typography variant="h3" sx={customStyles.inventorySection.sectionTitle}>
+          {t('equipment.onHand')}
+        </Typography>
+      )}
       <Box sx={customStyles.inventorySection.itemsGrid}>
         {aggregated.map((group) => (
           <Paper key={buildAggregateKey(group)} sx={itemRowStyle}>
@@ -416,7 +418,7 @@ export function OnHandSection() {
   );
 }
 
-export function StorageSection() {
+export function StorageSection({ showTitle = true }: { showTitle?: boolean } = {}) {
   const { t } = useTranslation();
   const {
     character,
@@ -453,9 +455,11 @@ export function StorageSection() {
 
   return (
     <Paper sx={sectionPaperStyle}>
-      <Typography variant="h3" sx={customStyles.inventorySection.sectionTitle}>
-        {t('equipment.storedItems')}
-      </Typography>
+      {showTitle && (
+        <Typography variant="h3" sx={customStyles.inventorySection.sectionTitle}>
+          {t('equipment.storedItems')}
+        </Typography>
+      )}
       <Box sx={customStyles.inventorySection.itemsGrid}>
         {aggregated.map((group) => (
           <Paper key={buildAggregateKey(group)} sx={itemRowStyle}>

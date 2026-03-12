@@ -1558,6 +1558,26 @@ export const customStyles = {
       color: morkBorgColors.yellow,
       fontSize: '0.7rem',
     },
+    action: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: 0.5,
+      marginLeft: 'auto',
+      padding: '2px 6px',
+      border: `1px solid ${morkBorgColors.grey}`,
+      backgroundColor: '#111',
+      textTransform: 'uppercase' as const,
+      letterSpacing: '0.12em',
+    },
+    actionLabel: {
+      fontFamily: "'Antonio', sans-serif",
+      fontSize: '0.55rem',
+      color: morkBorgColors.yellow,
+    },
+    actionIcon: {
+      fontSize: '1rem',
+      color: morkBorgColors.yellow,
+    },
     menuUnequipItem: {
       color: morkBorgColors.yellow,
     },
@@ -1612,6 +1632,36 @@ export const customStyles = {
     },
     sectionTitle: {
       mb: 1,
+    },
+  },
+
+  // Collapsible section styles (character page)
+  collapsibleSection: {
+    accordion: {
+      mb: 2.5,
+      bgcolor: morkBorgColors.black,
+      border: `2px solid ${morkBorgColors.grey}`,
+      borderRadius: 0,
+      boxShadow: 'none',
+      '&:before': { display: 'none' },
+    },
+    summary: {
+      px: 2,
+      py: 0.5,
+      minHeight: 0,
+      '& .MuiAccordionSummary-content': {
+        margin: '8px 0',
+      },
+    },
+    title: {
+      letterSpacing: '0.15em',
+    },
+    details: {
+      px: 2,
+      pb: 2,
+    },
+    expandIcon: {
+      color: morkBorgColors.yellow,
     },
   },
 
