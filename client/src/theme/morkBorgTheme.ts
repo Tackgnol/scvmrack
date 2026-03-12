@@ -639,7 +639,9 @@ export const customStyles = {
       textAlign: 'center' as const,
       flexDirection: 'column',
       display:'flex',
-      alignItems: 'center'
+      alignItems: 'center',
+      border: `1px solid ${morkBorgColors.black}`,
+      boxShadow: '2px 2px 0 rgba(0, 0, 0, 0.45)',
     },
     label: {
       mb: 0.75,
@@ -673,10 +675,14 @@ export const customStyles = {
     },
     title: {
       color: morkBorgColors.black,
-      borderBottom: `4px solid ${morkBorgColors.black}`,
-      pb: 0.5,
+      backgroundColor: morkBorgColors.yellow,
+      border: `3px solid ${morkBorgColors.black}`,
+      boxShadow: `4px 4px 0 ${morkBorgColors.black}`,
+      px: 1.25,
+      py: 0.25,
       mb: 1.5,
       display: 'inline-block',
+      transform: 'rotate(-0.6deg)',
     },
     grid: {
       display: 'grid',
@@ -796,8 +802,10 @@ export const customStyles = {
   // Character name box
   characterNameBox: {
     bgcolor: morkBorgColors.pink,
-    p: 2,
-    boxShadow: `5px 5px 0 ${morkBorgColors.black}`,
+    p: 2.5,
+    border: `3px solid ${morkBorgColors.black}`,
+    boxShadow: `6px 6px 0 ${morkBorgColors.black}`,
+    transform: 'rotate(-0.8deg)',
   },
 
   // Character name label
@@ -827,8 +835,10 @@ export const customStyles = {
 
   // Character class paper
   characterClassPaper: {
-    p: 2,
-    boxShadow: `5px 5px 0 ${morkBorgColors.pink}`,
+    p: 2.5,
+    border: `3px solid ${morkBorgColors.pink}`,
+    boxShadow: `6px 6px 0 ${morkBorgColors.pink}`,
+    transform: 'rotate(0.8deg)',
   },
 
   // Character class label
@@ -934,10 +944,15 @@ export const customStyles = {
       mb: 2.5,
     },
     sectionTitle: {
-      borderBottom: `4px solid ${morkBorgColors.pink}`,
-      pb: 0.5,
+      color: morkBorgColors.black,
+      backgroundColor: morkBorgColors.yellow,
+      border: `3px solid ${morkBorgColors.black}`,
+      boxShadow: `4px 4px 0 ${morkBorgColors.black}`,
+      px: 1.25,
+      py: 0.25,
       mb: 1.5,
       display: 'inline-block',
+      transform: 'rotate(-0.6deg)',
     },
     gearGrid: {
       display: 'grid',
@@ -1743,8 +1758,15 @@ export const customStyles = {
       flexShrink: 0,
     },
     sectionTitle: {
+      color: morkBorgColors.black,
+      backgroundColor: morkBorgColors.yellow,
+      border: `3px solid ${morkBorgColors.black}`,
+      boxShadow: `4px 4px 0 ${morkBorgColors.black}`,
+      px: 1.25,
+      py: 0.25,
       mb: 2,
-      color: morkBorgColors.pink,
+      display: 'inline-block',
+      transform: 'rotate(-0.6deg)',
     },
     itemsGrid: {
       display: 'grid',

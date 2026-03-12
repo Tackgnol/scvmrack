@@ -125,6 +125,9 @@ export default function EquippedBar() {
     const mainWeapon = equippedWeapons[0];
     const offhandWeapon = equippedWeapons[1];
     const equippedArmor = character?.equipped_armor;
+    const canOpenWeaponSlot0 = inventoryWeapons.length > 0 || !!mainWeapon?.key;
+    const canOpenWeaponSlot1 = inventoryWeapons.length > 0 || !!offhandWeapon?.key;
+    const canOpenArmor = inventoryArmor.length > 0 || !!equippedArmor?.key;
 
     // 2. Simple Handlers calling our new hooks
     const openWeaponMenu = (event: MouseEvent<HTMLElement> | KeyboardEvent<HTMLElement>, slot: number) => {
@@ -152,7 +155,7 @@ export default function EquippedBar() {
                 name={mainWeapon?.name ?? t('equipment.unarmed')}
                 detail={mainWeapon?.dice ? formatDice(mainWeapon.dice) : 'd2'}
                 noneName={t('equipment.none')}
-                onClick={(e) => openWeaponMenu(e, 0)}
+                onClick={canOpenWeaponSlot0 ? (e) => openWeaponMenu(e, 0) : undefined}
                 dataTestId="equipped-weapon-slot-0"
                 actionLabel={t('equipment.change', 'Change')}
             />
@@ -164,7 +167,7 @@ export default function EquippedBar() {
                 name={offhandWeapon?.name ?? t('equipment.none')}
                 detail={offhandWeapon?.dice ? formatDice(offhandWeapon.dice) : ''}
                 noneName={t('equipment.none')}
-                onClick={(e) => openWeaponMenu(e, 1)}
+                onClick={canOpenWeaponSlot1 ? (e) => openWeaponMenu(e, 1) : undefined}
                 dataTestId="equipped-weapon-slot-1"
                 actionLabel={t('equipment.change', 'Change')}
             />)}
@@ -176,7 +179,7 @@ export default function EquippedBar() {
                 name={equippedArmor?.name ?? t('equipment.unarmored')}
                 detail={equippedArmor?.dice ? `-${formatDice(equippedArmor.dice)}` : '−'}
                 noneName={t('equipment.none')}
-                onClick={(e) => setArmorAnchor(e.currentTarget)}
+                onClick={canOpenArmor ? (e) => setArmorAnchor(e.currentTarget) : undefined}
                 dataTestId="equipped-armor-slot"
                 actionLabel={t('equipment.change', 'Change')}
             />

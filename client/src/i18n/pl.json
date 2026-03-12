@@ -86,7 +86,10 @@
         "effect": "Efekt"
       }
     },
-    "advancedTooltip": "Zaawansowane opcje modyfikatora"
+    "advancedTooltip": "Zaawansowane opcje modyfikatora",
+    "shiftNegative": "Klątwy drgnęły",
+    "shiftPositive": "Błogosławieństwa drgnęły",
+    "shiftNeutral": "Losy drgnęły"
   },
   "attributes": {
     "agility": "Zwinność",
@@ -108,6 +111,7 @@
     "unarmed": "Gołe pięści",
     "unarmored": "Golas",
     "none": "Brak",
+    "change": "Zmień",
     "itemDetails": "Szczegóły Przedmiotu",
     "itemName": "Nazwa Przedmiotu",
     "quantity": "Ilość",
@@ -162,7 +166,9 @@
   },
   "notes": {
     "title": "Notatki i Nieszczęścia",
-    "placeholder": "Wypisz tu swoje grzechy..."
+    "placeholder": "Wypisz tu swoje grzechy...",
+    "placeholderAlt1": "Skreślenia, przysięgi, długi.",
+    "placeholderAlt2": "Bazgroły z otchłani."
   },
   "footer": {
     "worldEnding": "Świat Się Kończy",
@@ -252,6 +258,7 @@
     "noCharacters": "Nie masz jeszcze żadnych postaci. Stwórz swojego pierwszego scvma!",
     "createFirst": "Stwórz Postać",
     "loadError": "Nie udało się załadować postaci",
+    "deathStamp": "Scvm padł. Inny się wyczołga.",
     "columns": {
       "name": "Imię",
       "class": "Klasa",
