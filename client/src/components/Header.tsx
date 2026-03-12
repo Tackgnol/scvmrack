@@ -12,7 +12,7 @@ import SyncIcon from "@mui/icons-material/Sync";
 import { Box, Chip, Drawer, IconButton, Paper, Typography, useMediaQuery, useTheme } from "@mui/material";
 import { useRouterState } from "@tanstack/react-router";
 import { customStyles } from "@theme/morkBorgTheme";
-import { useCallback, useEffect, useState, lazy, Suspense } from "react";
+import { useCallback, useEffect, useRef, useState, lazy, Suspense } from "react";
 import { useTranslation } from "react-i18next";
 import { BoneIconContainer, BoneBar, StyledNavLink } from "./Header.styled";
 
@@ -57,6 +57,10 @@ export default function Header() {
     const [authModalOpen, setAuthModalOpen] = useState(false);
     const [sessionExpiredNotice, setSessionExpiredNotice] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [showSaving, setShowSaving] = useState(false);
+    const savingShowTimeoutRef = useRef<number | null>(null);
+    const savingHideTimeoutRef = useRef<number | null>(null);
+    const savingVisibleSinceRef = useRef<number | null>(null);
 
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down("md"));
@@ -97,8 +101,48 @@ export default function Header() {
         }
     }, [isJustLoggedOut, character, authModalOpen, openAuthModal]);
 
+    useEffect(() => {
+        const SHOW_DELAY_MS = 140;
+        const MIN_VISIBLE_MS = 420;
+
+        if (isSaving) {
+            if (!showSaving && savingShowTimeoutRef.current === null) {
+                savingShowTimeoutRef.current = window.setTimeout(() => {
+                    setShowSaving(true);
+                    savingVisibleSinceRef.current = Date.now();
+                    savingShowTimeoutRef.current = null;
+                }, SHOW_DELAY_MS);
+            }
+        } else {
+            if (savingShowTimeoutRef.current !== null) {
+                window.clearTimeout(savingShowTimeoutRef.current);
+                savingShowTimeoutRef.current = null;
+            }
+            if (showSaving) {
+                const elapsed = Date.now() - (savingVisibleSinceRef.current ?? Date.now());
+                const remaining = Math.max(0, MIN_VISIBLE_MS - elapsed);
+                savingHideTimeoutRef.current = window.setTimeout(() => {
+                    setShowSaving(false);
+                    savingVisibleSinceRef.current = null;
+                    savingHideTimeoutRef.current = null;
+                }, remaining);
+            }
+        }
+
+        return () => {
+            if (savingShowTimeoutRef.current !== null) {
+                window.clearTimeout(savingShowTimeoutRef.current);
+                savingShowTimeoutRef.current = null;
+            }
+            if (savingHideTimeoutRef.current !== null) {
+                window.clearTimeout(savingHideTimeoutRef.current);
+                savingHideTimeoutRef.current = null;
+            }
+        };
+    }, [isSaving, showSaving]);
+
     const getStatusChip = () => {
-        if (isSaving) return (
+        if (showSaving) return (
             <Chip
                 size="small"
                 icon={<SyncIcon sx={customStyles.header.syncIcon} />}

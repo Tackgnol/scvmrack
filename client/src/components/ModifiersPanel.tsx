@@ -17,6 +17,7 @@ import {
   Typography,
   Checkbox,
 } from '@mui/material';
+import { keyframes } from '@mui/system';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { type ChangeEvent, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -72,18 +73,51 @@ const scopeIncludeOptions: {
   { value: 'powers', labelKey: 'modifiers.scopes.powers', include: ['cast'] },
 ];
 
+const valuePulse = keyframes`
+  0% { transform: scale(1); }
+  60% { transform: scale(1.04); }
+  100% { transform: scale(1); }
+`;
+
+const shiftBadge = keyframes`
+  0% { opacity: 0; transform: translateY(-6px) scale(0.98); }
+  20% { opacity: 1; transform: translateY(0) scale(1); }
+  80% { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(4px) scale(0.98); }
+`;
+
 function CustomModifierTag({
   modifier,
   onRemove,
   onEdit,
   isFull,
+  reduceMotion,
 }: {
   modifier: CustomModifier;
   onRemove: () => void;
   onEdit: () => void;
   isFull: boolean;
+  reduceMotion?: boolean;
 }) {
   const isNegative = (modifier.value ?? 0) < 0;
+  const [pulse, setPulse] = useState(false);
+  const previousValueRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (reduceMotion) return;
+    const nextValue = modifier.value ?? 0;
+    if (previousValueRef.current === null) {
+      previousValueRef.current = nextValue;
+      return;
+    }
+    if (previousValueRef.current !== nextValue) {
+      setPulse(true);
+      const timeoutId = window.setTimeout(() => setPulse(false), 180);
+      previousValueRef.current = nextValue;
+      return () => window.clearTimeout(timeoutId);
+    }
+    previousValueRef.current = nextValue;
+  }, [modifier.value, reduceMotion]);
 
   return (
     <Box
@@ -168,6 +202,9 @@ function CustomModifierTag({
           fontSize: '1rem',
           color: isNegative ? morkBorgColors.pink : morkBorgColors.yellow,
           flexShrink: 0,
+          animation: pulse
+            ? `${valuePulse} 180ms cubic-bezier(0.22, 1, 0.36, 1)`
+            : 'none',
         }}
       >
         {(modifier.value ?? 0) > 0 ? '+' : ''}
@@ -202,15 +239,35 @@ function ComputedModifierTag({
   modifier,
   onOpen,
   isFull,
+  reduceMotion,
 }: {
   modifier: ComputedModifier;
   onOpen: (modifier: ComputedModifier) => void;
   isFull: boolean;
+  reduceMotion?: boolean;
 }) {
   const { t } = useTranslation();
   const isNegative = (modifier.value ?? 0) < 0;
   const originName =
     modifier.origin_name ?? t('modifiers.computed.unknownOrigin');
+  const [pulse, setPulse] = useState(false);
+  const previousValueRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (reduceMotion) return;
+    const nextValue = modifier.value ?? 0;
+    if (previousValueRef.current === null) {
+      previousValueRef.current = nextValue;
+      return;
+    }
+    if (previousValueRef.current !== nextValue) {
+      setPulse(true);
+      const timeoutId = window.setTimeout(() => setPulse(false), 180);
+      previousValueRef.current = nextValue;
+      return () => window.clearTimeout(timeoutId);
+    }
+    previousValueRef.current = nextValue;
+  }, [modifier.value, reduceMotion]);
 
   return (
     <Box
@@ -289,6 +346,9 @@ function ComputedModifierTag({
           fontSize: '0.9rem',
           color: isNegative ? morkBorgColors.pink : morkBorgColors.yellow,
           flexShrink: 0,
+          animation: pulse
+            ? `${valuePulse} 180ms cubic-bezier(0.22, 1, 0.36, 1)`
+            : 'none',
         }}
       >
         {(modifier.value ?? 0) > 0 ? '+' : ''}
@@ -304,6 +364,11 @@ export default function ModifiersPanel() {
   const { t } = useTranslation();
   const prefersReducedMotion = Boolean(useReducedMotion());
   const REMOVE_ANIMATION_MS = 220;
+  const [modifierShiftLabel, setModifierShiftLabel] = useState<string | null>(
+    null
+  );
+  const computedSignatureRef = useRef<string | null>(null);
+  const shiftTimeoutRef = useRef<number | null>(null);
 
   // Quick form state
   const [name, setName] = useState('');
@@ -334,6 +399,42 @@ export default function ModifiersPanel() {
 
   const customModifiers = character?.modifiers ?? [];
   const computedModifiers = character?.computed_modifiers ?? [];
+  const computedSignature = computedModifiers
+    .map(
+      (mod) =>
+        `${mod.origin_key ?? mod.origin_name ?? 'origin'}:${mod.statistic ?? 'stat'}:${mod.value ?? 0}:${(mod.exclude ?? []).join('.')}`
+    )
+    .join('|');
+  const computedTotal = computedModifiers.reduce(
+    (sum, mod) => sum + (mod.value ?? 0),
+    0
+  );
+
+  useEffect(() => {
+    if (computedSignatureRef.current === null) {
+      computedSignatureRef.current = computedSignature;
+      return;
+    }
+
+    if (computedSignatureRef.current === computedSignature) return;
+    computedSignatureRef.current = computedSignature;
+
+    const label =
+      computedTotal < 0
+        ? t('modifiers.shiftNegative', 'Curses shift')
+        : computedTotal > 0
+          ? t('modifiers.shiftPositive', 'Blessings shift')
+          : t('modifiers.shiftNeutral', 'Fates shift');
+
+    setModifierShiftLabel(label);
+    if (shiftTimeoutRef.current) {
+      window.clearTimeout(shiftTimeoutRef.current);
+    }
+    shiftTimeoutRef.current = window.setTimeout(
+      () => setModifierShiftLabel(null),
+      900
+    );
+  }, [computedSignature, computedTotal, t]);
 
   useEffect(() => {
     return () => {
@@ -341,6 +442,10 @@ export default function ModifiersPanel() {
         window.clearTimeout(timeoutId)
       );
       removeTimeoutsRef.current = [];
+      if (shiftTimeoutRef.current) {
+        window.clearTimeout(shiftTimeoutRef.current);
+        shiftTimeoutRef.current = null;
+      }
     };
   }, []);
 
@@ -566,6 +671,31 @@ export default function ModifiersPanel() {
         },
       }}
     >
+      {modifierShiftLabel && (
+        <Box
+          sx={{
+            position: 'absolute',
+            top: -12,
+            right: 12,
+            px: 1.25,
+            py: 0.35,
+            bgcolor: morkBorgColors.yellow,
+            color: morkBorgColors.black,
+            border: `2px solid ${morkBorgColors.black}`,
+            boxShadow: `3px 3px 0 ${morkBorgColors.black}`,
+            fontFamily: "'Antonio', sans-serif",
+            fontSize: '0.6rem',
+            letterSpacing: '0.2em',
+            textTransform: 'uppercase',
+            animation: prefersReducedMotion
+              ? 'none'
+              : `${shiftBadge} 900ms cubic-bezier(0.22, 1, 0.36, 1)`,
+            pointerEvents: 'none',
+          }}
+        >
+          {modifierShiftLabel}
+        </Box>
+      )}
       {/* Computed Modifiers (Auto - from equipment) */}
       {computedModifiers.length > 0 && (
         <Box sx={{ mb: 2 }}>
@@ -619,6 +749,7 @@ export default function ModifiersPanel() {
                       modifier={mod}
                       onOpen={handleOpenComputedModal}
                       isFull={tileSpan.full}
+                      reduceMotion={prefersReducedMotion}
                     />
                   </Box>
                 );
@@ -683,6 +814,7 @@ export default function ModifiersPanel() {
                     onEdit={() => handleOpenEditModal(mod)}
                     onRemove={() => handleRemoveModifier(mod.id)}
                     isFull={tileSpan.full}
+                    reduceMotion={prefersReducedMotion}
                   />
                 </Box>
               );
