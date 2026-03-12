@@ -15,11 +15,8 @@ export default fp<FastifyCorsOptions>(async (fastify) => {
 
     const origins = Array.from(new Set([...defaultOrigins, ...envOrigins]));
 
-    // Add versions with port 3000 for direct backend access
-    const originsWithPort = origins.map(o => `${o}:3000`);
-
     fastify.register(cors, {
-        origin: [...origins, ...originsWithPort],
+        origin: origins,
 
         methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
         allowedHeaders: [

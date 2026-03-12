@@ -6,7 +6,12 @@ import {FastifyInstance} from 'fastify';
 export default fp(async function securityPlugin(fastify: FastifyInstance) {
     // Security headers (XSS, clickjacking, MIME sniffing, etc.)
     await fastify.register(helmet, {
-        contentSecurityPolicy: false,  // Disable if you have a frontend
+        contentSecurityPolicy: {
+            directives: {
+                defaultSrc: ["'none'"],
+                frameAncestors: ["'none'"],
+            },
+        },
     });
 
     // Rate limiting

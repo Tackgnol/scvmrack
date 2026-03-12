@@ -42,7 +42,14 @@ const authRoutes: FastifyPluginAsync = async (fastify): Promise<void> => {
         }
     });
 
-    fastify.all('/*', async (request, reply) => {
+    fastify.all('/*', {
+        config: {
+            rateLimit: {
+                max: process.env.NODE_ENV === 'test' ? 10000 : 10,
+                timeWindow: '1 minute',
+            },
+        },
+    }, async (request, reply) => {
         try {
             // Better Auth strictly checks the request URL against its configured baseURL.
             // By using AUTH_BASE_URL (or localhost fallback) here, we ensure Better Auth 
@@ -100,12 +107,6 @@ const authRoutes: FastifyPluginAsync = async (fastify): Promise<void> => {
                 // Pass the plain email via a custom header for the plugin to read easily
                 headers.set('x-plain-email', plainEmail);
             }
-
-            console.log("SENDING TO AUTH:", {
-                url: fullUrl,
-                email: body?.email,
-                hasPlainHeader: !!plainEmail
-            });
 
             const req = new Request(fullUrl, {
                 method: request.method,
