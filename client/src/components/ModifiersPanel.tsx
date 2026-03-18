@@ -10,7 +10,6 @@ import {
   FormControlLabel,
   IconButton,
   MenuItem,
-  Paper,
   Select,
   TextField,
   Tooltip,
@@ -21,8 +20,13 @@ import { keyframes } from '@mui/system';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { type ChangeEvent, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { morkBorgColors } from '../theme/morkBorgTheme';
+import { customStyles, morkBorgColors } from '../theme/morkBorgTheme';
 import MorkBorgModal from './MorkBorgModal';
+
+const modifiersTitleStyle = {
+  ...customStyles.abilities.title,
+  transform: 'rotate(0.5deg)',
+};
 
 // Local type aliases for cleaner code
 type LocalStatistic = 'agility' | 'strength' | 'presence' | 'toughness';
@@ -648,29 +652,29 @@ export default function ModifiersPanel() {
   };
 
   return (
-    <Paper
-      sx={{
-        p: 2.5,
-        pt: 3,
-        mb: 2.5,
-        position: 'relative',
-        border: `3px solid ${morkBorgColors.pink}`,
-        boxShadow: `6px 6px 0 ${morkBorgColors.yellow}`,
-        '&::before': {
-          content: '"' + t('modifiers.title').toUpperCase() + '"',
-          position: 'absolute',
-          top: -12,
-          left: 15,
-          bgcolor: morkBorgColors.pink,
-          color: morkBorgColors.black,
-          fontFamily: "'Antonio', sans-serif",
-          fontSize: '0.6rem',
-          letterSpacing: '0.3em',
-          px: 1.25,
-          py: 0.4,
-        },
-      }}
-    >
+    <Box sx={{
+      mb: 2,
+      bgcolor: morkBorgColors.black,
+      border: `3px solid ${morkBorgColors.black}`,
+      boxShadow: `6px 6px 0 ${morkBorgColors.pink}`,
+      p: { xs: 1.5, sm: 2.5 },
+      pt: { xs: 3, sm: 3.5 },
+      position: 'relative',
+    }}>
+      <Typography variant="h3" sx={{
+        ...modifiersTitleStyle,
+        position: 'absolute',
+        top: { xs: -14, sm: -16 },
+        left: { xs: 12, sm: 16 },
+        zIndex: 1,
+      }}>
+        {t('modifiers.title')}
+      </Typography>
+      <Box
+        sx={{
+          position: 'relative',
+        }}
+      >
       {modifierShiftLabel && (
         <Box
           sx={{
@@ -701,11 +705,13 @@ export default function ModifiersPanel() {
         <Box sx={{ mb: 2 }}>
           <Typography
             sx={{
-              color: '#666',
+              color: morkBorgColors.yellow,
+              opacity: 0.5,
               fontSize: '0.7rem',
               mb: 1,
               textTransform: 'uppercase',
               letterSpacing: '0.1em',
+              fontFamily: "'Antonio', sans-serif",
             }}
           >
             {t('modifiers.fromEquipment')}
@@ -774,9 +780,11 @@ export default function ModifiersPanel() {
         {customModifiers.length === 0 ? (
           <Typography
             sx={{
-              color: '#666',
+              color: morkBorgColors.yellow,
+              opacity: 0.4,
               fontStyle: 'italic',
-              fontSize: '0.85rem',
+              fontFamily: "'Alegreya', serif",
+              fontSize: '0.8rem',
               gridColumn: '1 / -1',
             }}
           >
@@ -823,12 +831,15 @@ export default function ModifiersPanel() {
         )}
       </Box>
 
-      {/* Quick Form */}
+      {/* Quick Form — control strip */}
       <Box
         sx={{
+          mt: 2,
+          pt: 2,
+          borderTop: `2px solid ${morkBorgColors.grey}`,
           display: 'grid',
-          gridTemplateColumns: { xs: '1fr auto', sm: '1fr auto auto auto' },
-          gap: 1,
+          gridTemplateColumns: { xs: '1fr auto', sm: '1fr auto auto auto auto auto' },
+          gap: { xs: 1, sm: 0.75 },
           alignItems: 'center',
         }}
       >
@@ -840,7 +851,14 @@ export default function ModifiersPanel() {
           }
           onKeyDown={handleQuickKeyDown}
           size="small"
-          sx={{ gridColumn: { xs: '1 / -1', sm: 'auto' } }}
+          sx={{
+            gridColumn: { xs: '1 / -1', sm: 'auto' },
+            '& .MuiOutlinedInput-root': {
+              fontFamily: "'Antonio', sans-serif",
+              fontSize: '0.8rem',
+              letterSpacing: '0.05em',
+            },
+          }}
           inputProps={{ "data-testid": "quick-mod-name-input" }}
         />
 
@@ -849,14 +867,13 @@ export default function ModifiersPanel() {
           onChange={(e) => setStat(e.target.value as LocalStatistic)}
           size="small"
           sx={{
-            gridColumn: { xs: '1 / -1', sm: 'auto' },
             bgcolor: morkBorgColors.grey,
             color: morkBorgColors.yellow,
-            minWidth: 90,
+            minWidth: 75,
             '& .MuiSelect-select': {
-              fontFamily: "'Antonio', sans-serif",
-              fontSize: '0.75rem',
-              textTransform: 'uppercase',
+              fontFamily: "'Bebas Neue', sans-serif",
+              fontSize: '0.85rem',
+              letterSpacing: '0.1em',
             },
           }}
         >
@@ -877,8 +894,12 @@ export default function ModifiersPanel() {
           onKeyDown={handleQuickKeyDown}
           size="small"
           sx={{
-            gridColumn: { xs: '1 / -1', sm: 'auto' },
-            width: { xs: '100%', sm: 70 },
+            width: { xs: '100%', sm: 60 },
+            '& .MuiOutlinedInput-root': {
+              fontFamily: "'Bebas Neue', sans-serif",
+              fontSize: '0.9rem',
+              textAlign: 'center',
+            },
           }}
           inputProps={{ "data-testid": "quick-mod-value-input" }}
         />
@@ -888,14 +909,14 @@ export default function ModifiersPanel() {
           onChange={(e) => setScope(e.target.value as ScopeOption)}
           size="small"
           sx={{
-            gridColumn: { xs: '1 / -1', sm: 'auto' },
             bgcolor: morkBorgColors.grey,
             color: morkBorgColors.yellow,
-            minWidth: 100,
+            minWidth: 90,
             '& .MuiSelect-select': {
               fontFamily: "'Antonio', sans-serif",
-              fontSize: '0.65rem',
+              fontSize: '0.6rem',
               textTransform: 'uppercase',
+              letterSpacing: '0.1em',
             },
           }}
         >
@@ -912,7 +933,21 @@ export default function ModifiersPanel() {
           data-testid="quick-mod-add-btn"
           sx={{
             gridColumn: { xs: '1 / 2', sm: 'auto' },
-            width: { xs: '100%', sm: 'auto' },
+            minWidth: 'auto',
+            px: 2.5,
+            bgcolor: morkBorgColors.yellow,
+            color: morkBorgColors.black,
+            fontFamily: "'Antonio', sans-serif",
+            fontSize: '0.7rem',
+            fontWeight: 'bold',
+            letterSpacing: '0.15em',
+            boxShadow: `2px 2px 0 ${morkBorgColors.pink}`,
+            '&:hover': {
+              bgcolor: morkBorgColors.pink,
+              color: morkBorgColors.black,
+              transform: 'translate(-1px, -1px)',
+              boxShadow: `3px 3px 0 ${morkBorgColors.yellow}`,
+            },
           }}
         >
           {t('modifiers.addModifier')}
@@ -927,23 +962,22 @@ export default function ModifiersPanel() {
             sx={{
               gridColumn: { xs: '2 / 3', sm: 'auto' },
               justifySelf: 'end',
-              width: { xs: 42, sm: '100%' },
-              height: { xs: 42, sm: 36 },
-              borderRadius: 0.5,
+              width: 36,
+              height: 36,
+              borderRadius: 0,
               border: `2px solid ${morkBorgColors.yellow}`,
-              bgcolor: morkBorgColors.darkGrey,
+              bgcolor: 'transparent',
               color: morkBorgColors.yellow,
               fontFamily: "'Antonio', sans-serif",
-              fontSize: { xs: '1.1rem', sm: '1rem' },
+              fontSize: '1rem',
               lineHeight: 1,
-              boxShadow: `2px 2px 0 ${morkBorgColors.pink}`,
               transition:
                 'transform 140ms ease, box-shadow 140ms ease, color 140ms ease',
               '&:hover': {
-                bgcolor: morkBorgColors.black,
-                color: morkBorgColors.pink,
+                bgcolor: morkBorgColors.yellow,
+                color: morkBorgColors.black,
                 transform: 'translate(-1px, -1px)',
-                boxShadow: `3px 3px 0 ${morkBorgColors.yellow}`,
+                boxShadow: `2px 2px 0 ${morkBorgColors.pink}`,
               },
             }}
           >
@@ -1193,6 +1227,7 @@ export default function ModifiersPanel() {
           {computedAppliesToText}
         </Typography>
       </MorkBorgModal>
-    </Paper>
+    </Box>
+    </Box>
   );
 }

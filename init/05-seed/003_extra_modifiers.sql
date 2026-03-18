@@ -7,54 +7,54 @@ VALUES
     -- Gutterborn Scum (Class 2)
     (
         2,
-        'abilities.gutterborn_scum.jester',
+        'abilities.gutterborn_scum.fingersmith',
         4,
         'agility',
         '[]'::jsonb,
         'Filthy Fingersmith',
-        'Pick locks with a DR8 Agility test (standard is DR12, so +4).'
+        'Pick locks with a dr8 Agility test (standard is dr12, so +4).'
     ),
     (
         2,
-        'abilities.gutterborn_scum.spatula',
+        'abilities.gutterborn_scum.gob_lobber',
         4,
         'presence',
         '[]'::jsonb,
         'Abominable Gob Lobber',
-        'Roll a DR8 Presence test for accuracy (standard is DR12, so +4).'
+        'Roll a dr8 Presence test for accuracy (standard is dr12, so +4).'
     ),
     (
         2,
-        'abilities.gutterborn_scum.muck',
-        4,
+        'abilities.gutterborn_scum.stealth',
+        -4,
         'presence',
         '[]'::jsonb,
         'Excretal Stealth',
-        'DR16 Presence test required to notice you (effectively +4 to stealth Presence).'
+        'dr16 Presence test required to notice you (standard is dr12, so -4 modifier to spotter).'
     ),
     -- Esoteric Hermit (Class 3)
     (
         3,
-        'abilities.esoteric_hermit.book',
+        'abilities.esoteric_hermit.master_of_fate',
         4,
         'presence',
         '[]'::jsonb,
         'Master of Fate',
-        'Know the right way with a DR8 Presence test (standard is DR12, so +4).'
+        'Know the right way with a dr8 Presence test (standard is dr12, so +4).'
     ),
     (
         3,
-        'abilities.esoteric_hermit.staff',
+        'abilities.esoteric_hermit.speaker',
         4,
         'presence',
         '[]'::jsonb,
         'Speaker of Truths',
-        'The DR of the next test is lowered by 4 (effectively +4 to Presence).'
+        'The dr of the next test is lowered by 4 (effectively +4 to Presence).'
     ),
     -- Wretched Royalty (Class 4)
     (
         4,
-        'abilities.wretched_royalty.servant',
+        'abilities.wretched_royalty.poltroon',
         2,
         'agility',
         '[]'::jsonb,
@@ -63,7 +63,7 @@ VALUES
     ),
     (
         4,
-        'abilities.wretched_royalty.servant',
+        'abilities.wretched_royalty.poltroon',
         2,
         'strength',
         '[]'::jsonb,
@@ -72,7 +72,7 @@ VALUES
     ),
     (
         4,
-        'abilities.wretched_royalty.horse',
+        'abilities.wretched_royalty.barbarister',
         2,
         'presence',
         '[]'::jsonb,
@@ -82,16 +82,16 @@ VALUES
     -- Heretical Priest (Class 5)
     (
         5,
-        'abilities.heretical_priest.breath',
+        'abilities.heretical_priest.mitre',
         2,
         'agility',
         '[]'::jsonb,
         'Stolen Mitre',
-        'Hard to hit in combat (Defence DR10, standard is DR12, so +2).'
+        'Hard to hit in combat (Defence dr10, standard is dr12, so +2).'
     ),
     (
         5,
-        'abilities.heretical_priest.voice',
+        'abilities.heretical_priest.sins',
         2,
         'agility',
         '[]'::jsonb,

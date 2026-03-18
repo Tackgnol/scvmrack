@@ -30,4 +30,4 @@ VALUES
         'Stealthy',
         'All Presence and Agility tests have DR reduced by 2.'
     )
-ON CONFLICT (class_id, ability_key, statistic, value, exclude) DO NOTHING;
+    ON CONFLICT (class_id, ability_key, statistic, value, exclude) DO NOTHING;

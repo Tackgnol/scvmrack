@@ -24,6 +24,17 @@ export const statColors: StatColorMap = {
   all: morkBorgColors.yellow,
 };
 
+// Shared section stamp heading style
+const sectionStamp = {
+  color: morkBorgColors.black,
+  backgroundColor: morkBorgColors.yellow,
+  border: `3px solid ${morkBorgColors.black}`,
+  boxShadow: `4px 4px 0 ${morkBorgColors.black}`,
+  px: 1.25,
+  py: 0.25,
+  display: 'inline-block',
+} as const;
+
 // Custom reusable styles
 export const customStyles = {
   // Navigation styles
@@ -38,7 +49,7 @@ export const customStyles = {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      fontFamily: '"Pirata One", serif',
+      fontFamily: '"MedievalSharp", serif',
       fontSize: '1.2rem',
       textTransform: 'uppercase' as const,
     },
@@ -102,12 +113,20 @@ export const customStyles = {
       bgcolor: morkBorgColors.black,
       border: `2px solid ${morkBorgColors.pink}`,
       borderRadius: 0,
-      minWidth: 220,
+      minWidth: 250,
+      boxShadow: `6px 6px 0 ${morkBorgColors.pink}`,
     },
     item: {
       flexDirection: 'column' as const,
       alignItems: 'flex-start' as const,
-      '&:hover': { bgcolor: '#222' },
+      py: 1.25,
+      px: 2,
+      transition: 'all 0.15s ease',
+      borderLeft: '3px solid transparent',
+      '&:hover': {
+        bgcolor: 'rgba(255, 62, 181, 0.1)',
+        borderLeftColor: morkBorgColors.pink,
+      },
     },
   },
 
@@ -210,14 +229,14 @@ export const customStyles = {
       alignItems: 'center',
       gap: '12px',
       flex: 1,
-      transition: 'all 0.2s ease',
+      transition: 'all 0.2s cubic-bezier(0.25, 0, 0.2, 1)',
       border: '1px solid transparent',
       backgroundColor: '#111',
     },
     hover: {
       backgroundColor: '#1a1a1a',
       borderColor: morkBorgColors.pink,
-      transform: 'translateY(-2px)',
+      boxShadow: `0 0 12px rgba(255, 62, 181, 0.3), inset 0 0 12px rgba(255, 62, 181, 0.05)`,
     },
   },
 
@@ -250,7 +269,7 @@ export const customStyles = {
   statusChip: {
     common: {
       fontWeight: 'bold',
-      fontFamily: '"Pirata One", serif',
+      fontFamily: '"MedievalSharp", serif',
       borderColor: morkBorgColors.yellow,
       color: morkBorgColors.yellow,
     },
@@ -386,18 +405,24 @@ export const customStyles = {
   // Notes section
   notes: {
     title: {
-      fontFamily: "'Permanent Marker', cursive",
-      fontSize: '1.3rem',
-      color: morkBorgColors.black,
-      marginBottom: '10px',
+      ...sectionStamp,
+      mb: 1.5,
+      transform: 'rotate(0.3deg)',
     },
     input: {
       '& .MuiOutlinedInput-root': {
-        backgroundColor: morkBorgColors.white,
-        border: `3px solid ${morkBorgColors.black}`,
+        backgroundColor: morkBorgColors.black,
+        border: `2px solid ${morkBorgColors.black}`,
         '& fieldset': { border: 'none' },
         '& textarea': {
-          color: morkBorgColors.black,
+          color: morkBorgColors.yellow,
+          fontFamily: "'Alegreya', serif",
+          fontStyle: 'italic' as const,
+          fontSize: '0.9rem',
+        },
+        '& textarea::placeholder': {
+          color: morkBorgColors.yellow,
+          opacity: 0.35,
         },
       },
     },
@@ -421,14 +446,21 @@ export const customStyles = {
 
   // Footer button
   footerButton: {
-    backgroundColor: morkBorgColors.pink,
+    backgroundColor: morkBorgColors.black,
     border: `2px solid ${morkBorgColors.black}`,
-    color: morkBorgColors.black,
+    color: morkBorgColors.yellow,
     fontFamily: "'Antonio', sans-serif",
-    fontSize: '0.7rem',
+    fontSize: '0.65rem',
     letterSpacing: '0.2em',
+    px: 3,
+    py: 0.75,
+    boxShadow: `3px 3px 0 ${morkBorgColors.pink}`,
+    transition: 'all 0.15s ease',
     '&:hover': {
-      backgroundColor: morkBorgColors.yellow,
+      backgroundColor: morkBorgColors.pink,
+      color: morkBorgColors.black,
+      transform: 'translate(-1px, -1px)',
+      boxShadow: `4px 4px 0 ${morkBorgColors.black}`,
     },
   },
 
@@ -443,7 +475,7 @@ export const customStyles = {
 
   // Page title
   pageTitle: {
-    fontFamily: '"Pirata One", serif',
+    fontFamily: '"MedievalSharp", serif',
     color: morkBorgColors.black,
     textTransform: 'uppercase' as const,
   },
@@ -507,7 +539,7 @@ export const customStyles = {
       padding: '12px',
       backgroundColor: morkBorgColors.black,
       border: `2px solid ${morkBorgColors.yellow}`,
-      marginBottom: '20px',
+      marginBottom: '12px',
       flexWrap: 'wrap' as const,
     },
     stat: {
@@ -536,7 +568,7 @@ export const customStyles = {
     '& .MuiOutlinedInput-root': {
       '& input': {
         color: morkBorgColors.yellow,
-        fontFamily: "'Pirata One', serif",
+        fontFamily: "'MedievalSharp', serif",
         fontSize: '1.8rem',
         padding: '12px',
         textAlign: 'center' as const,
@@ -578,28 +610,32 @@ export const customStyles = {
 
   // Ability adjust button
   abilityAdjustButton: {
-    width: 32,
-    height: 32,
-    backgroundColor: morkBorgColors.grey,
+    width: 28,
+    height: 28,
+    minWidth: 28,
+    backgroundColor: 'transparent',
     border: `2px solid ${morkBorgColors.yellow}`,
     color: morkBorgColors.yellow,
+    transition: 'all 0.15s ease',
     '&:hover': {
       backgroundColor: morkBorgColors.yellow,
       color: morkBorgColors.black,
+      transform: 'scale(1.1)',
     },
   },
 
   // Ability value input
   abilityValueInput: {
-    width: 50,
+    width: 48,
     '& .MuiOutlinedInput-root': {
       backgroundColor: morkBorgColors.yellow,
       '& input': {
         color: morkBorgColors.black,
         textAlign: 'center' as const,
         fontFamily: "'Bebas Neue', sans-serif",
-        fontSize: '2rem',
-        padding: '4px',
+        fontSize: '1.8rem',
+        padding: '2px 4px',
+        lineHeight: 1,
       },
       '& fieldset': { border: 'none' },
     },
@@ -632,7 +668,7 @@ export const customStyles = {
       display: 'grid',
       gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(4, 1fr)' },
       gap: 1.25,
-      mb: 2.5,
+      mb: 1.5,
     },
     paper: {
       p: 1.5,
@@ -649,45 +685,67 @@ export const customStyles = {
     },
   },
 
+  // Zone divider — decorative break between section groups
+  zoneDivider: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 2,
+    my: { xs: 3, sm: 4 },
+    '&::before, &::after': {
+      content: '""',
+      flex: 1,
+      height: '2px',
+      bgcolor: morkBorgColors.black,
+      opacity: 0.12,
+    },
+  },
+  zoneDividerIcon: {
+    color: morkBorgColors.pink,
+    fontSize: '0.7rem',
+    opacity: 0.5,
+    userSelect: 'none' as const,
+  },
+
   // Footer styles
   footer: {
     paper: {
       textAlign: 'center' as const,
-      p: 3,
+      p: { xs: 2, sm: 2.5 },
+      bgcolor: 'transparent',
+      boxShadow: 'none',
+      borderTop: `1px solid rgba(10, 10, 10, 0.15)`,
+      mt: 3,
     },
     title: {
-      color: morkBorgColors.yellow,
-      letterSpacing: '0.3em',
-      '& span': { color: morkBorgColors.pink },
+      fontFamily: "'Antonio', sans-serif",
+      fontSize: '0.6rem',
+      letterSpacing: '0.35em',
+      textTransform: 'uppercase' as const,
+      color: morkBorgColors.black,
+      opacity: 0.3,
     },
     buttonContainer: {
       display: 'flex',
       gap: 2,
       justifyContent: 'center',
-      mt: 2,
+      mt: 1.5,
     },
   },
 
   // Abilities styles
   abilities: {
     container: {
-      mb: 2.5,
+      mb: 1.5,
     },
     title: {
-      color: morkBorgColors.black,
-      backgroundColor: morkBorgColors.yellow,
-      border: `3px solid ${morkBorgColors.black}`,
-      boxShadow: `4px 4px 0 ${morkBorgColors.black}`,
-      px: 1.25,
-      py: 0.25,
+      ...sectionStamp,
       mb: 1.5,
-      display: 'inline-block',
       transform: 'rotate(-0.6deg)',
     },
     grid: {
       display: 'grid',
       gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(4, 1fr)' },
-      gap: 1.25,
+      gap: { xs: 0.75, sm: 1.25 },
     },
   },
 
@@ -799,76 +857,109 @@ export const customStyles = {
     '&:last-child': { borderRight: 'none' },
   },
 
-  // Character name box
+  // Character name box — hot pink card with black shadow
   characterNameBox: {
+    position: 'relative' as const,
+    zIndex: 1,
     bgcolor: morkBorgColors.pink,
-    p: 2.5,
     border: `3px solid ${morkBorgColors.black}`,
     boxShadow: `6px 6px 0 ${morkBorgColors.black}`,
-    transform: 'rotate(-0.8deg)',
+    p: { xs: 2, sm: 3 },
+    pt: { xs: 1.5, sm: 1.5 },
+    pb: { xs: 2, sm: 2.5 },
+    mr: { xs: 0, sm: -4 },
+    pr: { xs: 2, sm: 5 },
+    transform: 'rotate(-0.3deg)',
   },
 
-  // Character name label
+  // Character name label — small stamp label
   characterNameLabel: {
-    color: morkBorgColors.black,
-    mb: 0.5,
+    fontFamily: "'Antonio', sans-serif",
     fontSize: '0.6rem',
+    letterSpacing: '0.2em',
+    textTransform: 'uppercase' as const,
+    color: morkBorgColors.black,
+    opacity: 0.45,
+    mb: 0.25,
   },
 
-  // Character name text
+  // Character name text — BIG Black Ops One
   characterNameText: {
-    fontFamily: "'Permanent Marker', cursive",
-    fontSize: 'clamp(1.2rem, 4vw, 1.8rem)',
+    fontFamily: "'Black Ops One', cursive",
+    fontSize: 'clamp(2.4rem, 8vw, 4.5rem)',
     color: morkBorgColors.black,
+    lineHeight: 0.9,
+    letterSpacing: '-0.02em',
+    pb: 1,
     borderBottom: `3px solid ${morkBorgColors.black}`,
-    minHeight: '2rem',
+    mb: 1,
   },
 
-  // Character trait text
+  // Character trait text — the flavor line beneath the name
   characterTraitText: {
-    fontFamily: "'Permanent Marker', cursive",
-    fontSize: 'clamp(0.7rem, 2vw, 0.9rem)',
+    fontFamily: "'Alegreya', serif",
+    fontSize: 'clamp(0.8rem, 2vw, 0.95rem)',
+    fontStyle: 'italic' as const,
     color: morkBorgColors.black,
-    opacity: 0.8,
-    mt: 0.5,
+    opacity: 0.6,
   },
 
-  // Character class paper
+  // Character class paper — overlaps ON TOP of the name card
   characterClassPaper: {
-    p: 2.5,
+    position: 'relative' as const,
+    p: { xs: 2, sm: 2.5 },
+    bgcolor: morkBorgColors.black,
     border: `3px solid ${morkBorgColors.pink}`,
-    boxShadow: `6px 6px 0 ${morkBorgColors.pink}`,
-    transform: 'rotate(0.8deg)',
+    boxShadow: `8px 8px 0 ${morkBorgColors.pink}`,
+    transform: { xs: 'rotate(0.4deg)', sm: 'rotate(1.2deg)' },
+    zIndex: 3,
+    mb: { xs: 0, sm: -2 },
+    ml: { xs: 0, sm: -5 },
+    transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+    '&:hover': {
+      transform: { xs: 'rotate(0.4deg)', sm: 'rotate(0deg) translateY(-2px)' },
+      boxShadow: `10px 12px 0 ${morkBorgColors.pink}`,
+    },
   },
 
   // Character class label
   characterClassLabel: {
-    mb: 0.5,
-    fontSize: '0.6rem',
+    mb: 0.25,
+    fontSize: '0.5rem',
+    letterSpacing: '0.25em',
+    textTransform: 'uppercase' as const,
+    opacity: 0.5,
   },
 
   // Character class text
   characterClassText: {
     fontFamily: "'Permanent Marker', cursive",
-    fontSize: 'clamp(1rem, 3vw, 1.4rem)',
+    fontSize: 'clamp(1.2rem, 3vw, 1.8rem)',
     color: morkBorgColors.yellow,
-    borderBottom: `1px solid ${morkBorgColors.yellow}`,
     minHeight: '1.8rem',
+    lineHeight: 1.1,
   },
 
   // Character class description
   characterClassDescription: {
     mt: 1,
     color: morkBorgColors.white,
-    opacity: 0.7,
+    opacity: 0.5,
+    fontFamily: "'Alegreya', serif",
+    fontStyle: 'italic' as const,
+    fontSize: '0.75rem',
+    lineHeight: 1.5,
+    borderTop: `1px solid rgba(255,255,255,0.08)`,
+    pt: 1,
   },
 
-  // Character name/class grid
+  // Character name/class grid — name card tucks under class card
   characterNameClassGrid: {
     display: 'grid',
-    gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
-    gap: 2,
-    mb: 2.5,
+    gridTemplateColumns: { xs: '1fr', sm: '1.6fr 1fr' },
+    gap: { xs: 1, sm: 0 },
+    mb: 3,
+    alignItems: 'end',
   },
 
   // Auth modal styles
@@ -944,14 +1035,8 @@ export const customStyles = {
       mb: 2.5,
     },
     sectionTitle: {
-      color: morkBorgColors.black,
-      backgroundColor: morkBorgColors.yellow,
-      border: `3px solid ${morkBorgColors.black}`,
-      boxShadow: `4px 4px 0 ${morkBorgColors.black}`,
-      px: 1.25,
-      py: 0.25,
+      ...sectionStamp,
       mb: 1.5,
-      display: 'inline-block',
       transform: 'rotate(-0.6deg)',
     },
     gearGrid: {
@@ -1111,9 +1196,17 @@ export const customStyles = {
     },
     title: (isMobile: boolean) => ({
       color: morkBorgColors.yellow,
-      fontSize: isMobile ? '2.2rem' : 'clamp(2.5rem, 10vw, 5rem)',
-      lineHeight: 1,
+      fontSize: isMobile ? '2.8rem' : 'clamp(3.5rem, 10vw, 5.5rem)',
+      lineHeight: 0.85,
       '& span': { color: morkBorgColors.pink },
+    }),
+    titleSecondLine: (isMobile: boolean) => ({
+      fontFamily: "'Black Ops One', cursive",
+      color: morkBorgColors.yellow,
+      fontSize: isMobile ? '2.4rem' : 'clamp(3rem, 9vw, 4.8rem)',
+      lineHeight: 0.9,
+      letterSpacing: '0.05em',
+      mt: 0.25,
     }),
     subtitle: (isMobile: boolean) => ({
       color: morkBorgColors.white,
@@ -1157,7 +1250,7 @@ export const customStyles = {
     },
     drawerTitle: {
       color: morkBorgColors.pink,
-      fontFamily: '"Pirata One", serif',
+      fontFamily: '"MedievalSharp", serif',
     },
     drawerNav: {
       display: 'flex',
@@ -1192,7 +1285,7 @@ export const customStyles = {
     },
     savingChip: {
       fontWeight: 'bold',
-      fontFamily: '"Pirata One", serif',
+      fontFamily: '"MedievalSharp", serif',
       borderColor: morkBorgColors.yellow,
       color: morkBorgColors.yellow,
       '@keyframes spin': {
@@ -1211,28 +1304,42 @@ export const customStyles = {
   // Small component styles
   abilityCardTwo: {
     paper: (rotate: number) => ({
-      p: 2,
+      p: { xs: 1.25, sm: 2 },
       textAlign: 'center' as const,
       transform: `rotate(${rotate}deg)`,
+      position: 'relative' as const,
+      overflow: 'visible' as const,
+      transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+      '&:hover': {
+        transform: `rotate(${rotate}deg) translateY(-2px)`,
+        boxShadow: `6px 6px 0 ${morkBorgColors.pink}`,
+      },
     }),
     label: {
-      mb: 1,
+      mb: 0.5,
+      fontSize: '0.55rem',
+      letterSpacing: '0.2em',
+      textTransform: 'uppercase' as const,
     },
     controls: {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      gap: 0.75,
+      gap: 0.5,
     },
     modifier: {
-      mt: 1,
-      color: morkBorgColors.white,
+      fontFamily: "'Bebas Neue', sans-serif",
+      fontSize: 'clamp(1.6rem, 4vw, 2.2rem)',
+      color: morkBorgColors.pink,
+      lineHeight: 1,
+      mt: 0.5,
     },
     description: {
-      mt: 0.5,
-      opacity: 0.6,
+      mt: 0.25,
+      opacity: 0.45,
       fontStyle: 'italic' as const,
-      fontSize: '0.6rem',
+      fontSize: '0.55rem',
+      fontFamily: "'Alegreya', serif",
     },
   },
 
@@ -1339,7 +1446,7 @@ export const customStyles = {
       mb: 3,
     },
     title: {
-      fontFamily: '"Pirata One", serif',
+      fontFamily: '"MedievalSharp", serif',
       color: morkBorgColors.black,
       textTransform: 'uppercase' as const,
     },
@@ -1399,7 +1506,7 @@ export const customStyles = {
       mb: 3,
     },
     title: {
-      fontFamily: '"Pirata One", serif',
+      fontFamily: '"MedievalSharp", serif',
       color: morkBorgColors.black,
       textTransform: 'uppercase' as const,
     },
@@ -1432,7 +1539,7 @@ export const customStyles = {
       gap: 2,
     },
     versionNumber: {
-      fontFamily: '"Pirata One", serif',
+      fontFamily: '"MedievalSharp", serif',
       color: morkBorgColors.yellow,
     },
     typeChip: (type: 'major' | 'minor' | 'patch', color: string) => ({
@@ -1519,7 +1626,7 @@ export const customStyles = {
       alignItems: 'flex-start',
     },
     characterName: {
-      fontFamily: '"Pirata One", serif',
+      fontFamily: '"MedievalSharp", serif',
       color: morkBorgColors.yellow,
       mb: 0.5,
     },
@@ -1550,7 +1657,7 @@ export const customStyles = {
       display: 'flex',
       flexDirection: { xs: 'column' as const, sm: 'row' as const },
       gap: 1.25,
-      mb: 2.5,
+      mb: 1.5,
     },
     icon: {
       fontSize: '1.5rem',
@@ -1594,17 +1701,25 @@ export const customStyles = {
       color: morkBorgColors.yellow,
     },
     menuUnequipItem: {
-      color: morkBorgColors.yellow,
+      color: morkBorgColors.pink,
+      fontFamily: "'Antonio', sans-serif",
+      fontSize: '0.75rem',
+      textTransform: 'uppercase' as const,
+      letterSpacing: '0.15em',
     },
     menuDivider: {
-      bgcolor: '#333',
+      bgcolor: 'rgba(255, 62, 181, 0.2)',
     },
     menuItemName: {
       color: morkBorgColors.yellow,
-      fontWeight: 'bold',
+      fontFamily: "'MedievalSharp', serif",
+      fontSize: '1.05rem',
     },
     menuItemDescription: {
       color: morkBorgColors.pink,
+      fontFamily: "'Alegreya', serif",
+      fontStyle: 'italic' as const,
+      fontSize: '0.8rem',
     },
   },
 
@@ -1616,7 +1731,6 @@ export const customStyles = {
     },
     paperWithRelative: {
       p: 2.5,
-      mb: 2.5,
       position: 'relative' as const,
     },
     headerRow: {
@@ -1642,46 +1756,274 @@ export const customStyles = {
       mt: 2,
     },
     emptyText: {
-      color: morkBorgColors.white,
+      color: morkBorgColors.yellow,
       opacity: 0.5,
     },
     sectionTitle: {
       mb: 1,
+    },
+    classAbilitiesHeading: {
+      ...sectionStamp,
+      mb: 0,
+      transform: 'rotate(-0.4deg)',
+      position: 'relative' as const,
+      zIndex: 1,
+    },
+    classAbilitiesCard: {
+      bgcolor: morkBorgColors.black,
+      border: `2px solid ${morkBorgColors.black}`,
+      p: { xs: 1.5, sm: 2 },
+      pt: { xs: 1, sm: 1.5 },
+    },
+    abilitiesList: {
+      display: 'flex',
+      flexDirection: 'column' as const,
+      gap: 0,
+    },
+    abilityItem: (rotate: number) => ({
+      py: 1.5,
+      px: 1.5,
+      pl: 2,
+      borderLeft: `5px solid ${morkBorgColors.pink}`,
+      cursor: 'pointer',
+      transition: 'all 0.2s cubic-bezier(0.25, 0, 0.2, 1)',
+      transform: `rotate(${rotate}deg)`,
+      display: 'flex',
+      gap: 1.5,
+      alignItems: 'flex-start',
+      '&:hover': {
+        borderLeftWidth: '8px',
+        bgcolor: 'rgba(255, 62, 181, 0.08)',
+        transform: `rotate(${rotate}deg) translateX(4px)`,
+      },
+      '& + &': {
+        borderTop: `1px dashed rgba(255, 255, 255, 0.1)`,
+      },
+    }),
+    abilityIndex: {
+      fontFamily: "'Bebas Neue', sans-serif",
+      fontSize: 'clamp(1.4rem, 3vw, 1.8rem)',
+      color: morkBorgColors.pink,
+      lineHeight: 1,
+      flexShrink: 0,
+      mt: 0.25,
+      userSelect: 'none' as const,
+    },
+    abilityContent: {
+      flex: 1,
+      minWidth: 0,
+    },
+    abilityName: {
+      color: morkBorgColors.white,
+      fontFamily: "'Permanent Marker', cursive",
+      fontSize: 'clamp(1rem, 2.5vw, 1.15rem)',
+      lineHeight: 1.2,
+      letterSpacing: '0.02em',
+    },
+    abilityDescription: {
+      color: morkBorgColors.yellow,
+      opacity: 0.6,
+      fontSize: '0.78rem',
+      fontStyle: 'italic' as const,
+      fontFamily: "'Alegreya', serif",
+      mt: 0.5,
+      lineHeight: 1.5,
+    },
+    abilityComment: {
+      mt: 1,
+      '& .MuiInput-root': {
+        color: `${morkBorgColors.yellow} !important`,
+        fontSize: '0.8rem',
+        '&:before': { borderBottomColor: 'rgba(255, 255, 255, 0.15)' },
+        '&:after': { borderBottomColor: morkBorgColors.pink },
+      },
+      '& .MuiInput-input': {
+        color: `${morkBorgColors.yellow} !important`,
+      },
+      '& .MuiInputLabel-root': {
+        color: `${morkBorgColors.yellow} !important`,
+        opacity: 0.4,
+        fontSize: '0.7rem',
+      },
+    },
+    // Traits section — dark container, scrawled character notes
+    traitsHeading: {
+      ...sectionStamp,
+      mb: 0,
+      transform: 'rotate(0.4deg)',
+      alignSelf: 'flex-start',
+      position: 'relative' as const,
+      zIndex: 1,
+    },
+    traitsCard: {
+      bgcolor: morkBorgColors.black,
+      border: `2px solid ${morkBorgColors.black}`,
+      p: { xs: 1.5, sm: 2 },
+      pt: { xs: 1, sm: 1.5 },
+      mb: 2,
+    },
+    traitsLabel: {
+      fontFamily: "'Antonio', sans-serif",
+      fontSize: '0.5rem',
+      textTransform: 'uppercase' as const,
+      letterSpacing: '0.25em',
+      color: morkBorgColors.black,
+      opacity: 0.4,
+      mb: 0.5,
+      mt: 0.5,
+    },
+    traitsField: {
+      '& .MuiInput-root': {
+        color: `${morkBorgColors.white} !important`,
+        fontFamily: "'Permanent Marker', cursive",
+        fontSize: 'clamp(1.15rem, 3vw, 1.5rem)',
+        lineHeight: 1.1,
+        '&:before': { borderBottomColor: morkBorgColors.pink, opacity: 0.4, borderBottomWidth: '2px' },
+        '&:hover:not(.Mui-disabled):before': { borderBottomColor: morkBorgColors.pink, opacity: 0.7 },
+        '&:after': { borderBottomColor: morkBorgColors.pink },
+      },
+      '& .MuiInput-input': {
+        color: `${morkBorgColors.white} !important`,
+        pb: 0.75,
+      },
+      '& .MuiInputLabel-root': {
+        color: `${morkBorgColors.yellow} !important`,
+        opacity: 0.4,
+        fontFamily: "'Antonio', sans-serif",
+        fontSize: '0.65rem',
+        textTransform: 'uppercase' as const,
+        letterSpacing: '0.2em',
+      },
+    },
+    traitsFieldHabit: {
+      '& .MuiInput-root': {
+        color: `${morkBorgColors.yellow} !important`,
+        fontFamily: "'Alegreya', serif",
+        fontSize: '0.85rem',
+        fontStyle: 'italic' as const,
+        '&:before': { borderBottomColor: morkBorgColors.pink, opacity: 0.25 },
+        '&:hover:not(.Mui-disabled):before': { borderBottomColor: morkBorgColors.pink, opacity: 0.5 },
+        '&:after': { borderBottomColor: morkBorgColors.pink },
+      },
+      '& .MuiInput-input': {
+        color: `${morkBorgColors.yellow} !important`,
+        pb: 0.5,
+      },
+      '& .MuiInputLabel-root': {
+        color: `${morkBorgColors.yellow} !important`,
+        opacity: 0.4,
+        fontFamily: "'Antonio', sans-serif",
+        fontSize: '0.65rem',
+        textTransform: 'uppercase' as const,
+        letterSpacing: '0.2em',
+      },
+    },
+    // Origin section — dark container
+    originOpen: {
+      mb: 0,
+    },
+    originTextarea: {
+      bgcolor: morkBorgColors.black,
+      p: 2,
+      '& .MuiInput-root': {
+        color: `${morkBorgColors.yellow} !important`,
+        fontFamily: "'Alegreya', serif",
+        fontSize: '0.9rem',
+        fontStyle: 'italic' as const,
+        '&:before': { borderBottom: 'none' },
+        '&:hover:not(.Mui-disabled):before': { borderBottom: 'none' },
+        '&:after': { borderBottom: 'none' },
+      },
+      '& .MuiInput-input': {
+        color: `${morkBorgColors.yellow} !important`,
+      },
+      '& .MuiInputLabel-root': {
+        display: 'none',
+      },
+    },
+    originPlaceholder: {
+      '& .MuiInput-input': {
+        color: `${morkBorgColors.yellow} !important`,
+      },
+      '& .MuiInput-input::placeholder': {
+        color: `${morkBorgColors.yellow} !important`,
+        opacity: 0.35,
+        fontStyle: 'italic' as const,
+      },
     },
   },
 
   // Collapsible section styles (character page)
   collapsibleSection: {
     accordion: {
-      mb: 2.5,
-      bgcolor: morkBorgColors.black,
-      border: `2px solid ${morkBorgColors.grey}`,
+      mb: 2,
+      bgcolor: 'transparent',
+      border: 'none',
       borderRadius: 0,
       boxShadow: 'none',
       '&:before': { display: 'none' },
     },
     summary: {
-      px: 2,
-      py: 0.5,
+      px: 0,
+      py: 0,
       minHeight: 0,
       '& .MuiAccordionSummary-content': {
-        margin: '8px 0',
+        margin: '0 0 0 0',
       },
     },
     title: {
+      ...sectionStamp,
       letterSpacing: '0.15em',
     },
     details: {
-      px: 2,
-      pb: 2,
+      px: 0,
+      pb: 0,
     },
     expandIcon: {
-      color: morkBorgColors.yellow,
+      color: morkBorgColors.black,
     },
   },
 
   // Inventory section styles
   inventorySection: {
+    // On Hand — dark container
+    openContainer: {
+      mb: 2,
+      bgcolor: morkBorgColors.black,
+      border: `2px solid ${morkBorgColors.black}`,
+      p: { xs: 1.5, sm: 2 },
+      pt: { xs: 1, sm: 1.5 },
+      position: 'relative' as const,
+    },
+    openItemSlot: {
+      display: 'flex',
+      alignItems: 'flex-start',
+      gap: 1.5,
+      cursor: 'pointer',
+      py: 1.25,
+      px: 1.5,
+      borderLeft: `3px solid ${morkBorgColors.pink}`,
+      mb: 0.75,
+      transition: 'all 0.15s ease-in-out',
+      '&:hover': {
+        bgcolor: 'rgba(255, 255, 255, 0.05)',
+        transform: 'translateX(4px)',
+        borderLeftColor: morkBorgColors.yellow,
+      },
+    },
+    openItemName: {
+      color: morkBorgColors.white,
+      fontSize: '1rem',
+      fontWeight: 'bold',
+      lineHeight: 1.2,
+    },
+    openItemDescription: {
+      color: morkBorgColors.yellow,
+      opacity: 0.7,
+      fontStyle: 'italic' as const,
+      fontSize: '0.8rem',
+      mt: 0.25,
+    },
     itemSlot: {
       display: 'flex',
       alignItems: 'flex-start',
@@ -1758,78 +2100,123 @@ export const customStyles = {
       flexShrink: 0,
     },
     sectionTitle: {
-      color: morkBorgColors.black,
-      backgroundColor: morkBorgColors.yellow,
-      border: `3px solid ${morkBorgColors.black}`,
-      boxShadow: `4px 4px 0 ${morkBorgColors.black}`,
-      px: 1.25,
-      py: 0.25,
-      mb: 2,
-      display: 'inline-block',
+      ...sectionStamp,
+      mb: 0,
       transform: 'rotate(-0.6deg)',
+      position: 'relative' as const,
+      zIndex: 1,
     },
     itemsGrid: {
       display: 'grid',
       gap: 1,
     },
     addItemSection: {
-      mt: 4,
+      mt: 2,
+    },
+    // Open variant: style autocomplete for dark background
+    openAddItem: {
+      mt: 2,
+      '& .MuiAutocomplete-root': {
+        '& .MuiOutlinedInput-root': {
+          bgcolor: 'rgba(255, 255, 255, 0.05)',
+          color: morkBorgColors.white,
+          borderRadius: 0,
+          '& .MuiOutlinedInput-notchedOutline': {
+            borderColor: 'rgba(255, 255, 255, 0.15)',
+          },
+          '&:hover .MuiOutlinedInput-notchedOutline': {
+            borderColor: morkBorgColors.yellow,
+          },
+          '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+            borderColor: morkBorgColors.pink,
+          },
+        },
+        '& .MuiInputLabel-root': {
+          color: morkBorgColors.yellow,
+          opacity: 0.5,
+          fontFamily: "'Antonio', sans-serif",
+          textTransform: 'uppercase' as const,
+          letterSpacing: '0.15em',
+          '&.Mui-focused': {
+            color: morkBorgColors.pink,
+            opacity: 1,
+          },
+        },
+        '& .MuiAutocomplete-input': {
+          color: `${morkBorgColors.white} !important`,
+        },
+        '& .MuiSvgIcon-root': {
+          color: morkBorgColors.yellow,
+          opacity: 0.4,
+        },
+      },
     },
   },
 
   // Powers section styles
   powersSection: {
-    paper: {
-      p: 2.5,
-      mb: 2.5,
-      border: `3px solid ${morkBorgColors.pink}`,
-      position: 'relative' as const,
+    container: {
+      bgcolor: morkBorgColors.pink,
+      border: `3px solid ${morkBorgColors.black}`,
+      boxShadow: `6px 6px 0 ${morkBorgColors.black}`,
+      p: { xs: 1.5, sm: 2 },
+      pt: { xs: 1, sm: 1.5 },
     },
     sectionLabel: {
-      position: 'absolute' as const,
-      top: -12,
-      left: 15,
-      bgcolor: morkBorgColors.pink,
-      color: morkBorgColors.black,
-      fontFamily: "'Antonio', sans-serif",
-      fontSize: '0.6rem',
-      letterSpacing: '0.3em',
-      px: 1.25,
-      py: 0.4,
+      ...sectionStamp,
+      mb: 0,
+      transform: 'rotate(-0.3deg)',
+      position: 'relative' as const,
+      zIndex: 1,
     },
     emptyText: {
-      color: morkBorgColors.grey,
+      color: morkBorgColors.black,
+      opacity: 0.6,
       fontStyle: 'italic' as const,
       mt: 1,
     },
     contentContainer: {
-      mt: 1,
+      mt: 0,
     },
     powerRow: {
-      display: 'grid',
-      gridTemplateColumns: { xs: '1fr', sm: '30px 1fr 100px' },
-      gap: 1.25,
-      alignItems: 'center',
+      display: 'flex',
+      gap: 1.5,
+      alignItems: 'flex-start',
       py: 1.25,
-      borderBottom: `1px solid ${morkBorgColors.grey}`,
-      '&:last-child': { borderBottom: 'none' },
+      px: 1.5,
+      transition: 'all 0.15s ease',
+      '&:hover': {
+        bgcolor: 'rgba(0, 0, 0, 0.08)',
+        transform: 'translateX(4px)',
+      },
+      '& + &': {
+        borderTop: `1px solid rgba(10, 10, 10, 0.15)`,
+      },
     },
     powerNumber: {
       fontFamily: "'Bebas Neue', sans-serif",
-      fontSize: '1.2rem',
-      color: morkBorgColors.yellow,
-      textAlign: 'center' as const,
-      display: { xs: 'none', sm: 'block' },
+      fontSize: 'clamp(1.4rem, 3vw, 1.8rem)',
+      color: morkBorgColors.black,
+      lineHeight: 1,
+      flexShrink: 0,
+      mt: 0.25,
+      userSelect: 'none' as const,
     },
     powerName: {
-      color: morkBorgColors.white,
-      fontSize: '0.9rem',
-      fontWeight: 'bold',
+      color: morkBorgColors.black,
+      fontFamily: "'Permanent Marker', cursive",
+      fontSize: 'clamp(1rem, 2.5vw, 1.15rem)',
+      lineHeight: 1.2,
+      letterSpacing: '0.02em',
     },
     powerDescription: {
-      color: morkBorgColors.yellow,
-      fontSize: '0.75rem',
+      color: morkBorgColors.black,
+      opacity: 0.6,
+      fontSize: '0.78rem',
       fontStyle: 'italic' as const,
+      fontFamily: "'Alegreya', serif",
+      mt: 0.5,
+      lineHeight: 1.5,
     },
     usePipsContainer: {
       display: 'flex',
@@ -1840,13 +2227,13 @@ export const customStyles = {
       base: {
         width: 18,
         height: 18,
-        border: `2px solid ${morkBorgColors.pink}`,
+        border: `2px solid ${morkBorgColors.black}`,
         borderRadius: '50%',
         cursor: 'pointer',
         transition: 'background-color 0.1s',
       },
       used: {
-        bgcolor: morkBorgColors.pink,
+        bgcolor: morkBorgColors.black,
         '&:hover': {
           bgcolor: morkBorgColors.pink,
         },
@@ -1886,7 +2273,7 @@ export const morkBorgTheme = createTheme({
   },
 
   typography: {
-    fontFamily: "'Libre Baskerville', Georgia, serif",
+    fontFamily: "'Alegreya', Georgia, serif",
 
     h1: {
       fontFamily: "'Permanent Marker', cursive",
@@ -1923,11 +2310,11 @@ export const morkBorgTheme = createTheme({
       letterSpacing: '0.15em',
     },
     body1: {
-      fontFamily: "'Libre Baskerville', serif",
+      fontFamily: "'Alegreya', serif",
       fontSize: '0.9rem',
     },
     body2: {
-      fontFamily: "'Libre Baskerville', serif",
+      fontFamily: "'Alegreya', serif",
       fontSize: '0.85rem',
     },
     button: {
@@ -2096,7 +2483,7 @@ export const morkBorgTheme = createTheme({
         tooltip: {
           backgroundColor: morkBorgColors.yellow,
           color: morkBorgColors.black,
-          fontFamily: "'Libre Baskerville', serif",
+          fontFamily: "'Alegreya', serif",
           fontSize: '0.8rem',
           borderRadius: 0,
           boxShadow: `3px 3px 0 ${morkBorgColors.black}`,

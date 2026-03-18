@@ -46,4 +46,3 @@ export const CancelButton = styled('button')({
 });
 
 export const BorderedContainer = styled(Box)(customStyles.containers.bordered);
-export const BorderedGreyContainer = styled(Box)(customStyles.containers.borderedGrey);

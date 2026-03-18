@@ -1,8 +1,8 @@
 import {useCharacter} from "@/CharacterContext/CharacterContext.tsx";
 import { aggregateItems } from "@/utils/aggregateItems";
-import {Box, Divider, Menu, MenuItem, Typography} from '@mui/material';
+import {Box, Divider, Menu, MenuItem, Typography, useMediaQuery} from '@mui/material';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import {KeyboardEvent, MouseEvent, useMemo, useState} from 'react';
+import {forwardRef, KeyboardEvent, MouseEvent, useCallback, useMemo, useRef, useState} from 'react';
 import {useTranslation} from 'react-i18next';
 import { customStyles} from '../theme/morkBorgTheme';
 import { StyledEquipmentCard } from './EquippedBar.styled';
@@ -18,7 +18,7 @@ interface EquippedQuickProps {
     actionLabel?: string;
 }
 
-function EquippedQuick({icon, type, name, detail, noneName, onClick, dataTestId, actionLabel}: EquippedQuickProps) {
+const EquippedQuick = forwardRef<HTMLDivElement, EquippedQuickProps>(function EquippedQuick({icon, type, name, detail, noneName, onClick, dataTestId, actionLabel}, ref) {
     const hasClick = !!onClick;
     const resolvedActionLabel = actionLabel ?? 'Change';
     const handleKeyDown = (event: KeyboardEvent<HTMLElement>) => {
@@ -31,6 +31,7 @@ function EquippedQuick({icon, type, name, detail, noneName, onClick, dataTestId,
 
     return (
         <StyledEquipmentCard
+            ref={ref}
             onClick={onClick}
             onKeyDown={handleKeyDown}
             hasClick={hasClick}
@@ -63,7 +64,7 @@ function EquippedQuick({icon, type, name, detail, noneName, onClick, dataTestId,
             )}
         </StyledEquipmentCard>
     );
-}
+});
 
 function formatDice(dice?: number[]): string {
     if (!dice || dice.length === 0) return '';
@@ -87,10 +88,48 @@ export default function EquippedBar() {
     } = useCharacter();
 
     const {t} = useTranslation();
+    const prefersReducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
 
     const [weaponAnchor, setWeaponAnchor] = useState<null | HTMLElement>(null);
     const [armorAnchor, setArmorAnchor] = useState<null | HTMLElement>(null);
     const [activeWeaponSlot, setActiveWeaponSlot] = useState<number>(0);
+
+    // Refs for slot animation
+    const weaponSlotRef = useRef<HTMLDivElement>(null);
+    const armorSlotRef = useRef<HTMLDivElement>(null);
+
+    const animateSlot = useCallback((ref: React.RefObject<HTMLDivElement | null>, type: 'equip' | 'unequip') => {
+        if (prefersReducedMotion || !ref.current) return;
+        const el = ref.current;
+        el.style.transition = 'none';
+        if (type === 'equip') {
+            el.style.boxShadow = '0 0 20px rgba(255, 62, 181, 0.6), inset 0 0 20px rgba(255, 62, 181, 0.15)';
+            el.style.borderColor = '#FF3EB5';
+        } else {
+            el.style.transform = 'translateX(-4px)';
+        }
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                el.style.transition = type === 'equip'
+                    ? 'box-shadow 0.6s ease-out, border-color 0.6s ease-out'
+                    : 'transform 0.08s ease-in-out';
+                if (type === 'equip') {
+                    el.style.boxShadow = '';
+                    el.style.borderColor = '';
+                } else {
+                    el.style.transform = 'translateX(4px)';
+                    setTimeout(() => {
+                        el.style.transition = 'transform 0.08s ease-in-out';
+                        el.style.transform = 'translateX(-2px)';
+                        setTimeout(() => {
+                            el.style.transition = 'transform 0.1s ease-out';
+                            el.style.transform = '';
+                        }, 80);
+                    }, 80);
+                }
+            });
+        });
+    }, [prefersReducedMotion]);
 
     // 1. Data Selectors - We map inventory to include original index for the hooks
     const inventory = character?.equipment || [];
@@ -138,11 +177,13 @@ export default function EquippedBar() {
     const handleSelectWeapon = (equipmentIndex: number) => {
         equipWeapon(equipmentIndex, activeWeaponSlot);
         setWeaponAnchor(null);
+        animateSlot(weaponSlotRef, 'equip');
     };
 
     const handleSelectArmor = (equipmentIndex: number) => {
         equipArmor(equipmentIndex);
         setArmorAnchor(null);
+        animateSlot(armorSlotRef, 'equip');
     };
 
     return (
@@ -150,6 +191,7 @@ export default function EquippedBar() {
 
             {/* Main Weapon Slot */}
             <EquippedQuick
+                ref={weaponSlotRef}
                 icon="⚔"
                 type={t('equipment.weapon')}
                 name={mainWeapon?.name ?? t('equipment.unarmed')}
@@ -174,6 +216,7 @@ export default function EquippedBar() {
 
             {/* Armor Slot */}
             <EquippedQuick
+                ref={armorSlotRef}
                 icon="🛡"
                 type={t('equipment.armorLabel')}
                 name={equippedArmor?.name ?? t('equipment.unarmored')}
@@ -195,6 +238,7 @@ export default function EquippedBar() {
                         onClick={() => {
                             unequipWeapon(activeWeaponSlot);
                             setWeaponAnchor(null);
+                            animateSlot(weaponSlotRef, 'unequip');
                         }}
                         sx={{...menuItemStyle, ...customStyles.equippedBar.menuUnequipItem}}
                         data-testid="unequip-weapon-option"
@@ -226,6 +270,7 @@ export default function EquippedBar() {
                         onClick={() => {
                             unequipArmor();
                             setArmorAnchor(null);
+                            animateSlot(armorSlotRef, 'unequip');
                         }}
                         sx={{...menuItemStyle, ...customStyles.equippedBar.menuUnequipItem}}
                         data-testid="unequip-armor-option"

@@ -1,5 +1,5 @@
 import {useCharacter} from "@/CharacterContext/CharacterContext.tsx";
-import {Box, Paper, Typography} from '@mui/material';
+import {Box, Typography} from '@mui/material';
 import {customStyles} from '../theme/morkBorgTheme';
 import {useTranslation} from 'react-i18next';
 
@@ -38,7 +38,7 @@ function PowerRow({number, name, description, uses, onToggleUse}: PowerRowProps)
                 {number}
             </Typography>
 
-            <Box>
+            <Box sx={{ flex: 1, minWidth: 0 }}>
                 <Typography sx={customStyles.powersSection.powerName}>
                     {name}
                 </Typography>
@@ -54,14 +54,6 @@ function PowerRow({number, name, description, uses, onToggleUse}: PowerRowProps)
                     <UsePip key={useIndex} used={used} onClick={() => onToggleUse(useIndex)}/>
                 ))}
             </Box>
-        </Box>
-    );
-}
-
-function SectionLabel({label}: { label: string }) {
-    return (
-        <Box sx={customStyles.powersSection.sectionLabel}>
-            {label}
         </Box>
     );
 }
@@ -84,8 +76,12 @@ export default function PowersSection({ showLabel = true }: PowersSectionProps) 
     }
 
     return (
-        <Paper sx={customStyles.powersSection.paper}>
-            {showLabel && <SectionLabel label={t('powers.title')}/>}
+        <Box sx={customStyles.powersSection.container}>
+            {showLabel && (
+                <Typography variant="h3" sx={customStyles.powersSection.sectionLabel}>
+                    {t('powers.title')}
+                </Typography>
+            )}
             <Box sx={customStyles.powersSection.contentContainer}>
                 {scrollsWithIndices.map(({item, equipmentIndex}, displayIndex) => {
                     // Get uses from item, default to array of false
@@ -103,6 +99,6 @@ export default function PowersSection({ showLabel = true }: PowersSectionProps) 
                     );
                 })}
             </Box>
-        </Paper>
+        </Box>
     );
 }

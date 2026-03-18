@@ -105,7 +105,7 @@ const listStyles = {
         fontFamily: '"Bebas Neue", sans-serif',
     },
     characterName: {
-        fontFamily: '"Pirata One", serif',
+        fontFamily: '"MedievalSharp", serif',
         color: morkBorgColors.yellow,
         fontSize: { xs: '1.35rem', sm: '1.15rem' },
         lineHeight: 1.1,
@@ -317,7 +317,7 @@ export function CharactersListPage() {
                                 ? t('characters.creating', 'Creating...')
                                 : t('actions.generateNew', 'Generate New')}
                         </Button>
-                        <Button component={Link} to="/" variant="outlined" sx={listStyles.backButton}>
+                        <Button variant="outlined" sx={listStyles.backButton} onClick={() => appHistory.push(buildHomeCallbackUrl(characterId))}>
                             {t('common.back', 'Back')}
                         </Button>
                     </Box>

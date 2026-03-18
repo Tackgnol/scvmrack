@@ -1,7 +1,8 @@
 import { useAuth } from "@/hooks/useAuth";
 import { useCharacter } from "@/CharacterContext/CharacterContext";
 import { useSessionExpiredFlag } from '@/hooks/useSessionExpiredFlag';
-import { getCurrentPendingClaimCharacterId } from '@/router/navigation';
+import { appHistory } from '@/router/history';
+import { buildHomeCallbackUrl, getCurrentPendingClaimCharacterId } from '@/router/navigation';
 import { Flag } from "@components/Flag";
 import { FlagContainer } from "@components/FlagContainer";
 import { SessionWarningBanner } from "@components/SessionWarningBanner";
@@ -27,8 +28,9 @@ const BoneIcon = ({ isOpen }: { isOpen: boolean }) => (
     </BoneIconContainer>
 );
 
-function NavLink({ to, text, onClick, fullWidth }: {
+function NavLink({ to, href, text, onClick, fullWidth }: {
     to: string;
+    href?: string;
     text: string;
     onClick?: () => void;
     fullWidth?: boolean
@@ -36,10 +38,16 @@ function NavLink({ to, text, onClick, fullWidth }: {
     const routerState = useRouterState();
     const isActive = routerState.location.pathname === to;
 
+    const handleClick = href ? (e: React.MouseEvent) => {
+        e.preventDefault();
+        onClick?.();
+        void appHistory.push(href);
+    } : onClick;
+
     return (
         <StyledNavLink
             to={to}
-            onClick={onClick}
+            onClick={handleClick}
             isActive={isActive}
             fullWidth={fullWidth}
             data-testid={`nav-link-${to.replace(/\//g, '') || 'home'}`}
@@ -52,7 +60,7 @@ function NavLink({ to, text, onClick, fullWidth }: {
 export default function Header() {
     const { t } = useTranslation();
     const { user, isAuthenticated } = useAuth();
-    const { isSaving, isJustLoggedOut, character } = useCharacter();
+    const { isSaving, isJustLoggedOut, character, characterId } = useCharacter();
     const { isSessionExpired, clearSessionExpiredFlag } = useSessionExpiredFlag();
     const [authModalOpen, setAuthModalOpen] = useState(false);
     const [sessionExpiredNotice, setSessionExpiredNotice] = useState(false);
@@ -64,6 +72,7 @@ export default function Header() {
 
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+    const homeUrl = buildHomeCallbackUrl(characterId);
 
     const openAuthModal = useCallback((showSessionExpiredNotice = false) => {
         setSessionExpiredNotice(showSessionExpiredNotice);
@@ -171,7 +180,10 @@ export default function Header() {
                 <Box sx={customStyles.header.container(isMobile)}>
                     <Box sx={customStyles.header.titleBox}>
                         <Typography variant="h1" sx={customStyles.header.title(isMobile)}>
-                            Sc<span>v</span>m G<span>r</span>inder
+                            SC<span>V</span>M
+                        </Typography>
+                        <Typography sx={customStyles.header.titleSecondLine(isMobile)}>
+                            RACK
                         </Typography>
                         <Typography variant="subtitle1" sx={customStyles.header.subtitle(isMobile)}>
                             {t("app.subtitle")}
@@ -194,7 +206,7 @@ export default function Header() {
                                 </IconButton>
                             </Box>
                             <Box sx={customStyles.header.navBar}>
-                                <NavLink to="/" text={t("nav.home")} />
+                                <NavLink to="/" href={homeUrl} text={t("nav.home")} />
                                 {isAuthenticated && <NavLink to="/characters" text={t("nav.characters")} />}
                                 <NavLink to="/faq" text={t("nav.faq")} />
                                 <NavLink to="/release" text={t("nav.release")} />
@@ -227,7 +239,7 @@ export default function Header() {
                 </Box>
 
                 <Box sx={customStyles.header.drawerNav}>
-                    <NavLink to="/" text={t("nav.home")} fullWidth onClick={() => setMobileMenuOpen(false)} />
+                    <NavLink to="/" href={homeUrl} text={t("nav.home")} fullWidth onClick={() => setMobileMenuOpen(false)} />
                     {isAuthenticated && <NavLink to="/characters" text={t("nav.characters")} fullWidth
                         onClick={() => setMobileMenuOpen(false)} />}
                     <NavLink to="/faq" text={t("nav.faq")} fullWidth onClick={() => setMobileMenuOpen(false)} />
