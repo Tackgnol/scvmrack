@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Antonio:wght@400;700&family=Permanent+Marker&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=MedievalSharp&family=Alegreya:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Antonio:wght@400;700&family=Permanent+Marker&family=Black+Ops+One&display=swap');
 
 /* Mork Borg Global Styles */
 
@@ -42,4 +42,40 @@ input[type="number"]::-webkit-inner-spin-button {
 
 input[type="number"] {
   -moz-appearance: textfield;
+}
+
+/* Item loading scan-line effect */
+@keyframes itemScanLine {
+  0% {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+}
+
+@keyframes itemGlitchFlicker {
+  0%, 100% { opacity: 0.6; }
+  20% { opacity: 0.8; }
+  40% { opacity: 0.5; }
+  60% { opacity: 0.9; }
+  80% { opacity: 0.4; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .item-loading-ghost .scan-line,
+  .item-loading-ghost {
+    animation: none !important;
+  }
+  .item-loading-ghost {
+    opacity: 0.5;
+  }
 }

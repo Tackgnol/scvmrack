@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useCharacter } from '@/CharacterContext/CharacterContext.tsx';
 import { ItemSearchHit } from '@/hooks/useEquipmentSearch.ts';
 import { aggregateItems, type AggregatedItem } from '@/utils/aggregateItems';
 import AnimatedNumber from '@components/AnimatedNumber.tsx';
 import ItemAutocomplete from '@components/ItemAutocomplete.tsx';
 import { Box, Button, Grow, Paper, TextField, Typography } from '@mui/material';
-import { customStyles } from '../theme/morkBorgTheme';
+import { customStyles, morkBorgColors } from '../theme/morkBorgTheme';
 import { useTranslation } from 'react-i18next';
 import MorkBorgModal from './MorkBorgModal';
 
@@ -50,6 +50,104 @@ function buildAggregateKey(aggregated: AggregatedItem<EquipmentItem>): string {
 }
 
 // --- Components ---
+
+function OpenItemSlot({ aggregated, location, onOpenEditor }: ItemSlotProps) {
+  const { item, indices, quantity } = aggregated;
+  const quantityCacheKey = `${location}:${item.key ?? item.name ?? 'item'}:${indices[0] ?? 0}`;
+
+  return (
+    <Box
+      onClick={() => onOpenEditor(aggregated)}
+      sx={customStyles.inventorySection.openItemSlot}
+    >
+      <Grow
+        in={quantity > 1}
+        mountOnEnter
+        unmountOnExit
+        timeout={{ enter: 180, exit: 120 }}
+      >
+        <Box sx={quantityBadgeStyle}>
+          <AnimatedNumber
+            value={quantity}
+            cacheKey={`${quantityCacheKey}:slot`}
+            durationMs={220}
+          />
+          x
+        </Box>
+      </Grow>
+
+      <Box sx={customStyles.inventorySection.itemContent}>
+        <Typography variant="h6" sx={customStyles.inventorySection.openItemName}>
+          {item.name}
+        </Typography>
+        {item.description && (
+          <Typography
+            variant="body2"
+            sx={customStyles.inventorySection.openItemDescription}
+          >
+            {item.description}
+          </Typography>
+        )}
+      </Box>
+    </Box>
+  );
+}
+
+function LoadingItemSlot({ name }: { name: string }) {
+  return (
+    <Box
+      className="item-loading-ghost"
+      sx={{
+        ...customStyles.inventorySection.openItemSlot,
+        cursor: 'default',
+        borderLeftColor: morkBorgColors.yellow,
+        position: 'relative',
+        overflow: 'hidden',
+        animation: 'itemGlitchFlicker 1.2s ease-in-out infinite',
+        '&:hover': {
+          bgcolor: 'transparent',
+          transform: 'none',
+          borderLeftColor: morkBorgColors.yellow,
+        },
+      }}
+    >
+      {/* Scan line */}
+      <Box
+        className="scan-line"
+        sx={{
+          position: 'absolute',
+          left: 0,
+          right: 0,
+          height: '2px',
+          background: `linear-gradient(90deg, transparent, ${morkBorgColors.pink}, ${morkBorgColors.yellow}, ${morkBorgColors.pink}, transparent)`,
+          animation: 'itemScanLine 0.8s ease-in-out infinite',
+          pointerEvents: 'none',
+          zIndex: 1,
+        }}
+      />
+      <Box sx={customStyles.inventorySection.itemContent}>
+        <Typography
+          variant="h6"
+          sx={{
+            ...customStyles.inventorySection.openItemName,
+            color: morkBorgColors.yellow,
+          }}
+        >
+          {name}
+        </Typography>
+        <Typography
+          variant="body2"
+          sx={{
+            ...customStyles.inventorySection.openItemDescription,
+            opacity: 0.4,
+          }}
+        >
+          &#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;
+        </Typography>
+      </Box>
+    </Box>
+  );
+}
 
 function ItemSlot({ aggregated, location, onOpenEditor }: ItemSlotProps) {
   const { item, indices, quantity } = aggregated;
@@ -326,6 +424,7 @@ export function OnHandSection({ showTitle = true }: { showTitle?: boolean } = {}
   const aggregated = useMemo(() => aggregateItems(equipment), [equipment]);
   const [editingGroup, setEditingGroup] =
     useState<AggregatedItem<EquipmentItem> | null>(null);
+  const [loadingItems, setLoadingItems] = useState<ItemSearchHit[]>([]);
 
   const handleAdjustQuantity = (
     item: EquipmentItem,
@@ -343,37 +442,46 @@ export function OnHandSection({ showTitle = true }: { showTitle?: boolean } = {}
     }
   };
 
-  const handleAddItem = async (hit: ItemSearchHit) => {
-    const response = await fetch(
-      `${import.meta.env.VITE_BACKEND_URL}/equipment/${hit.item_type}/${hit.id}`
-    );
-    if (!response.ok) return;
-    const fullItem = await response.json();
+  const handleAddItem = useCallback(async (hit: ItemSearchHit) => {
+    const loadingKey = `${hit.item_type}-${hit.id}`;
+    setLoadingItems((prev) => [...prev, hit]);
 
-    const isPet =
-      hit.item_type === 'pet' ||
-      (Array.isArray(fullItem.tags) && fullItem.tags.includes('pet'));
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_BACKEND_URL}/equipment/${hit.item_type}/${hit.id}`
+      );
+      if (!response.ok) return;
+      const fullItem = await response.json();
 
-    const actionDice = (Array.isArray(fullItem.action_die) ? fullItem.action_die : [])
-      .map((value: unknown) => Number(value))
-      .filter((value: number) => Number.isFinite(value) && value > 0);
+      const isPet =
+        hit.item_type === 'pet' ||
+        (Array.isArray(fullItem.tags) && fullItem.tags.includes('pet'));
 
-    const petHp = Number(fullItem.hp);
-    const initialUses =
-      isPet && Number.isFinite(petHp) && petHp > 0
-        ? Array.from({ length: petHp }, () => true)
-        : [];
+      const actionDice = (Array.isArray(fullItem.action_die) ? fullItem.action_die : [])
+        .map((value: unknown) => Number(value))
+        .filter((value: number) => Number.isFinite(value) && value > 0);
 
-    addEquipmentItem({
-      ...fullItem,
-      name: fullItem.name ?? hit.name,
-      dice: actionDice.length > 0 ? actionDice : fullItem.dice,
-      uses: initialUses,
-    });
-  };
+      const petHp = Number(fullItem.hp);
+      const initialUses =
+        isPet && Number.isFinite(petHp) && petHp > 0
+          ? Array.from({ length: petHp }, () => true)
+          : [];
+
+      addEquipmentItem({
+        ...fullItem,
+        name: fullItem.name ?? hit.name,
+        dice: actionDice.length > 0 ? actionDice : fullItem.dice,
+        uses: initialUses,
+      });
+    } finally {
+      setLoadingItems((prev) =>
+        prev.filter((h) => `${h.item_type}-${h.id}` !== loadingKey)
+      );
+    }
+  }, [addEquipmentItem]);
 
   return (
-    <Paper sx={sectionPaperStyle}>
+    <Box sx={customStyles.inventorySection.openContainer}>
       {showTitle && (
         <Typography variant="h3" sx={customStyles.inventorySection.sectionTitle}>
           {t('equipment.onHand')}
@@ -381,13 +489,18 @@ export function OnHandSection({ showTitle = true }: { showTitle?: boolean } = {}
       )}
       <Box sx={customStyles.inventorySection.itemsGrid}>
         {aggregated.map((group) => (
-          <Paper key={buildAggregateKey(group)} sx={itemRowStyle}>
-            <ItemSlot
-              aggregated={group}
-              location="equipment"
-              onOpenEditor={setEditingGroup}
-            />
-          </Paper>
+          <OpenItemSlot
+            key={buildAggregateKey(group)}
+            aggregated={group}
+            location="equipment"
+            onOpenEditor={setEditingGroup}
+          />
+        ))}
+        {loadingItems.map((hit) => (
+          <LoadingItemSlot
+            key={`loading-${hit.item_type}-${hit.id}`}
+            name={hit.name}
+          />
         ))}
       </Box>
 
@@ -408,13 +521,13 @@ export function OnHandSection({ showTitle = true }: { showTitle?: boolean } = {}
         onAdjustQuantity={handleAdjustQuantity}
       />
 
-      <Box sx={customStyles.inventorySection.addItemSection}>
+      <Box sx={customStyles.inventorySection.openAddItem}>
         <ItemAutocomplete
           onSelect={handleAddItem}
           placeholder={t('equipment.searchPlaceholder')}
         />
       </Box>
-    </Paper>
+    </Box>
   );
 }
 

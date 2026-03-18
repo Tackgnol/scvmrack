@@ -8,7 +8,7 @@ import NotesSection from "@components/NoteSection";
 import ResourcesRow from "@components/ResourceRow";
 import {Seo} from '@/seo/Seo';
 import { customStyles, morkBorgColors } from "@/theme/morkBorgTheme";
-import {Accordion, AccordionDetails, AccordionSummary, Typography, useMediaQuery, useTheme} from "@mui/material";
+import {Accordion, AccordionDetails, AccordionSummary, Box, Typography, useMediaQuery, useTheme} from "@mui/material";
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { keyframes } from '@mui/system';
 import {useTranslation} from "react-i18next";
@@ -186,6 +186,9 @@ export function CharacterPage() {
             <CharacterNameAndClass/>
             <Abilities/>
             <CharacterDescriptors/>
+            <Box sx={customStyles.zoneDivider}>
+                <Typography sx={customStyles.zoneDividerIcon}>✠</Typography>
+            </Box>
             <ModifiersPanel/>
             <OnHandSection/>
             {hasBackpack && (
@@ -203,6 +206,9 @@ export function CharacterPage() {
                     <PetSection showLabel={false}/>
                 </SectionAccordion>
             )}
+            <Box sx={customStyles.zoneDivider}>
+                <Typography sx={customStyles.zoneDividerIcon}>✠</Typography>
+            </Box>
             <NotesSection />
             <Footer
                 onGenerateNew={handleNew}

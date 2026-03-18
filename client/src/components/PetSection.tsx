@@ -1,5 +1,5 @@
 import { useCharacter } from '@/CharacterContext/CharacterContext.tsx';
-import { Box, Paper, Typography } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { customStyles } from '../theme/morkBorgTheme';
 
@@ -17,14 +17,6 @@ function HpPip({ filled, onClick }: HpPipProps) {
                 ...(filled ? customStyles.powersSection.usePip.used : customStyles.powersSection.usePip.unused),
             }}
         />
-    );
-}
-
-function SectionLabel({ label }: { label: string }) {
-    return (
-        <Box sx={customStyles.powersSection.sectionLabel}>
-            {label}
-        </Box>
     );
 }
 
@@ -67,24 +59,25 @@ export default function PetSection({ showLabel = true }: PetSectionProps) {
     }
 
     return (
-        <Paper sx={customStyles.powersSection.paper}>
-            {showLabel && <SectionLabel label={t('pets.title')} />}
+        <Box sx={customStyles.powersSection.container}>
+            {showLabel && (
+                <Typography variant="h3" sx={customStyles.powersSection.sectionLabel}>
+                    {t('pets.title')}
+                </Typography>
+            )}
             <Box sx={customStyles.powersSection.contentContainer}>
                 {petsWithIndices.map(({ item, equipmentIndex }, displayIndex) => {
                     const hpPips = item.uses ?? [];
                     return (
                         <Box
                             key={item.key ?? equipmentIndex}
-                            sx={{
-                                ...customStyles.powersSection.powerRow,
-                                gridTemplateColumns: { xs: '1fr', sm: '30px 1fr 100px 130px' },
-                            }}
+                            sx={customStyles.powersSection.powerRow}
                         >
                             <Typography sx={customStyles.powersSection.powerNumber}>
                                 {displayIndex + 1}
                             </Typography>
 
-                            <Box>
+                            <Box sx={{ flex: 1, minWidth: 0 }}>
                                 <Typography sx={customStyles.powersSection.powerName}>
                                     {item.name ?? t('pets.unknown')}
                                 </Typography>
@@ -93,11 +86,10 @@ export default function PetSection({ showLabel = true }: PetSectionProps) {
                                         {item.description}
                                     </Typography>
                                 )}
+                                <Typography sx={customStyles.powersSection.powerDescription}>
+                                    {t('pets.actionDie')}: {formatActionDie(item.dice)}
+                                </Typography>
                             </Box>
-
-                            <Typography sx={customStyles.powersSection.powerDescription}>
-                                {t('pets.actionDie')}: {formatActionDie(item.dice)}
-                            </Typography>
 
                             <Box
                                 sx={{
@@ -118,6 +110,6 @@ export default function PetSection({ showLabel = true }: PetSectionProps) {
                     );
                 })}
             </Box>
-        </Paper>
+        </Box>
     );
 }

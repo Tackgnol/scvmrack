@@ -175,8 +175,6 @@ CREATE OR REPLACE FUNCTION build_character_abilities(p_class_id INTEGER) RETURNS
 DECLARE
     v_abilities JSONB := '[]'::jsonb;
     v_random_ability_count INTEGER := 0;
-    v_random_ability_key TEXT;
-    i INTEGER;
 BEGIN
     SELECT COALESCE(c.random_ability_count, 0)
     INTO v_random_ability_count
@@ -194,19 +192,17 @@ BEGIN
     END IF;
 
     IF v_random_ability_count > 0 THEN
-        FOR i IN 1..v_random_ability_count LOOP
-            SELECT a.key
-            INTO v_random_ability_key
-            FROM abilities a
-            WHERE a.class_id = p_class_id
-              AND a.is_random = true
-            ORDER BY random()
-            LIMIT 1;
-
-            IF v_random_ability_key IS NOT NULL THEN
-                v_abilities := v_abilities || jsonb_build_array(jsonb_build_object('key', v_random_ability_key));
-            END IF;
-        END LOOP;
+        v_abilities := v_abilities || COALESCE((
+            SELECT jsonb_agg(jsonb_build_object('key', a.key))
+            FROM (
+                SELECT key
+                FROM abilities
+                WHERE class_id = p_class_id
+                  AND is_random = true
+                ORDER BY random()
+                LIMIT v_random_ability_count
+            ) a
+        ), '[]'::jsonb);
     END IF;
 
     RETURN v_abilities;

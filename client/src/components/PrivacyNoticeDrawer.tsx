@@ -88,7 +88,7 @@ export function PrivacyNoticeDrawer() {
                     variant="h4"
                     sx={{
                         color: morkBorgColors.yellow,
-                        fontFamily: '"Pirata One", serif',
+                        fontFamily: '"MedievalSharp", serif',
                         lineHeight: 1.05,
                     }}
                 >

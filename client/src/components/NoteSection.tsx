@@ -33,7 +33,7 @@ export default function NotesSection({ showTitle = true }: { showTitle?: boolean
     return (
         <Box sx={customStyles.containers.notes}>
             {showTitle && (
-                <Typography sx={customStyles.notes.title}>
+                <Typography variant="h3" sx={customStyles.notes.title}>
                     {t('notes.title')}
                 </Typography>
             )}
