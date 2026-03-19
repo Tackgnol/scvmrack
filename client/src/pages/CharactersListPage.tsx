@@ -188,7 +188,7 @@ const listStyles = {
 export function CharactersListPage() {
     const { t } = useTranslation();
     const { isAuthenticated, isGuest } = useAuth();
-    const { characterId, setCharacterId, generateNew } = useCharacter();
+    const { characterId, lastCharacterId, setCharacterId, generateNew } = useCharacter();
     const [isCreating, setIsCreating] = useState(false);
     const [deletingId, setDeletingId] = useState<string | null>(null);
     const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -201,9 +201,16 @@ export function CharactersListPage() {
     );
     const deleteCharacter = $api.useMutation('delete', '/characters/{id}');
 
-    const handleOpenCharacter = (id?: string) => {
+    const handleOpenCharacter = async (id?: string) => {
         if (!id) return;
-        void appHistory.push(buildHomeCallbackUrl(id));
+        const targetPath = buildHomeCallbackUrl(id);
+        const result = await appHistory.push(targetPath);
+        // History writes are throttled internally; flush to avoid stale route/query reads.
+        appHistory.flush();
+
+        if (result.type === 'BLOCKED') {
+            window.location.assign(targetPath);
+        }
     };
 
     const handleCreateNewCharacter = () => {
@@ -317,7 +324,11 @@ export function CharactersListPage() {
                                 ? t('characters.creating', 'Creating...')
                                 : t('actions.generateNew', 'Generate New')}
                         </Button>
-                        <Button variant="outlined" sx={listStyles.backButton} onClick={() => appHistory.push(buildHomeCallbackUrl(characterId))}>
+                        <Button
+                            variant="outlined"
+                            sx={listStyles.backButton}
+                            onClick={() => appHistory.push(buildHomeCallbackUrl(characterId || lastCharacterId))}
+                        >
                             {t('common.back', 'Back')}
                         </Button>
                     </Box>
@@ -416,7 +427,9 @@ export function CharactersListPage() {
                                                 size="small"
                                                 variant="contained"
                                                 sx={listStyles.openButton}
-                                                onClick={() => handleOpenCharacter(character.id)}
+                                                onClick={() => {
+                                                    void handleOpenCharacter(character.id);
+                                                }}
                                                 disabled={!character.id || isDeleting}
                                             >
                                                 {t('characters.open', 'Open')}

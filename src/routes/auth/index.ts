@@ -5,7 +5,6 @@ import auth from '../../services/auth.js';
 import {isTurnstileEnabled, verifyTurnstileToken} from "../../services/turnstile.js";
 import {
     CLAIM_CHARACTER_QUERY_PARAM,
-    CLAIM_SESSION_QUERY_PARAM,
     CLAIM_SIG_QUERY_PARAM,
     CLAIM_USER_QUERY_PARAM,
     verifyClaimSignature,
@@ -54,6 +53,7 @@ const authRoutes: FastifyPluginAsync = async (fastify): Promise<void> => {
                     name: session.user.name,
                     email: decryptedEmail,
                     emailVerified: session.user.emailVerified,
+                    isAnonymous: Boolean((session.user as any).isAnonymous),
                 }
             });
         } catch (error) {
@@ -88,7 +88,10 @@ const authRoutes: FastifyPluginAsync = async (fastify): Promise<void> => {
 
             let body = request.body as Record<string, any> | undefined;
             let plainEmail: string | undefined;
-            const requestPath = request.url.split('?')[0];
+            const rawPath = request.url.split('?')[0];
+            const requestPath = rawPath.startsWith('/auth/')
+                ? rawPath.slice('/auth'.length)
+                : rawPath;
             const requiresTurnstile = request.method === 'POST'
                 && protectedAuthPaths.some((path) => requestPath.includes(path));
 
@@ -140,57 +143,65 @@ const authRoutes: FastifyPluginAsync = async (fastify): Promise<void> => {
             // The callbackURL carries a signed claim payload set in sendVerificationEmail.
             if (requestPath === '/verify-email' && response.status >= 300 && response.status < 400) {
                 try {
-                    const rawCallback = new URL(fullUrl).searchParams.get('callbackURL') || '';
+                    const verifyUrl = new URL(fullUrl);
+                    const verifyParams = verifyUrl.searchParams;
+                    const rawCallback = verifyParams.get('callbackURL') || '';
                     const parsedCallback = parseCallbackUrl(rawCallback);
-                    const characterId = parsedCallback?.searchParams.get(CLAIM_CHARACTER_QUERY_PARAM)
-                        || parsedCallback?.searchParams.get('character');
-                    const claimSessionId = parsedCallback?.searchParams.get(CLAIM_SESSION_QUERY_PARAM);
-                    const claimUserId = parsedCallback?.searchParams.get(CLAIM_USER_QUERY_PARAM);
-                    const claimSignature = parsedCallback?.searchParams.get(CLAIM_SIG_QUERY_PARAM);
+                    const callbackParams = parsedCallback?.searchParams;
 
-                    let claimed = false;
+                    // Some mail clients / browser flows may flatten callbackURL query params
+                    // into the top-level verify-email query string. Read both sources.
+                    const characterId = callbackParams?.get(CLAIM_CHARACTER_QUERY_PARAM)
+                        || callbackParams?.get('character')
+                        || verifyParams.get(CLAIM_CHARACTER_QUERY_PARAM)
+                        || verifyParams.get('character');
+                    const claimUserId = callbackParams?.get(CLAIM_USER_QUERY_PARAM)
+                        || verifyParams.get(CLAIM_USER_QUERY_PARAM);
+                    const claimSignature = callbackParams?.get(CLAIM_SIG_QUERY_PARAM)
+                        || verifyParams.get(CLAIM_SIG_QUERY_PARAM);
 
-                    if (characterId && claimSessionId && claimUserId && claimSignature) {
+                    if (characterId && claimUserId && claimSignature) {
+                        const owner = await queryOne<{ user_id: string | null; session_id: string | null }>(
+                            `SELECT user_id, session_id FROM characters WHERE id = $1`,
+                            [characterId]
+                        );
+
+                        const claimSourceId = owner?.user_id || owner?.session_id;
+                        if (!claimSourceId) {
+                            request.log.warn({ characterId, claimUserId }, 'Skipped auto-claim: missing source owner on character');
+                            return;
+                        }
+
                         const isValidSignature = verifyClaimSignature(
                             claimUserId,
-                            claimSessionId,
+                            claimSourceId,
                             characterId,
                             claimSignature
                         );
 
                         if (isValidSignature) {
-                            await query(
+                            // Migrate ownership from anonymous user id -> verified user id.
+                            const claimedCharacters = await query<{ id: string }>(
+                                `UPDATE characters SET user_id = $1
+                                 WHERE user_id = $2
+                                 RETURNING id`,
+                                [claimUserId, claimSourceId]
+                            );
+                            // Keep legacy guest-session characters compatible during transition.
+                            const legacyClaimedCharacters = await query<{ id: string }>(
                                 `UPDATE characters SET user_id = $1
                                  WHERE session_id = $2
-                                   AND user_id IS NULL`,
-                                [claimUserId, claimSessionId]
+                                   AND user_id IS NULL
+                                 RETURNING id`,
+                                [claimUserId, claimSourceId]
                             );
-                            claimed = true;
-                            request.log.info({ userId: claimUserId, characterId }, 'Auto-claimed guest characters after verification (signed callback)');
+                            request.log.info({
+                                userId: claimUserId,
+                                characterId,
+                                claimedCount: claimedCharacters.length + legacyClaimedCharacters.length
+                            }, 'Auto-claimed guest characters after verification (signed callback)');
                         } else {
-                            request.log.warn({ characterId, claimSessionId, claimUserId }, 'Skipped auto-claim: invalid callback signature');
-                        }
-                    }
-
-                    if (!claimed && characterId) {
-                        // Backward-compatible fallback for older verification links.
-                        const setCookies = response.headers.getSetCookie?.() || [];
-                        const cookieStr = setCookies.map((c: string) => c.split(';')[0]).join('; ');
-
-                        if (cookieStr) {
-                            const sessionHeaders = new Headers();
-                            sessionHeaders.set('cookie', cookieStr);
-                            const session = await auth.api.getSession({ headers: sessionHeaders });
-
-                            if (session?.user?.id) {
-                                await query(
-                                    `UPDATE characters SET user_id = $1
-                                     WHERE session_id = (SELECT session_id FROM characters WHERE id = $2)
-                                       AND user_id IS NULL`,
-                                    [session.user.id, characterId]
-                                );
-                                request.log.info({ userId: session.user.id, characterId }, 'Auto-claimed guest characters after verification (session fallback)');
-                            }
+                            request.log.warn({ characterId, claimSourceId, claimUserId }, 'Skipped auto-claim: invalid callback signature');
                         }
                     }
                 } catch (err) {

@@ -44,6 +44,7 @@ export function AuthModal({
     user,
     isAuthenticated,
     isGuest,
+    isAnonymous,
     signIn,
     signUp,
     signOut,
@@ -131,7 +132,7 @@ export function AuthModal({
       });
 
       // If user was guest with a character, offer to claim it
-      if (isGuest && character) {
+      if (isGuest && !isAnonymous && character) {
         setShowClaimPrompt(true);
       } else {
         onClose();
@@ -157,7 +158,7 @@ export function AuthModal({
     }
 
     try {
-      const pendingClaimId = isGuest && characterId ? characterId : null;
+      const pendingClaimId = isGuest && !isAnonymous && characterId ? characterId : null;
       await setCurrentPendingClaimCharacterId(pendingClaimId);
 
       await signInMagicLink.mutateAsync({
@@ -188,7 +189,7 @@ export function AuthModal({
     }
 
     try {
-      const pendingClaimId = isGuest && characterId ? characterId : null;
+      const pendingClaimId = isGuest && !isAnonymous && characterId ? characterId : null;
       await setCurrentPendingClaimCharacterId(pendingClaimId);
 
       await signUp.mutateAsync({

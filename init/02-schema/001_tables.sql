@@ -28,7 +28,7 @@ CREATE TABLE classes (
 CREATE TABLE abilities (
     id SERIAL PRIMARY KEY,
     class_id INTEGER REFERENCES classes(id),
-    key VARCHAR(255) NOT NULL,
+    key VARCHAR(255) NOT NULL UNIQUE,
     is_random BOOLEAN DEFAULT FALSE,
     roll_value INTEGER
 );
