@@ -90,6 +90,7 @@ export default function MorkBorgModal({
           <IconButton
             onClick={onClose}
             sx={customStyles.morkBorgModal.closeButton}
+            aria-label="Close modal"
           >
             <CloseIcon />
           </IconButton>

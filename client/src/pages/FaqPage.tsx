@@ -26,16 +26,16 @@ export function FaqPage() {
             answer: t('faq.whatIsMorkBorg.a', 'MÖRK BORG is a doom metal album of a game. A rules-light, art-heavy tabletop RPG about lost souls seeking redemption in a bleak world. The game is published by Free League Publishing.'),
         },
         {
-            question: t('faq.whatIsScvmGrinder.q', 'What is Scvm Grinder?'),
-            answer: t('faq.whatIsScvmGrinder.a', 'Scvm Grinder is a free character sheet and generator for MÖRK BORG. It helps you create characters, track stats, and manage equipment during your games.'),
+            question: t('faq.whatIsScvmGrinder.q', 'What is Scvm Rack?'),
+            answer: t('faq.whatIsScvmGrinder.a', 'Scvm Rack is a free character sheet and generator for MÖRK BORG. It helps you create characters, track stats, and manage equipment during your games.'),
         },
         {
             question: t('faq.isItFree.q', 'Is this free?'),
-            answer: t('faq.isItFree.a', 'Yes! Scvm Grinder is completely free to use. You can create and save characters without paying anything.'),
+            answer: t('faq.isItFree.a', 'Yes! Scvm Rack is completely free to use. You can create and save characters without paying anything.'),
         },
         {
             question: t('faq.guestVsAccount.q', 'Do I need an account?'),
-            answer: t('faq.guestVsAccount.a', 'No! You can use Scvm Grinder as a guest. Your character will be saved for 7 days. If you create an account, your characters are saved permanently and you can access them from any device.'),
+            answer: t('faq.guestVsAccount.a', 'No! You can use Scvm Rack as a guest. Your character will be saved for 7 days. If you create an account, your characters are saved permanently and you can access them from any device.'),
         },
         {
             question: t('faq.howToSave.q', 'How do I save my character?'),
@@ -47,15 +47,15 @@ export function FaqPage() {
         },
         {
             question: t('faq.mobileSupport.q', 'Does it work on mobile?'),
-            answer: t('faq.mobileSupport.a', 'Yes! Scvm Grinder is designed to work on phones, tablets, and desktops. Use it at the table or on the go.'),
+            answer: t('faq.mobileSupport.a', 'Yes! Scvm Rack is designed to work on phones, tablets, and desktops. Use it at the table or on the go.'),
         },
         {
             question: t('faq.offlineUse.q', 'Can I use it offline?'),
-            answer: t('faq.offlineUse.a', 'Currently, Scvm Grinder requires an internet connection. Offline support may be added in the future.'),
+            answer: t('faq.offlineUse.a', 'Currently, Scvm Rack requires an internet connection. Offline support may be added in the future.'),
         },
         {
             question: t('faq.bugReport.q', 'I found a bug! How do I report it?'),
-            answer: t('faq.bugReport.a', 'Please report bugs via GitHub issues or contact us directly. We appreciate your help making Scvm Grinder better!'),
+            answer: t('faq.bugReport.a', 'Please report bugs via GitHub issues or contact us directly. We appreciate your help making Scvm Rack better!'),
         },
     ];
 
@@ -76,14 +76,14 @@ export function FaqPage() {
         <>
             <Seo
                 title="Mork Borg Character Sheet FAQ"
-                description="Answers about Scvm Grinder, the free interactive Mork Borg character sheet. Learn how to create, save, and manage Mörk Borg characters online."
+                description="Answers about Scvm Rack, the free interactive Mork Borg character sheet. Learn how to create, save, and manage Mörk Borg characters online."
                 path="/faq"
                 keywords={[
                     'Mork Borg FAQ',
                     'Mork Borg character sheet FAQ',
                     'Mork Borg character generator help',
                     'MÖRK BORG',
-                    'Scvm Grinder',
+                    'Scvm Rack',
                 ]}
                 jsonLd={faqStructuredData}
             />

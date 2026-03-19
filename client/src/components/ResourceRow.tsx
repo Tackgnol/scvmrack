@@ -158,7 +158,10 @@ export default function ResourcesRow() {
               }
               size="small"
               sx={customStyles.hpInput}
-              inputProps={{ "data-testid": "hp-input" }}
+              inputProps={{
+                "data-testid": "hp-input",
+                "aria-label": t('stats.hitPoints'),
+              }}
             />
             <Typography sx={customStyles.hpDivider}>/</Typography>
             <Box sx={customStyles.maxHpBox}>
@@ -185,10 +188,11 @@ export default function ResourcesRow() {
           <Button
             type="button"
             onClick={() => setOmensModalOpen(true)}
+            aria-label={`${t('omensModal.title', 'Omens')}: ${omens}`}
             sx={{
-              minWidth: 80,
-              width: 80,
-              height: 42,
+              minWidth: { xs: 88, sm: 80 },
+              width: { xs: 88, sm: 80 },
+              height: { xs: 44, sm: 42 },
               bgcolor: morkBorgColors.yellow,
               color: morkBorgColors.black,
               border: `2px solid ${morkBorgColors.black}`,
@@ -231,7 +235,10 @@ export default function ResourcesRow() {
             }
             size="small"
             sx={customStyles.resourceInput}
-            inputProps={{ "data-testid": "silver-input" }}
+            inputProps={{
+              "data-testid": "silver-input",
+              "aria-label": t('stats.silver'),
+            }}
           />
         </Paper>
 
@@ -250,17 +257,23 @@ export default function ResourcesRow() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: 0.5,
+                gap: { xs: 1, sm: 0.5 },
               }}
             >
               <IconButton
-                size="small"
                 onClick={() => handleTierChange(-1)}
                 disabled={currentTier <= 0}
                 color="primary"
-                sx={{ p: 0.25 }}
+                sx={{
+                  width: { xs: 44, sm: 30 },
+                  height: { xs: 44, sm: 30 },
+                  border: `2px solid ${morkBorgColors.yellow}`,
+                  borderRadius: 0,
+                  p: 0,
+                }}
+                aria-label={t('common.decreaseArmorTier', 'Decrease armor tier')}
               >
-                <RemoveIcon fontSize="small" />
+                <RemoveIcon sx={{ fontSize: { xs: 22, sm: 18 } }} />
               </IconButton>
               <Typography
                 variant="h6"
@@ -269,7 +282,7 @@ export default function ResourcesRow() {
                   minWidth: '2ch',
                   textAlign: 'center',
                   fontFamily: "'Bebas Neue', sans-serif",
-                  fontSize: '1.3rem',
+                  fontSize: { xs: '1.45rem', sm: '1.3rem' },
                 }}
               >
                 <AnimatedNumber
@@ -279,13 +292,19 @@ export default function ResourcesRow() {
                 />
               </Typography>
               <IconButton
-                size="small"
                 onClick={() => handleTierChange(1)}
                 disabled={currentTier >= maxTier}
                 color="primary"
-                sx={{ p: 0.25 }}
+                sx={{
+                  width: { xs: 44, sm: 30 },
+                  height: { xs: 44, sm: 30 },
+                  border: `2px solid ${morkBorgColors.yellow}`,
+                  borderRadius: 0,
+                  p: 0,
+                }}
+                aria-label={t('common.increaseArmorTier', 'Increase armor tier')}
               >
-                <AddIcon fontSize="small" />
+                <AddIcon sx={{ fontSize: { xs: 22, sm: 18 } }} />
               </IconButton>
             </Box>
           ) : (
@@ -293,7 +312,12 @@ export default function ResourcesRow() {
               type="text"
               value="−"
               size="small"
-              slotProps={{ input: { readOnly: true } }}
+              slotProps={{
+                input: {
+                  readOnly: true,
+                  'aria-label': t('stats.armorTier'),
+                },
+              }}
               sx={customStyles.resourceInput}
             />
           )}

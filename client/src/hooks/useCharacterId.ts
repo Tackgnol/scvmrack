@@ -1,27 +1,22 @@
-import { appHistory } from '@/router/history';
-import { getCurrentCharacterIdParam, setCurrentCharacterIdParam } from '@/router/navigation';
-import { useCallback, useSyncExternalStore } from 'react';
-
-const subscribeToHistory = (onStoreChange: () => void): (() => void) => {
-    return appHistory.subscribe(() => onStoreChange());
-};
-
-const getCharacterIdSnapshot = (): string | null => {
-    return getCurrentCharacterIdParam();
-};
+import {appHistory} from '@/router/history';
+import {getCurrentCharacterIdParam, setCurrentCharacterIdParam} from '@/router/navigation';
+import {useCallback, useEffect, useState} from 'react';
 
 export function useCharacterId() {
-    const characterId = useSyncExternalStore(
-        subscribeToHistory,
-        getCharacterIdSnapshot,
-        () => null
-    );
+    const [characterId, setInternalCharacterId] = useState<string | null>(() => getCurrentCharacterIdParam());
 
-    const setCharacterId = useCallback((id: string | null) => {
+    useEffect(() => {
+        return appHistory.subscribe(() => {
+            const nextId = getCurrentCharacterIdParam();
+            setInternalCharacterId(nextId);
+        });
+    }, []);
+
+    const setCharacterId = useCallback(async (id: string | null) => {
         if (id === characterId) {
             return;
         }
-        void setCurrentCharacterIdParam(id);
+        await setCurrentCharacterIdParam(id);
     }, [characterId]);
 
     return {

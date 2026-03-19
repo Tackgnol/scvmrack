@@ -1,6 +1,6 @@
 {
   "app": {
-    "title": "Scvm Grinder",
+    "title": "Scvm Rack",
     "subtitle": "Character Sheet"
   },
   "stats": {
@@ -286,16 +286,16 @@
       "a": "MÖRK BORG is a doom metal album of a game. A rules-light, art-heavy tabletop RPG about lost souls seeking redemption in a bleak world. The game is published by Free League Publishing."
     },
     "whatIsScvmGrinder": {
-      "q": "What is Scvm Grinder?",
-      "a": "Scvm Grinder is a free character sheet and generator for MÖRK BORG. It helps you create characters, track stats, and manage equipment during your games."
+      "q": "What is Scvm Rack?",
+      "a": "Scvm Rack is a free character sheet and generator for MÖRK BORG. It helps you create characters, track stats, and manage equipment during your games."
     },
     "isItFree": {
       "q": "Is this free?",
-      "a": "Yes! Scvm Grinder is completely free to use. You can create and save characters without paying anything."
+      "a": "Yes! Scvm Rack is completely free to use. You can create and save characters without paying anything."
     },
     "guestVsAccount": {
       "q": "Do I need an account?",
-      "a": "No! You can use Scvm Grinder as a guest. Your character will be saved for 7 days. If you create an account, your characters are saved permanently and you can access them from any device."
+      "a": "No! You can use Scvm Rack as a guest. Your character will be saved for 7 days. If you create an account, your characters are saved permanently and you can access them from any device."
     },
     "howToSave": {
       "q": "How do I save my character?",
@@ -307,15 +307,15 @@
     },
     "mobileSupport": {
       "q": "Does it work on mobile?",
-      "a": "Yes! Scvm Grinder is designed to work on phones, tablets, and desktops. Use it at the table or on the go."
+      "a": "Yes! Scvm Rack is designed to work on phones, tablets, and desktops. Use it at the table or on the go."
     },
     "offlineUse": {
       "q": "Can I use it offline?",
-      "a": "Currently, Scvm Grinder requires an internet connection. Offline support may be added in the future."
+      "a": "Currently, Scvm Rack requires an internet connection. Offline support may be added in the future."
     },
     "bugReport": {
       "q": "I found a bug! How do I report it?",
-      "a": "Please report bugs via GitHub issues or contact us directly. We appreciate your help making Scvm Grinder better!"
+      "a": "Please report bugs via GitHub issues or contact us directly. We appreciate your help making Scvm Rack better!"
     },
     "morkBorgCredit": "MÖRK BORG is © Free League Publishing. This is an independent fan project."
   },

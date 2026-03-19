@@ -430,15 +430,15 @@ export const customStyles = {
 
   // Resource input
   resourceInput: {
-    width: 80,
+    width: { xs: 92, sm: 80 },
     '& .MuiOutlinedInput-root': {
       backgroundColor: morkBorgColors.yellow,
       '& input': {
         color: morkBorgColors.black,
         textAlign: 'center' as const,
         fontFamily: "'Bebas Neue', sans-serif",
-        fontSize: '1.3rem',
-        padding: '6px',
+        fontSize: { xs: '1.45rem', sm: '1.3rem' },
+        padding: { xs: '8px 6px', sm: '6px' },
       },
       '& fieldset': { border: 'none' },
     },
@@ -610,13 +610,14 @@ export const customStyles = {
 
   // Ability adjust button
   abilityAdjustButton: {
-    width: 28,
-    height: 28,
-    minWidth: 28,
+    width: { xs: 44, sm: 28 },
+    height: { xs: 44, sm: 28 },
+    minWidth: { xs: 44, sm: 28 },
     backgroundColor: 'transparent',
     border: `2px solid ${morkBorgColors.yellow}`,
     color: morkBorgColors.yellow,
     transition: 'all 0.15s ease',
+    borderRadius: 0,
     '&:hover': {
       backgroundColor: morkBorgColors.yellow,
       color: morkBorgColors.black,
@@ -626,15 +627,15 @@ export const customStyles = {
 
   // Ability value input
   abilityValueInput: {
-    width: 48,
+    width: { xs: 56, sm: 48 },
     '& .MuiOutlinedInput-root': {
       backgroundColor: morkBorgColors.yellow,
       '& input': {
         color: morkBorgColors.black,
         textAlign: 'center' as const,
         fontFamily: "'Bebas Neue', sans-serif",
-        fontSize: '1.8rem',
-        padding: '2px 4px',
+        fontSize: { xs: '1.65rem', sm: '1.8rem' },
+        padding: { xs: '6px 4px', sm: '2px 4px' },
         lineHeight: 1,
       },
       '& fieldset': { border: 'none' },
@@ -643,15 +644,15 @@ export const customStyles = {
 
   // Summary bar HP input
   hpInput: {
-    width: 45,
+    width: { xs: 56, sm: 45 },
     '& .MuiOutlinedInput-root': {
       bgcolor: 'secondary.main',
       '& input': {
         color: morkBorgColors.black,
         textAlign: 'center' as const,
         fontFamily: "'Bebas Neue', sans-serif",
-        fontSize: '1.4rem',
-        p: 0.5,
+        fontSize: { xs: '1.45rem', sm: '1.4rem' },
+        p: { xs: 1, sm: 0.5 },
       },
     },
   },
@@ -681,7 +682,8 @@ export const customStyles = {
     },
     label: {
       mb: 0.75,
-      fontSize: '0.6rem',
+      fontSize: { xs: '0.75rem', sm: '0.6rem' },
+      letterSpacing: { xs: '0.08em', sm: '0.04em' },
     },
   },
 
@@ -2179,19 +2181,33 @@ export const customStyles = {
       mt: 0,
     },
     powerRow: {
-      display: 'flex',
-      gap: 1.5,
+      display: 'grid',
+      gridTemplateColumns: { xs: 'auto minmax(0, 1fr)', sm: 'auto minmax(0, 1fr) auto' },
+      columnGap: 1.5,
+      rowGap: { xs: 0.6, sm: 0 },
       alignItems: 'flex-start',
       py: 1.25,
       px: 1.5,
       transition: 'all 0.15s ease',
+      '@media (hover: hover) and (pointer: fine)': {
+        '&:hover': {
+          bgcolor: 'rgba(0, 0, 0, 0.08)',
+          transform: 'translateX(4px)',
+        },
+      },
       '&:hover': {
-        bgcolor: 'rgba(0, 0, 0, 0.08)',
-        transform: 'translateX(4px)',
+        '@media (hover: none), (pointer: coarse)': {
+          bgcolor: 'transparent',
+          transform: 'none',
+        },
       },
       '& + &': {
         borderTop: `1px solid rgba(10, 10, 10, 0.15)`,
       },
+    },
+    powerText: {
+      gridColumn: '2 / 3',
+      minWidth: 0,
     },
     powerNumber: {
       fontFamily: "'Bebas Neue', sans-serif",
@@ -2205,14 +2221,14 @@ export const customStyles = {
     powerName: {
       color: morkBorgColors.black,
       fontFamily: "'Permanent Marker', cursive",
-      fontSize: 'clamp(1rem, 2.5vw, 1.15rem)',
+      fontSize: { xs: '1.05rem', sm: 'clamp(1rem, 2.5vw, 1.15rem)' },
       lineHeight: 1.2,
       letterSpacing: '0.02em',
     },
     powerDescription: {
       color: morkBorgColors.black,
       opacity: 0.6,
-      fontSize: '0.78rem',
+      fontSize: { xs: '0.9rem', sm: '0.78rem' },
       fontStyle: 'italic' as const,
       fontFamily: "'Alegreya', serif",
       mt: 0.5,
@@ -2220,28 +2236,61 @@ export const customStyles = {
     },
     usePipsContainer: {
       display: 'flex',
-      gap: 0.6,
+      flexWrap: 'wrap' as const,
+      gap: { xs: 0.75, sm: 0.6 },
       justifyContent: { xs: 'flex-start', sm: 'flex-end' },
+      alignItems: 'center',
+      gridColumn: { xs: '2 / -1', sm: '3 / 4' },
+      gridRow: { xs: '2 / 3', sm: '1 / 2' },
+      width: { xs: '100%', sm: 'auto' },
     },
     usePip: {
       base: {
-        width: 18,
-        height: 18,
-        border: `2px solid ${morkBorgColors.black}`,
+        width: { xs: 36, sm: 28 },
+        height: { xs: 36, sm: 28 },
+        border: 'none',
         borderRadius: '50%',
         cursor: 'pointer',
-        transition: 'background-color 0.1s',
+        transition: 'transform 0.1s ease',
+        p: 0,
+        m: 0,
+        appearance: 'none',
+        WebkitAppearance: 'none',
+        flexShrink: 0,
+        touchAction: 'manipulation',
+        bgcolor: 'transparent',
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        position: 'relative' as const,
+        '--pip-fill': 'transparent',
+        '&::before': {
+          content: '""',
+          width: { xs: 20, sm: 18 },
+          height: { xs: 20, sm: 18 },
+          border: `2px solid ${morkBorgColors.black}`,
+          borderRadius: '50%',
+          bgcolor: 'var(--pip-fill)',
+          boxSizing: 'border-box',
+          transition: 'background-color 0.1s, transform 0.1s',
+        },
+        '&:active::before': {
+          transform: 'scale(0.93)',
+        },
       },
       used: {
-        bgcolor: morkBorgColors.black,
-        '&:hover': {
-          bgcolor: morkBorgColors.pink,
+        '--pip-fill': morkBorgColors.black,
+        '@media (hover: hover) and (pointer: fine)': {
+          '&:hover': {
+            '--pip-fill': morkBorgColors.pink,
+          },
         },
       },
       unused: {
-        bgcolor: 'transparent',
-        '&:hover': {
-          bgcolor: 'rgba(255,62,181,0.3)',
+        '@media (hover: hover) and (pointer: fine)': {
+          '&:hover': {
+            '--pip-fill': 'rgba(255,62,181,0.3)',
+          },
         },
       },
     },
@@ -2291,6 +2340,9 @@ export const morkBorgTheme = createTheme({
       fontFamily: "'Bebas Neue', sans-serif",
       fontSize: '1.5rem',
       textTransform: 'uppercase',
+      '@media (max-width:600px)': {
+        fontSize: '1.65rem',
+      },
     },
     h4: {
       fontFamily: "'Bebas Neue', sans-serif",
@@ -2302,20 +2354,32 @@ export const morkBorgTheme = createTheme({
       fontSize: '0.75rem',
       textTransform: 'uppercase',
       letterSpacing: '0.2em',
+      '@media (max-width:600px)': {
+        fontSize: '0.82rem',
+      },
     },
     subtitle2: {
       fontFamily: "'Antonio', sans-serif",
       fontSize: '0.65rem',
       textTransform: 'uppercase',
       letterSpacing: '0.15em',
+      '@media (max-width:600px)': {
+        fontSize: '0.76rem',
+      },
     },
     body1: {
       fontFamily: "'Alegreya', serif",
       fontSize: '0.9rem',
+      '@media (max-width:600px)': {
+        fontSize: '1rem',
+      },
     },
     body2: {
       fontFamily: "'Alegreya', serif",
       fontSize: '0.85rem',
+      '@media (max-width:600px)': {
+        fontSize: '0.95rem',
+      },
     },
     button: {
       fontFamily: "'Bebas Neue', sans-serif",
@@ -2334,7 +2398,29 @@ export const morkBorgTheme = createTheme({
         body {
           background-color: ${morkBorgColors.yellow};
         }
+
+        button:focus-visible,
+        [role="button"]:focus-visible,
+        a:focus-visible,
+        input:focus-visible,
+        textarea:focus-visible,
+        select:focus-visible,
+        [tabindex]:focus-visible {
+          outline: 2px solid ${morkBorgColors.yellow};
+          outline-offset: 2px;
+        }
       `,
+    },
+
+    MuiButtonBase: {
+      styleOverrides: {
+        root: {
+          '&.Mui-focusVisible': {
+            outline: `2px solid ${morkBorgColors.yellow}`,
+            outlineOffset: '2px',
+          },
+        },
+      },
     },
 
     MuiButton: {

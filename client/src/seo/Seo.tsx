@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { getRuntimeOrigin } from '@/platform/runtime';
 
-const SITE_NAME = 'Scvm Grinder';
+const SITE_NAME = 'Scvm Rack';
 const DEFAULT_SITE_URL = 'https://scvmgrinder.tackgnol.usermd.net';
 const DEFAULT_IMAGE_PATH = '/preview.png';
 
@@ -145,14 +145,14 @@ export function Seo({
         upsertMetaTag('property', 'og:image', ogImageUrl);
         upsertMetaTag('property', 'og:image:width', '1600');
         upsertMetaTag('property', 'og:image:height', '627');
-        upsertMetaTag('property', 'og:image:alt', 'Scvm Grinder Mork Borg character sheet preview');
+        upsertMetaTag('property', 'og:image:alt', 'Scvm Rack Mork Borg character sheet preview');
         upsertMetaTag('property', 'og:locale', 'en_US');
 
         upsertMetaTag('name', 'twitter:card', 'summary_large_image');
         upsertMetaTag('name', 'twitter:title', fullTitle);
         upsertMetaTag('name', 'twitter:description', description);
         upsertMetaTag('name', 'twitter:image', ogImageUrl);
-        upsertMetaTag('name', 'twitter:image:alt', 'Scvm Grinder Mork Borg character sheet preview');
+        upsertMetaTag('name', 'twitter:image:alt', 'Scvm Rack Mork Borg character sheet preview');
 
         upsertCanonical(canonicalUrl);
         upsertJsonLd(serializedJsonLd);

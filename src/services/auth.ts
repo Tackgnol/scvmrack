@@ -6,6 +6,13 @@ import {magicLinkEmail} from "../emails/magicLinkEmail.js";
 import {verificationEmail} from "../emails/verificationEmail.js";
 import {decryptEmail, encryptEmail} from "./crypto.js";
 import {sendEmail} from "./nodemailer.js";
+import {
+    buildClaimSignature,
+    CLAIM_CHARACTER_QUERY_PARAM,
+    CLAIM_SESSION_QUERY_PARAM,
+    CLAIM_SIG_QUERY_PARAM,
+    CLAIM_USER_QUERY_PARAM,
+} from "./claimSignature.js";
 
 const pool = new Pool({
     user: process.env.DATABASE_USER,
@@ -125,7 +132,26 @@ const auth = betterAuth({
             }
 
             const verificationUrl = new URL(url);
-            const callbackPath = characterId ? `/?character=${characterId}` : '/';
+            const callbackSearchParams = new URLSearchParams();
+
+            if (characterId) {
+                callbackSearchParams.set('character', characterId);
+                callbackSearchParams.set(CLAIM_CHARACTER_QUERY_PARAM, characterId);
+
+                if (guestSessionId) {
+                    callbackSearchParams.set(CLAIM_SESSION_QUERY_PARAM, guestSessionId);
+                    callbackSearchParams.set(CLAIM_USER_QUERY_PARAM, user.id);
+
+                    const signature = buildClaimSignature(user.id, guestSessionId, characterId);
+                    if (signature) {
+                        callbackSearchParams.set(CLAIM_SIG_QUERY_PARAM, signature);
+                    }
+                }
+            }
+
+            const callbackPath = callbackSearchParams.toString().length > 0
+                ? `/?${callbackSearchParams.toString()}`
+                : '/';
             verificationUrl.searchParams.set('callbackURL', callbackPath);
 
             const realEmail = decryptEmail((user as any).encrypted_email);

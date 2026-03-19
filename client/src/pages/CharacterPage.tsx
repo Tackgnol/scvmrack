@@ -26,7 +26,7 @@ const homeKeywords = [
     'Mork Borg online sheet',
     'MORK BORG',
     'MÖRK BORG',
-    'Scvm Grinder',
+    'Scvm Rack',
 ];
 
 const homeStructuredData = {
@@ -34,14 +34,14 @@ const homeStructuredData = {
     '@graph': [
         {
             '@type': 'WebSite',
-            name: 'Scvm Grinder',
+            name: 'Scvm Rack',
             inLanguage: ['en', 'pl'],
             description: 'Free interactive Mork Borg character sheet and generator.',
             keywords: homeKeywords.join(', '),
         },
         {
             '@type': 'WebApplication',
-            name: 'Scvm Grinder',
+            name: 'Scvm Rack',
             applicationCategory: 'GameApplication',
             operatingSystem: 'Any',
             isAccessibleForFree: true,
@@ -148,7 +148,7 @@ export function CharacterPage() {
             </MorkBorgModal>
             <Seo
                 title="Mork Borg Character Sheet Interactive"
-                description="Scvm Grinder is a free interactive Mork Borg character sheet and generator. Create, edit, and save your Mörk Borg characters online."
+                description="Scvm Rack is a free interactive Mork Borg character sheet and generator. Create, edit, and save your Mörk Borg characters online."
                 path="/"
                 keywords={homeKeywords}
                 jsonLd={homeStructuredData}
