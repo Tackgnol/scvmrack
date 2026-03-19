@@ -36,6 +36,8 @@ export function RootLayout() {
                 <Container maxWidth="md">
                     <Header/>
                     <Box
+                        component="main"
+                        id="main-content"
                         key={pathname}
                         sx={{
                             animation: `${routeFadeIn} 400ms cubic-bezier(0.22, 1, 0.36, 1)`,

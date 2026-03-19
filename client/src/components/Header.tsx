@@ -192,7 +192,10 @@ export default function Header() {
 
                     {isMobile ? (
                         <Box sx={customStyles.header.mobileMenuButton}>
-                            <IconButton onClick={() => setMobileMenuOpen(true)}>
+                            <IconButton
+                                onClick={() => setMobileMenuOpen(true)}
+                                aria-label={t("common.openMenu", "Open menu")}
+                            >
                                 <BoneIcon isOpen={false} />
                             </IconButton>
                         </Box>
@@ -201,7 +204,12 @@ export default function Header() {
                             <Box sx={customStyles.header.topBar}>
                                 {getStatusChip()}
                                 <FlagContainer><Flag locale="en" /><Flag locale="pl" /></FlagContainer>
-                                <IconButton data-testid="auth-button" onClick={() => openAuthModal()} sx={customStyles.header.authButton}>
+                                <IconButton
+                                    data-testid="auth-button"
+                                    onClick={() => openAuthModal()}
+                                    sx={customStyles.header.authButton}
+                                    aria-label={isAuthenticated ? t("auth.profile", "Profile") : t("auth.loginSignup", "Log In / Sign Up")}
+                                >
                                     {isAuthenticated ? <PersonIcon /> : <PersonOutlineIcon />}
                                 </IconButton>
                             </Box>
@@ -233,7 +241,10 @@ export default function Header() {
                     <Typography variant="h4" sx={customStyles.header.drawerTitle}>
                         THE VAULT
                     </Typography>
-                    <IconButton onClick={() => setMobileMenuOpen(false)}>
+                    <IconButton
+                        onClick={() => setMobileMenuOpen(false)}
+                        aria-label={t("common.close", "Close")}
+                    >
                         <BoneIcon isOpen={true} />
                     </IconButton>
                 </Box>
@@ -250,10 +261,14 @@ export default function Header() {
                     <Box sx={customStyles.header.drawerStatusBox}>{getStatusChip()}</Box>
                     <Box sx={customStyles.header.drawerAuthBox}>
                         <FlagContainer><Flag locale="en" /><Flag locale="pl" /></FlagContainer>
-                        <IconButton onClick={() => {
-                            openAuthModal();
-                            setMobileMenuOpen(false);
-                        }} sx={customStyles.header.drawerAuthButton}>
+                        <IconButton
+                            onClick={() => {
+                                openAuthModal();
+                                setMobileMenuOpen(false);
+                            }}
+                            sx={customStyles.header.drawerAuthButton}
+                            aria-label={isAuthenticated ? t("auth.profile", "Profile") : t("auth.loginSignup", "Log In / Sign Up")}
+                        >
                             {isAuthenticated ? <PersonIcon fontSize="large" /> : <PersonOutlineIcon fontSize="large" />}
                         </IconButton>
                     </Box>

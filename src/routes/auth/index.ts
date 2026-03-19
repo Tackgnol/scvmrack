@@ -3,9 +3,29 @@ import {query, queryOne} from "../../services/db.js";
 import {decryptEmail, generateEmailBlindIndex} from "../../services/crypto.js";
 import auth from '../../services/auth.js';
 import {isTurnstileEnabled, verifyTurnstileToken} from "../../services/turnstile.js";
+import {
+    CLAIM_CHARACTER_QUERY_PARAM,
+    CLAIM_SESSION_QUERY_PARAM,
+    CLAIM_SIG_QUERY_PARAM,
+    CLAIM_USER_QUERY_PARAM,
+    verifyClaimSignature,
+} from "../../services/claimSignature.js";
 
 const authRoutes: FastifyPluginAsync = async (fastify): Promise<void> => {
     const protectedAuthPaths = ['/sign-in/email', '/sign-up/email', '/sign-in/magic-link'];
+    const parseCallbackUrl = (rawCallback: string): URL | null => {
+        if (!rawCallback) {
+            return null;
+        }
+
+        try {
+            return rawCallback.startsWith('/')
+                ? new URL(rawCallback, 'http://localhost')
+                : new URL(rawCallback);
+        } catch {
+            return null;
+        }
+    };
 
     fastify.get('/me', async (request, reply) => {
         try {
@@ -117,29 +137,60 @@ const authRoutes: FastifyPluginAsync = async (fastify): Promise<void> => {
             const response = await auth.handler(req);
 
             // Auto-claim guest characters after successful email verification.
-            // The callbackURL carries the character ID (set in sendVerificationEmail).
+            // The callbackURL carries a signed claim payload set in sendVerificationEmail.
             if (requestPath === '/verify-email' && response.status >= 300 && response.status < 400) {
                 try {
                     const rawCallback = new URL(fullUrl).searchParams.get('callbackURL') || '';
-                    const callbackQuery = rawCallback.split('?')[1] || '';
-                    const characterId = new URLSearchParams(callbackQuery).get('character');
+                    const parsedCallback = parseCallbackUrl(rawCallback);
+                    const characterId = parsedCallback?.searchParams.get(CLAIM_CHARACTER_QUERY_PARAM)
+                        || parsedCallback?.searchParams.get('character');
+                    const claimSessionId = parsedCallback?.searchParams.get(CLAIM_SESSION_QUERY_PARAM);
+                    const claimUserId = parsedCallback?.searchParams.get(CLAIM_USER_QUERY_PARAM);
+                    const claimSignature = parsedCallback?.searchParams.get(CLAIM_SIG_QUERY_PARAM);
 
-                    if (characterId) {
-                        // Resolve the verified user from the session cookies Better Auth just set
-                        const setCookies = response.headers.getSetCookie?.() || [];
-                        const cookieStr = setCookies.map((c: string) => c.split(';')[0]).join('; ');
-                        const sessionHeaders = new Headers();
-                        sessionHeaders.set('cookie', cookieStr);
-                        const session = await auth.api.getSession({ headers: sessionHeaders });
+                    let claimed = false;
 
-                        if (session?.user?.id) {
+                    if (characterId && claimSessionId && claimUserId && claimSignature) {
+                        const isValidSignature = verifyClaimSignature(
+                            claimUserId,
+                            claimSessionId,
+                            characterId,
+                            claimSignature
+                        );
+
+                        if (isValidSignature) {
                             await query(
                                 `UPDATE characters SET user_id = $1
-                                 WHERE session_id = (SELECT session_id FROM characters WHERE id = $2)
+                                 WHERE session_id = $2
                                    AND user_id IS NULL`,
-                                [session.user.id, characterId]
+                                [claimUserId, claimSessionId]
                             );
-                            request.log.info({ userId: session.user.id, characterId }, 'Auto-claimed guest characters after verification');
+                            claimed = true;
+                            request.log.info({ userId: claimUserId, characterId }, 'Auto-claimed guest characters after verification (signed callback)');
+                        } else {
+                            request.log.warn({ characterId, claimSessionId, claimUserId }, 'Skipped auto-claim: invalid callback signature');
+                        }
+                    }
+
+                    if (!claimed && characterId) {
+                        // Backward-compatible fallback for older verification links.
+                        const setCookies = response.headers.getSetCookie?.() || [];
+                        const cookieStr = setCookies.map((c: string) => c.split(';')[0]).join('; ');
+
+                        if (cookieStr) {
+                            const sessionHeaders = new Headers();
+                            sessionHeaders.set('cookie', cookieStr);
+                            const session = await auth.api.getSession({ headers: sessionHeaders });
+
+                            if (session?.user?.id) {
+                                await query(
+                                    `UPDATE characters SET user_id = $1
+                                     WHERE session_id = (SELECT session_id FROM characters WHERE id = $2)
+                                       AND user_id IS NULL`,
+                                    [session.user.id, characterId]
+                                );
+                                request.log.info({ userId: session.user.id, characterId }, 'Auto-claimed guest characters after verification (session fallback)');
+                            }
                         }
                     }
                 } catch (err) {

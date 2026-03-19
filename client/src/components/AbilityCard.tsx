@@ -48,6 +48,7 @@ export default function AbilityCard({ability, rotate = 0}: AbilityCardProps) {
                 <IconButton
                     onClick={() => adjustAbility(-1)}
                     sx={customStyles.abilityAdjustButton}
+                    aria-label={t('common.decreaseStat', 'Decrease {{stat}}', { stat: label })}
                 >
                     <RemoveIcon fontSize="small" />
                 </IconButton>
@@ -58,11 +59,13 @@ export default function AbilityCard({ability, rotate = 0}: AbilityCardProps) {
                     onChange={(e) => setAbility(parseInt(e.target.value) || 10)}
                     sx={customStyles.abilityValueInput}
                     size="small"
+                    inputProps={{ 'aria-label': label }}
                 />
 
                 <IconButton
                     onClick={() => adjustAbility(1)}
                     sx={customStyles.abilityAdjustButton}
+                    aria-label={t('common.increaseStat', 'Increase {{stat}}', { stat: label })}
                 >
                     <AddIcon fontSize="small" />
                 </IconButton>

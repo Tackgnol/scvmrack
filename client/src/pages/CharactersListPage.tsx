@@ -276,7 +276,7 @@ export function CharactersListPage() {
             <>
                 <Seo
                     title="Your Characters"
-                    description="Private account page for saved Scvm Grinder characters."
+                    description="Private account page for saved Scvm Rack characters."
                     path="/characters"
                     noIndex
                 />
@@ -296,7 +296,7 @@ export function CharactersListPage() {
         <>
             <Seo
                 title="Your Characters"
-                description="Private account page for saved Scvm Grinder characters."
+                description="Private account page for saved Scvm Rack characters."
                 path="/characters"
                 noIndex
             />

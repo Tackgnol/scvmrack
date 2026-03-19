@@ -95,12 +95,14 @@ function CustomModifierTag({
   onRemove,
   onEdit,
   isFull,
+  removeLabel,
   reduceMotion,
 }: {
   modifier: CustomModifier;
   onRemove: () => void;
   onEdit: () => void;
   isFull: boolean;
+  removeLabel: string;
   reduceMotion?: boolean;
 }) {
   const isNegative = (modifier.value ?? 0) < 0;
@@ -194,8 +196,8 @@ function CustomModifierTag({
         sx={{
           bgcolor: morkBorgColors.pink,
           color: morkBorgColors.black,
-          height: 22,
-          fontSize: '0.6rem',
+          height: { xs: 26, sm: 22 },
+          fontSize: { xs: '0.68rem', sm: '0.6rem' },
           flexShrink: 0,
         }}
       />
@@ -220,10 +222,10 @@ function CustomModifierTag({
           e.stopPropagation();
           onRemove();
         }}
-        size="small"
+        aria-label={removeLabel}
         sx={{
-          width: 22,
-          height: 22,
+          width: { xs: 40, sm: 22 },
+          height: { xs: 40, sm: 22 },
           bgcolor: morkBorgColors.pink,
           color: morkBorgColors.black,
           flexShrink: 0,
@@ -233,7 +235,7 @@ function CustomModifierTag({
           },
         }}
       >
-        <CloseIcon sx={{ fontSize: 14 }} />
+        <CloseIcon sx={{ fontSize: { xs: 18, sm: 14 } }} />
       </IconButton>
     </Box>
   );
@@ -339,8 +341,8 @@ function ComputedModifierTag({
         sx={{
           bgcolor: morkBorgColors.pink,
           color: morkBorgColors.black,
-          height: 20,
-          fontSize: '0.55rem',
+          height: { xs: 24, sm: 20 },
+          fontSize: { xs: '0.65rem', sm: '0.55rem' },
           flexShrink: 0,
         }}
       />
@@ -688,7 +690,7 @@ export default function ModifiersPanel() {
             border: `2px solid ${morkBorgColors.black}`,
             boxShadow: `3px 3px 0 ${morkBorgColors.black}`,
             fontFamily: "'Antonio', sans-serif",
-            fontSize: '0.6rem',
+            fontSize: { xs: '0.7rem', sm: '0.6rem' },
             letterSpacing: '0.2em',
             textTransform: 'uppercase',
             animation: prefersReducedMotion
@@ -707,7 +709,7 @@ export default function ModifiersPanel() {
             sx={{
               color: morkBorgColors.yellow,
               opacity: 0.5,
-              fontSize: '0.7rem',
+              fontSize: { xs: '0.78rem', sm: '0.7rem' },
               mb: 1,
               textTransform: 'uppercase',
               letterSpacing: '0.1em',
@@ -817,16 +819,17 @@ export default function ModifiersPanel() {
                     gridRow: { xs: 'span 1', sm: `span ${tileSpan.row}` },
                   }}
                 >
-                  <CustomModifierTag
-                    modifier={mod}
-                    onEdit={() => handleOpenEditModal(mod)}
-                    onRemove={() => handleRemoveModifier(mod.id)}
-                    isFull={tileSpan.full}
-                    reduceMotion={prefersReducedMotion}
-                  />
-                </Box>
-              );
-            })}
+                    <CustomModifierTag
+                      modifier={mod}
+                      onEdit={() => handleOpenEditModal(mod)}
+                      onRemove={() => handleRemoveModifier(mod.id)}
+                      isFull={tileSpan.full}
+                      removeLabel={t('modifiers.removeModifier', 'Remove modifier')}
+                      reduceMotion={prefersReducedMotion}
+                    />
+                  </Box>
+                );
+              })}
           </AnimatePresence>
         )}
       </Box>
@@ -855,16 +858,20 @@ export default function ModifiersPanel() {
             gridColumn: { xs: '1 / -1', sm: 'auto' },
             '& .MuiOutlinedInput-root': {
               fontFamily: "'Antonio', sans-serif",
-              fontSize: '0.8rem',
+              fontSize: { xs: '0.9rem', sm: '0.8rem' },
               letterSpacing: '0.05em',
             },
           }}
-          inputProps={{ "data-testid": "quick-mod-name-input" }}
+          inputProps={{
+            "data-testid": "quick-mod-name-input",
+            "aria-label": t('modifiers.name'),
+          }}
         />
 
         <Select
           value={stat}
           onChange={(e) => setStat(e.target.value as LocalStatistic)}
+          inputProps={{ 'aria-label': t('modifiers.statistic', 'Modifier statistic') }}
           size="small"
           sx={{
             bgcolor: morkBorgColors.grey,
@@ -872,7 +879,7 @@ export default function ModifiersPanel() {
             minWidth: 75,
             '& .MuiSelect-select': {
               fontFamily: "'Bebas Neue', sans-serif",
-              fontSize: '0.85rem',
+              fontSize: { xs: '0.95rem', sm: '0.85rem' },
               letterSpacing: '0.1em',
             },
           }}
@@ -897,16 +904,20 @@ export default function ModifiersPanel() {
             width: { xs: '100%', sm: 60 },
             '& .MuiOutlinedInput-root': {
               fontFamily: "'Bebas Neue', sans-serif",
-              fontSize: '0.9rem',
+              fontSize: { xs: '1rem', sm: '0.9rem' },
               textAlign: 'center',
             },
           }}
-          inputProps={{ "data-testid": "quick-mod-value-input" }}
+          inputProps={{
+            "data-testid": "quick-mod-value-input",
+            "aria-label": t('modifiers.value'),
+          }}
         />
 
         <Select
           value={scope}
           onChange={(e) => setScope(e.target.value as ScopeOption)}
+          inputProps={{ 'aria-label': t('modifiers.scope') }}
           size="small"
           sx={{
             bgcolor: morkBorgColors.grey,
@@ -914,7 +925,7 @@ export default function ModifiersPanel() {
             minWidth: 90,
             '& .MuiSelect-select': {
               fontFamily: "'Antonio', sans-serif",
-              fontSize: '0.6rem',
+              fontSize: { xs: '0.72rem', sm: '0.6rem' },
               textTransform: 'uppercase',
               letterSpacing: '0.1em',
             },
@@ -934,11 +945,12 @@ export default function ModifiersPanel() {
           sx={{
             gridColumn: { xs: '1 / 2', sm: 'auto' },
             minWidth: 'auto',
+            minHeight: { xs: 44, sm: 36 },
             px: 2.5,
             bgcolor: morkBorgColors.yellow,
             color: morkBorgColors.black,
             fontFamily: "'Antonio', sans-serif",
-            fontSize: '0.7rem',
+            fontSize: { xs: '0.8rem', sm: '0.7rem' },
             fontWeight: 'bold',
             letterSpacing: '0.15em',
             boxShadow: `2px 2px 0 ${morkBorgColors.pink}`,
@@ -956,20 +968,19 @@ export default function ModifiersPanel() {
         <Tooltip title={t('modifiers.advancedTooltip')} placement="top">
           <IconButton
             onClick={handleOpenModal}
-            size="small"
             aria-label={t('modifiers.advancedTooltip')}
             data-testid="advanced-mod-btn"
             sx={{
               gridColumn: { xs: '2 / 3', sm: 'auto' },
               justifySelf: 'end',
-              width: 36,
-              height: 36,
+              width: { xs: 44, sm: 36 },
+              height: { xs: 44, sm: 36 },
               borderRadius: 0,
               border: `2px solid ${morkBorgColors.yellow}`,
               bgcolor: 'transparent',
               color: morkBorgColors.yellow,
               fontFamily: "'Antonio', sans-serif",
-              fontSize: '1rem',
+              fontSize: { xs: '1.1rem', sm: '1rem' },
               lineHeight: 1,
               transition:
                 'transform 140ms ease, box-shadow 140ms ease, color 140ms ease',
@@ -1031,6 +1042,7 @@ export default function ModifiersPanel() {
         <Select
           value={modalStat}
           onChange={(e) => setModalStat(e.target.value as LocalStatistic)}
+          inputProps={{ 'aria-label': t('modifiers.statistic', 'Modifier statistic') }}
           fullWidth
           displayEmpty
           sx={{
@@ -1069,6 +1081,7 @@ export default function ModifiersPanel() {
           onChange={(e) =>
             handleModalScopeChange(e.target.value as ScopeOption)
           }
+          inputProps={{ 'aria-label': t('modifiers.scope') }}
           fullWidth
           displayEmpty
           sx={{
@@ -1090,13 +1103,21 @@ export default function ModifiersPanel() {
         {/* Include Checkboxes */}
         <Box>
           <Typography
-            sx={{ color: morkBorgColors.pink, fontSize: '0.75rem', mb: 1 }}
+            sx={{
+              color: morkBorgColors.pink,
+              fontSize: { xs: '0.82rem', sm: '0.75rem' },
+              mb: 1,
+            }}
           >
             {t('modifiers.exclude.title')}
           </Typography>
           <Typography
             variant="body2"
-            sx={{ color: '#999', mb: 1.5, fontSize: '0.7rem' }}
+            sx={{
+              color: '#999',
+              mb: 1.5,
+              fontSize: { xs: '0.8rem', sm: '0.7rem' },
+            }}
           >
             {t('modifiers.exclude.description')}
           </Typography>
@@ -1127,7 +1148,9 @@ export default function ModifiersPanel() {
                 label={t(opt.labelKey)}
                 sx={{
                   color: morkBorgColors.white,
-                  '& .MuiFormControlLabel-label': { fontSize: '0.8rem' },
+                  '& .MuiFormControlLabel-label': {
+                    fontSize: { xs: '0.9rem', sm: '0.8rem' },
+                  },
                 }}
               />
             ))}
@@ -1195,8 +1218,8 @@ export default function ModifiersPanel() {
             sx={{
               bgcolor: morkBorgColors.pink,
               color: morkBorgColors.black,
-              height: 22,
-              fontSize: '0.6rem',
+              height: { xs: 26, sm: 22 },
+              fontSize: { xs: '0.68rem', sm: '0.6rem' },
             }}
           />
           <Typography

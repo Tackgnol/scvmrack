@@ -1,21 +1,27 @@
 import {useCharacter} from "@/CharacterContext/CharacterContext.tsx";
 import {Ability} from "@/hooks/models.ts";
-import {Box, CircularProgress, Collapse, Paper, TextField, Typography} from '@mui/material';
+import {Box, CircularProgress, Collapse, Paper, TextField, Typography, Button} from '@mui/material';
 import {customStyles} from '../theme/morkBorgTheme';
 import {useTranslation} from 'react-i18next';
 import {useState} from 'react';
+import DecoctionsModal from './DecoctionsModal';
 
 const abilityRotations = [0.3, -0.2, 0.4, -0.3, 0.15];
 
-function AbilityItem({ ability, index, onUpdateComment }: {
+function AbilityItem({ ability, index, onUpdateComment, isOccultHerbmaster }: {
     ability: Ability;
     index: number;
     onUpdateComment: (comment: string) => void;
+    isOccultHerbmaster?: boolean;
 }) {
     const {t} = useTranslation();
     const hasComment = Boolean(ability.comment);
     const [showComment, setShowComment] = useState(hasComment);
+    const [showDecoctions, setShowDecoctions] = useState(false);
     const rotate = abilityRotations[index % abilityRotations.length];
+
+    const isPortableLaboratory = ability.name?.toLowerCase().includes('portable laboratory') || 
+                                 ability.name?.toLowerCase().includes('laboratorium przenośne');
 
     return (
         <Box
@@ -40,6 +46,37 @@ function AbilityItem({ ability, index, onUpdateComment }: {
                         {ability.description}
                     </Typography>
                 )}
+                
+                {isOccultHerbmaster && isPortableLaboratory && (
+                    <Box sx={{ mt: 1 }}>
+                        <Button
+                            size="small"
+                            variant="outlined"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setShowDecoctions(true);
+                            }}
+                            sx={{
+                                color: '#FF3EB5', // pink
+                                borderColor: 'rgba(255, 62, 181, 0.5)',
+                                fontFamily: "'Antonio', sans-serif",
+                                fontSize: '0.7rem',
+                                padding: '2px 8px',
+                                '&:hover': {
+                                    borderColor: '#FF3EB5',
+                                    bgcolor: 'rgba(255, 62, 181, 0.1)',
+                                }
+                            }}
+                        >
+                            {t('abilities.occult_herbmaster.view_decoctions', 'VIEW DECOCTIONS')}
+                        </Button>
+                        <DecoctionsModal 
+                            open={showDecoctions} 
+                            onClose={() => setShowDecoctions(false)} 
+                        />
+                    </Box>
+                )}
+
                 <Collapse in={showComment}>
                     <TextField
                         fullWidth
@@ -79,6 +116,8 @@ export const CharacterDescriptors = () => {
         );
     }
 
+    const isOccultHerbmaster = character.class_id === 6;
+
     return (
         <>
             {/* Class Abilities */}
@@ -94,6 +133,7 @@ export const CharacterDescriptors = () => {
                                     key={index}
                                     ability={ability}
                                     index={index}
+                                    isOccultHerbmaster={isOccultHerbmaster}
                                     onUpdateComment={(comment) => {
                                         const newAbilities = [...character.abilities!] as Ability[];
                                         newAbilities[index] = {...ability, comment};

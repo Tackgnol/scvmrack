@@ -5,13 +5,18 @@ import { customStyles } from '../theme/morkBorgTheme';
 
 interface HpPipProps {
     filled: boolean;
+    ariaLabel: string;
     onClick: () => void;
 }
 
-function HpPip({ filled, onClick }: HpPipProps) {
+function HpPip({ filled, ariaLabel, onClick }: HpPipProps) {
     return (
         <Box
+            component="button"
+            type="button"
             onClick={onClick}
+            aria-label={ariaLabel}
+            aria-pressed={filled}
             sx={{
                 ...customStyles.powersSection.usePip.base,
                 ...(filled ? customStyles.powersSection.usePip.used : customStyles.powersSection.usePip.unused),
@@ -77,7 +82,7 @@ export default function PetSection({ showLabel = true }: PetSectionProps) {
                                 {displayIndex + 1}
                             </Typography>
 
-                            <Box sx={{ flex: 1, minWidth: 0 }}>
+                            <Box sx={customStyles.powersSection.powerText}>
                                 <Typography sx={customStyles.powersSection.powerName}>
                                     {item.name ?? t('pets.unknown')}
                                 </Typography>
@@ -91,17 +96,15 @@ export default function PetSection({ showLabel = true }: PetSectionProps) {
                                 </Typography>
                             </Box>
 
-                            <Box
-                                sx={{
-                                    ...customStyles.powersSection.usePipsContainer,
-                                    flexWrap: 'wrap',
-                                    rowGap: 0.6,
-                                }}
-                            >
+                            <Box sx={customStyles.powersSection.usePipsContainer}>
                                 {hpPips.map((filled, hpIndex) => (
                                     <HpPip
                                         key={hpIndex}
                                         filled={filled}
+                                        ariaLabel={t(
+                                            'pets.hpPip',
+                                            `${filled ? 'Mark hit point empty' : 'Mark hit point filled'}: ${item.name ?? t('pets.unknown')} point ${hpIndex + 1}`
+                                        )}
                                         onClick={() => toggleScrollUse(equipmentIndex, hpIndex)}
                                     />
                                 ))}

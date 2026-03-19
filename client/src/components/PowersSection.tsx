@@ -7,13 +7,18 @@ const DEFAULT_MAX_USES = 4;
 
 interface UsePipProps {
     used: boolean;
+    ariaLabel: string;
     onClick: () => void;
 }
 
-function UsePip({used, onClick}: UsePipProps) {
+function UsePip({used, ariaLabel, onClick}: UsePipProps) {
     return (
         <Box
+            component="button"
+            type="button"
             onClick={onClick}
+            aria-label={ariaLabel}
+            aria-pressed={used}
             data-testid="power-pip"
             sx={{
                 ...customStyles.powersSection.usePip.base,
@@ -28,17 +33,18 @@ interface PowerRowProps {
     name: string;
     description?: string;
     uses: boolean[];
+    createPipLabel: (useIndex: number, used: boolean) => string;
     onToggleUse: (useIndex: number) => void;
 }
 
-function PowerRow({number, name, description, uses, onToggleUse}: PowerRowProps) {
+function PowerRow({number, name, description, uses, createPipLabel, onToggleUse}: PowerRowProps) {
     return (
         <Box sx={customStyles.powersSection.powerRow}>
             <Typography sx={customStyles.powersSection.powerNumber}>
                 {number}
             </Typography>
 
-            <Box sx={{ flex: 1, minWidth: 0 }}>
+            <Box sx={customStyles.powersSection.powerText}>
                 <Typography sx={customStyles.powersSection.powerName}>
                     {name}
                 </Typography>
@@ -51,7 +57,12 @@ function PowerRow({number, name, description, uses, onToggleUse}: PowerRowProps)
 
             <Box sx={customStyles.powersSection.usePipsContainer}>
                 {uses.map((used, useIndex) => (
-                    <UsePip key={useIndex} used={used} onClick={() => onToggleUse(useIndex)}/>
+                    <UsePip
+                        key={useIndex}
+                        used={used}
+                        ariaLabel={createPipLabel(useIndex, used)}
+                        onClick={() => onToggleUse(useIndex)}
+                    />
                 ))}
             </Box>
         </Box>
@@ -94,6 +105,12 @@ export default function PowersSection({ showLabel = true }: PowersSectionProps) 
                             name={item.name ?? t('powers.unknownScroll')}
                             description={item.description}
                             uses={uses}
+                            createPipLabel={(useIndex, used) =>
+                                t(
+                                    'powers.usePip',
+                                    `${used ? 'Mark unused' : 'Mark used'}: ${item.name ?? t('powers.unknownScroll')} use ${useIndex + 1}`
+                                )
+                            }
                             onToggleUse={(useIndex) => toggleScrollUse(equipmentIndex, useIndex)}
                         />
                     );

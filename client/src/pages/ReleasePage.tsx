@@ -86,12 +86,12 @@ export function ReleasePage() {
         <>
             <Seo
                 title="Mork Borg Character Sheet Release Notes"
-                description="Track Scvm Grinder updates for the interactive Mork Borg character sheet, including new features, fixes, and gameplay tools."
+                description="Track Scvm Rack updates for the interactive Mork Borg character sheet, including new features, fixes, and gameplay tools."
                 path="/release"
                 keywords={[
                     'Mork Borg character sheet updates',
                     'Mork Borg release notes',
-                    'Scvm Grinder changelog',
+                    'Scvm Rack changelog',
                     'MÖRK BORG',
                 ]}
             />
