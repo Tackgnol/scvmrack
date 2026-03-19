@@ -1,7 +1,6 @@
 import {betterAuth} from "better-auth";
-import {magicLink} from "better-auth/plugins";
+import {anonymous, magicLink} from "better-auth/plugins";
 import {Pool} from "pg";
-import {buildClientVerificationUrl} from "./url.js";
 import {magicLinkEmail} from "../emails/magicLinkEmail.js";
 import {verificationEmail} from "../emails/verificationEmail.js";
 import {decryptEmail, encryptEmail} from "./crypto.js";
@@ -36,6 +35,16 @@ const auth = betterAuth({
     },
 
     plugins: [
+        anonymous({
+            onLinkAccount: async ({anonymousUser, newUser}) => {
+                await pool.query(
+                    `UPDATE characters
+                     SET user_id = $1
+                     WHERE user_id = $2`,
+                    [newUser.user.id, anonymousUser.user.id]
+                );
+            },
+        }),
         magicLink({
             sendMagicLink: async ({email, url}, ctx) => {
                 const body = (ctx as any).body;
@@ -67,12 +76,14 @@ const auth = betterAuth({
                 
                 if (!callback || callback.includes(":3000") || callback.includes("localhost")) {
                     verificationUrl.searchParams.set("callbackURL", originToUse);
+                } else if (callback.startsWith('/')) {
+                    verificationUrl.searchParams.set("callbackURL", `${originToUse}${callback}`);
                 }
 
                 await sendEmail(
                     recipientEmail,
                     "Your Scvmgrinder login Link",
-                    magicLinkEmail(buildClientVerificationUrl(verificationUrl.toString(), originToUse))
+                    magicLinkEmail(verificationUrl.toString())
                 );
             },
         }),
@@ -116,17 +127,22 @@ const auth = betterAuth({
             const reqOrigin = request?.headers?.get('origin') || request?.headers?.get('referer');
             const originToUse = reqOrigin ? new URL(reqOrigin).origin : (process.env.CLIENT_ORIGIN ?? 'http://localhost:3000');
 
-            // Embed the guest's character ID in the callbackURL so it survives
-            // the email round-trip (works even if verified in a different browser).
-            const cookieHeader = request?.headers?.get('cookie') || '';
-            const guestMatch = cookieHeader.match(/guest-session=([^;]+)/);
-            const guestSessionId = guestMatch?.[1];
+            // Embed a signed ownership source + character id in callbackURL.
+            // This survives email verification across browsers/devices.
+            const currentSession = request
+                ? await auth.api.getSession({ headers: request.headers as any }).catch(() => null)
+                : null;
+            const currentUser = currentSession?.user as { id: string; isAnonymous?: boolean } | undefined;
+
+            const claimSourceId = currentUser?.id && currentUser.isAnonymous
+                ? currentUser.id
+                : null;
 
             let characterId: string | null = null;
-            if (guestSessionId) {
+            if (claimSourceId) {
                 const { rows } = await pool.query(
-                    'SELECT id FROM characters WHERE session_id = $1 AND user_id IS NULL ORDER BY updated_at DESC LIMIT 1',
-                    [guestSessionId]
+                    'SELECT id FROM characters WHERE user_id = $1 ORDER BY updated_at DESC LIMIT 1',
+                    [claimSourceId]
                 );
                 characterId = rows[0]?.id || null;
             }
@@ -136,15 +152,15 @@ const auth = betterAuth({
 
             if (characterId) {
                 callbackSearchParams.set('character', characterId);
-                callbackSearchParams.set(CLAIM_CHARACTER_QUERY_PARAM, characterId);
 
-                if (guestSessionId) {
-                    callbackSearchParams.set(CLAIM_SESSION_QUERY_PARAM, guestSessionId);
-                    callbackSearchParams.set(CLAIM_USER_QUERY_PARAM, user.id);
+                if (claimSourceId) {
+                    verificationUrl.searchParams.set(CLAIM_CHARACTER_QUERY_PARAM, characterId);
+                    verificationUrl.searchParams.set(CLAIM_SESSION_QUERY_PARAM, claimSourceId);
+                    verificationUrl.searchParams.set(CLAIM_USER_QUERY_PARAM, user.id);
 
-                    const signature = buildClaimSignature(user.id, guestSessionId, characterId);
+                    const signature = buildClaimSignature(user.id, claimSourceId, characterId);
                     if (signature) {
-                        callbackSearchParams.set(CLAIM_SIG_QUERY_PARAM, signature);
+                        verificationUrl.searchParams.set(CLAIM_SIG_QUERY_PARAM, signature);
                     }
                 }
             }
@@ -152,13 +168,13 @@ const auth = betterAuth({
             const callbackPath = callbackSearchParams.toString().length > 0
                 ? `/?${callbackSearchParams.toString()}`
                 : '/';
-            verificationUrl.searchParams.set('callbackURL', callbackPath);
+            verificationUrl.searchParams.set('callbackURL', `${originToUse}${callbackPath}`);
 
             const realEmail = decryptEmail((user as any).encrypted_email);
             await sendEmail(
                 realEmail,
                 "Verify your Scvmgrinder account",
-                verificationEmail(buildClientVerificationUrl(verificationUrl.toString(), originToUse))
+                verificationEmail(verificationUrl.toString())
             );
         },
     },

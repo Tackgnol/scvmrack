@@ -1,9 +1,9 @@
-import { $api, characterKeys } from "@/api";
+import { $api, characterKeys, client } from "@/api";
 import { PathsCharactersIdGetParametersQueryLocale } from "@/api/schema.ts";
 
 import { CharacterResponse, UpdateMutationContext } from "@/hooks/models.ts";
 import { getApiLocale, getCharacterKey } from "@/hooks/utils.ts";
-import { useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
 
 export function useCharacterRepository(characterId: string | null, locale?: string) {
@@ -24,7 +24,31 @@ export function useCharacterRepository(characterId: string | null, locale?: stri
     );
 
     // ---- Create Character ----
-    const createCharacter = $api.useMutation('post', '/characters/new', {
+    const createCharacter = useMutation({
+        mutationFn: async (vars: {
+            body: { class_id?: number };
+            params: { query: { locale: string } };
+            signal?: AbortSignal;
+        }) => {
+            const { signal, ...request } = vars;
+            const { data, error } = await client.POST('/characters/new', {
+                ...(request as any),
+                signal,
+            } as any);
+
+            if (error) {
+                if (signal?.aborted) {
+                    throw new DOMException('The operation was aborted.', 'AbortError');
+                }
+                throw new Error((error as any)?.error || (error as any)?.message || 'Failed to create character');
+            }
+
+            if (!data) {
+                throw new Error('Failed to create character');
+            }
+
+            return data;
+        },
         onSuccess: (character) => {
             if (!character?.id) return;
             queryClient.setQueryData(

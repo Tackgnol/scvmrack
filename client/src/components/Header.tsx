@@ -60,7 +60,7 @@ function NavLink({ to, href, text, onClick, fullWidth }: {
 export default function Header() {
     const { t } = useTranslation();
     const { user, isAuthenticated } = useAuth();
-    const { isSaving, isJustLoggedOut, character, characterId } = useCharacter();
+    const { isSaving, isJustLoggedOut, character, characterId, lastCharacterId } = useCharacter();
     const { isSessionExpired, clearSessionExpiredFlag } = useSessionExpiredFlag();
     const [authModalOpen, setAuthModalOpen] = useState(false);
     const [sessionExpiredNotice, setSessionExpiredNotice] = useState(false);
@@ -72,7 +72,7 @@ export default function Header() {
 
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down("md"));
-    const homeUrl = buildHomeCallbackUrl(characterId);
+    const homeUrl = buildHomeCallbackUrl(characterId || lastCharacterId);
 
     const openAuthModal = useCallback((showSessionExpiredNotice = false) => {
         setSessionExpiredNotice(showSessionExpiredNotice);

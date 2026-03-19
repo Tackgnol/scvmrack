@@ -2,7 +2,7 @@ import {authKeys} from "@/api";
 import { trackEvent } from '@/analytics/googleAnalytics';
 import { navigateToLoggedOut } from '@/router/navigation';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import {magicLinkClient} from "better-auth/client/plugins";
+import {anonymousClient, magicLinkClient} from "better-auth/client/plugins";
 import { createAuthClient } from "better-auth/react";
 
 
@@ -18,7 +18,8 @@ export const authClient = createAuthClient({
     baseURL: import.meta.env.VITE_BACKEND_URL || "",
     basePath: "/auth",
     plugins: [
-        magicLinkClient() // Add the plugin here
+        magicLinkClient(),
+        anonymousClient(),
     ]
 });
 
@@ -30,6 +31,7 @@ export interface AuthUser {
     name: string;
     email: string;
     emailVerified: boolean;
+    isAnonymous?: boolean;
 }
 
 export interface SignInCredentials {
@@ -91,6 +93,31 @@ export function useAuth() {
         },
         enabled: !!sessionQuery.data,
         staleTime: 1000 * 60 * 5,
+    });
+
+    const sessionUser = sessionQuery.data?.user as (AuthUser & { isAnonymous?: boolean }) | undefined;
+    const isAnonymousUser = Boolean(sessionUser?.isAnonymous);
+
+    const anonymousBootstrapQuery = useQuery({
+        queryKey: ['auth', 'anonymous-bootstrap'],
+        enabled: !sessionQuery.isLoading && !sessionUser,
+        staleTime: Infinity,
+        retry: false,
+        refetchOnWindowFocus: false,
+        queryFn: async () => {
+            const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/auth/sign-in/anonymous`, {
+                method: "POST",
+                credentials: "include",
+            });
+
+            if (!res.ok) {
+                throw new Error('Failed to bootstrap anonymous session');
+            }
+
+            await queryClient.invalidateQueries({ queryKey: authKeys.session() });
+            await queryClient.invalidateQueries({ queryKey: authKeys.me() });
+            return true;
+        },
     });
 
     // Sign in
@@ -210,11 +237,12 @@ export function useAuth() {
     });
 
     return {
-        user: (meQuery.data?.user ?? sessionQuery.data?.user) as AuthUser | null,
+        user: (meQuery.data?.user ?? sessionUser) as AuthUser | null,
         session: sessionQuery.data,
-        isAuthenticated: !!sessionQuery.data?.user,
-        isGuest: !sessionQuery.data?.user && !sessionQuery.isLoading,
-        isLoading: sessionQuery.isLoading,
+        isAuthenticated: Boolean(sessionUser) && !isAnonymousUser,
+        isGuest: isAnonymousUser || (!sessionUser && !sessionQuery.isLoading),
+        isLoading: sessionQuery.isLoading || anonymousBootstrapQuery.isFetching,
+        isAnonymous: isAnonymousUser,
 
         signIn,
         signUp,

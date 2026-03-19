@@ -30,8 +30,10 @@ type GenerateNewOptions = {
     onError?: (error: unknown) => void;
 };
 
+let pendingAutoCreateController: AbortController | null = null;
+
 export function useCurrentCharacter() {
-    const { characterId, setCharacterId } = useCharacterId();
+    const { characterId, lastCharacterId, setCharacterId } = useCharacterId();
     const { i18n: { changeLanguage, language: locale } } = useTranslation();
     const trimmedLocale = getApiLocale<PathsCharactersNewPostParametersQueryLocale>(locale);
     const { showSuccess, showError } = useSnackbar();
@@ -67,23 +69,45 @@ export function useCurrentCharacter() {
 
     // ---- Handle logout side effects ----
     useEffect(() => {
-        if (isJustLoggedOut && characterId) {
-            // Force clear the character ID from context when user logs out
+        if (isJustLoggedOut && (characterId || lastCharacterId)) {
+            // Force clear current and remembered character ID when user logs out.
             setCharacterId(null);
         }
-    }, [isJustLoggedOut, characterId, setCharacterId]);
+    }, [isJustLoggedOut, characterId, lastCharacterId, setCharacterId]);
 
     // ---- Auto-create character if none exists (original logic) ----
     useEffect(() => {
         if (pathname !== '/') return;
+        if (authLoading) return;
 
-        if (!characterId && !repo.createCharacter.isPending && !isJustLoggedOut) {
+        if (!characterId && !repo.createCharacter.isPending && !repo.createCharacter.data?.id && !isJustLoggedOut) {
+            pendingAutoCreateController?.abort();
+            const controller = new AbortController();
+            pendingAutoCreateController = controller;
+
             repo.createCharacter.mutate({
                 body: {},
-                params: { query: { locale: trimmedLocale } }
+                params: { query: { locale: trimmedLocale } },
+                signal: controller.signal,
+            }, {
+                onSuccess: (character) => {
+                    if (character?.id) {
+                        setCharacterId(character.id);
+                    }
+                },
+                onSettled: () => {
+                    if (pendingAutoCreateController === controller) {
+                        pendingAutoCreateController = null;
+                    }
+                },
+                onError: (error) => {
+                    if (error instanceof DOMException && error.name === 'AbortError') {
+                        return;
+                    }
+                },
             });
         }
-    }, [characterId, repo.createCharacter, trimmedLocale, isJustLoggedOut, pathname]);
+    }, [characterId, repo.createCharacter, trimmedLocale, isJustLoggedOut, pathname, authLoading, setCharacterId]);
 
     // ---- Set characterId when character is created (original logic) ----
     useEffect(() => {
@@ -96,6 +120,9 @@ export function useCurrentCharacter() {
     // ---- Generate new character (original logic) ----
     const generateNewCharacter = useCallback(
         (classId?: number, options?: GenerateNewOptions) => {
+            pendingAutoCreateController?.abort();
+            pendingAutoCreateController = null;
+
             editor.flush();
             const id = classId ?? Math.floor(Math.random() * (6 - 1 + 1)) + 1;
 
@@ -168,6 +195,7 @@ export function useCurrentCharacter() {
     return {
         // Original returns
         characterId,
+        lastCharacterId,
         character: repo.character,
         error: repo.error,
         isLoading: repo.isLoading || repo.createCharacter.isPending || authLoading,

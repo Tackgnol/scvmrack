@@ -19,7 +19,9 @@ const sessionRoutes: FastifyPluginAsync = async (fastify): Promise<void> => {
             isAuthenticated: !session.isGuest,
             expiresAt: session.expiresAt.toISOString(),
             daysUntilExpiry: Math.floor(daysUntilExpiry),
-            canExtend: session.isGuest && daysUntilExpiry <= 3,
+            // Only legacy guest sessions can be extended. Anonymous Better Auth
+            // sessions have their own lifecycle and are renewed by auth.
+            canExtend: session.isGuest && !session.userId && daysUntilExpiry <= 3,
         });
     });
 
@@ -31,7 +33,7 @@ const sessionRoutes: FastifyPluginAsync = async (fastify): Promise<void> => {
             return reply.status(401).send({ error: 'No session' });
         }
 
-        if (!session.isGuest) {
+        if (!session.isGuest || session.userId) {
             return reply.status(400).send({ error: 'Only guest sessions can be extended' });
         }
 

@@ -4,6 +4,26 @@
 
 BEGIN;
 
+-- Ensure ability keys are unique so ON CONFLICT (key) works deterministically.
+-- This keeps the seed idempotent even on partially-initialized databases.
+DELETE FROM public.abilities a
+USING public.abilities b
+WHERE a.id > b.id
+  AND a.key = b.key;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_constraint
+        WHERE conrelid = 'public.abilities'::regclass
+          AND conname = 'abilities_key_key'
+    ) THEN
+        ALTER TABLE public.abilities
+            ADD CONSTRAINT abilities_key_key UNIQUE (key);
+    END IF;
+END $$;
+
 -- 0. Delete known hallucinated abilities from previous versions to ensure a clean state
 DELETE FROM public.abilities WHERE key IN (
     'abilities.fanged_deserter.clumsy',

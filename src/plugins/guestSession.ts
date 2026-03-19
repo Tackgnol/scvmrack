@@ -41,16 +41,16 @@ const guestSessionPlugin: FastifyPluginAsync = async (fastify): Promise<void> =>
             });
 
             if (authSession?.session && authSession?.user) {
-                // Authenticated user - use their session
-                // BUT also grab the guest session cookie if present (for claiming)
+                const isAnonymous = Boolean((authSession.user as any).isAnonymous);
+                // Better Auth session (authenticated or anonymous guest).
                 const guestSessionId = request.cookies?.['guest-session'] || null;
 
                 request.appSession = {
                     id: authSession.session.id,
                     userId: authSession.user.id,
                     expiresAt: new Date(authSession.session.expiresAt),
-                    isGuest: false,
-                    guestSessionId  // Preserve for claiming characters created as guest
+                    isGuest: isAnonymous,
+                    guestSessionId
                 };
                 return;
             }
