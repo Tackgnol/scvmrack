@@ -72,6 +72,14 @@ async function request(
   return response;
 }
 
+async function fetchCsrfToken(jar: CookieJar): Promise<string> {
+  const response = await request('/csrf-token', { jar });
+  assert.equal(response.status, 200, 'CSRF token fetch should succeed');
+  const { token } = (await response.json()) as { token: string };
+  assert.equal(typeof token, 'string');
+  return token;
+}
+
 async function expectStatus(response: Response, expectedStatus: number): Promise<void> {
   if (response.status === expectedStatus) return;
   const payload = await response.text();
@@ -90,29 +98,71 @@ test('GET /health returns service status', async () => {
   assert.ok(!Number.isNaN(Date.parse(payload.timestamp)));
 });
 
-test('guest session can create, list, fetch and delete character', async () => {
+test('CSRF protection rejects state-changing requests without token', async () => {
   const jar = new CookieJar();
 
-  const sessionResponse = await request('/session/info', { jar });
-  await expectStatus(sessionResponse, 200);
-  assert.equal(jar.has('guest-session'), true);
+  // Bootstrap an anonymous session
+  const anonResponse = await request('/auth/sign-in/anonymous', {
+    method: 'POST',
+    json: {},
+    jar,
+  });
+  await expectStatus(anonResponse, 200);
 
-  const sessionPayload = (await sessionResponse.json()) as {
-    isGuest: boolean;
-    isAuthenticated: boolean;
-  };
-  assert.equal(sessionPayload.isGuest, true);
-  assert.equal(sessionPayload.isAuthenticated, false);
+  // POST without CSRF token should be rejected
+  const noTokenResponse = await request('/characters/new', {
+    method: 'POST',
+    json: {},
+    jar,
+  });
+  await expectStatus(noTokenResponse, 403);
 
+  // POST with invalid CSRF token should be rejected
+  const badTokenResponse = await request('/characters/new', {
+    method: 'POST',
+    json: {},
+    headers: { 'x-csrf-token': 'completely-bogus-token' },
+    jar,
+  });
+  await expectStatus(badTokenResponse, 403);
+
+  // POST with valid CSRF token should succeed
+  const csrfToken = await fetchCsrfToken(jar);
+  const goodResponse = await request('/characters/new', {
+    method: 'POST',
+    json: {},
+    headers: { 'x-csrf-token': csrfToken },
+    jar,
+  });
+  await expectStatus(goodResponse, 201);
+});
+
+test('anonymous session can create, list, fetch and delete character', async () => {
+  const jar = new CookieJar();
+
+  // Bootstrap an anonymous session via Better Auth
+  const anonResponse = await request('/auth/sign-in/anonymous', {
+    method: 'POST',
+    json: {},
+    jar,
+  });
+  await expectStatus(anonResponse, 200);
+
+  // Fetch a CSRF token
+  const csrfToken = await fetchCsrfToken(jar);
+
+  // Create a character
   const createResponse = await request('/characters/new', {
     method: 'POST',
     json: {},
+    headers: { 'x-csrf-token': csrfToken },
     jar,
   });
   await expectStatus(createResponse, 201);
   const createdCharacter = (await createResponse.json()) as { id: string };
   assert.equal(typeof createdCharacter.id, 'string');
 
+  // List characters
   const listResponse = await request('/characters', { jar });
   await expectStatus(listResponse, 200);
   const characters = (await listResponse.json()) as Array<{ id?: string }>;
@@ -122,17 +172,24 @@ test('guest session can create, list, fetch and delete character', async () => {
     true
   );
 
+  // Fetch character
   const fetchResponse = await request(`/characters/${createdCharacter.id}`, { jar });
   await expectStatus(fetchResponse, 200);
   const fetchedCharacter = (await fetchResponse.json()) as { id: string };
   assert.equal(fetchedCharacter.id, createdCharacter.id);
 
+  // Fetch a fresh CSRF token before delete
+  const csrfToken2 = await fetchCsrfToken(jar);
+
+  // Delete character
   const deleteResponse = await request(`/characters/${createdCharacter.id}`, {
     method: 'DELETE',
+    headers: { 'x-csrf-token': csrfToken2 },
     jar,
   });
   await expectStatus(deleteResponse, 204);
 
+  // Verify deleted
   const fetchAfterDeleteResponse = await request(`/characters/${createdCharacter.id}`, {
     jar,
   });

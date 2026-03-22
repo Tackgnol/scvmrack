@@ -140,7 +140,14 @@ export async function runCharacterSheetEditingSteps(page: Page, syncBadgeTimeout
   const notesInput = page.getByTestId('notes-input');
   await notesInput.fill('I am doomed');
   await notesInput.blur();
-  await expect(syncBadge).toBeVisible();
+
+  // Wait for the save cycle to complete before reloading:
+  // The editor uses a debounce (1s) before sending the PATCH.
+  // Wait for "Saving..." to appear (confirms the flush started),
+  // then wait for "Synced" to reappear (confirms the PATCH completed).
+  const savingBadge = page.getByText('Saving...', { exact: true });
+  await expect(savingBadge).toBeVisible({ timeout: 5000 });
+  await expect(syncBadge).toBeVisible({ timeout: 10000 });
 
   // Step 19: Refresh and all values are still edited
   await page.reload();

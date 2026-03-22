@@ -19,6 +19,9 @@ test.describe('Guest Editing', () => {
     await page.goto('/');
     await expect(page.getByTestId('app-title')).toBeVisible({ timeout: 15000 });
 
+    // Wait for the character to be fully loaded (generate button means page is interactive)
+    await expect(page.getByTestId('generate-new-button')).toBeVisible({ timeout: 30000 });
+
     await runCharacterSheetEditingSteps(page);
   });
 });

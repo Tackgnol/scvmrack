@@ -15,7 +15,7 @@ const start = async () => {
         const port = process.env.PORT ? parseInt(process.env.PORT) : 3000;
 
         await server.listen({ port, host: '0.0.0.0' });
-        console.log(`Serwer działa na porcie: ${port}`);
+        server.log.info(`Serwer działa na porcie: ${port}`);
     } catch (err) {
         server.log.error(err);
         process.exit(1);

@@ -6,7 +6,6 @@ import { useCharacterId } from "@/hooks/useCharacterId.ts";
 import { useCharacterRepository } from "@/hooks/useCharacterRepository.ts";
 import { appHistory } from '@/router/history';
 import { hasCurrentSearchParam, LOGGED_OUT_QUERY_PARAM } from '@/router/navigation';
-import { useSessionStatus } from "@/hooks/useSessionStatus.ts";
 import {getApiLocale} from "@/hooks/utils.ts";
 import {useSnackbar} from "@/SnackbarContext/SnackbarProvider.tsx";
 
@@ -52,9 +51,6 @@ export function useCurrentCharacter() {
     // Auth state
     const { isAuthenticated, isGuest, isLoading: authLoading } = useAuth();
 
-    // Session status (for expiry warning)
-    const sessionStatus = useSessionStatus();
-
     // Repository and editor (original pattern preserved)
     const repo = useCharacterRepository(characterId, locale);
     const editor = useCharacterEditor(
@@ -66,25 +62,58 @@ export function useCurrentCharacter() {
 
     // Claiming state
     const [isClaiming, setIsClaiming] = useState(false);
+    const [autoCreateFailed, setAutoCreateFailed] = useState(false);
+    const [checkingExisting, setCheckingExisting] = useState(false);
 
     // ---- Handle logout side effects ----
     useEffect(() => {
         if (isJustLoggedOut && (characterId || lastCharacterId)) {
             // Force clear current and remembered character ID when user logs out.
             setCharacterId(null);
+            setAutoCreateFailed(false);
         }
     }, [isJustLoggedOut, characterId, lastCharacterId, setCharacterId]);
 
-    // ---- Auto-create character if none exists (original logic) ----
+    // ---- Check for existing characters, then auto-create if none found ----
     useEffect(() => {
         if (pathname !== '/') return;
         if (authLoading) return;
+        if (characterId) return;
+        if (isJustLoggedOut) return;
+        if (autoCreateFailed) return;
 
-        if (!characterId && !repo.createCharacter.isPending && !repo.createCharacter.data?.id && !isJustLoggedOut) {
-            pendingAutoCreateController?.abort();
-            const controller = new AbortController();
-            pendingAutoCreateController = controller;
+        let cancelled = false;
+        const controller = new AbortController();
 
+        pendingAutoCreateController?.abort();
+        pendingAutoCreateController = controller;
+        setCheckingExisting(true);
+
+        (async () => {
+            // Step 1: Check if user already has characters (raw fetch to avoid auth middleware redirect)
+            try {
+                const baseUrl = import.meta.env.VITE_BACKEND_URL || '';
+                const res = await fetch(`${baseUrl}/characters`, {
+                    credentials: 'include',
+                    signal: controller.signal,
+                });
+                if (!cancelled && res.ok) {
+                    const chars = (await res.json()) as Array<{ id: string }>;
+                    if (chars.length > 0) {
+                        setCharacterId(chars[0].id);
+                        setCheckingExisting(false);
+                        return;
+                    }
+                }
+            } catch (e) {
+                if (e instanceof DOMException && e.name === 'AbortError') return;
+                // List fetch failed — fall through to create
+            }
+
+            if (cancelled) return;
+            setCheckingExisting(false);
+
+            // Step 2: No existing characters — create a new one
             repo.createCharacter.mutate({
                 body: {},
                 params: { query: { locale: trimmedLocale } },
@@ -104,10 +133,20 @@ export function useCurrentCharacter() {
                     if (error instanceof DOMException && error.name === 'AbortError') {
                         return;
                     }
+                    setAutoCreateFailed(true);
+                    showError("Failed to create character. The server may be experiencing issues.");
                 },
             });
-        }
-    }, [characterId, repo.createCharacter, trimmedLocale, isJustLoggedOut, pathname, authLoading, setCharacterId]);
+        })();
+
+        return () => {
+            cancelled = true;
+            controller.abort();
+            pendingAutoCreateController = null;
+            setCheckingExisting(false);
+        };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [pathname, authLoading, characterId, isJustLoggedOut, autoCreateFailed, trimmedLocale]);
 
     // ---- Set characterId when character is created (original logic) ----
     useEffect(() => {
@@ -122,6 +161,7 @@ export function useCurrentCharacter() {
         (classId?: number, options?: GenerateNewOptions) => {
             pendingAutoCreateController?.abort();
             pendingAutoCreateController = null;
+            setAutoCreateFailed(false);
 
             editor.flush();
             const id = classId ?? Math.floor(Math.random() * (6 - 1 + 1)) + 1;
@@ -148,7 +188,7 @@ export function useCurrentCharacter() {
                 },
             });
         },
-        [editor, repo.createCharacter, trimmedLocale, isAuthenticated, isGuest, setCharacterId]
+        [editor, repo.createCharacter, trimmedLocale, isAuthenticated, isGuest, setCharacterId, setAutoCreateFailed]
     );
 
     // ---- Change locale (original logic) ----
@@ -198,7 +238,7 @@ export function useCurrentCharacter() {
         lastCharacterId,
         character: repo.character,
         error: repo.error,
-        isLoading: repo.isLoading || repo.createCharacter.isPending || authLoading,
+        isLoading: repo.isLoading || repo.createCharacter.isPending || authLoading || checkingExisting,
         locale,
 
         setCharacterId,
@@ -212,9 +252,6 @@ export function useCurrentCharacter() {
         // NEW: Auth state
         isAuthenticated,
         isGuest,
-
-        // NEW: Session status (for warning banner)
-        sessionStatus,
 
         // NEW: Claim functionality
         claimCharacter,

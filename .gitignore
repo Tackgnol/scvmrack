@@ -71,5 +71,18 @@ replacements.txt
 compose.yaml
 
 materials
+
+# test results & reports
 tests/e2e/playwright-report
 tests/e2e/test-results
+tests/integration-be/test-results
+
+# build outputs
+client/public/
+client/stats.html
+
+# Claude Code local settings
+.claude/settings.local.json
+
+# Lighthouse reports
+*.usermd.net-*.json

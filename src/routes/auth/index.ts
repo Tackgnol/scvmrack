@@ -161,12 +161,12 @@ const authRoutes: FastifyPluginAsync = async (fastify): Promise<void> => {
                         || verifyParams.get(CLAIM_SIG_QUERY_PARAM);
 
                     if (characterId && claimUserId && claimSignature) {
-                        const owner = await queryOne<{ user_id: string | null; session_id: string | null }>(
-                            `SELECT user_id, session_id FROM characters WHERE id = $1`,
+                        const owner = await queryOne<{ user_id: string | null }>(
+                            `SELECT user_id FROM characters WHERE id = $1`,
                             [characterId]
                         );
 
-                        const claimSourceId = owner?.user_id || owner?.session_id;
+                        const claimSourceId = owner?.user_id;
                         if (!claimSourceId) {
                             request.log.warn({ characterId, claimUserId }, 'Skipped auto-claim: missing source owner on character');
                             return;
@@ -187,18 +187,10 @@ const authRoutes: FastifyPluginAsync = async (fastify): Promise<void> => {
                                  RETURNING id`,
                                 [claimUserId, claimSourceId]
                             );
-                            // Keep legacy guest-session characters compatible during transition.
-                            const legacyClaimedCharacters = await query<{ id: string }>(
-                                `UPDATE characters SET user_id = $1
-                                 WHERE session_id = $2
-                                   AND user_id IS NULL
-                                 RETURNING id`,
-                                [claimUserId, claimSourceId]
-                            );
                             request.log.info({
                                 userId: claimUserId,
                                 characterId,
-                                claimedCount: claimedCharacters.length + legacyClaimedCharacters.length
+                                claimedCount: claimedCharacters.length
                             }, 'Auto-claimed guest characters after verification (signed callback)');
                         } else {
                             request.log.warn({ characterId, claimSourceId, claimUserId }, 'Skipped auto-claim: invalid callback signature');

@@ -39,7 +39,24 @@ fs.cpSync("dist", path.join(out, "dist"), { recursive: true });
 fs.cpSync("client/public", path.join(out, "public"), { recursive: true });
 
 fs.copyFileSync("app.js", path.join(out, "app.js"));
-fs.copyFileSync("package.json", path.join(out, "package.json"));
+
+// Copy backend .env.mydevil as .env so dotenv loads it at runtime
+const beEnvMyDevil = path.join(process.cwd(), ".env.mydevil");
+if (fs.existsSync(beEnvMyDevil)) {
+    fs.copyFileSync(beEnvMyDevil, path.join(out, ".env"));
+    console.log("📋 Copied .env.mydevil as .env for backend");
+}
+
+// Deploy package.json without "type": "module" so Passenger can require() app.js as CJS.
+// A separate dist/package.json with "type": "module" ensures compiled files stay ESM.
+const pkg = JSON.parse(fs.readFileSync("package.json", "utf-8"));
+delete pkg.type;
+pkg.main = "app.js";
+fs.writeFileSync(path.join(out, "package.json"), JSON.stringify(pkg, null, 2));
+
+// Mark dist/ as ESM so compiled TypeScript imports work correctly
+fs.writeFileSync(path.join(out, "dist", "package.json"), JSON.stringify({ type: "module" }, null, 2));
+
 fs.copyFileSync("package-lock.json", path.join(out, "package-lock.json"));
 
 console.log("✅ Build and deployment preparation complete!");

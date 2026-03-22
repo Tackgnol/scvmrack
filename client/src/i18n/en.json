@@ -209,6 +209,7 @@
     "guestCharacterNotice": "{{characterName}} will be saved to your account after signup.",
     "verified": "Verified",
     "emailNotVerified": "Your email is not verified. Check your inbox for a verification link.",
+    "checkSpamFolder": "Can't find it? Check your spam/junk folder.",
     "verifyEmailTitle": "Check Your Email",
     "verifyEmailDesc": "We've sent a verification link to your email. Click it to complete your registration.",
     "characterWillBeSaved": "{{characterName}} will be saved to your account after verification.",
@@ -222,12 +223,6 @@
     "sessionExpired": "Your session expired. Sign in again to continue."
   },
   "session": {
-    "expiresWarning": "Your guest session expires in {{days}} days. Sign up to keep your character forever!",
-    "expiresWarning_one": "Your guest session expires tomorrow! Sign up to keep your character forever!",
-    "signUpKeepForever": "Sign Up - Keep Forever",
-    "extend7Days": "Extend 7 Days",
-    "extended": "Session extended! Come back within 7 days to keep your character.",
-    "extendFailed": "Failed to extend session. Please try again.",
     "loggedOut": "You've been logged out.",
     "createNewCharacter": "Create new character"
   },

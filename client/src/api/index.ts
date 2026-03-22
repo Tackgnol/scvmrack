@@ -8,7 +8,6 @@ import type { paths } from "./schema.ts";
 export const authKeys = {
     all: ["auth"] as const,
     session: () => [...authKeys.all, "session"] as const,
-    sessionInfo: () => [...authKeys.all, "session-info"] as const,
     me: () => [...authKeys.all, "me"] as const,
 };
 
@@ -34,6 +33,59 @@ function redirectToSessionExpired() {
         void navigateToSessionExpired();
     }, 100);
 }
+
+// ============================================
+// CSRF Token Management
+// ============================================
+let csrfToken: string | null = null;
+
+async function fetchCsrfToken(): Promise<string> {
+    const res = await fetch(
+        `${import.meta.env.VITE_BACKEND_URL || ""}/csrf-token`,
+        { credentials: "include" }
+    );
+    if (!res.ok) {
+        throw new Error("Failed to fetch CSRF token");
+    }
+    const data = (await res.json()) as { token: string };
+    csrfToken = data.token;
+    return csrfToken;
+}
+
+const MUTATING_METHODS = ["POST", "PUT", "PATCH", "DELETE"];
+
+const csrfMiddleware: Middleware = {
+    async onRequest({ request }) {
+        if (!MUTATING_METHODS.includes(request.method)) {
+            return request;
+        }
+
+        if (!csrfToken) {
+            await fetchCsrfToken();
+        }
+
+        const headers = new Headers(request.headers);
+        headers.set("x-csrf-token", csrfToken!);
+        return new Request(request, { headers });
+    },
+
+    async onResponse({ request, response }) {
+        // If we get a 403 on a mutating request, the token may have expired.
+        // Fetch a fresh token and retry once.
+        if (response.status === 403 && MUTATING_METHODS.includes(request.method)) {
+            try {
+                await fetchCsrfToken();
+            } catch {
+                return response;
+            }
+
+            const headers = new Headers(request.headers);
+            headers.set("x-csrf-token", csrfToken!);
+            return fetch(new Request(request, { headers, credentials: "include" }));
+        }
+        return response;
+    },
+};
 
 // ============================================
 // Auth Middleware
@@ -102,6 +154,7 @@ const client = createClient<paths>({
     baseUrl: import.meta.env.VITE_BACKEND_URL || "",
 });
 
+client.use(csrfMiddleware);
 client.use(authMiddleware);
 
 export const $api = createQueryClient(client);

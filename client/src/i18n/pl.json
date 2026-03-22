@@ -209,6 +209,7 @@
     "guestCharacterNotice": "{{characterName}} zostanie zapisana na Twoim koncie po rejestracji.",
     "verified": "Zweryfikowany",
     "emailNotVerified": "Twój email nie jest zweryfikowany. Sprawdź skrzynkę, aby znaleźć link weryfikacyjny.",
+    "checkSpamFolder": "Nie widzisz maila? Sprawdź folder spam/śmieci.",
     "verifyEmailTitle": "Sprawdź Email",
     "verifyEmailDesc": "Wysłaliśmy link weryfikacyjny na Twój email. Kliknij go, aby dokończyć rejestrację.",
     "characterWillBeSaved": "{{characterName}} zostanie zapisany na Twoim koncie po weryfikacji.",
@@ -222,12 +223,6 @@
     "sessionExpired": "Twoja sesja wygasła. Zaloguj się ponownie, aby kontynuować."
   },
   "session": {
-    "expiresWarning": "Twoja sesja gościa wygasa za {{days}} dni. Zarejestruj się, aby zachować postać na zawsze!",
-    "expiresWarning_one": "Twoja sesja gościa wygasa jutro! Zarejestruj się, aby zachować postać na zawsze!",
-    "signUpKeepForever": "Zarejestruj się",
-    "extend7Days": "Przedłuż o 7 dni",
-    "extended": "Sesja przedłużona! Wróć w ciągu 7 dni, aby zachować postać.",
-    "extendFailed": "Nie udało się przedłużyć sesji. Spróbuj ponownie.",
     "loggedOut": "Wylogowano.",
     "createNewCharacter": "Stwórz nową postać"
   },

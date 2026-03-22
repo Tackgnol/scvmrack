@@ -45,17 +45,23 @@ export async function pollEmailLink(
       const match = detail.HTML?.match(linkRegex);
       if (match) {
         let extractedUrl = match[1].replace(/&amp;/g, '&');
+        const baseUrl = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:5173';
+
+        // Rewrite the auth URL to go through the Vite proxy so the browser sets
+        // cookies for the correct domain (web:5173 instead of api:3000).
+        const urlObj = new URL(extractedUrl);
+        const proxyBase = new URL(baseUrl);
+        urlObj.protocol = proxyBase.protocol;
+        urlObj.host = proxyBase.host;
 
         // Fix callbackURL to be absolute so Better Auth redirects back to the client, not the API
-        const urlObj = new URL(extractedUrl);
         const callbackUrlParam = urlObj.searchParams.get('callbackURL');
 
         if (callbackUrlParam && callbackUrlParam.startsWith('/')) {
-          const baseUrl = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:5173';
           urlObj.searchParams.set('callbackURL', new URL(callbackUrlParam, baseUrl).toString());
-          extractedUrl = urlObj.toString();
         }
 
+        extractedUrl = urlObj.toString();
         return extractedUrl;
       }
     }

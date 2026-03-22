@@ -16,20 +16,11 @@ test('user can register a new account and sign in via email verification', async
   const email = `test_${Date.now()}@example.com`;
   const testStartTime = new Date();
 
-  // Load the home page; start listening for the character fetch BEFORE navigating
-  const characterLoaded = page.waitForResponse(
-    (r) =>
-      /\/characters\/[^/]+$/.test(new URL(r.url()).pathname) &&
-      r.request().method() === 'GET' &&
-      r.status() === 200,
-    { timeout: 30000 }
-  );
-
   await page.goto('/');
   await expect(page.getByTestId('app-title')).toBeVisible();
 
-  // Wait for the character to be fully loaded — guarantees no "not found" modal is open
-  await characterLoaded;
+  // Wait for the character to be fully loaded (generate button means page is interactive)
+  await expect(page.getByTestId('generate-new-button')).toBeVisible({ timeout: 30000 });
 
   // Open the auth modal
   await page.getByTestId('auth-button').click();

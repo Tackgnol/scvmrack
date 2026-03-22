@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { getRuntimeOrigin } from '@/platform/runtime';
 
 const SITE_NAME = 'Scvm Rack';
-const DEFAULT_SITE_URL = 'https://scvmgrinder.tackgnol.usermd.net';
+const DEFAULT_SITE_URL = 'https://scvmrack.rpgtools.eu.org';
 const DEFAULT_IMAGE_PATH = '/preview.png';
 
 type JsonLd = Record<string, unknown> | Array<Record<string, unknown>>;

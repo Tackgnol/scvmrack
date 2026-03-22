@@ -1025,7 +1025,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description List characters for current session/user */
+        /** @description List characters for current user */
         get: {
             parameters: {
                 query?: never;
