@@ -131,8 +131,10 @@ export function AuthModal({
         hadGuestCharacter: Boolean(characterId),
       });
 
-      // If user was guest with a character, offer to claim it
-      if (isGuest && !isAnonymous && character) {
+      // If user was anonymous with a character, offer to claim it.
+      // Note: isAnonymous reflects the PRE-login state here (React hasn't re-rendered yet),
+      // which is what we want — "was the user anonymous before this login?"
+      if (isAnonymous && characterId) {
         setShowClaimPrompt(true);
       } else {
         onClose();
@@ -158,7 +160,7 @@ export function AuthModal({
     }
 
     try {
-      const pendingClaimId = isGuest && !isAnonymous && characterId ? characterId : null;
+      const pendingClaimId = isAnonymous && characterId ? characterId : null;
       await setCurrentPendingClaimCharacterId(pendingClaimId);
 
       await signInMagicLink.mutateAsync({
@@ -189,7 +191,7 @@ export function AuthModal({
     }
 
     try {
-      const pendingClaimId = isGuest && !isAnonymous && characterId ? characterId : null;
+      const pendingClaimId = isAnonymous && characterId ? characterId : null;
       await setCurrentPendingClaimCharacterId(pendingClaimId);
 
       await signUp.mutateAsync({
@@ -330,6 +332,9 @@ export function AuthModal({
             "We've sent a verification link to your email. Click it to complete your registration."
           )}
         </Typography>
+        <Typography variant="body2" sx={{ mt: 1, mb: 2, opacity: 0.7, textAlign: 'center' }}>
+          {t('auth.checkSpamFolder')}
+        </Typography>
         {isGuest && character && (
           <Alert severity="info" sx={customStyles.authModal.infoAlert}>
             {t('auth.characterWillBeSaved', {
@@ -379,6 +384,8 @@ export function AuthModal({
               'auth.emailNotVerified',
               'Your email is not verified. Check your inbox for a verification link.'
             )}
+            <br />
+            {t('auth.checkSpamFolder')}
           </Alert>
         )}
 
@@ -443,6 +450,9 @@ export function AuthModal({
                   'auth.checkEmailDesc',
                   'A magic link has been sent to your scroll (email).'
                 )}
+              </Typography>
+              <Typography variant="body2" sx={{ mb: 2, opacity: 0.7 }}>
+                {t('auth.checkSpamFolder')}
               </Typography>
               <Button
                 variant="outlined"

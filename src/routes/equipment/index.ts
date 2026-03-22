@@ -6,6 +6,12 @@ const equipment: FastifyPluginAsync = async (fastify) => {
     fastify.get<{
         Querystring: { q: string; locale: string; limit?: number };
     }>('/search', {
+        config: {
+            rateLimit: {
+                max: process.env.NODE_ENV === 'test' ? 10000 : 30,
+                timeWindow: '1 minute',
+            },
+        },
         schema: {
             description: 'Search items with fuzzy matching and locale awareness',
             tags: ['items'],

@@ -11,11 +11,13 @@ const transporter = nodemailer.createTransport({
 });
 
 export const sendEmail = async (mail: string, subject: string, html: string) => {
+    // Strip CRLF to prevent email header injection
+    const safeSubject = subject.replace(/[\r\n]/g, '');
 
     await transporter.sendMail({
-        from: `"Scvmgrinder" <${process.env.MAIL_USER}>`,
+        from: `"Scvmrack" <${process.env.MAIL_USER}>`,
         to: mail,
-        subject,
+        subject: safeSubject,
         html,
     });
 };

@@ -5,7 +5,6 @@ import { appHistory } from '@/router/history';
 import { buildHomeCallbackUrl, getCurrentPendingClaimCharacterId } from '@/router/navigation';
 import { Flag } from "@components/Flag";
 import { FlagContainer } from "@components/FlagContainer";
-import { SessionWarningBanner } from "@components/SessionWarningBanner";
 import CloudDoneIcon from "@mui/icons-material/CloudDone";
 import PersonIcon from "@mui/icons-material/Person";
 import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
@@ -174,8 +173,6 @@ export default function Header() {
 
     return (
         <>
-            <SessionWarningBanner onSignUpClick={() => openAuthModal()} />
-
             <Paper data-testid="app-title" sx={customStyles.header.paper}>
                 <Box sx={customStyles.header.container(isMobile)}>
                     <Box sx={customStyles.header.titleBox}>

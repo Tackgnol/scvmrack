@@ -313,7 +313,7 @@ export const customStyles = {
       width: 32,
       height: 32,
       cursor: 'pointer',
-      fontFamily: "'Permanent Marker', cursive",
+      fontFamily: "'Caveat Brush', cursive",
       fontSize: '1.2rem',
       display: 'flex',
       alignItems: 'center',
@@ -935,7 +935,7 @@ export const customStyles = {
 
   // Character class text
   characterClassText: {
-    fontFamily: "'Permanent Marker', cursive",
+    fontFamily: "'Caveat Brush', cursive",
     fontSize: 'clamp(1.2rem, 3vw, 1.8rem)',
     color: morkBorgColors.yellow,
     minHeight: '1.8rem',
@@ -1407,35 +1407,6 @@ export const customStyles = {
     },
   },
 
-  // Session warning banner styles
-  sessionWarning: {
-    alert: {
-      mb: 2,
-      bgcolor: morkBorgColors.black,
-      color: morkBorgColors.yellow,
-      border: `1px solid ${morkBorgColors.yellow}`,
-      '& .MuiAlert-icon': { color: morkBorgColors.yellow },
-      '& .MuiAlert-message': {
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        width: '100%',
-        flexWrap: 'wrap' as const,
-        gap: 1,
-      },
-    },
-    buttonContainer: {
-      display: 'flex',
-      gap: 1,
-      flexShrink: 0,
-    },
-    signUpButton: {
-      color: morkBorgColors.yellow,
-      borderColor: morkBorgColors.yellow,
-      '&:hover': { bgcolor: `${morkBorgColors.yellow}33`, borderColor: morkBorgColors.yellow },
-    },
-  },
-
   // FAQ page styles
   faqPage: {
     container: {
@@ -1817,7 +1788,7 @@ export const customStyles = {
     },
     abilityName: {
       color: morkBorgColors.white,
-      fontFamily: "'Permanent Marker', cursive",
+      fontFamily: "'Caveat Brush', cursive",
       fontSize: 'clamp(1rem, 2.5vw, 1.15rem)',
       lineHeight: 1.2,
       letterSpacing: '0.02em',
@@ -1877,7 +1848,7 @@ export const customStyles = {
     traitsField: {
       '& .MuiInput-root': {
         color: `${morkBorgColors.white} !important`,
-        fontFamily: "'Permanent Marker', cursive",
+        fontFamily: "'Caveat Brush', cursive",
         fontSize: 'clamp(1.15rem, 3vw, 1.5rem)',
         lineHeight: 1.1,
         '&:before': { borderBottomColor: morkBorgColors.pink, opacity: 0.4, borderBottomWidth: '2px' },
@@ -2242,7 +2213,7 @@ export const customStyles = {
     },
     powerName: {
       color: morkBorgColors.black,
-      fontFamily: "'Permanent Marker', cursive",
+      fontFamily: "'Caveat Brush', cursive",
       fontSize: { xs: '1.05rem', sm: 'clamp(1rem, 2.5vw, 1.15rem)' },
       lineHeight: 1.2,
       letterSpacing: '0.02em',
@@ -2347,7 +2318,7 @@ export const morkBorgTheme = createTheme({
     fontFamily: "'Alegreya', Georgia, serif",
 
     h1: {
-      fontFamily: "'Permanent Marker', cursive",
+      fontFamily: "'Caveat Brush', cursive",
       fontSize: '3rem',
       textTransform: 'uppercase',
       lineHeight: 0.85,

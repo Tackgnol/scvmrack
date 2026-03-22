@@ -1,5 +1,5 @@
-import { FastifyPluginAsync } from 'fastify';
-import { isValidLocale, isValidUUID, sanitizeCharacterUpdate } from "../../utils.js";
+import {FastifyPluginAsync} from 'fastify';
+import type {AppSession} from '../../plugins/guestSession.js';
 import {
     CharacterIdParamsSchema,
     CharacterSchema,
@@ -8,9 +8,9 @@ import {
     LocaleQuerySchema,
     UpdateBodySchema,
 } from '../../schemas/character.js';
-import type { CharacterFull, CharacterUpdate, GenerateCharacterParams } from '../../types/character.js';
-import { query, queryOne } from '../../services/db.js';
-import type { AppSession } from '../../plugins/guestSession.js';
+import {query, queryOne} from '../../services/db.js';
+import type {CharacterFull, CharacterUpdate, GenerateCharacterParams} from '../../types/character.js';
+import {isValidLocale, isValidUUID, sanitizeCharacterUpdate} from "../../utils.js";
 
 type CharacterListRow = {
     id: string;
@@ -34,8 +34,8 @@ async function checkCharacterAccess(
         return { allowed: false, reason: 'No session' };
     }
 
-    const character = await queryOne<{ session_id: string | null; user_id: string | null }>(
-        'SELECT session_id, user_id FROM characters WHERE id = $1',
+    const character = await queryOne<{ user_id: string | null }>(
+        'SELECT user_id FROM characters WHERE id = $1',
         [characterId]
     );
 
@@ -43,20 +43,7 @@ async function checkCharacterAccess(
         return { allowed: false, reason: 'Character not found' };
     }
 
-    // If character has a user_id, must match session's user
-    if (character.user_id) {
-        if (!session.userId || character.user_id !== session.userId) {
-            return { allowed: false, reason: 'Access denied' };
-        }
-        return { allowed: true };
-    }
-
-    // Guest character - check both session.id AND guestSessionId
-    // (guestSessionId preserved when user authenticates)
-    const isOwner = character.session_id === session.id ||
-        character.session_id === session.guestSessionId;
-
-    if (!isOwner) {
+    if (character.user_id !== session.userId) {
         return { allowed: false, reason: 'Access denied' };
     }
 
@@ -89,7 +76,7 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
     }>('/new', {
         config: {
             rateLimit: {
-                max: process.env.NODE_ENV === 'test' ? 10000 : 15,
+                max: process.env.NODE_ENV === 'test' ? 10000 : 5,
                 timeWindow: '1 minute',
             },
         },
@@ -126,15 +113,12 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
 
             const characterId = result.generate_character;
 
-            // Bind character to session
-            // Use guestSessionId if available (for guests), otherwise session.id
-            const sessionIdForCharacter = session.guestSessionId || session.id;
-
+            // Bind character to user
             await query(
-                `UPDATE characters 
-                 SET session_id = $1, user_id = $2 
-                 WHERE id = $3`,
-                [sessionIdForCharacter, session.userId, characterId]
+                `UPDATE characters
+                 SET user_id = $1
+                 WHERE id = $2`,
+                [session.userId, characterId]
             );
 
             const character = await queryOne<CharacterFull>(
@@ -172,6 +156,10 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
         const locale = request.query.locale ?? 'en';
         const session = request.appSession;
 
+        if (!isValidUUID(id)) {
+            return reply.status(400).send({ error: 'Invalid character ID' });
+        }
+
         // Check access
         const access = await checkCharacterAccess(id, session);
         if (!access.allowed) {
@@ -203,6 +191,12 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
         Body: CharacterUpdate;
         Querystring: { locale?: string };
     }>('/:id', {
+        config: {
+            rateLimit: {
+                max: process.env.NODE_ENV === 'test' ? 10000 : 30,
+                timeWindow: '1 minute',
+            },
+        },
         schema: {
             description: 'Update a character',
             tags: ['characters'],
@@ -322,17 +316,17 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
         const { id } = request.params;
         const session = request.appSession;
 
+        if (!isValidUUID(id)) {
+            return reply.status(400).send({ error: 'Invalid character ID' });
+        }
+
         if (!session) {
             return reply.status(401).send({ error: 'Session required' });
         }
 
-        if (!session.userId) {
-            return reply.status(401).send({ error: 'Authentication required to claim character' });
-        }
-
         try {
-            const character = await queryOne<{ session_id: string | null; user_id: string | null }>(
-                'SELECT session_id, user_id FROM characters WHERE id = $1',
+            const character = await queryOne<{ user_id: string | null }>(
+                'SELECT user_id FROM characters WHERE id = $1',
                 [id]
             );
 
@@ -340,38 +334,23 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
                 return reply.status(404).send({ error: 'Character not found' });
             }
 
-            // Must be YOUR guest character
-            // Check both current session ID AND original guest session ID
-            const isOwner = character.session_id === session.id ||
-                character.session_id === session.guestSessionId;
-
-            if (!isOwner) {
-                request.log.warn({
-                    characterSessionId: character.session_id,
-                    sessionId: session.id,
-                    guestSessionId: session.guestSessionId
-                }, 'Claim denied - session mismatch');
-                return reply.status(403).send({ error: 'Not your character to claim' });
+            // Already claimed by this user? Idempotent success.
+            if (character.user_id === session.userId) {
+                return reply.send({ success: true });
             }
 
-            // Already claimed?
-            if (character.user_id) {
-                // Idempotent: if already claimed by the same user, return success
-                if (character.user_id === session.userId) {
-                    return reply.send({ success: true });
-                }
-                return reply.status(400).send({ error: 'Character already claimed' });
+            // Unclaimed character - allow claim
+            if (character.user_id === null) {
+                await query(
+                    `UPDATE characters SET user_id = $1 WHERE id = $2`,
+                    [session.userId, id]
+                );
+                request.log.info({ characterId: id, userId: session.userId }, 'Character claimed');
+                return reply.send({ success: true });
             }
 
-            // Claim it
-            await query(
-                `UPDATE characters SET user_id = $1 WHERE id = $2`,
-                [session.userId, id]
-            );
-
-            request.log.info({ characterId: id, userId: session.userId }, 'Character claimed');
-
-            return reply.send({ success: true });
+            // Owned by someone else
+            return reply.status(403).send({ error: 'Not your character to claim' });
         } catch (err) {
             request.log.error(err);
             return reply.status(500).send({ error: 'Failed to claim character' });
@@ -381,7 +360,7 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
     // GET / - List user's characters
     fastify.get('/', {
         schema: {
-            description: 'List characters for current session/user',
+            description: 'List characters for current user',
             tags: ['characters'],
             response: {
                 200: { type: 'array', items: CharacterSchema },
@@ -398,55 +377,25 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
         }
 
         try {
-            let characters: CharacterListRow[];
-
-            if (session.userId) {
-                // Authenticated: get all owned characters
-                // Also include unclaimed characters from their guest session
-                characters = await query<CharacterListRow>(
-                    `SELECT
-                        c.id,
-                        c.name,
-                        c.class_id,
-                        COALESCE(t_class_name.value, cl.name) AS class_name,
-                        c.current_hp,
-                        c.max_hp,
-                        c.created_at,
-                        c.updated_at
-                     FROM characters c
-                     LEFT JOIN classes cl ON cl.id = c.class_id
-                     LEFT JOIN translations t_class_name
-                        ON t_class_name.key = cl.name_key
-                       AND t_class_name.locale = $3
-                     WHERE c.user_id = $1
-                        OR (c.session_id = $2 AND c.user_id IS NULL)
-                     ORDER BY c.updated_at DESC`,
-                    [session.userId, session.guestSessionId, locale]
-                );
-            } else {
-                // Guest: get characters for this session only
-                characters = await query<CharacterListRow>(
-                    `SELECT
-                        c.id,
-                        c.name,
-                        c.class_id,
-                        COALESCE(t_class_name.value, cl.name) AS class_name,
-                        c.current_hp,
-                        c.max_hp,
-                        c.created_at,
-                        c.updated_at
-                     FROM characters c
-                     LEFT JOIN classes cl ON cl.id = c.class_id
-                     LEFT JOIN translations t_class_name
-                        ON t_class_name.key = cl.name_key
-                       AND t_class_name.locale = $2
-                     WHERE c.session_id = $1 AND c.user_id IS NULL
-                     ORDER BY c.updated_at DESC`,
-                    [session.id, locale]
-                );
-            }
-
-            return characters;
+            return await query<CharacterListRow>(
+                `SELECT
+                    c.id,
+                    c.name,
+                    c.class_id,
+                    COALESCE(t_class_name.value, cl.name) AS class_name,
+                    c.current_hp,
+                    c.max_hp,
+                    c.created_at,
+                    c.updated_at
+                 FROM characters c
+                 LEFT JOIN classes cl ON cl.id = c.class_id
+                 LEFT JOIN translations t_class_name
+                    ON t_class_name.key = cl.name_key
+                   AND t_class_name.locale = $2
+                 WHERE c.user_id = $1
+                 ORDER BY c.updated_at DESC`,
+                [session.userId, locale]
+            );
         } catch (err) {
             request.log.error(err);
             return reply.status(500).send({ error: 'Failed to list characters' });
@@ -472,6 +421,10 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
     }, async (request, reply) => {
         const { id } = request.params;
         const session = request.appSession;
+
+        if (!isValidUUID(id)) {
+            return reply.status(400).send({ error: 'Invalid character ID' });
+        }
 
         // Check access
         const access = await checkCharacterAccess(id, session);

@@ -1,40 +1,42 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
 
 export const CLAIM_CHARACTER_QUERY_PARAM = 'claim-character';
-export const CLAIM_SESSION_QUERY_PARAM = 'claim-session';
+export const CLAIM_SOURCE_QUERY_PARAM = 'claim-source';
 export const CLAIM_USER_QUERY_PARAM = 'claim-user';
 export const CLAIM_SIG_QUERY_PARAM = 'claim-sig';
 
-const CLAIM_HMAC_SECRET = process.env.SESSION_SECRET || process.env.BETTER_AUTH_SECRET || '';
+function getClaimHmacSecret(): string {
+    const secret = process.env.SESSION_SECRET || process.env.BETTER_AUTH_SECRET;
+    if (!secret) {
+        throw new Error('SESSION_SECRET or BETTER_AUTH_SECRET must be set');
+    }
+    return secret;
+}
 
-const buildPayload = (userId: string, guestSessionId: string, characterId: string): string =>
-    `${userId}:${guestSessionId}:${characterId}`;
+const buildPayload = (userId: string, sourceUserId: string, characterId: string): string =>
+    `${userId}:${sourceUserId}:${characterId}`;
 
 export function buildClaimSignature(
     userId: string,
-    guestSessionId: string,
+    sourceUserId: string,
     characterId: string
 ): string | null {
-    if (!CLAIM_HMAC_SECRET) {
-        return null;
-    }
-
-    return createHmac('sha256', CLAIM_HMAC_SECRET)
-        .update(buildPayload(userId, guestSessionId, characterId))
+    return createHmac('sha256', getClaimHmacSecret())
+        .update(buildPayload(userId, sourceUserId, characterId))
         .digest('hex');
 }
 
 export function verifyClaimSignature(
     userId: string,
-    guestSessionId: string,
+    sourceUserId: string,
     characterId: string,
     signature: string
 ): boolean {
-    if (!CLAIM_HMAC_SECRET || !signature) {
+    if (!signature) {
         return false;
     }
 
-    const expected = buildClaimSignature(userId, guestSessionId, characterId);
+    const expected = buildClaimSignature(userId, sourceUserId, characterId);
     if (!expected) {
         return false;
     }

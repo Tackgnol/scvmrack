@@ -8,10 +8,32 @@ import {sendEmail} from "./nodemailer.js";
 import {
     buildClaimSignature,
     CLAIM_CHARACTER_QUERY_PARAM,
-    CLAIM_SESSION_QUERY_PARAM,
+    CLAIM_SOURCE_QUERY_PARAM,
     CLAIM_SIG_QUERY_PARAM,
     CLAIM_USER_QUERY_PARAM,
 } from "./claimSignature.js";
+
+const ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "http://localhost:3000",
+    "https://scvmrack.rpgtools.eu.org",
+    ...[process.env.CLIENT_ORIGIN, process.env.CLIENT_GATEWAY].filter(Boolean),
+] as string[];
+
+function resolveAllowedOrigin(request: Request | null): string {
+    const fallback = process.env.CLIENT_ORIGIN ?? 'http://localhost:3000';
+    if (!request) return fallback;
+
+    const reqOrigin = request.headers.get('origin') || request.headers.get('referer');
+    if (!reqOrigin) return fallback;
+
+    try {
+        const origin = new URL(reqOrigin).origin;
+        if (ALLOWED_ORIGINS.includes(origin)) return origin;
+    } catch { /* invalid URL, use fallback */ }
+
+    return fallback;
+}
 
 const pool = new Pool({
     user: process.env.DATABASE_USER,
@@ -25,8 +47,8 @@ const auth = betterAuth({
     database: pool,
     trustedOrigins: [
         "http://localhost:5173",
-        "https://scvmgrinder.tackgnol.usermd.net",
-        "https://scvmgrinder.rpgtools.eu.org"
+        "https://scvmrack.rpgtools.eu.org",
+        ...[process.env.CLIENT_ORIGIN, process.env.CLIENT_GATEWAY].filter((x): x is string => Boolean(x)),
     ],
     baseURL: process.env.AUTH_BASE_URL || "http://localhost:3000/auth",
     emailAndPassword: {
@@ -70,10 +92,8 @@ const auth = betterAuth({
 
                 const verificationUrl = new URL(url);
                 const callback = verificationUrl.searchParams.get("callbackURL");
-                
-                const reqOrigin = request.headers.get('origin') || request.headers.get('referer');
-                const originToUse = reqOrigin ? new URL(reqOrigin).origin : (process.env.CLIENT_ORIGIN ?? 'http://localhost:3000');
-                
+                const originToUse = resolveAllowedOrigin(request);
+
                 if (!callback || callback.includes(":3000") || callback.includes("localhost")) {
                     verificationUrl.searchParams.set("callbackURL", originToUse);
                 } else if (callback.startsWith('/')) {
@@ -82,7 +102,7 @@ const auth = betterAuth({
 
                 await sendEmail(
                     recipientEmail,
-                    "Your Scvmgrinder login Link",
+                    "Your Scvmrack login link",
                     magicLinkEmail(verificationUrl.toString())
                 );
             },
@@ -124,8 +144,7 @@ const auth = betterAuth({
         autoSignInAfterVerification: true,
 
         sendVerificationEmail: async ({user, url}, request) => {
-            const reqOrigin = request?.headers?.get('origin') || request?.headers?.get('referer');
-            const originToUse = reqOrigin ? new URL(reqOrigin).origin : (process.env.CLIENT_ORIGIN ?? 'http://localhost:3000');
+            const originToUse = resolveAllowedOrigin(request ?? null);
 
             // Embed a signed ownership source + character id in callbackURL.
             // This survives email verification across browsers/devices.
@@ -155,7 +174,7 @@ const auth = betterAuth({
 
                 if (claimSourceId) {
                     verificationUrl.searchParams.set(CLAIM_CHARACTER_QUERY_PARAM, characterId);
-                    verificationUrl.searchParams.set(CLAIM_SESSION_QUERY_PARAM, claimSourceId);
+                    verificationUrl.searchParams.set(CLAIM_SOURCE_QUERY_PARAM, claimSourceId);
                     verificationUrl.searchParams.set(CLAIM_USER_QUERY_PARAM, user.id);
 
                     const signature = buildClaimSignature(user.id, claimSourceId, characterId);
@@ -173,7 +192,7 @@ const auth = betterAuth({
             const realEmail = decryptEmail((user as any).encrypted_email);
             await sendEmail(
                 realEmail,
-                "Verify your Scvmgrinder account",
+                "Verify your Scvmrack account",
                 verificationEmail(verificationUrl.toString())
             );
         },

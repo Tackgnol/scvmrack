@@ -4,27 +4,26 @@ import cors, { FastifyCorsOptions } from '@fastify/cors';
 export default fp<FastifyCorsOptions>(async (fastify) => {
     const defaultOrigins = [
         "http://localhost:5173",
-        "https://scvmgrinder.tackgnol.usermd.net",
-        "https://scvmgrinder.rpgtools.eu.org"
+        "https://scvmrack.rpgtools.eu.org"
     ];
 
     const envOrigins = [
         process.env.CLIENT_ORIGIN,
         process.env.CLIENT_GATEWAY,
-    ].filter((origin): origin is string => !!origin);
+    ].filter((origin): origin is string => !!origin)
+     .map(o => o.trim());
 
     const origins = Array.from(new Set([...defaultOrigins, ...envOrigins]));
 
     fastify.register(cors, {
         origin: origins,
-
-        methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
         allowedHeaders: [
             "Content-Type",
             "Authorization",
-            "X-Requested-With"
+            "x-csrf-token",
         ],
         credentials: true,
-        maxAge: 86400
+        maxAge: 3600
     });
 });
