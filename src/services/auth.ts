@@ -88,10 +88,6 @@ const auth = betterAuth({
           throw new Error('Email not found');
         }
 
-        if (!recipientEmail) {
-          throw new Error('Could not resolve recipient email.');
-        }
-
         const verificationUrl = new URL(url);
         const callback = verificationUrl.searchParams.get('callbackURL');
         const originToUse = resolveAllowedOrigin(request);

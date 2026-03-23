@@ -45,7 +45,7 @@ src/
 │   └── session/     # Session management
 ├── plugins/         # Fastify plugins (autoloaded)
 │   ├── cors.ts      # CORS configuration
-│   ├── guestSession.ts # Anonymous session handling
+│   ├── sessionResolver.ts # Session resolution (auth + anonymous)
 │   └── security.ts  # Helmet, rate limiting
 ├── services/        # Business logic
 │   ├── auth.ts      # better-auth setup
@@ -87,14 +87,55 @@ The frontend uses optimistic updates with debouncing. When editing a character:
 4. Failed updates retry up to 3 times with user notification
 
 ### Authentication Flow
-- Guest users get anonymous sessions stored in `guest_sessions` table
-- Authenticated users have characters linked via `user_id`
-- Characters can be "claimed" to bind guest characters to authenticated users
+- **Better Auth v1.4.13** manages all sessions via `__Secure-better-auth.session_token` cookie (`HttpOnly`, `Secure`, `SameSite=Lax`)
+- Three auth modes: email+password, magic link (passwordless), anonymous bootstrap (auto-created on page load)
+- The `sessionResolver.ts` plugin resolves Better Auth sessions into `request.appSession` on every request (skips `/auth/*` routes)
+- No roles/RBAC — authorization is purely ownership-based (`character.user_id === session.userId`)
+
+### Email Encryption Scheme
+- Emails are **never stored in plaintext** in the database
+- A **blind index** (HMAC-SHA256 with `EMAIL_PEPPER`) is stored as `<hash>@bidx.local` for lookup
+- The real email is encrypted with **AES-256-GCM** (`EMAIL_ENCRYPTION_KEY`) and stored in `encrypted_email`
+- The auth route interceptor (`src/routes/auth/index.ts`) transforms plaintext emails before passing to Better Auth, conveying the real email via the internal `x-plain-email` header (stripped from external requests)
+
+### Character Ownership Model
+Characters are bound to users via `user_id`. Three paths transfer ownership:
+1. **`onLinkAccount`** (auth.ts) — Better Auth callback when anonymous user links to email account (same browser session)
+2. **Auto-claim via `/verify-email`** — cross-browser/device verification using HMAC-signed claim parameters (`claimSignature.ts`). Signature binds `userId + sourceUserId + characterId` with `timingSafeEqual`
+3. **`POST /characters/:id/claim`** — manual endpoint, restricted to authenticated users claiming characters from anonymous users only
 
 ### Database Functions
 - `generate_character(class_id)` - Creates random character
 - `get_character_full(id, locale)` - Returns character with localized data
 - Equipment search uses fuzzy matching with PostgreSQL trigram indexes
+
+## Security Architecture
+
+Pentested with Shannon AI (2026-03-23). All findings remediated or accepted.
+
+### Validated Security Controls
+
+| Control | Implementation | Status |
+|---|---|---|
+| Session cookies | `HttpOnly`, `Secure`, `SameSite=Lax`, `__Secure-` prefix | Verified |
+| HSTS | `max-age=31536000; includeSubDomains` via `@fastify/helmet` | Verified |
+| CSRF | HMAC double-submit cookie on all POST/PATCH/DELETE/PUT outside `/auth/*` | Verified |
+| Password hashing | bcrypt via Better Auth | Verified |
+| Session invalidation | `deleteSession()` clears DB record + cookie on logout | Verified |
+| SQL injection | Parameterized queries (`pg` library) throughout, no dynamic column names | Verified |
+| Cache-control | `no-store, no-cache, must-revalidate, private` on all auth responses | Verified |
+| Rate limiting | 10 req/min per IP on auth endpoints, 30 req/min on character/equipment | Verified |
+| Turnstile CAPTCHA | Server-side Cloudflare verification on sign-in/sign-up/magic-link | Verified |
+| Claim signatures | HMAC-SHA256 with `timingSafeEqual`, buffer length validation | Verified |
+| Swagger/OpenAPI | Disabled in production (`NODE_ENV=production`) | Verified |
+| Dockerfile | Runs as `node` user, not root | Verified |
+
+### Security Considerations When Modifying
+- **Never commit secrets** to version control (`.env` files are in `.gitignore`)
+- **Never expose `x-plain-email`** — it is an internal header, stripped from external requests in the auth route
+- **Sign-up error responses** are normalized to prevent user enumeration
+- **Claim endpoint** only allows claiming from anonymous users — never modify to allow claiming from authenticated users
+- **GCM decryption** validates IV (16 bytes) and auth tag (16 bytes) before decrypting
 
 ## Database Reapply Scripts
 
@@ -104,6 +145,16 @@ The project includes scripts to reapply database schema:
 
 ## Environment Variables
 
-- `.env` - Development configuration
-- `.env.mydevil` - Production server configuration
-- Required: DATABASE_URL, SESSION_SECRET, BETTER_AUTH_SECRET
+- `.env` - Development configuration (never commit to git)
+- Required: `DATABASE_USER`, `DATABASE_HOST`, `DATABASE_NAME`, `DATABASE_PASSWORD`, `DATABASE_PORT`
+- Required: `BETTER_AUTH_SECRET`, `EMAIL_PEPPER` (min 32 chars), `EMAIL_ENCRYPTION_KEY` (64 hex chars)
+- Optional: `AUTH_BASE_URL`, `CLIENT_ORIGIN`, `CLIENT_GATEWAY`, `TURNSTILE_SECRET_KEY`
+
+## Recommended Skills
+
+When working on this codebase, use these skills for best results:
+- **`backend-security-coder`** — for any auth, crypto, or security-related changes
+- **`fastify-best-practices`** — for route handlers, plugins, hooks, schemas
+- **`shannon`** — to run pentests against staging before releases
+- **`code-reviewer`** — review completed work against plan and standards
+- **`postgresql`** — for database schema, functions, or query changes

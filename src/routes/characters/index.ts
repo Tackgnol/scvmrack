@@ -388,28 +388,6 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
       }
 
       try {
-        // Atomically reassign ownership: only if the character currently
-        // belongs to the caller's own anonymous identity (or is already theirs).
-        // This prevents claiming characters that belong to other users or
-        // orphaned characters the caller never owned.
-        const claimed = await query<{ id: string }>(
-          `UPDATE characters
-             SET user_id = $1
-           WHERE id = $2
-             AND user_id != $1
-           RETURNING id`,
-          [session.userId, id]
-        );
-
-        if (claimed.length > 0) {
-          request.log.info(
-            { characterId: id, userId: session.userId },
-            'Character claimed'
-          );
-          return reply.send({ success: true });
-        }
-
-        // Check why the update didn't match
         const character = await queryOne<{ user_id: string | null }>(
           'SELECT user_id FROM characters WHERE id = $1',
           [id]
@@ -424,7 +402,43 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
           return reply.send({ success: true });
         }
 
-        // Owned by someone else or unclaimed (not ours to take).
+        // Only allow claiming characters owned by anonymous users.
+        // This prevents stealing characters from other authenticated users.
+        if (!character.user_id) {
+          return reply
+            .status(403)
+            .send({ error: 'Not your character to claim' });
+        }
+
+        const owner = await queryOne<{ isAnonymous: boolean }>(
+          'SELECT "isAnonymous" FROM "user" WHERE id = $1',
+          [character.user_id]
+        );
+
+        if (!owner?.isAnonymous) {
+          return reply
+            .status(403)
+            .send({ error: 'Not your character to claim' });
+        }
+
+        // Atomically reassign from anonymous owner to authenticated user.
+        const claimed = await query<{ id: string }>(
+          `UPDATE characters
+             SET user_id = $1
+           WHERE id = $2
+             AND user_id = $3
+           RETURNING id`,
+          [session.userId, id, character.user_id]
+        );
+
+        if (claimed.length > 0) {
+          request.log.info(
+            { characterId: id, userId: session.userId },
+            'Character claimed'
+          );
+          return reply.send({ success: true });
+        }
+
         return reply.status(403).send({ error: 'Not your character to claim' });
       } catch (err) {
         request.log.error(err);

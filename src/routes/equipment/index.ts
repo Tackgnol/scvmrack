@@ -21,7 +21,7 @@ const equipment: FastifyPluginAsync = async (fastify) => {
           required: ['q'],
           properties: {
             q: { type: 'string', minLength: 1, maxLength: 100 },
-            locale: { type: 'string', default: 'en', maxLength: 10 },
+            locale: { type: 'string', default: 'en', enum: ['en', 'pl'] },
             limit: { type: 'integer', default: 20, minimum: 1, maximum: 100 },
           },
         },
