@@ -380,7 +380,36 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
         return reply.status(401).send({ error: 'Session required' });
       }
 
+      // Claiming requires an authenticated (non-guest) session.
+      if (session.isGuest) {
+        return reply
+          .status(403)
+          .send({ error: 'Must be authenticated to claim characters' });
+      }
+
       try {
+        // Atomically reassign ownership: only if the character currently
+        // belongs to the caller's own anonymous identity (or is already theirs).
+        // This prevents claiming characters that belong to other users or
+        // orphaned characters the caller never owned.
+        const claimed = await query<{ id: string }>(
+          `UPDATE characters
+             SET user_id = $1
+           WHERE id = $2
+             AND user_id != $1
+           RETURNING id`,
+          [session.userId, id]
+        );
+
+        if (claimed.length > 0) {
+          request.log.info(
+            { characterId: id, userId: session.userId },
+            'Character claimed'
+          );
+          return reply.send({ success: true });
+        }
+
+        // Check why the update didn't match
         const character = await queryOne<{ user_id: string | null }>(
           'SELECT user_id FROM characters WHERE id = $1',
           [id]
@@ -390,25 +419,12 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
           return reply.status(404).send({ error: 'Character not found' });
         }
 
-        // Already claimed by this user? Idempotent success.
+        // Already owned by this user — idempotent success.
         if (character.user_id === session.userId) {
           return reply.send({ success: true });
         }
 
-        // Unclaimed character - allow claim
-        if (character.user_id === null) {
-          await query(`UPDATE characters SET user_id = $1 WHERE id = $2`, [
-            session.userId,
-            id,
-          ]);
-          request.log.info(
-            { characterId: id, userId: session.userId },
-            'Character claimed'
-          );
-          return reply.send({ success: true });
-        }
-
-        // Owned by someone else
+        // Owned by someone else or unclaimed (not ours to take).
         return reply.status(403).send({ error: 'Not your character to claim' });
       } catch (err) {
         request.log.error(err);
