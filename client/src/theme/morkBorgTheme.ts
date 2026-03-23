@@ -33,6 +33,8 @@ const sectionStamp = {
   px: 1.25,
   py: 0.25,
   display: 'inline-block',
+  userSelect: 'none' as const,
+  WebkitTapHighlightColor: 'transparent',
 } as const;
 
 // Custom reusable styles
