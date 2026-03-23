@@ -1,9 +1,9 @@
-import { baseEmailLayout } from "./baseLayout.js";
+import { baseEmailLayout } from './baseLayout.js';
 
 export const verificationEmail = (verificationUrl: string) =>
-    baseEmailLayout(
-        "One Final Oath",
-        `
+  baseEmailLayout(
+    'One Final Oath',
+    `
         <tr>
             <td style="font-size:15px; line-height:1.6; padding-bottom:24px;">
                 Confirm this email address to complete your registration.
@@ -18,8 +18,8 @@ export const verificationEmail = (verificationUrl: string) =>
             </td>
         </tr>
         `,
-        `
+    `
         This verification link expires soon.<br>
         If you did not create an account, you can safely ignore this email.
         `
-    );
+  );

@@ -3,7 +3,13 @@ import { access, readFile } from 'node:fs/promises';
 import { constants } from 'node:fs';
 import { extname, join } from 'node:path';
 
-const apiPrefixes = ['/auth', '/characters', '/equipment', '/session', '/health'];
+const apiPrefixes = [
+  '/auth',
+  '/characters',
+  '/equipment',
+  '/session',
+  '/health',
+];
 
 const spaIndexCandidates = [
   join(process.cwd(), 'public', 'index.html'),
@@ -11,14 +17,15 @@ const spaIndexCandidates = [
 ];
 
 const isApiRoute = (pathname: string): boolean =>
-  apiPrefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
+  apiPrefixes.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
+  );
 
 const isSpaRouteRequest = (url: string): boolean => {
   const pathname = url.split('?')[0] || '/';
   if (isApiRoute(pathname)) return false;
   // Skip static assets and file-like requests.
   return !extname(pathname);
-
 };
 
 const resolveSpaIndexPath = async (): Promise<string | null> => {
@@ -37,7 +44,7 @@ const root: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
   // GET /health
   fastify.get('/health', async () => ({
     status: 'ok',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   }));
 
   const spaIndexPath = await resolveSpaIndexPath();
@@ -56,13 +63,15 @@ const root: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
         }
         return reply.type('text/html; charset=utf-8').send(spaIndexHtmlCache);
       } catch (error) {
-        request.log.error({ err: error }, 'Failed to read SPA index.html for fallback response.');
+        request.log.error(
+          { err: error },
+          'Failed to read SPA index.html for fallback response.'
+        );
       }
     }
 
     return reply.status(404).send({
-      message: `Route ${request.method}:${request.url} not found`,
-      error: 'Not Found',
+      message: 'Not Found',
       statusCode: 404,
     });
   });
