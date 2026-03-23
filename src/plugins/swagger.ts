@@ -4,6 +4,10 @@ import swaggerUi from '@fastify/swagger-ui';
 import { FastifyPluginAsync } from 'fastify';
 
 const swaggerPlugin: FastifyPluginAsync = async (fastify) => {
+  if (process.env.NODE_ENV === 'production') {
+    return;
+  }
+
   await fastify.register(swagger, {
     openapi: {
       openapi: '3.0.0',
