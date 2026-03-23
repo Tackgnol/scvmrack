@@ -1,4 +1,8 @@
-export const baseEmailLayout = (title: string, body: string, footer: string) => `
+export const baseEmailLayout = (
+  title: string,
+  body: string,
+  footer: string
+) => `
 <!DOCTYPE html>
 <html>
 <body style="margin:0; padding:0; background:#000000; color:#ffffff; font-family:Arial, Helvetica, sans-serif;">

@@ -1,9 +1,9 @@
-import { baseEmailLayout } from "./baseLayout.js";
+import { baseEmailLayout } from './baseLayout.js';
 
 export const magicLinkEmail = (url: string) =>
-    baseEmailLayout(
-        "Souls Dispatched",
-        `
+  baseEmailLayout(
+    'Souls Dispatched',
+    `
         <tr>
             <td style="font-size:15px; line-height:1.6; padding-bottom:24px;">
                 You requested a magic link to sign in.
@@ -18,8 +18,8 @@ export const magicLinkEmail = (url: string) =>
             </td>
         </tr>
         `,
-        `
+    `
         This link expires soon and can only be used once.<br>
         If you did not request this, ignore this email.
         `
-    );
+  );

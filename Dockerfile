@@ -6,7 +6,10 @@ COPY package*.json ./
 RUN npm install
 
 COPY . .
+RUN npm run build:ts
+
+USER node
 
 EXPOSE 3000
 
-CMD ["npm", "run", "dev"]
+CMD ["node", "dist/server.js"]
