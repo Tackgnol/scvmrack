@@ -100,9 +100,9 @@ const authRoutes: FastifyPluginAsync = async (fastify): Promise<void> => {
         const fullUrl = `${base.origin}${request.url}`;
 
         const headers = new Headers();
+        const stripHeaders = ['content-length', 'host', 'x-plain-email'];
         Object.entries(request.headers).forEach(([key, value]) => {
-          // Filter out headers that the 'new Request' constructor should handle
-          if (['content-length', 'host'].includes(key.toLowerCase())) return;
+          if (stripHeaders.includes(key.toLowerCase())) return;
           if (value)
             headers.append(
               key,
@@ -252,6 +252,25 @@ const authRoutes: FastifyPluginAsync = async (fastify): Promise<void> => {
               'Auto-claim after verification failed (non-fatal)'
             );
           }
+        }
+
+        // Normalize sign-up error responses to prevent user enumeration.
+        // Better Auth returns distinguishable errors for existing vs new emails.
+        const isSignUp = requestPath === '/sign-up/email';
+        if (isSignUp && response.status >= 400 && response.status < 500) {
+          reply.status(200);
+          response.headers.forEach((v, k) => reply.header(k, v));
+          reply.header(
+            'cache-control',
+            'no-store, no-cache, must-revalidate, private'
+          );
+          reply.header('pragma', 'no-cache');
+          return reply.send(
+            JSON.stringify({
+              message:
+                'If this email is not registered, a verification email has been sent.',
+            })
+          );
         }
 
         reply.status(response.status);
