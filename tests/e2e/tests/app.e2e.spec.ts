@@ -1,6 +1,8 @@
 import { expect, test } from '@playwright/test';
 
 test.beforeEach(async ({ page }) => {
+  // Clear cookies to prevent stale session issues between parallel tests
+  await page.context().clearCookies();
   await page.addInitScript(() => {
     localStorage.setItem(
       'scvmgrinder-privacy-settings-v1',

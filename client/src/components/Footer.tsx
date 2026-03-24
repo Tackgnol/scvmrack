@@ -5,9 +5,11 @@ import {Trans, useTranslation} from 'react-i18next';
 
 interface FooterProps {
     onGenerateNew: () => void;
+    generateNewLabel?: string;
+    onKillScvm?: () => void;
 }
 
-export default function Footer({onGenerateNew}: FooterProps) {
+export default function Footer({onGenerateNew, generateNewLabel, onKillScvm}: FooterProps) {
     const {t} = useTranslation();
 
     const handleOpenPrivacy = () => {
@@ -18,8 +20,17 @@ export default function Footer({onGenerateNew}: FooterProps) {
         <Box sx={customStyles.footer.paper}>
             <Box sx={customStyles.footer.buttonContainer}>
                 <Button data-testid="generate-new-button" onClick={onGenerateNew} sx={customStyles.footerButton}>
-                    {t('actions.generateNew')}
+                    {generateNewLabel || t('actions.generateNew')}
                 </Button>
+                {onKillScvm && (
+                    <Button
+                        data-testid="kill-scvm-button"
+                        onClick={onKillScvm}
+                        sx={customStyles.killButton}
+                    >
+                        {t('actions.killScvm', 'Kill Scvm')}
+                    </Button>
+                )}
             </Box>
             <Typography sx={customStyles.footer.title}>
                 <Trans i18nKey="footer.worldEnding">

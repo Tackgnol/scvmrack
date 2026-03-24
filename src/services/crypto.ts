@@ -52,7 +52,7 @@ export function decryptEmail(encryptedEmail: string): string {
     throw new Error('Invalid encrypted email format');
   }
   const [ivHex, authTagHex, encrypted] = parts;
-  if (!ivHex || !authTagHex || !encrypted) {
+  if (!ivHex || !authTagHex || encrypted === undefined) {
     throw new Error('Invalid encrypted email format');
   }
   const iv = Buffer.from(ivHex, 'hex');

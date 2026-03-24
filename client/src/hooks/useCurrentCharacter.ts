@@ -191,6 +191,40 @@ export function useCurrentCharacter() {
         [editor, repo.createCharacter, trimmedLocale, isAuthenticated, isGuest, setCharacterId, setAutoCreateFailed]
     );
 
+    // ---- Kill current character and generate a new one ----
+    const killAndReplace = useCallback(
+        (options?: GenerateNewOptions) => {
+            const idToKill = characterId;
+            if (!idToKill) {
+                // No character to kill, just generate
+                generateNewCharacter(undefined, options);
+                return;
+            }
+
+            editor.flush();
+
+            // Delete first, then generate
+            repo.deleteCharacter.mutate(
+                { params: { path: { id: idToKill } } } as any,
+                {
+                    onSuccess: () => {
+                        trackEvent('kill_character', {
+                            locale: trimmedLocale,
+                            is_authenticated: isAuthenticated,
+                            is_guest: isGuest,
+                        });
+                        generateNewCharacter(undefined, options);
+                    },
+                    onError: (error) => {
+                        showError('Failed to kill character');
+                        options?.onError?.(error);
+                    },
+                }
+            );
+        },
+        [characterId, editor, repo.deleteCharacter, generateNewCharacter, trimmedLocale, isAuthenticated, isGuest, showError]
+    );
+
     // ---- Change locale (original logic) ----
     const changeLocale = useCallback(
         async (newLocale: 'en' | 'pl') => {
@@ -244,6 +278,7 @@ export function useCurrentCharacter() {
         setCharacterId,
         changeLocale,
         generateNew: generateNewCharacter,
+        killAndReplace,
 
         // All editor methods exposed (original)
         ...editor,

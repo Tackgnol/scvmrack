@@ -31,6 +31,7 @@
     "title": "To jeszcze nie koniec...",
     "rollPrompt": "Rzuć d4",
     "close": "Zamknij",
+    "kill": "Zabij i Zastąp",
     "rules": {
       "one": "1 → Tracisz przytomność na d4 rund; potem budzisz się z d4 PŻ.",
       "two": "2 → Rzuć d6: 1-5 = Złamana lub odcięta kończyna. 6 = Utracone oko. Nie możesz działać przez d4 rundy; potem wracasz z d4 PŻ.",
@@ -176,6 +177,10 @@
   },
   "actions": {
     "generateNew": "Generuj Nową",
+    "killScvm": "Zabij Scvma",
+    "killConfirmTitle": "ZABIĆ TEGO SCVMA?",
+    "killConfirm": "Zabij i Zastąp",
+    "killConfirmDesc": "\"{{name}}\" zostanie trwale usunięty i nowy scvm się wyczołga.",
     "testModal": "Testuj Modal",
     "cancel": "Anuluj"
   },
@@ -220,7 +225,19 @@
     "sendMagicLink": "Wyślij mi magiczny link",
     "magicLinkFailed": "Nie udało się wysłać magicznego linku. Spróbuj ponownie.",
     "emailRequired": "Email jest wymagany do magicznego linku",
-    "sessionExpired": "Twoja sesja wygasła. Zaloguj się ponownie, aby kontynuować."
+    "sessionExpired": "Twoja sesja wygasła. Zaloguj się ponownie, aby kontynuować.",
+    "forgotPassword": "Zapomniałeś hasła?",
+    "resetEmailTitle": "SPRAWDŹ SWÓJ ZWÓJ",
+    "resetEmailDesc": "Jeśli ten email jest zarejestrowany, link do resetowania hasła został wysłany.",
+    "resetPasswordTitle": "RESETUJ HASŁO",
+    "newPassword": "Nowe Hasło",
+    "confirmPassword": "Potwierdź Hasło",
+    "passwordsMismatch": "Hasła nie pasują do siebie.",
+    "resetPasswordButton": "Resetuj Hasło",
+    "resetSuccess": "HASŁO WYKUTE NA NOWO",
+    "resetSuccessDesc": "Twoje hasło zostało zresetowane. Możesz się teraz zalogować.",
+    "resetFailed": "Resetowanie hasła nie powiodło się. Link mógł wygasnąć.",
+    "invalidResetLink": "Nieprawidłowy lub wygasły link do resetowania."
   },
   "session": {
     "loggedOut": "Wylogowano.",

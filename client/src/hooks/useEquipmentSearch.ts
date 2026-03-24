@@ -45,9 +45,11 @@ export function useItemSearch(options: { debounceMs?: number; limit?: number } =
 
     const enabled = debouncedQuery.length > 0;
 
+    const locale = (i18n.resolvedLanguage ?? i18n.language ?? 'en').split('-')[0];
+
     const queryKey = useMemo(
-        () => ['item-search', debouncedQuery, i18n.language, limit],
-        [debouncedQuery, i18n.language, limit]
+        () => ['item-search', debouncedQuery, locale, limit],
+        [debouncedQuery, locale, limit]
     );
 
     const {data, isLoading, error} = useQuery({
@@ -55,7 +57,7 @@ export function useItemSearch(options: { debounceMs?: number; limit?: number } =
         queryFn: () =>
             fetchItemSearch(
                 debouncedQuery,
-                i18n.language,
+                locale,
                 limit
             ),
         enabled,

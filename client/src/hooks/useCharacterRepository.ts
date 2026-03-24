@@ -86,6 +86,15 @@ export function useCharacterRepository(characterId: string | null, locale?: stri
         }
     });
 
+    // ---- Delete Character ----
+    const deleteCharacter = $api.useMutation('delete', '/characters/{id}', {
+        onSuccess: (_data, vars) => {
+            const id = (vars as any).params.path.id;
+            queryClient.removeQueries({ queryKey: getCharacterKey(id, locale) });
+            queryClient.invalidateQueries({ queryKey: characterKeys.list() });
+        },
+    });
+
     // ---- Claim Character (guest -> authenticated) ----
     const claimCharacter = $api.useMutation('post', '/characters/{id}/claim' as any, {
         onSuccess: (_data, vars) => {
@@ -117,6 +126,7 @@ export function useCharacterRepository(characterId: string | null, locale?: stri
 
         createCharacter,
         updateCharacter,
+        deleteCharacter,
         claimCharacter,
         refetchCharacter,
         getCharacterKey

@@ -3,6 +3,8 @@ import { pollEmailLink } from './utils/mailpit.js';
 
 // Pre-acknowledge the privacy notice so the drawer never opens and blocks clicks
 test.beforeEach(async ({ page }) => {
+  // Clear cookies to prevent stale session issues between parallel tests
+  await page.context().clearCookies();
   await page.addInitScript(() => {
     localStorage.setItem(
       'scvmgrinder-privacy-settings-v1',
