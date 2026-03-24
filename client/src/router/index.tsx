@@ -33,12 +33,18 @@ const releaseRoute = createRoute({
     component: lazyRouteComponent(() => import('@/pages/ReleasePage').then(m => ({ default: m.ReleasePage }))),
 });
 
+const resetPasswordRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: '/reset-password',
+    component: lazyRouteComponent(() => import('@/pages/ResetPasswordPage').then(m => ({ default: m.ResetPasswordPage }))),
+});
 
 const routeTree = rootRoute.addChildren([
     indexRoute,
     charactersRoute,
     faqRoute,
     releaseRoute,
+    resetPasswordRoute,
 ]);
 
 

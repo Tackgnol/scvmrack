@@ -73,21 +73,24 @@ export async function runCharacterSheetEditingSteps(page: Page, syncBadgeTimeout
   await expect(syncBadge).toBeVisible();
 
   // Step 10: Add scroll to inventory
-  const eqSearch = page.getByTestId('equipment-search-input');
+  const eqSearch = page.getByTestId('equipment-search-input').first();
+  await eqSearch.click();
   await eqSearch.fill('scroll'); // type "scroll"
-  await page.waitForTimeout(500); // Wait for debounce/search
+  await page.waitForTimeout(1000); // Wait for debounce/search
   await page.getByRole('option').first().click();
   await expect(syncBadge).toBeVisible();
 
   // Step 11: Add armor
+  await eqSearch.click();
   await eqSearch.fill('armor');
-  await page.waitForTimeout(500);
+  await page.waitForTimeout(1000);
   await page.getByRole('option').first().click();
   await expect(syncBadge).toBeVisible();
 
   // Step 12: Add weapon
+  await eqSearch.click();
   await eqSearch.fill('weapon');
-  await page.waitForTimeout(500);
+  await page.waitForTimeout(1000);
   await page.getByRole('option').first().click();
   await expect(syncBadge).toBeVisible();
 

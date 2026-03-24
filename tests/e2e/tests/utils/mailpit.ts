@@ -33,7 +33,8 @@ export async function pollEmailLink(
     const recentMessages = (data.messages || [])
       .filter((m) => {
         const isToUser = m.To?.some((t) => t.Address.toLowerCase() === email.toLowerCase());
-        const isRecent = new Date(m.Created) > sinceDate;
+        // Allow a 5-second buffer for slight clock differences between containers
+        const isRecent = new Date(m.Created) > new Date(sinceDate.getTime() - 5000);
         return isToUser && isRecent;
       })
       .sort((a, b) => new Date(b.Created).getTime() - new Date(a.Created).getTime());

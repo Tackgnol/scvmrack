@@ -466,6 +466,26 @@ export const customStyles = {
     },
   },
 
+  // Kill button — blood-red, menacing
+  killButton: {
+    backgroundColor: '#8b0000',
+    border: `2px solid ${morkBorgColors.black}`,
+    color: morkBorgColors.yellow,
+    fontFamily: "'Antonio', sans-serif",
+    fontSize: '0.65rem',
+    letterSpacing: '0.2em',
+    px: 3,
+    py: 0.75,
+    boxShadow: `3px 3px 0 ${morkBorgColors.black}`,
+    transition: 'all 0.15s ease',
+    '&:hover': {
+      backgroundColor: morkBorgColors.pink,
+      color: morkBorgColors.black,
+      transform: 'translate(-1px, -1px)',
+      boxShadow: '4px 4px 0 #8b0000',
+    },
+  },
+
   // Character card (for list page)
   characterCard: {
     backgroundColor: morkBorgColors.black,
@@ -794,10 +814,39 @@ export const customStyles = {
     },
   },
 
-  // SnackbarProvider Alert
+  // SnackbarProvider Alert — styled to match Mörk Borg aesthetic
   snackbarAlert: {
     width: '100%',
     alignItems: 'center',
+    borderRadius: 0,
+    fontFamily: "'Antonio', sans-serif",
+    fontSize: '0.8rem',
+    letterSpacing: '0.1em',
+    textTransform: 'uppercase' as const,
+    border: `2px solid ${morkBorgColors.black}`,
+    boxShadow: `4px 4px 0 ${morkBorgColors.black}`,
+    '&.MuiAlert-filled' : {
+      // Keep filled variant but override colors per severity below
+    },
+    '&.MuiAlert-filledError': {
+      backgroundColor: '#8b0000',
+      color: morkBorgColors.yellow,
+    },
+    '&.MuiAlert-filledSuccess': {
+      backgroundColor: morkBorgColors.yellow,
+      color: morkBorgColors.black,
+      '& .MuiAlert-icon': { color: morkBorgColors.black },
+    },
+    '&.MuiAlert-filledInfo': {
+      backgroundColor: morkBorgColors.black,
+      color: morkBorgColors.white,
+      border: `2px solid ${morkBorgColors.yellow}`,
+    },
+    '&.MuiAlert-filledWarning': {
+      backgroundColor: morkBorgColors.pink,
+      color: morkBorgColors.black,
+      '& .MuiAlert-icon': { color: morkBorgColors.black },
+    },
   },
 
   // AuthModal error alert

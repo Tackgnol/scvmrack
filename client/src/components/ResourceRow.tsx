@@ -30,7 +30,7 @@ const numberPulse = keyframes`
 `;
 
 export default function ResourcesRow() {
-  const { character, updateField, updateArmorField } = useCharacter();
+  const { character, updateField, updateArmorField, killAndReplace } = useCharacter();
   const { t } = useTranslation();
   const [omensModalOpen, setOmensModalOpen] = useState(false);
   const [deathModalOpen, setDeathModalOpen] = useState(false);
@@ -388,9 +388,29 @@ export default function ResourcesRow() {
         title={t('deathModal.title', "It's not ever...yet")}
         maxWidth="sm"
         actions={
-          <Button onClick={() => setDeathModalOpen(false)} variant="contained">
-            {t('deathModal.close', 'Close')}
-          </Button>
+          <>
+            <Button onClick={() => setDeathModalOpen(false)} variant="contained">
+              {t('deathModal.close', 'Close')}
+            </Button>
+            <Button
+              onClick={() => {
+                setDeathModalOpen(false);
+                killAndReplace();
+              }}
+              variant="contained"
+              data-testid="death-modal-kill-button"
+              sx={{
+                backgroundColor: '#8b0000',
+                color: morkBorgColors.yellow,
+                '&:hover': {
+                  backgroundColor: morkBorgColors.pink,
+                  color: morkBorgColors.black,
+                },
+              }}
+            >
+              {t('deathModal.kill', 'Kill & Replace')}
+            </Button>
+          </>
         }
       >
         <Typography

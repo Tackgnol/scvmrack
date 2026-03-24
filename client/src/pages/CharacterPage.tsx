@@ -101,12 +101,13 @@ function SectionAccordion({
 }
 
 export function CharacterPage() {
-    const {generateNew, error, character, characterId, isLoading} = useCharacter();
+    const {generateNew, killAndReplace, isAuthenticated, error, character, characterId, isLoading} = useCharacter();
     const {t} = useTranslation();
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
     const prefersReducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
     const [deathStampVisible, setDeathStampVisible] = useState(false);
+    const [killConfirmOpen, setKillConfirmOpen] = useState(false);
 
     const isNotFound = !!error && !character && !!characterId && !isLoading;
     const equipment = character?.equipment ?? [];
@@ -119,10 +120,26 @@ export function CharacterPage() {
     const hasBackpack = (character?.storage ?? []).length > 0;
     const defaultExpanded = !isMobile;
 
+    // Guests only have one character — "Generate New" is effectively a kill.
+    // Authenticated users keep the old character in their list.
     const handleNew = () => {
         setDeathStampVisible(true);
-        generateNew()
-    }
+        if (isAuthenticated) {
+            generateNew();
+        } else {
+            killAndReplace();
+        }
+    };
+
+    const handleKillRequest = () => {
+        setKillConfirmOpen(true);
+    };
+
+    const handleKillConfirm = () => {
+        setKillConfirmOpen(false);
+        setDeathStampVisible(true);
+        killAndReplace();
+    };
 
     useEffect(() => {
         if (!deathStampVisible) return;
@@ -212,7 +229,31 @@ export function CharacterPage() {
             <NotesSection />
             <Footer
                 onGenerateNew={handleNew}
+                generateNewLabel={isAuthenticated ? undefined : t('actions.killScvm')}
+                onKillScvm={isAuthenticated ? handleKillRequest : undefined}
             />
+            <MorkBorgModal
+                open={killConfirmOpen}
+                onClose={() => setKillConfirmOpen(false)}
+                title={t('actions.killConfirmTitle', 'KILL THIS SCVM?')}
+                maxWidth="xs"
+                actions={
+                    <>
+                        <ModalButton variant="secondary" onClick={() => setKillConfirmOpen(false)}>
+                            {t('actions.cancel')}
+                        </ModalButton>
+                        <ModalButton variant="danger" onClick={handleKillConfirm} data-testid="kill-confirm-button">
+                            {t('actions.killConfirm', 'Kill & Replace')}
+                        </ModalButton>
+                    </>
+                }
+            >
+                <Typography>
+                    {t('actions.killConfirmDesc', '"{{name}}" will be permanently deleted and a new scvm will crawl out.', {
+                        name: character?.name || t('character.unnamedWretch'),
+                    })}
+                </Typography>
+            </MorkBorgModal>
         </>
     );
 }

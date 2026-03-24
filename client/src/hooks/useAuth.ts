@@ -134,7 +134,10 @@ export function useAuth() {
             }
 
             const { data, error } = await authClient.signIn.email(payload as any);
-            if (error) throw error;
+            if (error) {
+                const message = error.message || (error as any).error?.message || 'Login failed';
+                throw new Error(message);
+            }
             return data;
         },
         onSuccess: (_data, vars) => {
@@ -166,7 +169,10 @@ export function useAuth() {
             }
 
             const { data, error } = await authClient.signUp.email(payload as any);
-            if (error) throw error;
+            if (error) {
+                const message = error.message || (error as any).error?.message || 'Sign up failed';
+                throw new Error(message);
+            }
             return data;
         },
         onSuccess: (_data, vars) => {
@@ -194,16 +200,42 @@ export function useAuth() {
         },
     });
 
-    // Forgot password
-    // const forgotPassword = useMutation({
-    //     mutationFn: async (email: string) => {
-    //         const { error } = await authClient.forgetPassword({
-    //             email,
-    //             redirectTo: "/reset-password",
-    //         });
-    //         if (error) throw error;
-    //     },
-    // });
+    const forgotPassword = useMutation({
+        mutationFn: async ({ email, turnstileToken }: { email: string; turnstileToken?: string }) => {
+            const payload: Record<string, unknown> = {
+                email,
+                redirectTo: '/reset-password',
+            };
+            if (turnstileToken) {
+                payload.turnstileToken = turnstileToken;
+            }
+            const res = await fetch(`${import.meta.env.VITE_BACKEND_URL || ''}/auth/request-password-reset`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify(payload),
+            });
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                throw new Error(data.message || 'Request failed');
+            }
+        },
+    });
+
+    const resetPassword = useMutation({
+        mutationFn: async ({ newPassword, token }: { newPassword: string; token: string }) => {
+            const res = await fetch(`${import.meta.env.VITE_BACKEND_URL || ''}/auth/reset-password`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ newPassword, token }),
+            });
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                throw new Error(data.message || 'Password reset failed');
+            }
+        },
+    });
 
     const signInMagicLink = useMutation({
         mutationFn: async ({ email, turnstileToken, callbackURL }: MagicLinkCredentials) => {
@@ -220,7 +252,10 @@ export function useAuth() {
 
             const { data, error } = await authClient.signIn.magicLink(payload as any);
 
-            if (error) throw error;
+            if (error) {
+                const message = error.message || (error as any).error?.message || 'Magic link failed';
+                throw new Error(message);
+            }
             return data;
         },
         onSuccess: (_data, vars) => {
@@ -247,7 +282,8 @@ export function useAuth() {
         signIn,
         signUp,
         signOut,
-        signInMagicLink
-        // forgotPassword,
+        signInMagicLink,
+        forgotPassword,
+        resetPassword,
     };
 }

@@ -3,6 +3,8 @@ import { registerAndLogin } from './utils/auth.js';
 import { runCharacterSheetEditingSteps } from './utils/character-sheet.js';
 
 test.beforeEach(async ({ context }) => {
+  // Clear cookies to prevent stale session issues between parallel tests
+  await context.clearCookies();
   await context.addInitScript(() => {
     localStorage.setItem(
       'scvmgrinder-privacy-settings-v1',

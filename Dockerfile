@@ -6,7 +6,7 @@ COPY package*.json ./
 RUN npm install
 
 COPY . .
-RUN npm run build:ts
+RUN npm run build:ts && chown -R node:node /app
 
 USER node
 

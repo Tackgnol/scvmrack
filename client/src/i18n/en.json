@@ -31,6 +31,7 @@
     "title": "It's not over...yet",
     "rollPrompt": "Roll a d4",
     "close": "Close",
+    "kill": "Kill & Replace",
     "rules": {
       "one": "1 → Fall unconscious for d4 rounds; then awaken with d4 HP.",
       "two": "2 → Roll a d6: 1-5 = Broken or severed limb. 6 = Lost eye. Can't act for d4 rounds; then become active with d4 HP.",
@@ -176,6 +177,10 @@
   },
   "actions": {
     "generateNew": "Generate New",
+    "killScvm": "Kill Scvm",
+    "killConfirmTitle": "KILL THIS SCVM?",
+    "killConfirm": "Kill & Replace",
+    "killConfirmDesc": "\"{{name}}\" will be permanently deleted and a new scvm will crawl out.",
     "testModal": "Test Modal",
     "cancel": "Cancel"
   },
@@ -220,7 +225,19 @@
     "sendMagicLink": "Email me a Magic Link",
     "magicLinkFailed": "Failed to send magic link. Please try again.",
     "emailRequired": "Email is required for magic links",
-    "sessionExpired": "Your session expired. Sign in again to continue."
+    "sessionExpired": "Your session expired. Sign in again to continue.",
+    "forgotPassword": "Forgot password?",
+    "resetEmailTitle": "CHECK YOUR SCROLL",
+    "resetEmailDesc": "If this email is registered, a password reset link has been sent.",
+    "resetPasswordTitle": "RESET PASSWORD",
+    "newPassword": "New Password",
+    "confirmPassword": "Confirm Password",
+    "passwordsMismatch": "Passwords do not match.",
+    "resetPasswordButton": "Reset Password",
+    "resetSuccess": "PASSWORD FORGED ANEW",
+    "resetSuccessDesc": "Your password has been reset. You can now log in.",
+    "resetFailed": "Password reset failed. The link may have expired.",
+    "invalidResetLink": "Invalid or expired reset link."
   },
   "session": {
     "loggedOut": "You've been logged out.",

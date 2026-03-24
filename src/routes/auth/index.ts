@@ -15,12 +15,18 @@ import {
   CLAIM_USER_QUERY_PARAM,
   verifyClaimSignature,
 } from '../../services/claimSignature.js';
+import {
+  getLockedUntil,
+  recordLoginFailure,
+  clearLoginFailures,
+} from '../../services/loginLockout.js';
 
 const authRoutes: FastifyPluginAsync = async (fastify): Promise<void> => {
   const protectedAuthPaths = [
     '/sign-in/email',
     '/sign-up/email',
     '/sign-in/magic-link',
+    '/request-password-reset',
   ];
   const parseCallbackUrl = (rawCallback: string): URL | null => {
     if (!rawCallback) {
@@ -149,17 +155,36 @@ const authRoutes: FastifyPluginAsync = async (fastify): Promise<void> => {
           delete body.turnstileToken;
         }
 
+        let emailHash: string | undefined;
+
         if (body?.email && typeof body.email === 'string') {
           const isMagicLink = request.url.includes('magic-link');
           const isSignUp = request.url.includes('sign-up') || isMagicLink;
 
           plainEmail = body.email; // Store the real email
-          const hash = generateEmailBlindIndex(plainEmail);
+          emailHash = generateEmailBlindIndex(plainEmail);
+
+          // Per-account lockout check (sign-in/email only).
+          if (requestPath === '/sign-in/email') {
+            const lockedUntil = getLockedUntil(emailHash);
+            if (lockedUntil) {
+              const retryAfter = Math.ceil((lockedUntil - Date.now()) / 1000);
+              return reply
+                .status(429)
+                .header('retry-after', String(retryAfter))
+                .send({
+                  message: 'Too many failed login attempts. Try again later, or use a magic link to sign in.',
+                  error: {
+                    message: 'Too many failed login attempts. Try again later, or use a magic link to sign in.'
+                  }
+                });
+            }
+          }
 
           if (isSignUp) {
             body.plainTextEmailForEncryption = plainEmail;
           }
-          body.email = `${hash}@bidx.local`;
+          body.email = `${emailHash}@bidx.local`;
 
           // Pass the plain email via a custom header for the plugin to read easily
           headers.set('x-plain-email', plainEmail);
@@ -172,6 +197,15 @@ const authRoutes: FastifyPluginAsync = async (fastify): Promise<void> => {
         });
 
         const response = await auth.handler(req);
+
+        // Track login success/failure for per-account lockout.
+        if (requestPath === '/sign-in/email' && emailHash) {
+          if (response.status === 200) {
+            clearLoginFailures(emailHash);
+          } else if (response.status === 401 || response.status === 400) {
+            recordLoginFailure(emailHash);
+          }
+        }
 
         // Auto-claim guest characters after successful email verification.
         // The callbackURL carries a signed claim payload set in sendVerificationEmail.
@@ -254,10 +288,17 @@ const authRoutes: FastifyPluginAsync = async (fastify): Promise<void> => {
           }
         }
 
-        // Normalize sign-up error responses to prevent user enumeration.
+        // Normalize sign-up and forgot-password error responses to prevent user enumeration.
         // Better Auth returns distinguishable errors for existing vs new emails.
         const isSignUp = requestPath === '/sign-up/email';
-        if (isSignUp && response.status >= 400 && response.status < 500) {
+        const isForgotPassword = requestPath === '/request-password-reset';
+        if (
+          (isSignUp || isForgotPassword) &&
+          response.status >= 400 &&
+          response.status < 500
+        ) {
+          const errorBody = await response.text();
+          request.log.warn({ status: response.status, body: errorBody, path: requestPath }, 'Normalized auth error to 200');
           reply.status(200);
           response.headers.forEach((v, k) => reply.header(k, v));
           reply.header(
@@ -268,7 +309,7 @@ const authRoutes: FastifyPluginAsync = async (fastify): Promise<void> => {
           return reply.send(
             JSON.stringify({
               message:
-                'If this email is not registered, a verification email has been sent.',
+                'If this email is registered, an email has been sent.',
             })
           );
         }

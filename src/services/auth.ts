@@ -1,8 +1,10 @@
 import { betterAuth } from 'better-auth';
 import { anonymous, magicLink } from 'better-auth/plugins';
 import { magicLinkEmail } from '../emails/magicLinkEmail.js';
+import { resetPasswordEmail } from '../emails/resetPasswordEmail.js';
 import { verificationEmail } from '../emails/verificationEmail.js';
 import { decryptEmail, encryptEmail } from './crypto.js';
+import { clearLoginFailures } from './loginLockout.js';
 import { sendEmail } from './nodemailer.js';
 import pool from './db.js';
 import {
@@ -51,6 +53,41 @@ const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     autoSignIn: false,
+    sendResetPassword: async ({ user, url }, request) => {
+      const originToUse = resolveAllowedOrigin(request ?? null);
+
+      const resetUrl = new URL(url);
+      // Rewrite the redirect so the user lands on the FE reset page.
+      resetUrl.searchParams.set(
+        'callbackURL',
+        `${originToUse}/reset-password`
+      );
+
+      // Query DB directly — Better Auth may not include additionalFields in this callback's user object
+      const { rows } = await pool.query(
+        'SELECT encrypted_email FROM "user" WHERE id = $1',
+        [user.id]
+      );
+      const realEmail = decryptEmail(rows[0].encrypted_email);
+      await sendEmail(
+        realEmail,
+        'Reset your Scvmrack password',
+        resetPasswordEmail(resetUrl.toString())
+      );
+    },
+    onPasswordReset: async ({ user }) => {
+      // Clear any active login lockout so the user can immediately log in
+      // with their new password after a successful reset.
+      const { rows } = await pool.query(
+        'SELECT email_bidx FROM "user" WHERE id = $1',
+        [user.id]
+      );
+      const emailBidx: string | undefined = rows[0]?.email_bidx;
+      if (emailBidx) {
+        // email_bidx is stored as "${hash}@bidx.local"; the lockout key is the hash part
+        clearLoginFailures(emailBidx.split('@')[0]);
+      }
+    },
   },
 
   plugins: [

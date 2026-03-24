@@ -49,6 +49,7 @@ export function AuthModal({
     signUp,
     signOut,
     signInMagicLink,
+    forgotPassword,
   } = useAuth();
 
   const { character, claimCharacter, isClaiming, characterId, isJustLoggedOut, generateNew } =
@@ -62,6 +63,7 @@ export function AuthModal({
   const [showClaimPrompt, setShowClaimPrompt] = useState(false);
   const [showVerifyEmail, setShowVerifyEmail] = useState(false);
   const [magicLinkSent, setMagicLinkSent] = useState(false);
+  const [resetEmailSent, setResetEmailSent] = useState(false);
 
   const turnstileSiteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY;
   const turnstileEnabled = Boolean(turnstileSiteKey);
@@ -101,6 +103,7 @@ export function AuthModal({
       setShowVerifyEmail(false);
       setTab('login');
       setMagicLinkSent(false);
+      setResetEmailSent(false);
       resetTurnstile();
 
       // Check if we should show claim prompt (user just verified via email link)
@@ -139,8 +142,8 @@ export function AuthModal({
       } else {
         onClose();
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t('auth.loginFailed'));
+    } catch (err: any) {
+      setError(err?.message || (err instanceof Error ? err.message : t('auth.loginFailed')));
     } finally {
       if (turnstileEnabled) {
         resetTurnstile();
@@ -172,9 +175,36 @@ export function AuthModal({
         hadGuestCharacter: Boolean(characterId),
       });
       setMagicLinkSent(true);
-    } catch (err) {
+    } catch (err: any) {
       await setCurrentPendingClaimCharacterId(null);
-      setError(err instanceof Error ? err.message : t('auth.magicLinkFailed'));
+      setError(err?.message || (err instanceof Error ? err.message : t('auth.magicLinkFailed')));
+    } finally {
+      if (turnstileEnabled) {
+        resetTurnstile();
+      }
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    if (!email) {
+      setError(t('auth.emailRequired', 'Email is required'));
+      return;
+    }
+    setError(null);
+
+    if (!ensureTurnstileToken()) {
+      return;
+    }
+
+    try {
+      await forgotPassword.mutateAsync({
+        email,
+        turnstileToken: turnstileToken ?? undefined,
+      });
+      setResetEmailSent(true);
+    } catch {
+      // Always show success to prevent user enumeration
+      setResetEmailSent(true);
     } finally {
       if (turnstileEnabled) {
         resetTurnstile();
@@ -207,10 +237,10 @@ export function AuthModal({
 
       // Show "check your email" instead of claim prompt
       setShowVerifyEmail(true);
-    } catch (err) {
+    } catch (err: any) {
       // Clear pending claim on error
       await setCurrentPendingClaimCharacterId(null);
-      setError(err instanceof Error ? err.message : t('auth.signupFailed'));
+      setError(err?.message || (err instanceof Error ? err.message : t('auth.signupFailed')));
     } finally {
       if (turnstileEnabled) {
         resetTurnstile();
@@ -223,8 +253,8 @@ export function AuthModal({
       try {
         const pendingClaimId = getCurrentPendingClaimCharacterId();
         await claimCharacter(pendingClaimId || undefined);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : t('auth.claimFailed'));
+      } catch (err: any) {
+        setError(err?.message || (err instanceof Error ? err.message : t('auth.claimFailed')));
         return;
       }
     } else {
@@ -440,16 +470,17 @@ export function AuthModal({
 
       {tab === 'login' && (
         <Box>
-          {magicLinkSent ? (
-            <Box sx={customStyles.authModal.centeredBox} data-testid="magic-link-sent-view">
+          {magicLinkSent || resetEmailSent ? (
+            <Box sx={customStyles.authModal.centeredBox} data-testid={resetEmailSent ? 'reset-email-sent-view' : 'magic-link-sent-view'}>
               <Typography variant="h6" sx={customStyles.authModal.title}>
-                {t('auth.checkEmailTitle', 'SOULS DISPATCHED')}
+                {resetEmailSent
+                  ? t('auth.resetEmailTitle', 'CHECK YOUR SCROLL')
+                  : t('auth.checkEmailTitle', 'SOULS DISPATCHED')}
               </Typography>
               <Typography sx={customStyles.authModal.titleMarginLarge}>
-                {t(
-                  'auth.checkEmailDesc',
-                  'A magic link has been sent to your scroll (email).'
-                )}
+                {resetEmailSent
+                  ? t('auth.resetEmailDesc', 'If this email is registered, a password reset link has been sent.')
+                  : t('auth.checkEmailDesc', 'A magic link has been sent to your scroll (email).')}
               </Typography>
               <Typography variant="body2" sx={{ mb: 2, opacity: 0.7 }}>
                 {t('auth.checkSpamFolder')}
@@ -457,7 +488,10 @@ export function AuthModal({
               <Button
                 variant="outlined"
                 fullWidth
-                onClick={() => setMagicLinkSent(false)}
+                onClick={() => {
+                  setMagicLinkSent(false);
+                  setResetEmailSent(false);
+                }}
               >
                 {t('auth.tryAgain', 'Back to Login')}
               </Button>
@@ -502,6 +536,21 @@ export function AuthModal({
                   <CircularProgress size={24} />
                 ) : (
                   t('auth.login')
+                )}
+              </Button>
+
+              <Button
+                variant="text"
+                size="small"
+                onClick={handleForgotPassword}
+                disabled={forgotPassword.isPending || (turnstileEnabled && !turnstileToken)}
+                sx={{ mt: 1, textTransform: 'none', opacity: 0.8 }}
+                data-testid="forgot-password-button"
+              >
+                {forgotPassword.isPending ? (
+                  <CircularProgress size={16} color="inherit" />
+                ) : (
+                  t('auth.forgotPassword', 'Forgot password?')
                 )}
               </Button>
 
