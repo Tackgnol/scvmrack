@@ -1,7 +1,8 @@
 import { FastifyPluginAsync } from 'fastify';
+import fastifyStatic from '@fastify/static';
 import { access, readFile } from 'node:fs/promises';
 import { constants } from 'node:fs';
-import { extname, join } from 'node:path';
+import { join } from 'node:path';
 
 const apiPrefixes = [
   '/auth',
@@ -11,21 +12,36 @@ const apiPrefixes = [
   '/health',
 ];
 
+const STATIC_PREFIXES = [
+  '/assets',
+  '/static',
+  '/favicon',
+  '/fonts',
+];
+
 const spaIndexCandidates = [
   join(process.cwd(), 'public', 'index.html'),
   join(process.cwd(), 'client', 'public', 'index.html'),
 ];
 
 const isApiRoute = (pathname: string): boolean =>
-  apiPrefixes.some(
-    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
-  );
+    apiPrefixes.some(
+        (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
+    );
 
-const isSpaRouteRequest = (url: string): boolean => {
+const isStaticRequest = (pathname: string): boolean =>
+    STATIC_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+
+const isSpaRouteRequest = (url: string, acceptHeader?: string): boolean => {
   const pathname = url.split('?')[0] || '/';
+
   if (isApiRoute(pathname)) return false;
-  // Skip static assets and file-like requests.
-  return !extname(pathname);
+  if (isStaticRequest(pathname)) return false;
+
+  // Only serve SPA for browser navigations expecting HTML
+  if (!acceptHeader || !acceptHeader.includes('text/html')) return false;
+
+  return true;
 };
 
 const resolveSpaIndexPath = async (): Promise<string | null> => {
@@ -34,38 +50,62 @@ const resolveSpaIndexPath = async (): Promise<string | null> => {
       await access(candidate, constants.R_OK);
       return candidate;
     } catch {
-      // Continue to next candidate.
+      // try next
     }
   }
   return null;
 };
 
-const root: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
-  // GET /health
+const root: FastifyPluginAsync = async (fastify): Promise<void> => {
+  // ---------------------------------------
+  // 1. Static files (MUST come first)
+  // ---------------------------------------
+  await fastify.register(fastifyStatic, {
+    root: join(process.cwd(), 'dist'),
+    prefix: '/',
+  });
+
+  // ---------------------------------------
+  // 2. Health endpoint
+  // ---------------------------------------
   fastify.get('/health', async () => ({
     status: 'ok',
     timestamp: new Date().toISOString(),
   }));
 
+  // ---------------------------------------
+  // 3. SPA fallback setup
+  // ---------------------------------------
   const spaIndexPath = await resolveSpaIndexPath();
   let spaIndexHtmlCache: string | null = null;
 
   if (!spaIndexPath) {
-    fastify.log.warn('SPA fallback disabled: index.html was not found.');
+    fastify.log.warn('SPA fallback disabled: index.html not found');
     return;
   }
 
+  // ---------------------------------------
+  // 4. Not Found handler (safe version)
+  // ---------------------------------------
   fastify.setNotFoundHandler(async (request, reply) => {
-    if (request.method === 'GET' && isSpaRouteRequest(request.url)) {
+    const accept = request.headers.accept;
+
+    if (
+        request.method === 'GET' &&
+        isSpaRouteRequest(request.url, accept)
+    ) {
       try {
         if (!spaIndexHtmlCache) {
           spaIndexHtmlCache = await readFile(spaIndexPath, 'utf8');
         }
-        return reply.type('text/html; charset=utf-8').send(spaIndexHtmlCache);
+
+        return reply
+            .type('text/html; charset=utf-8')
+            .send(spaIndexHtmlCache);
       } catch (error) {
         request.log.error(
-          { err: error },
-          'Failed to read SPA index.html for fallback response.'
+            { err: error },
+            'Failed to serve SPA index.html'
         );
       }
     }

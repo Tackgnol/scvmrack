@@ -237,7 +237,10 @@
     "resetSuccess": "HASŁO WYKUTE NA NOWO",
     "resetSuccessDesc": "Twoje hasło zostało zresetowane. Możesz się teraz zalogować.",
     "resetFailed": "Resetowanie hasła nie powiodło się. Link mógł wygasnąć.",
-    "invalidResetLink": "Nieprawidłowy lub wygasły link do resetowania."
+    "invalidResetLink": "Nieprawidłowy lub wygasły link do resetowania.",
+    "backToLogin": "Wróć do logowania",
+    "showPassword": "Pokaż hasło",
+    "hidePassword": "Ukryj hasło"
   },
   "session": {
     "loggedOut": "Wylogowano.",

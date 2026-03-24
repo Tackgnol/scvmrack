@@ -237,7 +237,10 @@
     "resetSuccess": "PASSWORD FORGED ANEW",
     "resetSuccessDesc": "Your password has been reset. You can now log in.",
     "resetFailed": "Password reset failed. The link may have expired.",
-    "invalidResetLink": "Invalid or expired reset link."
+    "invalidResetLink": "Invalid or expired reset link.",
+    "backToLogin": "Back to Login",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password"
   },
   "session": {
     "loggedOut": "You've been logged out.",
