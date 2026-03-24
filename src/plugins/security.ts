@@ -9,7 +9,11 @@ export default fp(async function securityPlugin(fastify: FastifyInstance) {
   await fastify.register(helmet, {
     contentSecurityPolicy: {
       directives: {
-        defaultSrc: ["'none'"],
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: ["'self'", "data:"],
+        connectSrc: ["'self'"],
         frameAncestors: ["'none'"],
       },
     },
