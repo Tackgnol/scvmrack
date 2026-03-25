@@ -211,30 +211,31 @@ export function ResetPasswordPage() {
           onChange={(e) => setNewPassword(e.target.value)}
           fullWidth
           required
-          InputProps={{
-            'aria-label': t('auth.newPassword', 'New Password'),
-            endAdornment: (
-              <InputAdornment position="end">
-                <IconButton
-                  onClick={() => setShowNewPassword(!showNewPassword)}
-                  onMouseDown={(e) => e.preventDefault()}
-                  edge="end"
-                  aria-label={
-                    showNewPassword
-                      ? t('auth.hidePassword', 'Hide password')
-                      : t('auth.showPassword', 'Show password')
-                  }
-                  sx={{ color: morkBorgColors.white }}
-                >
-                  {showNewPassword ? <VisibilityOff /> : <Visibility />}
-                </IconButton>
-              </InputAdornment>
-            ),
-          }}
-          inputProps={{
-            minLength: 8,
-            'data-testid': 'new-password-input',
-            'aria-describedby': 'new-password-helper',
+          slotProps={{
+            input: {
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                    onMouseDown={(e) => e.preventDefault()}
+                    edge="end"
+                    aria-label={
+                      showNewPassword
+                        ? t('auth.hidePassword', 'Hide password')
+                        : t('auth.showPassword', 'Show password')
+                    }
+                    sx={{ color: morkBorgColors.white }}
+                  >
+                    {showNewPassword ? <VisibilityOff /> : <Visibility />}
+                  </IconButton>
+                </InputAdornment>
+              ),
+            },
+            htmlInput: {
+              minLength: 8,
+              'data-testid': 'new-password-input',
+              'aria-describedby': 'new-password-helper',
+            },
           }}
           helperText={
             <Typography
@@ -259,29 +260,30 @@ export function ResetPasswordPage() {
           onChange={(e) => setConfirmPassword(e.target.value)}
           fullWidth
           required
-          InputProps={{
-            'aria-label': t('auth.confirmPassword', 'Confirm Password'),
-            endAdornment: (
-              <InputAdornment position="end">
-                <IconButton
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  onMouseDown={(e) => e.preventDefault()}
-                  edge="end"
-                  aria-label={
-                    showConfirmPassword
-                      ? t('auth.hidePassword', 'Hide password')
-                      : t('auth.showPassword', 'Show password')
-                  }
-                  sx={{ color: morkBorgColors.white }}
-                >
-                  {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
-                </IconButton>
-              </InputAdornment>
-            ),
-          }}
-          inputProps={{
-            minLength: 8,
-            'data-testid': 'confirm-password-input',
+          slotProps={{
+            input: {
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    onMouseDown={(e) => e.preventDefault()}
+                    edge="end"
+                    aria-label={
+                      showConfirmPassword
+                        ? t('auth.hidePassword', 'Hide password')
+                        : t('auth.showPassword', 'Show password')
+                    }
+                    sx={{ color: morkBorgColors.white }}
+                  >
+                    {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
+                  </IconButton>
+                </InputAdornment>
+              ),
+            },
+            htmlInput: {
+              minLength: 8,
+              'data-testid': 'confirm-password-input',
+            },
           }}
           sx={customStyles.authModal.textFieldLast}
         />
@@ -317,7 +319,6 @@ export function ResetPasswordPage() {
             display: 'flex',
             alignItems: 'center',
           }}
-          role="status"
           aria-live="polite"
         >
           {error}

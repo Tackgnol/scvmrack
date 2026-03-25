@@ -1,6 +1,32 @@
 // Stricter schema definitions with validation limits
 // Use these in your route schemas
 
+import { Json } from "../queries/equipment.queries.js";
+
+export type CharacterPatch = {
+  name?: string;
+  current_hp?: number;
+  omens?: number;
+  silver?: number;
+  agility?: number;
+  strength?: number;
+  presence?: number;
+  toughness?: number;
+  habit?: string;
+  body_description?: string;
+  origin?: string;
+  notes?: string;
+  trait1?: string;
+  trait2?: string;
+
+  abilities?: Json;
+  equipment?: Json;
+  storage?: Json;
+  equipped_weapons?: Json;
+  equipped_armor?: Json;
+  modifiers?: Json;
+};
+
 export const CharacterIdParamsSchema = {
   type: 'object',
   required: ['id'],

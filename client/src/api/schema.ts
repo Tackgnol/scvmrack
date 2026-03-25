@@ -1181,9 +1181,9 @@ export interface paths {
         /** @description Search items with fuzzy matching and locale awareness */
         get: {
             parameters: {
-                query?: {
-                    q?: string;
-                    locale?: string;
+                query: {
+                    q: string;
+                    locale?: PathsEquipmentSearchGetParametersQueryLocale;
                     limit?: number;
                 };
                 header?: never;
@@ -1229,8 +1229,8 @@ export interface paths {
                 query?: never;
                 header?: never;
                 path: {
-                    itemType: string;
-                    id: string;
+                    itemType: PathsEquipmentItemTypeIdGetParametersPathItemType;
+                    id: number;
                 };
                 cookie?: never;
             };
@@ -1419,5 +1419,15 @@ export enum PathsCharactersGetResponses200ContentApplicationJsonComputed_modifie
     weapon = "weapon",
     pet = "pet",
     system = "system"
+}
+export enum PathsEquipmentSearchGetParametersQueryLocale {
+    en = "en",
+    pl = "pl"
+}
+export enum PathsEquipmentItemTypeIdGetParametersPathItemType {
+    weapon = "weapon",
+    armor = "armor",
+    equipment = "equipment",
+    pet = "pet"
 }
 export type operations = Record<string, never>;
