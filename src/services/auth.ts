@@ -14,6 +14,13 @@ import {
   CLAIM_SIG_QUERY_PARAM,
   CLAIM_USER_QUERY_PARAM,
 } from './claimSignature.js';
+import {
+  getLatestCharacterIdByUserId,
+  getUserEmailBidxById,
+  getUserEncryptedEmailByBidx,
+  getUserEncryptedEmailById,
+  transferCharacterOwnership,
+} from '../queries/auth.queries.js';
 
 const ALLOWED_ORIGINS = [
   'http://localhost:5173',
@@ -64,11 +71,11 @@ const auth = betterAuth({
       );
 
       // Query DB directly — Better Auth may not include additionalFields in this callback's user object
-      const { rows } = await pool.query(
-        'SELECT encrypted_email FROM "user" WHERE id = $1',
-        [user.id]
+      const [row] = await getUserEncryptedEmailById.run(
+        { id: user.id },
+        pool
       );
-      const realEmail = decryptEmail(rows[0].encrypted_email);
+      const realEmail = decryptEmail(row!.encryptedEmail);
       await sendEmail(
         realEmail,
         'Reset your Scvmrack password',
@@ -78,11 +85,11 @@ const auth = betterAuth({
     onPasswordReset: async ({ user }) => {
       // Clear any active login lockout so the user can immediately log in
       // with their new password after a successful reset.
-      const { rows } = await pool.query(
-        'SELECT email_bidx FROM "user" WHERE id = $1',
-        [user.id]
+      const [row] = await getUserEmailBidxById.run(
+        { id: user.id },
+        pool
       );
-      const emailBidx: string | undefined = rows[0]?.email_bidx;
+      const emailBidx: string | undefined = row?.emailBidx;
       if (emailBidx) {
         // email_bidx is stored as "${hash}@bidx.local"; the lockout key is the hash part
         clearLoginFailures(emailBidx.split('@')[0]);
@@ -93,11 +100,9 @@ const auth = betterAuth({
   plugins: [
     anonymous({
       onLinkAccount: async ({ anonymousUser, newUser }) => {
-        await pool.query(
-          `UPDATE characters
-                     SET user_id = $1
-                     WHERE user_id = $2`,
-          [newUser.user.id, anonymousUser.user.id]
+        await transferCharacterOwnership.run(
+          { userId: newUser.user.id, guestId: anonymousUser.user.id },
+          pool
         );
       },
     }),
@@ -113,13 +118,13 @@ const auth = betterAuth({
 
         if (!recipientEmail) {
           // Fallback for existing users: search DB
-          const { rows } = await pool.query(
-            'SELECT encrypted_email FROM "user" WHERE email_bidx = $1',
-            [email]
+          const [row] = await getUserEncryptedEmailByBidx.run(
+            { emailBidx: email },
+            pool
           );
-          if (rows[0]?.encrypted_email) {
+          if (row?.encryptedEmail) {
             // EXPLICIT DECRYPT only when we know it's the DB string
-            const decrypted = decryptEmail(rows[0].encrypted_email);
+            const decrypted = decryptEmail(row.encryptedEmail);
             return await sendEmail(decrypted, 'Login Link', `Link: ${url}`);
           }
           throw new Error('Email not found');
@@ -207,11 +212,11 @@ const auth = betterAuth({
 
       let characterId: string | null = null;
       if (claimSourceId) {
-        const { rows } = await pool.query(
-          'SELECT id FROM characters WHERE user_id = $1 ORDER BY updated_at DESC LIMIT 1',
-          [claimSourceId]
+        const [row] = await getLatestCharacterIdByUserId.run(
+          { userId: claimSourceId },
+          pool
         );
-        characterId = rows[0]?.id || null;
+        characterId = row?.id || null;
       }
 
       const verificationUrl = new URL(url);

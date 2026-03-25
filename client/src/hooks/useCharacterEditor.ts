@@ -1,4 +1,5 @@
 import { $api } from "@/api";
+import { trackCharacterEdited } from "@/analytics/characterAnalytics";
 import { applyOptimisticPatch } from "@/hooks/applyOptimisticPatch.ts";
 import {CharacterResponse, CustomModifier, EquipmentItem, OptimisticPatch, SimpleField} from "@/hooks/models.ts";
 import { buildRequestFromPatches } from "@/hooks/patchToRequest.ts";
@@ -34,6 +35,10 @@ export function useCharacterEditor(
         // Build request body from patches + current state
         const body = buildRequestFromPatches(pending, currentCharacter);
 
+        // Capture the batch now — setPending([]) below clears state
+        // asynchronously, but we need the snapshot for analytics.
+        const flushedPatches = [...pending];
+
         updateCharacter.mutate(
             {
                 params: { path: { id: characterId } },
@@ -42,6 +47,7 @@ export function useCharacterEditor(
             {
                 onSuccess: () => {
                     retryCountRef.current = 0;
+                    trackCharacterEdited(flushedPatches, locale ?? 'en');
                 },
                 onError: (error: MutationObserverErrorResult) => {
                     console.error("Failed to save:", error);

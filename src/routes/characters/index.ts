@@ -1,557 +1,454 @@
-import { FastifyPluginAsync } from 'fastify';
-import type { AppSession } from '../../plugins/sessionResolver.js';
+import {FastifyPluginAsync} from 'fastify';
+import type {AppSession} from '../../plugins/sessionResolver.js';
 import {
-  CharacterIdParamsSchema,
-  CharacterSchema,
-  ErrorSchema,
-  GenerateBodySchema,
-  LocaleQuerySchema,
-  UpdateBodySchema,
+    bindCharacterToUser,
+    checkCharacterAccess as checkCharacterAccessQuery,
+    checkUserIsAnonymous,
+    claimCharacterFromAnonymous,
+    deleteCharacter,
+    generateCharacter,
+    getCharacterFull,
+    listUserCharacters,
+    updateCharacter
+} from '../../queries/characters.queries.js';
+import {
+    CharacterIdParamsSchema,
+    CharacterPatch,
+    CharacterSchema,
+    ErrorSchema,
+    GenerateBodySchema,
+    LocaleQuerySchema,
+    UpdateBodySchema,
 } from '../../schemas/character.js';
-import { query, queryOne } from '../../services/db.js';
-import type {
-  CharacterFull,
-  CharacterUpdate,
-  GenerateCharacterParams,
-} from '../../types/character.js';
-import {
-  isValidLocale,
-  isValidUUID,
-  sanitizeCharacterUpdate,
-} from '../../utils.js';
+import db from '../../services/db.js';
+import type {CharacterUpdate, GenerateCharacterParams,} from '../../types/character.js';
+import {isValidLocale, isValidUUID, sanitizeCharacterUpdate,} from '../../utils.js';
 
-type CharacterListRow = {
-  id: string;
-  name: string;
-  class_id: number | null;
-  class_name: string;
-  current_hp: number;
-  max_hp: number;
-  created_at: string;
-  updated_at: string;
-};
-
-// ============================================
+W// ============================================
 // Helper: Check character access
 // ============================================
 async function checkCharacterAccess(
-  characterId: string,
-  session: AppSession | null
+    characterId: string,
+    session: AppSession | null
 ): Promise<{ allowed: boolean; reason?: string }> {
-  if (!session) {
-    return { allowed: false, reason: 'No session' };
-  }
+    if (!session) {
+        return {allowed: false, reason: 'No session'};
+    }
 
-  const character = await queryOne<{ user_id: string | null }>(
-    'SELECT user_id FROM characters WHERE id = $1',
-    [characterId]
-  );
+    const [character] = await checkCharacterAccessQuery.run({id: characterId}, db);
 
-  if (!character) {
-    return { allowed: false, reason: 'Character not found' };
-  }
+    if (!character) {
+        return {allowed: false, reason: 'Character not found'};
+    }
 
-  if (character.user_id !== session.userId) {
-    return { allowed: false, reason: 'Access denied' };
-  }
+    if (character.userId !== session.userId) {
+        return {allowed: false, reason: 'Access denied'};
+    }
 
-  return { allowed: true };
+    return {allowed: true};
 }
 
 function resolveListLocale(acceptLanguage: unknown): 'en' | 'pl' {
-  if (typeof acceptLanguage !== 'string' || acceptLanguage.length === 0) {
+    if (typeof acceptLanguage !== 'string' || acceptLanguage.length === 0) {
+        return 'en';
+    }
+
+    const primaryTag = acceptLanguage.split(',')[0]?.trim().toLowerCase();
+    if (!primaryTag) {
+        return 'en';
+    }
+
+    if (primaryTag === 'pl' || primaryTag.startsWith('pl-')) {
+        return 'pl';
+    }
+
     return 'en';
-  }
-
-  const primaryTag = acceptLanguage.split(',')[0]?.trim().toLowerCase();
-  if (!primaryTag) {
-    return 'en';
-  }
-
-  if (primaryTag === 'pl' || primaryTag.startsWith('pl-')) {
-    return 'pl';
-  }
-
-  return 'en';
 }
 
 const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
-  // POST /characters/new - Generate new character (bound to session)
-  fastify.post<{
-    Body: GenerateCharacterParams;
-    Querystring: { locale?: string };
-  }>(
-    '/new',
-    {
-      config: {
-        rateLimit: {
-          max: process.env.NODE_ENV === 'test' ? 10000 : 5,
-          timeWindow: '1 minute',
+    // POST /characters/new - Generate new character (bound to session)
+    fastify.post<{
+        Body: GenerateCharacterParams;
+        Querystring: { locale?: string };
+    }>(
+        '/new',
+        {
+            config: {
+                rateLimit: {
+                    max: process.env.NODE_ENV === 'test' ? 10000 : 5,
+                    timeWindow: '1 minute',
+                },
+            },
+            schema: {
+                description: 'Generate a new random character',
+                tags: ['characters'],
+                querystring: LocaleQuerySchema,
+                body: GenerateBodySchema,
+                response: {
+                    201: CharacterSchema,
+                    401: ErrorSchema,
+                    500: ErrorSchema,
+                },
+            },
         },
-      },
-      schema: {
-        description: 'Generate a new random character',
-        tags: ['characters'],
-        querystring: LocaleQuerySchema,
-        body: GenerateBodySchema,
-        response: {
-          201: CharacterSchema,
-          401: ErrorSchema,
-          500: ErrorSchema,
+        async (request, reply) => {
+            const session = request.appSession;
+
+            if (!session) {
+                return reply.status(401).send({error: 'Session required'});
+            }
+
+            const class_id = request.body?.class_id;
+            const locale = request.query.locale ?? 'en';
+
+            try {
+                const [result] = await generateCharacter.run(
+                    {classId: class_id ?? null},
+                    db
+                );
+
+                if (!result) {
+                    return reply
+                        .status(500)
+                        .send({error: 'Failed to generate character'});
+                }
+
+                const characterId = result.generateCharacter;
+
+                // Bind character to user
+                await bindCharacterToUser.run({userId: session.userId, id: characterId!}, db);
+
+                const [character] = await getCharacterFull.run({id: characterId!, locale}, db);
+
+                return reply.status(201).send(character);
+            } catch (err) {
+                request.log.error(err);
+                return reply
+                    .status(500)
+                    .send({error: 'Failed to generate character'});
+            }
+        }
+    );
+
+    // GET /:id - Get character (with access control)
+    fastify.get<{
+        Params: { id: string };
+        Querystring: { locale?: string };
+    }>(
+        '/:id',
+        {
+            schema: {
+                description: 'Get a character by ID',
+                tags: ['characters'],
+                params: CharacterIdParamsSchema,
+                querystring: LocaleQuerySchema,
+                response: {
+                    200: CharacterSchema,
+                    401: ErrorSchema,
+                    403: ErrorSchema,
+                    404: ErrorSchema,
+                    500: ErrorSchema,
+                },
+            },
         },
-      },
-    },
-    async (request, reply) => {
-      const session = request.appSession;
+        async (request, reply) => {
+            const {id} = request.params;
+            const locale = request.query.locale ?? 'en';
+            const session = request.appSession;
 
-      if (!session) {
-        return reply.status(401).send({ error: 'Session required' });
-      }
+            if (!isValidUUID(id)) {
+                return reply.status(400).send({error: 'Invalid character ID'});
+            }
 
-      const class_id = request.body?.class_id;
-      const locale = request.query.locale ?? 'en';
+            // Check access
+            const access = await checkCharacterAccess(id, session);
+            if (!access.allowed) {
+                const status =
+                    access.reason === 'No session'
+                        ? 401
+                        : access.reason === 'Character not found'
+                            ? 404
+                            : 403;
+                return reply.status(status).send({error: access.reason});
+            }
 
-      try {
-        const result = await queryOne<{ generate_character: string }>(
-          'SELECT generate_character($1::integer)',
-          [class_id]
-        );
+            try {
+                const [character] = await getCharacterFull.run({id, locale}, db);
+                if (!character) {
+                    return reply.status(404).send({error: 'Character not found'});
+                }
 
-        if (!result) {
-          return reply
-            .status(500)
-            .send({ error: 'Failed to generate character' });
+                return character;
+            } catch (err) {
+                request.log.error(err);
+                return reply.status(500).send({error: 'Failed to fetch character'});
+            }
         }
+    );
 
-        const characterId = result.generate_character;
-
-        // Bind character to user
-        await query(
-          `UPDATE characters
-                 SET user_id = $1
-                 WHERE id = $2`,
-          [session.userId, characterId]
-        );
-
-        const character = await queryOne<CharacterFull>(
-          'SELECT * FROM get_character_full($1, $2)',
-          [characterId, locale]
-        );
-
-        return reply.status(201).send(character);
-      } catch (err) {
-        request.log.error(err);
-        return reply
-          .status(500)
-          .send({ error: 'Failed to generate character' });
-      }
-    }
-  );
-
-  // GET /:id - Get character (with access control)
-  fastify.get<{
-    Params: { id: string };
-    Querystring: { locale?: string };
-  }>(
-    '/:id',
-    {
-      schema: {
-        description: 'Get a character by ID',
-        tags: ['characters'],
-        params: CharacterIdParamsSchema,
-        querystring: LocaleQuerySchema,
-        response: {
-          200: CharacterSchema,
-          401: ErrorSchema,
-          403: ErrorSchema,
-          404: ErrorSchema,
-          500: ErrorSchema,
+    // PATCH /:id - Update character (with access control)
+    fastify.patch<{
+        Params: { id: string };
+        Body: CharacterUpdate;
+        Querystring: { locale?: string };
+    }>(
+        '/:id',
+        {
+            config: {
+                rateLimit: {
+                    max: process.env.NODE_ENV === 'test' ? 10000 : 30,
+                    timeWindow: '1 minute',
+                },
+            },
+            schema: {
+                description: 'Update a character',
+                tags: ['characters'],
+                params: CharacterIdParamsSchema,
+                querystring: LocaleQuerySchema,
+                body: UpdateBodySchema,
+                response: {
+                    200: CharacterSchema,
+                    400: ErrorSchema,
+                    401: ErrorSchema,
+                    403: ErrorSchema,
+                    404: ErrorSchema,
+                    500: ErrorSchema,
+                },
+            },
         },
-      },
-    },
-    async (request, reply) => {
-      const { id } = request.params;
-      const locale = request.query.locale ?? 'en';
-      const session = request.appSession;
+        async (request, reply) => {
+            const {id} = request.params;
+            const session = request.appSession;
 
-      if (!isValidUUID(id)) {
-        return reply.status(400).send({ error: 'Invalid character ID' });
-      }
+            // Validate UUID
+            if (!isValidUUID(id)) {
+                return reply.status(400).send({error: 'Invalid character ID'});
+            }
 
-      // Check access
-      const access = await checkCharacterAccess(id, session);
-      if (!access.allowed) {
-        const status =
-          access.reason === 'No session'
-            ? 401
-            : access.reason === 'Character not found'
-            ? 404
-            : 403;
-        return reply.status(status).send({ error: access.reason });
-      }
+            // Check access
+            const access = await checkCharacterAccess(id, session);
+            if (!access.allowed) {
+                const status =
+                    access.reason === 'No session'
+                        ? 401
+                        : access.reason === 'Character not found'
+                            ? 404
+                            : 403;
+                return reply.status(status).send({error: access.reason});
+            }
 
-      try {
-        const character = await queryOne<CharacterFull>(
-          'SELECT * FROM get_character_full($1, $2)',
-          [id, locale]
-        );
-        if (!character) {
-          return reply.status(404).send({ error: 'Character not found' });
+            // Validate and default locale
+            const locale = isValidLocale(request.query.locale)
+                ? request.query.locale
+                : 'en';
+
+            // Sanitize all inputs
+            const updates = sanitizeCharacterUpdate(
+                request.body as Record<string, unknown>
+            );
+
+            if (Object.keys(updates).length === 0) {
+                return reply.status(400).send({error: 'No valid fields to update'});
+            }
+
+            try {
+                await updateCharacter.run({id, patch: updates as CharacterPatch}, db);
+
+                const [character] = await getCharacterFull.run({id, locale}, db);
+                return character;
+            } catch (err: unknown) {
+                if (err instanceof Error && err.message.includes('Character not found')) {
+                    return reply.status(404).send({error: 'Character not found'});
+                }
+                request.log.error(err, 'Failed to update character');
+                return reply.status(500).send({error: 'Failed to update character'});
+            }
         }
+    );
 
-        return character;
-      } catch (err) {
-        request.log.error(err);
-        return reply.status(500).send({ error: 'Failed to fetch character' });
-      }
-    }
-  );
-
-  // PATCH /:id - Update character (with access control)
-  fastify.patch<{
-    Params: { id: string };
-    Body: CharacterUpdate;
-    Querystring: { locale?: string };
-  }>(
-    '/:id',
-    {
-      config: {
-        rateLimit: {
-          max: process.env.NODE_ENV === 'test' ? 10000 : 30,
-          timeWindow: '1 minute',
+    // POST /:id/claim - Claim guest character (bind to authenticated user)
+    fastify.post<{
+        Params: { id: string };
+    }>(
+        '/:id/claim',
+        {
+            schema: {
+                description: 'Claim a guest character for authenticated user',
+                tags: ['characters'],
+                params: CharacterIdParamsSchema,
+                response: {
+                    200: {type: 'object', properties: {success: {type: 'boolean'}}},
+                    400: ErrorSchema,
+                    401: ErrorSchema,
+                    403: ErrorSchema,
+                    404: ErrorSchema,
+                    500: ErrorSchema,
+                },
+            },
         },
-      },
-      schema: {
-        description: 'Update a character',
-        tags: ['characters'],
-        params: CharacterIdParamsSchema,
-        querystring: LocaleQuerySchema,
-        body: UpdateBodySchema,
-        response: {
-          200: CharacterSchema,
-          400: ErrorSchema,
-          401: ErrorSchema,
-          403: ErrorSchema,
-          404: ErrorSchema,
-          500: ErrorSchema,
+        async (request, reply) => {
+            const {id} = request.params;
+            const session = request.appSession;
+
+            if (!isValidUUID(id)) {
+                return reply.status(400).send({error: 'Invalid character ID'});
+            }
+
+            if (!session) {
+                return reply.status(401).send({error: 'Session required'});
+            }
+
+            // Claiming requires an authenticated (non-guest) session.
+            if (session.isGuest) {
+                return reply
+                    .status(403)
+                    .send({error: 'Must be authenticated to claim characters'});
+            }
+
+            try {
+                const [character] = await checkCharacterAccessQuery.run({id}, db);
+
+                if (!character) {
+                    return reply.status(404).send({error: 'Character not found'});
+                }
+
+                // Already owned by this user — idempotent success.
+                if (character.userId === session.userId) {
+                    return reply.send({success: true});
+                }
+
+                // Only allow claiming characters owned by anonymous users.
+                // This prevents stealing characters from other authenticated users.
+                if (!character.userId) {
+                    return reply
+                        .status(403)
+                        .send({error: 'Not your character to claim'});
+                }
+
+                const [owner] = await checkUserIsAnonymous.run({id: character.userId!}, db);
+
+                if (!owner?.isAnonymous) {
+                    return reply
+                        .status(403)
+                        .send({error: 'Not your character to claim'});
+                }
+
+                // Atomically reassign from anonymous owner to authenticated user.
+                const claimed = await claimCharacterFromAnonymous.run(
+                    {userId: session.userId, characterId: id, guestId: character.userId!},
+                    db
+                );
+
+                if (claimed.length > 0) {
+                    request.log.info(
+                        {characterId: id, userId: session.userId},
+                        'Character claimed'
+                    );
+                    return reply.send({success: true});
+                }
+
+                return reply.status(403).send({error: 'Not your character to claim'});
+            } catch (err) {
+                request.log.error(err);
+                return reply.status(500).send({error: 'Failed to claim character'});
+            }
+        }
+    );
+
+    // GET / - List user's characters
+    fastify.get(
+        '/',
+        {
+            schema: {
+                description: 'List characters for current user',
+                tags: ['characters'],
+                response: {
+                    200: {type: 'array', items: CharacterSchema},
+                    401: ErrorSchema,
+                    500: ErrorSchema,
+                },
+            },
         },
-      },
-    },
-    async (request, reply) => {
-      const { id } = request.params;
-      const session = request.appSession;
+        async (request, reply) => {
+            const session = request.appSession;
+            const locale = resolveListLocale(request.headers['accept-language']);
 
-      // Validate UUID
-      if (!isValidUUID(id)) {
-        return reply.status(400).send({ error: 'Invalid character ID' });
-      }
+            if (!session) {
+                return reply.status(401).send({error: 'Session required'});
+            }
 
-      // Check access
-      const access = await checkCharacterAccess(id, session);
-      if (!access.allowed) {
-        const status =
-          access.reason === 'No session'
-            ? 401
-            : access.reason === 'Character not found'
-            ? 404
-            : 403;
-        return reply.status(status).send({ error: access.reason });
-      }
-
-      // Validate and default locale
-      const locale = isValidLocale(request.query.locale)
-        ? request.query.locale
-        : 'en';
-
-      // Sanitize all inputs
-      const updates = sanitizeCharacterUpdate(
-        request.body as Record<string, unknown>
-      );
-
-      // Fields that are JSONB and need special handling
-      const jsonbFields = [
-        'abilities',
-        'equipment',
-        'storage',
-        'equipped_weapons',
-        'equipped_armor',
-        'modifiers',
-      ];
-
-      const allowedFields = [
-        'abilities',
-        'name',
-        'current_hp',
-        'omens',
-        'silver',
-        'equipment',
-        'storage',
-        'equipped_weapons',
-        'equipped_armor',
-        'modifiers',
-        'agility',
-        'strength',
-        'presence',
-        'toughness',
-        'trait1',
-        'trait2',
-        'habit',
-        'body_description',
-        'origin',
-        'notes',
-      ];
-
-      const setClauses: string[] = [];
-      const values: unknown[] = [];
-      let paramIndex = 1;
-
-      for (const field of allowedFields) {
-        if (updates[field] !== undefined) {
-          if (jsonbFields.includes(field)) {
-            setClauses.push(`${field} = $${paramIndex}::jsonb`);
-            values.push(JSON.stringify(updates[field]));
-          } else {
-            setClauses.push(`${field} = $${paramIndex}`);
-            values.push(updates[field]);
-          }
-          paramIndex++;
+            try {
+                const rows = await listUserCharacters.run({userId: session.userId, locale}, db);
+                return rows.map((r) => ({
+                    id: r.id,
+                    name: r.name,
+                    class_id: r.classId,
+                    class_name: r.className,
+                    current_hp: r.currentHp,
+                    max_hp: r.maxHp,
+                    created_at: r.createdAt,
+                    updated_at: r.updatedAt,
+                }));
+            } catch (err) {
+                request.log.error(err);
+                return reply.status(500).send({error: 'Failed to list characters'});
+            }
         }
-      }
+    );
 
-      if (setClauses.length === 0) {
-        return reply.status(400).send({ error: 'No valid fields to update' });
-      }
-
-      setClauses.push(`updated_at = NOW()`);
-      values.push(id);
-
-      try {
-        const result = await query(
-          `UPDATE characters
-                 SET ${setClauses.join(', ')}
-                 WHERE id = $${paramIndex} RETURNING id`,
-          values
-        );
-
-        if (result.length === 0) {
-          return reply.status(404).send({ error: 'Character not found' });
-        }
-
-        return await queryOne<CharacterFull>(
-          'SELECT * FROM get_character_full($1, $2)',
-          [id, locale]
-        );
-      } catch (err) {
-        request.log.error(err, 'Failed to update character');
-        return reply.status(500).send({ error: 'Failed to update character' });
-      }
-    }
-  );
-
-  // POST /:id/claim - Claim guest character (bind to authenticated user)
-  fastify.post<{
-    Params: { id: string };
-  }>(
-    '/:id/claim',
-    {
-      schema: {
-        description: 'Claim a guest character for authenticated user',
-        tags: ['characters'],
-        params: CharacterIdParamsSchema,
-        response: {
-          200: { type: 'object', properties: { success: { type: 'boolean' } } },
-          400: ErrorSchema,
-          401: ErrorSchema,
-          403: ErrorSchema,
-          404: ErrorSchema,
-          500: ErrorSchema,
+    // DELETE /:id - Delete character (with access control)
+    fastify.delete<{
+        Params: { id: string };
+    }>(
+        '/:id',
+        {
+            schema: {
+                description: 'Delete a character',
+                tags: ['characters'],
+                params: CharacterIdParamsSchema,
+                response: {
+                    204: {type: 'null', description: 'Character deleted'},
+                    401: ErrorSchema,
+                    403: ErrorSchema,
+                    404: ErrorSchema,
+                    500: ErrorSchema,
+                },
+            },
         },
-      },
-    },
-    async (request, reply) => {
-      const { id } = request.params;
-      const session = request.appSession;
+        async (request, reply) => {
+            const {id} = request.params;
+            const session = request.appSession;
 
-      if (!isValidUUID(id)) {
-        return reply.status(400).send({ error: 'Invalid character ID' });
-      }
+            if (!isValidUUID(id)) {
+                return reply.status(400).send({error: 'Invalid character ID'});
+            }
 
-      if (!session) {
-        return reply.status(401).send({ error: 'Session required' });
-      }
+            // Check access
+            const access = await checkCharacterAccess(id, session);
+            if (!access.allowed) {
+                const status =
+                    access.reason === 'No session'
+                        ? 401
+                        : access.reason === 'Character not found'
+                            ? 404
+                            : 403;
+                return reply.status(status).send({error: access.reason});
+            }
 
-      // Claiming requires an authenticated (non-guest) session.
-      if (session.isGuest) {
-        return reply
-          .status(403)
-          .send({ error: 'Must be authenticated to claim characters' });
-      }
+            try {
+                const result = await deleteCharacter.run({id}, db);
 
-      try {
-        const character = await queryOne<{ user_id: string | null }>(
-          'SELECT user_id FROM characters WHERE id = $1',
-          [id]
-        );
+                if (result.length === 0) {
+                    return reply.status(404).send({error: 'Character not found'});
+                }
 
-        if (!character) {
-          return reply.status(404).send({ error: 'Character not found' });
+                return reply.status(204).send();
+            } catch (err) {
+                request.log.error(err);
+                return reply.status(500).send({error: 'Failed to delete character'});
+            }
         }
-
-        // Already owned by this user — idempotent success.
-        if (character.user_id === session.userId) {
-          return reply.send({ success: true });
-        }
-
-        // Only allow claiming characters owned by anonymous users.
-        // This prevents stealing characters from other authenticated users.
-        if (!character.user_id) {
-          return reply
-            .status(403)
-            .send({ error: 'Not your character to claim' });
-        }
-
-        const owner = await queryOne<{ isAnonymous: boolean }>(
-          'SELECT "isAnonymous" FROM "user" WHERE id = $1',
-          [character.user_id]
-        );
-
-        if (!owner?.isAnonymous) {
-          return reply
-            .status(403)
-            .send({ error: 'Not your character to claim' });
-        }
-
-        // Atomically reassign from anonymous owner to authenticated user.
-        const claimed = await query<{ id: string }>(
-          `UPDATE characters
-             SET user_id = $1
-           WHERE id = $2
-             AND user_id = $3
-           RETURNING id`,
-          [session.userId, id, character.user_id]
-        );
-
-        if (claimed.length > 0) {
-          request.log.info(
-            { characterId: id, userId: session.userId },
-            'Character claimed'
-          );
-          return reply.send({ success: true });
-        }
-
-        return reply.status(403).send({ error: 'Not your character to claim' });
-      } catch (err) {
-        request.log.error(err);
-        return reply.status(500).send({ error: 'Failed to claim character' });
-      }
-    }
-  );
-
-  // GET / - List user's characters
-  fastify.get(
-    '/',
-    {
-      schema: {
-        description: 'List characters for current user',
-        tags: ['characters'],
-        response: {
-          200: { type: 'array', items: CharacterSchema },
-          401: ErrorSchema,
-          500: ErrorSchema,
-        },
-      },
-    },
-    async (request, reply) => {
-      const session = request.appSession;
-      const locale = resolveListLocale(request.headers['accept-language']);
-
-      if (!session) {
-        return reply.status(401).send({ error: 'Session required' });
-      }
-
-      try {
-        return await query<CharacterListRow>(
-          `SELECT
-                    c.id,
-                    c.name,
-                    c.class_id,
-                    COALESCE(t_class_name.value, cl.name) AS class_name,
-                    c.current_hp,
-                    c.max_hp,
-                    c.created_at,
-                    c.updated_at
-                 FROM characters c
-                 LEFT JOIN classes cl ON cl.id = c.class_id
-                 LEFT JOIN translations t_class_name
-                    ON t_class_name.key = cl.name_key
-                   AND t_class_name.locale = $2
-                 WHERE c.user_id = $1
-                 ORDER BY c.updated_at DESC`,
-          [session.userId, locale]
-        );
-      } catch (err) {
-        request.log.error(err);
-        return reply.status(500).send({ error: 'Failed to list characters' });
-      }
-    }
-  );
-
-  // DELETE /:id - Delete character (with access control)
-  fastify.delete<{
-    Params: { id: string };
-  }>(
-    '/:id',
-    {
-      schema: {
-        description: 'Delete a character',
-        tags: ['characters'],
-        params: CharacterIdParamsSchema,
-        response: {
-          204: { type: 'null', description: 'Character deleted' },
-          401: ErrorSchema,
-          403: ErrorSchema,
-          404: ErrorSchema,
-          500: ErrorSchema,
-        },
-      },
-    },
-    async (request, reply) => {
-      const { id } = request.params;
-      const session = request.appSession;
-
-      if (!isValidUUID(id)) {
-        return reply.status(400).send({ error: 'Invalid character ID' });
-      }
-
-      // Check access
-      const access = await checkCharacterAccess(id, session);
-      if (!access.allowed) {
-        const status =
-          access.reason === 'No session'
-            ? 401
-            : access.reason === 'Character not found'
-            ? 404
-            : 403;
-        return reply.status(status).send({ error: access.reason });
-      }
-
-      try {
-        const result = await query(
-          'DELETE FROM characters WHERE id = $1 RETURNING id',
-          [id]
-        );
-
-        if (result.length === 0) {
-          return reply.status(404).send({ error: 'Character not found' });
-        }
-
-        return reply.status(204).send();
-      } catch (err) {
-        request.log.error(err);
-        return reply.status(500).send({ error: 'Failed to delete character' });
-      }
-    }
-  );
+    );
 };
 
 export default characters;

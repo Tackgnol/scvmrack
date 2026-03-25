@@ -230,6 +230,7 @@ export function useCurrentCharacter() {
         async (newLocale: 'en' | 'pl') => {
             if (newLocale === trimmedLocale) return;
             await changeLanguage(newLocale);
+            trackEvent('language_changed', { from: trimmedLocale, to: newLocale });
         },
         [trimmedLocale, changeLanguage]
     );

@@ -1,5 +1,6 @@
 import { FastifyPluginAsync } from 'fastify';
-import { query } from '../../services/db.js';
+import db from '../../services/db.js';
+import { getItemFull, searchItems } from '../../queries/equipment.queries.js';
 
 const equipment: FastifyPluginAsync = async (fastify) => {
   fastify.get<{
@@ -47,54 +48,13 @@ const equipment: FastifyPluginAsync = async (fastify) => {
       if (!q || q.trim().length === 0) return [];
 
       try {
-        return await query<{
-          item_type: string;
-          id: number;
-          key: string;
-          name: string;
-        }>(
-          `
-                    WITH ranked_matches AS (
-                        SELECT
-                            s.item_type,
-                            s.id,
-                            s.key,
-                            s.name,
-                            s.locale,
-                            ts_rank(s.document, plainto_tsquery('simple', unaccent($1))) AS ts_score,
-                            similarity(s.normalized_name, lower(unaccent($1))) AS sim_score
-                        FROM item_search s
-                        WHERE (
-                                  s.document @@ plainto_tsquery('simple', unaccent($1))
-                                  OR s.normalized_name % lower(unaccent($1))
-                                  OR s.normalized_name LIKE (lower(unaccent($1)) || '%')
-                                  )
-                    ),
-                         best_matches AS (
-                             SELECT DISTINCT ON (item_type, id)
-                        item_type,
-                        id,
-                        key,
-                        ts_score,
-                        sim_score
-                    FROM ranked_matches
-                    ORDER BY item_type, id, ts_score DESC, sim_score DESC
-                        )
-                    SELECT
-                        b.item_type,
-                        b.id,
-                        b.key,
-                        COALESCE(t.name, b.key) AS name
-                    FROM best_matches b
-                             LEFT JOIN item_search t
-                                       ON t.id = b.id
-                                           AND t.item_type = b.item_type
-                                           AND t.locale = $2
-                    ORDER BY b.ts_score DESC, b.sim_score DESC
-                        LIMIT $3
-                `,
-          [q, locale, limit]
-        );
+        const rows = await searchItems.run({ q, locale, limit }, db);
+        return rows.map((r) => ({
+          item_type: r.itemType,
+          id: r.id,
+          key: r.key,
+          name: r.name,
+        }));
       } catch (err) {
         request.log.error(err, 'Search failed');
         return reply.status(500).send({ error: 'Search failed' });
@@ -130,15 +90,12 @@ const equipment: FastifyPluginAsync = async (fastify) => {
       const { itemType, id } = request.params;
 
       try {
-        const results = await query<{ get_item_full: any }>(
-          'SELECT get_item_full($1, $2)',
-          [itemType, id]
-        );
-        if (results.length === 0 || results[0].get_item_full == null) {
+        const results = await getItemFull.run({ itemType, id }, db);
+        if (results.length === 0 || results[0].getItemFull == null) {
           return reply.status(404).send({ error: 'Item not found' });
         }
 
-        return results[0].get_item_full;
+        return results[0].getItemFull;
       } catch (err) {
         request.log.error(err, 'Item fetch failed');
         return reply.status(500).send({ error: 'Failed to fetch item' });

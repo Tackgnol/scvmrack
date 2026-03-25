@@ -20,17 +20,18 @@ const STATIC_PREFIXES = [
 ];
 
 const spaIndexCandidates = [
+  join(process.cwd(), 'dist', 'index.html'),
   join(process.cwd(), 'public', 'index.html'),
   join(process.cwd(), 'client', 'public', 'index.html'),
 ];
 
 const isApiRoute = (pathname: string): boolean =>
-    apiPrefixes.some(
-        (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
-    );
+  apiPrefixes.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
+  );
 
 const isStaticRequest = (pathname: string): boolean =>
-    STATIC_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+  STATIC_PREFIXES.some((prefix) => pathname.startsWith(prefix));
 
 const isSpaRouteRequest = (url: string, acceptHeader?: string): boolean => {
   const pathname = url.split('?')[0] || '/';
@@ -39,9 +40,9 @@ const isSpaRouteRequest = (url: string, acceptHeader?: string): boolean => {
   if (isStaticRequest(pathname)) return false;
 
   // Only serve SPA for browser navigations expecting HTML
-  if (!acceptHeader || !acceptHeader.includes('text/html')) return false;
+  return !(!acceptHeader || !acceptHeader.includes('text/html'));
 
-  return true;
+
 };
 
 const resolveSpaIndexPath = async (): Promise<string | null> => {
@@ -91,8 +92,8 @@ const root: FastifyPluginAsync = async (fastify): Promise<void> => {
     const accept = request.headers.accept;
 
     if (
-        request.method === 'GET' &&
-        isSpaRouteRequest(request.url, accept)
+      request.method === 'GET' &&
+      isSpaRouteRequest(request.url, accept)
     ) {
       try {
         if (!spaIndexHtmlCache) {
@@ -100,12 +101,12 @@ const root: FastifyPluginAsync = async (fastify): Promise<void> => {
         }
 
         return reply
-            .type('text/html; charset=utf-8')
-            .send(spaIndexHtmlCache);
+          .type('text/html; charset=utf-8')
+          .send(spaIndexHtmlCache);
       } catch (error) {
         request.log.error(
-            { err: error },
-            'Failed to serve SPA index.html'
+          { err: error },
+          'Failed to serve SPA index.html'
         );
       }
     }
