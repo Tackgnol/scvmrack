@@ -116,7 +116,7 @@ export const CharacterDescriptors = () => {
         );
     }
 
-    const isOccultHerbmaster = character.class_id === 6;
+    const isOccultHerbmaster = character.classId === 6;
 
     return (
         <>
@@ -192,8 +192,8 @@ export const CharacterDescriptors = () => {
                     <TextField
                         fullWidth
                         label={t('traits.bodyDescription')}
-                        value={character.body_description || ''}
-                        onChange={(e) => updateField('body_description', e.target.value)}
+                        value={character.bodyDescription || ''}
+                        onChange={(e) => updateField('bodyDescription', e.target.value)}
                         variant="standard"
                         sx={customStyles.characterDescriptors.traitsFieldHabit}
                         inputProps={{ "data-testid": "body-description-input" }}

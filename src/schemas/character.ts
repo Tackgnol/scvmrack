@@ -71,8 +71,8 @@ const EquipmentItemSchema = {
       items: { type: 'string', maxLength: 50 },
       maxItems: 10,
     },
-    max_tier: { type: 'integer', minimum: 0, maximum: 4 },
-    current_tier: { type: 'integer', minimum: 0, maximum: 4 },
+    maxTier: { type: 'integer', minimum: 0, maximum: 4 },
+    currentTier: { type: 'integer', minimum: 0, maximum: 4 },
   },
 };
 
@@ -119,8 +119,8 @@ const ArmorSchema = {
       items: { type: 'integer', minimum: 1, maximum: 20 },
       maxItems: 5,
     },
-    max_tier: { type: 'integer', minimum: 0, maximum: 4 },
-    current_tier: { type: 'integer', minimum: 0, maximum: 4 },
+    maxTier: { type: 'integer', minimum: 0, maximum: 4 },
+    currentTier: { type: 'integer', minimum: 0, maximum: 4 },
     tags: {
       type: 'array',
       items: { type: 'string', maxLength: 50 },
@@ -168,8 +168,8 @@ const ComputedModifierSchemaDefs = {
       maxItems: 15,
     },
     origin: { type: 'string', enum: ['armor', 'weapon', 'pet', 'system'] },
-    origin_key: { type: 'string', maxLength: 255 },
-    origin_name: { type: 'string', maxLength: 255 },
+    originKey: { type: 'string', maxLength: 255 },
+    originName: { type: 'string', maxLength: 255 },
   },
 };
 
@@ -182,10 +182,10 @@ export const UpdateBodySchema = {
   additionalProperties: false, // Reject unknown fields
   properties: {
     name: { type: 'string', maxLength: 255 },
-    current_hp: { type: 'integer', minimum: -100, maximum: 1000 },
-    max_hp: { type: 'integer', minimum: 1, maximum: 1000 },
+    currentHp: { type: 'integer', minimum: -100, maximum: 1000 },
+    maxHp: { type: 'integer', minimum: 1, maximum: 1000 },
     omens: { type: 'integer', minimum: 0, maximum: 100 },
-    max_omens: { type: 'integer', minimum: 0, maximum: 100 },
+    maxOmens: { type: 'integer', minimum: 0, maximum: 100 },
     silver: { type: 'integer', minimum: 0, maximum: 1000000 },
     strength: { type: 'integer', minimum: 1, maximum: 30 },
     agility: { type: 'integer', minimum: 1, maximum: 30 },
@@ -195,7 +195,7 @@ export const UpdateBodySchema = {
     trait2: { type: 'string', maxLength: 255 },
     habit: { type: 'string', maxLength: 1000 },
     tale: { type: 'string', maxLength: 1000 },
-    body_description: { type: 'string', maxLength: 1000 },
+    bodyDescription: { type: 'string', maxLength: 1000 },
     origin: { type: 'string', maxLength: 1000 },
     notes: { type: 'string', maxLength: 10000 },
     abilities: {
@@ -213,12 +213,12 @@ export const UpdateBodySchema = {
       items: EquipmentItemSchema,
       maxItems: 100,
     },
-    equipped_weapons: {
+    equippedWeapons: {
       type: 'array',
       items: WeaponSchema,
       maxItems: 10,
     },
-    equipped_armor: {
+    equippedArmor: {
       oneOf: [ArmorSchema, { type: 'null' }],
     },
     modifiers: {
@@ -234,39 +234,39 @@ export const CharacterSchema = {
   properties: {
     id: { type: 'string', format: 'uuid' },
     name: { type: 'string' },
-    class_id: { type: 'integer' },
-    class_name: { type: 'string' },
-    class_description: { type: 'string' },
+    classId: { type: 'integer' },
+    className: { type: 'string' },
+    classDescription: { type: 'string' },
     origin: { type: 'string' },
     strength: { type: 'integer' },
     agility: { type: 'integer' },
     presence: { type: 'integer' },
     toughness: { type: 'integer' },
-    max_hp: { type: 'integer' },
-    current_hp: { type: 'integer' },
+    maxHp: { type: 'integer' },
+    currentHp: { type: 'integer' },
     omens: { type: 'integer' },
-    max_omens: { type: 'integer' },
+    maxOmens: { type: 'integer' },
     silver: { type: 'integer' },
     habit: { type: 'string' },
     tale: { type: 'string' },
-    body_description: { type: 'string' },
+    bodyDescription: { type: 'string' },
     trait1: { type: 'string' },
     trait2: { type: 'string' },
     notes: { type: 'string' },
     abilities: { type: 'array', items: AbilitySchema },
     equipment: { type: 'array', items: EquipmentItemSchema },
     storage: { type: 'array', items: EquipmentItemSchema },
-    equipped_weapons: { type: 'array', items: WeaponSchema },
-    equipped_armor: { oneOf: [ArmorSchema, { type: 'null' }] },
+    equippedWeapons: { type: 'array', items: WeaponSchema },
+    equippedArmor: { oneOf: [ArmorSchema, { type: 'null' }] },
     modifiers: { type: 'array', items: ModifierSchema },
-    computed_modifiers: { type: 'array', items: ComputedModifierSchema },
+    computedModifiers: { type: 'array', items: ComputedModifierSchema },
     encumbrance: { type: 'integer' },
-    max_encumbrance: { type: 'integer' },
-    dr_to_dodge: { type: 'integer' },
-    dr_to_melee: { type: 'integer' },
-    dr_to_ranged: { type: 'integer' },
-    created_at: { type: 'string', format: 'date-time' },
-    updated_at: { type: 'string', format: 'date-time' },
+    maxEncumbrance: { type: 'integer' },
+    drToDodge: { type: 'integer' },
+    drToMelee: { type: 'integer' },
+    drToRanged: { type: 'integer' },
+    createdAt: { type: 'string', format: 'date-time' },
+    updatedAt: { type: 'string', format: 'date-time' },
   },
 };
 
@@ -280,6 +280,6 @@ export const ErrorSchema = {
 export const GenerateBodySchema = {
   type: 'object',
   properties: {
-    class_id: { type: 'integer', minimum: 1, maximum: 6 },
+    classId: { type: 'integer', minimum: 1, maximum: 6 },
   },
 } as const;

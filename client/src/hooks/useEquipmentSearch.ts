@@ -4,13 +4,17 @@ import {useTranslation} from 'react-i18next';
 import {useQuery} from '@tanstack/react-query';
 
 export interface ItemSearchHit {
-    item_type: 'weapon' | 'armor' | 'equipment' | 'pet';
+    itemType: 'weapon' | 'armor' | 'equipment' | 'pet';
     id: number;
     description?:string;
     key: string;
     name: string;
     tags: string[]
 }
+
+type RawItemSearchHit = ItemSearchHit & {
+    item_type?: ItemSearchHit['itemType'];
+};
 
 async function fetchItemSearch(
     query: string,
@@ -31,7 +35,12 @@ async function fetchItemSearch(
         throw new Error('Search failed');
     }
 
-    return response.json();
+    const data = await response.json() as RawItemSearchHit[];
+    return data.map((item) => ({
+        ...item,
+        itemType: item.itemType ?? item.item_type ?? 'equipment',
+        tags: item.tags ?? [],
+    }));
 }
 
 

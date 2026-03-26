@@ -43,12 +43,12 @@ export default function ResourcesRow() {
   const hpPulseTimeoutRef = useRef<number | null>(null);
   const omensPulseTimeoutRef = useRef<number | null>(null);
 
-  const currentHp = character?.current_hp ?? 0;
-  const maxHp = character?.max_hp ?? 1;
+  const currentHp = character?.currentHp ?? 0;
+  const maxHp = character?.maxHp ?? 1;
   const omens = character?.omens ?? 0;
-  const currentTier = character?.equipped_armor?.current_tier ?? 0;
-  const maxTier = character?.equipped_armor?.max_tier ?? 0;
-  const hasArmor = !!character?.equipped_armor;
+  const currentTier = character?.equippedArmor?.currentTier ?? 0;
+  const maxTier = character?.equippedArmor?.maxTier ?? 0;
+  const hasArmor = !!character?.equippedArmor;
   const characterKey = character?.id ?? 'unknown';
 
   useEffect(() => {
@@ -116,7 +116,7 @@ export default function ResourcesRow() {
   const handleTierChange = (delta: number) => {
     const newTier = Math.max(0, Math.min(maxTier, currentTier + delta));
     if (newTier !== currentTier) {
-      updateArmorField('current_tier', newTier);
+      updateArmorField('currentTier', newTier);
     }
   };
 
@@ -154,7 +154,7 @@ export default function ResourcesRow() {
               type="number"
               value={currentHp}
               onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                updateField('current_hp', parseInt(e.target.value) || 0)
+                updateField('currentHp', parseInt(e.target.value) || 0)
               }
               size="small"
               sx={customStyles.hpInput}

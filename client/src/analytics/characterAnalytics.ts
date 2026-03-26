@@ -5,7 +5,7 @@ import type { OptimisticPatch } from '@/hooks/models';
  * Maps a single patch to a stable, human-readable field name suitable for GA4.
  *
  * Simple field patches use their field name directly so GA can show e.g.
- * "current_hp edited 3 420 times".  Structural operations (equip, move,
+ * "currentHp edited 3 420 times".  Structural operations (equip, move,
  * inventory management) are grouped into a handful of meaningful categories
  * so reports stay readable without losing signal.
  */
@@ -48,10 +48,10 @@ function patchToField(patch: OptimisticPatch): string {
         // ── Equipping / unequipping ───────────────────────────────────────────
         case 'equip-weapon':
         case 'unequip-weapon':
-            return 'equipped_weapons';
+            return 'equippedWeapons';
         case 'equip-armor':
         case 'unequip-armor':
-            return 'equipped_armor';
+            return 'equippedArmor';
 
         // ── Custom modifiers ─────────────────────────────────────────────────
         case 'modifier-add':
@@ -66,7 +66,7 @@ function patchToField(patch: OptimisticPatch): string {
  *
  * GA4 receives:
  *   - `fields`       – sorted, deduplicated list of what was touched,
- *                      e.g. `"current_hp,equipment,silver"`.
+ *                      e.g. `"currentHp,equipment,silver"`.
  *   - `patch_count`  – raw number of patches in the batch (proxy for edit
  *                      intensity — a player hammering HP up/down scores high).
  *   - `locale`       – UI language at the time of the edit.

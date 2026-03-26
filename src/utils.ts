@@ -1,6 +1,38 @@
 import validator from 'validator';
 
 /**
+ * Convert a camelCase string to snake_case
+ */
+export function camelToSnake(key: string): string {
+  return key.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`);
+}
+
+/**
+ * Convert a snake_case string to camelCase
+ */
+export function snakeToCamel(key: string): string {
+  return key.replace(/_([a-z])/g, (_, c) => c.toUpperCase());
+}
+
+/**
+ * Recursively transform all object keys using the given function.
+ * Arrays are traversed, primitives are left as-is.
+ */
+export function transformKeys(obj: unknown, keyFn: (key: string) => string): unknown {
+  if (Array.isArray(obj)) return obj.map((item) => transformKeys(item, keyFn));
+  if (obj !== null && typeof obj === 'object') {
+    const prototype = Object.getPrototypeOf(obj);
+    if (prototype !== Object.prototype && prototype !== null) {
+      return obj;
+    }
+    return Object.fromEntries(
+      Object.entries(obj as Record<string, unknown>).map(([k, v]) => [keyFn(k), transformKeys(v, keyFn)])
+    );
+  }
+  return obj;
+}
+
+/**
  * Sanitize a string input - escape HTML, trim, limit length
  */
 export function sanitizeString(input: unknown, maxLength = 10000): string {
@@ -66,17 +98,17 @@ export function sanitizeCharacterUpdate(
     tale: 1000,
     trait1: 255,
     trait2: 255,
-    body_description: 1000,
+    bodyDescription: 1000,
     origin: 1000,
     notes: 10000,
   };
 
   // Integer fields with min/max bounds
   const integerFields: Record<string, { min: number; max: number }> = {
-    current_hp: { min: -100, max: 1000 },
-    max_hp: { min: 1, max: 1000 },
+    currentHp: { min: -100, max: 1000 },
+    maxHp: { min: 1, max: 1000 },
     omens: { min: 0, max: 100 },
-    max_omens: { min: 0, max: 100 },
+    maxOmens: { min: 0, max: 100 },
     silver: { min: 0, max: 1000000 },
     strength: { min: 1, max: 30 },
     agility: { min: 1, max: 30 },
@@ -89,8 +121,8 @@ export function sanitizeCharacterUpdate(
     'abilities',
     'equipment',
     'storage',
-    'equipped_weapons',
-    'equipped_armor',
+    'equippedWeapons',
+    'equippedArmor',
     'modifiers',
   ];
 
@@ -133,4 +165,27 @@ export function isValidUUID(id: string): boolean {
  */
 export function isValidLocale(locale: unknown): locale is 'en' | 'pl' {
   return locale === 'en' || locale === 'pl';
+}
+
+/**
+ * Convert a sanitized camelCase patch to snake_case keys for the DB update_character function.
+ * JSONB content (arrays/objects) is also converted so stored data stays in snake_case.
+ */
+export function toDbPatch(patch: Record<string, unknown>): Record<string, unknown> {
+  return Object.fromEntries(
+    Object.entries(patch).map(([k, v]) => [
+      camelToSnake(k),
+      (Array.isArray(v) || (v !== null && typeof v === 'object'))
+        ? transformKeys(v, camelToSnake)
+        : v,
+    ])
+  );
+}
+
+/**
+ * Transform a character response from Postgres to camelCase recursively.
+ * This normalizes both top-level columns and nested JSONB content.
+ */
+export function camelCaseJsonbFields<T extends object>(row: T): T {
+  return transformKeys(row, snakeToCamel) as T;
 }

@@ -293,7 +293,7 @@ export interface paths {
             requestBody?: {
                 content: {
                     "application/json": {
-                        class_id?: number;
+                        classId?: number;
                     };
                 };
             };
@@ -308,22 +308,22 @@ export interface paths {
                             /** Format: uuid */
                             id?: string;
                             name?: string;
-                            class_id?: number;
-                            class_name?: string;
-                            class_description?: string;
+                            classId?: number;
+                            className?: string;
+                            classDescription?: string;
                             origin?: string;
                             strength?: number;
                             agility?: number;
                             presence?: number;
                             toughness?: number;
-                            max_hp?: number;
-                            current_hp?: number;
+                            maxHp?: number;
+                            currentHp?: number;
                             omens?: number;
-                            max_omens?: number;
+                            maxOmens?: number;
                             silver?: number;
                             habit?: string;
                             tale?: string;
-                            body_description?: string;
+                            bodyDescription?: string;
                             trait1?: string;
                             trait2?: string;
                             notes?: string;
@@ -340,8 +340,8 @@ export interface paths {
                                 uses?: boolean[];
                                 dice?: number[];
                                 tags?: string[];
-                                max_tier?: number;
-                                current_tier?: number;
+                                maxTier?: number;
+                                currentTier?: number;
                             }[];
                             storage?: {
                                 key?: string;
@@ -350,23 +350,23 @@ export interface paths {
                                 uses?: boolean[];
                                 dice?: number[];
                                 tags?: string[];
-                                max_tier?: number;
-                                current_tier?: number;
+                                maxTier?: number;
+                                currentTier?: number;
                             }[];
-                            equipped_weapons?: {
+                            equippedWeapons?: {
                                 key?: string;
                                 name?: string;
                                 description?: string;
                                 dice?: number[];
                                 tags?: string[];
                             }[];
-                            equipped_armor?: {
+                            equippedArmor?: {
                                 key?: string;
                                 name?: string;
                                 description?: string;
                                 dice?: number[];
-                                max_tier?: number;
-                                current_tier?: number;
+                                maxTier?: number;
+                                currentTier?: number;
                                 tags?: string[];
                             } | null;
                             modifiers?: {
@@ -379,26 +379,26 @@ export interface paths {
                                 exclude?: string[];
                                 comment?: string;
                             }[];
-                            computed_modifiers?: {
+                            computedModifiers?: {
                                 value?: number;
                                 source?: string;
                                 /** @enum {string} */
-                                statistic?: PathsCharactersNewPostResponses201ContentApplicationJsonComputed_modifiersStatistic;
+                                statistic?: PathsCharactersNewPostResponses201ContentApplicationJsonComputedModifiersStatistic;
                                 exclude?: string[];
                                 /** @enum {string} */
-                                origin?: PathsCharactersNewPostResponses201ContentApplicationJsonComputed_modifiersOrigin;
-                                origin_key?: string;
-                                origin_name?: string;
+                                origin?: PathsCharactersNewPostResponses201ContentApplicationJsonComputedModifiersOrigin;
+                                originKey?: string;
+                                originName?: string;
                             }[];
                             encumbrance?: number;
-                            max_encumbrance?: number;
-                            dr_to_dodge?: number;
-                            dr_to_melee?: number;
-                            dr_to_ranged?: number;
+                            maxEncumbrance?: number;
+                            drToDodge?: number;
+                            drToMelee?: number;
+                            drToRanged?: number;
                             /** Format: date-time */
-                            created_at?: string;
+                            createdAt?: string;
                             /** Format: date-time */
-                            updated_at?: string;
+                            updatedAt?: string;
                         };
                     };
                 };
@@ -426,6 +426,55 @@ export interface paths {
                 };
             };
         };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/characters/count": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Get total number of characters in the database */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            total: number;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error?: string;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -463,22 +512,22 @@ export interface paths {
                             /** Format: uuid */
                             id?: string;
                             name?: string;
-                            class_id?: number;
-                            class_name?: string;
-                            class_description?: string;
+                            classId?: number;
+                            className?: string;
+                            classDescription?: string;
                             origin?: string;
                             strength?: number;
                             agility?: number;
                             presence?: number;
                             toughness?: number;
-                            max_hp?: number;
-                            current_hp?: number;
+                            maxHp?: number;
+                            currentHp?: number;
                             omens?: number;
-                            max_omens?: number;
+                            maxOmens?: number;
                             silver?: number;
                             habit?: string;
                             tale?: string;
-                            body_description?: string;
+                            bodyDescription?: string;
                             trait1?: string;
                             trait2?: string;
                             notes?: string;
@@ -495,8 +544,8 @@ export interface paths {
                                 uses?: boolean[];
                                 dice?: number[];
                                 tags?: string[];
-                                max_tier?: number;
-                                current_tier?: number;
+                                maxTier?: number;
+                                currentTier?: number;
                             }[];
                             storage?: {
                                 key?: string;
@@ -505,23 +554,23 @@ export interface paths {
                                 uses?: boolean[];
                                 dice?: number[];
                                 tags?: string[];
-                                max_tier?: number;
-                                current_tier?: number;
+                                maxTier?: number;
+                                currentTier?: number;
                             }[];
-                            equipped_weapons?: {
+                            equippedWeapons?: {
                                 key?: string;
                                 name?: string;
                                 description?: string;
                                 dice?: number[];
                                 tags?: string[];
                             }[];
-                            equipped_armor?: {
+                            equippedArmor?: {
                                 key?: string;
                                 name?: string;
                                 description?: string;
                                 dice?: number[];
-                                max_tier?: number;
-                                current_tier?: number;
+                                maxTier?: number;
+                                currentTier?: number;
                                 tags?: string[];
                             } | null;
                             modifiers?: {
@@ -534,26 +583,26 @@ export interface paths {
                                 exclude?: string[];
                                 comment?: string;
                             }[];
-                            computed_modifiers?: {
+                            computedModifiers?: {
                                 value?: number;
                                 source?: string;
                                 /** @enum {string} */
-                                statistic?: PathsCharactersIdGetResponses200ContentApplicationJsonComputed_modifiersStatistic;
+                                statistic?: PathsCharactersIdGetResponses200ContentApplicationJsonComputedModifiersStatistic;
                                 exclude?: string[];
                                 /** @enum {string} */
-                                origin?: PathsCharactersIdGetResponses200ContentApplicationJsonComputed_modifiersOrigin;
-                                origin_key?: string;
-                                origin_name?: string;
+                                origin?: PathsCharactersIdGetResponses200ContentApplicationJsonComputedModifiersOrigin;
+                                originKey?: string;
+                                originName?: string;
                             }[];
                             encumbrance?: number;
-                            max_encumbrance?: number;
-                            dr_to_dodge?: number;
-                            dr_to_melee?: number;
-                            dr_to_ranged?: number;
+                            maxEncumbrance?: number;
+                            drToDodge?: number;
+                            drToMelee?: number;
+                            drToRanged?: number;
                             /** Format: date-time */
-                            created_at?: string;
+                            createdAt?: string;
                             /** Format: date-time */
-                            updated_at?: string;
+                            updatedAt?: string;
                         };
                     };
                 };
@@ -688,10 +737,10 @@ export interface paths {
                 content: {
                     "application/json": {
                         name?: string;
-                        current_hp?: number;
-                        max_hp?: number;
+                        currentHp?: number;
+                        maxHp?: number;
                         omens?: number;
-                        max_omens?: number;
+                        maxOmens?: number;
                         silver?: number;
                         strength?: number;
                         agility?: number;
@@ -701,7 +750,7 @@ export interface paths {
                         trait2?: string;
                         habit?: string;
                         tale?: string;
-                        body_description?: string;
+                        bodyDescription?: string;
                         origin?: string;
                         notes?: string;
                         abilities?: {
@@ -717,8 +766,8 @@ export interface paths {
                             uses?: boolean[];
                             dice?: number[];
                             tags?: string[];
-                            max_tier?: number;
-                            current_tier?: number;
+                            maxTier?: number;
+                            currentTier?: number;
                         }[];
                         storage?: {
                             key?: string;
@@ -727,23 +776,23 @@ export interface paths {
                             uses?: boolean[];
                             dice?: number[];
                             tags?: string[];
-                            max_tier?: number;
-                            current_tier?: number;
+                            maxTier?: number;
+                            currentTier?: number;
                         }[];
-                        equipped_weapons?: {
+                        equippedWeapons?: {
                             key?: string;
                             name?: string;
                             description?: string;
                             dice?: number[];
                             tags?: string[];
                         }[];
-                        equipped_armor?: {
+                        equippedArmor?: {
                             key?: string;
                             name?: string;
                             description?: string;
                             dice?: number[];
-                            max_tier?: number;
-                            current_tier?: number;
+                            maxTier?: number;
+                            currentTier?: number;
                             tags?: string[];
                         } | null;
                         modifiers?: {
@@ -770,22 +819,22 @@ export interface paths {
                             /** Format: uuid */
                             id?: string;
                             name?: string;
-                            class_id?: number;
-                            class_name?: string;
-                            class_description?: string;
+                            classId?: number;
+                            className?: string;
+                            classDescription?: string;
                             origin?: string;
                             strength?: number;
                             agility?: number;
                             presence?: number;
                             toughness?: number;
-                            max_hp?: number;
-                            current_hp?: number;
+                            maxHp?: number;
+                            currentHp?: number;
                             omens?: number;
-                            max_omens?: number;
+                            maxOmens?: number;
                             silver?: number;
                             habit?: string;
                             tale?: string;
-                            body_description?: string;
+                            bodyDescription?: string;
                             trait1?: string;
                             trait2?: string;
                             notes?: string;
@@ -802,8 +851,8 @@ export interface paths {
                                 uses?: boolean[];
                                 dice?: number[];
                                 tags?: string[];
-                                max_tier?: number;
-                                current_tier?: number;
+                                maxTier?: number;
+                                currentTier?: number;
                             }[];
                             storage?: {
                                 key?: string;
@@ -812,23 +861,23 @@ export interface paths {
                                 uses?: boolean[];
                                 dice?: number[];
                                 tags?: string[];
-                                max_tier?: number;
-                                current_tier?: number;
+                                maxTier?: number;
+                                currentTier?: number;
                             }[];
-                            equipped_weapons?: {
+                            equippedWeapons?: {
                                 key?: string;
                                 name?: string;
                                 description?: string;
                                 dice?: number[];
                                 tags?: string[];
                             }[];
-                            equipped_armor?: {
+                            equippedArmor?: {
                                 key?: string;
                                 name?: string;
                                 description?: string;
                                 dice?: number[];
-                                max_tier?: number;
-                                current_tier?: number;
+                                maxTier?: number;
+                                currentTier?: number;
                                 tags?: string[];
                             } | null;
                             modifiers?: {
@@ -841,26 +890,26 @@ export interface paths {
                                 exclude?: string[];
                                 comment?: string;
                             }[];
-                            computed_modifiers?: {
+                            computedModifiers?: {
                                 value?: number;
                                 source?: string;
                                 /** @enum {string} */
-                                statistic?: PathsCharactersIdPatchResponses200ContentApplicationJsonComputed_modifiersStatistic;
+                                statistic?: PathsCharactersIdPatchResponses200ContentApplicationJsonComputedModifiersStatistic;
                                 exclude?: string[];
                                 /** @enum {string} */
-                                origin?: PathsCharactersIdPatchResponses200ContentApplicationJsonComputed_modifiersOrigin;
-                                origin_key?: string;
-                                origin_name?: string;
+                                origin?: PathsCharactersIdPatchResponses200ContentApplicationJsonComputedModifiersOrigin;
+                                originKey?: string;
+                                originName?: string;
                             }[];
                             encumbrance?: number;
-                            max_encumbrance?: number;
-                            dr_to_dodge?: number;
-                            dr_to_melee?: number;
-                            dr_to_ranged?: number;
+                            maxEncumbrance?: number;
+                            drToDodge?: number;
+                            drToMelee?: number;
+                            drToRanged?: number;
                             /** Format: date-time */
-                            created_at?: string;
+                            createdAt?: string;
                             /** Format: date-time */
-                            updated_at?: string;
+                            updatedAt?: string;
                         };
                     };
                 };
@@ -1045,22 +1094,22 @@ export interface paths {
                             /** Format: uuid */
                             id?: string;
                             name?: string;
-                            class_id?: number;
-                            class_name?: string;
-                            class_description?: string;
+                            classId?: number;
+                            className?: string;
+                            classDescription?: string;
                             origin?: string;
                             strength?: number;
                             agility?: number;
                             presence?: number;
                             toughness?: number;
-                            max_hp?: number;
-                            current_hp?: number;
+                            maxHp?: number;
+                            currentHp?: number;
                             omens?: number;
-                            max_omens?: number;
+                            maxOmens?: number;
                             silver?: number;
                             habit?: string;
                             tale?: string;
-                            body_description?: string;
+                            bodyDescription?: string;
                             trait1?: string;
                             trait2?: string;
                             notes?: string;
@@ -1077,8 +1126,8 @@ export interface paths {
                                 uses?: boolean[];
                                 dice?: number[];
                                 tags?: string[];
-                                max_tier?: number;
-                                current_tier?: number;
+                                maxTier?: number;
+                                currentTier?: number;
                             }[];
                             storage?: {
                                 key?: string;
@@ -1087,23 +1136,23 @@ export interface paths {
                                 uses?: boolean[];
                                 dice?: number[];
                                 tags?: string[];
-                                max_tier?: number;
-                                current_tier?: number;
+                                maxTier?: number;
+                                currentTier?: number;
                             }[];
-                            equipped_weapons?: {
+                            equippedWeapons?: {
                                 key?: string;
                                 name?: string;
                                 description?: string;
                                 dice?: number[];
                                 tags?: string[];
                             }[];
-                            equipped_armor?: {
+                            equippedArmor?: {
                                 key?: string;
                                 name?: string;
                                 description?: string;
                                 dice?: number[];
-                                max_tier?: number;
-                                current_tier?: number;
+                                maxTier?: number;
+                                currentTier?: number;
                                 tags?: string[];
                             } | null;
                             modifiers?: {
@@ -1116,26 +1165,26 @@ export interface paths {
                                 exclude?: string[];
                                 comment?: string;
                             }[];
-                            computed_modifiers?: {
+                            computedModifiers?: {
                                 value?: number;
                                 source?: string;
                                 /** @enum {string} */
-                                statistic?: PathsCharactersGetResponses200ContentApplicationJsonComputed_modifiersStatistic;
+                                statistic?: PathsCharactersGetResponses200ContentApplicationJsonComputedModifiersStatistic;
                                 exclude?: string[];
                                 /** @enum {string} */
-                                origin?: PathsCharactersGetResponses200ContentApplicationJsonComputed_modifiersOrigin;
-                                origin_key?: string;
-                                origin_name?: string;
+                                origin?: PathsCharactersGetResponses200ContentApplicationJsonComputedModifiersOrigin;
+                                originKey?: string;
+                                originName?: string;
                             }[];
                             encumbrance?: number;
-                            max_encumbrance?: number;
-                            dr_to_dodge?: number;
-                            dr_to_melee?: number;
-                            dr_to_ranged?: number;
+                            maxEncumbrance?: number;
+                            drToDodge?: number;
+                            drToMelee?: number;
+                            drToRanged?: number;
                             /** Format: date-time */
-                            created_at?: string;
+                            createdAt?: string;
                             /** Format: date-time */
-                            updated_at?: string;
+                            updatedAt?: string;
                         }[];
                     };
                 };
@@ -1199,7 +1248,7 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
-                            item_type?: string;
+                            itemType?: string;
                             id?: number;
                             key?: string;
                             name?: string;
@@ -1253,72 +1302,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/session/info": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Default Response */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/session/extend": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Default Response */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1340,13 +1323,13 @@ export enum PathsCharactersNewPostResponses201ContentApplicationJsonModifiersSta
     presence = "presence",
     toughness = "toughness"
 }
-export enum PathsCharactersNewPostResponses201ContentApplicationJsonComputed_modifiersStatistic {
+export enum PathsCharactersNewPostResponses201ContentApplicationJsonComputedModifiersStatistic {
     agility = "agility",
     strength = "strength",
     presence = "presence",
     toughness = "toughness"
 }
-export enum PathsCharactersNewPostResponses201ContentApplicationJsonComputed_modifiersOrigin {
+export enum PathsCharactersNewPostResponses201ContentApplicationJsonComputedModifiersOrigin {
     armor = "armor",
     weapon = "weapon",
     pet = "pet",
@@ -1362,13 +1345,13 @@ export enum PathsCharactersIdGetResponses200ContentApplicationJsonModifiersStati
     presence = "presence",
     toughness = "toughness"
 }
-export enum PathsCharactersIdGetResponses200ContentApplicationJsonComputed_modifiersStatistic {
+export enum PathsCharactersIdGetResponses200ContentApplicationJsonComputedModifiersStatistic {
     agility = "agility",
     strength = "strength",
     presence = "presence",
     toughness = "toughness"
 }
-export enum PathsCharactersIdGetResponses200ContentApplicationJsonComputed_modifiersOrigin {
+export enum PathsCharactersIdGetResponses200ContentApplicationJsonComputedModifiersOrigin {
     armor = "armor",
     weapon = "weapon",
     pet = "pet",
@@ -1390,13 +1373,13 @@ export enum PathsCharactersIdPatchResponses200ContentApplicationJsonModifiersSta
     presence = "presence",
     toughness = "toughness"
 }
-export enum PathsCharactersIdPatchResponses200ContentApplicationJsonComputed_modifiersStatistic {
+export enum PathsCharactersIdPatchResponses200ContentApplicationJsonComputedModifiersStatistic {
     agility = "agility",
     strength = "strength",
     presence = "presence",
     toughness = "toughness"
 }
-export enum PathsCharactersIdPatchResponses200ContentApplicationJsonComputed_modifiersOrigin {
+export enum PathsCharactersIdPatchResponses200ContentApplicationJsonComputedModifiersOrigin {
     armor = "armor",
     weapon = "weapon",
     pet = "pet",
@@ -1408,13 +1391,13 @@ export enum PathsCharactersGetResponses200ContentApplicationJsonModifiersStatist
     presence = "presence",
     toughness = "toughness"
 }
-export enum PathsCharactersGetResponses200ContentApplicationJsonComputed_modifiersStatistic {
+export enum PathsCharactersGetResponses200ContentApplicationJsonComputedModifiersStatistic {
     agility = "agility",
     strength = "strength",
     presence = "presence",
     toughness = "toughness"
 }
-export enum PathsCharactersGetResponses200ContentApplicationJsonComputed_modifiersOrigin {
+export enum PathsCharactersGetResponses200ContentApplicationJsonComputedModifiersOrigin {
     armor = "armor",
     weapon = "weapon",
     pet = "pet",

@@ -8,6 +8,7 @@ import {
     deleteCharacter,
     generateCharacter,
     getCharacterFull,
+    getTotalCharacters,
     listUserCharacters,
     updateCharacter
 } from '../../queries/characters.queries.js';
@@ -22,9 +23,9 @@ import {
 } from '../../schemas/character.js';
 import db from '../../services/db.js';
 import type {CharacterUpdate, GenerateCharacterParams,} from '../../types/character.js';
-import {isValidLocale, isValidUUID, sanitizeCharacterUpdate,} from '../../utils.js';
+import {camelCaseJsonbFields, isValidLocale, isValidUUID, sanitizeCharacterUpdate, toDbPatch,} from '../../utils.js';
 
-W// ============================================
+// ============================================
 // Helper: Check character access
 // ============================================
 async function checkCharacterAccess(
@@ -98,12 +99,12 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
                 return reply.status(401).send({error: 'Session required'});
             }
 
-            const class_id = request.body?.class_id;
+            const classId = request.body?.classId;
             const locale = request.query.locale ?? 'en';
 
             try {
                 const [result] = await generateCharacter.run(
-                    {classId: class_id ?? null},
+                    {classId: classId ?? null},
                     db
                 );
 
@@ -120,12 +121,43 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
 
                 const [character] = await getCharacterFull.run({id: characterId!, locale}, db);
 
-                return reply.status(201).send(character);
+                return reply.status(201).send(camelCaseJsonbFields(character));
             } catch (err) {
                 request.log.error(err);
                 return reply
                     .status(500)
                     .send({error: 'Failed to generate character'});
+            }
+        }
+    );
+
+    // GET /count - Get total number of characters
+    fastify.get(
+        '/count',
+        {
+            schema: {
+                description: 'Get total number of characters in the database',
+                tags: ['characters'],
+                response: {
+                    200: {
+                        type: 'object',
+                        properties: {
+                            total: { type: 'number' },
+                        },
+                        required: ['total'],
+                    },
+                    500: ErrorSchema,
+                },
+            },
+        },
+        async (request, reply) => {
+            try {
+                const [result] = await getTotalCharacters.run(undefined, db);
+                const total = result?.total ?? 0;
+                return { total };
+            } catch (err) {
+                request.log.error(err);
+                return reply.status(500).send({ error: 'Failed to count characters' });
             }
         }
     );
@@ -178,7 +210,7 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
                     return reply.status(404).send({error: 'Character not found'});
                 }
 
-                return character;
+                return camelCaseJsonbFields(character);
             } catch (err) {
                 request.log.error(err);
                 return reply.status(500).send({error: 'Failed to fetch character'});
@@ -252,10 +284,10 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
             }
 
             try {
-                await updateCharacter.run({id, patch: updates as CharacterPatch}, db);
+                await updateCharacter.run({id, patch: toDbPatch(updates) as CharacterPatch}, db);
 
                 const [character] = await getCharacterFull.run({id, locale}, db);
-                return character;
+                return camelCaseJsonbFields(character);
             } catch (err: unknown) {
                 if (err instanceof Error && err.message.includes('Character not found')) {
                     return reply.status(404).send({error: 'Character not found'});
@@ -379,16 +411,7 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
 
             try {
                 const rows = await listUserCharacters.run({userId: session.userId, locale}, db);
-                return rows.map((r) => ({
-                    id: r.id,
-                    name: r.name,
-                    class_id: r.classId,
-                    class_name: r.className,
-                    current_hp: r.currentHp,
-                    max_hp: r.maxHp,
-                    created_at: r.createdAt,
-                    updated_at: r.updatedAt,
-                }));
+                return rows;
             } catch (err) {
                 request.log.error(err);
                 return reply.status(500).send({error: 'Failed to list characters'});

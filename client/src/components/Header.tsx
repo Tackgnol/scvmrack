@@ -14,7 +14,8 @@ import { useRouterState } from "@tanstack/react-router";
 import { customStyles } from "@theme/morkBorgTheme";
 import { useCallback, useEffect, useRef, useState, lazy, Suspense } from "react";
 import { useTranslation } from "react-i18next";
-import { BoneIconContainer, BoneBar, StyledNavLink } from "./Header.styled";
+import { BoneIconContainer, BoneBar, StyledNavLink, ScvmCountBadge } from "./Header.styled";
+import { $api } from "@/api";
 
 const AuthModal = lazy(() => import('./AuthModal').then(m => ({ default: m.AuthModal })));
 
@@ -60,6 +61,7 @@ export default function Header() {
     const { t } = useTranslation();
     const { user, isAuthenticated } = useAuth();
     const { isSaving, isJustLoggedOut, character, characterId, lastCharacterId } = useCharacter();
+    const { data: countData } = $api.useQuery("get", "/characters/count");
     const { isSessionExpired, clearSessionExpiredFlag } = useSessionExpiredFlag();
     const [authModalOpen, setAuthModalOpen] = useState(false);
     const [sessionExpiredNotice, setSessionExpiredNotice] = useState(false);
@@ -210,6 +212,13 @@ export default function Header() {
                                     {isAuthenticated ? <PersonIcon /> : <PersonOutlineIcon />}
                                 </IconButton>
                             </Box>
+                            {countData?.total !== undefined && (
+                                <Box sx={{ display: 'flex', justifyContent: 'flex-end', mr: 2, mb: 1.5 }}>
+                                    <ScvmCountBadge>
+                                        {countData.total} {t("header.scvmsCreated", "SCVMS")}... AND COUNTING
+                                    </ScvmCountBadge>
+                                </Box>
+                            )}
                             <Box sx={customStyles.header.navBar}>
                                 <NavLink to="/" href={homeUrl} text={t("nav.home")} />
                                 {isAuthenticated && <NavLink to="/characters" text={t("nav.characters")} />}
