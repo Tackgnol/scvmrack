@@ -255,7 +255,7 @@ function ComputedModifierTag({
   const { t } = useTranslation();
   const isNegative = (modifier.value ?? 0) < 0;
   const originName =
-    modifier.origin_name ?? t('modifiers.computed.unknownOrigin');
+    modifier.originName ?? t('modifiers.computed.unknownOrigin');
   const [pulse, setPulse] = useState(false);
   const previousValueRef = useRef<number | null>(null);
 
@@ -404,11 +404,11 @@ export default function ModifiersPanel() {
   const modalValue = modalValueStr === '' ? 0 : Number(modalValueStr);
 
   const customModifiers = character?.modifiers ?? [];
-  const computedModifiers = character?.computed_modifiers ?? [];
+  const computedModifiers = character?.computedModifiers ?? [];
   const computedSignature = computedModifiers
     .map(
       (mod) =>
-        `${mod.origin_key ?? mod.origin_name ?? 'origin'}:${mod.statistic ?? 'stat'}:${mod.value ?? 0}:${(mod.exclude ?? []).join('.')}`
+        `${mod.originKey ?? mod.originName ?? 'origin'}:${mod.statistic ?? 'stat'}:${mod.value ?? 0}:${(mod.exclude ?? []).join('.')}`
     )
     .join('|');
   const computedTotal = computedModifiers.reduce(
@@ -593,7 +593,7 @@ export default function ModifiersPanel() {
   };
 
   const computedOriginName =
-    selectedComputedModifier?.origin_name ??
+    selectedComputedModifier?.originName ??
     t('modifiers.computed.unknownOrigin');
   const computedExcluded = new Set(selectedComputedModifier?.exclude ?? []);
   const computedAppliesToOptions = allIncludeOptions.filter(
@@ -732,11 +732,11 @@ export default function ModifiersPanel() {
           >
             <AnimatePresence initial={false}>
               {computedModifiers.map((mod, idx) => {
-                const nameLength = (mod.origin_name ?? '').trim().length;
+                const nameLength = (mod.originName ?? '').trim().length;
                 const tileSpan = getBentoTileSpan(nameLength);
                 const computedKey =
-                  mod.origin_key ??
-                  `${mod.origin_name ?? 'computed'}-${mod.statistic ?? 'agility'}-${mod.value ?? 0}-${idx}`;
+                  mod.originKey ??
+                  `${mod.originName ?? 'computed'}-${mod.statistic ?? 'agility'}-${mod.value ?? 0}-${idx}`;
 
                 return (
                   <Box

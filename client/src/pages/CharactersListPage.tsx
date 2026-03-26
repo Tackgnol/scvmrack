@@ -1,6 +1,6 @@
 import { $api } from "@/api";
-import type { paths } from "@/api/schema.ts";
 import { useCharacter } from "@/CharacterContext/CharacterContext";
+import { CharacterListItem } from "@/hooks/models.ts";
 import AnimatedNumber from "@components/AnimatedNumber.tsx";
 import { useAuth } from '@/hooks/useAuth';
 import { appHistory } from '@/router/history';
@@ -18,11 +18,6 @@ import {
 import { Link } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-
-type CharactersListResponse = NonNullable<
-    paths['/characters']['get']['responses']['200']['content']['application/json']
->;
-type CharacterListItem = CharactersListResponse[number];
 
 const listStyles = {
     container: {
@@ -200,6 +195,7 @@ export function CharactersListPage() {
         { enabled: isAuthenticated, refetchOnMount: 'always' }
     );
     const deleteCharacter = $api.useMutation('delete', '/characters/{id}');
+    const characters = (charactersQuery.data as CharacterListItem[] | undefined) ?? [];
 
     const handleOpenCharacter = async (id?: string) => {
         if (!id) return;
@@ -276,7 +272,7 @@ export function CharactersListPage() {
         (character.name || '').trim() || t('characters.unnamed', 'Unnamed Scvm');
 
     const getClassName = (character: CharacterListItem) =>
-        (character.class_name || '').trim() || t('characters.unknownClass', 'Unknown');
+        (character.className || '').trim() || t('characters.unknownClass', 'Unknown');
 
     if (isGuest) {
         return (
@@ -352,7 +348,7 @@ export function CharactersListPage() {
                     </Alert>
                 )}
 
-                {charactersQuery.data?.length === 0 && (
+                {characters.length === 0 && (
                     <Box sx={listStyles.emptyState}>
                         <Typography sx={listStyles.emptyStateText}>
                             {t('characters.noCharacters', 'No characters yet. Create your first scvm!')}
@@ -363,7 +359,7 @@ export function CharactersListPage() {
                     </Box>
                 )}
 
-                {Boolean(charactersQuery.data?.length) && (
+                {characters.length > 0 && (
                     <Box sx={listStyles.shell}>
                         <Box sx={listStyles.tableHeader}>
                             <Typography sx={listStyles.tableHeaderCell}>{t('characters.columns.name', 'Name')}</Typography>
@@ -374,7 +370,7 @@ export function CharactersListPage() {
                         </Box>
 
                         <Stack spacing={0}>
-                            {charactersQuery.data?.map((character, index) => {
+                            {characters.map((character, index) => {
                                 const id = character.id || null;
                                 const isActive = id !== null && id === characterId;
                                 const isDeleting = deletingId !== null && id === deletingId;
@@ -402,13 +398,13 @@ export function CharactersListPage() {
                                             </Typography>
                                             <Typography sx={listStyles.hpText}>
                                                 <AnimatedNumber
-                                                    value={character.current_hp ?? 0}
+                                                    value={character.currentHp ?? 0}
                                                     cacheKey={`${character.id ?? key}:list:current-hp`}
                                                     durationMs={300}
                                                 />
                                                 {'/'}
                                                 <AnimatedNumber
-                                                    value={character.max_hp ?? 0}
+                                                    value={character.maxHp ?? 0}
                                                     cacheKey={`${character.id ?? key}:list:max-hp`}
                                                     durationMs={300}
                                                 />
@@ -419,7 +415,7 @@ export function CharactersListPage() {
                                             <Typography sx={listStyles.mobileLabel}>
                                                 {t('characters.columns.updated', 'Updated')}
                                             </Typography>
-                                            <Typography sx={listStyles.dateText}>{formatDate(character.updated_at)}</Typography>
+                                            <Typography sx={listStyles.dateText}>{formatDate(character.updatedAt)}</Typography>
                                         </Box>
 
                                         <Box sx={listStyles.actions}>

@@ -167,7 +167,7 @@ export function useCurrentCharacter() {
             const id = classId ?? Math.floor(Math.random() * (6 - 1 + 1)) + 1;
 
             repo.createCharacter.mutate({
-                body: { class_id: id },
+                body: { classId: id },
                 params: { query: { locale: trimmedLocale } }
             }, {
                 onSuccess: (character) => {
@@ -178,7 +178,7 @@ export function useCurrentCharacter() {
                     trackEvent('generate_character', {
                         source: 'manual',
                         locale: trimmedLocale,
-                        class_id: id,
+                        classId: id,
                         is_authenticated: isAuthenticated,
                         is_guest: isGuest,
                     });

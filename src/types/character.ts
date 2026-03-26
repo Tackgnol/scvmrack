@@ -6,23 +6,20 @@ export type Ability = {
 export interface CharacterFull {
   id: string;
   name: string;
-  class_name: string;
+  className: string;
+  classDescription: string | null;
   // Localized texts from the view/function
-  origin_text: string | null;
-  habit_text: string | null;
-  tale_text: string | null;
-  body_text: string | null;
-  trait1_text: string | null;
-  trait2_text: string | null;
+  origin: string | null;
   // Stats
   strength: number;
   agility: number;
   presence: number;
   toughness: number;
-  max_hp: number;
-  current_hp: number;
+  maxHp: number;
+  currentHp: number;
   silver: number;
   omens: number;
+  maxOmens: number;
   // JSONB data
   abilities: Array<{ key: string; name: string; description: string }>;
   equipment: Array<{
@@ -40,44 +37,44 @@ export interface CharacterFull {
     tags: string[];
     dice: string[];
   }>;
-  equipped_weapons: Array<{
+  equippedWeapons: Array<{
     key: string;
     name: string;
     description: string;
     dice: string[];
     tags: string[];
   }>;
-  equipped_armor: {
+  equippedArmor: {
     key: string;
     name: string;
     description: string;
     dice: string[];
-    max_tier: number;
+    maxTier: number;
     tags: string[];
   } | null;
   encumbrance?: number;
-  max_encumbrance?: number;
-  created_at: string;
-  updated_at: string;
+  maxEncumbrance?: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface CharacterUpdate {
   abilities?: Array<{ key?: string; name: string; description: string }>;
   name?: string;
-  current_hp?: number;
+  currentHp?: number;
   omens?: number;
   silver?: number;
   equipment?: Array<{ key?: string; name?: string; description?: string }>;
-  storage?: Array<{ key?: string; name?: string; description?: string }>; // NEW
-  equipped_weapons?: Array<{
+  storage?: Array<{ key?: string; name?: string; description?: string }>;
+  equippedWeapons?: Array<{
     name?: string;
     description?: string;
     dice?: number[];
   }>;
-  equipped_armor?: {
+  equippedArmor?: {
     name?: string;
     description?: string;
-    max_tier?: number;
+    maxTier?: number;
     dice?: number[];
   };
   agility?: number;
@@ -87,11 +84,11 @@ export interface CharacterUpdate {
   trait1?: string;
   trait2?: string;
   habit?: string;
-  body_description?: string;
+  bodyDescription?: string;
   origin?: string;
   notes?: string;
 }
 
 export interface GenerateCharacterParams {
-  class_id?: number | null;
+  classId?: number | null;
 }

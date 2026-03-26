@@ -14,14 +14,14 @@ export function patchToRequest(
 
         case 'armor':
             return {
-                equipped_armor: {
+                equippedArmor: {
                     [patch.field]: patch.value
-                } as CharacterUpdateRequest['equipped_armor']
+                } as NonNullable<CharacterUpdateRequest['equippedArmor']>
             };
 
         case 'weapon':
             return {
-                equipped_weapons: [{
+                equippedWeapons: [{
                     index: patch.index,
                     field: patch.field,
                     value: patch.value
@@ -117,6 +117,7 @@ export function buildRequestFromPatches(
                 break;
             case 'equip-armor':
             case 'armor':
+                needsEquipment = true;
                 needsArmor = true;
                 break;
             case 'unequip-armor':
@@ -138,10 +139,10 @@ export function buildRequestFromPatches(
         result.storage = currentCharacter.storage;
     }
     if (needsWeapons) {
-        result.equipped_weapons = currentCharacter.equipped_weapons;
+        result.equippedWeapons = currentCharacter.equippedWeapons;
     }
     if (needsArmor) {
-        result.equipped_armor = currentCharacter.equipped_armor;
+        result.equippedArmor = currentCharacter.equippedArmor;
     }
 
     return result;

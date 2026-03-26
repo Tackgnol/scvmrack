@@ -1,5 +1,3 @@
-import {paths} from "@/api";
-
 export type SimpleField =
     | 'abilities'
     | 'silver'
@@ -8,25 +6,139 @@ export type SimpleField =
     | 'presence'
     | 'toughness'
     | 'omens'
-    | 'current_hp'
-    | 'max_hp'
+    | 'currentHp'
+    | 'maxHp'
     | 'name'
     | 'habit'
     | 'tale'
     | 'trait1'
     | 'trait2'
-    | 'body_description'
+    | 'bodyDescription'
     | 'origin'
     | 'notes'
     | 'modifiers'
 
-export type Character = NonNullable<
-    paths['/characters/{id}']['get']['responses']['200']['content']['application/json']
->;
-export type CharacterResponse = NonNullable<paths['/characters/{id}']['get']['responses']['200']['content']['application/json']>;
+export type Statistic = 'agility' | 'strength' | 'presence' | 'toughness';
 
-type PatchRequestBody = NonNullable<paths['/characters/{id}']['patch']['requestBody']>['content']['application/json'];
-export type CharacterUpdateRequest = PatchRequestBody;
+export type Ability = {
+    key?: string;
+    name?: string;
+    description?: string;
+    comment?: string;
+};
+
+export type EquipmentItem = {
+    key?: string;
+    name?: string;
+    description?: string;
+    uses?: boolean[];
+    dice?: number[];
+    tags?: string[];
+    comments?: string;
+    maxTier?: number;
+    currentTier?: number;
+};
+
+export type WeaponItem = EquipmentItem;
+
+export type ArmorItem = EquipmentItem | null;
+
+export type CustomModifier = {
+    id?: string;
+    name?: string;
+    value?: number;
+    source?: string;
+    statistic?: Statistic;
+    exclude?: string[];
+    comment?: string;
+};
+
+export type ComputedModifier = {
+    value?: number;
+    source?: string;
+    statistic?: Statistic;
+    exclude?: string[];
+    origin?: 'armor' | 'weapon' | 'pet' | 'system';
+    originKey?: string;
+    originName?: string;
+};
+
+export type Character = {
+    id?: string;
+    name?: string;
+    classId?: number;
+    className?: string;
+    classDescription?: string;
+    origin?: string;
+    strength?: number;
+    agility?: number;
+    presence?: number;
+    toughness?: number;
+    maxHp?: number;
+    currentHp?: number;
+    omens?: number;
+    maxOmens?: number;
+    silver?: number;
+    habit?: string;
+    tale?: string;
+    bodyDescription?: string;
+    trait1?: string;
+    trait2?: string;
+    notes?: string;
+    abilities?: Ability[];
+    equipment?: EquipmentItem[];
+    storage?: EquipmentItem[];
+    equippedWeapons?: WeaponItem[];
+    equippedArmor?: ArmorItem;
+    modifiers?: CustomModifier[];
+    computedModifiers?: ComputedModifier[];
+    encumbrance?: number;
+    maxEncumbrance?: number;
+    drToDodge?: number;
+    drToMelee?: number;
+    drToRanged?: number;
+    createdAt?: string;
+    updatedAt?: string;
+};
+
+export type CharacterResponse = Character;
+
+export type CharacterUpdateRequest = Partial<{
+    name: string;
+    currentHp: number;
+    maxHp: number;
+    omens: number;
+    maxOmens: number;
+    silver: number;
+    strength: number;
+    agility: number;
+    presence: number;
+    toughness: number;
+    trait1: string;
+    trait2: string;
+    habit: string;
+    tale: string;
+    bodyDescription: string;
+    origin: string;
+    notes: string;
+    abilities: Ability[];
+    equipment: EquipmentItem[];
+    storage: EquipmentItem[];
+    equippedWeapons: WeaponItem[];
+    equippedArmor: ArmorItem;
+    modifiers: CustomModifier[];
+}>;
+
+export type CharacterListItem = {
+    id?: string;
+    name?: string;
+    classId?: number;
+    className?: string;
+    currentHp?: number;
+    maxHp?: number;
+    createdAt?: string;
+    updatedAt?: string;
+};
 
 export type OptimisticPatch =
     | { kind: 'simple'; field: SimpleField; value: number | string }
@@ -58,32 +170,11 @@ export type UpdateMutationContext = {
     queryKey: any[];
 };
 
-
-/** Equipment item */
-export type EquipmentItem = NonNullable<Character['equipment']>[number];
-
-/** Weapon item */
-export type WeaponItem = NonNullable<Character['equipped_weapons']>[number];
-
-/** Armor item */
-export type ArmorItem = NonNullable<Character['equipped_armor']>;
-
-/** Ability */
-export type Ability = NonNullable<Character['abilities']>[number] & {
-    comment?: string;
-};
-
-/** Custom modifier (player-created) */
-export type CustomModifier = NonNullable<Character['modifiers']>[number];
-
-/** Computed modifier (from equipped items) */
-export type ComputedModifier = NonNullable<Character['computed_modifiers']>[number];
-
 /** Base modifier shape for DR computation - use primitives for flexibility */
 export type BaseModifier = {
     value?: number;
     source?: string;
-    statistic?: 'agility' | 'strength' | 'presence' | 'toughness';
+    statistic?: Statistic;
     exclude?: string[];
 };
 

@@ -43,7 +43,7 @@ BEGIN
     IF p_patch ? 'equipped_weapons' AND jsonb_typeof(p_patch->'equipped_weapons') NOT IN ('array', 'null') THEN
         RAISE EXCEPTION 'Invalid type for equipped_weapons';
     END IF;
-    IF p_patch ? 'equipped_armor' AND jsonb_typeof(p_patch->'equipped_armor') NOT IN ('array', 'null') THEN
+    IF p_patch ? 'equipped_armor' AND jsonb_typeof(p_patch->'equipped_armor') NOT IN ('object', 'null') THEN
         RAISE EXCEPTION 'Invalid type for equipped_armor';
     END IF;
     IF p_patch ? 'modifiers' AND jsonb_typeof(p_patch->'modifiers') NOT IN ('array', 'null') THEN

@@ -26,7 +26,7 @@ export function useCharacterRepository(characterId: string | null, locale?: stri
     // ---- Create Character ----
     const createCharacter = useMutation({
         mutationFn: async (vars: {
-            body: { class_id?: number };
+            body: { classId?: number };
             params: { query: { locale: string } };
             signal?: AbortSignal;
         }) => {
@@ -68,7 +68,7 @@ export function useCharacterRepository(characterId: string | null, locale?: stri
             await queryClient.cancelQueries({ queryKey: key });
 
             const previous = queryClient.getQueryData<CharacterResponse>(key);
-            return { previous, key };
+            return { previousCharacter: previous, queryKey: [...key] };
         },
         onError: (_e, _v, context) => {
             const ctx = context as UpdateMutationContext;
@@ -120,7 +120,7 @@ export function useCharacterRepository(characterId: string | null, locale?: stri
     );
 
     return {
-        character: characterQuery.data,
+        character: characterQuery.data as CharacterResponse | undefined,
         isLoading: characterQuery.isLoading,
         error: characterQuery.error,
 

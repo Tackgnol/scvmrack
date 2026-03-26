@@ -39,7 +39,7 @@ export const CharacterNameAndClass = () => {
                         values={{
                             trait1: character.trait1 || t('character.mysterious'),
                             trait2: character.trait2 || t('character.unknown'),
-                            className: character.class_name || t('character.wretch'),
+                            className: character.className || t('character.wretch'),
                         }}
                     />
                 </Typography>
@@ -51,11 +51,11 @@ export const CharacterNameAndClass = () => {
                     {t('character.class')}
                 </Typography>
                 <Typography sx={customStyles.characterClassText}>
-                    {character.class_name || t('character.classless')}
+                    {character.className || t('character.classless')}
                 </Typography>
-                {character.class_description && (
+                {character.classDescription && (
                     <Typography variant="body2" sx={customStyles.characterClassDescription}>
-                        {character.class_description}
+                        {character.classDescription}
                     </Typography>
                 )}
             </Paper>

@@ -443,18 +443,22 @@ export function OnHandSection({ showTitle = true }: { showTitle?: boolean } = {}
   };
 
   const handleAddItem = useCallback(async (hit: ItemSearchHit) => {
-    const loadingKey = `${hit.item_type}-${hit.id}`;
+    const loadingKey = `${hit.itemType}-${hit.id}`;
     setLoadingItems((prev) => [...prev, hit]);
 
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/equipment/${hit.item_type}/${hit.id}`
-      );
+      const baseUrl = import.meta.env.VITE_BACKEND_URL ?? '';
+      const itemUrl = new URL(`${baseUrl}/equipment/${hit.itemType}/${hit.id}`);
+      if (hit.key) {
+        itemUrl.searchParams.set('key', hit.key);
+      }
+
+      const response = await fetch(itemUrl.toString());
       if (!response.ok) return;
       const fullItem = await response.json();
 
       const isPet =
-        hit.item_type === 'pet' ||
+        hit.itemType === 'pet' ||
         (Array.isArray(fullItem.tags) && fullItem.tags.includes('pet'));
 
       const actionDice = (Array.isArray(fullItem.action_die) ? fullItem.action_die : [])
@@ -475,7 +479,7 @@ export function OnHandSection({ showTitle = true }: { showTitle?: boolean } = {}
       });
     } finally {
       setLoadingItems((prev) =>
-        prev.filter((h) => `${h.item_type}-${h.id}` !== loadingKey)
+        prev.filter((h) => `${h.itemType}-${h.id}` !== loadingKey)
       );
     }
   }, [addEquipmentItem]);
@@ -498,7 +502,7 @@ export function OnHandSection({ showTitle = true }: { showTitle?: boolean } = {}
         ))}
         {loadingItems.map((hit) => (
           <LoadingItemSlot
-            key={`loading-${hit.item_type}-${hit.id}`}
+            key={`loading-${hit.itemType}-${hit.id}`}
             name={hit.name}
           />
         ))}

@@ -11,6 +11,35 @@ export const BoneIconContainer = styled(Box)({
     position: "relative"
 });
 
+export const ScvmCountBadge = styled(Box)(({ theme }) => ({
+    backgroundColor: morkBorgColors.pink,
+    color: morkBorgColors.black,
+    padding: '0px 8px',
+    fontSize: '0.75rem',
+    fontWeight: 900,
+    fontFamily: '"Oswald", "Helvetica Neue", Arial, sans-serif',
+    textTransform: 'uppercase',
+    letterSpacing: '0.05em',
+    border: `2px solid ${morkBorgColors.black}`,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    boxShadow: `3px 3px 0px ${morkBorgColors.yellow}`,
+    transform: 'rotate(-2deg)',
+    whiteSpace: 'nowrap',
+    marginRight: '8px',
+    marginLeft: '8px',
+    height: '24px',
+    [theme.breakpoints.down('md')]: {
+        fontSize: '0.65rem',
+        padding: '0px 6px',
+        boxShadow: `2px 2px 0px ${morkBorgColors.yellow}`,
+        marginRight: '4px',
+        marginLeft: '4px',
+        height: '20px',
+    }
+}));
+
 interface BoneBarProps {
     index: number;
     isOpen: boolean;

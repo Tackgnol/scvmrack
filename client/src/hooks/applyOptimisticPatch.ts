@@ -12,17 +12,17 @@ export function applyOptimisticPatch(
             };
 
         case 'armor':
-            if (!character.equipped_armor) return character;
+            if (!character.equippedArmor) return character;
             return {
                 ...character,
-                equipped_armor: {
-                    ...character.equipped_armor,
+                equippedArmor: {
+                    ...character.equippedArmor,
                     [patch.field]: patch.value
                 }
             };
 
         case 'weapon': {
-            const weapons = character.equipped_weapons;
+            const weapons = character.equippedWeapons;
             if (!weapons || !weapons[patch.index]) return character;
 
             const next = [...weapons];
@@ -31,7 +31,7 @@ export function applyOptimisticPatch(
                 [patch.field]: patch.value
             };
 
-            return {...character, equipped_weapons: next};
+            return {...character, equippedWeapons: next};
         }
 
         case 'equipment-item': {
@@ -159,7 +159,7 @@ export function applyOptimisticPatch(
 
         case 'equip-weapon': {
             const equipment = [...(character.equipment ?? [])];
-            const weapons = [...(character.equipped_weapons ?? [])];
+            const weapons = [...(character.equippedWeapons ?? [])];
 
             // 1. Get the new weapon from inventory
             const newItem = equipment[patch.equipmentIndex];
@@ -178,11 +178,11 @@ export function applyOptimisticPatch(
             // 4. Update the slot
             weapons[patch.slotIndex] = newItem;
 
-            return { ...character, equipment, equipped_weapons: weapons };
+            return { ...character, equipment, equippedWeapons: weapons };
         }
 
         case 'unequip-weapon': {
-            const weapons = [...(character.equipped_weapons ?? [])];
+            const weapons = [...(character.equippedWeapons ?? [])];
             const item = weapons[patch.slotIndex];
 
             // Guard: Only unequip if it's a real item
@@ -195,7 +195,7 @@ export function applyOptimisticPatch(
             return {
                 ...character,
                 // Filter ensures no {} or nulls ever persist in the weapon list
-                equipped_weapons: weapons.filter(w => w && (w.name || w.key)),
+                equippedWeapons: weapons.filter(w => w && (w.name || w.key)),
                 equipment: [...(character.equipment ?? []), item]
             };
         }
@@ -207,19 +207,19 @@ export function applyOptimisticPatch(
 
             equipment.splice(patch.equipmentIndex, 1);
 
-            const oldArmor = character.equipped_armor;
+            const oldArmor = character.equippedArmor;
             const nextEquipment = oldArmor ? [...equipment, oldArmor] : equipment;
 
-            return { ...character, equipment: nextEquipment, equipped_armor: newItem };
+            return { ...character, equipment: nextEquipment, equippedArmor: newItem };
         }
 
         case 'unequip-armor': {
-            const item = character.equipped_armor;
+            const item = character.equippedArmor;
             if (!item) return character;
 
             return {
                 ...character,
-                equipped_armor: null,
+                equippedArmor: null,
                 equipment: [...(character.equipment ?? []), item]
             };
         }

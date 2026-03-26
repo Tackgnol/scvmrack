@@ -160,10 +160,10 @@ export default function EquippedBar() {
         [groupedInventory]
     );
 
-    const equippedWeapons = character?.equipped_weapons || [null, null];
+    const equippedWeapons = character?.equippedWeapons || [null, null];
     const mainWeapon = equippedWeapons[0];
     const offhandWeapon = equippedWeapons[1];
-    const equippedArmor = character?.equipped_armor;
+    const equippedArmor = character?.equippedArmor;
     const canOpenWeaponSlot0 = inventoryWeapons.length > 0 || !!mainWeapon?.key;
     const canOpenWeaponSlot1 = inventoryWeapons.length > 0 || !!offhandWeapon?.key;
     const canOpenArmor = inventoryArmor.length > 0 || !!equippedArmor?.key;

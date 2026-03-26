@@ -313,3 +313,26 @@ const claimCharacterFromAnonymousIR: any = {"usedParamSet":{"userId":true,"chara
 export const claimCharacterFromAnonymous = new PreparedQuery<IClaimCharacterFromAnonymousParams,IClaimCharacterFromAnonymousResult>(claimCharacterFromAnonymousIR);
 
 
+/** 'GetTotalCharacters' parameters type */
+export type IGetTotalCharactersParams = void;
+
+/** 'GetTotalCharacters' return type */
+export interface IGetTotalCharactersResult {
+  total: number | null;
+}
+
+/** 'GetTotalCharacters' query type */
+export interface IGetTotalCharactersQuery {
+  params: IGetTotalCharactersParams;
+  result: IGetTotalCharactersResult;
+}
+
+const getTotalCharactersIR: any = {"usedParamSet":{},"params":[],"statement":"SELECT count(*)::int AS \"total\" FROM characters"};
+
+/**
+ * Query generated from SQL:
+ * ```
+ * SELECT count(*)::int AS "total" FROM characters
+ * ```
+ */
+export const getTotalCharacters = new PreparedQuery<IGetTotalCharactersParams,IGetTotalCharactersResult>(getTotalCharactersIR);

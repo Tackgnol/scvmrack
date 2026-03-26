@@ -1,6 +1,21 @@
 import { FastifyPluginAsync } from 'fastify';
 import db from '../../services/db.js';
 import { getItemFull, searchItems } from '../../queries/equipment.queries.js';
+import type { Json } from '../../queries/equipment.queries.js';
+
+type SupportedItemType = 'weapon' | 'armor' | 'equipment' | 'pet';
+
+async function getItemFullByKey(itemType: SupportedItemType, key: string): Promise<Json | null> {
+  const sqlByType: Record<SupportedItemType, string> = {
+    weapon: 'SELECT to_jsonb(w) AS item FROM weapons w WHERE w.key = $1 LIMIT 1',
+    armor: 'SELECT to_jsonb(a) AS item FROM armors a WHERE a.key = $1 LIMIT 1',
+    equipment: 'SELECT to_jsonb(e) AS item FROM equipment e WHERE e.key = $1 LIMIT 1',
+    pet: 'SELECT to_jsonb(p) AS item FROM pets p WHERE p.key = $1 LIMIT 1',
+  };
+
+  const result = await db.query<{ item: Json | null }>(sqlByType[itemType], [key]);
+  return result.rows[0]?.item ?? null;
+}
 
 const equipment: FastifyPluginAsync = async (fastify) => {
   fastify.get<{
@@ -32,7 +47,7 @@ const equipment: FastifyPluginAsync = async (fastify) => {
             items: {
               type: 'object',
               properties: {
-                item_type: { type: 'string' },
+                itemType: { type: 'string' },
                 id: { type: 'number' },
                 key: { type: 'string' },
                 name: { type: 'string' },
@@ -49,12 +64,38 @@ const equipment: FastifyPluginAsync = async (fastify) => {
 
       try {
         const rows = await searchItems.run({ q, locale, limit }, db);
-        return rows.map((r) => ({
-          item_type: r.itemType,
-          id: r.id,
-          key: r.key,
-          name: r.name,
-        }));
+        return rows
+          .map((row) => {
+            const raw = row as {
+              itemType?: string | null;
+              item_type?: string | null;
+              id?: number | null;
+              key?: string | null;
+              name?: string | null;
+            };
+
+            const itemType = raw.itemType ?? raw.item_type ?? null;
+            if (
+              itemType !== 'weapon' &&
+              itemType !== 'armor' &&
+              itemType !== 'equipment' &&
+              itemType !== 'pet'
+            ) {
+              return null;
+            }
+
+            if (typeof raw.id !== 'number' || !Number.isFinite(raw.id)) {
+              return null;
+            }
+
+            return {
+              itemType,
+              id: raw.id,
+              key: raw.key ?? '',
+              name: raw.name ?? raw.key ?? '',
+            };
+          })
+          .filter((row): row is { itemType: 'weapon' | 'armor' | 'equipment' | 'pet'; id: number; key: string; name: string } => row !== null);
       } catch (err) {
         request.log.error(err, 'Search failed');
         return reply.status(500).send({ error: 'Search failed' });
@@ -66,6 +107,9 @@ const equipment: FastifyPluginAsync = async (fastify) => {
     Params: {
       itemType: string;
       id: number;
+    };
+    Querystring: {
+      key?: string;
     };
   }>(
     '/:itemType/:id',
@@ -84,18 +128,32 @@ const equipment: FastifyPluginAsync = async (fastify) => {
             id: { type: 'integer', minimum: 1 },
           },
         },
+        querystring: {
+          type: 'object',
+          properties: {
+            key: { type: 'string', minLength: 1 },
+          },
+        },
       },
     },
     async (request, reply) => {
       const { itemType, id } = request.params;
+      const { key } = request.query;
 
       try {
         const results = await getItemFull.run({ itemType, id }, db);
-        if (results.length === 0 || results[0].getItemFull == null) {
+        let item = results[0]?.getItemFull ?? null;
+
+        // Fallback for stale search IDs: if the same hit key still exists, resolve by key.
+        if (!item && key && (itemType === 'weapon' || itemType === 'armor' || itemType === 'equipment' || itemType === 'pet')) {
+          item = await getItemFullByKey(itemType, key);
+        }
+
+        if (!item) {
           return reply.status(404).send({ error: 'Item not found' });
         }
 
-        return results[0].getItemFull;
+        return item;
       } catch (err) {
         request.log.error(err, 'Item fetch failed');
         return reply.status(500).send({ error: 'Failed to fetch item' });

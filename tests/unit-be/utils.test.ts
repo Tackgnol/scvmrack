@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import {
+  camelCaseJsonbFields,
   isValidLocale,
   isValidUUID,
   sanitizeCharacterUpdate,
@@ -32,17 +33,52 @@ test('sanitizeJsonb recursively sanitizes and drops dangerous keys', () => {
 test('sanitizeCharacterUpdate keeps known fields and clamps numeric bounds', () => {
   const sanitized = sanitizeCharacterUpdate({
     name: '  <b>Hero</b>  ',
-    max_hp: 9999,
-    current_hp: -999,
+    maxHp: 9999,
+    currentHp: -999,
     equipment: [{ name: '<axe>' }],
     unknown: 'drop-me',
   });
 
   assert.deepEqual(sanitized, {
     name: '&lt;b&gt;Hero&lt;&#x2F;b&gt;',
-    max_hp: 1000,
-    current_hp: -100,
+    maxHp: 1000,
+    currentHp: -100,
     equipment: [{ name: '&lt;axe&gt;' }],
+  });
+});
+
+test('camelCaseJsonbFields normalizes top-level and nested snake_case keys', () => {
+  const createdAt = new Date('2026-03-26T10:11:12.000Z');
+  const normalized = camelCaseJsonbFields({
+    current_hp: 7,
+    max_hp: 10,
+    created_at: createdAt,
+    equipped_armor: {
+      current_tier: 1,
+      max_tier: 2,
+    },
+    computed_modifiers: [
+      {
+        origin_key: 'armor.tattered',
+        origin_name: 'Tattered Armor',
+      },
+    ],
+  }) as Record<string, unknown>;
+
+  assert.deepEqual(normalized, {
+    currentHp: 7,
+    maxHp: 10,
+    createdAt,
+    equippedArmor: {
+      currentTier: 1,
+      maxTier: 2,
+    },
+    computedModifiers: [
+      {
+        originKey: 'armor.tattered',
+        originName: 'Tattered Armor',
+      },
+    ],
   });
 });
 

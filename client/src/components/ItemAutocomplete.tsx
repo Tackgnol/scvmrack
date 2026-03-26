@@ -61,16 +61,16 @@ export default function ItemAutocomplete({
             onChange={handleSelect}
             getOptionLabel={(o) => o.name}
             isOptionEqualToValue={(a, b) =>
-                a.id === b.id && a.item_type === b.item_type
+                a.id === b.id && a.itemType === b.itemType
             }
             filterOptions={(x) => x}
             renderOption={(props, option) => (
-                <Box component="li" {...props} key={`${option.item_type}-${option.id}`}>
+                <Box component="li" {...props} key={`${option.itemType}-${option.id}`}>
                     <Typography sx={customStyles.itemAutocomplete.itemName}>
                         {option.name}&nbsp;
                     </Typography>
                     <Typography sx={customStyles.itemAutocomplete.itemType}>
-                        {option.item_type.toUpperCase()}
+                        {(option.itemType ?? 'equipment').toUpperCase()}
                     </Typography>
                 </Box>
             )}

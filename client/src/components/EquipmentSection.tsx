@@ -62,9 +62,9 @@ export function EquipmentSection() {
     comments: string; // 7. Free text field 'comments'
   }>({ type: 'weapon', title: '', name: '', description: '', comments: '' });
 
-  const weapon0 = character?.equipped_weapons?.[0];
-  const weapon1 = character?.equipped_weapons?.[1];
-  const armor = character?.equipped_armor;
+  const weapon0 = character?.equippedWeapons?.[0];
+  const weapon1 = character?.equippedWeapons?.[1];
+  const armor = character?.equippedArmor;
 
   const handleSlotClick = (
     type: 'weapon' | 'armor' | 'other',
@@ -105,8 +105,8 @@ export function EquipmentSection() {
   // 3. Add Item Logic
   const handleAutocompleteSelect = (item: ItemSearchHit) => {
     // Find first empty weapon slot
-    const w0Empty = !character?.equipped_weapons?.[0]?.name;
-    const w1Empty = !character?.equipped_weapons?.[1]?.name;
+    const w0Empty = !character?.equippedWeapons?.[0]?.name;
+    const w1Empty = !character?.equippedWeapons?.[1]?.name;
 
     let targetIndex = 0;
     if (!w0Empty && w1Empty) targetIndex = 1;

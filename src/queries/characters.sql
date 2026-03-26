@@ -45,3 +45,6 @@ SET user_id = :userId
 WHERE id = :characterId
   AND user_id = :guestId
 RETURNING id;
+
+/* @name getTotalCharacters */
+SELECT count(*)::int AS "total" FROM characters;
