@@ -283,7 +283,9 @@ export const customStyles = {
       '& .MuiInput-root': {
         color: morkBorgColors.white,
         '&:before': { borderBottomColor: '#504c4c' },
-        '&:hover:not(.Mui-disabled):before': { borderBottomColor: morkBorgColors.yellow },
+        '&:hover:not(.Mui-disabled):before': {
+          borderBottomColor: morkBorgColors.yellow,
+        },
         '&:after': { borderBottomColor: morkBorgColors.yellow },
       },
       '& .MuiInputLabel-root': {
@@ -295,7 +297,9 @@ export const customStyles = {
       '& .MuiInput-root': {
         color: morkBorgColors.yellow,
         '&:before': { borderBottomColor: '#504c4c' },
-        '&:hover:not(.Mui-disabled):before': { borderBottomColor: morkBorgColors.yellow },
+        '&:hover:not(.Mui-disabled):before': {
+          borderBottomColor: morkBorgColors.yellow,
+        },
         '&:after': { borderBottomColor: morkBorgColors.yellow },
       },
       '& .MuiInputLabel-root': {
@@ -697,7 +701,7 @@ export const customStyles = {
       p: 1.5,
       textAlign: 'center' as const,
       flexDirection: 'column',
-      display:'flex',
+      display: 'flex',
       alignItems: 'center',
       border: `1px solid ${morkBorgColors.black}`,
       boxShadow: '2px 2px 0 rgba(0, 0, 0, 0.45)',
@@ -825,7 +829,7 @@ export const customStyles = {
     textTransform: 'uppercase' as const,
     border: `2px solid ${morkBorgColors.black}`,
     boxShadow: `4px 4px 0 ${morkBorgColors.black}`,
-    '&.MuiAlert-filled' : {
+    '&.MuiAlert-filled': {
       // Keep filled variant but override colors per severity below
     },
     '&.MuiAlert-filledError': {
@@ -1283,6 +1287,29 @@ export const customStyles = {
       alignItems: 'center',
       gap: 1,
     },
+    printButton: {
+      minHeight: 24,
+      px: 1.25,
+      py: 0.2,
+      borderRadius: 0,
+      backgroundColor: morkBorgColors.black,
+      border: `1px solid ${morkBorgColors.yellow}`,
+      color: morkBorgColors.yellow,
+      fontFamily: "'Antonio', sans-serif",
+      fontSize: '0.58rem',
+      letterSpacing: '0.14em',
+      textTransform: 'uppercase' as const,
+      lineHeight: 1,
+      '&:hover': {
+        backgroundColor: morkBorgColors.pink,
+        color: morkBorgColors.black,
+        borderColor: morkBorgColors.black,
+      },
+      '& .MuiButton-startIcon': {
+        mr: 0.35,
+        ml: 0,
+      },
+    },
     navBar: {
       display: 'flex',
       alignItems: 'center',
@@ -1321,6 +1348,26 @@ export const customStyles = {
     drawerStatusBox: {
       display: 'flex',
       justifyContent: 'center',
+      alignItems: 'center',
+      gap: 1,
+      flexWrap: 'wrap' as const,
+    },
+    drawerPrintButton: {
+      minHeight: 32,
+      px: 1.25,
+      borderRadius: 0,
+      backgroundColor: morkBorgColors.black,
+      border: `1px solid ${morkBorgColors.yellow}`,
+      color: morkBorgColors.yellow,
+      fontFamily: "'Antonio', sans-serif",
+      fontSize: '0.65rem',
+      letterSpacing: '0.12em',
+      textTransform: 'uppercase' as const,
+      '&:hover': {
+        backgroundColor: morkBorgColors.pink,
+        color: morkBorgColors.black,
+        borderColor: morkBorgColors.black,
+      },
     },
     drawerAuthBox: {
       display: 'flex',
@@ -1902,8 +1949,15 @@ export const customStyles = {
         fontFamily: "'Caveat Brush', cursive",
         fontSize: 'clamp(1.15rem, 3vw, 1.5rem)',
         lineHeight: 1.1,
-        '&:before': { borderBottomColor: morkBorgColors.pink, opacity: 0.4, borderBottomWidth: '2px' },
-        '&:hover:not(.Mui-disabled):before': { borderBottomColor: morkBorgColors.pink, opacity: 0.7 },
+        '&:before': {
+          borderBottomColor: morkBorgColors.pink,
+          opacity: 0.4,
+          borderBottomWidth: '2px',
+        },
+        '&:hover:not(.Mui-disabled):before': {
+          borderBottomColor: morkBorgColors.pink,
+          opacity: 0.7,
+        },
         '&:after': { borderBottomColor: morkBorgColors.pink },
       },
       '& .MuiInput-input': {
@@ -1926,7 +1980,10 @@ export const customStyles = {
         fontSize: '0.85rem',
         fontStyle: 'italic' as const,
         '&:before': { borderBottomColor: morkBorgColors.pink, opacity: 0.25 },
-        '&:hover:not(.Mui-disabled):before': { borderBottomColor: morkBorgColors.pink, opacity: 0.5 },
+        '&:hover:not(.Mui-disabled):before': {
+          borderBottomColor: morkBorgColors.pink,
+          opacity: 0.5,
+        },
         '&:after': { borderBottomColor: morkBorgColors.pink },
       },
       '& .MuiInput-input': {
@@ -2226,7 +2283,10 @@ export const customStyles = {
     },
     powerRow: {
       display: 'grid',
-      gridTemplateColumns: { xs: 'auto minmax(0, 1fr)', sm: 'auto minmax(0, 1fr) auto' },
+      gridTemplateColumns: {
+        xs: 'auto minmax(0, 1fr)',
+        sm: 'auto minmax(0, 1fr) auto',
+      },
       columnGap: 1.5,
       rowGap: { xs: 0.6, sm: 0 },
       alignItems: 'flex-start',
