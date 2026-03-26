@@ -34,7 +34,9 @@ export function RootLayout() {
             <CssBaseline />
             <Box sx={customStyles.layout.root}>
                 <Container maxWidth="md">
-                    <Header/>
+                    <Box className="print-hidden">
+                        <Header/>
+                    </Box>
                     <Box
                         component="main"
                         id="main-content"
@@ -49,7 +51,9 @@ export function RootLayout() {
                         <Outlet />
                     </Box>
                 </Container>
-                <NetworkActivityIndicator />
+                <Box className="print-hidden">
+                    <NetworkActivityIndicator />
+                </Box>
             </Box>
         </ThemeProvider>
     );

@@ -525,7 +525,7 @@ export function OnHandSection({ showTitle = true }: { showTitle?: boolean } = {}
         onAdjustQuantity={handleAdjustQuantity}
       />
 
-      <Box sx={customStyles.inventorySection.openAddItem}>
+      <Box sx={customStyles.inventorySection.openAddItem} className="print-hidden">
         <ItemAutocomplete
           onSelect={handleAddItem}
           placeholder={t('equipment.searchPlaceholder')}

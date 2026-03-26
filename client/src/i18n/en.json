@@ -176,6 +176,7 @@
     "legalNotice": "Created by Adam Koscielniak, all rights reserved 2026, Compatible with Mork Borg. <privacyLink>Review your privacy settings</privacyLink>"
   },
   "actions": {
+    "print": "Print Sheet",
     "generateNew": "Generate New",
     "killScvm": "Kill Scvm",
     "killConfirmTitle": "KILL THIS SCVM?",

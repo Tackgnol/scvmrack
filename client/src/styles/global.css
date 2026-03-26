@@ -24,21 +24,21 @@ body::before {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #FF3EB5;
+  background: #ff3eb5;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #FFE900;
+  background: #ffe900;
 }
 
 /* Number input hide spinners */
-input[type="number"]::-webkit-outer-spin-button,
-input[type="number"]::-webkit-inner-spin-button {
+input[type='number']::-webkit-outer-spin-button,
+input[type='number']::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
 
-input[type="number"] {
+input[type='number'] {
   -moz-appearance: textfield;
 }
 
@@ -61,11 +61,22 @@ input[type="number"] {
 }
 
 @keyframes itemGlitchFlicker {
-  0%, 100% { opacity: 0.6; }
-  20% { opacity: 0.8; }
-  40% { opacity: 0.5; }
-  60% { opacity: 0.9; }
-  80% { opacity: 0.4; }
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+  20% {
+    opacity: 0.8;
+  }
+  40% {
+    opacity: 0.5;
+  }
+  60% {
+    opacity: 0.9;
+  }
+  80% {
+    opacity: 0.4;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -75,5 +86,139 @@ input[type="number"] {
   }
   .item-loading-ghost {
     opacity: 0.5;
+  }
+}
+
+@page {
+  margin: 12mm;
+}
+
+@media print {
+  :root {
+    color-scheme: light;
+  }
+
+  * {
+    box-shadow: none !important;
+    text-shadow: none !important;
+    animation: none !important;
+  }
+
+  body {
+    background: #fff !important;
+    color: #111 !important;
+  }
+
+  .print-sheet {
+    background: #fff !important;
+  }
+
+  body::before {
+    display: none !important;
+  }
+
+  .print-hidden,
+  .MuiModal-root,
+  .MuiBackdrop-root,
+  .MuiDrawer-root,
+  .MuiSnackbar-root {
+    display: none !important;
+  }
+
+  #main-content {
+    animation: none !important;
+  }
+
+  .MuiContainer-root {
+    max-width: none !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  .print-sheet *,
+  .print-sheet *::before,
+  .print-sheet *::after {
+    background-color: transparent !important;
+    background-image: none !important;
+    border-color: #111 !important;
+  }
+
+  .print-sheet .MuiBox-root,
+  .print-sheet .MuiPaper-root,
+  .print-sheet .MuiAccordion-root,
+  .print-sheet .MuiAccordionSummary-root,
+  .print-sheet .MuiAccordionDetails-root {
+    background-color: #fff !important;
+    background-image: none !important;
+  }
+
+  .MuiPaper-root {
+    border-color: #111 !important;
+  }
+
+  .print-sheet .MuiTypography-root,
+  .print-sheet .MuiInputBase-input,
+  .print-sheet .MuiInputBase-inputMultiline,
+  .print-sheet .MuiSelect-select,
+  .print-sheet button,
+  .print-sheet [role='button'],
+  .print-sheet * {
+    color: #111 !important;
+    -webkit-text-fill-color: #111 !important;
+    opacity: 1 !important;
+  }
+
+  .MuiIconButton-root {
+    display: none !important;
+  }
+
+  .MuiAccordionSummary-expandIconWrapper {
+    display: none !important;
+  }
+
+  .MuiAccordion-root .MuiCollapse-root,
+  .MuiAccordion-root .MuiCollapse-wrapper,
+  .MuiAccordion-root .MuiCollapse-wrapperInner {
+    height: auto !important;
+    overflow: visible !important;
+    visibility: visible !important;
+    transform: none !important;
+    display: block !important;
+  }
+
+  .MuiInputBase-root,
+  .MuiOutlinedInput-root {
+    background: transparent !important;
+  }
+
+  .MuiOutlinedInput-notchedOutline,
+  .MuiInput-underline:before,
+  .MuiInput-underline:after {
+    border-color: #111 !important;
+  }
+
+  .print-sheet .MuiPaper-root,
+  .print-sheet .MuiAccordion-root,
+  .print-sheet .MuiBox-root {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .print-sheet [data-testid='power-pip'] {
+    background-color: #fff !important;
+  }
+
+  .print-sheet [data-testid='power-pip'][aria-pressed='true'] {
+    background-color: #111 !important;
+  }
+
+  .print-sheet .MuiDivider-root {
+    border-color: #666 !important;
+    opacity: 0.7 !important;
+  }
+
+  .item-loading-ghost,
+  .scan-line {
+    display: none !important;
   }
 }

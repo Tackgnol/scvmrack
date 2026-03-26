@@ -836,6 +836,7 @@ export default function ModifiersPanel() {
 
       {/* Quick Form — control strip */}
       <Box
+        className="print-hidden"
         sx={{
           mt: 2,
           pt: 2,

@@ -176,6 +176,7 @@
     "legalNotice": "Stworzone przez Adama Kościelniaka, wszelkie prawa zastrzeżone 2026, kompatybilne z Mork Borg. <privacyLink>Sprawdź ustawienia prywatności</privacyLink>"
   },
   "actions": {
+    "print": "Drukuj kartę",
     "generateNew": "Generuj Nową",
     "killScvm": "Zabij Scvma",
     "killConfirmTitle": "ZABIĆ TEGO SCVMA?",
