@@ -37,6 +37,8 @@ export type EquipmentItem = {
     comments?: string;
     maxTier?: number;
     currentTier?: number;
+    amount?: number;
+    ammoType?: string;
 };
 
 export type WeaponItem = EquipmentItem;
@@ -163,6 +165,7 @@ export type OptimisticPatch =
     | { kind: 'modifier-add'; modifier: CustomModifier }
     | { kind: 'modifier-remove'; modifierId: string }
     | { kind: 'modifier-update'; modifierId: string; modifier: Partial<CustomModifier> }
+    | { kind: 'ammo-use'; equipmentIndex: number }
 
 
 export type UpdateMutationContext = {

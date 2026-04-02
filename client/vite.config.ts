@@ -1,5 +1,6 @@
 import visualizer from "rollup-plugin-visualizer";
-import { defineConfig, type ProxyOptions } from 'vite';
+import { defineConfig } from 'vitest/config';
+import type { ProxyOptions } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 
@@ -76,5 +77,22 @@ export default defineConfig({
         '/c': apiProxy(process.env.API_PROXY_TARGET),
       },
     }),
+  },
+  test: {
+    environment: 'jsdom',
+    setupFiles: ['./test/setup-dom.ts'],
+    include: ['test/unit/**/*.test.ts'],
+    coverage: {
+      provider: 'istanbul',
+      enabled: false,
+      reporter: ['text', 'html', 'lcov', 'json', 'cobertura'],
+      reportsDirectory: './coverage',
+      include: ['src/**/*.{ts,tsx}'],
+      exclude: [
+        'src/**/*.d.ts',
+        'src/api/schema.ts',
+        'src/main.tsx',
+      ],
+    },
   },
 });

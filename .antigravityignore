@@ -1,0 +1,71 @@
+# .agentignore
+
+# -------------------------------------------------------------------
+# 1. Dependencies (Crucial to ignore for context window limits)
+# -------------------------------------------------------------------
+node_modules/
+jspm_packages/
+.npm/
+
+# -------------------------------------------------------------------
+# 2. Build Outputs & Compiled Assets
+# -------------------------------------------------------------------
+dist/
+build/
+client/public/
+client/stats.html
+client/tsconfig.node.tsbuildinfo
+examples/typescript-server.js
+test/types/index.js
+
+# -------------------------------------------------------------------
+# 3. Test Results, Coverage & Screenshots
+# -------------------------------------------------------------------
+coverage/
+.nyc_output/
+reports/
+tests/e2e/playwright-report/
+tests/e2e/test-results/
+tests/integration-be/test-results/
+e2e-report/
+test-results/
+.playwright-mcp/
+client/temp-report/
+client/vitest_output.txt
+client/coverage-browser/
+client/coverage-merged/
+client/coverage-unit*/
+client/.vitest-attachments/
+client/test/**/__screenshots__/
+lib-cov/
+
+# -------------------------------------------------------------------
+# 4. Environment Variables & Secrets
+# -------------------------------------------------------------------
+.env
+.env.*
+replacements.txt
+
+# -------------------------------------------------------------------
+# 5. Logs & Profiling Data
+# -------------------------------------------------------------------
+logs/
+*.log
+npm-debug.log*
+pids/
+*.pid
+*.seed
+profile-*
+*clinic*
+*flamegraph*
+*.usermd.net-*.json
+
+# -------------------------------------------------------------------
+# 6. Other IDEs & OS Files
+# -------------------------------------------------------------------
+.DS_Store
+*.swp
+.idea/
+.vscode/
+*.code-workspace
+.claude/

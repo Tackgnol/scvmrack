@@ -1,0 +1,118 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import {
+  hasCurrentSearchParam,
+  getCurrentSearchParamValue,
+  getCurrentCharacterIdParam,
+  getCurrentPendingClaimCharacterId,
+  setCurrentCharacterIdParam,
+  setCurrentPendingClaimCharacterId,
+  buildHomeCallbackUrl,
+  clearCurrentSearchParam,
+  navigateToLoggedOut,
+  navigateToSessionExpired,
+  CHARACTER_ID_QUERY_PARAM,
+  CLAIM_CHARACTER_QUERY_PARAM,
+  LOGGED_OUT_QUERY_PARAM,
+  SESSION_EXPIRED_QUERY_PARAM,
+} from '../../../src/router/navigation';
+import { appHistory } from '../../../src/router/history';
+
+vi.mock('../../../src/router/history', () => ({
+  appHistory: {
+    location: {
+      search: '',
+      pathname: '/',
+      hash: '',
+    },
+    replace: vi.fn().mockResolvedValue(undefined),
+  },
+}));
+
+describe('navigation router utils', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    appHistory.location.search = '';
+    appHistory.location.pathname = '/';
+    appHistory.location.hash = '';
+  });
+
+  describe('hasCurrentSearchParam', () => {
+    it('should return true if param exists', () => {
+      appHistory.location.search = '?test=1';
+      expect(hasCurrentSearchParam('test')).toBe(true);
+    });
+
+    it('should return false if param does not exist', () => {
+      appHistory.location.search = '?other=1';
+      expect(hasCurrentSearchParam('test')).toBe(false);
+    });
+  });
+
+  describe('getCurrentSearchParamValue', () => {
+    it('should return trimmed value if exists', () => {
+      appHistory.location.search = '?test=%20hello%20';
+      expect(getCurrentSearchParamValue('test')).toBe('hello');
+    });
+
+    it('should return null if not exists or empty', () => {
+      appHistory.location.search = '?test=';
+      expect(getCurrentSearchParamValue('test')).toBeNull();
+      expect(getCurrentSearchParamValue('other')).toBeNull();
+    });
+  });
+
+  describe('getCurrentCharacterIdParam', () => {
+    it('should return character ID from search', () => {
+      appHistory.location.search = `?${CHARACTER_ID_QUERY_PARAM}=123`;
+      expect(getCurrentCharacterIdParam()).toBe('123');
+    });
+  });
+
+  describe('setCurrentCharacterIdParam', () => {
+    it('should set character ID in search', async () => {
+      await setCurrentCharacterIdParam('456');
+      expect(appHistory.replace).toHaveBeenCalledWith(`/?${CHARACTER_ID_QUERY_PARAM}=456`);
+    });
+
+    it('should remove character ID if null', async () => {
+      appHistory.location.search = `?${CHARACTER_ID_QUERY_PARAM}=123`;
+      await setCurrentCharacterIdParam(null);
+      expect(appHistory.replace).toHaveBeenCalledWith('/');
+    });
+  });
+
+  describe('buildHomeCallbackUrl', () => {
+    it('should build URL with provided params', () => {
+      const url = buildHomeCallbackUrl('char1', 'claim1');
+      expect(url).toContain(`${CHARACTER_ID_QUERY_PARAM}=char1`);
+      expect(url).toContain(`${CLAIM_CHARACTER_QUERY_PARAM}=claim1`);
+    });
+
+    it('should build URL with only character ID', () => {
+      const url = buildHomeCallbackUrl('char1');
+      expect(url).toBe(`/?${CHARACTER_ID_QUERY_PARAM}=char1`);
+    });
+  });
+
+  describe('clearCurrentSearchParam', () => {
+    it('should remove param from search', async () => {
+      appHistory.location.search = '?a=1&b=2';
+      await clearCurrentSearchParam('a');
+      expect(appHistory.replace).toHaveBeenCalledWith('/?b=2');
+    });
+  });
+
+  describe('navigateToLoggedOut', () => {
+    it('should navigate to home with logged-out flag', async () => {
+      await navigateToLoggedOut();
+      expect(appHistory.replace).toHaveBeenCalledWith(`/?${LOGGED_OUT_QUERY_PARAM}=true`);
+    });
+  });
+
+  describe('navigateToSessionExpired', () => {
+    it('should navigate to home with expired flag', async () => {
+      await navigateToSessionExpired();
+      expect(appHistory.replace).toHaveBeenCalledWith(`/?${SESSION_EXPIRED_QUERY_PARAM}=true`);
+    });
+  });
+});

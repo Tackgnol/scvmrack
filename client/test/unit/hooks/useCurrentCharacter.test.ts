@@ -1,0 +1,215 @@
+import { act, renderHook } from '@testing-library/react';
+import { expect, test, vi } from 'vitest';
+import { useCurrentCharacter } from '../../../src/hooks/useCurrentCharacter.ts';
+import { useCharacterId } from '../../../src/hooks/useCharacterId.ts';
+import { useAuth } from '../../../src/hooks/useAuth.ts';
+import { useCharacterRepository } from '../../../src/hooks/useCharacterRepository.ts';
+import { useCharacterEditor } from '../../../src/hooks/useCharacterEditor.ts';
+import { useTranslation } from 'react-i18next';
+import { useSnackbar } from '../../../src/SnackbarContext/SnackbarProvider.tsx';
+
+vi.mock('../../../src/hooks/useCharacterId.ts', () => ({
+  useCharacterId: vi.fn(),
+}));
+
+vi.mock('../../../src/hooks/useAuth.ts', () => ({
+  useAuth: vi.fn(),
+}));
+
+vi.mock('../../../src/hooks/useCharacterRepository.ts', () => ({
+  useCharacterRepository: vi.fn(),
+}));
+
+vi.mock('../../../src/hooks/useCharacterEditor.ts', () => ({
+  useCharacterEditor: vi.fn(),
+}));
+
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    i18n: { changeLanguage: vi.fn(), language: 'en' },
+    t: (k: string) => k,
+  }),
+}));
+
+vi.mock('../../../src/SnackbarContext/SnackbarProvider.tsx', () => ({
+  useSnackbar: () => ({ showSuccess: vi.fn(), showError: vi.fn() }),
+}));
+
+vi.mock('@/router/history', () => ({
+    appHistory: {
+        subscribe: vi.fn(),
+        location: { pathname: '/' }
+    }
+}));
+
+vi.mock('@/router/navigation', () => ({
+    hasCurrentSearchParam: vi.fn().mockReturnValue(false),
+    LOGGED_OUT_QUERY_PARAM: 'loggedOut'
+}));
+
+vi.mock('@/analytics/googleAnalytics', () => ({
+    trackEvent: vi.fn(),
+}));
+
+test('useCurrentCharacter aggregates repository, editor and auth state', () => {
+    (useCharacterId as any).mockReturnValue({ characterId: 'char-1', lastCharacterId: null, setCharacterId: vi.fn() });
+    (useAuth as any).mockReturnValue({ isAuthenticated: true, isGuest: false, isLoading: false });
+    
+    const repo = {
+        character: { id: 'char-1', name: 'Test' },
+        isLoading: false,
+        error: null,
+        updateCharacter: {},
+        getCharacterKey: vi.fn(),
+        createCharacter: { mutate: vi.fn() },
+    };
+    (useCharacterRepository as any).mockReturnValue(repo);
+    
+    const editor = {
+        updateField: vi.fn(),
+        flush: vi.fn(),
+        isSaving: false
+    };
+    (useCharacterEditor as any).mockReturnValue(editor);
+
+    const { result } = renderHook(() => useCurrentCharacter());
+
+    expect(result.current.characterId).toBe('char-1');
+    expect(result.current.character?.name).toBe('Test');
+    expect(result.current.isAuthenticated).toBe(true);
+    expect(result.current.updateField).toBe(editor.updateField);
+});
+
+test('useCurrentCharacter handles generateNew', () => {
+    const setCharacterId = vi.fn();
+    (useCharacterId as any).mockReturnValue({ characterId: 'char-1', setCharacterId });
+    (useAuth as any).mockReturnValue({ isAuthenticated: true, isGuest: false, isLoading: false });
+    
+    const mutate = vi.fn();
+    const repo = {
+        createCharacter: { mutate, data: null },
+    };
+    (useCharacterRepository as any).mockReturnValue(repo);
+    (useCharacterEditor as any).mockReturnValue({ flush: vi.fn() });
+
+    const { result } = renderHook(() => useCurrentCharacter());
+
+    act(() => {
+        result.current.generateNew(1);
+    });
+
+    expect(mutate).toHaveBeenCalledWith(
+        expect.objectContaining({ body: { classId: 1 } }),
+        expect.any(Object)
+    );
+    
+    // Test onSuccess callback
+    const callbacks = (mutate as any).mock.calls[0][1];
+    callbacks.onSuccess({ id: 'new-char' });
+    expect(setCharacterId).toHaveBeenCalledWith('new-char');
+});
+
+test('useCurrentCharacter handles killAndReplace', () => {
+    const setCharacterId = vi.fn();
+    (useCharacterId as any).mockReturnValue({ characterId: 'char-1', setCharacterId });
+    (useAuth as any).mockReturnValue({ isAuthenticated: true, isGuest: false, isLoading: false });
+    
+    const deleteMutate = vi.fn();
+    const createMutate = vi.fn();
+    const repo = {
+        deleteCharacter: { mutate: deleteMutate },
+        createCharacter: { mutate: createMutate, data: null },
+    };
+    (useCharacterRepository as any).mockReturnValue(repo);
+    (useCharacterEditor as any).mockReturnValue({ flush: vi.fn() });
+
+    const { result } = renderHook(() => useCurrentCharacter());
+
+    act(() => {
+        result.current.killAndReplace();
+    });
+
+    expect(deleteMutate).toHaveBeenCalled();
+    
+    // Simulate delete success
+    const deleteCallbacks = deleteMutate.mock.calls[0][1];
+    deleteCallbacks.onSuccess();
+    
+    expect(createMutate).toHaveBeenCalled();
+});
+
+test('useCurrentCharacter handles claimCharacter', async () => {
+    const setCharacterId = vi.fn();
+    (useCharacterId as any).mockReturnValue({ characterId: 'char-1', setCharacterId });
+    (useAuth as any).mockReturnValue({ isAuthenticated: true, isGuest: false, isLoading: false });
+    
+    const mutateAsync = vi.fn().mockResolvedValue({});
+    const repo = {
+        claimCharacter: { mutateAsync },
+        createCharacter: { data: null }
+    };
+    (useCharacterRepository as any).mockReturnValue(repo);
+    (useCharacterEditor as any).mockReturnValue({ flush: vi.fn() });
+
+    const { result } = renderHook(() => useCurrentCharacter());
+
+    await act(async () => {
+        await result.current.claimCharacter('char-target');
+    });
+
+    expect(mutateAsync).toHaveBeenCalledWith(expect.objectContaining({
+        params: { path: { id: 'char-target' } }
+    }));
+    expect(setCharacterId).toHaveBeenCalledWith('char-target');
+});
+
+test('useCurrentCharacter handles changeLocale', async () => {
+    (useCharacterId as any).mockReturnValue({ characterId: 'char-1', setCharacterId: vi.fn() });
+    (useAuth as any).mockReturnValue({ isAuthenticated: true, isGuest: false, isLoading: false });
+    
+    const repo = {
+        createCharacter: { mutate: vi.fn(), data: null },
+    };
+    (useCharacterRepository as any).mockReturnValue(repo);
+    (useCharacterEditor as any).mockReturnValue({ flush: vi.fn() });
+
+    const { result } = renderHook(() => useCurrentCharacter());
+
+    await act(async () => {
+        await result.current.changeLocale('pl');
+    });
+
+    // Language changed is mocked in vi.mock('react-i18next')
+});
+
+test('useCurrentCharacter handles auto-create effect', async () => {
+    const setCharacterId = vi.fn();
+    (useCharacterId as any).mockReturnValue({ characterId: null, lastCharacterId: null, setCharacterId });
+    (useAuth as any).mockReturnValue({ isAuthenticated: false, isGuest: true, isLoading: false });
+
+    const createMutate = vi.fn();
+    const repo = {
+        createCharacter: { mutate: createMutate, data: null },
+    };
+    (useCharacterRepository as any).mockReturnValue(repo);
+    (useCharacterEditor as any).mockReturnValue({ flush: vi.fn() });
+
+    // Mock global fetch
+    global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => []
+    });
+
+    await act(async () => {
+        renderHook(() => useCurrentCharacter());
+    });
+
+    // Wait for the async effect
+    await vi.waitFor(() => {
+        expect(createMutate).toHaveBeenCalled();
+    });
+
+    const createCallbacks = createMutate.mock.calls[0][1];
+    createCallbacks.onSuccess({ id: 'auto-char' });
+    expect(setCharacterId).toHaveBeenCalledWith('auto-char');
+});

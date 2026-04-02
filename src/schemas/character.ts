@@ -73,6 +73,8 @@ const EquipmentItemSchema = {
     },
     maxTier: { type: 'integer', minimum: 0, maximum: 4 },
     currentTier: { type: 'integer', minimum: 0, maximum: 4 },
+    amount: { type: 'integer', minimum: 0, maximum: 999 },
+    ammoType: { type: 'string', maxLength: 50 },
   },
 };
 
@@ -104,6 +106,7 @@ const WeaponSchema = {
       items: { type: 'string', maxLength: 50 },
       maxItems: 10,
     },
+    ammoType: { type: 'string', maxLength: 50 },
   },
 };
 

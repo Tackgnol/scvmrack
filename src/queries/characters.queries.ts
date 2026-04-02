@@ -199,7 +199,7 @@ export interface IListUserCharactersQuery {
   result: IListUserCharactersResult;
 }
 
-const listUserCharactersIR: any = {"usedParamSet":{"locale":true,"userId":true},"params":[{"name":"locale","required":false,"transform":{"type":"scalar"},"locs":[{"a":397,"b":403}]},{"name":"userId","required":false,"transform":{"type":"scalar"},"locs":[{"a":423,"b":429}]}],"statement":"SELECT\n    c.id,\n    c.name,\n    c.class_id AS \"classId\",\n    COALESCE(t_class_name.value, cl.name) AS \"className\",\n    c.current_hp AS \"currentHp\",\n    c.max_hp AS \"maxHp\",\n    c.created_at AS \"createdAt\",\n    c.updated_at AS \"updatedAt\"\nFROM characters c\nLEFT JOIN classes cl ON cl.id = c.class_id\nLEFT JOIN translations t_class_name\n    ON t_class_name.key = cl.name_key\n    AND t_class_name.locale = :locale\nWHERE c.user_id = :userId\nORDER BY c.updated_at DESC"};
+const listUserCharactersIR: any = {"usedParamSet":{"locale":true,"userId":true},"params":[{"name":"locale","required":false,"transform":{"type":"scalar"},"locs":[{"a":404,"b":410}]},{"name":"userId","required":false,"transform":{"type":"scalar"},"locs":[{"a":430,"b":436}]}],"statement":"SELECT\n    c.id,\n    c.name,\n    c.class_id AS \"classId\",\n    COALESCE(t_class_name.value, cl.name) AS \"className\",\n    c.current_hp AS \"currentHp\",\n    c.max_hp AS \"maxHp\",\n    c.created_at AS \"createdAt\",\n    c.updated_at AS \"updatedAt\"\nFROM characters c\nLEFT JOIN classes cl ON cl.id = c.class_id\nLEFT JOIN translations t_class_name\n    ON t_class_name.key = cl.name_key\n    AND t_class_name.locale = :locale\nWHERE c.user_id = :userId\nORDER BY c.updated_at DESC"};
 
 /**
  * Query generated from SQL:

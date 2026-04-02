@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { waitForCharacterSave } from './utils/save.js';
 
 test.beforeEach(async ({ page }) => {
   // Clear cookies to prevent stale session issues between parallel tests
@@ -28,15 +29,10 @@ test.describe('Existing character loading on root visit', () => {
 
     // 2. Edit HP to a known value so we can verify the same character loads later
     const hpInput = page.getByTestId('hp-input');
-    await hpInput.fill('3');
-    await hpInput.blur();
-
-    // Wait for the save cycle: "Saving..." appears when the debounce flushes,
-    // then "Synced" reappears once the PATCH completes.
-    const savingBadge = page.getByText('Saving...', { exact: true });
-    const syncBadge = page.getByText('Synced', { exact: true });
-    await expect(savingBadge).toBeVisible({ timeout: 5000 });
-    await expect(syncBadge).toBeVisible({ timeout: 10000 });
+    await waitForCharacterSave(page, async () => {
+      await hpInput.fill('3');
+      await hpInput.blur();
+    });
 
     // 3. Clear localStorage to simulate "forgotten" character ID
     await page.evaluate(() => {

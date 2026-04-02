@@ -1,4 +1,31 @@
 import { expect, Page } from '@playwright/test';
+import { waitForCharacterSave } from './save.js';
+
+async function fillAndSave(
+  page: Page,
+  testId: string,
+  value: string,
+  timeout = 20000
+) {
+  const input = page.getByTestId(testId);
+  await waitForCharacterSave(page, async () => {
+    await input.fill(value);
+    await input.blur();
+  }, timeout);
+}
+
+async function selectSearchResult(page: Page, query: string, optionName: string | RegExp) {
+  const eqSearch = page.getByTestId('equipment-search-input');
+  const option = page.getByRole('option', {
+    name: typeof optionName === 'string' ? new RegExp(optionName, 'i') : optionName,
+  });
+
+  await eqSearch.click();
+  await eqSearch.fill(query);
+  await page.waitForTimeout(1000);
+  await expect(option).toBeVisible({ timeout: 10000 });
+  await option.click();
+}
 
 export async function runCharacterSheetEditingSteps(page: Page, syncBadgeTimeout = 20000) {
   // Check it's an anonymous new guest by seeing if synced badge eventually appears
@@ -6,60 +33,44 @@ export async function runCharacterSheetEditingSteps(page: Page, syncBadgeTimeout
   await expect(syncBadge).toBeVisible({ timeout: syncBadgeTimeout });
 
   // Step 1: Edit current Hit Points
-  const hpInput = page.getByTestId('hp-input');
-  await hpInput.fill('5');
-  await hpInput.blur();
-  await expect(syncBadge).toBeVisible(); // Saves
+  await fillAndSave(page, 'hp-input', '5');
 
   // Step 2: Edit current Silver
-  const silverInput = page.getByTestId('silver-input');
-  await silverInput.fill('150');
-  await silverInput.blur();
-  await expect(syncBadge).toBeVisible();
+  await fillAndSave(page, 'silver-input', '150');
 
   // Step 3: Add comments to abilities
   // Find the first comment text field among abilities. Note: this might not exist if class has no abilities.
   const firstCommentInput = page.getByTestId('ability-comment-0-input');
   if (await firstCommentInput.isVisible()) {
-    await firstCommentInput.fill('My fun ability comment');
-    await firstCommentInput.blur();
-    await expect(syncBadge).toBeVisible();
+    await waitForCharacterSave(page, async () => {
+      await firstCommentInput.fill('My fun ability comment');
+      await firstCommentInput.blur();
+    });
   }
 
   // Step 4: Edit Trait 1
-  const trait1Input = page.getByTestId('trait1-input');
-  await trait1Input.fill('Obsessive');
-  await trait1Input.blur();
-  await expect(syncBadge).toBeVisible();
+  await fillAndSave(page, 'trait1-input', 'Obsessive');
 
   // Step 5: Edit Trait 2
-  const trait2Input = page.getByTestId('trait2-input');
-  await trait2Input.fill('Paranoid');
-  await trait2Input.blur();
-  await expect(syncBadge).toBeVisible();
+  await fillAndSave(page, 'trait2-input', 'Paranoid');
 
   // Step 6: Edit Habit
-  const habitInput = page.getByTestId('habit-input');
-  await habitInput.fill('Bites nails');
-  await habitInput.blur();
-  await expect(syncBadge).toBeVisible();
+  await fillAndSave(page, 'habit-input', 'Bites nails');
 
   // Step 7: Edit Body Description
-  const bodyInput = page.getByTestId('body-description-input');
-  await bodyInput.fill('Tall and lanky');
-  await bodyInput.blur();
-  await expect(syncBadge).toBeVisible();
+  await fillAndSave(page, 'body-description-input', 'Tall and lanky');
 
   // Step 8: Add quick modifier
   const quickModInput = page.getByTestId('quick-mod-name-input');
   await quickModInput.fill('Quick Boost');
   const quickModValue = page.getByTestId('quick-mod-value-input');
-  await quickModValue.click();
-  await quickModValue.fill('1');
-  await quickModValue.press('Enter');
+  await waitForCharacterSave(page, async () => {
+    await quickModValue.click();
+    await quickModValue.fill('1');
+    await quickModValue.press('Enter');
+  });
 
   await expect(page.getByText('Quick Boost')).toBeVisible({ timeout: 20000 });
-  await expect(syncBadge).toBeVisible();
 
   // Step 9: Add modifier via Modal
   const advancedModBtn = page.getByTestId('advanced-mod-btn');
@@ -67,48 +78,43 @@ export async function runCharacterSheetEditingSteps(page: Page, syncBadgeTimeout
   const modModal = page.getByRole('dialog');
   await expect(modModal).toBeVisible();
   await page.getByTestId('modal-mod-name-input').fill('Modal Super Buff');
-  await page.getByTestId('modal-mod-save-btn').click();
+  await waitForCharacterSave(page, async () => {
+    await page.getByTestId('modal-mod-save-btn').click();
+  });
   await expect(modModal).not.toBeVisible();
   await expect(page.getByText('Modal Super Buff')).toBeVisible();
-  await expect(syncBadge).toBeVisible();
 
   // Step 10: Add scroll to inventory
-  const eqSearch = page.getByTestId('equipment-search-input').first();
-  await eqSearch.click();
-  await eqSearch.fill('scroll'); // type "scroll"
-  await page.waitForTimeout(1000); // Wait for debounce/search
-  await page.getByRole('option').first().click();
-  await expect(syncBadge).toBeVisible();
+  await selectSearchResult(page, 'palms', /^Palms Open the Southern Gate\b/i);
+  await expect(syncBadge).toBeVisible({ timeout: 20000 });
 
   // Step 11: Add armor
-  await eqSearch.click();
-  await eqSearch.fill('armor');
-  await page.waitForTimeout(1000);
-  await page.getByRole('option').first().click();
-  await expect(syncBadge).toBeVisible();
+  await selectSearchResult(page, 'leather', /^Leather Armor\b/i);
+  await expect(syncBadge).toBeVisible({ timeout: 20000 });
 
   // Step 12: Add weapon
-  await eqSearch.click();
-  await eqSearch.fill('weapon');
-  await page.waitForTimeout(1000);
-  await page.getByRole('option').first().click();
-  await expect(syncBadge).toBeVisible();
+  await selectSearchResult(page, 'sword', /^Sword\b/i);
+  await expect(syncBadge).toBeVisible({ timeout: 20000 });
 
   // Step 13-14: Equip/unequip weapon (inventory may or may not contain weapons)
   const weaponSlot = page.getByTestId('equipped-weapon-slot-0');
   await weaponSlot.click();
-  const weaponOption = page.locator('[data-testid^="equip-weapon-option-"]').first();
+  const weaponOption = page.locator('[data-testid^="equip-weapon-option-"]').filter({
+    hasText: /^Sword(?:\s|$)/i,
+  });
   const hasWeaponToEquip = await weaponOption
     .waitFor({ state: 'visible', timeout: 3000 })
     .then(() => true)
     .catch(() => false);
   if (hasWeaponToEquip) {
-    await weaponOption.click();
-    await expect(syncBadge).toBeVisible();
+    await waitForCharacterSave(page, async () => {
+      await weaponOption.click();
+    });
 
     await weaponSlot.click();
-    await page.getByTestId('unequip-weapon-option').click();
-    await expect(syncBadge).toBeVisible();
+    await waitForCharacterSave(page, async () => {
+      await page.getByTestId('unequip-weapon-option').click();
+    });
   } else {
     await page.keyboard.press('Escape');
   }
@@ -116,41 +122,36 @@ export async function runCharacterSheetEditingSteps(page: Page, syncBadgeTimeout
   // Step 15-16: Equip/unequip armor (inventory may or may not contain armor)
   const armorSlot = page.getByTestId('equipped-armor-slot');
   await armorSlot.click();
-  const armorOption = page.locator('[data-testid^="equip-armor-option-"]').first();
+  const armorOption = page.locator('[data-testid^="equip-armor-option-"]').filter({
+    hasText: /^Leather Armor(?:\s|$)/i,
+  });
   const hasArmorToEquip = await armorOption
     .waitFor({ state: 'visible', timeout: 3000 })
     .then(() => true)
     .catch(() => false);
   if (hasArmorToEquip) {
-    await armorOption.click();
-    await expect(syncBadge).toBeVisible();
+    await waitForCharacterSave(page, async () => {
+      await armorOption.click();
+    });
 
     await armorSlot.click();
-    await page.getByTestId('unequip-armor-option').click();
-    await expect(syncBadge).toBeVisible();
+    await waitForCharacterSave(page, async () => {
+      await page.getByTestId('unequip-armor-option').click();
+    });
   } else {
     await page.keyboard.press('Escape');
   }
 
   // Step 17: Power usage dot clicked and saved
-  const firstPip = page.getByTestId('power-pip').first();
-  if (await firstPip.isVisible()) {
-    await firstPip.click();
-    await expect(syncBadge).toBeVisible();
+  const addedScrollPip = page.getByRole('button', { name: /Palms Open the Southern Gate use 1/i });
+  if (await addedScrollPip.isVisible()) {
+    await waitForCharacterSave(page, async () => {
+      await addedScrollPip.click();
+    });
   }
 
   // Step 18: Add a Note or Misery
-  const notesInput = page.getByTestId('notes-input');
-  await notesInput.fill('I am doomed');
-  await notesInput.blur();
-
-  // Wait for the save cycle to complete before reloading:
-  // The editor uses a debounce (1s) before sending the PATCH.
-  // Wait for "Saving..." to appear (confirms the flush started),
-  // then wait for "Synced" to reappear (confirms the PATCH completed).
-  const savingBadge = page.getByText('Saving...', { exact: true });
-  await expect(savingBadge).toBeVisible({ timeout: 5000 });
-  await expect(syncBadge).toBeVisible({ timeout: 10000 });
+  await fillAndSave(page, 'notes-input', 'I am doomed');
 
   // Step 19: Refresh and all values are still edited
   await page.reload();
@@ -166,5 +167,5 @@ export async function runCharacterSheetEditingSteps(page: Page, syncBadgeTimeout
   await expect(page.getByTestId('habit-input')).toHaveValue('Bites nails');
   await expect(page.getByText('Quick Boost')).toBeVisible();
   await expect(page.getByText('Modal Super Buff')).toBeVisible();
-  await expect(notesInput).toHaveValue('I am doomed');
+  await expect(page.getByTestId('notes-input')).toHaveValue('I am doomed');
 }

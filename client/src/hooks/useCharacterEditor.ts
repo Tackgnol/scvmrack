@@ -197,6 +197,13 @@ export function useCharacterEditor(
         [queuePatch]
     );
 
+    const useAmmo = useCallback(
+        (equipmentIndex: number) => {
+            queuePatch({ kind: 'ammo-use', equipmentIndex });
+        },
+        [queuePatch]
+    );
+
     const equipWeapon = useCallback((equipmentIndex: number, slotIndex: number) => {
         queuePatch({ kind: 'equip-weapon', equipmentIndex, slotIndex });
     }, [queuePatch]);
@@ -231,6 +238,7 @@ export function useCharacterEditor(
         flush,
 
         toggleScrollUse,
+        useAmmo,
 
         // Simple fields
         updateField,

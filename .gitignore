@@ -73,9 +73,28 @@ compose.yaml
 materials
 
 # test results & reports
+reports/
+coverage/
 tests/e2e/playwright-report
 tests/e2e/test-results
 tests/integration-be/test-results
+e2e-report/
+test-results/
+.playwright-mcp/
+client/temp-report/
+client/vitest_output.txt
+
+# vitest coverage
+client/coverage-browser/
+client/coverage-merged/
+client/coverage-unit*/
+client/.vitest-attachments/
+
+# vitest screenshots (generated during test runs)
+client/test/**/__screenshots__/
+
+# typescript build info
+client/tsconfig.node.tsbuildinfo
 
 # build outputs
 client/public/

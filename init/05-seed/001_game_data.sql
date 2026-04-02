@@ -179,6 +179,8 @@ INSERT INTO public.equipment VALUES (56, 'equipment.elixir-vitalis', '{consumabl
 INSERT INTO public.equipment VALUES (57, 'equipment.spider-owl-soup', '{consumable,decoction}', NULL, NULL, NULL, NULL, NULL, NULL, 0, false, NULL, 1, NULL, NULL, '{"type": "SingleUse"}');
 INSERT INTO public.equipment VALUES (58, 'equipment.fernors-philtre', '{consumable,decoction}', NULL, NULL, NULL, NULL, NULL, NULL, 0, false, NULL, 1, NULL, NULL, '{"type": "SingleUse", "effectDie": 4}');
 INSERT INTO public.equipment VALUES (59, 'equipment.hyphos-snuff', '{consumable,decoction}', NULL, NULL, NULL, NULL, NULL, NULL, 0, false, NULL, 1, NULL, NULL, '{"type": "SingleUse", "statuses": [{"value": -2, "source": "Hyphos snuff", "exclude": ["ability", "heal", "ranged", "melee", "cast"], "statistic": "agility"}]}');
+INSERT INTO public.equipment VALUES (60, 'equipment.arrows', '{ammo,consumable}', NULL, NULL, NULL, NULL, NULL, NULL, 3, false, NULL, 1, 'Arrow', 10, NULL);
+INSERT INTO public.equipment VALUES (61, 'equipment.bolts', '{ammo,consumable}', NULL, NULL, NULL, NULL, NULL, NULL, 5, false, NULL, 1, 'Bolt', 10, NULL);
 
 
 --
@@ -958,6 +960,10 @@ INSERT INTO public.translations VALUES ('en', 'equipment.black-poison', 'A Bottl
 INSERT INTO public.translations VALUES ('en', 'equipment.black-poison.description', 'Toughness DR14 or d6 damage + blind for one hour');
 INSERT INTO public.translations VALUES ('en', 'equipment.bomb', 'Bomb');
 INSERT INTO public.translations VALUES ('en', 'equipment.bomb.description', 'Sealed bottle, d10 damage');
+INSERT INTO public.translations VALUES ('en', 'equipment.arrows', 'Arrows');
+INSERT INTO public.translations VALUES ('en', 'equipment.arrows.description', 'Ammunition for bows');
+INSERT INTO public.translations VALUES ('en', 'equipment.bolts', 'Bolts');
+INSERT INTO public.translations VALUES ('en', 'equipment.bolts.description', 'Ammunition for crossbows');
 INSERT INTO public.translations VALUES ('en', 'scroll.unclean.1', 'Palms Open the Southern Gate');
 INSERT INTO public.translations VALUES ('en', 'scroll.unclean.1.description', 'A ball of fire hits d2 creatures dealing d8 damage per creature');
 INSERT INTO public.translations VALUES ('en', 'scroll.unclean.2', 'Tongue of Eris');
@@ -1184,6 +1190,10 @@ INSERT INTO public.translations VALUES ('pl', 'equipment.black-poison', 'Butelka
 INSERT INTO public.translations VALUES ('pl', 'equipment.black-poison.description', 'Wytrzymałość PT14 lub d6 obrażeń + oślepienie na godzinę');
 INSERT INTO public.translations VALUES ('pl', 'equipment.bomb', 'Bomba');
 INSERT INTO public.translations VALUES ('pl', 'equipment.bomb.description', 'Zapieczętowana butelka, d10 obrażeń');
+INSERT INTO public.translations VALUES ('pl', 'equipment.arrows', 'Strzały');
+INSERT INTO public.translations VALUES ('pl', 'equipment.arrows.description', 'Amunicja do łuków');
+INSERT INTO public.translations VALUES ('pl', 'equipment.bolts', 'Belty');
+INSERT INTO public.translations VALUES ('pl', 'equipment.bolts.description', 'Amunicja do kusz');
 INSERT INTO public.translations VALUES ('pl', 'scroll.unclean.1', 'Dłonie otwierają Południową Bramę');
 INSERT INTO public.translations VALUES ('pl', 'scroll.unclean.1.description', 'Kula ognia uderza w d2 stworzenia, zadając d8 obrażeń każdemu');
 INSERT INTO public.translations VALUES ('pl', 'scroll.unclean.2', 'Język Eris');

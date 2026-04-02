@@ -1,7 +1,7 @@
 import {useCurrentCharacter} from "@/hooks/useCurrentCharacter.ts";
 import { createContext, useContext, ReactNode } from 'react';
 
-const CharacterContext = createContext<ReturnType<typeof useCurrentCharacter> | null>(null);
+export const CharacterContext = createContext<ReturnType<typeof useCurrentCharacter> | null>(null);
 
 export function CharacterProvider({ children }: { children: ReactNode }) {
     const character = useCurrentCharacter();

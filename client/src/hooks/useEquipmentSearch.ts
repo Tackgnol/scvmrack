@@ -16,6 +16,18 @@ type RawItemSearchHit = ItemSearchHit & {
     item_type?: ItemSearchHit['itemType'];
 };
 
+function isRawItemSearchHit(value: unknown): value is RawItemSearchHit {
+    if (!value || typeof value !== 'object') return false;
+
+    const candidate = value as Partial<RawItemSearchHit>;
+    return (
+        typeof candidate.id === 'number' &&
+        Number.isFinite(candidate.id) &&
+        typeof candidate.key === 'string' &&
+        typeof candidate.name === 'string'
+    );
+}
+
 async function fetchItemSearch(
     query: string,
     locale: string,
@@ -35,8 +47,12 @@ async function fetchItemSearch(
         throw new Error('Search failed');
     }
 
-    const data = await response.json() as RawItemSearchHit[];
-    return data.map((item) => ({
+    const payload = await response.json() as unknown;
+    const data = Array.isArray(payload) ? payload : [];
+
+    return data
+        .filter(isRawItemSearchHit)
+        .map((item) => ({
         ...item,
         itemType: item.itemType ?? item.item_type ?? 'equipment',
         tags: item.tags ?? [],

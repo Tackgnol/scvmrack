@@ -28,10 +28,96 @@ npm run test     # Run tests
 cd client
 npm run dev          # Start Vite dev server
 npm run build        # Production build
+npm run test:unit    # Run JSDOM unit tests
+npm run test:browser # Run cross-browser tests (Chromium, Firefox, Webkit)
+npm run test:browser:ui # Run browser tests with interactive UI
+npm run test:coverage # Run all tests and generate unified coverage report
 npm run lint         # Run ESLint
 npm run lint:fix     # Fix linting issues
 npm run format       # Format code with Prettier
 ```
+
+## Testing Standards
+
+### Choosing between unit and browser tests
+- **Unit tests** (`test/unit/`, JSDOM): pure logic, hooks, data transforms, utilities — anything that doesn't need real layout or real browser events.
+- **Browser tests** (`test/browser/`, Playwright via Vitest Browser Mode): component rendering, real user interactions, visual correctness, CSS-dependent behaviour. Runs against Chromium, Firefox, and Webkit.
+
+### Browser test structure
+
+Every browser test file follows this shape:
+
+```ts
+import { render } from 'vitest-browser-react';      // NOT /pure
+import { page, userEvent } from 'vitest/browser';
+import { describe, it, expect, vi } from 'vitest';
+import MyComponent from '@/components/...';
+import BrowserTestProvider from '../BrowserTestProvider'; // adjust depth
+
+describe('MyComponent Browser', () => {
+  it('does something', async () => {
+    await render(
+      <BrowserTestProvider>
+        <MyComponent prop="value" />
+      </BrowserTestProvider>
+    );
+
+    await expect.element(page.getByRole('button')).toBeVisible();
+    await userEvent.click(page.getByRole('button'));
+    await expect.poll(() => mockFn).toHaveBeenCalled();
+    // no unmount() call — auto-cleanup handles it
+  });
+});
+```
+
+### Rules
+
+**Cleanup**
+- Do **not** call `unmount()` in tests. `vitest-browser-react` (default entry) auto-cleans before each test. Manual `unmount()` is redundant and triggers a webkit internal error.
+- Do **not** add `afterEach(cleanup)` in test files — `setup-browser.ts` does not need it either; auto-cleanup is built in.
+- **One render per `it()`**. Auto-cleanup fires *between* tests, not mid-test. If a test renders twice in one `it()` and the second render depends on the first being gone, it will fail. Split into separate `it()` blocks instead.
+
+**Locators** — in priority order:
+1. `page.getByRole('button', { name: /label/i })` — preferred, tests accessibility too
+2. `page.getByText('...')` — for visible text content
+3. `page.getByTestId('...')` — only when role/text are ambiguous; add `data-testid` to the component
+
+**Assertions**
+- Always `await expect.element(locator).toBeVisible()` — has built-in retry, never stale.
+- Never `expect(element).toBe...` without `await` — snapshots the DOM immediately and will be wrong for async updates.
+
+**Interactions**
+- Always `await userEvent.click(locator)` from `vitest/browser` — fires real CDP events, not synthetic JS.
+- Use `await userEvent.fill(input, 'value')` to set input values, not `userEvent.type`.
+
+**Verifying callbacks**
+- `await expect.poll(() => mockFn).toHaveBeenCalledWith(...)` — retries until true, handles async event dispatch correctly.
+- Never `expect(mockFn).toHaveBeenCalled()` without `poll` in browser tests.
+
+**Timers**
+- Avoid `sleep()` / raw `setTimeout` waits. They are fragile in CI.
+- For components with internal delays (and no `userEvent` interactions in the test), use fake timers:
+  ```ts
+  beforeEach(() => { vi.useFakeTimers(); });
+  afterEach(() => { vi.useRealTimers(); });
+  // inside test:
+  await vi.advanceTimersByTimeAsync(200); // flushes microtasks too
+  ```
+- Do **not** mix `userEvent` interactions with `vi.useFakeTimers()` — userEvent breaks under fake timers.
+
+**Mocks**
+- Reset mocks with `vi.clearAllMocks()` in `beforeEach` whenever shared describe-level `vi.fn()` props are used.
+- Prefer creating fresh `vi.fn()` locals inside each test over relying on shared describe-level mocks.
+
+**DOM manipulation**
+- If a test appends elements to `document.body` manually, always clean up with `try/finally` — assertions that throw will skip any cleanup after them, leaking into subsequent tests on the same page.
+
+**Provider**
+- Always wrap in `<BrowserTestProvider>` — it provides the MUI theme, i18n, and disables transitions/animations so assertions are not timing-dependent.
+- i18n is initialised once globally in `setup-browser.ts` (`beforeAll`). `BrowserTestProvider` does not need to gate on language loading.
+
+### Unit Testing
+Use standard Vitest with JSDOM for logic-heavy files and hooks that don't require real browser rendering.
 
 ## Architecture
 

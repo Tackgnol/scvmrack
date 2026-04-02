@@ -1,0 +1,234 @@
+import { act, renderHook } from '@testing-library/react';
+import { beforeEach, expect, test, vi } from 'vitest';
+import { useCharacterEditor } from '../../../src/hooks/useCharacterEditor.ts';
+import { useQueryClient } from '@tanstack/react-query';
+
+vi.mock('@tanstack/react-query', () => ({
+  useQueryClient: vi.fn(),
+}));
+
+vi.mock('../../../src/SnackbarContext/SnackbarProvider.tsx', () => ({
+  useSnackbar: () => ({ showError: vi.fn() }),
+}));
+
+vi.mock('use-debounce', () => ({
+  useDebouncedCallback: (fn: any) => {
+    const callback = (...args: any[]) => fn(...args);
+    callback.cancel = vi.fn();
+    return callback;
+  },
+}));
+
+vi.mock('@/analytics/characterAnalytics', () => ({
+    trackCharacterEdited: vi.fn(),
+}));
+
+beforeEach(() => {
+  vi.clearAllMocks();
+});
+
+test('useCharacterEditor queues patches and applies them optimistically', () => {
+  const queryClient = {
+    getQueryData: vi.fn(),
+    setQueryData: vi.fn(),
+  };
+  (useQueryClient as any).mockReturnValue(queryClient);
+
+  const mutate = vi.fn();
+  const updateCharacter = { mutate, isPending: false } as any;
+  const getCharacterKey = (id: string) => ['char', id];
+
+  const { result } = renderHook(() => useCharacterEditor('char-1', updateCharacter, getCharacterKey));
+
+  act(() => {
+    result.current.updateField('name', 'New Name');
+  });
+
+  expect(queryClient.setQueryData).toHaveBeenCalledWith(
+    ['char', 'char-1'],
+    expect.any(Function)
+  );
+  
+  // Verify optimistic update logic
+  const updater = (queryClient.setQueryData as any).mock.calls[0][1];
+  const oldChar = { name: 'Old' };
+  expect(updater(oldChar)).toEqual({ name: 'New Name' });
+});
+
+test('useCharacterEditor flushes patches to server', () => {
+    const character = { id: 'char-1', name: 'Old' };
+    const queryClient = {
+      getQueryData: vi.fn().mockReturnValue(character),
+      setQueryData: vi.fn(),
+    };
+    (useQueryClient as any).mockReturnValue(queryClient);
+  
+    const mutate = vi.fn();
+    const updateCharacter = { mutate, isPending: false } as any;
+    const getCharacterKey = (id: string) => ['char', id];
+  
+    const { result } = renderHook(() => useCharacterEditor('char-1', updateCharacter, getCharacterKey));
+  
+    act(() => {
+      result.current.updateField('name', 'New Name');
+    });
+  
+    act(() => {
+      result.current.flush();
+    });
+  
+    expect(mutate).toHaveBeenCalledWith(
+      expect.objectContaining({
+          body: { name: 'New Name' }
+      }),
+      expect.any(Object)
+    );
+});
+
+test('useCharacterEditor builds later flushes from the latest optimistic character state', () => {
+    const sword = { key: 'sword', name: 'Sword' };
+    const torch = { key: 'torch', name: 'Torch' };
+    let character = {
+        id: 'char-1',
+        equipment: [] as Array<{ key: string; name: string }>,
+        storage: [],
+        equippedWeapons: [],
+        equippedArmor: null,
+        modifiers: [],
+    };
+
+    const queryClient = {
+        getQueryData: vi.fn(() => character),
+        setQueryData: vi.fn((_key, updater) => {
+            character = typeof updater === 'function' ? updater(character) : updater;
+        }),
+    };
+    (useQueryClient as any).mockReturnValue(queryClient);
+
+    const mutate = vi.fn();
+    const updateCharacter = { mutate, isPending: false } as any;
+
+    const { result } = renderHook(() => useCharacterEditor('char-1', updateCharacter, (id) => ['char', id]));
+
+    act(() => {
+        result.current.addEquipmentItem(sword as any);
+    });
+
+    act(() => {
+        result.current.flush();
+    });
+
+    act(() => {
+        result.current.addEquipmentItem(torch as any);
+    });
+
+    act(() => {
+        result.current.flush();
+    });
+
+    expect(mutate).toHaveBeenNthCalledWith(
+        1,
+        expect.objectContaining({
+            body: expect.objectContaining({
+                equipment: [sword],
+            }),
+        }),
+        expect.any(Object)
+    );
+    expect(mutate).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({
+            body: expect.objectContaining({
+                equipment: [sword, torch],
+            }),
+        }),
+        expect.any(Object)
+    );
+});
+
+test('useCharacterEditor handles failed save and retries', () => {
+    const character = { id: 'char-1' };
+    const queryClient = {
+      getQueryData: vi.fn().mockReturnValue(character),
+      setQueryData: vi.fn(),
+    };
+    (useQueryClient as any).mockReturnValue(queryClient);
+  
+    const mutate = vi.fn();
+    const updateCharacter = { mutate, isPending: false } as any;
+    
+    const { result } = renderHook(() => useCharacterEditor('char-1', updateCharacter, (id) => [id]));
+  
+    act(() => {
+      result.current.updateField('hp', 10);
+    });
+
+    act(() => {
+        result.current.flush();
+    });
+  
+    expect(mutate).toHaveBeenCalled();
+    const options = mutate.mock.calls[0][1];
+    expect(options.onError).toBeInstanceOf(Function);
+
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    act(() => {
+        options.onError(new Error('Fail 1'));
+    });
+    expect(spy).toHaveBeenCalled();
+    spy.mockRestore();
+    // This increments internal retryCountRef.
+});
+
+test('useCharacterEditor supports equipment and storage operations', () => {
+    const character = { id: 'char-1', equipment: [], storage: [] };
+    const queryClient = {
+      getQueryData: vi.fn().mockReturnValue(character),
+      setQueryData: vi.fn(),
+    };
+    (useQueryClient as any).mockReturnValue(queryClient);
+  
+    const mutate = vi.fn();
+    const updateCharacter = { mutate, isPending: false } as any;
+    
+    const { result } = renderHook(() => useCharacterEditor('char-1', updateCharacter, (id) => [id]));
+  
+    act(() => {
+      result.current.addEquipmentItem({ key: 'sword', name: 'Sword' } as any);
+      result.current.addStorageItem({ key: 'potion', name: 'Potion' } as any);
+      result.current.moveToStorage(0);
+      result.current.moveToEquipment(0);
+    });
+
+    act(() => {
+        result.current.flush();
+    });
+  
+    expect(mutate).toHaveBeenCalled();
+});
+
+test('useCharacterEditor supports modifier operations', () => {
+    const character = { id: 'char-1', customModifiers: [] };
+    const queryClient = {
+      getQueryData: vi.fn().mockReturnValue(character),
+      setQueryData: vi.fn(),
+    };
+    (useQueryClient as any).mockReturnValue(queryClient);
+  
+    const mutate = vi.fn();
+    const updateCharacter = { mutate, isPending: false } as any;
+    
+    const { result } = renderHook(() => useCharacterEditor('char-1', updateCharacter, (id) => [id]));
+  
+    act(() => {
+      result.current.addModifier({ id: 'mod-1', name: 'Bonus', type: 'stat', stat: 'strength', value: 1 });
+      result.current.updateModifier('mod-1', { value: 2 });
+      result.current.removeModifier('mod-1');
+    });
+
+    act(() => {
+        result.current.flush();
+    });
+  
+    expect(mutate).toHaveBeenCalled();
+});

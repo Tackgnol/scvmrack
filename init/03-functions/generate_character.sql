@@ -148,13 +148,41 @@ DECLARE
     v_equipped_weapons JSONB := '[]'::jsonb;
     v_equipped_armor JSONB := NULL;
     v_item RECORD;
+    v_weapon_record RECORD;
+    v_ammo_key TEXT;
 BEGIN
     FOR v_item IN
         SELECT *
         FROM jsonb_to_recordset(COALESCE(p_rolled_pool, '[]'::jsonb)) AS x(key TEXT, tags TEXT[])
     LOOP
         IF 'weapon' = ANY(v_item.tags) AND jsonb_array_length(v_equipped_weapons) < 2 THEN
+            -- Get weapon to check for ammo
+            SELECT w.key, w.ammo_type, w.default_amount
+            INTO v_weapon_record
+            FROM weapons w
+            WHERE w.key = v_item.key;
+
             v_equipped_weapons := v_equipped_weapons || jsonb_build_array(jsonb_build_object('key', v_item.key));
+
+            -- Reset ammo key for each weapon
+            v_ammo_key := NULL;
+
+            -- Auto-add ammo if weapon has an ammo type
+            IF v_weapon_record.ammo_type IS NOT NULL AND v_weapon_record.default_amount > 0 THEN
+                -- Map ammo type string to equipment key
+                IF v_weapon_record.ammo_type = 'Arrow' THEN
+                    v_ammo_key := 'equipment.arrows';
+                ELSIF v_weapon_record.ammo_type = 'Bolt' THEN
+                    v_ammo_key := 'equipment.bolts';
+                END IF;
+
+                IF v_ammo_key IS NOT NULL THEN
+                    v_final_equipment := v_final_equipment || jsonb_build_array(
+                        jsonb_build_object('key', v_ammo_key, 'amount', v_weapon_record.default_amount)
+                    );
+                END IF;
+            END IF;
+
         ELSIF 'armor' = ANY(v_item.tags) AND v_equipped_armor IS NULL THEN
             v_equipped_armor := jsonb_build_object('key', v_item.key);
         ELSE
