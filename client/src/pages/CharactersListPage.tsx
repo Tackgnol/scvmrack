@@ -1,7 +1,7 @@
 import { $api } from "@/api";
 import { useCharacter } from "@/CharacterContext/CharacterContext";
 import { CharacterListItem } from "@/hooks/models.ts";
-import AnimatedNumber from "@components/AnimatedNumber.tsx";
+import { AnimatedNumber } from "@components/index";
 import { useAuth } from '@/hooks/useAuth';
 import { appHistory } from '@/router/history';
 import { buildHomeCallbackUrl } from '@/router/navigation';

@@ -5,7 +5,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {anonymousClient, magicLinkClient} from "better-auth/client/plugins";
 import { createAuthClient } from "better-auth/react";
 
-
 // ============================================
 // Better Auth Client
 //

@@ -1,0 +1,63 @@
+## Integration test stack for running tests from the HOST machine.
+## Uses the same settings as compose.integration-be.yaml (NODE_ENV=test,
+## fresh ephemeral DB) but exposes the API on port 3001 so it does not
+## conflict with the dev stack on port 3000.
+##
+## Usage:
+##   docker compose -f compose.integration-be-local.yaml up -d
+##   E2E_BASE_URL=http://localhost:3001 npm --prefix tests/integration-be run test:report
+##
+## The `run-integration-be-report.ts` script handles this automatically.
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: p1002_scmgrinder
+      POSTGRES_PASSWORD: p1002_scmgrinder
+      POSTGRES_DB: p1002_scmgrinder
+    volumes:
+      - ./init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U p1002_scmgrinder"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  api:
+    build: .
+    ports:
+      - "3001:3000"
+    environment:
+      DATABASE_USER: p1002_scmgrinder
+      DATABASE_PASSWORD: p1002_scmgrinder
+      DATABASE_NAME: p1002_scmgrinder
+      DATABASE_HOST: db
+      DATABASE_PORT: 5432
+      PORT: 3000
+      NODE_ENV: test
+      CLIENT_ORIGIN: http://localhost:5173
+      CLIENT_GATEWAY: http://localhost:5173
+      BETTER_AUTH_SECRET: integration-secret
+      BETTER_AUTH_URL: http://localhost:3001
+      AUTH_BASE_URL: http://localhost:3001/auth
+      EMAIL_PEPPER: REMOVED_SECRET
+      EMAIL_ENCRYPTION_KEY: REMOVED_SECRET
+      MAIL_USER: integration@example.com
+      MAIL_PASS: integration
+      TURNSTILE_SECRET_KEY: ""
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://localhost:3000/health').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 10s

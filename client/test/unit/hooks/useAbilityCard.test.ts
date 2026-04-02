@@ -1,0 +1,68 @@
+import { act, renderHook } from '@testing-library/react';
+import { expect, test, vi } from 'vitest';
+import { useAbilityCard } from '../../../src/hooks/useAbilityCard.ts';
+import { createCharacterTestWrapper } from '../helpers/characterHookWrapper.ts';
+
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: (key: string, fallback?: string, options?: Record<string, unknown>) => {
+      if (typeof fallback === 'string') {
+        return fallback.replace('{{stat}}', String(options?.stat ?? ''));
+      }
+      return key;
+    },
+  }),
+}));
+
+test('useAbilityCard returns ability metadata and updates values with clamping', () => {
+  const updateFieldCalls: Array<[string, number]> = [];
+  const wrapperState = createCharacterTestWrapper({
+    character: {
+      id: 'char-44',
+      strength: 15,
+    },
+    updateField: (field: string, value: number) => {
+      updateFieldCalls.push([field, value]);
+    },
+  });
+
+  const { result } = renderHook(() => useAbilityCard('strength'), {
+    wrapper: wrapperState.wrapper,
+  });
+
+  expect(result.current.value).toBe(15);
+  expect(result.current.modifier).toBe(2);
+  expect(result.current.characterKey).toBe('char-44');
+  expect(result.current.label).toBe('attributes.strength');
+  expect(result.current.description).toBe('attributes.strengthDesc');
+
+  act(() => {
+    result.current.adjustAbility(10);
+  });
+  act(() => {
+    result.current.adjustAbility(-20);
+  });
+  act(() => {
+    result.current.setAbilityFromInput('');
+  });
+
+  expect(updateFieldCalls).toEqual([
+    ['strength', 20],
+    ['strength', 1],
+    ['strength', 10],
+  ]);
+});
+
+test('useAbilityCard uses defaults when character is unavailable', () => {
+  const wrapperState = createCharacterTestWrapper({
+    character: undefined,
+    updateField: () => {},
+  });
+
+  const { result } = renderHook(() => useAbilityCard('agility'), {
+    wrapper: wrapperState.wrapper,
+  });
+
+  expect(result.current.value).toBe(10);
+  expect(result.current.characterKey).toBe('unknown');
+});

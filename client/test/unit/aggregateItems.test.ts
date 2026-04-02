@@ -1,5 +1,4 @@
-import assert from 'node:assert/strict';
-import test from 'node:test';
+import { expect, test } from 'vitest';
 
 import { aggregateItems } from '../../src/utils/aggregateItems.ts';
 
@@ -13,18 +12,18 @@ test('aggregateItems groups by name case-insensitively and tracks indices', () =
   ];
 
   const grouped = aggregateItems(input);
-  assert.equal(grouped.length, 2);
+  expect(grouped).toHaveLength(2);
 
   const torch = grouped.find((group) => group.item.name?.toLowerCase() === 'torch');
-  assert.ok(torch);
-  assert.equal(torch.quantity, 3);
-  assert.deepEqual(torch.indices, [0, 1, 4]);
-  assert.equal(torch.item.comments, 'new\nwet');
+  expect(torch).toBeTruthy();
+  expect(torch?.quantity).toBe(3);
+  expect(torch?.indices).toEqual([0, 1, 4]);
+  expect(torch?.item.comments).toBe('new\nwet');
 
   const rope = grouped.find((group) => group.item.name?.toLowerCase() === 'rope');
-  assert.ok(rope);
-  assert.equal(rope.quantity, 1);
-  assert.deepEqual(rope.indices, [3]);
+  expect(rope).toBeTruthy();
+  expect(rope?.quantity).toBe(1);
+  expect(rope?.indices).toEqual([3]);
 });
 
 test('aggregateItems uses "Unknown" grouping when item name is missing', () => {
@@ -34,7 +33,7 @@ test('aggregateItems uses "Unknown" grouping when item name is missing', () => {
     { name: '', comments: 'mystery 2' },
   ]);
 
-  assert.equal(grouped.length, 1);
-  assert.equal(grouped[0].quantity, 2);
-  assert.deepEqual(grouped[0].indices, [0, 2]);
+  expect(grouped).toHaveLength(1);
+  expect(grouped[0].quantity).toBe(2);
+  expect(grouped[0].indices).toEqual([0, 2]);
 });

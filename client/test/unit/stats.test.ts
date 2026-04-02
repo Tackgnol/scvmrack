@@ -1,5 +1,4 @@
-import assert from 'node:assert/strict';
-import test from 'node:test';
+import { expect, test } from 'vitest';
 
 import { statToModifier } from '../../src/utils/stats.ts';
 
@@ -22,6 +21,6 @@ test('statToModifier maps full threshold table', () => {
   ];
 
   for (const [input, expected] of cases) {
-    assert.equal(statToModifier(input), expected);
+    expect(statToModifier(input)).toBe(expected);
   }
 });

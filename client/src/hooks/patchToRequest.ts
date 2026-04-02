@@ -60,6 +60,9 @@ export function patchToRequest(
             return {};
         }
 
+        case 'ammo-use':
+            return {};
+
         default:
             throw new Error('Unhandled patch kind');
     }
@@ -108,6 +111,7 @@ export function buildRequestFromPatches(
                 needsStorage = true;
                 break;
             case 'toggle-scroll-use':
+            case 'ammo-use':
                 needsEquipment = true;
                 break;
             case 'equip-weapon':

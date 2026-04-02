@@ -260,7 +260,9 @@
     "back": "Back",
     "backToHome": "Back to Home",
     "cancel": "Cancel",
-    "apply": "Apply"
+    "apply": "Apply",
+    "increaseHitPoints": "Increase hit points",
+    "decreaseHitPoints": "Decrease hit points"
   },
   "nav": {
     "home": "Sheet",

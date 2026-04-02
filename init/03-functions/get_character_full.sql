@@ -52,6 +52,12 @@ CREATE OR REPLACE FUNCTION resolve_character_inventory_items(
                 WHEN p.hp IS NOT NULL AND p.hp > 0 THEN to_jsonb(array_fill(true, ARRAY[LEAST(p.hp, 50)]))
                 WHEN p_scroll_default_uses AND item->>'key' LIKE 'scroll.%' THEN '[false,false,false,false]'::jsonb
                 ELSE COALESCE(item->'uses', '[]'::jsonb)
+            END,
+            'ammo_type', COALESCE(w.ammo_type, e_m.ammo_type),
+            'amount', CASE
+                WHEN COALESCE(w.ammo_type, e_m.ammo_type) IS NOT NULL
+                THEN COALESCE((item->>'amount')::int, COALESCE(e_m.default_amount, w.default_amount))
+                ELSE NULL
             END
         ) || CASE
             WHEN a.key IS NOT NULL THEN jsonb_build_object(
@@ -81,7 +87,8 @@ CREATE OR REPLACE FUNCTION resolve_character_equipped_weapons(
             'name', COALESCE(t.value, ew->>'key'),
             'description', COALESCE(td.value, ''),
             'dice', COALESCE(to_jsonb(w.dice), '[]'::jsonb),
-            'tags', COALESCE(to_jsonb(w.tags), '[]'::jsonb)
+            'tags', COALESCE(to_jsonb(w.tags), '[]'::jsonb),
+            'ammo_type', w.ammo_type
         )
     ), '[]'::jsonb)
     FROM jsonb_array_elements(COALESCE(p_items, '[]'::jsonb)) ew

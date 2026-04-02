@@ -1,3 +1,5 @@
+name: scvmrack-e2e
+
 services:
   mailpit:
     image: axllent/mailpit:latest
@@ -26,7 +28,6 @@ services:
     pull_policy: never
     build:
       context: .
-    command: npm start
     environment:
       DATABASE_USER: p1002_scmgrinder
       DATABASE_PASSWORD: p1002_scmgrinder

@@ -25,6 +25,11 @@ export const characterKeys = {
 // ============================================
 let isRedirecting = false;
 
+/** @internal */
+export function resetRedirectControl() {
+    isRedirecting = false;
+}
+
 function redirectToSessionExpired() {
     if (isRedirecting) return;
     isRedirecting = true;
@@ -54,7 +59,7 @@ async function fetchCsrfToken(): Promise<string> {
 
 const MUTATING_METHODS = ["POST", "PUT", "PATCH", "DELETE"];
 
-const csrfMiddleware: Middleware = {
+export const csrfMiddleware: Middleware = {
     async onRequest({ request }) {
         if (!MUTATING_METHODS.includes(request.method)) {
             return request;
@@ -94,14 +99,14 @@ const csrfMiddleware: Middleware = {
 /** Paths that don't trigger redirect on 401 */
 const AUTH_PATHS = ["/auth/"];
 
-function isAuthPath(pathname: string): boolean {
+export function isAuthPath(pathname: string): boolean {
     return AUTH_PATHS.some((prefix) => pathname.startsWith(prefix));
 }
 
 // Track retry state
 const pendingRetries = new Set<string>();
 
-const authMiddleware: Middleware = {
+export const authMiddleware: Middleware = {
     async onRequest({ request }) {
         return new Request(request, {
             credentials: "include",

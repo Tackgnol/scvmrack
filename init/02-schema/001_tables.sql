@@ -56,7 +56,7 @@ CREATE TABLE weapons (
     damage_modifier INTEGER DEFAULT 0,
     modifiers JSONB DEFAULT '[]'::JSONB,
     ammo_type VARCHAR(50),
-    ammo_start INTEGER
+    default_amount INTEGER
 );
 
 CREATE TABLE armors (
@@ -86,7 +86,7 @@ CREATE TABLE equipment (
     roll INTEGER,
     multiple INTEGER DEFAULT 1,
     ammo_type VARCHAR(50),
-    ammo_start INTEGER,
+    default_amount INTEGER,
     use_effect JSONB
 );
 

@@ -260,7 +260,9 @@
     "back": "Wróć",
     "backToHome": "Powrót do strony głównej",
     "cancel": "Anuluj",
-    "apply": "Zastosuj"
+    "apply": "Zastosuj",
+    "increaseHitPoints": "Zwiększ punkty życia",
+    "decreaseHitPoints": "Zmniejsz punkty życia"
   },
   "nav": {
     "home": "Karta",

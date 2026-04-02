@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { pollEmailLink } from './utils/mailpit.js';
-import { registerAndVerifyUser } from './utils/auth.js';
+import { acceptClaimPrompt, registerAndVerifyUser } from './utils/auth.js';
 
 test.beforeEach(async ({ page }) => {
   // Clear cookies to prevent stale session issues between parallel tests
@@ -98,22 +98,9 @@ test('user resets password on a locked-out account and logs in with the new pass
   await page.getByTestId('login-password-input').fill(newPassword);
   await page.getByTestId('login-submit-button').click();
 
-  // 10. Handle claim modal if it appears
-  const claimYesBtn = page.getByTestId('claim-character-yes');
   const navCharacters = page.getByTestId('nav-link-characters');
 
-  // Wait for authentication to complete
-  await expect(navCharacters).toBeVisible({ timeout: 15000 });
-
-  // The claim modal is triggered by a React effect that runs after auth settles.
-  // Wait briefly for it to appear before deciding there's nothing to claim.
-  try {
-    await expect(claimYesBtn).toBeVisible({ timeout: 3000 });
-    await claimYesBtn.click();
-    await expect(claimYesBtn).not.toBeVisible({ timeout: 10000 });
-  } catch {
-    // No claim modal appeared — character was already transferred or not applicable
-  }
+  await acceptClaimPrompt(page);
 
   // 11. Verify successful login
   await expect(navCharacters).toBeVisible({ timeout: 15000 });

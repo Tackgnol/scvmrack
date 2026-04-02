@@ -16,7 +16,30 @@ For production mode
 
 ### `npm run test`
 
-Run the test cases.
+Run all unit tests (backend + frontend).
+
+This does **not** run integration, browser, or E2E suites.
+Use `npm run test:all` for the full verification run.
+
+### `npm run test:all`
+
+Run the full verification stack in this order: E2E, backend integration, unit tests, then frontend browser tests.
+
+### `npm run test:unit`
+
+Run all unit tests.
+
+### `npm run test:unit:be`
+
+Run backend unit tests from the dedicated test project at `tests/unit-be/`.
+
+### `npm run test:unit:fe`
+
+Run frontend unit tests from the frontend package (`client/test/unit/`).
+
+### `npm run test:browser`
+
+Run frontend browser tests from the frontend package (`client/test/browser/`).
 
 ### `npm run test:e2e`
 
@@ -27,11 +50,11 @@ Run full FE+BE end-to-end tests in Docker. This command:
 3. Tears everything down (including volumes) after completion
 4. Writes Playwright HTML report to `tests/e2e/playwright-report/index.html`
 
-### `npm run test:integration:be:run`
+### `npm run test:integration:run`
 
 Run backend integration tests from the dedicated test project at `tests/integration-be/` against an already running API (defaults to `http://localhost:3000`).
 
-### `npm run test:integration:be`
+### `npm run test:integration`
 
 Run backend integration tests fully in Docker. This command:
 
@@ -39,17 +62,13 @@ Run backend integration tests fully in Docker. This command:
 2. Runs integration tests from `tests/integration-be/`
 3. Tears everything down (including volumes) after completion
 
-### `npm run test:unit:be:run`
+### `npm run test:report`
 
-Run backend unit tests from the dedicated test project at `tests/unit-be/`.
+Run the report-producing suites and regenerate `reports/index.html`.
 
-### `npm run test:unit:fe:run`
+### Legacy aliases
 
-Run frontend unit tests from the frontend package (`client/test/unit/`).
-
-### `npm run test:top-down`
-
-Run suites in this order: E2E (FE+BE) -> backend integration -> backend unit -> frontend unit.
+Older script names like `test:top-down`, `test:integration:be`, and `test:unit:be:run` still work, but the commands above are now the preferred ones.
 
 ## Bot Protection (Cloudflare Turnstile)
 

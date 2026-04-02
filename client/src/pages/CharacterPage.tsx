@@ -1,20 +1,21 @@
 import { useCharacter } from '@/CharacterContext/CharacterContext';
 import {
+  Abilities,
   BackpackSection,
+  CharacterDescriptors,
+  CharacterNameAndClass,
   EquippedBar,
   Footer,
   ModifiersPanel,
+  MorkBorgModal,
+  ModalButton,
   OnHandSection,
   PetSection,
   PowersSection,
   SummaryBar,
+  NoteSection,
+  ResourceRow,
 } from '@/components';
-import MorkBorgModal, { ModalButton } from '@components/MorkBorgModal';
-import { Abilities } from '@components/Abilities';
-import { CharacterDescriptors } from '@components/CharacterDescriptors';
-import { CharacterNameAndClass } from '@components/CharacterNameAndClass';
-import NotesSection from '@components/NoteSection';
-import ResourcesRow from '@components/ResourceRow';
 import { Seo } from '@/seo/Seo';
 import { customStyles, morkBorgColors } from '@/theme/morkBorgTheme';
 import {
@@ -235,7 +236,7 @@ export function CharacterPage() {
       )}
       <Box className="print-sheet">
         <SummaryBar />
-        <ResourcesRow />
+        <ResourceRow />
         <EquippedBar />
         <CharacterNameAndClass />
         <Abilities />
@@ -272,7 +273,7 @@ export function CharacterPage() {
         <Box sx={customStyles.zoneDivider}>
           <Typography sx={customStyles.zoneDividerIcon}>✠</Typography>
         </Box>
-        <NotesSection />
+        <NoteSection />
         <Box className="print-hidden">
           <Footer
             onGenerateNew={handleNew}

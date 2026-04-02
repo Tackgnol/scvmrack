@@ -12,6 +12,7 @@ import {
   CLAIM_CHARACTER_QUERY_PARAM,
   CLAIM_SOURCE_QUERY_PARAM,
   CLAIM_SIG_QUERY_PARAM,
+  CLAIM_TS_QUERY_PARAM,
   CLAIM_USER_QUERY_PARAM,
 } from './claimSignature.js';
 import {
@@ -226,6 +227,7 @@ const auth = betterAuth({
         callbackSearchParams.set('character', characterId);
 
         if (claimSourceId) {
+          const issuedAt = Date.now();
           verificationUrl.searchParams.set(
             CLAIM_CHARACTER_QUERY_PARAM,
             characterId
@@ -235,11 +237,13 @@ const auth = betterAuth({
             claimSourceId
           );
           verificationUrl.searchParams.set(CLAIM_USER_QUERY_PARAM, user.id);
+          verificationUrl.searchParams.set(CLAIM_TS_QUERY_PARAM, String(issuedAt));
 
           const signature = buildClaimSignature(
             user.id,
             claimSourceId,
-            characterId
+            characterId,
+            issuedAt
           );
           if (signature) {
             verificationUrl.searchParams.set(CLAIM_SIG_QUERY_PARAM, signature);

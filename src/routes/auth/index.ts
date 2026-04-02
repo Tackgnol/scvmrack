@@ -5,6 +5,7 @@ import auth from '../../services/auth.js';
 import {
   CLAIM_CHARACTER_QUERY_PARAM,
   CLAIM_SIG_QUERY_PARAM,
+  CLAIM_TS_QUERY_PARAM,
   CLAIM_USER_QUERY_PARAM,
   verifyClaimSignature,
 } from '../../services/claimSignature.js';
@@ -226,6 +227,12 @@ const authRoutes: FastifyPluginAsync = async (fastify): Promise<void> => {
                         const claimSignature =
                             callbackParams?.get(CLAIM_SIG_QUERY_PARAM) ||
                             verifyParams.get(CLAIM_SIG_QUERY_PARAM);
+                        const claimTimestampRaw =
+                            callbackParams?.get(CLAIM_TS_QUERY_PARAM) ||
+                            verifyParams.get(CLAIM_TS_QUERY_PARAM);
+                        const claimTimestamp = claimTimestampRaw
+                            ? Number.parseInt(claimTimestampRaw, 10)
+                            : Number.NaN;
 
                         if (characterId && claimUserId && claimSignature) {
                             const [owner] = await checkCharacterAccess.run(
@@ -246,7 +253,8 @@ const authRoutes: FastifyPluginAsync = async (fastify): Promise<void> => {
                                 claimUserId,
                                 claimSourceId,
                                 characterId,
-                                claimSignature
+                                claimSignature,
+                                claimTimestamp
                             );
 
                             if (isValidSignature) {

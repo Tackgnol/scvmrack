@@ -195,3 +195,275 @@ test('anonymous session can create, list, fetch and delete character', async () 
   });
   await expectStatus(fetchAfterDeleteResponse, 404);
 });
+
+test('DELETE /characters/:id returns 404 when the same character is deleted twice', async () => {
+  const jar = await bootstrapAnonymousSession();
+  const id = await createCharacter(jar);
+  const csrf = await fetchCsrfToken(jar);
+
+  const firstDeleteResponse = await request(`/characters/${id}`, {
+    method: 'DELETE',
+    headers: { 'x-csrf-token': csrf },
+    jar,
+  });
+  await expectStatus(firstDeleteResponse, 204);
+
+  const secondCsrf = await fetchCsrfToken(jar);
+  const secondDeleteResponse = await request(`/characters/${id}`, {
+    method: 'DELETE',
+    headers: { 'x-csrf-token': secondCsrf },
+    jar,
+  });
+  await expectStatus(secondDeleteResponse, 404);
+});
+
+// ── Helpers used by tests below ───────────────────────────────────────────────
+
+async function bootstrapAnonymousSession(): Promise<CookieJar> {
+  const jar = new CookieJar();
+  const response = await request('/auth/sign-in/anonymous', { method: 'POST', json: {}, jar });
+  assert.equal(response.status, 200, 'anonymous sign-in should succeed');
+  return jar;
+}
+
+async function createCharacter(jar: CookieJar): Promise<string> {
+  const csrf = await fetchCsrfToken(jar);
+  const response = await request('/characters/new', {
+    method: 'POST',
+    json: {},
+    headers: { 'x-csrf-token': csrf },
+    jar,
+  });
+  assert.equal(response.status, 201, 'character creation should succeed');
+  const { id } = (await response.json()) as { id: string };
+  assert.equal(typeof id, 'string');
+  return id;
+}
+
+// ── PATCH /characters/:id ─────────────────────────────────────────────────────
+
+test('PATCH /characters/:id updates character fields and returns updated character', async () => {
+  const jar = await bootstrapAnonymousSession();
+  const id = await createCharacter(jar);
+  const csrf = await fetchCsrfToken(jar);
+
+  const patchResponse = await request(`/characters/${id}`, {
+    method: 'PATCH',
+    json: { name: 'Grimdark Hero' },
+    headers: { 'x-csrf-token': csrf },
+    jar,
+  });
+  await expectStatus(patchResponse, 200);
+
+  const updated = (await patchResponse.json()) as { id: string; name?: string };
+  assert.equal(updated.id, id);
+  assert.equal(updated.name, 'Grimdark Hero');
+});
+
+test('PATCH /characters/:id with empty body returns 400', async () => {
+  const jar = await bootstrapAnonymousSession();
+  const id = await createCharacter(jar);
+  const csrf = await fetchCsrfToken(jar);
+
+  const patchResponse = await request(`/characters/${id}`, {
+    method: 'PATCH',
+    json: {},
+    headers: { 'x-csrf-token': csrf },
+    jar,
+  });
+  await expectStatus(patchResponse, 400);
+});
+
+test('PATCH /characters/:id requires CSRF token', async () => {
+  const jar = await bootstrapAnonymousSession();
+  const id = await createCharacter(jar);
+
+  const patchResponse = await request(`/characters/${id}`, {
+    method: 'PATCH',
+    json: { name: 'Should Fail' },
+    jar,
+  });
+  await expectStatus(patchResponse, 403);
+});
+
+// ── Ownership enforcement ─────────────────────────────────────────────────────
+
+test('GET /characters/:id returns 403 for a character owned by a different session', async () => {
+  const ownerJar = await bootstrapAnonymousSession();
+  const id = await createCharacter(ownerJar);
+
+  // Different session — no access
+  const otherJar = await bootstrapAnonymousSession();
+  const getResponse = await request(`/characters/${id}`, { jar: otherJar });
+  await expectStatus(getResponse, 403);
+});
+
+test('PATCH /characters/:id returns 403 for a character owned by a different session', async () => {
+  const ownerJar = await bootstrapAnonymousSession();
+  const id = await createCharacter(ownerJar);
+
+  const otherJar = await bootstrapAnonymousSession();
+  const csrf = await fetchCsrfToken(otherJar);
+  const patchResponse = await request(`/characters/${id}`, {
+    method: 'PATCH',
+    json: { name: 'Stolen' },
+    headers: { 'x-csrf-token': csrf },
+    jar: otherJar,
+  });
+  await expectStatus(patchResponse, 403);
+});
+
+test('DELETE /characters/:id returns 403 for a character owned by a different session', async () => {
+  const ownerJar = await bootstrapAnonymousSession();
+  const id = await createCharacter(ownerJar);
+
+  const otherJar = await bootstrapAnonymousSession();
+  const csrf = await fetchCsrfToken(otherJar);
+  const deleteResponse = await request(`/characters/${id}`, {
+    method: 'DELETE',
+    headers: { 'x-csrf-token': csrf },
+    jar: otherJar,
+  });
+  await expectStatus(deleteResponse, 403);
+});
+
+test('GET /characters/:id returns 401 with no session', async () => {
+  const ownerJar = await bootstrapAnonymousSession();
+  const id = await createCharacter(ownerJar);
+
+  const response = await request(`/characters/${id}`); // no jar
+  await expectStatus(response, 401);
+});
+
+// ── Input validation ──────────────────────────────────────────────────────────
+
+test('GET /characters/:id returns 400 for a non-UUID id', async () => {
+  const jar = await bootstrapAnonymousSession();
+  const response = await request('/characters/not-a-valid-uuid', { jar });
+  await expectStatus(response, 400);
+});
+
+test('PATCH /characters/:id returns 400 for a non-UUID id', async () => {
+  const jar = await bootstrapAnonymousSession();
+  const csrf = await fetchCsrfToken(jar);
+  const response = await request('/characters/not-a-valid-uuid', {
+    method: 'PATCH',
+    json: { name: 'x' },
+    headers: { 'x-csrf-token': csrf },
+    jar,
+  });
+  await expectStatus(response, 400);
+});
+
+// ── POST /characters/:id/claim ────────────────────────────────────────────────
+
+test('POST /characters/:id/claim returns 403 for a guest (anonymous) session', async () => {
+  const jar = await bootstrapAnonymousSession();
+  const id = await createCharacter(jar);
+  const csrf = await fetchCsrfToken(jar);
+
+  const claimResponse = await request(`/characters/${id}/claim`, {
+    method: 'POST',
+    json: {},
+    headers: { 'x-csrf-token': csrf },
+    jar,
+  });
+  await expectStatus(claimResponse, 403);
+});
+
+test('POST /characters/:id/claim returns 401 with no session', async () => {
+  const ownerJar = await bootstrapAnonymousSession();
+  const id = await createCharacter(ownerJar);
+
+  // Use a fresh jar with no session cookie — only capture the CSRF cookie
+  const csrfJar = new CookieJar();
+  const csrf = await fetchCsrfToken(csrfJar);
+  const response = await request(`/characters/${id}/claim`, {
+    method: 'POST',
+    json: {},
+    headers: { 'x-csrf-token': csrf },
+    jar: csrfJar,  // has CSRF cookie but no session cookie → passes CSRF check, hits 401
+  });
+  await expectStatus(response, 401);
+});
+
+test('POST /characters/:id/claim returns 400 for a non-UUID id', async () => {
+  const jar = await bootstrapAnonymousSession();
+  const csrf = await fetchCsrfToken(jar);
+  const response = await request('/characters/bad-uuid/claim', {
+    method: 'POST',
+    json: {},
+    headers: { 'x-csrf-token': csrf },
+    jar,
+  });
+  await expectStatus(response, 400);
+});
+
+// ── GET /characters/count ─────────────────────────────────────────────────────
+
+test('GET /characters/count returns a numeric total (public endpoint)', async () => {
+  const beforeResponse = await request('/characters/count');
+  await expectStatus(beforeResponse, 200);
+  const beforePayload = (await beforeResponse.json()) as { total: number };
+  assert.equal(typeof beforePayload.total, 'number');
+
+  const jar = await bootstrapAnonymousSession();
+  const id = await createCharacter(jar);
+
+  const afterCreateResponse = await request('/characters/count');
+  await expectStatus(afterCreateResponse, 200);
+  const afterCreatePayload = (await afterCreateResponse.json()) as { total: number };
+  assert.equal(typeof afterCreatePayload.total, 'number');
+  assert.ok(
+    afterCreatePayload.total > beforePayload.total,
+    `expected public character count to increase after creating ${id}`
+  );
+
+  const csrf = await fetchCsrfToken(jar);
+  const deleteResponse = await request(`/characters/${id}`, {
+    method: 'DELETE',
+    headers: { 'x-csrf-token': csrf },
+    jar,
+  });
+  await expectStatus(deleteResponse, 204);
+});
+
+// ── GET /equipment/search ─────────────────────────────────────────────────────
+
+test('GET /equipment/search returns an array of matching items', async () => {
+  const response = await request('/equipment/search?q=sword');
+  await expectStatus(response, 200);
+  const items = (await response.json()) as Array<{ name?: string; key?: string }>;
+  assert.equal(Array.isArray(items), true);
+  assert.ok(items.length > 0, 'expected sword query to return at least one item');
+  assert.ok(
+    items.some((item) => {
+      const haystack = `${item.name ?? ''} ${item.key ?? ''}`.toLowerCase();
+      return haystack.includes('sword');
+    }),
+    'expected at least one search result to match the sword query'
+  );
+});
+
+test('GET /equipment/search result items have expected shape', async () => {
+  const response = await request('/equipment/search?q=a&limit=5');
+  await expectStatus(response, 200);
+  const items = (await response.json()) as Array<{
+    itemType: string;
+    id: number;
+    key: string;
+    name: string;
+  }>;
+  assert.equal(Array.isArray(items), true);
+  for (const item of items) {
+    assert.ok(['weapon', 'armor', 'equipment', 'pet'].includes(item.itemType), `unexpected itemType: ${item.itemType}`);
+    assert.equal(typeof item.id, 'number');
+    assert.equal(typeof item.key, 'string');
+    assert.equal(typeof item.name, 'string');
+  }
+});
+
+test('GET /equipment/search returns 400 when q param is missing', async () => {
+  const response = await request('/equipment/search');
+  await expectStatus(response, 400);
+});

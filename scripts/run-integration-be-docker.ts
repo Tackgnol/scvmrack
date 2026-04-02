@@ -1,6 +1,7 @@
 import { spawnSync } from 'node:child_process';
 
 const composeBaseArgs = ['compose', '-f', 'compose.integration-be.yaml'];
+const cleanupArgs = [...composeBaseArgs, 'down', '--volumes', '--remove-orphans'];
 
 function runDocker(args: string[]): number {
   const result = spawnSync('docker', args, { stdio: 'inherit' });
@@ -13,6 +14,9 @@ function runDocker(args: string[]): number {
   return result.status ?? 1;
 }
 
+// Clean any stale test stack state first so reruns don't fail on orphaned containers.
+runDocker(cleanupArgs);
+
 const upExitCode = runDocker([
   ...composeBaseArgs,
   'up',
@@ -20,14 +24,12 @@ const upExitCode = runDocker([
   '--abort-on-container-exit',
   '--exit-code-from',
   'integration',
+  'db',
+  'api',
+  'integration',
 ]);
 
-const downExitCode = runDocker([
-  ...composeBaseArgs,
-  'down',
-  '--volumes',
-  '--remove-orphans',
-]);
+const downExitCode = runDocker(cleanupArgs);
 
 if (upExitCode !== 0) {
   process.exit(upExitCode);

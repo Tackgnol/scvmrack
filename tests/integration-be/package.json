@@ -3,6 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test:run": "node --import tsx --test \"src/**/*.test.ts\""
+    "test": "node --import tsx --test \"src/**/*.test.ts\"",
+    "test:run": "npm run test",
+    "test:report": "node --import tsx --test --test-reporter=spec --test-reporter-destination=stdout --test-reporter=junit --test-reporter-destination=../../reports/integration-be.xml \"src/**/*.test.ts\""
   }
 }

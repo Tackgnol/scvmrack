@@ -92,3 +92,10 @@ export async function registerAndLogin(page: Page, email: string) {
   // "Scvms" nav link only appears when the user is authenticated
   await expect(page.getByTestId('nav-link-characters')).toBeVisible({ timeout: 15000 });
 }
+
+export async function acceptClaimPrompt(page: Page, timeout = 15000) {
+  const claimYesBtn = page.getByTestId('claim-character-yes');
+  await expect(claimYesBtn).toBeVisible({ timeout });
+  await claimYesBtn.click();
+  await expect(claimYesBtn).not.toBeVisible({ timeout });
+}

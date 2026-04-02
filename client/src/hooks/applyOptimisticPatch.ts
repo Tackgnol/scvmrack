@@ -1,5 +1,9 @@
 import {CharacterResponse, OptimisticPatch} from "@/hooks/models.ts";
 
+function isValidIndex(index: number, length: number): boolean {
+    return index >= 0 && index < length;
+}
+
 export function applyOptimisticPatch(
     character: CharacterResponse,
     patch: OptimisticPatch
@@ -36,6 +40,7 @@ export function applyOptimisticPatch(
 
         case 'equipment-item': {
             const next = [...(character.equipment ?? [])];
+            if (!isValidIndex(patch.index, next.length)) return character;
             next[patch.index] = patch.item;
             return {...character, equipment: next};
         }
@@ -49,12 +54,16 @@ export function applyOptimisticPatch(
 
         case 'equipment-remove': {
             const next = [...(character.equipment ?? [])];
+            if (!isValidIndex(patch.index, next.length)) return character;
             next.splice(patch.index, 1);
             return {...character, equipment: next};
         }
 
         case 'equipment-move': {
             const next = [...(character.equipment ?? [])];
+            if (!isValidIndex(patch.from, next.length) || patch.to < 0 || patch.to > next.length) {
+                return character;
+            }
             const [item] = next.splice(patch.from, 1);
             next.splice(patch.to, 0, item);
             return {...character, equipment: next};
@@ -68,6 +77,7 @@ export function applyOptimisticPatch(
 
         case 'storage-item': {
             const next = [...(character.storage ?? [])];
+            if (!isValidIndex(patch.index, next.length)) return character;
             next[patch.index] = patch.item;
             return {...character, storage: next};
         }
@@ -81,6 +91,7 @@ export function applyOptimisticPatch(
 
         case 'storage-remove': {
             const next = [...(character.storage ?? [])];
+            if (!isValidIndex(patch.index, next.length)) return character;
             next.splice(patch.index, 1);
             return {...character, storage: next};
         }
@@ -109,7 +120,11 @@ export function applyOptimisticPatch(
 
             const [item] = storage.splice(patch.storageIndex, 1);
 
-            if (patch.equipmentPosition !== undefined && patch.equipmentPosition < equipment.length) {
+            if (
+                patch.equipmentPosition !== undefined &&
+                patch.equipmentPosition >= 0 &&
+                patch.equipmentPosition < equipment.length
+            ) {
                 equipment.splice(patch.equipmentPosition, 0, item);
             } else {
                 equipment.push(item);
@@ -160,6 +175,7 @@ export function applyOptimisticPatch(
         case 'equip-weapon': {
             const equipment = [...(character.equipment ?? [])];
             const weapons = [...(character.equippedWeapons ?? [])];
+            if (patch.slotIndex < 0) return character;
 
             // 1. Get the new weapon from inventory
             const newItem = equipment[patch.equipmentIndex];
@@ -241,6 +257,15 @@ export function applyOptimisticPatch(
                 m.id === patch.modifierId ? {...m, ...patch.modifier} : m
             );
             return {...character, modifiers: next};
+        }
+
+        case 'ammo-use': {
+            const equipment = [...(character.equipment ?? [])];
+            const item = equipment[patch.equipmentIndex];
+            if (!item) return character;
+
+            equipment.splice(patch.equipmentIndex, 1);
+            return { ...character, equipment };
         }
     }
 }

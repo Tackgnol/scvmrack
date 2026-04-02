@@ -226,6 +226,7 @@ export const customStyles = {
   // Equipment card
   equipmentCard: {
     base: {
+      position: 'relative' as const,
       padding: '12px',
       display: 'flex',
       alignItems: 'center',
@@ -234,6 +235,7 @@ export const customStyles = {
       transition: 'all 0.2s cubic-bezier(0.25, 0, 0.2, 1)',
       border: '1px solid transparent',
       backgroundColor: '#111',
+      overflow: 'visible',
     },
     hover: {
       backgroundColor: '#1a1a1a',
@@ -1770,6 +1772,41 @@ export const customStyles = {
     actionIcon: {
       fontSize: '1rem',
       color: morkBorgColors.yellow,
+    },
+    ammoPeg: {
+      position: 'absolute' as const,
+      top: -12,
+      right: -12,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      width: 42,
+      height: 42,
+      borderRadius: '50%',
+      fontFamily: "'Bebas Neue', sans-serif",
+      fontSize: '1.1rem',
+      fontWeight: 'bold',
+      cursor: 'pointer',
+      zIndex: 1,
+      transition: 'transform 0.1s ease-out, box-shadow 0.2s ease-out',
+      '&:hover': {
+        transform: 'scale(1.2)',
+      },
+      '&:active': {
+        transform: 'scale(0.85)',
+      },
+    },
+    ammoPegNormal: {
+      bgcolor: morkBorgColors.yellow,
+      color: morkBorgColors.black,
+      border: `3px solid ${morkBorgColors.black}`,
+      boxShadow: `3px 3px 0 ${morkBorgColors.black}`,
+    },
+    ammoPegEmpty: {
+      bgcolor: morkBorgColors.pink,
+      color: morkBorgColors.black,
+      border: `3px solid ${morkBorgColors.black}`,
+      boxShadow: `3px 3px 0 ${morkBorgColors.black}`,
     },
     menuUnequipItem: {
       color: morkBorgColors.pink,
