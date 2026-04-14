@@ -1,17 +1,17 @@
 import { useCharacter } from '@/CharacterContext/CharacterContext';
-import { isPetItem } from '@/hooks/useEquipmentSections';
 import { useTrackedUsePips } from '@/hooks/useTrackedUsePips';
+import { isConsumableUseItem } from '@/hooks/useEquipmentSections';
 import { type EquipmentUseEntry } from '@components/uses/types';
 import { useMemo } from 'react';
 
-export function usePetSection() {
+export function useConsumableSection() {
   const { character, toggleScrollUse, isSaving } = useCharacter();
   const trackedPips = useTrackedUsePips({
     isSaving,
     onToggle: toggleScrollUse,
   });
 
-  const petsWithIndices = useMemo<EquipmentUseEntry[]>(
+  const consumablesWithIndices = useMemo<EquipmentUseEntry[]>(
     () =>
       (character?.equipment ?? [])
         .map((item, index) => ({
@@ -19,12 +19,12 @@ export function usePetSection() {
           equipmentIndex: index,
           uses: item.uses ?? [],
         }))
-        .filter(({ item }) => isPetItem(item)),
+        .filter(({ item }) => isConsumableUseItem(item)),
     [character?.equipment],
   );
 
   return {
-    petsWithIndices,
+    consumablesWithIndices,
     ...trackedPips,
   };
 }

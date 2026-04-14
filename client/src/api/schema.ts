@@ -342,6 +342,8 @@ export interface paths {
                                 tags?: string[];
                                 maxTier?: number;
                                 currentTier?: number;
+                                amount?: number;
+                                ammoType?: string;
                             }[];
                             storage?: {
                                 key?: string;
@@ -352,6 +354,8 @@ export interface paths {
                                 tags?: string[];
                                 maxTier?: number;
                                 currentTier?: number;
+                                amount?: number;
+                                ammoType?: string;
                             }[];
                             equippedWeapons?: {
                                 key?: string;
@@ -359,6 +363,7 @@ export interface paths {
                                 description?: string;
                                 dice?: number[];
                                 tags?: string[];
+                                ammoType?: string;
                             }[];
                             equippedArmor?: {
                                 key?: string;
@@ -546,6 +551,8 @@ export interface paths {
                                 tags?: string[];
                                 maxTier?: number;
                                 currentTier?: number;
+                                amount?: number;
+                                ammoType?: string;
                             }[];
                             storage?: {
                                 key?: string;
@@ -556,6 +563,8 @@ export interface paths {
                                 tags?: string[];
                                 maxTier?: number;
                                 currentTier?: number;
+                                amount?: number;
+                                ammoType?: string;
                             }[];
                             equippedWeapons?: {
                                 key?: string;
@@ -563,6 +572,7 @@ export interface paths {
                                 description?: string;
                                 dice?: number[];
                                 tags?: string[];
+                                ammoType?: string;
                             }[];
                             equippedArmor?: {
                                 key?: string;
@@ -768,6 +778,8 @@ export interface paths {
                             tags?: string[];
                             maxTier?: number;
                             currentTier?: number;
+                            amount?: number;
+                            ammoType?: string;
                         }[];
                         storage?: {
                             key?: string;
@@ -778,6 +790,8 @@ export interface paths {
                             tags?: string[];
                             maxTier?: number;
                             currentTier?: number;
+                            amount?: number;
+                            ammoType?: string;
                         }[];
                         equippedWeapons?: {
                             key?: string;
@@ -785,6 +799,7 @@ export interface paths {
                             description?: string;
                             dice?: number[];
                             tags?: string[];
+                            ammoType?: string;
                         }[];
                         equippedArmor?: {
                             key?: string;
@@ -853,6 +868,8 @@ export interface paths {
                                 tags?: string[];
                                 maxTier?: number;
                                 currentTier?: number;
+                                amount?: number;
+                                ammoType?: string;
                             }[];
                             storage?: {
                                 key?: string;
@@ -863,6 +880,8 @@ export interface paths {
                                 tags?: string[];
                                 maxTier?: number;
                                 currentTier?: number;
+                                amount?: number;
+                                ammoType?: string;
                             }[];
                             equippedWeapons?: {
                                 key?: string;
@@ -870,6 +889,7 @@ export interface paths {
                                 description?: string;
                                 dice?: number[];
                                 tags?: string[];
+                                ammoType?: string;
                             }[];
                             equippedArmor?: {
                                 key?: string;
@@ -1128,6 +1148,8 @@ export interface paths {
                                 tags?: string[];
                                 maxTier?: number;
                                 currentTier?: number;
+                                amount?: number;
+                                ammoType?: string;
                             }[];
                             storage?: {
                                 key?: string;
@@ -1138,6 +1160,8 @@ export interface paths {
                                 tags?: string[];
                                 maxTier?: number;
                                 currentTier?: number;
+                                amount?: number;
+                                ammoType?: string;
                             }[];
                             equippedWeapons?: {
                                 key?: string;
@@ -1145,6 +1169,7 @@ export interface paths {
                                 description?: string;
                                 dice?: number[];
                                 tags?: string[];
+                                ammoType?: string;
                             }[];
                             equippedArmor?: {
                                 key?: string;
@@ -1275,7 +1300,9 @@ export interface paths {
         /** @description Fetch full item by type and id */
         get: {
             parameters: {
-                query?: never;
+                query?: {
+                    key?: string;
+                };
                 header?: never;
                 path: {
                     itemType: PathsEquipmentItemTypeIdGetParametersPathItemType;

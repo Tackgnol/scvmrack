@@ -54,17 +54,64 @@ test('useSummaryMetrics uses explicit DR and encumbrance values when provided', 
       drToDodge: 8,
       drToMelee: 9,
       drToRanged: 10,
-      encumbrance: 5,
-      maxEncumbrance: 9,
+      strength: 13,
       equipment: [{ key: '1' }, { key: '2' }],
+      equippedWeapons: [{ key: '3' }],
+      equippedArmor: { key: '4' },
     }),
   );
 
   expect(result.current.toDodge).toBe(8);
   expect(result.current.toHitMelee).toBe(9);
   expect(result.current.toHitRanged).toBe(10);
-  expect(result.current.encumbrance).toBe(5);
+  expect(result.current.encumbrance).toBe(4);
   expect(result.current.maxEncumbrance).toBe(9);
+});
+
+test('useSummaryMetrics counts equipped weapons and armor toward encumbrance', () => {
+  const { result } = renderHook(() =>
+    useSummaryMetrics({
+      equipment: [{ key: 'rope', name: 'Rope' }],
+      equippedWeapons: [
+        { key: 'dagger', name: 'Dagger' },
+        null as any,
+        { key: 'shield', name: 'Shield' },
+      ],
+      equippedArmor: { key: 'leather', name: 'Leather Armor' },
+    }),
+  );
+
+  expect(result.current.encumbrance).toBe(4);
+  expect(result.current.encumbranceItems.map((item) => item.key)).toEqual([
+    'rope',
+    'dagger',
+    'shield',
+    'leather',
+  ]);
+});
+
+test('useSummaryMetrics excludes ammo, pets, and carry items from encumbrance', () => {
+  const { result } = renderHook(() =>
+    useSummaryMetrics({
+      equipment: [
+        { key: 'equipment.rope', name: 'Rope', tags: ['tool'] },
+        { key: 'equipment.arrows', name: 'Arrows', tags: ['ammo'] },
+        { key: 'equipment.bolts', name: 'Bolts', tags: ['ammo', 'consumable'] },
+        { key: 'equipment.backpack', name: 'Backpack', tags: ['carry'] },
+        { key: 'equipment.donkey', name: 'Donkey', tags: ['carry'] },
+        { key: 'pets.hawk', name: 'Hawk', tags: ['pet'] },
+      ],
+      equippedWeapons: [{ key: 'weapons.bow', name: 'Bow' }],
+      equippedArmor: { key: 'armor.leather', name: 'Leather Armor' },
+    }),
+  );
+
+  expect(result.current.encumbrance).toBe(3);
+  expect(result.current.encumbranceItems.map((item) => item.key)).toEqual([
+    'equipment.rope',
+    'weapons.bow',
+    'armor.leather',
+  ]);
 });
 
 test('useSummaryMetrics handles undefined character', () => {

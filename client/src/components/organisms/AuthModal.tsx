@@ -143,7 +143,8 @@ export function AuthModal({
         onClose();
       }
     } catch (err: any) {
-      setError(err?.message || (err instanceof Error ? err.message : t('auth.loginFailed')));
+      const msg = err?.message || (err instanceof Error ? err.message : t('auth.loginFailed'));
+      setError(msg === 'RATE_LIMIT_EXCEEDED' ? t('auth.rateLimit', 'Too many requests. Please try again later.') : msg);
     } finally {
       if (turnstileEnabled) {
         resetTurnstile();
@@ -177,7 +178,8 @@ export function AuthModal({
       setMagicLinkSent(true);
     } catch (err: any) {
       await setCurrentPendingClaimCharacterId(null);
-      setError(err?.message || (err instanceof Error ? err.message : t('auth.magicLinkFailed')));
+      const msg = err?.message || (err instanceof Error ? err.message : t('auth.magicLinkFailed'));
+      setError(msg === 'RATE_LIMIT_EXCEEDED' ? t('auth.rateLimit', 'Too many requests. Please try again later.') : msg);
     } finally {
       if (turnstileEnabled) {
         resetTurnstile();
@@ -240,7 +242,8 @@ export function AuthModal({
     } catch (err: any) {
       // Clear pending claim on error
       await setCurrentPendingClaimCharacterId(null);
-      setError(err?.message || (err instanceof Error ? err.message : t('auth.signupFailed')));
+      const msg = err?.message || (err instanceof Error ? err.message : t('auth.signupFailed'));
+      setError(msg === 'RATE_LIMIT_EXCEEDED' ? t('auth.rateLimit', 'Too many requests. Please try again later.') : msg);
     } finally {
       if (turnstileEnabled) {
         resetTurnstile();

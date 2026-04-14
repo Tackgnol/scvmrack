@@ -336,3 +336,5 @@ const getTotalCharactersIR: any = {"usedParamSet":{},"params":[],"statement":"SE
  * ```
  */
 export const getTotalCharacters = new PreparedQuery<IGetTotalCharactersParams,IGetTotalCharactersResult>(getTotalCharactersIR);
+
+

@@ -58,6 +58,8 @@ function patchToField(patch: OptimisticPatch): string {
         case 'modifier-remove':
         case 'modifier-update':
             return 'modifiers';
+        default:
+            return 'other';
     }
 }
 

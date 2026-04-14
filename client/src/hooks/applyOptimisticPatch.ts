@@ -264,7 +264,14 @@ export function applyOptimisticPatch(
             const item = equipment[patch.equipmentIndex];
             if (!item) return character;
 
-            equipment.splice(patch.equipmentIndex, 1);
+            if ((item.amount ?? 1) > 1) {
+                equipment[patch.equipmentIndex] = {
+                    ...item,
+                    amount: (item.amount ?? 1) - 1
+                };
+            } else {
+                equipment.splice(patch.equipmentIndex, 1);
+            }
             return { ...character, equipment };
         }
     }

@@ -33,7 +33,7 @@ let pendingAutoCreateController: AbortController | null = null;
 
 export function useCurrentCharacter() {
     const { characterId, lastCharacterId, setCharacterId } = useCharacterId();
-    const { i18n: { changeLanguage, language: locale } } = useTranslation();
+    const { t, i18n: { changeLanguage, language: locale } } = useTranslation();
     const trimmedLocale = getApiLocale<PathsCharactersNewPostParametersQueryLocale>(locale);
     const { showSuccess, showError } = useSnackbar();
 
@@ -183,12 +183,18 @@ export function useCurrentCharacter() {
                         is_guest: isGuest,
                     });
                 },
-                onError: (error) => {
+                onError: (error: any) => {
+                    const msg = error instanceof Error ? error.message : String(error);
+                    if (msg === 'RATE_LIMIT_EXCEEDED') {
+                        showError(t('auth.rateLimit', 'Too many requests. Please try again later.'));
+                    } else {
+                        showError(t('characters.createError', 'Failed to create character'));
+                    }
                     options?.onError?.(error);
                 },
             });
         },
-        [editor, repo.createCharacter, trimmedLocale, isAuthenticated, isGuest, setCharacterId, setAutoCreateFailed]
+        [editor, repo.createCharacter, trimmedLocale, isAuthenticated, isGuest, setCharacterId, setAutoCreateFailed, showError, t]
     );
 
     // ---- Kill current character and generate a new one ----

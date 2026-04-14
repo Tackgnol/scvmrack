@@ -819,6 +819,8 @@ INSERT INTO public.translations VALUES ('en', 'weapons.sigurd-sling', 'Old Sigü
 INSERT INTO public.translations VALUES ('en', 'weapons.sigurd-sling.description', 'Woven from grey hair, this sling has never failed you. 2d4 damage');
 INSERT INTO public.translations VALUES ('en', 'weapons.shoe-of-death', 'The Shoe of Death''s Horse');
 INSERT INTO public.translations VALUES ('en', 'weapons.shoe-of-death.description', 'A horseshoe from Death himself. d4 damage, returns like a boomerang');
+INSERT INTO public.translations VALUES ('en', 'weapons.sacred-shepherds-crook', 'Sacred Shepherd’s Crook');
+INSERT INTO public.translations VALUES ('en', 'weapons.sacred-shepherds-crook.description', 'Head of human bone inscribed with anti-prayers. Staff does 2d4 damage except to faithless humans.');
 INSERT INTO public.translations VALUES ('en', 'weapons.femur', 'Femur');
 INSERT INTO public.translations VALUES ('en', 'weapons.femur.description', 'd4 damage');
 INSERT INTO public.translations VALUES ('en', 'weapons.staff', 'Staff');
@@ -1046,6 +1048,8 @@ INSERT INTO public.translations VALUES ('pl', 'weapons.sigurd-sling', 'Proca Sta
 INSERT INTO public.translations VALUES ('pl', 'weapons.sigurd-sling.description', 'Upleciona z siwych włosów, ta proca nigdy cię nie zawiodła. 2d4 obrażeń');
 INSERT INTO public.translations VALUES ('pl', 'weapons.shoe-of-death', 'Podkowa Konia Śmierci');
 INSERT INTO public.translations VALUES ('pl', 'weapons.shoe-of-death.description', 'Podkowa samego Śmierci. d4 obrażeń, wraca jak bumerang');
+INSERT INTO public.translations VALUES ('pl', 'weapons.sacred-shepherds-crook', 'Święty Kostur Pasterza');
+INSERT INTO public.translations VALUES ('pl', 'weapons.sacred-shepherds-crook.description', 'Głowica z ludzkiej kości pokryta antymodlitwami. Kostur zadaje 2d4 obrażeń z wyjątkiem bezbożnych ludzi.');
 INSERT INTO public.translations VALUES ('pl', 'weapons.femur', 'Kość udowa');
 INSERT INTO public.translations VALUES ('pl', 'weapons.femur.description', 'd4 obrażeń');
 INSERT INTO public.translations VALUES ('pl', 'weapons.staff', 'Kostur');
@@ -1600,6 +1604,7 @@ INSERT INTO public.weapons VALUES (2, 'weapons.blade-of-ancestors', '{weapon,mel
 INSERT INTO public.weapons VALUES (3, 'weapons.brown-scimitar', '{weapon,melee,special}', NULL, NULL, NULL, '{6}', NULL, 0, false, 6, '{"1": {"text": "Enemy struck with potent sepsis, dies in 10 mins"}, "2": {"text": "No effect"}, "3": {"text": "No effect"}, "4": {"text": "No effect"}, "5": {"text": "No effect"}, "6": {"text": "No effect"}}', 0, '[]', NULL, NULL);
 INSERT INTO public.weapons VALUES (4, 'weapons.sigurd-sling', '{weapon,ranged,special}', NULL, NULL, NULL, '{4,4}', NULL, 0, false, NULL, NULL, 0, '[]', 'Infinite', 999);
 INSERT INTO public.weapons VALUES (5, 'weapons.shoe-of-death', '{weapon,ranged,special}', NULL, NULL, NULL, '{4}', NULL, 0, false, 6, '{"1": {"text": "Smashes skull, instant kill on small-medium creatures"}, "2": {"text": "No effect"}, "3": {"text": "No effect"}, "4": {"text": "No effect"}, "5": {"text": "No effect"}, "6": {"text": "No effect"}}', 0, '[]', NULL, NULL);
+INSERT INTO public.weapons VALUES (31, 'weapons.sacred-shepherds-crook', '{weapon,melee,special}', NULL, NULL, NULL, '{4,4}', NULL, 0, false, NULL, NULL, 0, '[]', NULL, NULL);
 INSERT INTO public.weapons VALUES (6, 'weapons.femur', '{weapon,melee}', NULL, NULL, NULL, '{4}', 1, 0, false, NULL, NULL, 0, '[]', NULL, NULL);
 INSERT INTO public.weapons VALUES (7, 'weapons.staff', '{weapon,melee}', NULL, NULL, NULL, '{4}', 2, 5, false, NULL, NULL, 0, '[]', NULL, NULL);
 INSERT INTO public.weapons VALUES (8, 'weapons.shortsword', '{weapon,melee}', NULL, NULL, NULL, '{4}', 3, 20, false, NULL, NULL, 0, '[]', NULL, NULL);
@@ -1659,7 +1664,7 @@ SELECT pg_catalog.setval('public.classes_id_seq', 6, true);
 -- Name: equipment_id_seq; Type: SEQUENCE SET; Schema: public; Owner: p1002_scmgrinder
 --
 
-SELECT pg_catalog.setval('public.equipment_id_seq', 59, true);
+SELECT pg_catalog.setval('public.equipment_id_seq', 61, true);
 
 
 --
@@ -1708,7 +1713,7 @@ SELECT pg_catalog.setval('public.traits_id_seq', 20, true);
 -- Name: weapons_id_seq; Type: SEQUENCE SET; Schema: public; Owner: p1002_scmgrinder
 --
 
-SELECT pg_catalog.setval('public.weapons_id_seq', 30, true);
+SELECT pg_catalog.setval('public.weapons_id_seq', 31, true);
 
 
 --

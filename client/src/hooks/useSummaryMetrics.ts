@@ -6,6 +6,7 @@ import {
   type EquipmentItem,
   type Statistic,
 } from '@/hooks/models';
+import { isEncumbranceExemptItem } from '@/hooks/useEquipmentSections';
 import { statToModifier } from '@/utils/stats';
 
 export type SummaryDetailKey = 'dodge' | 'melee' | 'ranged' | 'encumbrance';
@@ -69,6 +70,10 @@ const buildCombatBreakdown = (
   return { applicable, modifierTotal };
 };
 
+const isCarriedItem = (
+  item: EquipmentItem | null | undefined,
+): item is EquipmentItem => Boolean(item?.key || item?.name);
+
 export function useSummaryMetrics(
   character: CharacterResponse | undefined,
 ): SummaryMetrics {
@@ -96,9 +101,15 @@ export function useSummaryMetrics(
       'ranged',
     );
 
-    const encumbranceItems = character?.equipment ?? [];
-    const encumbrance = char?.encumbrance ?? encumbranceItems.length;
-    const maxEncumbrance = char?.maxEncumbrance ?? 8;
+    const encumbranceItems = [
+      ...(character?.equipment ?? []).filter((item) => !isEncumbranceExemptItem(item)),
+      ...(character?.equippedWeapons ?? []).filter(isCarriedItem),
+      ...(character?.equippedArmor ? [character.equippedArmor] : []).filter(
+        isCarriedItem,
+      ),
+    ];
+    const encumbrance = encumbranceItems.length;
+    const maxEncumbrance = Math.max(0, 8 + strengthModifier);
 
     return {
       characterKey: character?.id ?? 'unknown',

@@ -31,14 +31,17 @@ export function useCharacterRepository(characterId: string | null, locale?: stri
             signal?: AbortSignal;
         }) => {
             const { signal, ...request } = vars;
-            const { data, error } = await client.POST('/characters/new', {
+            const { data, error, response } = await client.POST('/characters/new', {
                 ...(request as any),
                 signal,
             } as any);
 
-            if (error) {
+            if (error || !response.ok) {
                 if (signal?.aborted) {
                     throw new DOMException('The operation was aborted.', 'AbortError');
+                }
+                if (response.status === 429 || (error as any)?.statusCode === 429) {
+                    throw new Error('RATE_LIMIT_EXCEEDED');
                 }
                 throw new Error((error as any)?.error || (error as any)?.message || 'Failed to create character');
             }

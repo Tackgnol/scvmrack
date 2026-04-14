@@ -80,7 +80,8 @@ export function useEquippedBar() {
       let total = 0;
       for (const item of inventory) {
         if (item.ammoType === ammoType && item.tags?.includes('ammo')) {
-          total += 1;
+          const amt = item.amount;
+          total += typeof amt === 'number' && Number.isFinite(amt) && amt > 0 ? amt : 1;
         }
       }
       return total;
