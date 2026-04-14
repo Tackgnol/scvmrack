@@ -56,7 +56,7 @@ CREATE OR REPLACE FUNCTION resolve_character_inventory_items(
             'ammo_type', COALESCE(w.ammo_type, e_m.ammo_type),
             'amount', CASE
                 WHEN COALESCE(w.ammo_type, e_m.ammo_type) IS NOT NULL
-                THEN COALESCE((item->>'amount')::int, COALESCE(e_m.default_amount, w.default_amount))
+                THEN (item->>'amount')::int
                 ELSE NULL
             END
         ) || CASE
@@ -145,6 +145,50 @@ CREATE OR REPLACE FUNCTION resolve_character_abilities(
     LEFT JOIN translations td ON td.key = (ab->>'key') || '.description' AND td.locale = p_locale;
 $$;
 
+CREATE OR REPLACE FUNCTION calculate_character_encumbrance(
+    p_equipment jsonb,
+    p_equipped_weapons jsonb,
+    p_equipped_armor jsonb
+) RETURNS int
+    LANGUAGE sql AS $$
+    SELECT
+        COALESCE((
+            SELECT COUNT(*)
+            FROM jsonb_array_elements(COALESCE(p_equipment, '[]'::jsonb)) item
+            WHERE jsonb_typeof(item) = 'object'
+              AND COALESCE(item->>'key', '') <> ''
+              AND NOT EXISTS (
+                  SELECT 1
+                  FROM (
+                      SELECT jsonb_array_elements_text(item->'tags') AS tag
+                      WHERE item ? 'tags' AND jsonb_typeof(item->'tags') = 'array'
+                      UNION ALL
+                      SELECT unnest(e.tags) AS tag
+                      FROM equipment e
+                      WHERE e.key = item->>'key'
+                      UNION ALL
+                      SELECT unnest(p.tags) AS tag
+                      FROM pets p
+                      WHERE p.key = item->>'key'
+                  ) encumbrance_exempt_tags
+                  WHERE tag IN ('ammo', 'carry', 'pet')
+              )
+        ), 0)
+        + COALESCE((
+            SELECT COUNT(*)
+            FROM jsonb_array_elements(COALESCE(p_equipped_weapons, '[]'::jsonb)) equipped_weapon
+            WHERE jsonb_typeof(equipped_weapon) = 'object'
+              AND COALESCE(equipped_weapon->>'key', '') <> ''
+        ), 0)
+        + CASE
+            WHEN p_equipped_armor IS NOT NULL
+             AND jsonb_typeof(p_equipped_armor) = 'object'
+             AND COALESCE(p_equipped_armor->>'key', '') <> ''
+            THEN 1
+            ELSE 0
+        END;
+$$;
+
 DROP FUNCTION IF EXISTS resolve_character_computed_modifiers(jsonb, jsonb, jsonb, text);
 DROP FUNCTION IF EXISTS resolve_character_computed_modifiers(jsonb, jsonb, jsonb, int, text);
 DROP FUNCTION IF EXISTS resolve_character_computed_modifiers(jsonb, jsonb, jsonb, int, int, jsonb, text);
@@ -170,7 +214,11 @@ DECLARE
 BEGIN
     v_strength_modifier := roll_to_modifier(p_strength);
     v_max_encumbrance := GREATEST(0, 8 + v_strength_modifier);
-    v_encumbrance := COALESCE(jsonb_array_length(COALESCE(p_equipment, '[]'::jsonb)), 0);
+    v_encumbrance := calculate_character_encumbrance(
+        p_equipment,
+        p_equipped_weapons,
+        p_equipped_armor
+    );
 
     IF p_locale = 'pl' THEN
         v_encumbrance_label := 'Obciążenie';
@@ -218,18 +266,20 @@ BEGIN
     IF p_equipment IS NOT NULL THEN
         v_result := v_result || (
             SELECT COALESCE(jsonb_agg(
-                p.buff || jsonb_build_object(
+                buff_elem || jsonb_build_object(
                     'origin', 'pet',
                     'origin_key', 'pet.' || p.key,
                     'origin_name', COALESCE(t.value, p.key)
                 )
             ), '[]'::jsonb)
             FROM pets p
+            CROSS JOIN LATERAL jsonb_array_elements(p.buff) buff_elem
             LEFT JOIN translations t ON t.key = p.key AND t.locale = p_locale
             WHERE p.key IN (
                 SELECT eq->>'key'
                 FROM jsonb_array_elements(p_equipment) eq
-                WHERE eq->>'key' LIKE 'pet.%' OR eq->>'key' LIKE 'pets.%'
+                WHERE (eq->>'key' LIKE 'pet.%' OR eq->>'key' LIKE 'pets.%')
+                  AND NOT COALESCE((eq->>'suppress_pet_buff')::boolean, false)
             )
         );
     END IF;
@@ -285,7 +335,14 @@ BEGIN
         );
     END IF;
 
-    RETURN COALESCE(v_result, '[]'::jsonb);
+    -- Strip any empty/null/malformed elements from the result
+    RETURN (
+        SELECT COALESCE(jsonb_agg(elem), '[]'::jsonb)
+        FROM jsonb_array_elements(COALESCE(v_result, '[]'::jsonb)) elem
+        WHERE jsonb_typeof(elem) = 'object'
+          AND elem != '{}'::jsonb
+          AND elem ? 'origin'
+    );
 END;
 $$;
 
@@ -409,7 +466,11 @@ BEGIN
         p_locale
     );
 
-    encumbrance := COALESCE(jsonb_array_length(COALESCE(result.equipment, '[]'::jsonb)), 0);
+    encumbrance := calculate_character_encumbrance(
+        result.equipment,
+        result.equipped_weapons,
+        result.equipped_armor
+    );
     strength_modifier := roll_to_modifier(result.strength);
     max_encumbrance := GREATEST(0, 8 + strength_modifier);
 

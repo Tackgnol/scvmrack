@@ -1,6 +1,7 @@
 import { $api } from "@/api";
 import { useCharacter } from "@/CharacterContext/CharacterContext";
 import { CharacterListItem } from "@/hooks/models.ts";
+import { getCharacterKey } from "@/hooks/utils.ts";
 import { AnimatedNumber } from "@components/index";
 import { useAuth } from '@/hooks/useAuth';
 import { appHistory } from '@/router/history';
@@ -16,6 +17,7 @@ import {
     Typography,
 } from '@mui/material';
 import { Link } from '@tanstack/react-router';
+import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -181,8 +183,9 @@ const listStyles = {
 };
 
 export function CharactersListPage() {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const { isAuthenticated, isGuest } = useAuth();
+    const queryClient = useQueryClient();
     const { characterId, lastCharacterId, setCharacterId, generateNew } = useCharacter();
     const [isCreating, setIsCreating] = useState(false);
     const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -243,8 +246,10 @@ export function CharactersListPage() {
                 },
             });
 
+            queryClient.removeQueries({ queryKey: getCharacterKey(character.id, i18n.language) });
+
             if (character.id === characterId) {
-                setCharacterId(null);
+                await setCharacterId(null);
             }
 
             await charactersQuery.refetch();

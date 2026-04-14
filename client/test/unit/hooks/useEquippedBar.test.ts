@@ -101,3 +101,25 @@ test('useEquippedBar delegates equip/unequip flows with active slot tracking', (
   expect(unequipArmor).toHaveBeenCalledTimes(1);
   expect(result.current.armorAnchor).toBe(null);
 });
+
+test('useEquippedBar resolves ammo from both stacked and duplicate inventory items', () => {
+  const wrapperState = createCharacterTestWrapper({
+    character: {
+      equipment: [
+        { key: 'equipment.arrows', name: 'Arrows', ammoType: 'Arrow', tags: ['ammo'], amount: 4 },
+        { key: 'equipment.arrows', name: 'Arrows', ammoType: 'Arrow', tags: ['ammo'] },
+        { key: 'equipment.bolts', name: 'Bolts', ammoType: 'Bolt', tags: ['ammo'], amount: 2 },
+      ],
+      equippedWeapons: [{ key: 'weapons.bow', name: 'Bow', ammoType: 'Arrow' }, null],
+      equippedArmor: null,
+    },
+  });
+
+  const { result } = renderHook(() => useEquippedBar(), {
+    wrapper: wrapperState.wrapper,
+  });
+
+  expect(result.current.resolveAmmo('Arrow')).toBe(5);
+  expect(result.current.resolveAmmo('Bolt')).toBe(2);
+  expect(result.current.mainWeaponAmmo.ammoCount).toBe(5);
+});

@@ -195,6 +195,13 @@
     "actionDie": "Kości akcji",
     "unknown": "Nieznane zwierzę"
   },
+  "consumables": {
+    "title": "Zużywalne",
+    "unknown": "Nieznany przedmiot zużywalny",
+    "usePip": "{{action}}: {{name}} użycie {{index}}",
+    "markUsed": "Oznacz jako użyte",
+    "markUnused": "Oznacz jako nieużyte"
+  },
   "auth": {
     "login": "Zaloguj",
     "signup": "Zarejestruj",
@@ -241,7 +248,8 @@
     "invalidResetLink": "Nieprawidłowy lub wygasły link do resetowania.",
     "backToLogin": "Wróć do logowania",
     "showPassword": "Pokaż hasło",
-    "hidePassword": "Ukryj hasło"
+    "hidePassword": "Ukryj hasło",
+    "rateLimit": "Zbyt wiele zapytań. Spróbuj ponownie później."
   },
   "session": {
     "loggedOut": "Wylogowano.",
@@ -277,6 +285,8 @@
     "createFirst": "Stwórz Postać",
     "loadError": "Nie udało się załadować postaci",
     "deathStamp": "Scvm padł. Inny się wyczołga.",
+    "deadStampText": "MARTWY",
+    "deadStampDate": "KONIEC",
     "columns": {
       "name": "Imię",
       "class": "Klasa",

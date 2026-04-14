@@ -1,6 +1,5 @@
 import { Typography } from '@mui/material';
 import { customStyles } from '@/theme/morkBorgTheme';
-import { AnimatedNumber } from '@components/index';
 
 interface ItemQuantityBadgeProps {
   quantity: number;

@@ -134,6 +134,9 @@ export function useAuth() {
 
             const { data, error } = await authClient.signIn.email(payload as any);
             if (error) {
+                if (error.status === 429 || (error as any).error?.status === 429) {
+                    throw new Error('RATE_LIMIT_EXCEEDED');
+                }
                 const message = error.message || (error as any).error?.message || 'Login failed';
                 throw new Error(message);
             }
@@ -169,6 +172,9 @@ export function useAuth() {
 
             const { data, error } = await authClient.signUp.email(payload as any);
             if (error) {
+                if (error.status === 429 || (error as any).error?.status === 429) {
+                    throw new Error('RATE_LIMIT_EXCEEDED');
+                }
                 const message = error.message || (error as any).error?.message || 'Sign up failed';
                 throw new Error(message);
             }
@@ -215,6 +221,9 @@ export function useAuth() {
                 body: JSON.stringify(payload),
             });
             if (!res.ok) {
+                if (res.status === 429) {
+                    throw new Error('RATE_LIMIT_EXCEEDED');
+                }
                 const data = await res.json().catch(() => ({}));
                 throw new Error(data.message || 'Request failed');
             }
@@ -230,6 +239,9 @@ export function useAuth() {
                 body: JSON.stringify({ newPassword, token }),
             });
             if (!res.ok) {
+                if (res.status === 429) {
+                    throw new Error('RATE_LIMIT_EXCEEDED');
+                }
                 const data = await res.json().catch(() => ({}));
                 throw new Error(data.message || 'Password reset failed');
             }
@@ -252,6 +264,9 @@ export function useAuth() {
             const { data, error } = await authClient.signIn.magicLink(payload as any);
 
             if (error) {
+                if (error.status === 429 || (error as any).error?.status === 429) {
+                    throw new Error('RATE_LIMIT_EXCEEDED');
+                }
                 const message = error.message || (error as any).error?.message || 'Magic link failed';
                 throw new Error(message);
             }

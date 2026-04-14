@@ -1,4 +1,5 @@
 import { useCharacter } from '@/CharacterContext/CharacterContext';
+import { isScrollItem } from '@/hooks/useEquipmentSections';
 import { useTrackedUsePips } from '@/hooks/useTrackedUsePips';
 import { type EquipmentUseEntry } from '@components/uses/types';
 import { useMemo } from 'react';
@@ -20,7 +21,7 @@ export function usePowersSection() {
           equipmentIndex: index,
           uses: item.uses ?? Array(DEFAULT_MAX_USES).fill(false),
         }))
-        .filter(({ item }) => item.key?.startsWith('scroll.')),
+        .filter(({ item }) => isScrollItem(item)),
     [character?.equipment],
   );
 

@@ -62,11 +62,10 @@ export function ResetPasswordPage() {
       await resetPassword.mutateAsync({ newPassword, token });
       setSuccess(true);
     } catch (err) {
-      setError(
-        err instanceof Error
+      const msg = err instanceof Error
           ? err.message
-          : t('auth.resetFailed', 'Password reset failed. The link may have expired.')
-      );
+          : t('auth.resetFailed', 'Password reset failed. The link may have expired.');
+      setError(msg === 'RATE_LIMIT_EXCEEDED' ? t('auth.rateLimit', 'Too many requests. Please try again later.') : msg);
     }
   };
 

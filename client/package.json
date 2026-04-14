@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
-    "build:mydevil": "tsc && vite build --mode mydevil",
+    "build": "tsc -p tsconfig.build.json && vite build",
+    "build:mydevil": "tsc -p tsconfig.build.json && vite build --mode mydevil",
     "preview": "vite preview",
     "test": "npm run test:unit",
     "test:unit": "vitest run",

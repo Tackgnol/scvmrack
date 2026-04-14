@@ -195,6 +195,13 @@
     "actionDie": "Action Die",
     "unknown": "Unknown Pet"
   },
+  "consumables": {
+    "title": "Consumables",
+    "unknown": "Unknown Consumable",
+    "usePip": "{{action}}: {{name}} use {{index}}",
+    "markUsed": "Mark used",
+    "markUnused": "Mark unused"
+  },
   "auth": {
     "login": "Log In",
     "signup": "Sign Up",
@@ -241,7 +248,8 @@
     "invalidResetLink": "Invalid or expired reset link.",
     "backToLogin": "Back to Login",
     "showPassword": "Show password",
-    "hidePassword": "Hide password"
+    "hidePassword": "Hide password",
+    "rateLimit": "Too many requests. Please try again later."
   },
   "session": {
     "loggedOut": "You've been logged out.",
@@ -277,6 +285,8 @@
     "createFirst": "Create Character",
     "loadError": "Failed to load characters",
     "deathStamp": "Scvm fell. Another crawls out.",
+    "deadStampText": "DEAD",
+    "deadStampDate": "NO MORE",
     "columns": {
       "name": "Name",
       "class": "Class",

@@ -185,6 +185,34 @@ test('applyOptimisticPatch handles ammo-use', () => {
     const charWithAmmo = {
         ...baseCharacter,
         equipment: [
+            { key: 'equipment.arrows', name: 'Arrows', ammoType: 'Arrow', tags: ['ammo'], amount: 3 },
+            { key: 'equipment.rope', name: 'Rope' },
+        ]
+    } as any;
+
+    const r1 = applyOptimisticPatch(charWithAmmo, { kind: 'ammo-use', equipmentIndex: 0 });
+    expect(r1.equipment).toHaveLength(2);
+    expect(r1.equipment[0].amount).toBe(2);
+
+    const r2 = applyOptimisticPatch(
+        {
+            ...charWithAmmo,
+            equipment: [
+                { key: 'equipment.arrows', name: 'Arrows', ammoType: 'Arrow', tags: ['ammo'], amount: 1 },
+                { key: 'equipment.rope', name: 'Rope' },
+            ],
+        } as any,
+        { kind: 'ammo-use', equipmentIndex: 0 }
+    );
+
+    expect(r2.equipment).toHaveLength(1);
+    expect(r2.equipment[0].name).toBe('Rope');
+});
+
+test('applyOptimisticPatch handles ammo-use for duplicate single-arrow items', () => {
+    const charWithAmmo = {
+        ...baseCharacter,
+        equipment: [
             { key: 'equipment.arrows', name: 'Arrows', ammoType: 'Arrow', tags: ['ammo'] },
             { key: 'equipment.rope', name: 'Rope' },
         ]

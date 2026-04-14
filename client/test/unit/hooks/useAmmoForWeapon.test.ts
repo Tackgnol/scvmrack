@@ -66,8 +66,28 @@ test('returns ammo count when matching ammo found in inventory', () => {
         { wrapper: wrapperState.wrapper },
     );
 
-    expect(result.current.ammoCount).toBe(2);
+    expect(result.current.ammoCount).toBe(10);
     expect(result.current.ammoType).toBe('Arrow');
+    expect(result.current.equipmentIndex).toBe(0);
+});
+
+test('counts duplicate ammo items as one each when amount is not present', () => {
+    const wrapperState = createCharacterTestWrapper({
+        character: {
+            equipment: [
+                { key: 'equipment.arrows', name: 'Arrows', ammoType: 'Arrow', tags: ['ammo'] },
+                { key: 'equipment.arrows', name: 'Arrows', ammoType: 'Arrow', tags: ['ammo'] },
+                { key: 'equipment.arrows', name: 'Arrows', ammoType: 'Arrow', tags: ['ammo'] },
+            ],
+        },
+    });
+
+    const { result } = renderHook(
+        () => useAmmoForWeapon({ key: 'weapons.bow', name: 'Bow', ammoType: 'Arrow', tags: ['weapon', 'ranged'] }),
+        { wrapper: wrapperState.wrapper },
+    );
+
+    expect(result.current.ammoCount).toBe(3);
     expect(result.current.equipmentIndex).toBe(0);
 });
 

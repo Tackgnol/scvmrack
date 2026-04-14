@@ -101,41 +101,267 @@ CREATE OR REPLACE FUNCTION roll_character_omens() RETURNS INTEGER
     SELECT floor(random() * 2 + 1)::INTEGER;
 $$;
 
-CREATE OR REPLACE FUNCTION build_character_item_pool(p_class_id INTEGER) RETURNS JSONB
+CREATE OR REPLACE FUNCTION build_boolean_uses(p_count INTEGER) RETURNS JSONB
+    LANGUAGE sql AS $$
+    SELECT CASE
+        WHEN COALESCE(p_count, 0) <= 0 THEN '[]'::jsonb
+        ELSE to_jsonb(array_fill(false, ARRAY[p_count]))
+    END;
+$$;
+
+CREATE OR REPLACE FUNCTION build_pool_item(
+    p_key TEXT,
+    p_extra JSONB DEFAULT '{}'::jsonb
+) RETURNS JSONB
+    LANGUAGE sql AS $$
+    SELECT jsonb_build_object(
+        'key', p_key,
+        'tags', to_jsonb(COALESCE(e.tags, w.tags, a.tags, p.tags, ARRAY[]::TEXT[]))
+    ) || COALESCE(p_extra, '{}'::jsonb)
+    FROM (SELECT 1) seed
+    LEFT JOIN equipment e ON e.key = p_key
+    LEFT JOIN weapons w ON w.key = p_key
+    LEFT JOIN armors a ON a.key = p_key
+    LEFT JOIN pets p ON p.key = p_key;
+$$;
+
+CREATE OR REPLACE FUNCTION build_granted_class_item(p_name TEXT) RETURNS JSONB
+    LANGUAGE plpgsql AS $$
+BEGIN
+    RETURN CASE p_name
+        WHEN 'Crumpled Monster Mask' THEN build_pool_item('equipment.crumpled-monster-mask')
+        WHEN 'Wizard Teeth' THEN build_pool_item(
+            'equipment.wizard-teeth',
+            jsonb_build_object('uses', build_boolean_uses(4))
+        )
+        WHEN 'Lockpicks' THEN build_pool_item('equipment.lockpicks')
+        WHEN 'The Brown Scimitar of Galgenbeck' THEN build_pool_item('weapons.brown-scimitar')
+        WHEN 'Old Sigürd''s Sling' THEN build_pool_item('weapons.sigurd-sling')
+        WHEN 'The Shoe of Death''s Horse' THEN build_pool_item('weapons.shoe-of-death')
+        WHEN 'The Blade of your Ancestors' THEN build_pool_item('weapons.blade-of-ancestors')
+        WHEN 'The Snake-Skin Gift' THEN build_pool_item('weapons.snake-skin-gift')
+        WHEN 'Sacred Shepherd’s Crook' THEN build_pool_item('weapons.sacred-shepherds-crook')
+        ELSE NULL
+    END;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION build_granted_class_pet(p_name TEXT) RETURNS JSONB
+    LANGUAGE plpgsql AS $$
+BEGIN
+    RETURN CASE p_name
+        WHEN 'Hawk' THEN build_pool_item('pets.hawk')
+        WHEN 'Ancient Gore-Hound' THEN build_pool_item('pets.gore-hound')
+        WHEN 'Hamfund the Squire' THEN build_pool_item('pets.hamfund')
+        WHEN 'Barbarister the Incredible Horse' THEN build_pool_item('pets.barbarister')
+        ELSE NULL
+    END;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION pick_random_scroll_item(p_kind TEXT) RETURNS JSONB
+    LANGUAGE sql AS $$
+    SELECT build_pool_item(e.key)
+    FROM equipment e
+    WHERE p_kind = ANY(e.tags)
+    ORDER BY random()
+    LIMIT 1;
+$$;
+
+CREATE OR REPLACE FUNCTION roll_starting_carry_item() RETURNS JSONB
+    LANGUAGE plpgsql AS $$
+DECLARE
+    v_roll INTEGER;
+BEGIN
+    v_roll := roll_die(6);
+
+    RETURN CASE v_roll
+        WHEN 3 THEN jsonb_build_array(build_pool_item('equipment.backpack'))
+        WHEN 4 THEN jsonb_build_array(build_pool_item('equipment.sack'))
+        WHEN 5 THEN jsonb_build_array(build_pool_item('equipment.small-wagon'))
+        WHEN 6 THEN jsonb_build_array(build_pool_item('equipment.donkey'))
+        ELSE '[]'::jsonb
+    END;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION roll_starting_item_table_one(p_presence INTEGER) RETURNS JSONB
+    LANGUAGE plpgsql AS $$
+DECLARE
+    v_roll INTEGER;
+BEGIN
+    v_roll := roll_die(12);
+
+    RETURN CASE v_roll
+        WHEN 1 THEN jsonb_build_array(build_pool_item('equipment.rope'))
+        WHEN 2 THEN COALESCE((
+            SELECT jsonb_agg(build_pool_item('equipment.torches'))
+            FROM generate_series(1, GREATEST(0, roll_to_modifier(p_presence) + 4))
+        ), '[]'::jsonb)
+        WHEN 3 THEN jsonb_build_array(build_pool_item(
+            'equipment.lantern',
+            jsonb_build_object('uses', build_boolean_uses(GREATEST(0, roll_to_modifier(p_presence) + 6)))
+        ))
+        WHEN 4 THEN jsonb_build_array(build_pool_item('equipment.magnesium-strip'))
+        WHEN 5 THEN jsonb_build_array(pick_random_scroll_item('unclean'))
+        WHEN 6 THEN jsonb_build_array(build_pool_item('equipment.sharp-needle'))
+        WHEN 7 THEN jsonb_build_array(build_pool_item(
+            'equipment.medicine-chest',
+            jsonb_build_object('uses', build_boolean_uses(GREATEST(0, roll_to_modifier(p_presence) + 4)))
+        ))
+        WHEN 8 THEN jsonb_build_array(build_pool_item('equipment.lockpicks'))
+        WHEN 9 THEN jsonb_build_array(build_pool_item('equipment.bear-trap'))
+        WHEN 10 THEN jsonb_build_array(build_pool_item('equipment.bomb'))
+        WHEN 11 THEN jsonb_build_array(build_pool_item(
+            'equipment.red-poison',
+            jsonb_build_object('uses', build_boolean_uses(roll_die(4)))
+        ))
+        WHEN 12 THEN jsonb_build_array(build_pool_item('equipment.silver-crucifix'))
+        ELSE '[]'::jsonb
+    END;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION roll_starting_item_table_two() RETURNS JSONB
+    LANGUAGE plpgsql AS $$
+DECLARE
+    v_roll INTEGER;
+BEGIN
+    v_roll := roll_die(12);
+
+    RETURN CASE v_roll
+        WHEN 1 THEN jsonb_build_array(build_pool_item(
+            'equipment.life-elixir',
+            jsonb_build_object('uses', build_boolean_uses(roll_die(4)))
+        ))
+        WHEN 2 THEN jsonb_build_array(pick_random_scroll_item('sacred'))
+        WHEN 3 THEN jsonb_build_array(build_pool_item('pets.small-dog'))
+        WHEN 4 THEN COALESCE((
+            SELECT jsonb_agg(build_pool_item('pets.monkey'))
+            FROM generate_series(1, roll_die(4))
+        ), '[]'::jsonb)
+        WHEN 5 THEN jsonb_build_array(build_pool_item('equipment.exquisite-perfume'))
+        WHEN 6 THEN jsonb_build_array(build_pool_item('equipment.toolbox'))
+        WHEN 7 THEN jsonb_build_array(build_pool_item('equipment.heavy-chain'))
+        WHEN 8 THEN jsonb_build_array(build_pool_item('equipment.grappling-hook'))
+        WHEN 9 THEN jsonb_build_array(build_pool_item('weapons.shield'))
+        WHEN 10 THEN jsonb_build_array(build_pool_item('weapons.crowbar'))
+        WHEN 11 THEN jsonb_build_array(build_pool_item(
+            'equipment.lard',
+            jsonb_build_object('uses', build_boolean_uses(5))
+        ))
+        WHEN 12 THEN jsonb_build_array(build_pool_item('equipment.tent'))
+        ELSE '[]'::jsonb
+    END;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION roll_starting_weapon_item(
+    p_weapon_die INTEGER,
+    p_presence INTEGER
+) RETURNS JSONB
+    LANGUAGE plpgsql AS $$
+DECLARE
+    v_roll INTEGER;
+    v_weapon_key TEXT;
+    v_ammo_amount INTEGER;
+BEGIN
+    v_roll := roll_die(p_weapon_die);
+
+    SELECT w.key,
+           CASE
+               WHEN w.ammo_type IN ('Arrow', 'Bolt') THEN GREATEST(0, roll_to_modifier(p_presence) + COALESCE(w.default_amount, 0))
+               WHEN w.default_amount IS NOT NULL THEN GREATEST(0, w.default_amount)
+               ELSE NULL
+           END
+    INTO v_weapon_key, v_ammo_amount
+    FROM weapons w
+    WHERE w.roll = v_roll
+    LIMIT 1;
+
+    IF v_weapon_key IS NULL THEN
+        RETURN '[]'::jsonb;
+    END IF;
+
+    RETURN jsonb_build_array(build_pool_item(
+        v_weapon_key,
+        jsonb_strip_nulls(jsonb_build_object(
+            'auto_equip', true,
+            'starting_ammo_amount', v_ammo_amount
+        ))
+    ));
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION roll_starting_armor_item(p_armor_die INTEGER) RETURNS JSONB
+    LANGUAGE plpgsql AS $$
+DECLARE
+    v_roll INTEGER;
+    v_armor_key TEXT;
+BEGIN
+    v_roll := roll_die(p_armor_die);
+
+    IF v_roll = 1 THEN
+        RETURN '[]'::jsonb;
+    END IF;
+
+    SELECT a.key
+    INTO v_armor_key
+    FROM armors a
+    WHERE a.max_tier = CASE
+        WHEN v_roll = 2 THEN 1
+        WHEN v_roll = 3 THEN 2
+        ELSE 3
+    END
+    ORDER BY random()
+    LIMIT 1;
+
+    IF v_armor_key IS NULL THEN
+        RETURN '[]'::jsonb;
+    END IF;
+
+    RETURN jsonb_build_array(build_pool_item(
+        v_armor_key,
+        jsonb_build_object('auto_equip', true)
+    ));
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION build_character_item_pool(
+    p_class_id INTEGER,
+    p_presence INTEGER
+) RETURNS JSONB
     LANGUAGE plpgsql AS $$
 DECLARE
     v_pool JSONB := '[]'::jsonb;
     v_weapon_die INTEGER;
     v_armor_die INTEGER;
+    v_has_scroll BOOLEAN := false;
 BEGIN
     SELECT c.weapon_die, c.armor_die
     INTO v_weapon_die, v_armor_die
     FROM classes c
     WHERE c.id = p_class_id;
 
-    v_pool := v_pool || COALESCE((
-        SELECT jsonb_agg(item)
-        FROM (
-            SELECT jsonb_build_object('key', e.key, 'tags', e.tags) AS item
-            FROM equipment e
-            ORDER BY random()
-            LIMIT 3
-        ) t
-    ), '[]'::jsonb);
+    v_pool := v_pool
+        || roll_starting_carry_item()
+        || roll_starting_item_table_one(p_presence)
+        || roll_starting_item_table_two();
 
-    v_pool := v_pool || COALESCE((
-        SELECT jsonb_build_object('key', w.key, 'tags', ARRAY['weapon'])
-        FROM weapons w
-        WHERE w.roll = (floor(random() * v_weapon_die) + 1)
-        LIMIT 1
-    ), '[]'::jsonb);
+    SELECT EXISTS (
+        SELECT 1
+        FROM jsonb_array_elements(v_pool) item
+        WHERE item->>'key' LIKE 'scroll.%'
+    ) INTO v_has_scroll;
 
-    v_pool := v_pool || COALESCE((
-        SELECT jsonb_build_object('key', a.key, 'tags', ARRAY['armor'])
-        FROM armors a
-        WHERE a.roll = (floor(random() * v_armor_die) + 1)
-        LIMIT 1
-    ), '[]'::jsonb);
+    IF v_has_scroll THEN
+        v_weapon_die := LEAST(v_weapon_die, 6);
+        v_armor_die := LEAST(v_armor_die, 2);
+    END IF;
+
+    v_pool := v_pool
+        || roll_starting_weapon_item(v_weapon_die, p_presence)
+        || roll_starting_armor_item(v_armor_die);
 
     RETURN v_pool;
 END;
@@ -150,25 +376,35 @@ DECLARE
     v_item RECORD;
     v_weapon_record RECORD;
     v_ammo_key TEXT;
+    v_ammo_amount INTEGER;
 BEGIN
     FOR v_item IN
-        SELECT *
-        FROM jsonb_to_recordset(COALESCE(p_rolled_pool, '[]'::jsonb)) AS x(key TEXT, tags TEXT[])
+        SELECT value AS item
+        FROM jsonb_array_elements(COALESCE(p_rolled_pool, '[]'::jsonb))
     LOOP
-        IF 'weapon' = ANY(v_item.tags) AND jsonb_array_length(v_equipped_weapons) < 2 THEN
+        IF COALESCE((v_item.item->>'auto_equip')::BOOLEAN, false)
+           AND COALESCE(v_item.item->'tags', '[]'::jsonb) ? 'weapon'
+           AND jsonb_array_length(v_equipped_weapons) < 2 THEN
             -- Get weapon to check for ammo
             SELECT w.key, w.ammo_type, w.default_amount
             INTO v_weapon_record
             FROM weapons w
-            WHERE w.key = v_item.key;
+            WHERE w.key = v_item.item->>'key';
 
-            v_equipped_weapons := v_equipped_weapons || jsonb_build_array(jsonb_build_object('key', v_item.key));
+            v_equipped_weapons := v_equipped_weapons || jsonb_build_array(
+                jsonb_build_object('key', v_item.item->>'key')
+            );
 
             -- Reset ammo key for each weapon
             v_ammo_key := NULL;
+            v_ammo_amount := COALESCE(
+                NULLIF(v_item.item->>'starting_ammo_amount', '')::INTEGER,
+                v_weapon_record.default_amount,
+                0
+            );
 
             -- Auto-add ammo if weapon has an ammo type
-            IF v_weapon_record.ammo_type IS NOT NULL AND v_weapon_record.default_amount > 0 THEN
+            IF v_weapon_record.ammo_type IS NOT NULL AND v_ammo_amount > 0 THEN
                 -- Map ammo type string to equipment key
                 IF v_weapon_record.ammo_type = 'Arrow' THEN
                     v_ammo_key := 'equipment.arrows';
@@ -177,16 +413,21 @@ BEGIN
                 END IF;
 
                 IF v_ammo_key IS NOT NULL THEN
-                    v_final_equipment := v_final_equipment || jsonb_build_array(
-                        jsonb_build_object('key', v_ammo_key, 'amount', v_weapon_record.default_amount)
-                    );
+                    v_final_equipment := v_final_equipment || COALESCE((
+                        SELECT jsonb_agg(build_pool_item(v_ammo_key))
+                        FROM generate_series(1, v_ammo_amount)
+                    ), '[]'::jsonb);
                 END IF;
             END IF;
 
-        ELSIF 'armor' = ANY(v_item.tags) AND v_equipped_armor IS NULL THEN
-            v_equipped_armor := jsonb_build_object('key', v_item.key);
+        ELSIF COALESCE((v_item.item->>'auto_equip')::BOOLEAN, false)
+              AND COALESCE(v_item.item->'tags', '[]'::jsonb) ? 'armor'
+              AND v_equipped_armor IS NULL THEN
+            v_equipped_armor := jsonb_build_object('key', v_item.item->>'key');
         ELSE
-            v_final_equipment := v_final_equipment || jsonb_build_array(jsonb_build_object('key', v_item.key));
+            v_final_equipment := v_final_equipment || jsonb_build_array(
+                v_item.item - 'auto_equip' - 'starting_ammo_amount'
+            );
         END IF;
     END LOOP;
 
@@ -198,43 +439,72 @@ BEGIN
 END;
 $$;
 
-CREATE OR REPLACE FUNCTION build_character_abilities(p_class_id INTEGER) RETURNS JSONB
+CREATE OR REPLACE FUNCTION build_character_ability_bundle(p_class_id INTEGER) RETURNS JSONB
     LANGUAGE plpgsql AS $$
 DECLARE
-    v_abilities JSONB := '[]'::jsonb;
+    v_fixed_abilities JSONB := '[]'::jsonb;
+    v_random_abilities JSONB := '[]'::jsonb;
+    v_granted_items JSONB := '[]'::jsonb;
+    v_class_random_abilities JSONB := '[]'::jsonb;
     v_random_ability_count INTEGER := 0;
 BEGIN
-    SELECT COALESCE(c.random_ability_count, 0)
-    INTO v_random_ability_count
+    SELECT COALESCE(c.random_ability_count, 0),
+           COALESCE(c.random_abilities, '[]'::jsonb)
+    INTO v_random_ability_count, v_class_random_abilities
     FROM classes c
     WHERE c.id = p_class_id;
 
     SELECT jsonb_agg(jsonb_build_object('key', a.key))
-    INTO v_abilities
+    INTO v_fixed_abilities
     FROM abilities a
     WHERE a.class_id = p_class_id
       AND a.is_random = false;
 
-    IF v_abilities IS NULL THEN
-        v_abilities := '[]'::jsonb;
+    IF v_fixed_abilities IS NULL THEN
+        v_fixed_abilities := '[]'::jsonb;
     END IF;
 
     IF v_random_ability_count > 0 THEN
-        v_abilities := v_abilities || COALESCE((
-            SELECT jsonb_agg(jsonb_build_object('key', a.key))
-            FROM (
-                SELECT key
-                FROM abilities
-                WHERE class_id = p_class_id
-                  AND is_random = true
-                ORDER BY random()
-                LIMIT v_random_ability_count
-            ) a
-        ), '[]'::jsonb);
+        WITH rolled_random AS (
+            SELECT key, roll_value
+            FROM abilities
+            WHERE class_id = p_class_id
+              AND is_random = true
+            ORDER BY random()
+            LIMIT v_random_ability_count
+        )
+        SELECT
+            COALESCE(jsonb_agg(jsonb_build_object('key', key)), '[]'::jsonb),
+            COALESCE(jsonb_agg(granted_item) FILTER (WHERE granted_item IS NOT NULL), '[]'::jsonb)
+        INTO v_random_abilities, v_granted_items
+        FROM (
+            SELECT
+                rr.key,
+                COALESCE(
+                    build_granted_class_item(
+                        v_class_random_abilities -> (rr.roll_value - 1) ->> 'gainItem'
+                    ),
+                    build_granted_class_pet(
+                        v_class_random_abilities -> (rr.roll_value - 1) ->> 'gainPet'
+                    )
+                ) AS granted_item
+            FROM rolled_random rr
+        ) resolved_random;
     END IF;
 
-    RETURN v_abilities;
+    RETURN jsonb_build_object(
+        'abilities', COALESCE(v_fixed_abilities, '[]'::jsonb) || COALESCE(v_random_abilities, '[]'::jsonb),
+        'granted_items', COALESCE(v_granted_items, '[]'::jsonb)
+    );
 END;
+$$;
+
+CREATE OR REPLACE FUNCTION build_character_abilities(p_class_id INTEGER) RETURNS JSONB
+    LANGUAGE sql AS $$
+    SELECT COALESCE(
+        build_character_ability_bundle(p_class_id)->'abilities',
+        '[]'::jsonb
+    );
 $$;
 
 CREATE OR REPLACE FUNCTION pick_character_personality() RETURNS JSONB
@@ -273,6 +543,7 @@ DECLARE
     stats JSONB;
     item_pool JSONB;
     equipment_bundle JSONB;
+    ability_bundle JSONB;
     ability_keys JSONB;
     personality JSONB;
 
@@ -288,10 +559,12 @@ BEGIN
     stats := roll_character_stats(char_class_id);
     omens_val := roll_character_omens();
 
-    item_pool := build_character_item_pool(char_class_id);
-    equipment_bundle := auto_equip_character_items(item_pool);
+    ability_bundle := build_character_ability_bundle(char_class_id);
+    ability_keys := COALESCE(ability_bundle->'abilities', '[]'::jsonb);
 
-    ability_keys := build_character_abilities(char_class_id);
+    item_pool := build_character_item_pool(char_class_id, (stats->>'presence')::INTEGER)
+        || COALESCE(ability_bundle->'granted_items', '[]'::jsonb);
+    equipment_bundle := auto_equip_character_items(item_pool);
     personality := pick_character_personality();
 
     INSERT INTO characters (
