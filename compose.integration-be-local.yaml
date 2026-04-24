@@ -41,8 +41,8 @@ services:
       BETTER_AUTH_SECRET: integration-secret
       BETTER_AUTH_URL: http://localhost:3001
       AUTH_BASE_URL: http://localhost:3001/auth
-      EMAIL_PEPPER: REMOVED_SECRET
-      EMAIL_ENCRYPTION_KEY: REMOVED_SECRET
+      EMAIL_PEPPER: x8MdxZyAkFOxthKH2fwh9fVQ+cFVwO2Bm7wdtuyeERg=
+      EMAIL_ENCRYPTION_KEY: c80e44590e908ad4059e67cfdf246a8b21b8f7d726c850064006283fc8b8290a
       MAIL_USER: integration@example.com
       MAIL_PASS: integration
       TURNSTILE_SECRET_KEY: ""
