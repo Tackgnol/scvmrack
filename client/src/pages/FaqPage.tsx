@@ -9,7 +9,7 @@ import {
     Button,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import { customStyles } from '@/theme/morkBorgTheme';
+import { customStyles, morkBorgColors } from '@/theme/morkBorgTheme';
 import {Seo} from '@/seo/Seo';
 
 interface FaqItem {
@@ -56,6 +56,10 @@ export function FaqPage() {
         {
             question: t('faq.bugReport.q', 'I found a bug! How do I report it?'),
             answer: t('faq.bugReport.a', 'Please report bugs via GitHub issues or contact us directly. We appreciate your help making Scvm Rack better!'),
+        },
+        {
+            question: t('faq.howCanIHelp.q', 'How can I help?'),
+            answer: t('faq.howCanIHelp.a', 'You can support the project on Buy Me a Coffee: buymeacoffee.com/tackgnols.rpg.tools. Every contribution helps keeping the rack alive!'),
         },
     ];
 
@@ -117,7 +121,30 @@ export function FaqPage() {
                             </AccordionSummary>
                             <AccordionDetails>
                                 <Typography sx={customStyles.faqPage.answer}>
-                                    {faq.answer}
+                                    {faq.answer.split(/(\s+)/).map((segment, i) => {
+                                        const urlMatch = segment.match(/^(https?:\/\/[^\s]+?)([.,!?;:)]*)$/);
+                                        if (urlMatch) {
+                                            const [, url, trailing] = urlMatch;
+                                            return (
+                                                <span key={i}>
+                                                    <a
+                                                        href={url}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        style={{
+                                                            color: morkBorgColors.pink,
+                                                            textDecoration: 'underline',
+                                                            fontWeight: 'bold',
+                                                        }}
+                                                    >
+                                                        {url}
+                                                    </a>
+                                                    {trailing}
+                                                </span>
+                                            );
+                                        }
+                                        return <span key={i}>{segment}</span>;
+                                    })}
                                 </Typography>
                             </AccordionDetails>
                         </Accordion>

@@ -5,11 +5,17 @@
 -- This file defines only the canonical (uuid, text) signature.
 -- The cleanup migration handles dropping the stale overload on prod.
 
+-- Drop the old signature so the overload with p_presence is the only definition.
+DROP FUNCTION IF EXISTS resolve_character_inventory_items(jsonb, text, boolean);
+
 -- Shared resolver for equipment/storage item arrays.
+-- p_presence is used to scale the default pip count for presence-scaled consumables
+-- (lantern-oil, medicine-chest) so the behavior matches generate_character.
 CREATE OR REPLACE FUNCTION resolve_character_inventory_items(
     p_items jsonb,
     p_locale text,
-    p_scroll_default_uses boolean DEFAULT false
+    p_scroll_default_uses boolean DEFAULT false,
+    p_presence int DEFAULT 10
 ) RETURNS jsonb
     LANGUAGE sql AS $$
     SELECT COALESCE(jsonb_agg(
@@ -51,6 +57,16 @@ CREATE OR REPLACE FUNCTION resolve_character_inventory_items(
                     AND jsonb_array_length(item->'uses') > 0 THEN item->'uses'
                 WHEN p.hp IS NOT NULL AND p.hp > 0 THEN to_jsonb(array_fill(true, ARRAY[LEAST(p.hp, 50)]))
                 WHEN p_scroll_default_uses AND item->>'key' LIKE 'scroll.%' THEN '[false,false,false,false]'::jsonb
+                WHEN e_m.default_amount IS NOT NULL
+                    AND e_m.default_amount > 0
+                    AND 'consumable' = ANY(e_m.tags)
+                THEN to_jsonb(array_fill(false, ARRAY[
+                    GREATEST(0, e_m.default_amount + CASE
+                        WHEN e_m.key IN ('equipment.lantern-oil', 'equipment.medicine-chest')
+                            THEN roll_to_modifier(p_presence)
+                        ELSE 0
+                    END)
+                ]))
                 ELSE COALESCE(item->'uses', '[]'::jsonb)
             END,
             'ammo_type', COALESCE(w.ammo_type, e_m.ammo_type),
@@ -450,8 +466,8 @@ BEGIN
         RETURN;
     END IF;
 
-    resolved_equipment := resolve_character_inventory_items(result.equipment, p_locale, true);
-    resolved_storage := resolve_character_inventory_items(result.storage, p_locale, false);
+    resolved_equipment := resolve_character_inventory_items(result.equipment, p_locale, true, result.presence);
+    resolved_storage := resolve_character_inventory_items(result.storage, p_locale, false, result.presence);
     resolved_weapons := resolve_character_equipped_weapons(result.equipped_weapons, p_locale);
     resolved_armor := resolve_character_equipped_armor(result.equipped_armor, p_locale);
     resolved_abilities := resolve_character_abilities(result.abilities, p_locale);

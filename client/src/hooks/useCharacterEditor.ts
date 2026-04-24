@@ -49,6 +49,13 @@ export function useCharacterEditor(
                 onSuccess: () => {
                     retryCountRef.current = 0;
                     trackCharacterEdited(flushedPatches, locale ?? 'en');
+                    // Refetch so server-hydrated fields (e.g. consumable `uses` derived
+                    // from default_amount + presence) replace the optimistic stand-in.
+                    if (flushedPatches.some((p) => p.kind === 'equipment-add')) {
+                        queryClient.invalidateQueries({
+                            queryKey: getCharacterKey(characterId, locale),
+                        });
+                    }
                 },
                 onError: (error: any) => {
                     console.error("Failed to save:", error);
