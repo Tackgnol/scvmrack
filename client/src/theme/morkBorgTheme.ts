@@ -1230,7 +1230,7 @@ export const customStyles = {
   // Header styles
   header: {
     paper: {
-      p: 2.5,
+      p: { xs: 1.5, sm: 2.5 },
       mb: 2.5,
       transform: 'rotate(-0.5deg)',
       position: 'relative' as const,
@@ -1255,23 +1255,23 @@ export const customStyles = {
     },
     title: (isMobile: boolean) => ({
       color: morkBorgColors.yellow,
-      fontSize: isMobile ? '2.8rem' : 'clamp(3.5rem, 10vw, 5.5rem)',
+      fontSize: isMobile ? '2.2rem' : 'clamp(3.5rem, 10vw, 5.5rem)',
       lineHeight: 0.85,
       '& span': { color: morkBorgColors.pink },
     }),
     titleSecondLine: (isMobile: boolean) => ({
       fontFamily: "'Black Ops One', cursive",
       color: morkBorgColors.yellow,
-      fontSize: isMobile ? '2.4rem' : 'clamp(3rem, 9vw, 4.8rem)',
+      fontSize: isMobile ? '2rem' : 'clamp(3rem, 9vw, 4.8rem)',
       lineHeight: 0.9,
       letterSpacing: '0.05em',
       mt: 0.25,
     }),
     subtitle: (isMobile: boolean) => ({
       color: morkBorgColors.white,
-      letterSpacing: isMobile ? '0.2em' : '0.5em',
+      letterSpacing: isMobile ? '0.15em' : '0.5em',
       mt: 1,
-      fontSize: isMobile ? '0.7rem' : '1rem',
+      fontSize: isMobile ? '0.6rem' : '1rem',
     }),
     mobileMenuButton: {
       display: 'flex',
@@ -1772,6 +1772,36 @@ export const customStyles = {
     actionIcon: {
       fontSize: '1rem',
       color: morkBorgColors.yellow,
+    },
+    infoPeg: {
+      position: 'absolute' as const,
+      top: -12,
+      left: -12,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      width: 26,
+      height: 26,
+      borderRadius: '50%',
+      bgcolor: morkBorgColors.white,
+      color: morkBorgColors.black,
+      border: `2px solid ${morkBorgColors.black}`,
+      boxShadow: `2px 2px 0 ${morkBorgColors.black}`,
+      fontFamily: "'Antonio', sans-serif",
+      fontSize: '0.75rem',
+      fontWeight: 'bold',
+      cursor: 'pointer',
+      zIndex: 1,
+      userSelect: 'none' as const,
+      WebkitTapHighlightColor: 'transparent',
+      transition: 'transform 0.1s ease-out',
+      '&:hover': {
+        transform: 'scale(1.2)',
+        bgcolor: morkBorgColors.yellow,
+      },
+      '&:active': {
+        transform: 'scale(0.85)',
+      },
     },
     ammoPeg: {
       position: 'absolute' as const,

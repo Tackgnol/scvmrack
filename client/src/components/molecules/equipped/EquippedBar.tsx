@@ -46,6 +46,7 @@ export default function EquippedBar() {
         type={t('equipment.weapon')}
         name={mainWeapon?.name ?? t('equipment.unarmed')}
         detail={mainWeapon?.dice ? formatDice(mainWeapon.dice) : 'd2'}
+        description={mainWeapon?.description || undefined}
         noneName={t('equipment.none')}
         onClick={canOpenWeaponSlot0 ? (event) => openWeaponMenu(event, 0) : undefined}
         dataTestId="equipped-weapon-slot-0"
@@ -60,6 +61,7 @@ export default function EquippedBar() {
           type={t('equipment.offHand')}
           name={offhandWeapon.name ?? t('equipment.none')}
           detail={offhandWeapon.dice ? formatDice(offhandWeapon.dice) : ''}
+          description={offhandWeapon.description || undefined}
           noneName={t('equipment.none')}
           onClick={canOpenWeaponSlot1 ? (event) => openWeaponMenu(event, 1) : undefined}
           dataTestId="equipped-weapon-slot-1"

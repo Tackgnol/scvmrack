@@ -1,5 +1,5 @@
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import { Box, Typography } from '@mui/material';
+import { Box, Tooltip, Typography } from '@mui/material';
 import {
   forwardRef,
   type KeyboardEvent,
@@ -13,6 +13,7 @@ interface EquippedQuickCardProps {
   type: string;
   name: string;
   detail?: string;
+  description?: string;
   noneName: string;
   onClick?: (event: MouseEvent<HTMLElement>) => void;
   dataTestId?: string;
@@ -23,7 +24,7 @@ interface EquippedQuickCardProps {
 
 const EquippedQuickCard = forwardRef<HTMLDivElement, EquippedQuickCardProps>(
   function EquippedQuickCard(
-    { icon, type, name, detail, noneName, onClick, dataTestId, actionLabel, ammoCount, onAmmoUse },
+    { icon, type, name, detail, description, noneName, onClick, dataTestId, actionLabel, ammoCount, onAmmoUse },
     ref,
   ) {
     const hasClick = Boolean(onClick);
@@ -66,6 +67,33 @@ const EquippedQuickCard = forwardRef<HTMLDivElement, EquippedQuickCardProps>(
             </Typography>
           )}
         </Box>
+        {description && (
+          <Tooltip
+            title={description}
+            placement="top"
+            enterTouchDelay={0}
+            leaveTouchDelay={2000}
+            arrow
+          >
+            <Box
+              component="span"
+              role="button"
+              tabIndex={0}
+              aria-label={description}
+              onClick={(e: MouseEvent<HTMLElement>) => e.stopPropagation()}
+              onKeyDown={(e: KeyboardEvent<HTMLElement>) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }
+              }}
+              sx={customStyles.equippedBar.infoPeg}
+              className="print-hidden"
+            >
+              i
+            </Box>
+          </Tooltip>
+        )}
         {ammoCount !== null && ammoCount !== undefined && (
           <Box
             component="span"

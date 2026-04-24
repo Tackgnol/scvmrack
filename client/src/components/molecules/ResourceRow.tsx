@@ -128,8 +128,9 @@ export default function ResourcesRow() {
 
   const hpAdjustButtonSx = {
     decrease: {
-      height: { xs: 26, sm: 24 },
-      minWidth: { xs: 38, sm: 34 },
+      height: { xs: 40, sm: 24 },
+      width: { xs: 32, sm: 34 },
+      minWidth: { xs: 32, sm: 34 },
       border: `2px solid ${morkBorgColors.black}`,
       borderRadius: 0,
       p: 0,
@@ -155,8 +156,9 @@ export default function ResourcesRow() {
       },
     },
     increase: {
-      height: { xs: 26, sm: 24 },
-      minWidth: { xs: 38, sm: 34 },
+      height: { xs: 40, sm: 24 },
+      width: { xs: 32, sm: 34 },
+      minWidth: { xs: 32, sm: 34 },
       border: `2px solid ${morkBorgColors.black}`,
       borderRadius: 0,
       p: 0,
@@ -239,11 +241,13 @@ export default function ResourcesRow() {
                   ...customStyles.hpInput,
                   width: { xs: 56, sm: 50 },
                 }}
-                inputProps={{
-                  "data-testid": "hp-input",
-                  "aria-label": t('stats.hitPoints'),
-                  min: 0,
-                  step: 1,
+                slotProps={{
+                  htmlInput: {
+                    "data-testid": "hp-input",
+                    "aria-label": t('stats.hitPoints'),
+                    min: 0,
+                    step: 1,
+                  }
                 }}
               />
               <Typography
@@ -291,8 +295,8 @@ export default function ResourcesRow() {
               sx={{
                 ...hpAdjustButtonSx.decrease,
                 position: 'absolute',
-                left: { xs: -17, sm: -16 },
-                top: { xs: '13%', sm: '12%' },
+                left: { xs: -16, sm: -16 },
+                top: { xs: '50%', sm: '12%' },
                 transform: 'translateY(-50%) rotate(-3deg)',
                 zIndex: 1,
                 '&:hover': {
@@ -329,8 +333,8 @@ export default function ResourcesRow() {
               sx={{
                 ...hpAdjustButtonSx.increase,
                 position: 'absolute',
-                right: { xs: -17, sm: -16 },
-                top: { xs: '73%', sm: '72%' },
+                right: { xs: -16, sm: -16 },
+                top: { xs: '50%', sm: '72%' },
                 transform: 'translateY(-50%) rotate(3deg)',
                 zIndex: 1,
                 '&:hover': {
@@ -419,9 +423,11 @@ export default function ResourcesRow() {
             }
             size="small"
             sx={customStyles.resourceInput}
-            inputProps={{
-              "data-testid": "silver-input",
-              "aria-label": t('stats.silver'),
+            slotProps={{
+              htmlInput: {
+                "data-testid": "silver-input",
+                "aria-label": t('stats.silver'),
+              }
             }}
           />
         </Paper>
@@ -449,8 +455,8 @@ export default function ResourcesRow() {
                 disabled={currentTier <= 0}
                 color="primary"
                 sx={{
-                  width: { xs: 44, sm: 30 },
-                  height: { xs: 44, sm: 30 },
+                  width: { xs: 36, sm: 30 },
+                  height: { xs: 40, sm: 30 },
                   border: `2px solid ${morkBorgColors.yellow}`,
                   borderRadius: 0,
                   p: 0,
@@ -480,8 +486,8 @@ export default function ResourcesRow() {
                 disabled={currentTier >= maxTier}
                 color="primary"
                 sx={{
-                  width: { xs: 44, sm: 30 },
-                  height: { xs: 44, sm: 30 },
+                  width: { xs: 36, sm: 30 },
+                  height: { xs: 40, sm: 30 },
                   border: `2px solid ${morkBorgColors.yellow}`,
                   borderRadius: 0,
                   p: 0,

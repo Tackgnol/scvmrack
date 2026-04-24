@@ -275,7 +275,7 @@
   "nav": {
     "home": "Sheet",
     "characters": "Scvms",
-    "faq": "Wtf?",
+    "faq": "FAQ",
     "release": "log"
   },
   "characters": {
@@ -344,6 +344,10 @@
     "bugReport": {
       "q": "I found a bug! How do I report it?",
       "a": "Please report bugs via GitHub issues or contact us directly. We appreciate your help making Scvm Rack better!"
+    },
+    "howCanIHelp": {
+      "q": "How can I help?",
+      "a": "You can support the project on Buy Me a Coffee: https://ko-fi.com/tackgnols_rpgtools. Every contribution helps keeping the rack alive!"
     },
     "morkBorgCredit": "MÖRK BORG is © Free League Publishing. This is an independent fan project."
   },

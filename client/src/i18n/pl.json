@@ -275,7 +275,7 @@
   "nav": {
     "home": "Karta",
     "characters": "Scvmy",
-    "faq": "Co?",
+    "faq": "FAQ",
     "release": "Zmiany"
   },
   "characters": {
@@ -344,6 +344,10 @@
     "bugReport": {
       "q": "Znalazłem błąd! Jak go zgłosić?",
       "a": "Zgłoś błędy przez GitHub issues lub skontaktuj się z nami bezpośrednio. Doceniamy pomoc w ulepszaniu Scvm Rack!"
+    },
+    "howCanIHelp": {
+      "q": "Jak mogę pomóc?",
+      "a": "Możesz wesprzeć projekt na Buy Me a Coffee: https://ko-fi.com/tackgnols_rpgtools. Każdy wkład pomaga utrzymać rack przy życiu!"
     },
     "morkBorgCredit": "MÖRK BORG jest © Free League Publishing. To jest niezależny projekt fanowski."
   },

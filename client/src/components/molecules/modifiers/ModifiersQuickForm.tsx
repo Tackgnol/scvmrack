@@ -55,7 +55,8 @@ export default function ModifiersQuickForm({
         pt: 2,
         borderTop: `2px solid ${morkBorgColors.grey}`,
         display: 'grid',
-        gridTemplateColumns: { xs: '1fr auto', sm: '1fr auto auto auto auto auto' },
+        gridTemplateColumns: { xs: '1fr 1fr', sm: '1fr auto auto auto auto auto' },
+        gridTemplateRows: { xs: 'auto auto auto auto', sm: 'auto' },
         gap: { xs: 1, sm: 0.75 },
         alignItems: 'center',
       }}
@@ -70,15 +71,18 @@ export default function ModifiersQuickForm({
         size="small"
         sx={{
           gridColumn: { xs: '1 / -1', sm: 'auto' },
+          gridRow: { xs: 1, sm: 'auto' },
           '& .MuiOutlinedInput-root': {
             fontFamily: "'Antonio', sans-serif",
             fontSize: { xs: '0.9rem', sm: '0.8rem' },
             letterSpacing: '0.05em',
           },
         }}
-        inputProps={{
-          'data-testid': 'quick-mod-name-input',
-          'aria-label': t('modifiers.name'),
+        slotProps={{
+          htmlInput: {
+            'data-testid': 'quick-mod-name-input',
+            'aria-label': t('modifiers.name'),
+          },
         }}
       />
 
@@ -87,12 +91,15 @@ export default function ModifiersQuickForm({
         onChange={(event: SelectChangeEvent<LocalStatistic>) =>
           onStatChange(event.target.value as LocalStatistic)
         }
-        inputProps={{ 'aria-label': t('modifiers.statistic', 'Modifier statistic') }}
+        slotProps={{ htmlInput: { 'aria-label': t('modifiers.statistic', 'Modifier statistic') } }}
         size="small"
         sx={{
+          gridColumn: { xs: '1 / 2', sm: 'auto' },
+          gridRow: { xs: 2, sm: 'auto' },
           bgcolor: morkBorgColors.grey,
           color: morkBorgColors.yellow,
-          minWidth: 75,
+          minWidth: { xs: 0, sm: 75 },
+          width: { xs: '100%', sm: 'auto' },
           '& .MuiSelect-select': {
             fontFamily: "'Bebas Neue', sans-serif",
             fontSize: { xs: '0.95rem', sm: '0.85rem' },
@@ -117,6 +124,8 @@ export default function ModifiersQuickForm({
         onKeyDown={handleEnterSubmit}
         size="small"
         sx={{
+          gridColumn: { xs: '2 / 3', sm: 'auto' },
+          gridRow: { xs: 2, sm: 'auto' },
           width: { xs: '100%', sm: 60 },
           '& .MuiOutlinedInput-root': {
             fontFamily: "'Bebas Neue', sans-serif",
@@ -124,9 +133,11 @@ export default function ModifiersQuickForm({
             textAlign: 'center',
           },
         }}
-        inputProps={{
-          'data-testid': 'quick-mod-value-input',
-          'aria-label': t('modifiers.value'),
+        slotProps={{
+          htmlInput: {
+            'data-testid': 'quick-mod-value-input',
+            'aria-label': t('modifiers.value'),
+          },
         }}
       />
 
@@ -135,12 +146,15 @@ export default function ModifiersQuickForm({
         onChange={(event: SelectChangeEvent<ScopeOption>) =>
           onScopeChange(event.target.value as ScopeOption)
         }
-        inputProps={{ 'aria-label': t('modifiers.scope') }}
+        slotProps={{ htmlInput: { 'aria-label': t('modifiers.scope') } }}
         size="small"
         sx={{
+          gridColumn: { xs: '1 / 2', sm: 'auto' },
+          gridRow: { xs: 3, sm: 'auto' },
           bgcolor: morkBorgColors.grey,
           color: morkBorgColors.yellow,
-          minWidth: 90,
+          minWidth: { xs: 0, sm: 90 },
+          width: { xs: '100%', sm: 'auto' },
           '& .MuiSelect-select': {
             fontFamily: "'Antonio', sans-serif",
             fontSize: { xs: '0.72rem', sm: '0.6rem' },
@@ -161,7 +175,8 @@ export default function ModifiersQuickForm({
         onClick={onSubmit}
         data-testid="quick-mod-add-btn"
         sx={{
-          gridColumn: { xs: '1 / 2', sm: 'auto' },
+          gridColumn: { xs: '2 / 3', sm: 'auto' },
+          gridRow: { xs: 3, sm: 'auto' },
           minWidth: 'auto',
           minHeight: { xs: 44, sm: 36 },
           px: 2.5,
@@ -189,8 +204,9 @@ export default function ModifiersQuickForm({
           aria-label={t('modifiers.advancedTooltip')}
           data-testid="advanced-mod-btn"
           sx={{
-            gridColumn: { xs: '2 / 3', sm: 'auto' },
-            justifySelf: 'end',
+            gridColumn: { xs: '1 / -1', sm: 'auto' },
+            gridRow: { xs: 4, sm: 'auto' },
+            justifySelf: 'center',
             width: { xs: 44, sm: 36 },
             height: { xs: 44, sm: 36 },
             borderRadius: 0,
