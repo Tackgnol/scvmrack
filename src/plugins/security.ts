@@ -10,8 +10,8 @@ export default fp(async function securityPlugin(fastify: FastifyInstance) {
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
-        // Allow inline scripts and script attributes
-        scriptSrc: ["'self'", "'unsafe-inline'"],
+        // Allow inline scripts, script attributes, and Cloudflare Turnstile
+        scriptSrc: ["'self'", "'unsafe-inline'", "https://challenges.cloudflare.com"],
         scriptSrcAttr: ["'unsafe-inline'"],
         // Allowed Google Fonts stylesheets
         styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
@@ -20,6 +20,8 @@ export default fp(async function securityPlugin(fastify: FastifyInstance) {
         // Allowed the Flags API for images
         imgSrc: ["'self'", "data:", "https://flagsapi.com"],
         connectSrc: ["'self'"],
+        // Cloudflare Turnstile renders its widget in an iframe
+        frameSrc: ["https://challenges.cloudflare.com"],
         frameAncestors: ["'none'"],
       },
     },

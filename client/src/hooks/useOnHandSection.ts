@@ -53,14 +53,11 @@ export function useOnHandSection() {
 
     const handleAddItem = useCallback(
         async (hit: ItemSearchHit) => {
-            console.log(hit)
             const loadingKey = `${hit.itemType}-${hit.id}`;
             setLoadingItems((prev) => [...prev, hit]);
 
             try {
-                console.log(hit);
                 const baseUrl = import.meta.env.VITE_BACKEND_URL ?? '';
-                console.log(baseUrl, `/equipment/${hit.itemType}/${hit.id}`)
                 const itemUrl = new URL(`${baseUrl}/equipment/${hit.itemType}/${hit.id}`);
                 if (hit.key) {
                     itemUrl.searchParams.set('key', hit.key);
@@ -114,8 +111,7 @@ export function useOnHandSection() {
                         uses: initialUses,
                     });
                 }
-            } catch (error) {
-                console.log('Error fetching item details:', error);
+            } catch {
                 return;
             } finally {
                 setLoadingItems((prev) =>
