@@ -4,7 +4,7 @@ import ItemAutocomplete from '@components/molecules/ItemAutocomplete';
 import { Box, Button, Divider, TextField, Typography } from '@mui/material';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { customStyles } from '../../theme/morkBorgTheme';
+import { customStyles } from '@theme/morkBorgTheme.ts';
 import MorkBorgModal from '../molecules/modal/MorkBorgModal';
 
 interface GearSlotProps {
@@ -48,7 +48,6 @@ export function EquipmentSection() {
   const { character, updateWeaponField, updateArmorField } = useCharacter();
   const { t } = useTranslation();
 
-  // 4. Second section Item check (Empty for now)
   const specialItems: string[] = [];
 
   // Modal State
@@ -105,6 +104,7 @@ export function EquipmentSection() {
   // 3. Add Item Logic
   const handleAutocompleteSelect = (item: ItemSearchHit) => {
     // Find first empty weapon slot
+    console.log(item);
     const w0Empty = !character?.equippedWeapons?.[0]?.name;
     const w1Empty = !character?.equippedWeapons?.[1]?.name;
 
