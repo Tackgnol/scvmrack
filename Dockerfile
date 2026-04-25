@@ -1,32 +1,29 @@
-# --- Stage 1: build the React client ---------------------------------------
-FROM node:22-alpine AS client-builder
-
-WORKDIR /build
-
-COPY client/package*.json ./
-RUN npm ci
-
-COPY client ./
-RUN npm run build
-# vite outputs to /build/public (per client/vite.config.ts)
-
-# --- Stage 2: build the backend + assemble final image ----------------------
 FROM node:22-alpine
 
 WORKDIR /app
 
-COPY --chown=node:node package*.json ./
-RUN npm ci
+# Copy package files first for better caching
+COPY package*.json ./
+RUN npm install
 
-COPY --chown=node:node . .
-RUN npm run build:ts
+# Copy the rest of the code
+COPY . .
 
-# Place built client assets where Fastify's static handler serves from
-# (src/routes/root.ts registers @fastify/static with root = process.cwd()/dist)
-COPY --from=client-builder --chown=node:node /build/public ./dist/public
+# 1. Declare the ARGs so Docker knows to expect them from docker-compose
+ARG VITE_BACKEND_URL
+ARG VITE_TURNSTILE_SITE_KEY
+ARG VITE_SITE_URL
 
-USER node
+# 2. Set them as ENV vars so Vite can see them during the build
+ENV VITE_BACKEND_URL=$VITE_BACKEND_URL
+ENV VITE_TURNSTILE_SITE_KEY=$VITE_TURNSTILE_SITE_KEY
+ENV VITE_SITE_URL=$VITE_SITE_URL
 
+# 3. Build the frontend! This bakes the real URLs into the dist/ files
+RUN npm run build 
+
+# (Assuming this is a monorepo where Fastify is also in this container)
 EXPOSE 3000
 
-CMD ["node", "dist/server.js"]
+# 4. Start your Fastify backend (which will serve the newly built dist/ folder)
+CMD ["npm", "start"]
