@@ -10,7 +10,9 @@ export default fp(async function securityPlugin(fastify: FastifyInstance) {
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
-        scriptSrc: ["'self'"],
+        // Allow inline scripts and script attributes
+        scriptSrc: ["'self'", "'unsafe-inline'"],
+        scriptSrcAttr: ["'unsafe-inline'"],
         // Allowed Google Fonts stylesheets
         styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
         // Allowed the actual font files to download from Gstatic
