@@ -61,19 +61,26 @@ export default function ItemAutocomplete({
             onChange={handleSelect}
             getOptionLabel={(o) => o.name}
             isOptionEqualToValue={(a, b) =>
-                a.id === b.id && a.itemType === b.itemType
+                !!a && !!b && a.id === b.id && a.itemType === b.itemType
             }
             filterOptions={(x) => x}
-            renderOption={(props, option) => (
-                <Box component="li" {...props} key={`${option.itemType}-${option.id}`}>
-                    <Typography sx={customStyles.itemAutocomplete.itemName}>
-                        {option.name}&nbsp;
-                    </Typography>
-                    <Typography sx={customStyles.itemAutocomplete.itemType}>
-                        {(option.itemType ?? 'equipment').toUpperCase()}
-                    </Typography>
-                </Box>
-            )}
+            renderOption={(props, option) => {
+                const { key: _ignoredKey, ...rest } = props;
+                return (
+                    <Box
+                        component="li"
+                        key={`${option.itemType}-${option.id}`}
+                        {...rest}
+                    >
+                        <Typography sx={customStyles.itemAutocomplete.itemName}>
+                            {option.name}&nbsp;
+                        </Typography>
+                        <Typography sx={customStyles.itemAutocomplete.itemType}>
+                            {(option.itemType ?? 'equipment').toUpperCase()}
+                        </Typography>
+                    </Box>
+                );
+            }}
             renderInput={(params) => (
                 <TextField
                     {...params}
