@@ -47,7 +47,7 @@ export default function ItemAutocomplete({
             resetAutocomplete();
             return;
         }
-
+        console.log('Calling onSelect with:', value);
         onSelect(value);
         resetAutocomplete();
     };
