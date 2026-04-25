@@ -23,7 +23,7 @@ RUN npm run build:ts
 
 # Place built client assets where Fastify's static handler serves from
 # (src/routes/root.ts registers @fastify/static with root = process.cwd()/dist)
-COPY --from=client-builder --chown=node:node /build/public ./dist
+COPY --from=client-builder --chown=node:node /build/public ./dist/public
 
 USER node
 
