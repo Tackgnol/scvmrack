@@ -19,6 +19,11 @@ x-db-env: &db-env
   DATABASE_HOST: db
   DATABASE_PORT: 5432
 
+x-build-args: &build-args
+  VITE_BACKEND_URL: ${VITE_BACKEND_URL:?VITE_BACKEND_URL is required}
+  VITE_TURNSTILE_SITE_KEY: ${VITE_TURNSTILE_SITE_KEY:-}
+  VITE_SITE_URL: ${VITE_SITE_URL:-}
+
 services:
   db:
     image: postgres:16-alpine
@@ -40,6 +45,8 @@ services:
     pull_policy: never
     build:
       context: .
+      args:
+        <<: *build-args
     command: ["node", "scripts/migrate.js"]
     environment:
       <<: *db-env
@@ -53,6 +60,8 @@ services:
     pull_policy: never
     build:
       context: .
+      args:
+        <<: *build-args
     restart: unless-stopped
     ports:
       - "3000:3000"
