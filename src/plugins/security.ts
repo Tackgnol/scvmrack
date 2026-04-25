@@ -11,8 +11,12 @@ export default fp(async function securityPlugin(fastify: FastifyInstance) {
       directives: {
         defaultSrc: ["'self'"],
         scriptSrc: ["'self'"],
-        styleSrc: ["'self'", "'unsafe-inline'"],
-        imgSrc: ["'self'", "data:"],
+        // Allowed Google Fonts stylesheets
+        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+        // Allowed the actual font files to download from Gstatic
+        fontSrc: ["'self'", "https://fonts.gstatic.com"],
+        // Allowed the Flags API for images
+        imgSrc: ["'self'", "data:", "https://flagsapi.com"],
         connectSrc: ["'self'"],
         frameAncestors: ["'none'"],
       },
@@ -37,7 +41,7 @@ export default fp(async function securityPlugin(fastify: FastifyInstance) {
   const hmacKey = process.env.BETTER_AUTH_SECRET || process.env.SESSION_SECRET;
   if (!hmacKey) {
     throw new Error(
-      'BETTER_AUTH_SECRET or SESSION_SECRET must be set for CSRF protection'
+        'BETTER_AUTH_SECRET or SESSION_SECRET must be set for CSRF protection'
     );
   }
 
