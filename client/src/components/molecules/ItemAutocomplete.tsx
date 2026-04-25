@@ -1,8 +1,8 @@
 import {ItemSearchHit, useItemSearch} from '@/hooks/useEquipmentSearch.ts';
+import {customStyles} from '@/theme/morkBorgTheme';
 import {Autocomplete, Box, TextField, Typography} from '@mui/material';
 import {SyntheticEvent, useState} from 'react';
 import {useTranslation} from 'react-i18next';
-import { customStyles } from '@/theme/morkBorgTheme';
 
 interface ItemAutocompleteProps {
     onSelect: (item: ItemSearchHit) => void;
@@ -80,9 +80,11 @@ export default function ItemAutocomplete({
                     label={label ?? t('equipment.addItem')}
                     placeholder={placeholder}
                     size="small"
-                    inputProps={{
-                        ...params.inputProps,
-                        "data-testid": "equipment-search-input"
+                    slotProps={{
+                        htmlInput: {
+                            ...params.inputProps,
+                            "data-testid": "equipment-search-input"
+                        }
                     }}
                 />
             )}
