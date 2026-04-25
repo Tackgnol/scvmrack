@@ -60,6 +60,7 @@ export function useOnHandSection() {
             try {
                 console.log(hit);
                 const baseUrl = import.meta.env.VITE_BACKEND_URL ?? '';
+                console.log(baseUrl, `/equipment/${hit.itemType}/${hit.id}`)
                 const itemUrl = new URL(`${baseUrl}/equipment/${hit.itemType}/${hit.id}`);
                 if (hit.key) {
                     itemUrl.searchParams.set('key', hit.key);
