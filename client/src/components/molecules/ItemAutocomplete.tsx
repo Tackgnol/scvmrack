@@ -42,6 +42,7 @@ export default function ItemAutocomplete({
     };
 
     const handleSelect = (_: SyntheticEvent, value: ItemSearchHit | null) => {
+        console.log('Selected item:', value);
         if (!value) {
             resetAutocomplete();
             return;
