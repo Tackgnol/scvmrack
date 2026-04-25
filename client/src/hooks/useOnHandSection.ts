@@ -113,7 +113,8 @@ export function useOnHandSection() {
                         uses: initialUses,
                     });
                 }
-            } catch {
+            } catch (error) {
+                console.log('Error fetching item details:', error);
                 return;
             } finally {
                 setLoadingItems((prev) =>
