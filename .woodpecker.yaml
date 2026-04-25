@@ -12,6 +12,9 @@
 #   client_gateway
 #   better_auth_url
 #   auth_base_url
+#   vite_backend_url         <-- NEW: Add this to Woodpecker UI
+#   vite_turnstile_site_key  <-- NEW: Add this to Woodpecker UI
+#   vite_site_url            <-- NEW: Add this to Woodpecker UI
 
 when:
   - event: push
@@ -46,6 +49,7 @@ steps:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
+      # --- Backend Secrets ---
       DATABASE_PASSWORD:
         from_secret: database_password
       BETTER_AUTH_SECRET:
@@ -68,6 +72,15 @@ steps:
         from_secret: better_auth_url
       AUTH_BASE_URL:
         from_secret: auth_base_url
+
+      # --- Frontend Build Secrets ---
+      VITE_BACKEND_URL:
+        from_secret: vite_backend_url
+      VITE_TURNSTILE_SITE_KEY:
+        from_secret: vite_turnstile_site_key
+      VITE_SITE_URL:
+        from_secret: vite_site_url
+
     commands:
       # Build new image, run migrations, swap api. db keeps its volume.
       - docker compose -f compose.prod.yaml build
