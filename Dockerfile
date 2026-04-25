@@ -2,9 +2,13 @@ FROM node:22-alpine
 
 WORKDIR /app
 
-# Copy package files first for better caching
+# Copy package files first for better caching (both backend and frontend)
 COPY package*.json ./
+COPY client/package*.json ./client/
+
+# Install backend and frontend dependencies
 RUN npm install
+RUN cd client && npm install
 
 # Copy the rest of the code
 COPY . .
@@ -19,8 +23,8 @@ ENV VITE_BACKEND_URL=$VITE_BACKEND_URL
 ENV VITE_TURNSTILE_SITE_KEY=$VITE_TURNSTILE_SITE_KEY
 ENV VITE_SITE_URL=$VITE_SITE_URL
 
-# 3. Build the frontend! This bakes the real URLs into the dist/ files
-RUN npm run build 
+# 3. Build the frontend (the `build` script lives in client/package.json, not root)
+RUN cd client && npm run build
 
 # (Assuming this is a monorepo where Fastify is also in this container)
 EXPOSE 3000
