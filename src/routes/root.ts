@@ -20,9 +20,9 @@ const STATIC_PREFIXES = [
 ];
 
 const spaIndexCandidates = [
-  join(process.cwd(), 'dist', 'index.html'),
-  join(process.cwd(), 'public', 'index.html'),
   join(process.cwd(), 'client', 'public', 'index.html'),
+  join(process.cwd(), 'public', 'index.html'),
+  join(process.cwd(), 'dist', 'index.html'),
 ];
 
 const isApiRoute = (pathname: string): boolean =>
@@ -62,8 +62,9 @@ const root: FastifyPluginAsync = async (fastify): Promise<void> => {
   // 1. Static files (MUST come first)
   // ---------------------------------------
   await fastify.register(fastifyStatic, {
-    root: join(process.cwd(), 'dist'),
+    root: join(process.cwd(), 'client', 'public'),
     prefix: '/',
+    wildcard: false,
   });
 
   // ---------------------------------------
