@@ -1,15 +1,34 @@
-FROM node:22-alpine
-
+# ... (Top part stays the same) ...
 WORKDIR /app
 
-# Copy package files first for better caching
+# Copy the root/backend package.json
 COPY package*.json ./
+
+# NEW: Copy the frontend package.json into its correct subfolder
+COPY client/package*.json ./client/
+
+# Install backend dependencies (and frontend if you use npm workspaces)
 RUN npm install
 
-# Copy the rest of the code
+# NEW: Explicitly install frontend dependencies if not using workspaces
+RUN cd client && npm install
+
+# Copy the rest of your application code
 COPY . .
 
-EXPOSE 5173
+# --- Declare Build Arguments ---
+ARG VITE_BACKEND_URL
+ARG VITE_TURNSTILE_SITE_KEY
+ARG VITE_SITE_URL
 
-# Run Vite with the --host flag so it's accessible outside the container
-CMD ["npm", "run", "dev", "--", "--host"]
+# --- Set Environment Variables for Vite ---
+ENV VITE_BACKEND_URL=$VITE_BACKEND_URL
+ENV VITE_TURNSTILE_SITE_KEY=$VITE_TURNSTILE_SITE_KEY
+ENV VITE_SITE_URL=$VITE_SITE_URL
+
+# NEW: Navigate into the frontend folder to run the build!
+RUN cd client && npm run build
+
+# --- Expose and Start ---
+EXPOSE 3000
+CMD ["npm", "start"]
