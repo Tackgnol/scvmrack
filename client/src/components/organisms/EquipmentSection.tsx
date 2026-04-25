@@ -104,7 +104,6 @@ export function EquipmentSection() {
   // 3. Add Item Logic
   const handleAutocompleteSelect = (item: ItemSearchHit) => {
     // Find first empty weapon slot
-    console.log(item);
     const w0Empty = !character?.equippedWeapons?.[0]?.name;
     const w1Empty = !character?.equippedWeapons?.[1]?.name;
 
