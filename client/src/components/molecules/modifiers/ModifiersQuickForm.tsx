@@ -91,7 +91,7 @@ export default function ModifiersQuickForm({
         onChange={(event: SelectChangeEvent<LocalStatistic>) =>
           onStatChange(event.target.value as LocalStatistic)
         }
-        slotProps={{ htmlInput: { 'aria-label': t('modifiers.statistic', 'Modifier statistic') } }}
+        slotProps={{ input: { 'aria-label': t('modifiers.statistic', 'Modifier statistic') } }}
         size="small"
         sx={{
           gridColumn: { xs: '1 / 2', sm: 'auto' },
@@ -146,7 +146,7 @@ export default function ModifiersQuickForm({
         onChange={(event: SelectChangeEvent<ScopeOption>) =>
           onScopeChange(event.target.value as ScopeOption)
         }
-        slotProps={{ htmlInput: { 'aria-label': t('modifiers.scope') } }}
+        slotProps={{ input: { 'aria-label': t('modifiers.scope') } }}
         size="small"
         sx={{
           gridColumn: { xs: '1 / 2', sm: 'auto' },
