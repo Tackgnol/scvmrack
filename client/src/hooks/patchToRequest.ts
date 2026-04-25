@@ -19,15 +19,6 @@ export function patchToRequest(
                 } as NonNullable<CharacterUpdateRequest['equippedArmor']>
             };
 
-        case 'weapon':
-            return {
-                equippedWeapons: [{
-                    index: patch.index,
-                    field: patch.field,
-                    value: patch.value
-                }] as any
-            };
-
         case 'equipment-item':
         case 'equipment-add':
         case 'equipment-remove':
@@ -86,9 +77,12 @@ export function buildRequestFromPatches(
     for (const patch of patches) {
         switch (patch.kind) {
             case 'simple':
-            case 'weapon':
             case 'abilities':
                 result = {...result, ...patchToRequest(patch)};
+                break;
+
+            case 'weapon':
+                needsWeapons = true;
                 break;
 
             case 'equipment-item':
