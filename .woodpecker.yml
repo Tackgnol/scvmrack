@@ -1,0 +1,76 @@
+# Woodpecker pipeline. Runner is the same Oracle host that hosts prod.
+#
+# Secrets (set in Woodpecker UI, repo-scoped):
+#   database_password
+#   better_auth_secret
+#   email_pepper
+#   email_encryption_key
+#   mail_user
+#   mail_pass
+#   turnstile_secret_key
+#   client_origin
+#   client_gateway
+#   better_auth_url
+#   auth_base_url
+
+when:
+  - event: push
+    branch: master
+  - event: pull_request
+
+steps:
+  unit-test:
+    image: node:22-alpine
+    commands:
+      - npm ci
+      - npm --prefix client ci
+      - npm run test:unit
+
+  integration-test:
+    image: docker:27-cli
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    commands:
+      - docker compose -f compose.integration-be.yaml down --volumes --remove-orphans || true
+      - >
+        docker compose -f compose.integration-be.yaml up
+        --build --abort-on-container-exit --exit-code-from integration
+        db api integration
+      - docker compose -f compose.integration-be.yaml down --volumes --remove-orphans
+
+  deploy:
+    image: docker:27-cli
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      DATABASE_PASSWORD:
+        from_secret: database_password
+      BETTER_AUTH_SECRET:
+        from_secret: better_auth_secret
+      EMAIL_PEPPER:
+        from_secret: email_pepper
+      EMAIL_ENCRYPTION_KEY:
+        from_secret: email_encryption_key
+      MAIL_USER:
+        from_secret: mail_user
+      MAIL_PASS:
+        from_secret: mail_pass
+      TURNSTILE_SECRET_KEY:
+        from_secret: turnstile_secret_key
+      CLIENT_ORIGIN:
+        from_secret: client_origin
+      CLIENT_GATEWAY:
+        from_secret: client_gateway
+      BETTER_AUTH_URL:
+        from_secret: better_auth_url
+      AUTH_BASE_URL:
+        from_secret: auth_base_url
+    commands:
+      # Build new image, run migrations, swap api. db keeps its volume.
+      - docker compose -f compose.prod.yaml build
+      - docker compose -f compose.prod.yaml up -d db
+      - docker compose -f compose.prod.yaml run --rm migrate
+      - docker compose -f compose.prod.yaml up -d --no-deps api
+    when:
+      - event: push
+        branch: master

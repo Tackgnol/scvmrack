@@ -47,6 +47,8 @@
     "dev:start": "fastify start --ignore-watch=.ts$ -w -l info -P dist/app.js",
     "deploy:prepare": "npm run build:ts && cd client && npm run build && cd .. && node scripts/prepare-deploy.js",
     "deploy:env": "node scripts/parse-env.js",
+    "migrate": "node scripts/migrate.js",
+    "migrate:local": "node scripts/migrate-local.js",
     "pgtyped": "node --import tsx scripts/run-pgtyped.ts"
   },
   "keywords": [],
@@ -66,10 +68,10 @@
     "@pgtyped/runtime": "^2.4.2",
     "better-auth": "^1.4.13",
     "dotenv": "^17.3.1",
-    "fastify": "5.8.4",
+    "fastify": "5.8.5",
     "fastify-cli": "^7.4.1",
     "fastify-plugin": "^5.1.0",
-    "nodemailer": "^7.0.12",
+    "nodemailer": "8.0.5",
     "pg": "^8.16.3",
     "validator": "^13.15.26"
   },
