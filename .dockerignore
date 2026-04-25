@@ -1,6 +1,11 @@
 node_modules
-client
+client/node_modules
+client/public
+client/coverage
+client/dist
 tests/unit-be
+tests/integration-be
+tests/e2e
 .git
 .env
 .env.*

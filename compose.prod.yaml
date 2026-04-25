@@ -1,0 +1,90 @@
+name: scvmrack-prod
+
+# Production stack. Driven by Woodpecker; secrets come from the runner env.
+#
+# Required env (passed by Woodpecker via secrets):
+#   DATABASE_PASSWORD
+#   BETTER_AUTH_SECRET
+#   EMAIL_PEPPER
+#   EMAIL_ENCRYPTION_KEY
+#   MAIL_USER
+#   MAIL_PASS
+#   TURNSTILE_SECRET_KEY
+#   CLIENT_ORIGIN, CLIENT_GATEWAY, BETTER_AUTH_URL, AUTH_BASE_URL
+
+x-db-env: &db-env
+  DATABASE_USER: p1002_scmgrinder
+  DATABASE_PASSWORD: ${DATABASE_PASSWORD:?DATABASE_PASSWORD is required}
+  DATABASE_NAME: p1002_scmgrinder
+  DATABASE_HOST: db
+  DATABASE_PORT: 5432
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: p1002_scmgrinder
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:?DATABASE_PASSWORD is required}
+      POSTGRES_DB: p1002_scmgrinder
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U p1002_scmgrinder"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  migrate:
+    image: scvmgrinder_be:prod
+    pull_policy: never
+    build:
+      context: .
+    command: ["node", "scripts/migrate.js"]
+    environment:
+      <<: *db-env
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  api:
+    image: scvmgrinder_be:prod
+    pull_policy: never
+    build:
+      context: .
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      <<: *db-env
+      PORT: 3000
+      NODE_ENV: production
+      CLIENT_ORIGIN: ${CLIENT_ORIGIN:?CLIENT_ORIGIN is required}
+      CLIENT_GATEWAY: ${CLIENT_GATEWAY:-${CLIENT_ORIGIN}}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?BETTER_AUTH_SECRET is required}
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL:?BETTER_AUTH_URL is required}
+      AUTH_BASE_URL: ${AUTH_BASE_URL:?AUTH_BASE_URL is required}
+      EMAIL_PEPPER: ${EMAIL_PEPPER:?EMAIL_PEPPER is required}
+      EMAIL_ENCRYPTION_KEY: ${EMAIL_ENCRYPTION_KEY:?EMAIL_ENCRYPTION_KEY is required}
+      MAIL_USER: ${MAIL_USER:?MAIL_USER is required}
+      MAIL_PASS: ${MAIL_PASS:?MAIL_PASS is required}
+      TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY:-}
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://localhost:3000/health').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 10s
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+volumes:
+  pgdata:
