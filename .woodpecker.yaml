@@ -86,7 +86,7 @@ steps:
       - docker compose -f compose.prod.yaml build
       - docker compose -f compose.prod.yaml up -d db
       - docker compose -f compose.prod.yaml run --rm migrate
-      - docker compose -f compose.prod.yaml up -d --no-deps api
+      - docker compose -f compose.prod.yaml up -d --no-deps --wait api
     when:
       - event: push
         branch: master
