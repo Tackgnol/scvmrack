@@ -48,9 +48,14 @@ const routeTree = rootRoute.addChildren([
 ]);
 
 
+const NotFoundComponent = lazyRouteComponent(() =>
+    import('@/pages/NotFoundPage').then(m => ({ default: m.NotFoundPage }))
+);
+
 export const router = createRouter({
     routeTree,
     history: appHistory,
+    defaultNotFoundComponent: () => <NotFoundComponent />,
 });
 
 
