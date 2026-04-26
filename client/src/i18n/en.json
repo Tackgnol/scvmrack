@@ -263,6 +263,11 @@
     "guestSession": "Guest session - sign up to keep your character",
     "connectionError": "Connection error"
   },
+  "notFound": {
+    "title": "404",
+    "tagline": "Go back, mate.",
+    "stamp": "Page Not Found"
+  },
   "common": {
     "close": "Close",
     "back": "Back",

@@ -263,6 +263,11 @@
     "guestSession": "Sesja gościa - zarejestruj się, aby zachować postać",
     "connectionError": "Błąd połączenia"
   },
+  "notFound": {
+    "title": "404",
+    "tagline": "Wracaj, koleś.",
+    "stamp": "Strona Zaginiona"
+  },
   "common": {
     "close": "Zamknij",
     "back": "Wróć",
