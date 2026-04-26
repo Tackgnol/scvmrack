@@ -565,6 +565,19 @@ BEGIN
     item_pool := build_character_item_pool(char_class_id, (stats->>'presence')::INTEGER)
         || COALESCE(ability_bundle->'granted_items', '[]'::jsonb);
     equipment_bundle := auto_equip_character_items(item_pool);
+
+    -- Bake default `uses` for items the roll tables don't pre-populate (scrolls, pets, etc.)
+    -- so reads stay deterministic.
+    equipment_bundle := jsonb_set(
+        equipment_bundle,
+        '{equipment}',
+        hydrate_inventory_uses(
+            equipment_bundle->'equipment',
+            (stats->>'presence')::INTEGER,
+            true
+        )
+    );
+
     personality := pick_character_personality();
 
     INSERT INTO characters (

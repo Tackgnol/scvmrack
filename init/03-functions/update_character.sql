@@ -59,8 +59,34 @@ CREATE OR REPLACE FUNCTION update_character(
 LANGUAGE plpgsql AS $$
 DECLARE
     v_row characters;
+    v_presence int;
 BEGIN
     PERFORM validate_character_patch(p_patch);
+
+    -- Bake default `uses` arrays into newly-added inventory items so they don't get re-rolled
+    -- on every read. Use the patch's presence if provided, otherwise the character's current
+    -- presence. Existing items with a non-empty `uses` array are left alone.
+    IF (p_patch ? 'equipment' AND jsonb_typeof(p_patch->'equipment') = 'array')
+       OR (p_patch ? 'storage' AND jsonb_typeof(p_patch->'storage') = 'array') THEN
+        SELECT presence INTO v_presence FROM characters WHERE id = p_id;
+        v_presence := COALESCE((p_patch->>'presence')::int, v_presence, 10);
+
+        IF p_patch ? 'equipment' AND jsonb_typeof(p_patch->'equipment') = 'array' THEN
+            p_patch := jsonb_set(
+                p_patch,
+                '{equipment}',
+                hydrate_inventory_uses(p_patch->'equipment', v_presence, true)
+            );
+        END IF;
+
+        IF p_patch ? 'storage' AND jsonb_typeof(p_patch->'storage') = 'array' THEN
+            p_patch := jsonb_set(
+                p_patch,
+                '{storage}',
+                hydrate_inventory_uses(p_patch->'storage', v_presence, false)
+            );
+        END IF;
+    END IF;
 
     UPDATE characters
     SET
