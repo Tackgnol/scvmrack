@@ -8,9 +8,66 @@
 -- Drop the old signature so the overload with p_presence is the only definition.
 DROP FUNCTION IF EXISTS resolve_character_inventory_items(jsonb, text, boolean);
 
--- Shared resolver for equipment/storage item arrays.
--- p_presence is used to scale the default pip count for presence-scaled consumables
--- (lantern-oil, medicine-chest) so the behavior matches generate_character.
+-- Default uses array for an item, used when hydrating inventory at write time.
+-- Returns NULL when an item has no default (it should keep whatever the caller set, or '[]').
+CREATE OR REPLACE FUNCTION resolve_item_default_uses(
+    p_key text,
+    p_presence int,
+    p_scroll_default boolean DEFAULT false
+) RETURNS jsonb
+    LANGUAGE sql AS $$
+    SELECT CASE
+        WHEN p.hp IS NOT NULL AND p.hp > 0
+            THEN to_jsonb(array_fill(true, ARRAY[LEAST(p.hp, 50)]))
+        WHEN p_scroll_default AND p_key LIKE 'scroll.%'
+            THEN '[false,false,false,false]'::jsonb
+        WHEN p_key = 'equipment.violet-poison'
+            THEN to_jsonb(array_fill(false, ARRAY[roll_die(4) + 1]))
+        WHEN e.default_amount IS NOT NULL
+            AND e.default_amount > 0
+            AND 'consumable' = ANY(e.tags)
+            THEN to_jsonb(array_fill(false, ARRAY[
+                GREATEST(0, e.default_amount + CASE
+                    WHEN p_key IN ('equipment.lantern-oil', 'equipment.medicine-chest')
+                        THEN roll_to_modifier(p_presence)
+                    ELSE 0
+                END)
+            ]))
+        ELSE NULL
+    END
+    FROM (SELECT 1) seed
+    LEFT JOIN equipment e ON e.key = p_key
+    LEFT JOIN pets p ON p.key = p_key;
+$$;
+
+-- Walks an inventory array and fills in a default `uses` array for items that don't already
+-- have one. Items with a non-empty array `uses` are left alone.
+CREATE OR REPLACE FUNCTION hydrate_inventory_uses(
+    p_items jsonb,
+    p_presence int,
+    p_scroll_default boolean DEFAULT false
+) RETURNS jsonb
+    LANGUAGE sql AS $$
+    SELECT COALESCE(jsonb_agg(
+        CASE
+            WHEN item ? 'uses'
+                AND jsonb_typeof(item->'uses') = 'array'
+                AND jsonb_array_length(item->'uses') > 0
+            THEN item
+            WHEN defaults.value IS NOT NULL
+            THEN item || jsonb_build_object('uses', defaults.value)
+            ELSE item
+        END
+    ), '[]'::jsonb)
+    FROM jsonb_array_elements(COALESCE(p_items, '[]'::jsonb)) item
+    LEFT JOIN LATERAL (
+        SELECT resolve_item_default_uses(item->>'key', p_presence, p_scroll_default) AS value
+    ) defaults ON true;
+$$;
+
+-- Shared resolver for equipment/storage item arrays. Read-time only — `uses` is a passthrough;
+-- defaults are baked at write time by hydrate_inventory_uses (called from update_character /
+-- generate_character).
 CREATE OR REPLACE FUNCTION resolve_character_inventory_items(
     p_items jsonb,
     p_locale text,
@@ -52,24 +109,8 @@ CREATE OR REPLACE FUNCTION resolve_character_inventory_items(
                 ) dice_sub
             ),
             'uses', CASE
-                WHEN item->'uses' IS NOT NULL
-                    AND jsonb_typeof(item->'uses') = 'array'
-                    AND jsonb_array_length(item->'uses') > 0 THEN item->'uses'
-                WHEN p.hp IS NOT NULL AND p.hp > 0 THEN to_jsonb(array_fill(true, ARRAY[LEAST(p.hp, 50)]))
-                WHEN p_scroll_default_uses AND item->>'key' LIKE 'scroll.%' THEN '[false,false,false,false]'::jsonb
-                WHEN e_m.key = 'equipment.violet-poison'
-                THEN to_jsonb(array_fill(false, ARRAY[roll_die(4) + 1]))
-                WHEN e_m.default_amount IS NOT NULL
-                    AND e_m.default_amount > 0
-                    AND 'consumable' = ANY(e_m.tags)
-                THEN to_jsonb(array_fill(false, ARRAY[
-                    GREATEST(0, e_m.default_amount + CASE
-                        WHEN e_m.key IN ('equipment.lantern-oil', 'equipment.medicine-chest')
-                            THEN roll_to_modifier(p_presence)
-                        ELSE 0
-                    END)
-                ]))
-                ELSE COALESCE(item->'uses', '[]'::jsonb)
+                WHEN jsonb_typeof(item->'uses') = 'array' THEN item->'uses'
+                ELSE '[]'::jsonb
             END,
             'ammo_type', COALESCE(w.ammo_type, e_m.ammo_type),
             'amount', CASE
