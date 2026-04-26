@@ -57,6 +57,8 @@ CREATE OR REPLACE FUNCTION resolve_character_inventory_items(
                     AND jsonb_array_length(item->'uses') > 0 THEN item->'uses'
                 WHEN p.hp IS NOT NULL AND p.hp > 0 THEN to_jsonb(array_fill(true, ARRAY[LEAST(p.hp, 50)]))
                 WHEN p_scroll_default_uses AND item->>'key' LIKE 'scroll.%' THEN '[false,false,false,false]'::jsonb
+                WHEN e_m.key = 'equipment.violet-poison'
+                THEN to_jsonb(array_fill(false, ARRAY[roll_die(4) + 1]))
                 WHEN e_m.default_amount IS NOT NULL
                     AND e_m.default_amount > 0
                     AND 'consumable' = ANY(e_m.tags)
