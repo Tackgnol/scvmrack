@@ -1,5 +1,7 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 
+vi.stubEnv('VITE_GA_MEASUREMENT_ID', 'G-TEST');
+
 const mockTrack = vi.fn();
 const mockPage = vi.fn();
 

@@ -1,0 +1,80 @@
+# Runs on pull requests. GitHub can use this workflow status as the merge gate.
+
+when:
+  - event: pull_request
+
+steps:
+  unit-test:
+    image: node:22-alpine
+    commands:
+      - npm ci
+      - npm --prefix client ci
+      - npm run test:unit
+
+  integration-test:
+    image: docker:27-cli
+    depends_on:
+      - unit-test
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    commands:
+      - |
+        set -e
+        docker compose -f compose.integration-be.yaml down --volumes --remove-orphans || true
+        trap 'docker compose -f compose.integration-be.yaml down --volumes --remove-orphans' EXIT
+        docker compose -f compose.integration-be.yaml up \
+          --build --abort-on-container-exit --exit-code-from integration \
+          db api integration
+
+  browser-test-chromium:
+    image: mcr.microsoft.com/playwright:v1.58.2-jammy
+    depends_on:
+      - integration-test
+    environment:
+      VITEST_BROWSER_INSTANCES: chromium
+    commands:
+      - npm ci
+      - npm --prefix client ci
+      - npm run test:browser
+
+  browser-test-firefox:
+    image: mcr.microsoft.com/playwright:v1.58.2-jammy
+    depends_on:
+      - browser-test-chromium
+    environment:
+      VITEST_BROWSER_INSTANCES: firefox
+    commands:
+      - npm ci
+      - npm --prefix client ci
+      - npm run test:browser
+
+  browser-test-webkit:
+    image: mcr.microsoft.com/playwright:v1.58.2-jammy
+    depends_on:
+      - browser-test-firefox
+    environment:
+      VITEST_BROWSER_INSTANCES: webkit
+    commands:
+      - npm ci
+      - npm --prefix client ci
+      - npm run test:browser
+
+  e2e-test:
+    image: docker:27-cli
+    depends_on:
+      - browser-test-webkit
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      CI: "true"
+      PLAYWRIGHT_INCLUDE_REGRESSION: "1"
+    commands:
+      - |
+        set -e
+        docker compose -f compose.e2e.yaml down --volumes --remove-orphans || true
+        docker builder prune -af || true
+        docker image prune -f || true
+        trap 'docker compose -f compose.e2e.yaml down --volumes --remove-orphans' EXIT
+        docker compose -f compose.e2e.yaml up \
+          --build --abort-on-container-exit --exit-code-from e2e \
+          db api web mailpit e2e

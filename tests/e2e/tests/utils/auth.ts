@@ -5,8 +5,6 @@ import { pollEmailLink } from './mailpit.js';
  * Helper to register a fresh user and verify their email so they are in a known good state.
  */
 export async function registerAndVerifyUser(page: Page, email: string, name = 'Login Tester') {
-  const testStartTime = new Date();
-
   await page.goto('/');
   await expect(page.getByTestId('app-title')).toBeVisible();
 
@@ -31,7 +29,7 @@ export async function registerAndVerifyUser(page: Page, email: string, name = 'L
   await expect(page.getByText('Check Your Email')).toBeVisible({ timeout: 10000 });
 
   // Fetch the verification URL from Mailpit
-  const verifyUrl = await pollEmailLink(email, /href="([^"]*auth\/verify-email[^"]*)"/, testStartTime);
+  const verifyUrl = await pollEmailLink(email, /href="([^"]*auth\/verify-email[^"]*)"/);
 
   // Navigate the browser to the verification link
   await page.goto(verifyUrl);
@@ -58,8 +56,6 @@ export async function registerAndVerifyUser(page: Page, email: string, name = 'L
  * Register a user and log in, staying on that authenticated session.
  */
 export async function registerAndLogin(page: Page, email: string) {
-  const testStartTime = new Date();
-
   await page.goto('/');
   await expect(page.getByTestId('app-title')).toBeVisible();
 
@@ -84,7 +80,7 @@ export async function registerAndLogin(page: Page, email: string) {
   await expect(page.getByText('Check Your Email')).toBeVisible({ timeout: 10000 });
 
   // Fetch the verification URL from Mailpit
-  const verifyUrl = await pollEmailLink(email, /href="([^"]*auth\/verify-email[^"]*)"/, testStartTime);
+  const verifyUrl = await pollEmailLink(email, /href="([^"]*auth\/verify-email[^"]*)"/);
 
   // Navigate the browser to the verification link
   await page.goto(verifyUrl);

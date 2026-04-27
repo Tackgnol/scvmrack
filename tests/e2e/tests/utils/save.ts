@@ -26,5 +26,5 @@ export async function waitForCharacterSave(
     );
   }
 
-  await expect(page.getByTestId('synced-chip')).toBeVisible({ timeout });
+  await expect(page.getByText('Synced', { exact: true })).toBeVisible({ timeout });
 }

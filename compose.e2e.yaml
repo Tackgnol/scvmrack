@@ -10,13 +10,15 @@ services:
       retries: 10
 
   db:
-    image: postgres:16-alpine
+    image: scvmgrinder_db:e2e
+    pull_policy: never
+    build:
+      context: .
+      dockerfile: Dockerfile.integration-db
     environment:
       POSTGRES_USER: p1002_scmgrinder
       POSTGRES_PASSWORD: p1002_scmgrinder
       POSTGRES_DB: p1002_scmgrinder
-    volumes:
-      - ./init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U p1002_scmgrinder"]
       interval: 5s
@@ -49,6 +51,7 @@ services:
       MAIL_USER: e2e@example.com
       MAIL_PASS: e2e
       TURNSTILE_SECRET_KEY: ""
+      ENABLE_TEST_ROUTES: "1"
     depends_on:
       db:
         condition: service_healthy
@@ -97,12 +100,15 @@ services:
   e2e:
     image: scvmgrinder_e2e:latest
     build:
-      context: .
-      dockerfile: tests/e2e/Dockerfile
+      context: ./tests/e2e
+      dockerfile: Dockerfile
     environment:
+      CI: ${CI:-false}
       PLAYWRIGHT_BASE_URL: http://web:5173
       PLAYWRIGHT_MAILPIT_URL: http://mailpit:8025
       PLAYWRIGHT_DEBUG: ${PLAYWRIGHT_DEBUG:-0}
+      PLAYWRIGHT_INCLUDE_REGRESSION: ${PLAYWRIGHT_INCLUDE_REGRESSION:-0}
+      API_BASE_URL: http://api:3000
     volumes:
       - ./tests/e2e/playwright-report:/e2e/playwright-report
       - ./tests/e2e/test-results:/e2e/test-results

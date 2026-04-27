@@ -1,28 +1,107 @@
 import { expect, Page } from '@playwright/test';
 import { waitForCharacterSave } from './save.js';
 
-async function fillAndSave(
+export async function fillAndSave(
   page: Page,
   testId: string,
   value: string,
   timeout = 20000
 ) {
   const input = page.getByTestId(testId);
+  const currentValue = await input.inputValue();
+
+  if (currentValue === value) {
+    const numericValue = Number(value);
+    const alternateValue = Number.isFinite(numericValue)
+      ? String(numericValue === 0 ? 1 : numericValue - 1)
+      : `${value} updated`;
+    await waitForCharacterSave(page, async () => {
+      await input.fill(alternateValue);
+      await input.blur();
+    }, timeout);
+    await expect(input).toHaveValue(alternateValue, { timeout });
+  }
+
   await waitForCharacterSave(page, async () => {
     await input.fill(value);
     await input.blur();
   }, timeout);
 }
 
-async function selectSearchResult(page: Page, query: string, optionName: string | RegExp) {
+async function stableInputValue(page: Page, testId: string, timeout = 10000): Promise<string> {
+  const input = page.getByTestId(testId);
+  let previousValue: string | undefined;
+  let stableChecks = 0;
+  let stableValue = '';
+
+  await expect
+    .poll(
+      async () => {
+        const currentValue = await input.inputValue();
+        if (currentValue === previousValue) {
+          stableChecks += 1;
+        } else {
+          previousValue = currentValue;
+          stableChecks = 0;
+        }
+
+        if (stableChecks >= 4) {
+          stableValue = currentValue;
+          return true;
+        }
+
+        return false;
+      },
+      { intervals: [250], timeout }
+    )
+    .toBe(true);
+
+  return stableValue;
+}
+
+export async function changeHpByOne(page: Page, timeout = 20000): Promise<string> {
+  const hpInput = page.getByTestId('hp-input');
+  const currentValue = Number(await stableInputValue(page, 'hp-input'));
+  const shouldIncrease = currentValue === 0;
+  const targetValue = String(shouldIncrease ? currentValue + 1 : currentValue - 1);
+  const button = page.getByTestId(shouldIncrease ? 'hp-increase' : 'hp-decrease');
+
+  await waitForCharacterSave(page, async () => {
+    await button.click();
+  }, timeout);
+  await expect(hpInput).toHaveValue(targetValue, { timeout });
+
+  return targetValue;
+}
+
+async function closeAnyOpenDialog(page: Page): Promise<void> {
+  const dialog = page.getByRole('dialog').first();
+  const isOpen = await dialog.isVisible().catch(() => false);
+
+  if (!isOpen) {
+    return;
+  }
+
+  await page.keyboard.press('Escape');
+  await expect(dialog).not.toBeVisible({ timeout: 5000 });
+}
+
+export async function selectSearchResult(page: Page, query: string, optionName: string | RegExp) {
   const eqSearch = page.getByTestId('equipment-search-input');
   const option = page.getByRole('option', {
     name: typeof optionName === 'string' ? new RegExp(optionName, 'i') : optionName,
   });
 
   await eqSearch.click();
+  const searchResponse = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'GET' &&
+      /\/equipment\/search\b/i.test(new URL(response.url()).pathname) &&
+      response.ok(),
+    { timeout: 10000 }
+  );
   await eqSearch.fill(query);
-  await page.waitForTimeout(1000);
+  await searchResponse;
   await expect(option).toBeVisible({ timeout: 10000 });
   await option.click();
 }
@@ -33,7 +112,7 @@ export async function runCharacterSheetEditingSteps(page: Page, syncBadgeTimeout
   await expect(syncBadge).toBeVisible({ timeout: syncBadgeTimeout });
 
   // Step 1: Edit current Hit Points
-  await fillAndSave(page, 'hp-input', '5');
+  const hpTarget = await changeHpByOne(page);
 
   // Step 2: Edit current Silver
   await fillAndSave(page, 'silver-input', '150');
@@ -61,6 +140,7 @@ export async function runCharacterSheetEditingSteps(page: Page, syncBadgeTimeout
   await fillAndSave(page, 'body-description-input', 'Tall and lanky');
 
   // Step 8: Add quick modifier
+  await closeAnyOpenDialog(page);
   const quickModInput = page.getByTestId('quick-mod-name-input');
   await quickModInput.fill('Quick Boost');
   const quickModValue = page.getByTestId('quick-mod-value-input');
@@ -158,7 +238,7 @@ export async function runCharacterSheetEditingSteps(page: Page, syncBadgeTimeout
   await expect(page.getByTestId('app-title')).toBeVisible({ timeout: 15000 });
 
   // Verify
-  await expect(page.getByTestId('hp-input')).toHaveValue('5');
+  await expect(page.getByTestId('hp-input')).toHaveValue(hpTarget);
   await expect(page.getByTestId('silver-input')).toHaveValue('150');
   if (await firstCommentInput.isVisible()) {
     await expect(firstCommentInput).toHaveValue('My fun ability comment');

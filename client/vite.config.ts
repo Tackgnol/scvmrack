@@ -82,6 +82,7 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./test/setup-dom.ts'],
     include: ['test/**/*.test.{ts,tsx}'],
+    exclude: ['test/browser/**/*'],
     coverage: {
       provider: 'istanbul',
       enabled: false,

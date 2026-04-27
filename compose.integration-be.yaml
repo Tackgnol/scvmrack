@@ -2,13 +2,15 @@ name: scvmrack-integration
 
 services:
   db:
-    image: postgres:16-alpine
+    image: scvmgrinder_db:integration
+    pull_policy: never
+    build:
+      context: .
+      dockerfile: Dockerfile.integration-db
     environment:
       POSTGRES_USER: p1002_scmgrinder
       POSTGRES_PASSWORD: p1002_scmgrinder
       POSTGRES_DB: p1002_scmgrinder
-    volumes:
-      - ./init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U p1002_scmgrinder"]
       interval: 5s
@@ -55,9 +57,11 @@ services:
       start_period: 10s
 
   integration:
-    image: scvmgrinder_be:integration
+    image: scvmgrinder_integration_be:latest
     pull_policy: never
-    command: npm run test:integration:be:run
+    build:
+      context: .
+      dockerfile: Dockerfile.integration
     environment:
       E2E_BASE_URL: http://api:3000
     depends_on:

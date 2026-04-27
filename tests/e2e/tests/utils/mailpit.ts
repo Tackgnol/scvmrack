@@ -20,14 +20,9 @@ const MAILPIT_POLL_TIMEOUT_MS = Number.parseInt(
   10,
 );
 
-/**
- * Polls Mailpit for the most recent email to a given address containing a specific link pattern.
- * Uses a sinceDate to ignore emails from previous steps (like the original registration).
- */
 export async function pollEmailLink(
   email: string,
   linkRegex: RegExp,
-  sinceDate: Date,
   timeoutMs = MAILPIT_POLL_TIMEOUT_MS
 ): Promise<string> {
   const deadline = Date.now() + timeoutMs;
@@ -41,19 +36,17 @@ export async function pollEmailLink(
     attempt++;
 
     try {
-      const res = await fetch(`${MAILPIT_URL}/api/v1/messages`);
+      const res = await fetch(
+        `${MAILPIT_URL}/api/v1/search?query=${encodeURIComponent(`to:${email}`)}`
+      );
       if (!res.ok) {
-        throw new Error(`Mailpit list request failed with ${res.status}`);
+        throw new Error(`Mailpit search request failed with ${res.status}`);
       }
       const data = (await res.json()) as { messages: MailpitMessage[] };
 
-      // Find messages to the user sent AFTER the sinceDate, sorted most recent first
       const recentMessages = (data.messages || [])
         .filter((m) => {
-          const isToUser = m.To?.some((t) => t.Address.toLowerCase() === email.toLowerCase());
-          // Allow a 5-second buffer for slight clock differences between containers
-          const isRecent = new Date(m.Created) > new Date(sinceDate.getTime() - 5000);
-          return isToUser && isRecent;
+          return m.To?.some((t) => t.Address.toLowerCase() === email.toLowerCase());
         })
         .sort((a, b) => new Date(b.Created).getTime() - new Date(a.Created).getTime());
 
