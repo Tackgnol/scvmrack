@@ -60,7 +60,6 @@ const routeTree = rootRoute.addChildren([
     glitchTipRoute,
 ]);
 
-
 const NotFoundComponent = lazyRouteComponent(() =>
     import('@/pages/NotFoundPage').then(m => ({ default: m.NotFoundPage }))
 );
