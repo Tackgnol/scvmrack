@@ -4,17 +4,23 @@ when:
   - event: pull_request
 
 steps:
-  unit-test:
-    image: node:22-alpine
+  setup-deps:
+    image: mcr.microsoft.com/playwright:v1.58.2-jammy
     commands:
       - npm ci
       - npm --prefix client ci
+
+  unit-test:
+    image: mcr.microsoft.com/playwright:v1.58.2-jammy
+    depends_on:
+      - setup-deps
+    commands:
       - npm run test:unit
 
   integration-test:
     image: docker:27-cli
     depends_on:
-      - unit-test
+      - setup-deps
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     commands:
@@ -29,13 +35,11 @@ steps:
   browser-test-chromium:
     image: mcr.microsoft.com/playwright:v1.58.2-jammy
     depends_on:
-      - integration-test
+      - setup-deps
     environment:
       VITEST_BROWSER_INSTANCES: chromium
     commands:
-      - npm ci
-      - npm --prefix client ci
-      - npm run test:browser
+      - npm --prefix client run test:browser
 
   browser-test-firefox:
     image: mcr.microsoft.com/playwright:v1.58.2-jammy
@@ -44,9 +48,7 @@ steps:
     environment:
       VITEST_BROWSER_INSTANCES: firefox
     commands:
-      - npm ci
-      - npm --prefix client ci
-      - npm run test:browser
+      - npm --prefix client run test:browser
 
   browser-test-webkit:
     image: mcr.microsoft.com/playwright:v1.58.2-jammy
@@ -55,13 +57,13 @@ steps:
     environment:
       VITEST_BROWSER_INSTANCES: webkit
     commands:
-      - npm ci
-      - npm --prefix client ci
-      - npm run test:browser
+      - npm --prefix client run test:browser
 
   e2e-test:
     image: docker:27-cli
     depends_on:
+      - integration-test
+      - unit-test
       - browser-test-webkit
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock

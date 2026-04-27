@@ -1,0 +1,98 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: p1002_scmgrinder
+      POSTGRES_PASSWORD: p1002_scmgrinder
+      POSTGRES_DB: p1002_scmgrinder
+    ports:
+      - "5433:5432"
+    volumes:
+      - ./init:/docker-entrypoint-initdb.d
+      - pgdata-dev:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U p1002_scmgrinder"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    command: npm run dev:api
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: development
+      DATABASE_USER: p1002_scmgrinder
+      DATABASE_PASSWORD: p1002_scmgrinder
+      DATABASE_NAME: p1002_scmgrinder
+      DATABASE_HOST: db
+      DATABASE_PORT: 5432
+      PORT: 3000
+      CLIENT_ORIGIN: http://localhost:5173
+      CLIENT_GATEWAY: http://localhost:5173
+      AUTH_BASE_URL: http://localhost:3000/auth
+      BETTER_AUTH_SECRET: dev-only-better-auth-secret-change-for-prod
+      EMAIL_PEPPER: dev-only-email-pepper-at-least-thirty-two-chars
+      EMAIL_ENCRYPTION_KEY: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+      MAIL_HOST: mailpit
+      MAIL_PORT: 1025
+      MAIL_SECURE: "false"
+      MAIL_USER: scvmrack-dev@localhost
+      MAIL_PASS: dev-only
+    depends_on:
+      db:
+        condition: service_healthy
+      mailpit:
+        condition: service_started
+    develop:
+      watch:
+        - action: sync
+          path: ./src
+          target: /app/src
+        - action: sync
+          path: ./public
+          target: /app/public
+        - action: rebuild
+          path: package.json
+        - action: rebuild
+          path: package-lock.json
+
+  web:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_BACKEND_URL: http://localhost:3000
+      VITE_SITE_URL: http://localhost:5173
+      VITE_TURNSTILE_SITE_KEY: 0x4AAAAAACgej00bMWX0fRul
+      VITE_ALLOWED_HOSTS: localhost,127.0.0.1,web
+    depends_on:
+      - api
+    develop:
+      watch:
+        - action: sync
+          path: ./client/src
+          target: /app/src
+        - action: sync
+          path: ./client/static
+          target: /app/static
+        - action: sync
+          path: ./client/index.html
+          target: /app/index.html
+        - action: rebuild
+          path: ./client/package.json
+        - action: rebuild
+          path: ./client/package-lock.json
+
+  mailpit:
+    image: axllent/mailpit:latest
+    ports:
+      - "8025:8025"
+
+volumes:
+  pgdata-dev:

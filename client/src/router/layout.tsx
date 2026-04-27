@@ -34,7 +34,10 @@ export function RootLayout() {
                 </Suspense>
             )}
             <CssBaseline />
-            <Box sx={customStyles.layout.root}>
+            <Box
+                className={isPrintRoute ? 'print-layout-root' : undefined}
+                sx={customStyles.layout.root}
+            >
                 <Container maxWidth={isPrintRoute ? false : 'md'} disableGutters={isPrintRoute}>
                     {!isPrintRoute && (
                         <Box className="print-hidden">
