@@ -89,9 +89,7 @@ function DotTrack({
                     aria-label={`${label} tracker: ${filledCount}/${total}`}
                 >
                     {Array.from({ length: count }, (_, index) => (
-                        <span key={index} aria-hidden="true">
-                            {index < filledCount ? '●' : '○'}
-                        </span>
+                        <span key={index} aria-hidden="true" />
                     ))}
                     {hasOverflow && <em>+{total - count}</em>}
                 </span>
