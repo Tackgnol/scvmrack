@@ -19,19 +19,65 @@ const flicker = keyframes`
     96%           { opacity: 0.6; }
 `;
 
-export function NotFoundPage() {
+interface NotFoundPageProps {
+    homeLinkMode?: 'router' | 'anchor';
+    heading?: string;
+    tagline?: string;
+    stamp?: string;
+    seoTitle?: string;
+    seoDescription?: string;
+    seoPath?: string;
+    seoNoIndex?: boolean;
+}
+
+export function NotFoundPage({
+    homeLinkMode = 'router',
+    heading: headingOverride,
+    tagline: taglineOverride,
+    stamp: stampOverride,
+    seoTitle = '404 — Lost in the doom',
+    seoDescription = 'This page has rotted away. Crawl back to the rack.',
+    seoPath = '/404',
+    seoNoIndex = false,
+}: NotFoundPageProps) {
     const { t } = useTranslation();
 
-    const heading = t('notFound.title', '404');
-    const tagline = t('notFound.tagline', 'Go back, mate.');
-    const stamp = t('notFound.stamp', 'Page Not Found');
+    const heading = headingOverride ?? t('notFound.title', '404');
+    const tagline = taglineOverride ?? t('notFound.tagline', 'Go back, mate.');
+    const stamp = stampOverride ?? t('notFound.stamp', 'Page Not Found');
+    const ctaLabel = `« ${t('common.backToHome', 'Back to Home')}`;
+    const ctaSx = {
+        mt: { xs: 3, md: 4 },
+        bgcolor: morkBorgColors.yellow,
+        color: morkBorgColors.black,
+        fontFamily: "'Bebas Neue', sans-serif",
+        fontSize: { xs: '1.35rem', md: '1.5rem' },
+        letterSpacing: '0.18em',
+        px: 3,
+        py: 1.25,
+        borderRadius: 0,
+        border: `3px solid ${morkBorgColors.black}`,
+        boxShadow: `6px 6px 0 ${morkBorgColors.black}`,
+        transform: 'rotate(-1.5deg)',
+        transition: 'transform 160ms ease-out, box-shadow 160ms ease-out',
+        '&:hover': {
+            bgcolor: morkBorgColors.yellow,
+            transform: 'rotate(-2.5deg) translate(-2px, -2px)',
+            boxShadow: `9px 9px 0 ${morkBorgColors.black}`,
+        },
+        '&:active': {
+            transform: 'rotate(-1deg) translate(3px, 3px)',
+            boxShadow: `2px 2px 0 ${morkBorgColors.black}`,
+        },
+    } as const;
 
     return (
         <>
             <Seo
-                title="404 — Lost in the doom"
-                description="This page has rotted away. Crawl back to the rack."
-                path="/404"
+                title={seoTitle}
+                description={seoDescription}
+                path={seoPath}
+                noIndex={seoNoIndex}
             />
 
             <Box
@@ -208,37 +254,25 @@ export function NotFoundPage() {
                         </Box>
 
                         {/* CTA */}
-                        <Button
-                            component={Link}
-                            to="/"
-                            disableRipple
-                            sx={{
-                                mt: { xs: 3, md: 4 },
-                                bgcolor: morkBorgColors.yellow,
-                                color: morkBorgColors.black,
-                                fontFamily: "'Bebas Neue', sans-serif",
-                                fontSize: { xs: '1.35rem', md: '1.5rem' },
-                                letterSpacing: '0.18em',
-                                px: 3,
-                                py: 1.25,
-                                borderRadius: 0,
-                                border: `3px solid ${morkBorgColors.black}`,
-                                boxShadow: `6px 6px 0 ${morkBorgColors.black}`,
-                                transform: 'rotate(-1.5deg)',
-                                transition: 'transform 160ms ease-out, box-shadow 160ms ease-out',
-                                '&:hover': {
-                                    bgcolor: morkBorgColors.yellow,
-                                    transform: 'rotate(-2.5deg) translate(-2px, -2px)',
-                                    boxShadow: `9px 9px 0 ${morkBorgColors.black}`,
-                                },
-                                '&:active': {
-                                    transform: 'rotate(-1deg) translate(3px, 3px)',
-                                    boxShadow: `2px 2px 0 ${morkBorgColors.black}`,
-                                },
-                            }}
-                        >
-                            « {t('common.backToHome', 'Back to Home')}
-                        </Button>
+                        {homeLinkMode === 'anchor' ? (
+                            <Button
+                                component="a"
+                                href="/"
+                                disableRipple
+                                sx={ctaSx}
+                            >
+                                {ctaLabel}
+                            </Button>
+                        ) : (
+                            <Button
+                                component={Link}
+                                to="/"
+                                disableRipple
+                                sx={ctaSx}
+                            >
+                                {ctaLabel}
+                            </Button>
+                        )}
                     </Box>
 
                     {/* RIGHT — Skeleton */}
