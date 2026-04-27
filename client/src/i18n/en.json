@@ -1,7 +1,7 @@
 {
   "app": {
-    "title": "Scvm Rack",
-    "subtitle": "Character Sheet"
+    "title": "Scvmrack",
+    "subtitle": "Interactive Mörk Borg character sheet"
   },
   "stats": {
     "hitPoints": "Hit Points",

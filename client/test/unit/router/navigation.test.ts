@@ -7,6 +7,7 @@ import {
   setCurrentCharacterIdParam,
   setCurrentPendingClaimCharacterId,
   buildHomeCallbackUrl,
+  buildPrintCallbackUrl,
   clearCurrentSearchParam,
   navigateToLoggedOut,
   navigateToSessionExpired,
@@ -91,6 +92,18 @@ describe('navigation router utils', () => {
     it('should build URL with only character ID', () => {
       const url = buildHomeCallbackUrl('char1');
       expect(url).toBe(`/?${CHARACTER_ID_QUERY_PARAM}=char1`);
+    });
+  });
+
+  describe('buildPrintCallbackUrl', () => {
+    it('should build /print URL with character ID', () => {
+      const url = buildPrintCallbackUrl('char1');
+      expect(url).toBe(`/print?${CHARACTER_ID_QUERY_PARAM}=char1`);
+    });
+
+    it('should build /print URL without character ID when null', () => {
+      const url = buildPrintCallbackUrl(null);
+      expect(url).toBe('/print');
     });
   });
 

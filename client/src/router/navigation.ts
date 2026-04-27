@@ -6,6 +6,7 @@ export const CHARACTER_ID_QUERY_PARAM = 'character';
 export const CLAIM_CHARACTER_QUERY_PARAM = 'claim-character';
 
 const HOME_PATH = '/';
+const PRINT_PATH = '/print';
 
 const normalizeHash = (hash: string): string => {
     if (!hash) {
@@ -101,6 +102,15 @@ export const buildHomeCallbackUrl = (
     }
 
     return buildPath(HOME_PATH, searchParams, '');
+};
+
+export const buildPrintCallbackUrl = (characterId: string | null): string => {
+    const searchParams = new URLSearchParams();
+    if (characterId) {
+        searchParams.set(CHARACTER_ID_QUERY_PARAM, characterId);
+    }
+
+    return buildPath(PRINT_PATH, searchParams, '');
 };
 
 export const clearCurrentSearchParam = async (queryParam: string): Promise<void> => {

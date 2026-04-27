@@ -4,6 +4,7 @@ import { useSessionExpiredFlag } from '@/hooks/useSessionExpiredFlag';
 import { appHistory } from '@/router/history';
 import {
   buildHomeCallbackUrl,
+  buildPrintCallbackUrl,
   getCurrentPendingClaimCharacterId,
 } from '@/router/navigation';
 import { Flag } from '@components/atoms/Flag';
@@ -224,7 +225,7 @@ export default function Header() {
   };
 
   const handlePrint = () => {
-    window.print();
+    void appHistory.push(buildPrintCallbackUrl(characterId || lastCharacterId));
   };
 
   return (
@@ -233,10 +234,7 @@ export default function Header() {
         <Box sx={customStyles.header.container(isMobile)}>
           <Box sx={customStyles.header.titleBox}>
             <Typography variant="h1" sx={customStyles.header.title(isMobile)}>
-              SC<span>V</span>M
-            </Typography>
-            <Typography sx={customStyles.header.titleSecondLine(isMobile)}>
-              RACK
+              SC<span>V</span>MRACK
             </Typography>
             <Typography
               variant="subtitle1"

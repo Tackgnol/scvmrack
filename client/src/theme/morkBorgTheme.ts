@@ -1255,7 +1255,7 @@ export const customStyles = {
     },
     title: (isMobile: boolean) => ({
       color: morkBorgColors.yellow,
-      fontSize: isMobile ? '2.2rem' : 'clamp(3.5rem, 10vw, 5.5rem)',
+      fontSize: isMobile ? '1.9rem' : 'clamp(3.5rem, 8vw, 5rem)',
       lineHeight: 0.85,
       '& span': { color: morkBorgColors.pink },
     }),
@@ -1269,9 +1269,9 @@ export const customStyles = {
     }),
     subtitle: (isMobile: boolean) => ({
       color: morkBorgColors.white,
-      letterSpacing: isMobile ? '0.15em' : '0.5em',
+      letterSpacing: isMobile ? '0.03em' : '0.08em',
       mt: 1,
-      fontSize: isMobile ? '0.6rem' : '1rem',
+      fontSize: isMobile ? '0.7rem' : '1rem',
     }),
     mobileMenuButton: {
       display: 'flex',

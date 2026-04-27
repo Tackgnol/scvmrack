@@ -23,19 +23,24 @@ export function RootLayout() {
     const pathname = useRouterState({
         select: (state) => state.location.pathname,
     });
+    const isPrintRoute = pathname === '/print';
 
     return (
         <ThemeProvider theme={morkBorgTheme}>
             <AnalyticsPageTracker />
-            <Suspense fallback={null}>
-                <PrivacyNoticeDrawer />
-            </Suspense>
+            {!isPrintRoute && (
+                <Suspense fallback={null}>
+                    <PrivacyNoticeDrawer />
+                </Suspense>
+            )}
             <CssBaseline />
             <Box sx={customStyles.layout.root}>
-                <Container maxWidth="md">
-                    <Box className="print-hidden">
-                        <Header/>
-                    </Box>
+                <Container maxWidth={isPrintRoute ? false : 'md'} disableGutters={isPrintRoute}>
+                    {!isPrintRoute && (
+                        <Box className="print-hidden">
+                            <Header />
+                        </Box>
+                    )}
                     <Box
                         component="main"
                         id="main-content"
@@ -50,9 +55,11 @@ export function RootLayout() {
                         <Outlet />
                     </Box>
                 </Container>
-                <Box className="print-hidden">
-                    <NetworkActivityIndicator />
-                </Box>
+                {!isPrintRoute && (
+                    <Box className="print-hidden">
+                        <NetworkActivityIndicator />
+                    </Box>
+                )}
             </Box>
         </ThemeProvider>
     );
