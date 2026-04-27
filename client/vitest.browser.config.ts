@@ -2,6 +2,8 @@ import { defineConfig, mergeConfig } from 'vitest/config';
 import viteConfig from './vite.config';
 import { playwright } from '@vitest/browser-playwright';
 
+const { test: _unitTestConfig, ...viteConfigWithoutUnitTests } = viteConfig as any;
+
 const browserInstances = (
   process.env.VITEST_BROWSER_INSTANCES ?? 'chromium,firefox,webkit'
 )
@@ -14,7 +16,7 @@ const browserInstances = (
   }));
 
 export default mergeConfig(
-  viteConfig as any,
+  viteConfigWithoutUnitTests,
   defineConfig({
     test: {
       name: 'browser',

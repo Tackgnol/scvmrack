@@ -1,0 +1,9 @@
+node_modules
+client
+tests
+.git
+.env
+.env.*
+dist
+*.md
+.claude

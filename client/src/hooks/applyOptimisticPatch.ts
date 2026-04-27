@@ -27,8 +27,12 @@ export function applyOptimisticPatch(
 
         case 'weapon': {
             const next = [...(character.equippedWeapons ?? [])];
+            if (!isValidIndex(patch.index, next.length) || !next[patch.index]) {
+                return character;
+            }
+
             next[patch.index] = {
-                ...(next[patch.index] ?? {}),
+                ...next[patch.index],
                 [patch.field]: patch.value
             };
 

@@ -1,0 +1,28 @@
+# Runs on the integration branch. Keep this fast: unit + backend integration only.
+
+when:
+  - event: push
+    branch: dev
+
+steps:
+  unit-test:
+    image: node:22-alpine
+    commands:
+      - npm ci
+      - npm --prefix client ci
+      - npm run test:unit
+
+  integration-test:
+    image: docker:27-cli
+    depends_on:
+      - unit-test
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    commands:
+      - |
+        set -e
+        docker compose -f compose.integration-be.yaml down --volumes --remove-orphans || true
+        trap 'docker compose -f compose.integration-be.yaml down --volumes --remove-orphans' EXIT
+        docker compose -f compose.integration-be.yaml up \
+          --build --abort-on-container-exit --exit-code-from integration \
+          db api integration

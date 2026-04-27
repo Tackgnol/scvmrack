@@ -1,0 +1,14 @@
+node_modules
+public
+coverage
+coverage-unit
+coverage-browser
+dist
+.vitest-attachments
+test-results
+playwright-report
+stats.html
+vitest_output.txt
+*.tsbuildinfo
+.env
+.env.*

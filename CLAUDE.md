@@ -20,14 +20,25 @@ MÖRK BORG Character Sheet - A full-stack TTRPG character management application
 npm run dev      # Start development with hot reload
 npm run start    # Production build and start
 npm run build:ts # Compile TypeScript
-npm run test     # Run tests
+npm test         # Fast unit test loop
 ```
+
+### Test Commands
+| You want to... | Run |
+|---|---|
+| Fast inner loop while editing code | `npm test` |
+| Verify full backend wiring | `npm run test:integration` |
+| Verify frontend browser components | `npm run test:browser` |
+| Verify the whole user flow | `npm run test:e2e` |
+| Reproduce CI before pushing to master | `npm run test:all` |
 
 ### Frontend (client directory)
 ```bash
 cd client
 npm run dev          # Start Vite dev server
 npm run build        # Production build
+npm run test:unit    # Run JSDOM unit tests
+npm run test:browser # Run browser component tests
 npm run lint         # Run ESLint
 npm run lint:fix     # Fix linting issues
 npm run format       # Format code with Prettier

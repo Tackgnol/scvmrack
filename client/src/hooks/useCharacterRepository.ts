@@ -36,11 +36,14 @@ export function useCharacterRepository(characterId: string | null, locale?: stri
                 signal,
             } as any);
 
-            if (error || !response.ok) {
+            const responseOk = response?.ok ?? !error;
+            const responseStatus = response?.status ?? (error as any)?.statusCode;
+
+            if (error || !responseOk) {
                 if (signal?.aborted) {
                     throw new DOMException('The operation was aborted.', 'AbortError');
                 }
-                if (response.status === 429 || (error as any)?.statusCode === 429) {
+                if (responseStatus === 429) {
                     throw new Error('RATE_LIMIT_EXCEEDED');
                 }
                 throw new Error((error as any)?.error || (error as any)?.message || 'Failed to create character');

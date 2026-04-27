@@ -27,11 +27,12 @@ const baseCharacter = {
   agility: 14,   // modifier +2 → toDodge = 12 - 2 = 10
   strength: 16,  // modifier +3 → toHitMelee = 12 - 3 = 9
   presence: 10,  // modifier 0  → toHitRanged = 12
-  equipment: [],
+  equipment: [
+    { key: 'rope', name: 'Rope' },
+    { key: 'torch', name: 'Torch' },
+  ],
   computedModifiers: [],
   modifiers: [],
-  encumbrance: 2,
-  maxEncumbrance: 8,
   drToDodge: 10,
   drToMelee: 9,
   drToRanged: 12,
@@ -66,9 +67,9 @@ describe('SummaryBar Browser', () => {
     );
 
     // drToDodge=10, drToMelee=9, drToRanged=12 from baseCharacter
-    await expect.element(page.getByText('10')).toBeVisible();
-    await expect.element(page.getByText('9')).toBeVisible();
-    await expect.element(page.getByText('12')).toBeVisible();
+    await expect.element(page.getByRole('button', { name: /dodge/i })).toHaveTextContent('10');
+    await expect.element(page.getByRole('button', { name: /melee/i })).toHaveTextContent('9');
+    await expect.element(page.getByRole('button', { name: /ranged/i })).toHaveTextContent('12');
   });
 
   it('displays encumbrance as current / max', async () => {
@@ -78,11 +79,11 @@ describe('SummaryBar Browser', () => {
       </BrowserTestProvider>
     );
 
-    // encumbrance=2, maxEncumbrance=8 — scope to the encumbrance button to avoid
+    // encumbrance=2, maxEncumbrance=10 — scope to the encumbrance button to avoid
     // substring collision with other stat values (e.g. '2' inside '12')
     const encumbranceButton = page.getByRole('button', { name: /encumbrance/i });
     await expect.element(encumbranceButton).toHaveTextContent('2');
-    await expect.element(encumbranceButton).toHaveTextContent('8');
+    await expect.element(encumbranceButton).toHaveTextContent('10');
   });
 
   it('opens the detail popper when a stat button is clicked', async () => {

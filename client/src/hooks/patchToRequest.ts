@@ -19,6 +19,15 @@ export function patchToRequest(
                 } as NonNullable<CharacterUpdateRequest['equippedArmor']>
             };
 
+        case 'weapon':
+            return {
+                equippedWeapons: [{
+                    index: patch.index,
+                    field: patch.field,
+                    value: patch.value
+                }] as unknown as CharacterUpdateRequest['equippedWeapons']
+            };
+
         case 'equipment-item':
         case 'equipment-add':
         case 'equipment-remove':

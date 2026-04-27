@@ -1,0 +1,10 @@
+node_modules
+client
+tests/unit-be
+tests/e2e
+.git
+.env
+.env.*
+dist
+*.md
+.claude
