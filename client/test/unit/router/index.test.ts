@@ -20,6 +20,7 @@ vi.mock('@/router/history', () => ({
 vi.mock('@/pages/CharacterPage', () => ({ CharacterPage: () => null }));
 vi.mock('@/pages/CharactersListPage', () => ({ CharactersListPage: () => null }));
 vi.mock('@/pages/FaqPage', () => ({ FaqPage: () => null }));
+vi.mock('@/pages/PrintPage', () => ({ PrintPage: () => null }));
 vi.mock('@/pages/ReleasePage', () => ({ ReleasePage: () => null }));
 vi.mock('@/pages/ResetPasswordPage', () => ({ ResetPasswordPage: () => null }));
 vi.mock('@/router/layout', () => ({ RootLayout: () => null }));
@@ -31,6 +32,7 @@ describe('router/index — route registration', () => {
 
     expect(registeredPaths).toContain('/');
     expect(registeredPaths).toContain('/characters');
+    expect(registeredPaths).toContain('/print');
     expect(registeredPaths).toContain('/faq');
     expect(registeredPaths).toContain('/release');
     expect(registeredPaths).toContain('/reset-password');

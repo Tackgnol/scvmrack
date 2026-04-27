@@ -19,6 +19,11 @@ const charactersRoute = createRoute({
     component: lazyRouteComponent(() => import('@/pages/CharactersListPage').then(m => ({ default: m.CharactersListPage }))),
 });
 
+const printRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: '/print',
+    component: lazyRouteComponent(() => import('@/pages/PrintPage').then(m => ({ default: m.PrintPage }))),
+});
 
 const faqRoute = createRoute({
     getParentRoute: () => rootRoute,
@@ -42,6 +47,7 @@ const resetPasswordRoute = createRoute({
 const routeTree = rootRoute.addChildren([
     indexRoute,
     charactersRoute,
+    printRoute,
     faqRoute,
     releaseRoute,
     resetPasswordRoute,

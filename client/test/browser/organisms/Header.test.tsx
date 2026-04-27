@@ -28,6 +28,7 @@ vi.mock('@/api', () => ({
 
 vi.mock('@/router/navigation', () => ({
     buildHomeCallbackUrl: vi.fn().mockReturnValue('/home'),
+    buildPrintCallbackUrl: vi.fn().mockReturnValue('/print'),
     getCurrentPendingClaimCharacterId: vi.fn(),
     setCurrentPendingClaimCharacterId: vi.fn(),
 }));

@@ -336,7 +336,7 @@ export function CharacterPage() {
                 <Abilities />
                 <CharacterDescriptors />
 
-                <Box sx={customStyles.zoneDivider}>
+                <Box className="print-hidden" sx={customStyles.zoneDivider}>
                     <Typography sx={customStyles.zoneDividerIcon}>✠</Typography>
                 </Box>
 
@@ -379,7 +379,7 @@ export function CharacterPage() {
                     </SectionAccordion>
                 )}
 
-                <Box sx={customStyles.zoneDivider}>
+                <Box className="print-hidden" sx={customStyles.zoneDivider}>
                     <Typography sx={customStyles.zoneDividerIcon}>✠</Typography>
                 </Box>
 

@@ -17,9 +17,12 @@ const modifiersTitleStyle = {
 export default function ModifiersPanel() {
   const { t } = useTranslation();
   const { state, actions } = useModifiersPanel();
+  const hasPrintableModifiers =
+    state.computedModifiers.length > 0 || state.customModifiers.length > 0;
 
   return (
     <Box
+      className={hasPrintableModifiers ? 'print-modifiers' : 'print-modifiers print-empty'}
       sx={{
         mb: 2,
         bgcolor: morkBorgColors.black,

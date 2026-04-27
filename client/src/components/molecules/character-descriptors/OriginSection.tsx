@@ -14,7 +14,10 @@ export default function OriginSection({
   const { t } = useTranslation();
 
   return (
-    <Box sx={customStyles.characterDescriptors.originOpen}>
+    <Box
+      className="print-origin-section"
+      sx={customStyles.characterDescriptors.originOpen}
+    >
       <Typography sx={customStyles.characterDescriptors.traitsLabel}>
         {t('character.origin')}
       </Typography>

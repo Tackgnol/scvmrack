@@ -1,7 +1,7 @@
 {
   "app": {
-    "title": "Scvm Rack",
-    "subtitle": "Karta Postaci"
+    "title": "Scvmrack",
+    "subtitle": "Interaktywna karta postaci Mörk Borg"
   },
   "stats": {
     "hitPoints": "Punkty Życia",

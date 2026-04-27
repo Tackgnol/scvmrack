@@ -24,6 +24,7 @@ function apiProxy(target: string, allowHtml = false): ProxyOptions {
 }
 
 export default defineConfig({
+  publicDir: './static',
   plugins: [
     react({
       babel: {
