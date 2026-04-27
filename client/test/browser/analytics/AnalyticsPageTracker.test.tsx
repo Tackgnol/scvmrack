@@ -1,6 +1,5 @@
 import { render } from 'vitest-browser-react';
 import { expect, describe, it, vi, beforeEach } from 'vitest';
-import { page } from 'vitest/browser';
 import { AnalyticsPageTracker } from '@/analytics/AnalyticsPageTracker';
 import BrowserTestProvider from '../BrowserTestProvider';
 
@@ -53,26 +52,18 @@ describe('AnalyticsPageTracker Browser', () => {
 
         vi.mocked(useRouterState).mockReturnValue(mockLocation as any);
 
-        // We need to use a real render that triggers the useEffect
-        const { unmount } = await import('vitest-browser-react').then(({ render }) =>
-            render(
-                <BrowserTestProvider>
-                    <AnalyticsPageTracker />
-                </BrowserTestProvider>
-            )
+        await render(
+            <BrowserTestProvider>
+                <AnalyticsPageTracker />
+            </BrowserTestProvider>
         );
 
-        // Wait for the effect to run
-        await new Promise(resolve => setTimeout(resolve, 0));
-
-        expect(trackPageView).toHaveBeenCalledWith({
+        await expect.poll(() => vi.mocked(trackPageView)).toHaveBeenCalledWith({
             path: '/characters/char-123?tab=inventory#details',
             title: 'Test Character Sheet',
             url: expect.stringContaining('/characters/char-123'),
             search: '?tab=inventory',
         });
-
-        unmount();
     });
 
     it('does not track duplicate path changes (strict mode double-render)', async () => {
@@ -84,21 +75,15 @@ describe('AnalyticsPageTracker Browser', () => {
 
         vi.mocked(useRouterState).mockReturnValue(mockLocation as any);
 
-        const { unmount } = await import('vitest-browser-react').then(({ render }) =>
-            render(
-                <BrowserTestProvider>
-                    <AnalyticsPageTracker />
-                </BrowserTestProvider>
-            )
+        await render(
+            <BrowserTestProvider>
+                <AnalyticsPageTracker />
+            </BrowserTestProvider>
         );
-
-        await new Promise(resolve => setTimeout(resolve, 0));
 
         // trackPageView should only be called once even if effect runs twice (React StrictMode)
         // The component has a ref check to prevent duplicate tracking
-        const callCount = trackPageView.mock.calls.length;
-
-        unmount();
+        await expect.poll(() => vi.mocked(trackPageView).mock.calls.length).toBe(1);
     });
 
     it('handles location with no search string', async () => {
@@ -110,23 +95,17 @@ describe('AnalyticsPageTracker Browser', () => {
 
         vi.mocked(useRouterState).mockReturnValue(mockLocation as any);
 
-        const { unmount } = await import('vitest-browser-react').then(({ render }) =>
-            render(
-                <BrowserTestProvider>
-                    <AnalyticsPageTracker />
-                </BrowserTestProvider>
-            )
+        await render(
+            <BrowserTestProvider>
+                <AnalyticsPageTracker />
+            </BrowserTestProvider>
         );
 
-        await new Promise(resolve => setTimeout(resolve, 0));
-
-        expect(trackPageView).toHaveBeenCalledWith(
+        await expect.poll(() => vi.mocked(trackPageView)).toHaveBeenCalledWith(
             expect.objectContaining({
                 path: '/',
             })
         );
-
-        unmount();
     });
 
     it('handles location with hash', async () => {
@@ -138,22 +117,16 @@ describe('AnalyticsPageTracker Browser', () => {
 
         vi.mocked(useRouterState).mockReturnValue(mockLocation as any);
 
-        const { unmount } = await import('vitest-browser-react').then(({ render }) =>
-            render(
-                <BrowserTestProvider>
-                    <AnalyticsPageTracker />
-                </BrowserTestProvider>
-            )
+        await render(
+            <BrowserTestProvider>
+                <AnalyticsPageTracker />
+            </BrowserTestProvider>
         );
 
-        await new Promise(resolve => setTimeout(resolve, 0));
-
-        expect(trackPageView).toHaveBeenCalledWith(
+        await expect.poll(() => vi.mocked(trackPageView)).toHaveBeenCalledWith(
             expect.objectContaining({
                 path: '/characters#equipment',
             })
         );
-
-        unmount();
     });
 });

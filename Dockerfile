@@ -17,11 +17,13 @@ COPY . .
 ARG VITE_BACKEND_URL
 ARG VITE_TURNSTILE_SITE_KEY
 ARG VITE_SITE_URL
+ARG VITE_GLITCHTIP_DSN
 
 # 2. Set them as ENV vars so Vite can see them during the build
 ENV VITE_BACKEND_URL=$VITE_BACKEND_URL
 ENV VITE_TURNSTILE_SITE_KEY=$VITE_TURNSTILE_SITE_KEY
 ENV VITE_SITE_URL=$VITE_SITE_URL
+ENV VITE_GLITCHTIP_DSN=$VITE_GLITCHTIP_DSN
 
 # 3. Build the frontend (the `build` script lives in client/package.json, not root)
 RUN cd client && npm run build

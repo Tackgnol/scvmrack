@@ -1,3 +1,4 @@
+import './instrument';
 import { CharacterProvider } from "@/CharacterContext/CharacterContext";
 import { SnackbarProvider } from "@/SnackbarContext/SnackbarProvider";
 import { initializeAnalyticsConsent } from '@/analytics/googleAnalytics';

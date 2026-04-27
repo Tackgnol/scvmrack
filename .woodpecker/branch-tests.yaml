@@ -4,30 +4,47 @@ when:
   - event: pull_request
 
 steps:
-  setup-deps:
-    image: mcr.microsoft.com/playwright:v1.58.2-jammy
-    commands:
-      - npm ci
-      - npm --prefix client ci
-
   unit-test:
     image: mcr.microsoft.com/playwright:v1.58.2-jammy
-    depends_on:
-      - setup-deps
     commands:
-      - npm run test:unit
+      - |
+        set -e
+        cleanup() {
+          rm -rf node_modules client/node_modules client/public client/coverage client/coverage-unit client/coverage-browser reports
+          npm cache clean --force || true
+        }
+        cleanup
+        trap cleanup EXIT
+
+        pwd
+        ls -la package-lock.json client/package-lock.json || true
+
+        if [ -f package-lock.json ] || [ -f npm-shrinkwrap.json ]; then
+          npm ci --no-audit --no-fund
+        else
+          npm install --no-audit --no-fund
+        fi
+        npm --prefix tests/unit-be run test
+
+        rm -rf node_modules
+        npm cache clean --force || true
+
+        npm --prefix client ci --no-audit --no-fund
+        npm --prefix client run test:unit
 
   integration-test:
     image: docker:27-cli
     depends_on:
-      - setup-deps
+      - browser-test-webkit
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     commands:
       - |
         set -e
+        docker builder prune -af || true
+        docker image prune -f || true
         docker compose -f compose.integration-be.yaml down --volumes --remove-orphans || true
-        trap 'docker compose -f compose.integration-be.yaml down --volumes --remove-orphans' EXIT
+        trap 'docker compose -f compose.integration-be.yaml down --volumes --remove-orphans; docker builder prune -af || true; docker image prune -f || true' EXIT
         docker compose -f compose.integration-be.yaml up \
           --build --abort-on-container-exit --exit-code-from integration \
           db api integration
@@ -35,11 +52,22 @@ steps:
   browser-test-chromium:
     image: mcr.microsoft.com/playwright:v1.58.2-jammy
     depends_on:
-      - setup-deps
+      - unit-test
     environment:
       VITEST_BROWSER_INSTANCES: chromium
+      CI: "true"
     commands:
-      - npm --prefix client run test:browser
+      - |
+        set -e
+        cleanup() {
+          rm -rf client/node_modules client/public client/coverage client/coverage-unit client/coverage-browser
+          npm cache clean --force || true
+        }
+        cleanup
+        trap cleanup EXIT
+
+        npm --prefix client ci --no-audit --no-fund
+        npm --prefix client run test:browser
 
   browser-test-firefox:
     image: mcr.microsoft.com/playwright:v1.58.2-jammy
@@ -48,7 +76,17 @@ steps:
     environment:
       VITEST_BROWSER_INSTANCES: firefox
     commands:
-      - npm --prefix client run test:browser
+      - |
+        set -e
+        cleanup() {
+          rm -rf client/node_modules client/public client/coverage client/coverage-unit client/coverage-browser
+          npm cache clean --force || true
+        }
+        cleanup
+        trap cleanup EXIT
+
+        npm --prefix client ci --no-audit --no-fund
+        npm --prefix client run test:browser
 
   browser-test-webkit:
     image: mcr.microsoft.com/playwright:v1.58.2-jammy
@@ -57,14 +95,22 @@ steps:
     environment:
       VITEST_BROWSER_INSTANCES: webkit
     commands:
-      - npm --prefix client run test:browser
+      - |
+        set -e
+        cleanup() {
+          rm -rf client/node_modules client/public client/coverage client/coverage-unit client/coverage-browser
+          npm cache clean --force || true
+        }
+        cleanup
+        trap cleanup EXIT
+
+        npm --prefix client ci --no-audit --no-fund
+        npm --prefix client run test:browser
 
   e2e-test:
     image: docker:27-cli
     depends_on:
       - integration-test
-      - unit-test
-      - browser-test-webkit
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     environment:

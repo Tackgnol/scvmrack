@@ -81,6 +81,7 @@ services:
       API_PROXY_TARGET: http://api:3000
       VITE_GA_MEASUREMENT_ID: ""
       VITE_TURNSTILE_SITE_KEY: ""
+      VITE_GLITCHTIP_DSN: ""
     depends_on:
       api:
         condition: service_healthy

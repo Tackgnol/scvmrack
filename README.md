@@ -91,6 +91,15 @@ Set these variables:
 
 If those keys are empty, captcha validation is skipped.
 
+## Error Monitoring (GlitchTip)
+
+Set `GLITCHTIP_DSN` to enable backend GlitchTip/Sentry error reporting. Set
+`VITE_GLITCHTIP_DSN` to enable frontend reporting to a separate GlitchTip
+project. The transaction sample rate is `0.01`.
+
+When deploying through Woodpecker, provide `glitchtip_dsn` for the backend and
+`vite_glitchtip_dsn` for the frontend.
+
 ## Learn More
 
 To learn Fastify, check out the [Fastify documentation](https://fastify.dev/docs/latest/).

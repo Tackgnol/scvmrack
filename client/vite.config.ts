@@ -40,19 +40,19 @@ export default defineConfig({
   build: {
     outDir: './public',
     emptyOutDir: true,
-    rollupOptions: {
+    rolldownOptions: {
       output: {
-        manualChunks(id) {
-          if (id.includes('node_modules')) {
-            if (id.includes('@mui') || id.includes('@emotion')) {
-              return 'vendor-mui';
-            }
-            if (id.includes('motion')) {
-              return 'vendor-motion';
-            }
-            // Let the bundler handle the framework core (React, TanStack, Auth)
-            // automatically to ensure correct execution order.
-          }
+        codeSplitting: {
+          groups: [
+            {
+              name: 'vendor-mui',
+              test: /node_modules[\\/](?:@mui|@emotion)[\\/]/,
+            },
+            {
+              name: 'vendor-motion',
+              test: /node_modules[\\/]motion[\\/]/,
+            },
+          ],
         },
       },
     },

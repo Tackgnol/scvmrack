@@ -4,7 +4,20 @@ import rateLimit from '@fastify/rate-limit';
 import csrfProtection from '@fastify/csrf-protection';
 import { FastifyInstance } from 'fastify';
 
+const getGlitchTipConnectSrc = (): string[] => {
+  const dsn = process.env.VITE_GLITCHTIP_DSN ?? process.env.GLITCHTIP_DSN;
+  if (!dsn) return [];
+
+  try {
+    return [new URL(dsn).origin];
+  } catch {
+    return [];
+  }
+};
+
 export default fp(async function securityPlugin(fastify: FastifyInstance) {
+  const glitchTipConnectSrc = getGlitchTipConnectSrc();
+
   // Security headers
   await fastify.register(helmet, {
     contentSecurityPolicy: {
@@ -19,7 +32,7 @@ export default fp(async function securityPlugin(fastify: FastifyInstance) {
         fontSrc: ["'self'", "https://fonts.gstatic.com"],
         // Allowed the Flags API for images
         imgSrc: ["'self'", "data:", "https://flagsapi.com"],
-        connectSrc: ["'self'"],
+        connectSrc: ["'self'", ...glitchTipConnectSrc],
         // Cloudflare Turnstile renders its widget in an iframe
         frameSrc: ["https://challenges.cloudflare.com"],
         frameAncestors: ["'none'"],

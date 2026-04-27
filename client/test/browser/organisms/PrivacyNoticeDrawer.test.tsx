@@ -69,9 +69,6 @@ describe('PrivacyNoticeDrawer Component', () => {
             </BrowserTestProvider>
         );
 
-        // Wait to ensure rendering logic has completed
-        await new Promise((resolve) => setTimeout(resolve, 50));
- 
         // Assert the drawer save button isn't in the DOM
         await expect.poll(() => page.getByTestId('privacy-drawer-save-button').all()).toHaveLength(0);
     });
@@ -116,10 +113,10 @@ describe('PrivacyNoticeDrawer Component', () => {
         const saveBtn = page.getByTestId('privacy-drawer-save-button');
         await userEvent.click(saveBtn);
 
-        expect(PrivacySettingsModule.savePrivacySettings).toHaveBeenCalledWith({
+        await expect.poll(() => PrivacySettingsModule.savePrivacySettings).toHaveBeenCalledWith({
             acknowledged: true,
             analyticsEnabled: false,
         });
-        expect(GoogleAnalyticsModule.setAnalyticsEnabled).toHaveBeenCalledWith(false);
+        await expect.poll(() => GoogleAnalyticsModule.setAnalyticsEnabled).toHaveBeenCalledWith(false);
     });
 });

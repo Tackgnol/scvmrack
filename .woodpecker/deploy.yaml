@@ -8,6 +8,8 @@
 #   mail_user
 #   mail_pass
 #   turnstile_secret_key
+#   glitchtip_dsn
+#   vite_glitchtip_dsn
 #   client_origin
 #   client_gateway
 #   better_auth_url
@@ -41,6 +43,8 @@ steps:
         from_secret: mail_pass
       TURNSTILE_SECRET_KEY:
         from_secret: turnstile_secret_key
+      GLITCHTIP_DSN:
+        from_secret: glitchtip_dsn
       CLIENT_ORIGIN:
         from_secret: client_origin
       CLIENT_GATEWAY:
@@ -57,6 +61,8 @@ steps:
         from_secret: vite_turnstile_site_key
       VITE_SITE_URL:
         from_secret: vite_site_url
+      VITE_GLITCHTIP_DSN:
+        from_secret: vite_glitchtip_dsn
 
     commands:
       # Build new image, run migrations, swap api. db keeps its volume.
