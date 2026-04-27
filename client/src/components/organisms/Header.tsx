@@ -225,7 +225,8 @@ export default function Header() {
   };
 
   const handlePrint = () => {
-    void appHistory.push(buildPrintCallbackUrl(characterId || lastCharacterId));
+    const printUrl = buildPrintCallbackUrl(characterId || lastCharacterId);
+    window.open(printUrl, '_blank', 'noopener,noreferrer');
   };
 
   return (

@@ -92,7 +92,12 @@ input[type='number'] {
 .print-route-page {
   min-height: 100vh;
   padding: 16px;
-  background: #d8d6cf;
+  background: #e9e9e4;
+}
+
+.print-layout-root {
+  background: #e9e9e4 !important;
+  border: 0 !important;
 }
 
 .print-toolbar .MuiButton-root {
@@ -100,6 +105,14 @@ input[type='number'] {
   font-weight: 900;
   letter-spacing: 0;
   text-transform: uppercase;
+  background: #fff !important;
+  border: 1px solid #111 !important;
+  color: #111 !important;
+  box-shadow: none !important;
+}
+
+.print-toolbar .MuiButton-root:hover {
+  background: #eee !important;
 }
 
 .print-a4-sheet {
@@ -179,7 +192,394 @@ input[type='number'] {
   text-align: center;
 }
 
-@media (max-width: 900px) {
+.print-native-sheet {
+  position: relative;
+  font-family: Georgia, 'Times New Roman', serif;
+  color: #111;
+  font-size: 9pt;
+  line-height: 1.28;
+}
+
+.print-native-sheet::before {
+  content: '';
+  position: absolute;
+  inset: -3mm -3mm auto auto;
+  width: 32mm;
+  height: 32mm;
+  border-top: 5px solid #111;
+  border-right: 5px solid #111;
+  pointer-events: none;
+}
+
+.print-native-header {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 54mm;
+  gap: 6mm;
+  align-items: end;
+  margin-bottom: 3mm;
+  padding: 0 0 3mm 7mm;
+  border-bottom: 4px solid #111;
+}
+
+.print-native-header p,
+.print-native-header h1 {
+  margin: 0;
+}
+
+.print-native-header p {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 6.5pt;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.print-native-brand-line {
+  display: flex;
+  gap: 2mm;
+  align-items: baseline;
+  flex-wrap: wrap;
+}
+
+.print-native-brand-line span + span {
+  font-size: 5.8pt;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.print-native-header h1 {
+  margin-top: 1mm;
+  font-family: Arial Black, Impact, Arial, sans-serif;
+  font-size: 28pt;
+  letter-spacing: -0.03em;
+  line-height: 0.9;
+  text-transform: uppercase;
+}
+
+.print-native-header::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.5mm;
+  bottom: 3mm;
+  width: 3mm;
+  background:
+    repeating-linear-gradient(
+      -45deg,
+      #111,
+      #111 1.5px,
+      transparent 1.5px,
+      transparent 4px
+    );
+  border: 1px solid #111;
+}
+
+.print-native-header > div:last-child {
+  text-align: right;
+}
+
+.print-native-header strong {
+  display: block;
+  margin-top: 1mm;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 13pt;
+  line-height: 1.05;
+}
+
+.print-native-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0;
+  margin-bottom: 4mm;
+  border: 2px solid #111;
+}
+
+.print-native-summary .print-native-label-value {
+  border: 0;
+  border-right: 1px solid #111;
+}
+
+.print-native-summary .print-native-label-value:nth-child(4n) {
+  border-right: 0;
+}
+
+.print-native-summary .print-native-label-value:nth-child(n + 5) {
+  border-top: 1px solid #111;
+}
+
+.print-native-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+  gap: 4mm;
+  align-items: start;
+}
+
+.print-native-grid > div {
+  display: grid;
+  gap: 3mm;
+  min-width: 0;
+}
+
+.print-native-section {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.print-native-section h2 {
+  display: flex;
+  align-items: center;
+  gap: 1.5mm;
+  margin: 0 0 1mm;
+  padding: 0 0 0.8mm;
+  border-bottom: 2px solid #111;
+  background: transparent;
+  color: #111;
+  font-family: Arial Black, Impact, Arial, sans-serif;
+  font-size: 10pt;
+  font-weight: 900;
+  letter-spacing: 0.01em;
+  line-height: 0.95;
+  text-transform: uppercase;
+}
+
+.print-native-section h2::before {
+  content: '';
+  display: block;
+  width: 4mm;
+  height: 4mm;
+  border: 1px solid #111;
+  background:
+    linear-gradient(135deg, transparent 45%, #111 45%, #111 55%, transparent 55%);
+  flex: 0 0 auto;
+}
+
+.print-native-label-value,
+.print-native-text-field {
+  border: 1px solid #111;
+  min-width: 0;
+}
+
+.print-native-label-value dt,
+.print-native-text-field dt {
+  margin: 0;
+  padding: 1mm 1.2mm 0;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 6.5pt;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.print-native-label-value dd,
+.print-native-text-field dd {
+  margin: 0;
+  padding: 0.7mm 1.2mm 1mm;
+  min-height: 5mm;
+  color: #111;
+}
+
+.print-native-label-value dd {
+  font-family: Arial Black, Impact, Arial, sans-serif;
+  font-size: 12pt;
+  font-weight: 900;
+  line-height: 1.05;
+}
+
+.print-native-dot-track dd {
+  display: flex;
+  align-items: center;
+  gap: 1mm;
+}
+
+.print-native-dots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8mm;
+  align-items: center;
+}
+
+.print-native-dots span {
+  width: 3.2mm;
+  height: 3.2mm;
+  border: 1px solid #111;
+  border-radius: 50%;
+  background: transparent;
+}
+
+.print-native-dots em {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 6pt;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.print-native-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1mm;
+}
+
+.print-native-ability-score {
+  min-width: 0;
+  border: 2px solid #111;
+}
+
+.print-native-ability-score dt {
+  margin: 0;
+  padding: 1mm 1mm 0;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 6pt;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.print-native-ability-score dd {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 1mm;
+  align-items: end;
+  margin: 0;
+  padding: 0.5mm 1mm 1mm;
+}
+
+.print-native-ability-score strong {
+  font-family: Arial Black, Impact, Arial, sans-serif;
+  font-size: 19pt;
+  line-height: 0.85;
+}
+
+.print-native-ability-score span {
+  padding-bottom: 0.2mm;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 6.2pt;
+  font-weight: 900;
+  line-height: 1;
+  text-align: right;
+  text-transform: uppercase;
+}
+
+.print-native-fields {
+  display: grid;
+  gap: 1.5mm;
+  margin: 0;
+}
+
+.print-native-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid #111;
+}
+
+.print-native-list li {
+  display: grid;
+  gap: 0.7mm;
+  padding: 1.4mm 1.6mm;
+  border-bottom: 1px solid #111;
+}
+
+.print-native-list li:last-child {
+  border-bottom: 0;
+}
+
+.print-native-list strong {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 9pt;
+}
+
+.print-native-list span {
+  display: block;
+  font-size: 8pt;
+}
+
+.print-native-numbered {
+  list-style: decimal;
+  padding-left: 6mm;
+}
+
+.print-native-uses li {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+}
+
+.print-native-pips {
+  display: flex;
+  gap: 1.2mm;
+}
+
+.print-native-pips span {
+  display: block;
+  width: 4mm;
+  height: 4mm;
+  border: 1px solid #111;
+  border-radius: 50%;
+}
+
+.print-native-pips span.is-used {
+  background: repeating-linear-gradient(
+    -45deg,
+    #111,
+    #111 1px,
+    #fff 1px,
+    #fff 3px
+  );
+}
+
+.print-native-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 8pt;
+}
+
+.print-native-table th,
+.print-native-table td {
+  padding: 1mm 1.2mm;
+  border: 1px solid #111;
+  text-align: left;
+  vertical-align: top;
+}
+
+.print-native-table th {
+  background: #eee;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 6.5pt;
+  text-transform: uppercase;
+}
+
+.print-native-notes {
+  margin-top: 4mm;
+}
+
+.print-native-notes p {
+  min-height: 24mm;
+  margin: 0;
+  padding: 2mm;
+  border: 1px solid #111;
+  white-space: pre-wrap;
+}
+
+.print-native-empty,
+.print-native-empty-page {
+  margin: 0;
+  padding: 2mm;
+  border: 1px solid #111;
+}
+
+.print-native-empty-page {
+  min-height: 220mm;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 12pt;
+  font-weight: 900;
+}
+
+@media screen and (max-width: 700px) {
   .print-route-page {
     padding: 12px;
   }
@@ -201,6 +601,18 @@ input[type='number'] {
     margin-top: 6px !important;
     text-align: left;
   }
+
+  .print-native-header,
+  .print-native-summary,
+  .print-native-grid,
+  .print-native-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .print-native-header > div:last-child {
+    margin-top: 4mm;
+    text-align: left;
+  }
 }
 
 @page {
@@ -213,13 +625,13 @@ input[type='number'] {
     color-scheme: light;
   }
 
-  * {
+  body.print-route-active * {
     box-shadow: none !important;
     text-shadow: none !important;
     animation: none !important;
   }
 
-  body {
+  body.print-route-active {
     background: #fff !important;
     color: #111 !important;
   }
@@ -239,7 +651,7 @@ input[type='number'] {
     width: auto !important;
     min-height: auto !important;
     margin: 0 !important;
-    padding: 0 !important;
+    padding: 4mm !important;
     box-shadow: none !important;
   }
 
@@ -265,24 +677,24 @@ input[type='number'] {
     gap: 3mm !important;
   }
 
-  body::before {
+  body.print-route-active::before {
     display: none !important;
   }
 
-  .print-hidden,
-  .print-modifiers.print-empty,
-  .MuiModal-root,
-  .MuiBackdrop-root,
-  .MuiDrawer-root,
-  .MuiSnackbar-root {
+  body.print-route-active .print-hidden,
+  body.print-route-active .print-modifiers.print-empty,
+  body.print-route-active .MuiModal-root,
+  body.print-route-active .MuiBackdrop-root,
+  body.print-route-active .MuiDrawer-root,
+  body.print-route-active .MuiSnackbar-root {
     display: none !important;
   }
 
-  #main-content {
+  body.print-route-active #main-content {
     animation: none !important;
   }
 
-  .MuiContainer-root {
+  body.print-route-active .MuiContainer-root {
     max-width: none !important;
     padding-left: 0 !important;
     padding-right: 0 !important;
@@ -300,6 +712,20 @@ input[type='number'] {
     border-color: #111 !important;
   }
 
+  .print-native-pips span.is-used {
+    background: repeating-linear-gradient(
+      -45deg,
+      #111,
+      #111 1px,
+      #fff 1px,
+      #fff 3px
+    ) !important;
+  }
+
+  .print-native-table th {
+    background-color: #eee !important;
+  }
+
   .print-sheet .MuiBox-root,
   .print-sheet .MuiPaper-root,
   .print-sheet .MuiAccordion-root,
@@ -309,7 +735,7 @@ input[type='number'] {
     background-image: none !important;
   }
 
-  .MuiPaper-root {
+  body.print-route-active .MuiPaper-root {
     border-color: #111 !important;
   }
 
@@ -325,17 +751,17 @@ input[type='number'] {
     opacity: 1 !important;
   }
 
-  .MuiIconButton-root {
+  body.print-route-active .MuiIconButton-root {
     display: none !important;
   }
 
-  .MuiAccordionSummary-expandIconWrapper {
+  body.print-route-active .MuiAccordionSummary-expandIconWrapper {
     display: none !important;
   }
 
-  .MuiAccordion-root .MuiCollapse-root,
-  .MuiAccordion-root .MuiCollapse-wrapper,
-  .MuiAccordion-root .MuiCollapse-wrapperInner {
+  body.print-route-active .MuiAccordion-root .MuiCollapse-root,
+  body.print-route-active .MuiAccordion-root .MuiCollapse-wrapper,
+  body.print-route-active .MuiAccordion-root .MuiCollapse-wrapperInner {
     height: auto !important;
     overflow: visible !important;
     visibility: visible !important;
@@ -343,14 +769,14 @@ input[type='number'] {
     display: block !important;
   }
 
-  .MuiInputBase-root,
-  .MuiOutlinedInput-root {
+  body.print-route-active .MuiInputBase-root,
+  body.print-route-active .MuiOutlinedInput-root {
     background: transparent !important;
   }
 
-  .MuiOutlinedInput-notchedOutline,
-  .MuiInput-underline:before,
-  .MuiInput-underline:after {
+  body.print-route-active .MuiOutlinedInput-notchedOutline,
+  body.print-route-active .MuiInput-underline:before,
+  body.print-route-active .MuiInput-underline:after {
     border-color: #111 !important;
   }
 
@@ -399,8 +825,8 @@ input[type='number'] {
     opacity: 0.7 !important;
   }
 
-  .item-loading-ghost,
-  .scan-line {
+  body.print-route-active .item-loading-ghost,
+  body.print-route-active .scan-line {
     display: none !important;
   }
 }

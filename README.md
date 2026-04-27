@@ -7,8 +7,18 @@ In the project directory, you can run:
 
 ### `npm run dev`
 
-To start the app in dev mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+Starts the Docker dev stack with watch enabled:
+
+- PostgreSQL on `localhost:5433`
+- Fastify API on [http://localhost:3000](http://localhost:3000)
+- Vite frontend on [http://localhost:5173](http://localhost:5173)
+- Mailpit on [http://localhost:8025](http://localhost:8025)
+
+This uses `compose.dev.yaml`, so the direct Docker equivalent is:
+
+```bash
+docker compose -f compose.dev.yaml up --build --watch
+```
 
 ### `npm start`
 
