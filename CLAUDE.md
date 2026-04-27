@@ -159,7 +159,8 @@ The project includes scripts to reapply database schema:
 - `.env` - Development configuration (never commit to git)
 - Required: `DATABASE_USER`, `DATABASE_HOST`, `DATABASE_NAME`, `DATABASE_PASSWORD`, `DATABASE_PORT`
 - Required: `BETTER_AUTH_SECRET`, `EMAIL_PEPPER` (min 32 chars), `EMAIL_ENCRYPTION_KEY` (64 hex chars)
-- Optional: `AUTH_BASE_URL`, `CLIENT_ORIGIN`, `CLIENT_GATEWAY`, `TURNSTILE_SECRET_KEY`
+- Optional: `AUTH_BASE_URL`, `CLIENT_ORIGIN`, `CLIENT_GATEWAY`, `TURNSTILE_SECRET_KEY`, `GLITCHTIP_DSN`, `VITE_GLITCHTIP_DSN`
+- Production uses separate GlitchTip DSNs: `GLITCHTIP_DSN` for backend and `VITE_GLITCHTIP_DSN` for frontend.
 
 ## Recommended Skills
 

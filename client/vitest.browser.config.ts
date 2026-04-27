@@ -15,6 +15,10 @@ const browserInstances = (
     context: { reducedMotion: 'reduce' as const },
   }));
 
+const isCiChromiumRun = process.env.CI === 'true'
+  && browserInstances.length === 1
+  && browserInstances[0]?.browser === 'chromium';
+
 export default mergeConfig(
   viteConfigWithoutUnitTests,
   defineConfig({
@@ -27,7 +31,13 @@ export default mergeConfig(
       browser: {
         enabled: true,
         instances: browserInstances,
-        provider: playwright(),
+        provider: playwright({
+          launchOptions: isCiChromiumRun
+            ? {
+                args: ['--disable-dev-shm-usage', '--no-sandbox'],
+              }
+            : undefined,
+        }),
         headless: !process.argv.includes('--ui'),
         viewport: { width: 1280, height: 720 },
       },

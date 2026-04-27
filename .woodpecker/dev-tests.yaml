@@ -8,9 +8,30 @@ steps:
   unit-test:
     image: node:22-alpine
     commands:
-      - npm ci
-      - npm --prefix client ci
-      - npm run test:unit
+      - |
+        set -e
+        cleanup() {
+          rm -rf node_modules client/node_modules client/public client/coverage client/coverage-unit client/coverage-browser reports
+          npm cache clean --force || true
+        }
+        cleanup
+        trap cleanup EXIT
+
+        pwd
+        ls -la package-lock.json client/package-lock.json || true
+
+        if [ -f package-lock.json ] || [ -f npm-shrinkwrap.json ]; then
+          npm ci --no-audit --no-fund
+        else
+          npm install --no-audit --no-fund
+        fi
+        npm --prefix tests/unit-be run test
+
+        rm -rf node_modules
+        npm cache clean --force || true
+
+        npm --prefix client ci --no-audit --no-fund
+        npm --prefix client run test:unit
 
   integration-test:
     image: docker:27-cli
@@ -21,8 +42,10 @@ steps:
     commands:
       - |
         set -e
+        docker builder prune -af || true
+        docker image prune -f || true
         docker compose -f compose.integration-be.yaml down --volumes --remove-orphans || true
-        trap 'docker compose -f compose.integration-be.yaml down --volumes --remove-orphans' EXIT
+        trap 'docker compose -f compose.integration-be.yaml down --volumes --remove-orphans; docker builder prune -af || true; docker image prune -f || true' EXIT
         docker compose -f compose.integration-be.yaml up \
           --build --abort-on-container-exit --exit-code-from integration \
           db api integration

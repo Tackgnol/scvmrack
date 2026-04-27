@@ -1,3 +1,4 @@
+import './instrument.js';
 import Fastify from 'fastify';
 import appService from './app.js';
 import 'dotenv/config';

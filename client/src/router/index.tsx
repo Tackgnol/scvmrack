@@ -44,6 +44,12 @@ const resetPasswordRoute = createRoute({
     component: lazyRouteComponent(() => import('@/pages/ResetPasswordPage').then(m => ({ default: m.ResetPasswordPage }))),
 });
 
+const glitchTipRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: '/glitchtip',
+    component: lazyRouteComponent(() => import('@/pages/GlitchTipPage').then(m => ({ default: m.GlitchTipPage }))),
+});
+
 const routeTree = rootRoute.addChildren([
     indexRoute,
     charactersRoute,
@@ -51,6 +57,7 @@ const routeTree = rootRoute.addChildren([
     faqRoute,
     releaseRoute,
     resetPasswordRoute,
+    glitchTipRoute,
 ]);
 
 

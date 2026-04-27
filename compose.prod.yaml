@@ -10,6 +10,8 @@ name: scvmrack-prod
 #   MAIL_USER
 #   MAIL_PASS
 #   TURNSTILE_SECRET_KEY
+#   GLITCHTIP_DSN
+#   VITE_GLITCHTIP_DSN
 #   CLIENT_ORIGIN, CLIENT_GATEWAY, BETTER_AUTH_URL, AUTH_BASE_URL
 
 x-db-env: &db-env
@@ -23,6 +25,7 @@ x-build-args: &build-args
   VITE_BACKEND_URL: ${VITE_BACKEND_URL:?VITE_BACKEND_URL is required}
   VITE_TURNSTILE_SITE_KEY: ${VITE_TURNSTILE_SITE_KEY:-}
   VITE_SITE_URL: ${VITE_SITE_URL:-}
+  VITE_GLITCHTIP_DSN: ${VITE_GLITCHTIP_DSN:?VITE_GLITCHTIP_DSN is required}
 
 services:
   db:
@@ -80,6 +83,8 @@ services:
       MAIL_USER: ${MAIL_USER:?MAIL_USER is required}
       MAIL_PASS: ${MAIL_PASS:?MAIL_PASS is required}
       TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY:-}
+      GLITCHTIP_DSN: ${GLITCHTIP_DSN:?GLITCHTIP_DSN is required}
+      VITE_GLITCHTIP_DSN: ${VITE_GLITCHTIP_DSN:?VITE_GLITCHTIP_DSN is required}
     healthcheck:
       test:
         [

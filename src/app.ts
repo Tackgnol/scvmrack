@@ -1,3 +1,5 @@
+import './instrument.js';
+import * as Sentry from '@sentry/node';
 import { fastifyCookie } from '@fastify/cookie';
 import { join } from 'node:path';
 import AutoLoad, { AutoloadPluginOptions } from '@fastify/autoload';
@@ -32,6 +34,21 @@ const app: FastifyPluginAsync<AppOptions> = async (fastify, opts) => {
     options: opts,
   });
 
+  fastify.addHook('preHandler', async (request) => {
+    if (!Sentry.isInitialized()) {
+      return;
+    }
+
+    Sentry.getIsolationScope().setUser(
+      request.appSession
+        ? {
+            id: request.appSession.userId,
+            segment: request.appSession.isGuest ? 'guest' : 'authenticated',
+          }
+        : null
+    );
+  });
+
   if (process.env.NODE_ENV === 'test' && process.env.ENABLE_TEST_ROUTES === '1') {
     await fastify.register(testRoutes, { prefix: '/test' });
   }
@@ -43,6 +60,10 @@ const app: FastifyPluginAsync<AppOptions> = async (fastify, opts) => {
 
   // Drain the DB pool when Fastify shuts down.
   fastify.addHook('onClose', async () => {
+    if (Sentry.isInitialized()) {
+      await Sentry.close(2000);
+    }
+
     await pool.end();
   });
 };
