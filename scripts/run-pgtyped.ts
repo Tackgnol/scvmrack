@@ -1,6 +1,7 @@
 import { spawnSync } from 'node:child_process';
 
 const composeBaseArgs = ['compose', '-f', 'compose.yaml'];
+const npxCommand = process.platform === 'win32' ? 'npx.cmd' : 'npx';
 
 function runDocker(args: string[]): number {
   const result = spawnSync('docker', args, { stdio: 'inherit' });
@@ -69,9 +70,9 @@ console.log('\nRunning pgTyped...');
 console.log(`DATABASE_URL: ${databaseUrl}`);
 
 // Run pgtyped
-const pgtypedResult = spawnSync('npx', ['pgtyped', '--config', 'pgtyped.json'], {
+const pgtypedResult = spawnSync(npxCommand, ['pgtyped', '--config', 'pgtyped.json'], {
   stdio: 'inherit',
-  shell: true,
+  shell: false,
   env: { ...process.env, DATABASE_URL: databaseUrl },
 });
 

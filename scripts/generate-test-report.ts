@@ -42,8 +42,12 @@ interface Suite {
 // ── XML helpers ───────────────────────────────────────────────────────────────
 
 function getAttr(tag: string, name: string): string {
-  const m = tag.match(new RegExp(`${name}="([^"]*)"`));
-  return m ? xmlUnescape(m[1]) : '';
+  for (const attrMatch of tag.matchAll(/\s([^\s=]+)="([^"]*)"/g)) {
+    if (attrMatch[1] === name) {
+      return xmlUnescape(attrMatch[2]);
+    }
+  }
+  return '';
 }
 
 function xmlUnescape(s: string): string {
