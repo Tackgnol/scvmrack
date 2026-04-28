@@ -13,6 +13,8 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = resolve(__dirname, '..');
+const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+const nodeCommand = process.execPath;
 
 interface Suite {
   label: string;
@@ -33,10 +35,10 @@ for (const suite of suites) {
   console.log(`▶ ${suite.label}`);
   console.log('─'.repeat(60));
 
-  const result = spawnSync('npm', ['run', suite.npmScript], {
+  const result = spawnSync(npmCommand, ['run', suite.npmScript], {
     cwd: root,
     stdio: 'inherit',
-    shell: true,
+    shell: false,
   });
 
   if (result.status !== 0) {
@@ -52,10 +54,10 @@ console.log(`\n${'─'.repeat(60)}`);
 console.log('▶ Generating combined HTML report');
 console.log('─'.repeat(60));
 
-const genResult = spawnSync('node', ['--import', 'tsx', 'scripts/generate-test-report.ts'], {
+const genResult = spawnSync(nodeCommand, ['--import', 'tsx', 'scripts/generate-test-report.ts'], {
   cwd: root,
   stdio: 'inherit',
-  shell: true,
+  shell: false,
 });
 
 console.log('\n' + '═'.repeat(60));

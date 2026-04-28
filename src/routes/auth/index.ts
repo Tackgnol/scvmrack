@@ -326,7 +326,8 @@ const authRoutes: FastifyPluginAsync = async (fastify): Promise<void> => {
                 );
                 reply.header('pragma', 'no-cache');
 
-                return reply.send(await response.text());
+                const responseBody = await response.text();
+                return reply.send(responseBody); // nosemgrep: javascript.express.security.audit.xss.direct-response-write.direct-response-write - proxies Better Auth responses with copied status and headers.
             } catch (error) {
                 request.log.error(error);
                 return reply.status(500).send({error: 'Internal Auth Error'});

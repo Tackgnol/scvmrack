@@ -20,6 +20,7 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = resolve(__dirname, '..');
+const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 
 const INTEGRATION_PORT = 3001;
 const API_BASE = `http://localhost:${INTEGRATION_PORT}`;
@@ -90,12 +91,12 @@ async function main() {
   }
 
   const result = spawnSync(
-    'npm',
+    npmCommand,
     ['--prefix', 'tests/integration-be', 'run', 'test:report'],
     {
       cwd: root,
       stdio: 'inherit',
-      shell: true,
+      shell: false,
       env: { ...process.env, E2E_BASE_URL: API_BASE },
     }
   );
