@@ -6,9 +6,14 @@ import { getApiLocale, getCharacterKey } from "@/hooks/utils.ts";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
 
-export function useCharacterRepository(characterId: string | null, locale?: string) {
+export function useCharacterRepository(
+    characterId: string | null,
+    locale?: string,
+    options: { enabled?: boolean } = {}
+) {
     const queryClient = useQueryClient();
     const trimmedLocale = getApiLocale<PathsCharactersIdGetParametersQueryLocale>(locale);
+    const queryEnabled = options.enabled ?? true;
 
     // ---- Character Query ----
     const characterQuery = $api.useQuery(
@@ -20,7 +25,7 @@ export function useCharacterRepository(characterId: string | null, locale?: stri
                 query: { locale: trimmedLocale }
             }
         },
-        { enabled: !!characterId }
+        { enabled: queryEnabled && !!characterId }
     );
 
     // ---- Create Character ----

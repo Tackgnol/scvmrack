@@ -5,7 +5,11 @@ import { useCharacterEditor } from "@/hooks/useCharacterEditor.ts";
 import { useCharacterId } from "@/hooks/useCharacterId.ts";
 import { useCharacterRepository } from "@/hooks/useCharacterRepository.ts";
 import { appHistory } from '@/router/history';
-import { hasCurrentSearchParam, LOGGED_OUT_QUERY_PARAM } from '@/router/navigation';
+import {
+    hasCurrentSearchParam,
+    LOGGED_OUT_QUERY_PARAM,
+    SESSION_EXPIRED_QUERY_PARAM,
+} from '@/router/navigation';
 import {getApiLocale} from "@/hooks/utils.ts";
 import {useSnackbar} from "@/SnackbarContext/SnackbarProvider.tsx";
 
@@ -18,6 +22,10 @@ const subscribeToHistory = (onStoreChange: () => void): (() => void) => {
 
 const getLoggedOutSnapshot = (): boolean => {
     return hasCurrentSearchParam(LOGGED_OUT_QUERY_PARAM);
+};
+
+const getSessionExpiredSnapshot = (): boolean => {
+    return hasCurrentSearchParam(SESSION_EXPIRED_QUERY_PARAM);
 };
 
 const getPathnameSnapshot = (): string => {
@@ -42,6 +50,11 @@ export function useCurrentCharacter() {
         getLoggedOutSnapshot,
         () => false
     );
+    const isSessionExpired = useSyncExternalStore(
+        subscribeToHistory,
+        getSessionExpiredSnapshot,
+        () => false
+    );
     const pathname = useSyncExternalStore(
         subscribeToHistory,
         getPathnameSnapshot,
@@ -52,7 +65,9 @@ export function useCurrentCharacter() {
     const { isAuthenticated, isGuest, isLoading: authLoading } = useAuth();
 
     // Repository and editor (original pattern preserved)
-    const repo = useCharacterRepository(characterId, locale);
+    const repo = useCharacterRepository(characterId, locale, {
+        enabled: !isSessionExpired,
+    });
     const editor = useCharacterEditor(
         characterId,
         repo.updateCharacter,
@@ -80,6 +95,7 @@ export function useCurrentCharacter() {
         if (authLoading) return;
         if (characterId) return;
         if (isJustLoggedOut) return;
+        if (isSessionExpired) return;
         if (autoCreateFailed) return;
 
         let cancelled = false;
@@ -146,7 +162,7 @@ export function useCurrentCharacter() {
             setCheckingExisting(false);
         };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [pathname, authLoading, characterId, isJustLoggedOut, autoCreateFailed, trimmedLocale]);
+    }, [pathname, authLoading, characterId, isJustLoggedOut, isSessionExpired, autoCreateFailed, trimmedLocale]);
 
     // ---- Set characterId when character is created (original logic) ----
     useEffect(() => {
@@ -159,6 +175,10 @@ export function useCurrentCharacter() {
     // ---- Generate new character (original logic) ----
     const generateNewCharacter = useCallback(
         (classId?: number, options?: GenerateNewOptions) => {
+            if (isSessionExpired) {
+                return;
+            }
+
             pendingAutoCreateController?.abort();
             pendingAutoCreateController = null;
             setAutoCreateFailed(false);
@@ -194,12 +214,16 @@ export function useCurrentCharacter() {
                 },
             });
         },
-        [editor, repo.createCharacter, trimmedLocale, isAuthenticated, isGuest, setCharacterId, setAutoCreateFailed, showError, t]
+        [editor, repo.createCharacter, trimmedLocale, isAuthenticated, isGuest, isSessionExpired, setCharacterId, setAutoCreateFailed, showError, t]
     );
 
     // ---- Kill current character and generate a new one ----
     const killAndReplace = useCallback(
         (options?: GenerateNewOptions) => {
+            if (isSessionExpired) {
+                return;
+            }
+
             const idToKill = characterId;
             if (!idToKill) {
                 // No character to kill, just generate
@@ -228,7 +252,7 @@ export function useCurrentCharacter() {
                 }
             );
         },
-        [characterId, editor, repo.deleteCharacter, generateNewCharacter, trimmedLocale, isAuthenticated, isGuest, showError]
+        [characterId, editor, repo.deleteCharacter, generateNewCharacter, trimmedLocale, isAuthenticated, isGuest, isSessionExpired, showError]
     );
 
     // ---- Change locale (original logic) ----
@@ -298,6 +322,7 @@ export function useCurrentCharacter() {
         // NEW: Claim functionality
         claimCharacter,
         isClaiming,
-        isJustLoggedOut
+        isJustLoggedOut,
+        isSessionExpired
     };
 }

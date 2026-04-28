@@ -124,8 +124,11 @@ export default function Header() {
 
   const closeAuthModal = useCallback(() => {
     setAuthModalOpen(false);
+    if (sessionExpiredNotice || isSessionExpired) {
+      void clearSessionExpiredFlag();
+    }
     setSessionExpiredNotice(false);
-  }, []);
+  }, [clearSessionExpiredFlag, isSessionExpired, sessionExpiredNotice]);
 
   useEffect(() => {
     if (isAuthenticated && user?.emailVerified) {
@@ -140,13 +143,8 @@ export default function Header() {
       return;
     }
 
-    if (!isAuthenticated) {
-      openAuthModal(true);
-    }
-    void clearSessionExpiredFlag();
+    openAuthModal(true);
   }, [
-    clearSessionExpiredFlag,
-    isAuthenticated,
     isSessionExpired,
     openAuthModal,
   ]);

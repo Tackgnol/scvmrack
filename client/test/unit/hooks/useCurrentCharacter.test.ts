@@ -1,12 +1,11 @@
 import { act, renderHook } from '@testing-library/react';
-import { expect, test, vi } from 'vitest';
-import { useCurrentCharacter } from '../../../src/hooks/useCurrentCharacter.ts';
-import { useCharacterId } from '../../../src/hooks/useCharacterId.ts';
-import { useAuth } from '../../../src/hooks/useAuth.ts';
-import { useCharacterRepository } from '../../../src/hooks/useCharacterRepository.ts';
-import { useCharacterEditor } from '../../../src/hooks/useCharacterEditor.ts';
-import { useTranslation } from 'react-i18next';
-import { useSnackbar } from '../../../src/SnackbarContext/SnackbarProvider.tsx';
+import { beforeEach, expect, test, vi } from 'vitest';
+import { useCurrentCharacter } from '@/hooks/useCurrentCharacter.ts';
+import { useCharacterId } from '@/hooks/useCharacterId.ts';
+import { useAuth } from '@/hooks/useAuth.ts';
+import { useCharacterRepository } from '@/hooks/useCharacterRepository.ts';
+import { useCharacterEditor } from '@/hooks/useCharacterEditor.ts';
+import { hasCurrentSearchParam } from '@/router/navigation';
 
 vi.mock('../../../src/hooks/useCharacterId.ts', () => ({
   useCharacterId: vi.fn(),
@@ -44,12 +43,18 @@ vi.mock('@/router/history', () => ({
 
 vi.mock('@/router/navigation', () => ({
     hasCurrentSearchParam: vi.fn().mockReturnValue(false),
-    LOGGED_OUT_QUERY_PARAM: 'loggedOut'
+    LOGGED_OUT_QUERY_PARAM: 'logged-out',
+    SESSION_EXPIRED_QUERY_PARAM: 'expired',
 }));
 
 vi.mock('@/analytics/googleAnalytics', () => ({
     trackEvent: vi.fn(),
 }));
+
+beforeEach(() => {
+    vi.clearAllMocks();
+    (hasCurrentSearchParam as any).mockReturnValue(false);
+});
 
 test('useCurrentCharacter aggregates repository, editor and auth state', () => {
     (useCharacterId as any).mockReturnValue({ characterId: 'char-1', lastCharacterId: null, setCharacterId: vi.fn() });
@@ -212,4 +217,25 @@ test('useCurrentCharacter handles auto-create effect', async () => {
     const createCallbacks = createMutate.mock.calls[0][1];
     createCallbacks.onSuccess({ id: 'auto-char' });
     expect(setCharacterId).toHaveBeenCalledWith('auto-char');
+});
+
+test('useCurrentCharacter pauses auto-create while session expired', async () => {
+    (hasCurrentSearchParam as any).mockImplementation((queryParam: string) => queryParam === 'expired');
+    const setCharacterId = vi.fn();
+    (useCharacterId as any).mockReturnValue({ characterId: null, lastCharacterId: null, setCharacterId });
+    (useAuth as any).mockReturnValue({ isAuthenticated: false, isGuest: false, isLoading: false });
+
+    const createMutate = vi.fn();
+    const repo = {
+        createCharacter: { mutate: createMutate, data: null },
+    };
+    (useCharacterRepository as any).mockReturnValue(repo);
+    (useCharacterEditor as any).mockReturnValue({ flush: vi.fn() });
+    global.fetch = vi.fn();
+
+    renderHook(() => useCurrentCharacter());
+
+    expect(useCharacterRepository).toHaveBeenCalledWith(null, 'en', { enabled: false });
+    expect(global.fetch).not.toHaveBeenCalled();
+    expect(createMutate).not.toHaveBeenCalled();
 });

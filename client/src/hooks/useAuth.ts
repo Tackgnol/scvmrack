@@ -1,9 +1,15 @@
 import {authKeys} from "@/api";
 import { trackEvent } from '@/analytics/googleAnalytics';
-import { navigateToLoggedOut } from '@/router/navigation';
+import { appHistory } from '@/router/history';
+import {
+    hasCurrentSearchParam,
+    navigateToLoggedOut,
+    SESSION_EXPIRED_QUERY_PARAM,
+} from '@/router/navigation';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {anonymousClient, magicLinkClient} from "better-auth/client/plugins";
 import { createAuthClient } from "better-auth/react";
+import { useSyncExternalStore } from 'react';
 
 // ============================================
 // Better Auth Client
@@ -63,11 +69,24 @@ export interface MagicLinkCredentials {
     hadGuestCharacter?: boolean;
 }
 
+const subscribeToHistory = (onStoreChange: () => void): (() => void) => {
+    return appHistory.subscribe(() => onStoreChange());
+};
+
+const getSessionExpiredSnapshot = (): boolean => {
+    return hasCurrentSearchParam(SESSION_EXPIRED_QUERY_PARAM);
+};
+
 // ============================================
 // Auth Hook
 // ============================================
 export function useAuth() {
     const queryClient = useQueryClient();
+    const isSessionExpired = useSyncExternalStore(
+        subscribeToHistory,
+        getSessionExpiredSnapshot,
+        () => false
+    );
 
     // Session query - validates cookie on load
     const sessionQuery = useQuery({
@@ -90,16 +109,17 @@ export function useAuth() {
             if (!res.ok) return null;
             return res.json();
         },
-        enabled: !!sessionQuery.data,
+        enabled: !isSessionExpired && !!sessionQuery.data,
         staleTime: 1000 * 60 * 5,
     });
 
     const sessionUser = sessionQuery.data?.user as (AuthUser & { isAnonymous?: boolean }) | undefined;
+    const effectiveSessionUser = isSessionExpired ? undefined : sessionUser;
     const isAnonymousUser = Boolean(sessionUser?.isAnonymous);
 
     const anonymousBootstrapQuery = useQuery({
         queryKey: ['auth', 'anonymous-bootstrap'],
-        enabled: !sessionQuery.isLoading && !sessionUser,
+        enabled: !isSessionExpired && !sessionQuery.isLoading && !sessionUser,
         staleTime: Infinity,
         retry: false,
         refetchOnWindowFocus: false,
@@ -286,12 +306,12 @@ export function useAuth() {
     });
 
     return {
-        user: (meQuery.data?.user ?? sessionUser) as AuthUser | null,
-        session: sessionQuery.data,
-        isAuthenticated: Boolean(sessionUser) && !isAnonymousUser,
-        isGuest: isAnonymousUser || (!sessionUser && !sessionQuery.isLoading),
+        user: (isSessionExpired ? null : (meQuery.data?.user ?? sessionUser)) as AuthUser | null,
+        session: isSessionExpired ? null : sessionQuery.data,
+        isAuthenticated: Boolean(effectiveSessionUser) && !isAnonymousUser,
+        isGuest: !isSessionExpired && (isAnonymousUser || (!sessionUser && !sessionQuery.isLoading)),
         isLoading: sessionQuery.isLoading || anonymousBootstrapQuery.isFetching,
-        isAnonymous: isAnonymousUser,
+        isAnonymous: !isSessionExpired && isAnonymousUser,
 
         signIn,
         signUp,
