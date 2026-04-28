@@ -43,8 +43,15 @@ vi.mock('@tanstack/react-router', () => ({
 
 // Mock AuthModal inside organisms, since we will test it separately
 vi.mock('@/components/organisms/AuthModal', () => ({
-    AuthModal: ({ open, onClose }: any) => (
-        open ? <div data-testid="mock-auth-modal"><button onClick={onClose}>Close</button></div> : null
+    AuthModal: ({ open, onClose, sessionExpiredNotice }: any) => (
+        open ? (
+            <div
+                data-testid="mock-auth-modal"
+                data-session-expired={sessionExpiredNotice ? 'true' : 'false'}
+            >
+                <button onClick={onClose}>Close</button>
+            </div>
+        ) : null
     ),
 }));
 
@@ -137,5 +144,20 @@ describe('Header Component', () => {
         const badge = page.getByTestId('scvm-count-badge');
         await expect.element(badge).toBeVisible();
         await expect.element(badge).toHaveTextContent(/42 SCVMS/i);
+    });
+
+    it('opens login modal with session expired notice and clears the flag when closed', async () => {
+        await renderHeader({
+            auth: { isAuthenticated: true },
+            session: { isSessionExpired: true },
+        });
+
+        const modal = page.getByTestId('mock-auth-modal');
+        await expect.element(modal).toBeVisible();
+        await expect.element(modal).toHaveAttribute('data-session-expired', 'true');
+        expect(mockClearSessionExpiredFlag).not.toHaveBeenCalled();
+
+        await userEvent.click(page.getByRole('button', { name: /close/i }));
+        await expect.poll(() => mockClearSessionExpiredFlag).toHaveBeenCalled();
     });
 });

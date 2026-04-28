@@ -187,6 +187,7 @@ export function CharacterPage() {
         character,
         characterId,
         isLoading,
+        isSessionExpired,
     } = useCharacter();
 
     const { t } = useTranslation();
@@ -198,7 +199,7 @@ export function CharacterPage() {
     const [stampDate, setStampDate] = useState<Date | null>(null);
     const [pendingAction, setPendingAction] = useState<'generate' | 'kill' | null>(null);
 
-    const isNotFound = !!error && !character && !!characterId && !isLoading;
+    const isNotFound = !isSessionExpired && !!error && !character && !!characterId && !isLoading;
 
     const equipment = character?.equipment ?? [];
 

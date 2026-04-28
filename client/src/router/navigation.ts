@@ -41,8 +41,13 @@ const replaceCurrentWithSearchParams = async (
     await appHistory.replace(nextPath);
 };
 
-const navigateToHomeWithFlag = async (queryParam: string): Promise<void> => {
-    const searchParams = new URLSearchParams();
+const navigateToHomeWithFlag = async (
+    queryParam: string,
+    preserveCurrentSearchParams = false
+): Promise<void> => {
+    const searchParams = preserveCurrentSearchParams
+        ? getCurrentSearchParams()
+        : new URLSearchParams();
     searchParams.set(queryParam, 'true');
     await appHistory.replace(buildPath(HOME_PATH, searchParams, ''));
 };
@@ -124,5 +129,5 @@ export const navigateToLoggedOut = async (): Promise<void> => {
 };
 
 export const navigateToSessionExpired = async (): Promise<void> => {
-    await navigateToHomeWithFlag(SESSION_EXPIRED_QUERY_PARAM);
+    await navigateToHomeWithFlag(SESSION_EXPIRED_QUERY_PARAM, true);
 };

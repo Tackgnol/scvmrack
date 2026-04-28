@@ -1,7 +1,8 @@
 import { renderHook } from '@testing-library/react';
 import { beforeEach, expect, test, vi } from 'vitest';
-import { useAuth, authClient } from '../../../src/hooks/useAuth.ts';
+import { useAuth, authClient } from '@/hooks/useAuth.ts';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { hasCurrentSearchParam } from '@/router/navigation';
 
 vi.mock('@tanstack/react-query', () => ({
   useQuery: vi.fn(),
@@ -41,7 +42,15 @@ vi.mock('@/analytics/googleAnalytics', () => ({
 }));
 
 vi.mock('@/router/navigation', () => ({
+    hasCurrentSearchParam: vi.fn().mockReturnValue(false),
     navigateToLoggedOut: vi.fn(),
+    SESSION_EXPIRED_QUERY_PARAM: 'expired',
+}));
+
+vi.mock('@/router/history', () => ({
+    appHistory: {
+        subscribe: vi.fn(() => vi.fn()),
+    },
 }));
 
 global.fetch = vi.fn();
@@ -67,6 +76,7 @@ function installMutationMocks() {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  (hasCurrentSearchParam as any).mockReturnValue(false);
   mutationConfigs.length = 0;
   installMutationMocks();
 });
@@ -90,6 +100,36 @@ test('useAuth returns user and session data', () => {
 
     expect(result.current.user?.id).toBe('1');
     expect(result.current.isAuthenticated).toBe(true);
+});
+
+test('useAuth treats expired session flag as logged out and skips anonymous bootstrap', () => {
+    (useQuery as any).mockImplementation(({ queryKey, enabled }: any) => {
+        if (queryKey.includes('session')) {
+            return { data: { user: { id: '1', email: 'a@b.com' } }, isLoading: false };
+        }
+        if (queryKey.includes('me')) {
+            expect(enabled).toBe(false);
+            return { data: { user: { id: '1', email: 'a@b.com' } }, isLoading: false };
+        }
+        if (queryKey.includes('anonymous-bootstrap')) {
+            expect(enabled).toBe(false);
+            return { isFetching: false };
+        }
+        return { isLoading: false };
+    });
+    (useQueryClient as any).mockReturnValue({
+      invalidateQueries: vi.fn(),
+      setQueryData: vi.fn(),
+    });
+
+    (hasCurrentSearchParam as any).mockReturnValue(true);
+
+    const { result } = renderHook(() => useAuth());
+
+    expect(result.current.user).toBeNull();
+    expect(result.current.session).toBeNull();
+    expect(result.current.isAuthenticated).toBe(false);
+    expect(result.current.isGuest).toBe(false);
 });
 
 test('useAuth handles signIn mutation', async () => {
