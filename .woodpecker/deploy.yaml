@@ -65,8 +65,40 @@ steps:
         from_secret: vite_glitchtip_dsn
 
     commands:
-      # Build new image, run migrations, swap api. db keeps its volume.
       - docker compose -f compose.prod.yaml build
-      - docker compose -f compose.prod.yaml up -d db
-      - docker compose -f compose.prod.yaml run --rm migrate
-      - docker compose -f compose.prod.yaml up -d --no-deps --wait api
+      - |
+        set -e
+
+        if ! docker service inspect scvmrack_db > /dev/null 2>&1; then
+          COMPOSE_PROJECT_NAME=scvmrack-prod docker compose -f compose.prod.yaml down --remove-orphans || true
+          API_REPLICAS=0 docker stack deploy -c compose.prod.yaml scvmrack --detach=false --resolve-image never
+        fi
+
+        deadline=$(( $(date +%s) + 180 ))
+        while [ "$(date +%s)" -lt "$deadline" ]; do
+          container_id="$(docker ps --filter label=com.docker.swarm.service.name=scvmrack_db --format '{{.ID}}' | head -n 1)"
+          if [ -n "$container_id" ]; then
+            health="$(docker inspect "$container_id" --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' 2>/dev/null || true)"
+            if [ "$health" = "healthy" ]; then
+              break
+            fi
+          fi
+          sleep 3
+        done
+
+        if [ "$health" != "healthy" ]; then
+          echo "Timed out waiting for scvmrack_db to become healthy" >&2
+          docker stack ps scvmrack --no-trunc >&2 || true
+          exit 1
+        fi
+
+        docker run --rm --network scvmrack_db \
+          -e DATABASE_USER=p1002_scmgrinder \
+          -e DATABASE_PASSWORD="$DATABASE_PASSWORD" \
+          -e DATABASE_NAME=p1002_scmgrinder \
+          -e DATABASE_HOST=scvmrack_db \
+          -e DATABASE_PORT=5432 \
+          scvmgrinder_be:prod node scripts/migrate.js
+
+        docker stack deploy -c compose.prod.yaml scvmrack --detach=false --resolve-image never
+        docker stack services scvmrack
