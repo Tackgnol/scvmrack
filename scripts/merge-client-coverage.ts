@@ -10,6 +10,7 @@ const coverageUnit = resolve(clientDir, 'coverage-unit/coverage-final.json');
 const coverageBrowser = resolve(clientDir, 'coverage-browser/coverage-final.json');
 const mergedDir = resolve(clientDir, 'coverage-merged');
 const nycOutputDir = resolve(clientDir, '.nyc_output');
+const npxCommand = process.platform === 'win32' ? 'npx.cmd' : 'npx';
 
 mkdirSync(mergedDir, { recursive: true });
 mkdirSync(nycOutputDir, { recursive: true });
@@ -34,9 +35,9 @@ if (copiedFiles.length === 0) {
 }
 
 const mergeResult = spawnSync(
-  'npx',
+  npxCommand,
   ['nyc', 'merge', 'coverage-merged', '.nyc_output/out.json'],
-  { cwd: clientDir, stdio: 'inherit', shell: true },
+  { cwd: clientDir, stdio: 'inherit', shell: false },
 );
 
 if (mergeResult.status !== 0) {
@@ -44,9 +45,9 @@ if (mergeResult.status !== 0) {
 }
 
 const reportResult = spawnSync(
-  'npx',
+  npxCommand,
   ['nyc', 'report', '--reporter=html', '--reporter=text', '--report-dir', './coverage'],
-  { cwd: clientDir, stdio: 'inherit', shell: true },
+  { cwd: clientDir, stdio: 'inherit', shell: false },
 );
 
 process.exit(reportResult.status ?? 1);

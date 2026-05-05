@@ -111,8 +111,12 @@ services:
       PLAYWRIGHT_INCLUDE_REGRESSION: ${PLAYWRIGHT_INCLUDE_REGRESSION:-0}
       API_BASE_URL: http://api:3000
     volumes:
-      - ./tests/e2e/playwright-report:/e2e/playwright-report
-      - ./tests/e2e/test-results:/e2e/test-results
+      - e2e-playwright-report:/e2e/playwright-report
+      - e2e-test-results:/e2e/test-results
     depends_on:
       web:
         condition: service_healthy
+
+volumes:
+  e2e-playwright-report:
+  e2e-test-results:
