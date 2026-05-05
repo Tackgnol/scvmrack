@@ -62,6 +62,8 @@ services:
 
   api:
     image: scvmgrinder_be:prod
+    ports:
+      - "3000:3000" # Expose host port 3000, route to container port 3000
     build:
       context: .
       args:
