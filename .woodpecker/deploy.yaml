@@ -19,7 +19,7 @@
 #   vite_site_url
 
 when:
-  - event: push
+  - event: [push, manual, pull_request]
     branch: master
 
 steps:
