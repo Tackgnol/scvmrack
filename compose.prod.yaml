@@ -1,5 +1,3 @@
-name: scvmrack-prod
-
 # Production stack. Driven by Woodpecker; secrets come from the runner env.
 #
 # Required env (passed by Woodpecker via secrets):
@@ -12,7 +10,8 @@ name: scvmrack-prod
 #   TURNSTILE_SECRET_KEY
 #   GLITCHTIP_DSN
 #   VITE_GLITCHTIP_DSN
-#   CLIENT_ORIGIN, CLIENT_GATEWAY, BETTER_AUTH_URL, AUTH_BASE_URL
+#   CLIENT_ORIGIN, BETTER_AUTH_URL, AUTH_BASE_URL
+#   CLIENT_GATEWAY is optional.
 
 x-db-env: &db-env
   DATABASE_USER: p1002_scmgrinder
@@ -30,13 +29,17 @@ x-build-args: &build-args
 services:
   db:
     image: postgres:16-alpine
-    restart: unless-stopped
+    deploy:
+      restart_policy:
+        condition: on-failure
     environment:
       POSTGRES_USER: p1002_scmgrinder
       POSTGRES_PASSWORD: ${DATABASE_PASSWORD:?DATABASE_PASSWORD is required}
       POSTGRES_DB: p1002_scmgrinder
     volumes:
       - pgdata:/var/lib/postgresql/data
+    networks:
+      - db
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U p1002_scmgrinder"]
       interval: 5s
@@ -45,7 +48,6 @@ services:
 
   migrate:
     image: scvmgrinder_be:prod
-    pull_policy: never
     build:
       context: .
       args:
@@ -53,28 +55,31 @@ services:
     command: ["node", "scripts/migrate.js"]
     environment:
       <<: *db-env
-    depends_on:
-      db:
-        condition: service_healthy
-    restart: "no"
+    networks:
+      - db
+    deploy:
+      replicas: 0
 
   api:
     image: scvmgrinder_be:prod
-    pull_policy: never
     build:
       context: .
       args:
         <<: *build-args
-    restart: unless-stopped
+    deploy:
+      replicas: ${API_REPLICAS:-1}
+      update_config:
+        order: start-first
+        failure_action: rollback
+      restart_policy:
+        condition: on-failure
     stop_grace_period: 30s
-    ports:
-      - "3000:3000"
     environment:
       <<: *db-env
       PORT: 3000
       NODE_ENV: production
       CLIENT_ORIGIN: ${CLIENT_ORIGIN:?CLIENT_ORIGIN is required}
-      CLIENT_GATEWAY: ${CLIENT_GATEWAY:-${CLIENT_ORIGIN}}
+      CLIENT_GATEWAY: ${CLIENT_GATEWAY:-}
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?BETTER_AUTH_SECRET is required}
       BETTER_AUTH_URL: ${BETTER_AUTH_URL:?BETTER_AUTH_URL is required}
       AUTH_BASE_URL: ${AUTH_BASE_URL:?AUTH_BASE_URL is required}
@@ -85,6 +90,9 @@ services:
       TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY:-}
       GLITCHTIP_DSN: ${GLITCHTIP_DSN:?GLITCHTIP_DSN is required}
       VITE_GLITCHTIP_DSN: ${VITE_GLITCHTIP_DSN:?VITE_GLITCHTIP_DSN is required}
+    networks:
+      - db
+      - rpg-network
     healthcheck:
       test:
         [
@@ -97,9 +105,13 @@ services:
       timeout: 5s
       retries: 30
       start_period: 10s
-    depends_on:
-      migrate:
-        condition: service_completed_successfully
-
 volumes:
   pgdata:
+    name: scvmrack-prod_pgdata
+
+networks:
+  db:
+    internal: true
+    attachable: true
+  rpg-network:
+    external: true
