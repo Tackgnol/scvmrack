@@ -4,8 +4,39 @@ when:
   - event: pull_request
 
 steps:
+  # 1. Catch leaked secrets immediately
+  secret-scan:
+    image: trufflesecurity/trufflehog:latest
+    commands:
+      # Scans the git history of this PR for high-entropy secrets and API keys
+      - trufflehog git file://. --only-verified --fail
+
+  # 2. Scan your code logic for OWASP Top 10 vulnerabilities
+  static-analysis:
+    image: semgrep/semgrep
+    depends_on:
+      - secret-scan
+    commands:
+      # Runs community-driven security rules against JS/TS files
+      - |
+        set -e
+        export SEMGREP_SRC_DIRECTORY="$CI_WORKSPACE"
+        semgrep scan --config auto --error .
+
+  # 3. Scan Dockerfiles and compose files for high-risk misconfigurations
+  iac-scan:
+    image: aquasec/trivy:0.70.0
+    depends_on:
+      - secret-scan
+    commands:
+      # Avoid the vulnerability scanner here; it downloads Trivy's vuln DB.
+      - trivy fs --scanners misconfig --exit-code 1 --severity HIGH,CRITICAL --no-progress .
+
   unit-test:
     image: mcr.microsoft.com/playwright:v1.58.2-jammy
+    depends_on:
+      - static-analysis
+      - iac-scan
     commands:
       - |
         set -e
@@ -41,10 +72,13 @@ steps:
     commands:
       - |
         set -e
-        docker builder prune -af || true
-        docker image prune -f || true
-        docker compose -f compose.integration-be.yaml down --volumes --remove-orphans || true
-        trap 'docker compose -f compose.integration-be.yaml down --volumes --remove-orphans; docker builder prune -af || true; docker image prune -f || true' EXIT
+        cleanup() {
+          docker compose -f compose.integration-be.yaml down --volumes --remove-orphans --rmi all || true
+          docker builder prune -af || true
+          docker image prune -af || true
+        }
+        cleanup
+        trap cleanup EXIT
         docker compose -f compose.integration-be.yaml up \
           --build --abort-on-container-exit --exit-code-from integration \
           db api integration
@@ -119,10 +153,13 @@ steps:
     commands:
       - |
         set -e
-        docker compose -f compose.e2e.yaml down --volumes --remove-orphans || true
-        docker builder prune -af || true
-        docker image prune -f || true
-        trap 'docker compose -f compose.e2e.yaml down --volumes --remove-orphans' EXIT
+        cleanup() {
+          docker compose -f compose.e2e.yaml down --volumes --remove-orphans --rmi all || true
+          docker builder prune -af || true
+          docker image prune -af || true
+        }
+        cleanup
+        trap cleanup EXIT
         docker compose -f compose.e2e.yaml up \
           --build --abort-on-container-exit --exit-code-from e2e \
           db api web mailpit e2e

@@ -35,7 +35,7 @@ export const loadLanguage = async (lng: string) => {
             i18n.addResourceBundle(baseLng, 'translation', data.default, true, true);
             loadedLanguages.add(baseLng);
         } catch (error) {
-            console.error(`Failed to load language: ${baseLng}`, error);
+            console.error('Failed to load language', { language: baseLng, error });
         }
     }
 };
