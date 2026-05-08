@@ -114,27 +114,32 @@ steps:
           exit 1
         fi
 
-        docker exec -i "$db_container_id" psql \
+        # Diagnostic: hash the password from the shell and from inside the
+        # backend image's node process. If these two SHA-256 prefixes differ,
+        # the password is being mutated between contexts (whitespace, newline,
+        # encoding) — that's the actual root cause and no URL encoding will fix it.
+        echo "shell pw sha256 prefix: $(printf '%s' "$DATABASE_PASSWORD" | sha256sum | cut -c1-8) length=$(printf '%s' "$DATABASE_PASSWORD" | wc -c)"
+        docker run --rm \
+          -e RAW_PASS="$DATABASE_PASSWORD" \
+          scvmrack-backend:prod \
+          node -e 'const c=require("crypto");const p=process.env.RAW_PASS||"";console.log("node  pw sha256 prefix:",c.createHash("sha256").update(p).digest("hex").slice(0,8),"length="+p.length)'
+
+        # Sync the role password to the current secret. Use a temp SQL file
+        # so psql variable substitution works (`-c` does not support `:'var'`).
+        printf "ALTER USER p1002_scmgrinder WITH PASSWORD :'db_password';\n" > /tmp/sync-pw.sql
+        docker cp /tmp/sync-pw.sql "$db_container_id:/tmp/sync-pw.sql"
+        docker exec "$db_container_id" psql \
           -U p1002_scmgrinder \
           -d p1002_scmgrinder \
           -v ON_ERROR_STOP=1 \
-          -v "db_password=$DATABASE_PASSWORD" <<'SQL'
-        ALTER USER p1002_scmgrinder WITH PASSWORD :'db_password';
-        SQL
+          -v "db_password=$DATABASE_PASSWORD" \
+          -f /tmp/sync-pw.sql
 
-        # URL-encode the password using Node from the built backend image.
-        # The previous sed-based encoder missed characters like ! ' ( ) * and
-        # non-ASCII bytes, so the encoded URL didn't round-trip back to the
-        # role's actual password and Prisma authentication failed.
-        db_password_url="$(docker run --rm \
-          -e RAW_PASS="$DATABASE_PASSWORD" \
-          scvmrack-backend:prod \
-          node -e 'process.stdout.write(encodeURIComponent(process.env.RAW_PASS))')"
-        if [ -z "$db_password_url" ]; then
-          echo "Failed to URL-encode DATABASE_PASSWORD" >&2
-          exit 1
-        fi
-        DATABASE_URL="postgresql://p1002_scmgrinder:${db_password_url}@db:5432/p1002_scmgrinder"
+        # Match trenchrats: pass the raw password directly in DATABASE_URL.
+        # Assumes the password has no URL-reserved characters (@ : / ? # & + space).
+        # If it ever does, switch to encodeURIComponent — but the sha256 trace
+        # above will show whether shell and node see the same bytes first.
+        DATABASE_URL="postgresql://p1002_scmgrinder:${DATABASE_PASSWORD}@db:5432/p1002_scmgrinder"
         export DATABASE_URL
 
         docker run --rm --network scvmrack_db \
