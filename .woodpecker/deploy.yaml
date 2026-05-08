@@ -83,10 +83,13 @@ steps:
 
         docker compose -f compose.prod.yaml build backend frontend db
 
-        if ! docker service inspect scvmrack_db > /dev/null 2>&1; then
-          COMPOSE_PROJECT_NAME=scvmrack-prod docker compose -f compose.prod.yaml down --remove-orphans || true
-          BACKEND_REPLICAS=0 FRONTEND_REPLICAS=0 docker stack deploy -c compose.prod.yaml scvmrack --detach=false --resolve-image never
-        fi
+        # Always deploy the stack so the latest service specs (image, mounts,
+        # ports, env) get applied — including for the db service. Use
+        # BACKEND_REPLICAS=0 FRONTEND_REPLICAS=0 so the backend doesn't burn
+        # restart cycles failing to connect before we sync the password and
+        # apply migrations below. We scale them back up at the end.
+        # `--detach=true` because we don't wait here for backend to converge.
+        BACKEND_REPLICAS=0 FRONTEND_REPLICAS=0 docker stack deploy -c compose.prod.yaml scvmrack --detach=true --resolve-image never
 
         deadline=$(( $(date +%s) + 180 ))
         health=""
@@ -193,5 +196,8 @@ steps:
           -e DATABASE_URL="$DATABASE_URL" \
           scvmrack-backend:prod npx prisma migrate deploy
 
+        # Scale backend/frontend back to normal replicas now that the db is
+        # ready and migrations are applied. This is the same stack spec as
+        # the deploy at the top, just without the REPLICAS=0 overrides.
         docker stack deploy -c compose.prod.yaml scvmrack --detach=false --resolve-image never
         docker stack services scvmrack
