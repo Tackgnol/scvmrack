@@ -1,238 +1,175 @@
 # AGENTS.md
 
-This file provides guidance to Codex (Codex.ai/code) when working with code in this repository.
+This file provides guidance to Codex when working with code in this repository.
 
 ## Project Overview
 
-MÖRK BORG Character Sheet - A full-stack TTRPG character management application with a neo-brutalist punk aesthetic. The project consists of a Fastify backend API and a React frontend.
+MÖRK BORG Character Sheet is a full-stack TTRPG character management app with a neo-brutalist punk aesthetic.
 
-## Tech Stack
+The repository is a two-app monorepo:
 
-- **Backend**: Fastify 5.x with TypeScript, PostgreSQL, better-auth
-- **Frontend**: React 18, Vite, TanStack Query, TanStack Router, MUI with custom Mörk Borg theme
-- **Database**: PostgreSQL with custom functions, views, and fuzzy search
-- **i18n**: English (en) and Polish (pl)
+| Directory | Role | Stack |
+|---|---|---|
+| `backend/` | REST API | Fastify 5, TypeScript, PostgreSQL, Prisma |
+| `frontend/` | SPA | React, Vite, TanStack Query/Router, MUI |
+
+Authentication is handled by `@tackgnol/rpgtools-shared-auth` in `backend/src/plugins/rpgtools-auth.ts`.
 
 ## Common Commands
 
-### Backend (root directory)
+### Backend (`backend/`)
+
 ```bash
-npm run dev      # Start development with hot reload
-npm run start    # Production build and start
-npm run build:ts # Compile TypeScript
-npm run test     # Run tests
+npm run dev              # Start the Docker dev stack from backend/
+npm run build:ts         # Compile TypeScript
+npm test                 # Backend unit tests + frontend unit tests
+npm run test:integration # Backend integration suite in Docker
+npm run test:browser     # Frontend browser suite
+npm run test:all         # Broad pre-merge verification
 ```
 
-### Frontend (client directory)
+### Frontend (`frontend/`)
+
 ```bash
-cd client
 npm run dev          # Start Vite dev server
 npm run build        # Production build
-npm run test:unit    # Run JSDOM unit tests
-npm run test:browser # Run cross-browser tests (Chromium, Firefox, Webkit)
-npm run test:browser:ui # Run browser tests with interactive UI
-npm run test:coverage # Run all tests and generate unified coverage report
-npm run lint         # Run ESLint
+npm run test:unit    # JSDOM unit tests
+npm run test:browser # Browser component tests
+npm run lint         # ESLint
 npm run lint:fix     # Fix linting issues
-npm run format       # Format code with Prettier
+npm run format       # Format source files
 ```
+
+### Docker
+
+```bash
+docker compose -f compose.dev.yaml up --build --watch
+docker compose -f compose.integration-be.yaml config
+docker compose -f compose.prod.yaml config
+```
+
+Do not read `.npmrc`; it is gitignored and contains registry credentials.
 
 ## Testing Standards
 
-### Choosing between unit and browser tests
-- **Unit tests** (`test/unit/`, JSDOM): pure logic, hooks, data transforms, utilities — anything that doesn't need real layout or real browser events.
-- **Browser tests** (`test/browser/`, Playwright via Vitest Browser Mode): component rendering, real user interactions, visual correctness, CSS-dependent behaviour. Runs against Chromium, Firefox, and Webkit.
+### Choosing Unit vs Browser Tests
 
-### Browser test structure
+- Unit tests (`frontend/test/unit/`, JSDOM): pure logic, hooks, transforms, and utilities that do not require layout or real browser events.
+- Browser tests (`frontend/test/browser/`, Vitest Browser Mode): component rendering, real interactions, visual correctness, and CSS-dependent behavior.
 
-Every browser test file follows this shape:
+### Browser Test Rules
 
-```ts
-import { render } from 'vitest-browser-react';      // NOT /pure
-import { page, userEvent } from 'vitest/browser';
-import { describe, it, expect, vi } from 'vitest';
-import MyComponent from '@/components/...';
-import BrowserTestProvider from '../BrowserTestProvider'; // adjust depth
-
-describe('MyComponent Browser', () => {
-  it('does something', async () => {
-    await render(
-      <BrowserTestProvider>
-        <MyComponent prop="value" />
-      </BrowserTestProvider>
-    );
-
-    await expect.element(page.getByRole('button')).toBeVisible();
-    await userEvent.click(page.getByRole('button'));
-    await expect.poll(() => mockFn).toHaveBeenCalled();
-    // no unmount() call — auto-cleanup handles it
-  });
-});
-```
-
-### Rules
-
-**Cleanup**
-- Do **not** call `unmount()` in tests. `vitest-browser-react` (default entry) auto-cleans before each test. Manual `unmount()` is redundant and triggers a webkit internal error.
-- Do **not** add `afterEach(cleanup)` in test files — `setup-browser.ts` does not need it either; auto-cleanup is built in.
-- **One render per `it()`**. Auto-cleanup fires *between* tests, not mid-test. If a test renders twice in one `it()` and the second render depends on the first being gone, it will fail. Split into separate `it()` blocks instead.
-
-**Locators** — in priority order:
-1. `page.getByRole('button', { name: /label/i })` — preferred, tests accessibility too
-2. `page.getByText('...')` — for visible text content
-3. `page.getByTestId('...')` — only when role/text are ambiguous; add `data-testid` to the component
-
-**Assertions**
-- Always `await expect.element(locator).toBeVisible()` — has built-in retry, never stale.
-- Never `expect(element).toBe...` without `await` — snapshots the DOM immediately and will be wrong for async updates.
-
-**Interactions**
-- Always `await userEvent.click(locator)` from `vitest/browser` — fires real CDP events, not synthetic JS.
-- Use `await userEvent.fill(input, 'value')` to set input values, not `userEvent.type`.
-
-**Verifying callbacks**
-- `await expect.poll(() => mockFn).toHaveBeenCalledWith(...)` — retries until true, handles async event dispatch correctly.
-- Never `expect(mockFn).toHaveBeenCalled()` without `poll` in browser tests.
-
-**Timers**
-- Avoid `sleep()` / raw `setTimeout` waits. They are fragile in CI.
-- For components with internal delays (and no `userEvent` interactions in the test), use fake timers:
-  ```ts
-  beforeEach(() => { vi.useFakeTimers(); });
-  afterEach(() => { vi.useRealTimers(); });
-  // inside test:
-  await vi.advanceTimersByTimeAsync(200); // flushes microtasks too
-  ```
-- Do **not** mix `userEvent` interactions with `vi.useFakeTimers()` — userEvent breaks under fake timers.
-
-**Mocks**
-- Reset mocks with `vi.clearAllMocks()` in `beforeEach` whenever shared describe-level `vi.fn()` props are used.
-- Prefer creating fresh `vi.fn()` locals inside each test over relying on shared describe-level mocks.
-
-**DOM manipulation**
-- If a test appends elements to `document.body` manually, always clean up with `try/finally` — assertions that throw will skip any cleanup after them, leaking into subsequent tests on the same page.
-
-**Provider**
-- Always wrap in `<BrowserTestProvider>` — it provides the MUI theme, i18n, and disables transitions/animations so assertions are not timing-dependent.
-- i18n is initialised once globally in `setup-browser.ts` (`beforeAll`). `BrowserTestProvider` does not need to gate on language loading.
-
-### Unit Testing
-Use standard Vitest with JSDOM for logic-heavy files and hooks that don't require real browser rendering.
+- Import `render` from `vitest-browser-react`, not `/pure`.
+- Do not call `unmount()` and do not add `afterEach(cleanup)`.
+- Use one render per `it()`.
+- Prefer locators in this order: role, visible text, test id.
+- Always use `await expect.element(locator).toBeVisible()`.
+- Use `await userEvent.click(locator)` and `await userEvent.fill(input, value)`.
+- Use `await expect.poll(() => mockFn).toHaveBeenCalledWith(...)` for callbacks.
+- Avoid raw sleeps. Do not mix fake timers with `userEvent`.
+- Wrap browser component tests in `<BrowserTestProvider>`.
 
 ## Architecture
 
 ### Backend Structure
-```
-src/
-├── routes/          # Fastify route handlers (autoloaded)
-│   ├── auth/        # Authentication endpoints
-│   ├── characters/  # Character CRUD operations
-│   ├── equipment/   # Equipment search
-│   └── session/     # Session management
-├── plugins/         # Fastify plugins (autoloaded)
-│   ├── cors.ts      # CORS configuration
-│   ├── sessionResolver.ts # Session resolution (auth + anonymous)
-│   └── security.ts  # Helmet, rate limiting
-├── services/        # Business logic
-│   ├── auth.ts      # better-auth setup
-│   └── db.ts        # PostgreSQL query helpers
-├── schemas/         # JSON schema validation
-├── types/           # TypeScript types
-└── emails/          # Email templates
+
+```text
+backend/
+├── src/
+│   ├── routes/          # Fastify route handlers, autoloaded under /api
+│   ├── plugins/         # Swagger and shared auth plugin
+│   ├── lib/             # Prisma client and integration helpers
+│   ├── schemas/         # JSON schema validation
+│   └── types/           # TypeScript types
+├── prisma/              # Prisma schema and migrations
+├── init/                # PostgreSQL extensions, schema, functions, views, seed data
+├── scripts/             # DB/test/deploy helper scripts
+└── tests/               # Backend integration and unit projects
 ```
 
 ### Frontend Structure
-```
-client/src/
-├── components/     # React components (UI)
-├── hooks/          # Custom hooks (character editing, auth, search)
+
+```text
+frontend/src/
+├── components/     # React components
+├── hooks/          # Character editing, auth, search, and UI hooks
 ├── api/            # OpenAPI-generated client
 ├── pages/          # Route pages
 ├── router/         # TanStack Router config
-├── i18n/           # Translations (en.json, pl.json)
+├── i18n/           # en/pl translations
 └── theme/          # MUI Mörk Borg theme
 ```
 
-### Database (init/)
-```
-init/
-├── 01-extensions/  # PostgreSQL extensions
-├── 02-schema/      # Tables (characters, classes, equipment, etc.)
-├── 03-functions/   # Stored functions (character generation, search)
-├── 04-views/       # Database views
-└── 05-seed/        # Game data (classes, items, translations)
-```
+### Runtime Routing
+
+- Backend API routes live under `/api/*`.
+- Shared auth routes live under `/api/auth/*`.
+- Shared claim routes live under `/api/claim/*`.
+- The backend keeps `/health` as a direct container health alias and `/api/health` for proxied checks.
+- The frontend is a static SPA served by nginx in production.
+- Caddy routes `/api/*` to the backend and everything else to the frontend.
 
 ## Key Patterns
 
 ### Character Editing
-The frontend uses optimistic updates with debouncing. When editing a character:
-1. Changes are queued as "patches" in `useCharacterEditor`
-2. UI updates immediately via `queryClient.setQueryData`
-3. Changes flush to server after 1 second of inactivity
-4. Failed updates retry up to 3 times with user notification
+
+The frontend uses optimistic updates with debouncing:
+
+1. Changes are queued as patches in `useCharacterEditor`.
+2. UI updates immediately through TanStack Query cache writes.
+3. Changes flush to the server after a short idle period.
+4. Failed updates retry and surface a user notification.
 
 ### Authentication Flow
-- **Better Auth v1.4.13** manages all sessions via `__Secure-better-auth.session_token` cookie (`HttpOnly`, `Secure`, `SameSite=Lax`)
-- Three auth modes: email+password, magic link (passwordless), anonymous bootstrap (auto-created on page load)
-- The `sessionResolver.ts` plugin resolves Better Auth sessions into `request.appSession` on every request (skips `/auth/*` routes)
-- No roles/RBAC — authorization is purely ownership-based (`character.user_id === session.userId`)
 
-### Email Encryption Scheme
-- Emails are **never stored in plaintext** in the database
-- A **blind index** (HMAC-SHA256 with `EMAIL_PEPPER`) is stored as `<hash>@bidx.local` for lookup
-- The real email is encrypted with **AES-256-GCM** (`EMAIL_ENCRYPTION_KEY`) and stored in `encrypted_email`
-- The auth route interceptor (`src/routes/auth/index.ts`) transforms plaintext emails before passing to Better Auth, conveying the real email via the internal `x-plain-email` header (stripped from external requests)
+- `@tackgnol/rpgtools-shared-auth` owns Better Auth setup, Logto OAuth, CSRF, security headers, rate limiting, anonymous sessions, and claim routes.
+- Logto handles real-user sign-in/profile flows.
+- Anonymous Better Auth sessions are still used for first-run character ownership.
+- `request.appSession` is the raw shared-auth session shape: `{ session, user } | null`.
+- No roles/RBAC. Authorization is ownership-based: `characters.user_id === request.appSession.user.id`.
 
-### Character Ownership Model
-Characters are bound to users via `user_id`. Three paths transfer ownership:
-1. **`onLinkAccount`** (auth.ts) — Better Auth callback when anonymous user links to email account (same browser session)
-2. **Auto-claim via `/verify-email`** — cross-browser/device verification using HMAC-signed claim parameters (`claimSignature.ts`). Signature binds `userId + sourceUserId + characterId` with `timingSafeEqual`
-3. **`POST /characters/:id/claim`** — manual endpoint, restricted to authenticated users claiming characters from anonymous users only
+### Character Ownership
 
-### Database Functions
-- `generate_character(class_id)` - Creates random character
-- `get_character_full(id, locale)` - Returns character with localized data
-- Equipment search uses fuzzy matching with PostgreSQL trigram indexes
+Characters are bound to users through `characters.user_id`.
+
+- `onLinkAccount` in `backend/src/plugins/rpgtools-auth.ts` transfers anonymous characters when the same browser session links to Logto.
+- `/api/claim/issue` and `/api/claim/redeem` from shared-auth handle cross-device transfers.
+
+### Database
+
+- `generate_character(class_id)` creates random characters.
+- `get_character_full(id, locale)` returns localized character data.
+- Equipment search uses PostgreSQL trigram indexes.
+- Prisma owns auth/claim tables and models the character relation.
+- Existing game schema/functions/seed data still come from `backend/init/`.
 
 ## Security Architecture
 
-Pentested with Shannon AI (2026-03-23). All findings remediated or accepted.
-
-### Validated Security Controls
+Pentested with Shannon AI on 2026-03-23. All findings were remediated or accepted.
 
 | Control | Implementation | Status |
 |---|---|---|
 | Session cookies | `HttpOnly`, `Secure`, `SameSite=Lax`, `__Secure-` prefix | Verified |
-| HSTS | `max-age=31536000; includeSubDomains` via `@fastify/helmet` | Verified |
-| CSRF | HMAC double-submit cookie on all POST/PATCH/DELETE/PUT outside `/auth/*` | Verified |
-| Password hashing | bcrypt via Better Auth | Verified |
-| Session invalidation | `deleteSession()` clears DB record + cookie on logout | Verified |
-| SQL injection | Parameterized queries (`pg` library) throughout, no dynamic column names | Verified |
-| Cache-control | `no-store, no-cache, must-revalidate, private` on all auth responses | Verified |
-| Rate limiting | 10 req/min per IP on auth endpoints, 30 req/min on character/equipment | Verified |
-| Turnstile CAPTCHA | Server-side Cloudflare verification on sign-in/sign-up/magic-link | Verified |
-| Claim signatures | HMAC-SHA256 with `timingSafeEqual`, buffer length validation | Verified |
-| Swagger/OpenAPI | Disabled in production (`NODE_ENV=production`) | Verified |
-| Dockerfile | Runs as `node` user, not root | Verified |
+| HSTS | Shared-auth/Fastify helmet setup | Verified |
+| CSRF | HMAC double-submit cookie on state-changing routes outside `/api/auth/*` | Verified |
+| Password/auth UX | Managed by Logto + Better Auth through shared-auth | Verified |
+| SQL injection | Prisma parameterization and tagged `$queryRaw` calls | Verified |
+| Cache-control | No-store auth responses | Verified |
+| Rate limiting | Shared-auth route limits plus app API limits | Verified |
+| Claim flow | Shared-auth HMAC claim flow | Verified |
+| Swagger/OpenAPI | Disabled in production | Verified |
+| Dockerfile | Backend production image runs as `node`, not root | Verified |
 
-### Security Considerations When Modifying
-- **Never commit secrets** to version control (`.env` files are in `.gitignore`)
-- **Never expose `x-plain-email`** — it is an internal header, stripped from external requests in the auth route
-- **Sign-up error responses** are normalized to prevent user enumeration
-- **Claim endpoint** only allows claiming from anonymous users — never modify to allow claiming from authenticated users
-- **GCM decryption** validates IV (16 bytes) and auth tag (16 bytes) before decrypting
+### Security Rules
 
-## Database Reapply Scripts
+- Never commit secrets. `.env`, `.env.*`, and `.npmrc` are ignored.
+- Keep Logto credentials in env/secret storage, not source files or compose defaults.
+- Do not bypass shared-auth CSRF for app state-changing routes.
+- Do not reintroduce plaintext email storage, local password UI, magic-link UI, or Turnstile code in this app; those concerns moved out with the auth migration.
 
-The project includes scripts to reapply database schema:
-- `scripts/db-reapply.sh` (Unix) or `scripts/db-reapply.ps1` (Windows)
-- Applies all init SQL files in order
+## Environment
 
-## Environment Variables
-
-- `.env` - Development configuration (never commit to git)
-- Required: `DATABASE_USER`, `DATABASE_HOST`, `DATABASE_NAME`, `DATABASE_PASSWORD`, `DATABASE_PORT`
-- Required: `BETTER_AUTH_SECRET`, `EMAIL_PEPPER` (min 32 chars), `EMAIL_ENCRYPTION_KEY` (64 hex chars)
-- Optional: `AUTH_BASE_URL`, `CLIENT_ORIGIN`, `CLIENT_GATEWAY`, `TURNSTILE_SECRET_KEY`, `GLITCHTIP_DSN`, `VITE_GLITCHTIP_DSN`
-- Production uses separate GlitchTip DSNs: `GLITCHTIP_DSN` for backend and `VITE_GLITCHTIP_DSN` for frontend.
+- Backend dev values live in `backend/.env`, based on `backend/.env.example`.
+- Production deploy values can be documented locally in root `.env`, based on root `.env.example`.
+- Required auth env: `BETTER_AUTH_SECRET`, `AUTH_BASE_URL`, `APP_BASE_URL`, `CLIENT_ORIGIN`, `LOGTO_ENDPOINT`, `LOGTO_APP_ID`, `LOGTO_APP_SECRET`, `LOGTO_REDIRECT_URI`, `LOGTO_POST_LOGOUT_REDIRECT_URI`.
+- Frontend build env: `VITE_BACKEND_URL`, `VITE_LOGTO_ENDPOINT`, optional `VITE_SITE_URL`, optional `VITE_GLITCHTIP_DSN`.

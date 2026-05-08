@@ -32,6 +32,7 @@ jspm_packages
 
 # Optional npm cache directory
 .npm
+.npm-cache
 
 # Optional REPL history
 .node_repl_history
@@ -66,6 +67,11 @@ dist
 
 .env
 .env.*
+!.env.example
+!backend/.env.example
+!frontend/.env.example
+.npmrc
+backend/.npmrc
 public_nodejs
 replacements.txt
 compose.yaml
@@ -76,31 +82,32 @@ materials
 reports/
 coverage/
 coverage-backend/
-tests/e2e/playwright-report
-tests/e2e/test-results
-tests/e2e/.auth
-tests/integration-be/test-results
+backend/tests/e2e/playwright-report
+backend/tests/e2e/test-results
+backend/tests/e2e/.auth
+backend/tests/integration-be/test-results
 e2e-report/
 test-results/
 .playwright-mcp/
-client/temp-report/
-client/vitest_output.txt
+frontend/temp-report/
+frontend/vitest_output.txt
 
 # vitest coverage
-client/coverage-browser/
-client/coverage-merged/
-client/coverage-unit*/
-client/.vitest-attachments/
+frontend/coverage-browser/
+frontend/coverage-merged/
+frontend/coverage-unit*/
+frontend/.vitest-attachments/
 
 # vitest screenshots (generated during test runs)
-client/test/**/__screenshots__/
+frontend/test/**/__screenshots__/
 
 # typescript build info
-client/tsconfig.node.tsbuildinfo
+frontend/tsconfig.node.tsbuildinfo
 
 # build outputs
-client/public/
-client/stats.html
+frontend/public/
+frontend/dist/
+frontend/stats.html
 
 # Claude Code local settings
 .claude/settings.local.json

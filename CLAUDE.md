@@ -8,14 +8,14 @@ MÖRK BORG Character Sheet - A full-stack TTRPG character management application
 
 ## Tech Stack
 
-- **Backend**: Fastify 5.x with TypeScript, PostgreSQL, better-auth
+- **Backend**: Fastify 5.x with TypeScript, PostgreSQL, Prisma, `@tackgnol/rpgtools-shared-auth`
 - **Frontend**: React 18, Vite, TanStack Query, TanStack Router, MUI with custom Mörk Borg theme
 - **Database**: PostgreSQL with custom functions, views, and fuzzy search
 - **i18n**: English (en) and Polish (pl)
 
 ## Common Commands
 
-### Backend (root directory)
+### Backend (`backend` directory)
 ```bash
 npm run dev      # Start development with hot reload
 npm run start    # Production build and start
@@ -26,15 +26,15 @@ npm test         # Fast unit test loop
 ### Test Commands
 | You want to... | Run |
 |---|---|
-| Fast inner loop while editing code | `npm test` |
-| Verify full backend wiring | `npm run test:integration` |
-| Verify frontend browser components | `npm run test:browser` |
-| Verify the whole user flow | `npm run test:e2e` |
-| Reproduce CI before pushing to master | `npm run test:all` |
+| Fast backend/frontend unit loop | `cd backend && npm test` |
+| Verify full backend wiring | `cd backend && npm run test:integration` |
+| Verify frontend browser components | `cd frontend && npm run test:browser` |
+| Verify the whole user flow | `cd backend && npm run test:e2e` |
+| Reproduce CI before pushing to master | `cd backend && npm run test:all` |
 
-### Frontend (client directory)
+### Frontend (`frontend` directory)
 ```bash
-cd client
+cd frontend
 npm run dev          # Start Vite dev server
 npm run build        # Production build
 npm run test:unit    # Run JSDOM unit tests
@@ -50,25 +50,18 @@ npm run format       # Format code with Prettier
 ```
 src/
 ├── routes/          # Fastify route handlers (autoloaded)
-│   ├── auth/        # Authentication endpoints
 │   ├── characters/  # Character CRUD operations
 │   ├── equipment/   # Equipment search
-│   └── session/     # Session management
 ├── plugins/         # Fastify plugins (autoloaded)
-│   ├── cors.ts      # CORS configuration
-│   ├── sessionResolver.ts # Session resolution (auth + anonymous)
-│   └── security.ts  # Helmet, rate limiting
-├── services/        # Business logic
-│   ├── auth.ts      # better-auth setup
-│   └── db.ts        # PostgreSQL query helpers
+│   └── rpgtools-auth.ts # Shared auth, CSRF, helmet, rate limiting
+├── lib/             # Prisma client and integration helpers
 ├── schemas/         # JSON schema validation
-├── types/           # TypeScript types
-└── emails/          # Email templates
+└── types/           # TypeScript types
 ```
 
 ### Frontend Structure
 ```
-client/src/
+frontend/src/
 ├── components/     # React components (UI)
 ├── hooks/          # Custom hooks (character editing, auth, search)
 ├── api/            # OpenAPI-generated client
@@ -78,7 +71,7 @@ client/src/
 └── theme/          # MUI Mörk Borg theme
 ```
 
-### Database (init/)
+### Database (`backend/init/`)
 ```
 init/
 ├── 01-extensions/  # PostgreSQL extensions
@@ -98,22 +91,16 @@ The frontend uses optimistic updates with debouncing. When editing a character:
 4. Failed updates retry up to 3 times with user notification
 
 ### Authentication Flow
-- **Better Auth v1.4.13** manages all sessions via `__Secure-better-auth.session_token` cookie (`HttpOnly`, `Secure`, `SameSite=Lax`)
-- Three auth modes: email+password, magic link (passwordless), anonymous bootstrap (auto-created on page load)
-- The `sessionResolver.ts` plugin resolves Better Auth sessions into `request.appSession` on every request (skips `/auth/*` routes)
-- No roles/RBAC — authorization is purely ownership-based (`character.user_id === session.userId`)
-
-### Email Encryption Scheme
-- Emails are **never stored in plaintext** in the database
-- A **blind index** (HMAC-SHA256 with `EMAIL_PEPPER`) is stored as `<hash>@bidx.local` for lookup
-- The real email is encrypted with **AES-256-GCM** (`EMAIL_ENCRYPTION_KEY`) and stored in `encrypted_email`
-- The auth route interceptor (`src/routes/auth/index.ts`) transforms plaintext emails before passing to Better Auth, conveying the real email via the internal `x-plain-email` header (stripped from external requests)
+- Auth is handled by `@tackgnol/rpgtools-shared-auth` in `backend/src/plugins/rpgtools-auth.ts`.
+- Shared auth mounts Better Auth endpoints at `/api/auth/*`, CSRF at `/api/csrf-token`, and claim routes at `/api/claim/*`.
+- Logto handles real-user sign-in/profile flows. The app still uses anonymous Better Auth sessions for first-run character ownership.
+- `request.appSession` is the raw shared-auth session shape: `{ session, user } | null`.
+- No roles/RBAC — authorization is ownership-based (`characters.user_id === request.appSession.user.id`).
 
 ### Character Ownership Model
 Characters are bound to users via `user_id`. Three paths transfer ownership:
-1. **`onLinkAccount`** (auth.ts) — Better Auth callback when anonymous user links to email account (same browser session)
-2. **Auto-claim via `/verify-email`** — cross-browser/device verification using HMAC-signed claim parameters (`claimSignature.ts`). Signature binds `userId + sourceUserId + characterId` with `timingSafeEqual`
-3. **`POST /characters/:id/claim`** — manual endpoint, restricted to authenticated users claiming characters from anonymous users only
+1. **`onLinkAccount`** in `rpgtools-auth.ts` transfers anonymous characters when the same browser session links to Logto.
+2. **Shared claim routes** (`/api/claim/issue`, `/api/claim/redeem`) handle cross-device transfers through `@tackgnol/rpgtools-shared-auth`.
 
 ### Database Functions
 - `generate_character(class_id)` - Creates random character
@@ -130,23 +117,19 @@ Pentested with Shannon AI (2026-03-23). All findings remediated or accepted.
 |---|---|---|
 | Session cookies | `HttpOnly`, `Secure`, `SameSite=Lax`, `__Secure-` prefix | Verified |
 | HSTS | `max-age=31536000; includeSubDomains` via `@fastify/helmet` | Verified |
-| CSRF | HMAC double-submit cookie on all POST/PATCH/DELETE/PUT outside `/auth/*` | Verified |
-| Password hashing | bcrypt via Better Auth | Verified |
-| Session invalidation | `deleteSession()` clears DB record + cookie on logout | Verified |
-| SQL injection | Parameterized queries (`pg` library) throughout, no dynamic column names | Verified |
+| CSRF | HMAC double-submit cookie on all POST/PATCH/DELETE/PUT outside `/api/auth/*` | Verified |
+| Password/auth UX | Managed by Logto + Better Auth via shared-auth | Verified |
+| SQL injection | Prisma parameterization and `$queryRaw` tagged templates | Verified |
 | Cache-control | `no-store, no-cache, must-revalidate, private` on all auth responses | Verified |
 | Rate limiting | 10 req/min per IP on auth endpoints, 30 req/min on character/equipment | Verified |
-| Turnstile CAPTCHA | Server-side Cloudflare verification on sign-in/sign-up/magic-link | Verified |
-| Claim signatures | HMAC-SHA256 with `timingSafeEqual`, buffer length validation | Verified |
+| Claim signatures | Shared-auth HMAC claim flow | Verified |
 | Swagger/OpenAPI | Disabled in production (`NODE_ENV=production`) | Verified |
 | Dockerfile | Runs as `node` user, not root | Verified |
 
 ### Security Considerations When Modifying
 - **Never commit secrets** to version control (`.env` files are in `.gitignore`)
-- **Never expose `x-plain-email`** — it is an internal header, stripped from external requests in the auth route
-- **Sign-up error responses** are normalized to prevent user enumeration
-- **Claim endpoint** only allows claiming from anonymous users — never modify to allow claiming from authenticated users
-- **GCM decryption** validates IV (16 bytes) and auth tag (16 bytes) before decrypting
+- Keep Logto credentials in env/secret storage, not compose files.
+- Do not bypass shared-auth CSRF for app state-changing routes.
 
 ## Database Reapply Scripts
 
@@ -157,16 +140,16 @@ The project includes scripts to reapply database schema:
 ## Environment Variables
 
 - `.env` - Development configuration (never commit to git)
-- Required: `DATABASE_USER`, `DATABASE_HOST`, `DATABASE_NAME`, `DATABASE_PASSWORD`, `DATABASE_PORT`
-- Required: `BETTER_AUTH_SECRET`, `EMAIL_PEPPER` (min 32 chars), `EMAIL_ENCRYPTION_KEY` (64 hex chars)
-- Optional: `AUTH_BASE_URL`, `CLIENT_ORIGIN`, `CLIENT_GATEWAY`, `TURNSTILE_SECRET_KEY`, `GLITCHTIP_DSN`, `VITE_GLITCHTIP_DSN`
+- Required backend: `DATABASE_URL`, `BETTER_AUTH_SECRET`, `AUTH_BASE_URL`, `APP_BASE_URL`, `CLIENT_ORIGIN`, `LOGTO_ENDPOINT`, `LOGTO_APP_ID`, `LOGTO_APP_SECRET`, `LOGTO_REDIRECT_URI`, `LOGTO_POST_LOGOUT_REDIRECT_URI`
+- Optional backend: `DATABASE_USER`, `DATABASE_HOST`, `DATABASE_NAME`, `DATABASE_PASSWORD`, `DATABASE_PORT`, `CLIENT_GATEWAY`, `LOGTO_RESOURCE`, `GLITCHTIP_DSN`
+- Required frontend build: `VITE_BACKEND_URL`, `VITE_LOGTO_ENDPOINT`
+- Optional frontend build: `VITE_SITE_URL`, `VITE_GLITCHTIP_DSN`, `VITE_ALLOWED_HOSTS`
 - Production uses separate GlitchTip DSNs: `GLITCHTIP_DSN` for backend and `VITE_GLITCHTIP_DSN` for frontend.
 
 ## Recommended Skills
 
 When working on this codebase, use these skills for best results:
-- **`backend-security-coder`** — for any auth, crypto, or security-related changes
 - **`fastify-best-practices`** — for route handlers, plugins, hooks, schemas
+- **`oauth`** — for Logto/OIDC/shared-auth changes
 - **`shannon`** — to run pentests against staging before releases
-- **`code-reviewer`** — review completed work against plan and standards
-- **`postgresql`** — for database schema, functions, or query changes
+- **`postgresql`** — for database schema, functions, or raw SQL query changes

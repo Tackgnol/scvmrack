@@ -2,10 +2,10 @@ name: scvmrack-integration
 
 services:
   db:
-    image: scvmgrinder_db:integration
+    image: scvmrack-db:integration
     pull_policy: never
     build:
-      context: .
+      context: ./backend
       dockerfile: Dockerfile.integration-db
     environment:
       POSTGRES_USER: p1002_scmgrinder
@@ -17,32 +17,52 @@ services:
       timeout: 5s
       retries: 20
 
-  api:
-    image: scvmgrinder_be:integration
+  migrate:
+    image: scvmrack-api:integration
     pull_policy: never
     build:
       context: .
+      dockerfile: backend/Dockerfile.dev
+    command: npm run prisma:migrate
     environment:
       DATABASE_USER: p1002_scmgrinder
       DATABASE_PASSWORD: p1002_scmgrinder
       DATABASE_NAME: p1002_scmgrinder
       DATABASE_HOST: db
       DATABASE_PORT: 5432
+      DATABASE_URL: postgresql://p1002_scmgrinder:p1002_scmgrinder@db:5432/p1002_scmgrinder
+    depends_on:
+      db:
+        condition: service_healthy
+
+  api:
+    image: scvmrack-api:integration
+    pull_policy: never
+    build:
+      context: .
+      dockerfile: backend/Dockerfile.dev
+    environment:
+      DATABASE_USER: p1002_scmgrinder
+      DATABASE_PASSWORD: p1002_scmgrinder
+      DATABASE_NAME: p1002_scmgrinder
+      DATABASE_HOST: db
+      DATABASE_PORT: 5432
+      DATABASE_URL: postgresql://p1002_scmgrinder:p1002_scmgrinder@db:5432/p1002_scmgrinder
       PORT: 3000
       NODE_ENV: test
       CLIENT_ORIGIN: http://localhost:5173
       CLIENT_GATEWAY: http://localhost:5173
-      BETTER_AUTH_SECRET: integration-secret
-      BETTER_AUTH_URL: http://api:3000
-      AUTH_BASE_URL: http://api:3000/auth
-      EMAIL_PEPPER: x8MdxZyAkFOxthKH2fwh9fVQ+cFVwO2Bm7wdtuyeERg=
-      EMAIL_ENCRYPTION_KEY: c80e44590e908ad4059e67cfdf246a8b21b8f7d726c850064006283fc8b8290a
-      MAIL_USER: integration@example.com
-      MAIL_PASS: integration
-      TURNSTILE_SECRET_KEY: ""
+      APP_BASE_URL: http://localhost:5173
+      AUTH_BASE_URL: http://api:3000/api/auth
+      BETTER_AUTH_SECRET: integration-secret-change-for-prod
+      LOGTO_ENDPOINT: https://auth.rpgtools.eu.org
+      LOGTO_APP_ID: integration-logto-app-id
+      LOGTO_APP_SECRET: integration-logto-app-secret
+      LOGTO_REDIRECT_URI: http://api:3000/api/auth/oauth2/callback/logto
+      LOGTO_POST_LOGOUT_REDIRECT_URI: http://localhost:5173/
     depends_on:
-      db:
-        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     healthcheck:
       test:
         [
@@ -57,10 +77,10 @@ services:
       start_period: 10s
 
   integration:
-    image: scvmgrinder_integration_be:latest
+    image: scvmrack-integration-be:latest
     pull_policy: never
     build:
-      context: .
+      context: ./backend
       dockerfile: Dockerfile.integration
     environment:
       E2E_BASE_URL: http://api:3000

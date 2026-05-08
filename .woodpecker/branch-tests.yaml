@@ -4,32 +4,26 @@ when:
   - event: pull_request
 
 steps:
-  # 1. Catch leaked secrets immediately
   secret-scan:
     image: trufflesecurity/trufflehog:latest
     commands:
-      # Scans the git history of this PR for high-entropy secrets and API keys
       - trufflehog git file://. --only-verified --fail
 
-  # 2. Scan your code logic for OWASP Top 10 vulnerabilities
   static-analysis:
     image: semgrep/semgrep
     depends_on:
       - secret-scan
     commands:
-      # Runs community-driven security rules against JS/TS files
       - |
         set -e
         export SEMGREP_SRC_DIRECTORY="$CI_WORKSPACE"
         semgrep scan --config auto --error .
 
-  # 3. Scan Dockerfiles and compose files for high-risk misconfigurations
   iac-scan:
     image: aquasec/trivy:0.70.0
     depends_on:
       - secret-scan
     commands:
-      # Avoid the vulnerability scanner here; it downloads Trivy's vuln DB.
       - trivy fs --scanners misconfig --exit-code 1 --severity HIGH,CRITICAL --no-progress .
 
   unit-test:
@@ -37,51 +31,28 @@ steps:
     depends_on:
       - static-analysis
       - iac-scan
+    environment:
+      NPMRC_CONTENT:
+        from_secret: npmrc_content
     commands:
       - |
         set -e
         cleanup() {
-          rm -rf node_modules client/node_modules client/public client/coverage client/coverage-unit client/coverage-browser reports
+          rm -f .npmrc backend/.npmrc
+          rm -rf backend/node_modules frontend/node_modules frontend/dist frontend/coverage frontend/coverage-unit frontend/coverage-browser reports
           npm cache clean --force || true
         }
         cleanup
         trap cleanup EXIT
 
-        pwd
-        ls -la package-lock.json client/package-lock.json || true
+        printf '%s\n' "$NPMRC_CONTENT" > .npmrc
+        cp .npmrc backend/.npmrc
+        npm --prefix backend ci --no-audit --no-fund
+        rm -f .npmrc backend/.npmrc
+        npm --prefix backend/tests/unit-be run test
 
-        if [ -f package-lock.json ] || [ -f npm-shrinkwrap.json ]; then
-          npm ci --no-audit --no-fund
-        else
-          npm install --no-audit --no-fund
-        fi
-        npm --prefix tests/unit-be run test
-
-        rm -rf node_modules
-        npm cache clean --force || true
-
-        npm --prefix client ci --no-audit --no-fund
-        npm --prefix client run test:unit
-
-  integration-test:
-    image: docker:27-cli
-    depends_on:
-      - browser-test-webkit
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    commands:
-      - |
-        set -e
-        cleanup() {
-          docker compose -f compose.integration-be.yaml down --volumes --remove-orphans --rmi all || true
-          docker builder prune -af || true
-          docker image prune -af || true
-        }
-        cleanup
-        trap cleanup EXIT
-        docker compose -f compose.integration-be.yaml up \
-          --build --abort-on-container-exit --exit-code-from integration \
-          db api integration
+        npm --prefix frontend ci --no-audit --no-fund
+        npm --prefix frontend run test:unit
 
   browser-test-chromium:
     image: mcr.microsoft.com/playwright:v1.58.2-jammy
@@ -93,15 +64,8 @@ steps:
     commands:
       - |
         set -e
-        cleanup() {
-          rm -rf client/node_modules client/public client/coverage client/coverage-unit client/coverage-browser
-          npm cache clean --force || true
-        }
-        cleanup
-        trap cleanup EXIT
-
-        npm --prefix client ci --no-audit --no-fund
-        npm --prefix client run test:browser
+        npm --prefix frontend ci --no-audit --no-fund
+        npm --prefix frontend run test:browser
 
   browser-test-firefox:
     image: mcr.microsoft.com/playwright:v1.58.2-jammy
@@ -109,18 +73,12 @@ steps:
       - browser-test-chromium
     environment:
       VITEST_BROWSER_INSTANCES: firefox
+      CI: "true"
     commands:
       - |
         set -e
-        cleanup() {
-          rm -rf client/node_modules client/public client/coverage client/coverage-unit client/coverage-browser
-          npm cache clean --force || true
-        }
-        cleanup
-        trap cleanup EXIT
-
-        npm --prefix client ci --no-audit --no-fund
-        npm --prefix client run test:browser
+        npm --prefix frontend ci --no-audit --no-fund
+        npm --prefix frontend run test:browser
 
   browser-test-webkit:
     image: mcr.microsoft.com/playwright:v1.58.2-jammy
@@ -128,38 +86,35 @@ steps:
       - browser-test-firefox
     environment:
       VITEST_BROWSER_INSTANCES: webkit
+      CI: "true"
     commands:
       - |
         set -e
-        cleanup() {
-          rm -rf client/node_modules client/public client/coverage client/coverage-unit client/coverage-browser
-          npm cache clean --force || true
-        }
-        cleanup
-        trap cleanup EXIT
+        npm --prefix frontend ci --no-audit --no-fund
+        npm --prefix frontend run test:browser
 
-        npm --prefix client ci --no-audit --no-fund
-        npm --prefix client run test:browser
-
-  e2e-test:
+  integration-test:
     image: docker:27-cli
     depends_on:
-      - integration-test
+      - browser-test-webkit
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
-      CI: "true"
-      PLAYWRIGHT_INCLUDE_REGRESSION: "1"
+      NPMRC_CONTENT:
+        from_secret: npmrc_content
     commands:
       - |
         set -e
         cleanup() {
-          docker compose -f compose.e2e.yaml down --volumes --remove-orphans --rmi all || true
+          rm -f .npmrc backend/.npmrc
+          docker compose -f compose.integration-be.yaml down --volumes --remove-orphans --rmi all || true
           docker builder prune -af || true
           docker image prune -af || true
         }
         cleanup
         trap cleanup EXIT
-        docker compose -f compose.e2e.yaml up \
-          --build --abort-on-container-exit --exit-code-from e2e \
-          db api web mailpit e2e
+
+        printf '%s\n' "$NPMRC_CONTENT" > .npmrc
+        docker compose -f compose.integration-be.yaml up \
+          --build --abort-on-container-exit --exit-code-from integration \
+          db migrate api integration
