@@ -152,9 +152,32 @@ steps:
           postgres:16-alpine \
           psql -h scvmrack_db -U p1002_scmgrinder -d p1002_scmgrinder -c 'select current_user, inet_server_addr();' || echo "psql via 'scvmrack_db' FAILED"
 
-        # Match trenchrats: pass the raw password directly in DATABASE_URL.
-        DATABASE_URL="postgresql://p1002_scmgrinder:${DATABASE_PASSWORD}@db:5432/p1002_scmgrinder"
+        # URL-encode the password using Node's encodeURIComponent (RFC 3986 compliant).
+        db_password_url="$(docker run --rm \
+          -e RAW_PASS="$DATABASE_PASSWORD" \
+          scvmrack-backend:prod \
+          node -e 'process.stdout.write(encodeURIComponent(process.env.RAW_PASS))')"
+        DATABASE_URL="postgresql://p1002_scmgrinder:${db_password_url}@db:5432/p1002_scmgrinder"
         export DATABASE_URL
+
+        echo "url char count: $(printf '%s' "$DATABASE_URL" | wc -c)"
+        echo "encoded pw char count: $(printf '%s' "$db_password_url" | wc -c)"
+
+        # Diagnostic: connect with node-pg (which the backend image has installed)
+        # using the SAME DATABASE_URL Prisma will use. If pg works and Prisma fails,
+        # the bug is inside Prisma's URL handling, not our string.
+        echo "=== node-pg probe via DATABASE_URL ==="
+        docker run --rm --network scvmrack_db \
+          -e DATABASE_URL="$DATABASE_URL" \
+          scvmrack-backend:prod \
+          node -e '
+            const {Client} = require("pg");
+            const c = new Client({connectionString: process.env.DATABASE_URL});
+            c.connect()
+              .then(()=>c.query("select current_user"))
+              .then(r=>{console.log("pg ok:", r.rows[0]); return c.end();})
+              .catch(e=>{console.error("pg FAIL:", e.message); process.exit(1);});
+          ' || echo "node-pg probe FAILED"
 
         docker run --rm --network scvmrack_db \
           -e DATABASE_USER=p1002_scmgrinder \
