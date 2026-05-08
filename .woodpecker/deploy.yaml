@@ -135,10 +135,24 @@ steps:
           -v "db_password=$DATABASE_PASSWORD" \
           -f /tmp/sync-pw.sql
 
+        # Diagnostic: probe with vanilla psql from the same network using the
+        # same credentials. If this works but Prisma still fails, it's a URL
+        # parsing issue. If this fails too, `db` resolves to a different
+        # postgres than the one we just ALTERed, OR the role's password isn't
+        # what we think it is.
+        echo "=== psql probe: hostname 'db' ==="
+        docker run --rm --network scvmrack_db \
+          -e PGPASSWORD="$DATABASE_PASSWORD" \
+          postgres:16-alpine \
+          psql -h db -U p1002_scmgrinder -d p1002_scmgrinder -c 'select current_user, inet_server_addr();' || echo "psql via 'db' FAILED"
+
+        echo "=== psql probe: hostname 'scvmrack_db' ==="
+        docker run --rm --network scvmrack_db \
+          -e PGPASSWORD="$DATABASE_PASSWORD" \
+          postgres:16-alpine \
+          psql -h scvmrack_db -U p1002_scmgrinder -d p1002_scmgrinder -c 'select current_user, inet_server_addr();' || echo "psql via 'scvmrack_db' FAILED"
+
         # Match trenchrats: pass the raw password directly in DATABASE_URL.
-        # Assumes the password has no URL-reserved characters (@ : / ? # & + space).
-        # If it ever does, switch to encodeURIComponent — but the sha256 trace
-        # above will show whether shell and node see the same bytes first.
         DATABASE_URL="postgresql://p1002_scmgrinder:${DATABASE_PASSWORD}@db:5432/p1002_scmgrinder"
         export DATABASE_URL
 
