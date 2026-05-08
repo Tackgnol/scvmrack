@@ -114,6 +114,20 @@ steps:
           exit 1
         fi
 
+        db_container_id="$(docker ps --filter label=com.docker.swarm.service.name=scvmrack_db --format '{{.ID}}' | head -n 1)"
+        if [ -z "$db_container_id" ]; then
+          echo "Could not find running scvmrack_db container" >&2
+          docker stack ps scvmrack --no-trunc >&2 || true
+          exit 1
+        fi
+
+        docker exec "$db_container_id" psql \
+          -U p1002_scmgrinder \
+          -d p1002_scmgrinder \
+          -v ON_ERROR_STOP=1 \
+          -v "db_password=$DATABASE_PASSWORD" \
+          -c "ALTER USER p1002_scmgrinder WITH PASSWORD :'db_password';"
+
         docker run --rm --network scvmrack_db \
           -e DATABASE_USER=p1002_scmgrinder \
           -e DATABASE_PASSWORD="$DATABASE_PASSWORD" \
