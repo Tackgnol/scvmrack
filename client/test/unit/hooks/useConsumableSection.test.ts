@@ -35,6 +35,12 @@ test('useConsumableSection returns only tracked non-ammo consumables with uses',
           ammoType: 'bolt',
         },
         {
+          key: 'equipment.arrows',
+          name: 'Legacy Arrows',
+          tags: ['consumable'],
+          uses: [false, false, false, false],
+        },
+        {
           key: 'equipment.lantern',
           name: 'Lantern',
           tags: ['lighting', 'consumable'],
@@ -68,12 +74,12 @@ test('useConsumableSection returns only tracked non-ammo consumables with uses',
   ]);
 
   act(() => {
-    result.current.markPipPending(6, 1);
+    result.current.markPipPending(7, 1);
   });
 
   expect(result.current.hasPendingPipSave).toBe(true);
-  expect(result.current.isPipPending(6, 1)).toBe(true);
-  expect(toggleCalls).toEqual([[6, 1]]);
+  expect(result.current.isPipPending(7, 1)).toBe(true);
+  expect(toggleCalls).toEqual([[7, 1]]);
 });
 
 test('useConsumableSection clears pending flag once saving turns off via context update', () => {
