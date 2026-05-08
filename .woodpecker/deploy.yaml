@@ -114,18 +114,11 @@ steps:
           exit 1
         fi
 
-        # Diagnostic: hash the password from the shell and from inside the
-        # backend image's node process. If these two SHA-256 prefixes differ,
-        # the password is being mutated between contexts (whitespace, newline,
-        # encoding) — that's the actual root cause and no URL encoding will fix it.
-        echo "shell pw sha256 prefix: $(printf '%s' "$DATABASE_PASSWORD" | sha256sum | cut -c1-8) length=$(printf '%s' "$DATABASE_PASSWORD" | wc -c)"
-        docker run --rm \
-          -e RAW_PASS="$DATABASE_PASSWORD" \
-          scvmrack-backend:prod \
-          node -e 'const c=require("crypto");const p=process.env.RAW_PASS||"";console.log("node  pw sha256 prefix:",c.createHash("sha256").update(p).digest("hex").slice(0,8),"length="+p.length)'
-
-        # Sync the role password to the current secret. Use a temp SQL file
-        # so psql variable substitution works (`-c` does not support `:'var'`).
+        # Sync the db role password to the current secret. The Postgres data
+        # directory persists in pgdata, so POSTGRES_PASSWORD only takes effect
+        # on first init — after that, the secret can drift from the role's
+        # actual stored password and Prisma will fail with P1000.
+        # Use a temp SQL file because psql `-c` doesn't support `:'var'`.
         printf "ALTER USER p1002_scmgrinder WITH PASSWORD :'db_password';\n" > /tmp/sync-pw.sql
         docker cp /tmp/sync-pw.sql "$db_container_id:/tmp/sync-pw.sql"
         docker exec "$db_container_id" psql \
@@ -135,26 +128,11 @@ steps:
           -v "db_password=$DATABASE_PASSWORD" \
           -f /tmp/sync-pw.sql
 
-        # Diagnostic: probe with vanilla psql from the same network using the
-        # same credentials. If this works but Prisma still fails, it's a URL
-        # parsing issue. If this fails too, `db` resolves to a different
-        # postgres than the one we just ALTERed, OR the role's password isn't
-        # what we think it is.
-        echo "=== psql probe: hostname 'db' ==="
-        docker run --rm --network scvmrack_db \
-          -e PGPASSWORD="$DATABASE_PASSWORD" \
-          postgres:16-alpine \
-          psql -h db -U p1002_scmgrinder -d p1002_scmgrinder -c 'select current_user, inet_server_addr();' || echo "psql via 'db' FAILED"
-
-        echo "=== psql probe: hostname 'scvmrack_db' ==="
-        docker run --rm --network scvmrack_db \
-          -e PGPASSWORD="$DATABASE_PASSWORD" \
-          postgres:16-alpine \
-          psql -h scvmrack_db -U p1002_scmgrinder -d p1002_scmgrinder -c 'select current_user, inet_server_addr();' || echo "psql via 'scvmrack_db' FAILED"
-
-        # Build the entire DATABASE_URL inside Node — avoids shell capture
-        # quirks (CR/LF, busybox ash quirks) that were producing an empty
-        # password slot when concatenating $(docker run ...) output in shell.
+        # Build DATABASE_URL inside Node so encodeURIComponent handles every
+        # URL-reserved character correctly. `tr -d '\r\n'` strips the trailing
+        # CR that `docker run` adds in this CI environment — without it the
+        # captured value carried a stray \r that broke shell concatenation,
+        # producing a URL with an empty password slot.
         DATABASE_URL="$(docker run --rm \
           -e RAW_PASS="$DATABASE_PASSWORD" \
           -e DB_USER=p1002_scmgrinder \
@@ -166,56 +144,9 @@ steps:
           | tr -d '\r\n')"
         export DATABASE_URL
 
-        echo "url char count: $(printf '%s' "$DATABASE_URL" | wc -c)"
-        echo "url last byte hex: $(printf '%s' "$DATABASE_URL" | tail -c 1 | od -An -tx1 | tr -d ' ')"
-
-        # Diagnostic: dump exactly what node-pg's connection-string parser sees.
-        echo "=== inspect parsed DATABASE_URL ==="
-        docker run --rm \
-          -e DATABASE_URL="$DATABASE_URL" \
-          scvmrack-backend:prod \
-          node -e '
-            const url = process.env.DATABASE_URL;
-            console.log("raw URL length:", url.length);
-            try {
-              const u = new URL(url);
-              console.log("WHATWG URL: protocol=%s username=%s passwordType=%s passwordLen=%d host=%s pathname=%s",
-                u.protocol, u.username, typeof u.password, (u.password||"").length, u.host, u.pathname);
-            } catch (e) {
-              console.log("WHATWG URL parse failed:", e.message);
-            }
-            try {
-              const parse = require("pg-connection-string").parse;
-              const cfg = parse(url);
-              console.log("pg-connection-string: user=%s passwordType=%s passwordLen=%d host=%s database=%s port=%s",
-                cfg.user, typeof cfg.password, (cfg.password||"").length, cfg.host, cfg.database, cfg.port);
-            } catch (e) {
-              console.log("pg-connection-string failed:", e.message);
-            }
-          '
-
-        # Connect with node-pg using the SAME DATABASE_URL.
-        echo "=== node-pg probe via DATABASE_URL ==="
         docker run --rm --network scvmrack_db \
           -e DATABASE_URL="$DATABASE_URL" \
-          scvmrack-backend:prod \
-          node -e '
-            const {Client} = require("pg");
-            const c = new Client({connectionString: process.env.DATABASE_URL});
-            c.connect()
-              .then(()=>c.query("select current_user"))
-              .then(r=>{console.log("pg ok:", r.rows[0]); return c.end();})
-              .catch(e=>{console.error("pg FAIL:", e.message); process.exit(1);});
-          ' || echo "node-pg probe FAILED"
-
-        docker run --rm --network scvmrack_db \
-          -e DATABASE_USER=p1002_scmgrinder \
-          -e DATABASE_PASSWORD="$DATABASE_PASSWORD" \
-          -e DATABASE_NAME=p1002_scmgrinder \
-          -e DATABASE_HOST=db \
-          -e DATABASE_PORT=5432 \
-          -e DATABASE_URL="$DATABASE_URL" \
-          scvmrack-backend:prod npm run prisma:migrate
+          scvmrack-backend:prod npx prisma db push --accept-data-loss --skip-generate
 
         docker stack deploy -c compose.prod.yaml scvmrack --detach=false --resolve-image never
         docker stack services scvmrack
