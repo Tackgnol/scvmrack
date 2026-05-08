@@ -81,8 +81,7 @@ services:
       - db
       - rpg-network
     depends_on:
-      db:
-        condition: service_healthy
+      - db
     healthcheck:
       test:
         [
