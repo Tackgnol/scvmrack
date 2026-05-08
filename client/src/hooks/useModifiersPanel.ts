@@ -1,28 +1,49 @@
 import { useCharacter } from '@/CharacterContext/CharacterContext';
 import { type ComputedModifier, type CustomModifier } from '@/hooks/models';
-import { allIncludeOptions, scopeIncludeOptions } from '@components/modifiers/config';
+import {
+  allIncludeOptions,
+  scopeIncludeOptions,
+} from '@components/modifiers/config';
 import {
   createModifierId,
   excludeToIncludes,
   includesToExclude,
   resolveScopeFromIncludes,
 } from '@components/modifiers/utils';
-import { type IncludeContext, type LocalStatistic, type ScopeOption } from '@components/modifiers/types';
+import {
+  type IncludeContext,
+  type LocalStatistic,
+  type ScopeOption,
+} from '@components/modifiers/types';
+import {
+  getModifierValueLimitMessage,
+  getModifierValueLimitIssue,
+  isCompleteFiniteModifierValueInput,
+  sanitizeModifierValue,
+} from '@/validation/characterUpdate';
 import { useReducedMotion } from 'motion/react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const REMOVE_ANIMATION_MS = 220;
 const SHIFT_BADGE_TIMEOUT_MS = 900;
+const QUICK_MODIFIER_VALUE_ISSUE_ID = 'modifier:quick:value';
+const MODAL_MODIFIER_VALUE_ISSUE_ID = 'modifier:modal:value';
 
 export function useModifiersPanel() {
-  const { character, addModifier, removeModifier, updateModifier } =
-    useCharacter();
+  const {
+    character,
+    addModifier,
+    removeModifier,
+    updateModifier,
+    setValidationIssue,
+    clearValidationIssue,
+  } = useCharacter();
   const { t } = useTranslation();
   const prefersReducedMotion = Boolean(useReducedMotion());
 
   const [modifierShiftLabel, setModifierShiftLabel] = useState<string | null>(
-    null,
+    null
   );
   const computedSignatureRef = useRef<string | null>(null);
   const shiftTimeoutRef = useRef<number | null>(null);
@@ -41,7 +62,7 @@ export function useModifiersPanel() {
   const [modalScope, setModalScope] = useState<ScopeOption>('all');
   const [modalIncludes, setModalIncludes] = useState<IncludeContext[]>([]);
   const [editingModifierId, setEditingModifierId] = useState<string | null>(
-    null,
+    null
   );
   const [removingModifierIds, setRemovingModifierIds] = useState<string[]>([]);
 
@@ -51,24 +72,33 @@ export function useModifiersPanel() {
 
   const customModifiers = character?.modifiers ?? [];
   const computedModifiers = character?.computedModifiers ?? [];
-  const quickValue = valueStr === '' ? 0 : Number(valueStr);
-  const modalValue = modalValueStr === '' ? 0 : Number(modalValueStr);
+  const quickValueIssue = getModifierValueLimitIssue(valueStr);
+  const modalValueIssue = getModifierValueLimitIssue(modalValueStr);
+  const quickValueIssueMessage = getModifierValueLimitMessage(t, valueStr);
+  const modalValueIssueMessage = getModifierValueLimitMessage(t, modalValueStr);
+  const canSubmitQuickValue = isCompleteFiniteModifierValueInput(valueStr);
+  const canSubmitModalValue = isCompleteFiniteModifierValueInput(modalValueStr);
+  const quickValue = sanitizeModifierValue(valueStr);
+  const modalValue = sanitizeModifierValue(modalValueStr);
 
   const computedSignature = useMemo(
     () =>
       computedModifiers
         .map(
           (modifier) =>
-            `${modifier.originKey ?? modifier.originName ?? 'origin'}:${modifier.statistic ?? 'stat'}:${modifier.value ?? 0}:${(modifier.exclude ?? []).join('.')}`,
+            `${modifier.originKey ?? modifier.originName ?? 'origin'}:${modifier.statistic ?? 'stat'}:${modifier.value ?? 0}:${(modifier.exclude ?? []).join('.')}`
         )
         .join('|'),
-    [computedModifiers],
+    [computedModifiers]
   );
 
   const computedTotal = useMemo(
     () =>
-      computedModifiers.reduce((sum, modifier) => sum + (modifier.value ?? 0), 0),
-    [computedModifiers],
+      computedModifiers.reduce(
+        (sum, modifier) => sum + (modifier.value ?? 0),
+        0
+      ),
+    [computedModifiers]
   );
 
   useEffect(() => {
@@ -93,14 +123,14 @@ export function useModifiersPanel() {
     }
     shiftTimeoutRef.current = window.setTimeout(
       () => setModifierShiftLabel(null),
-      SHIFT_BADGE_TIMEOUT_MS,
+      SHIFT_BADGE_TIMEOUT_MS
     );
   }, [computedSignature, computedTotal, t]);
 
   useEffect(
     () => () => {
       removeTimeoutsRef.current.forEach((timeoutId) =>
-        window.clearTimeout(timeoutId),
+        window.clearTimeout(timeoutId)
       );
       removeTimeoutsRef.current = [];
       if (shiftTimeoutRef.current) {
@@ -108,8 +138,37 @@ export function useModifiersPanel() {
         shiftTimeoutRef.current = null;
       }
     },
-    [],
+    []
   );
+
+  useEffect(() => {
+    if (quickValueIssueMessage) {
+      setValidationIssue?.(
+        QUICK_MODIFIER_VALUE_ISSUE_ID,
+        quickValueIssueMessage
+      );
+      return;
+    }
+
+    clearValidationIssue?.(QUICK_MODIFIER_VALUE_ISSUE_ID);
+  }, [clearValidationIssue, quickValueIssueMessage, setValidationIssue]);
+
+  useEffect(() => {
+    if (modalOpen && modalValueIssueMessage) {
+      setValidationIssue?.(
+        MODAL_MODIFIER_VALUE_ISSUE_ID,
+        modalValueIssueMessage
+      );
+      return;
+    }
+
+    clearValidationIssue?.(MODAL_MODIFIER_VALUE_ISSUE_ID);
+  }, [
+    clearValidationIssue,
+    modalOpen,
+    modalValueIssueMessage,
+    setValidationIssue,
+  ]);
 
   const resetQuickForm = () => {
     setName('');
@@ -121,10 +180,13 @@ export function useModifiersPanel() {
   const closeAdvancedModal = () => {
     setModalOpen(false);
     setEditingModifierId(null);
+    clearValidationIssue?.(MODAL_MODIFIER_VALUE_ISSUE_ID);
   };
 
   const openAdvancedModal = () => {
-    const scopeConfig = scopeIncludeOptions.find((option) => option.value === scope);
+    const scopeConfig = scopeIncludeOptions.find(
+      (option) => option.value === scope
+    );
     setEditingModifierId(null);
     setModalName(name.trim());
     setModalStat(stat);
@@ -153,9 +215,11 @@ export function useModifiersPanel() {
   };
 
   const handleQuickAdd = () => {
-    if (!name.trim()) return;
+    if (!name.trim() || quickValueIssue || !canSubmitQuickValue) return;
 
-    const scopeConfig = scopeIncludeOptions.find((option) => option.value === scope);
+    const scopeConfig = scopeIncludeOptions.find(
+      (option) => option.value === scope
+    );
     const modifier: CustomModifier = {
       id: createModifierId(),
       name: name.trim(),
@@ -171,7 +235,7 @@ export function useModifiersPanel() {
 
   const handleModalScopeChange = (newScope: ScopeOption) => {
     const scopeConfig = scopeIncludeOptions.find(
-      (option) => option.value === newScope,
+      (option) => option.value === newScope
     );
     setModalScope(newScope);
     setModalIncludes(scopeConfig?.include ?? []);
@@ -187,7 +251,7 @@ export function useModifiersPanel() {
   };
 
   const saveAdvancedModifier = () => {
-    if (!modalName.trim()) return;
+    if (!modalName.trim() || modalValueIssue || !canSubmitModalValue) return;
 
     const modifierPayload: CustomModifier = {
       name: modalName.trim(),
@@ -217,10 +281,10 @@ export function useModifiersPanel() {
     const timeoutId = window.setTimeout(() => {
       removeModifier(modifierId);
       setRemovingModifierIds((previous) =>
-        previous.filter((id) => id !== modifierId),
+        previous.filter((id) => id !== modifierId)
       );
       removeTimeoutsRef.current = removeTimeoutsRef.current.filter(
-        (id) => id !== timeoutId,
+        (id) => id !== timeoutId
       );
     }, REMOVE_ANIMATION_MS);
 
@@ -253,7 +317,8 @@ export function useModifiersPanel() {
       advancedModal: {
         open: modalOpen,
         isEditing: editingModifierId !== null,
-        canSave: Boolean(modalName.trim()),
+        canSave:
+          Boolean(modalName.trim()) && !modalValueIssue && canSubmitModalValue,
         name: modalName,
         stat: modalStat,
         valueStr: modalValueStr,

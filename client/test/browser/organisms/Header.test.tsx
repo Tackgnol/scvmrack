@@ -9,155 +9,189 @@ import * as SessionExpiredFlagModule from '@/hooks/useSessionExpiredFlag';
 import { $api } from '@/api';
 
 vi.mock('@/hooks/useAuth', () => ({
-    useAuth: vi.fn(),
+  useAuth: vi.fn(),
 }));
 
 vi.mock('@/CharacterContext/CharacterContext', () => ({
-    useCharacter: vi.fn(),
+  useCharacter: vi.fn(),
 }));
 
 vi.mock('@/hooks/useSessionExpiredFlag', () => ({
-    useSessionExpiredFlag: vi.fn(),
+  useSessionExpiredFlag: vi.fn(),
 }));
 
 vi.mock('@/api', () => ({
-    $api: {
-        useQuery: vi.fn(),
-    },
+  $api: {
+    useQuery: vi.fn(),
+  },
 }));
 
 vi.mock('@/router/navigation', () => ({
-    buildHomeCallbackUrl: vi.fn().mockReturnValue('/home'),
-    buildPrintCallbackUrl: vi.fn().mockReturnValue('/print'),
-    getCurrentPendingClaimCharacterId: vi.fn(),
-    setCurrentPendingClaimCharacterId: vi.fn(),
+  buildHomeCallbackUrl: vi.fn().mockReturnValue('/home'),
+  buildPrintCallbackUrl: vi.fn().mockReturnValue('/print'),
+  getCurrentPendingClaimCharacterId: vi.fn(),
+  setCurrentPendingClaimCharacterId: vi.fn(),
 }));
 
 vi.mock('@tanstack/react-router', () => ({
-    useRouterState: vi.fn().mockImplementation((opts) => {
-        const state = { location: { pathname: '/' } };
-        return opts?.select ? opts.select(state) : state;
-    }),
-    Link: ({ children, to, ...props }: any) => <a href={to} {...props}>{children}</a>,
+  useRouterState: vi.fn().mockImplementation((opts) => {
+    const state = { location: { pathname: '/' } };
+    return opts?.select ? opts.select(state) : state;
+  }),
+  Link: ({ children, to, ...props }: any) => (
+    <a href={to} {...props}>
+      {children}
+    </a>
+  ),
 }));
 
 // Mock AuthModal inside organisms, since we will test it separately
 vi.mock('@/components/organisms/AuthModal', () => ({
-    AuthModal: ({ open, onClose, sessionExpiredNotice }: any) => (
-        open ? (
-            <div
-                data-testid="mock-auth-modal"
-                data-session-expired={sessionExpiredNotice ? 'true' : 'false'}
-            >
-                <button onClick={onClose}>Close</button>
-            </div>
-        ) : null
-    ),
+  AuthModal: ({ open, onClose, sessionExpiredNotice }: any) =>
+    open ? (
+      <div
+        data-testid="mock-auth-modal"
+        data-session-expired={sessionExpiredNotice ? 'true' : 'false'}
+      >
+        <button onClick={onClose}>Close</button>
+      </div>
+    ) : null,
 }));
 
 vi.mock('@/router/history', () => ({
-    appHistory: { push: vi.fn() },
+  appHistory: { push: vi.fn() },
 }));
 
 describe('Header Component', () => {
-    const mockClearSessionExpiredFlag = vi.fn();
+  const mockClearSessionExpiredFlag = vi.fn();
 
-    const renderHeader = async (overrides = {}) => {
-        const { auth = {}, character = {}, session = {}, queryReturn = undefined as any } = overrides as any;
+  const renderHeader = async (overrides = {}) => {
+    const {
+      auth = {},
+      character = {},
+      session = {},
+      queryReturn = undefined as any,
+    } = overrides as any;
 
-        vi.mocked(AuthContextModule.useAuth).mockReturnValue({
-            isAuthenticated: false,
-            user: null,
-            ...auth,
-        } as any);
+    vi.mocked(AuthContextModule.useAuth).mockReturnValue({
+      isAuthenticated: false,
+      user: null,
+      ...auth,
+    } as any);
 
-        vi.mocked(CharacterContextModule.useCharacter).mockReturnValue({
-            isSaving: false,
-            isJustLoggedOut: false,
-            character: null,
-            characterId: null,
-            lastCharacterId: null,
-            ...character,
-        } as any);
+    vi.mocked(CharacterContextModule.useCharacter).mockReturnValue({
+      isSaving: false,
+      isJustLoggedOut: false,
+      character: null,
+      characterId: null,
+      lastCharacterId: null,
+      validationIssues: [],
+      ...character,
+    } as any);
 
-        vi.mocked(SessionExpiredFlagModule.useSessionExpiredFlag).mockReturnValue({
-            isSessionExpired: false,
-            clearSessionExpiredFlag: mockClearSessionExpiredFlag,
-            ...session,
-        } as any);
+    vi.mocked(SessionExpiredFlagModule.useSessionExpiredFlag).mockReturnValue({
+      isSessionExpired: false,
+      clearSessionExpiredFlag: mockClearSessionExpiredFlag,
+      ...session,
+    } as any);
 
-        vi.mocked($api.useQuery).mockReturnValue({
-            data: queryReturn,
-        } as any);
+    vi.mocked($api.useQuery).mockReturnValue({
+      data: queryReturn,
+    } as any);
 
-        return render(
-            <BrowserTestProvider>
-                <Header />
-            </BrowserTestProvider>
-        );
-    };
+    return render(
+      <BrowserTestProvider>
+        <Header />
+      </BrowserTestProvider>
+    );
+  };
 
-    beforeEach(() => {
-        vi.clearAllMocks();
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('renders Header title and top bar interactions correctly', async () => {
+    await renderHeader();
+
+    const title = page.getByTestId('app-title');
+    await expect.element(title).toBeInTheDocument();
+
+    const printBtn = page.getByTestId('header-print-button');
+    await expect.element(printBtn).toBeVisible();
+  });
+
+  it('displays the saving chip when isSaving is true', async () => {
+    await renderHeader({ character: { isSaving: true } });
+
+    const savingChip = page.getByTestId('saving-chip');
+    // Wait for it because showSaving has a 140ms delay
+    await expect.element(savingChip).toBeVisible();
+  });
+
+  it('displays the synced chip when isSaving is false', async () => {
+    await renderHeader({ character: { isSaving: false } });
+
+    const syncedChip = page.getByTestId('synced-chip');
+    await expect.element(syncedChip).toBeVisible();
+  });
+
+  it('concatenates active validation issues in the top bar', async () => {
+    await renderHeader({
+      character: {
+        validationIssues: [
+          {
+            id: 'modifier:quick:value',
+            message: 'Modifier value must be -20 to +20',
+          },
+          {
+            id: 'field:name',
+            message: 'Name max 255 chars',
+          },
+        ],
+      },
     });
 
-    it('renders Header title and top bar interactions correctly', async () => {
-        await renderHeader();
+    const validationChip = page.getByTestId('validation-issues-chip');
+    await expect.element(validationChip).toBeVisible();
+    await expect
+      .element(validationChip)
+      .toHaveTextContent(
+        /Fix: Modifier value must be -20 to \+20 · Name max 255 chars/i
+      );
+  });
 
-        const title = page.getByTestId('app-title');
-        await expect.element(title).toBeInTheDocument();
-        
-        const printBtn = page.getByTestId('header-print-button');
-        await expect.element(printBtn).toBeVisible();
+  it('opens Auth Modal when profile icon is clicked', async () => {
+    await renderHeader();
+
+    const authBtn = page.getByTestId('auth-button');
+    await userEvent.click(authBtn);
+
+    const modal = page.getByTestId('mock-auth-modal');
+    await expect.element(modal).toBeVisible();
+  });
+
+  it('shows total count if query data exists', async () => {
+    await renderHeader({
+      queryReturn: { total: 42 },
     });
 
-    it('displays the saving chip when isSaving is true', async () => {
-        await renderHeader({ character: { isSaving: true } });
+    const badge = page.getByTestId('scvm-count-badge');
+    await expect.element(badge).toBeVisible();
+    await expect.element(badge).toHaveTextContent(/42 SCVMS/i);
+  });
 
-        const savingChip = page.getByTestId('saving-chip');
-        // Wait for it because showSaving has a 140ms delay
-        await expect.element(savingChip).toBeVisible();
+  it('opens login modal with session expired notice and clears the flag when closed', async () => {
+    await renderHeader({
+      auth: { isAuthenticated: true },
+      session: { isSessionExpired: true },
     });
 
-    it('displays the synced chip when isSaving is false', async () => {
-        await renderHeader({ character: { isSaving: false } });
+    const modal = page.getByTestId('mock-auth-modal');
+    await expect.element(modal).toBeVisible();
+    await expect.element(modal).toHaveAttribute('data-session-expired', 'true');
+    expect(mockClearSessionExpiredFlag).not.toHaveBeenCalled();
 
-        const syncedChip = page.getByTestId('synced-chip');
-        await expect.element(syncedChip).toBeVisible();
-    });
-
-    it('opens Auth Modal when profile icon is clicked', async () => {
-        await renderHeader();
-
-        const authBtn = page.getByTestId('auth-button');
-        await userEvent.click(authBtn);
-
-        const modal = page.getByTestId('mock-auth-modal');
-        await expect.element(modal).toBeVisible();
-    });
-
-    it('shows total count if query data exists', async () => {
-        await renderHeader({
-            queryReturn: { total: 42 }
-        });
-
-        const badge = page.getByTestId('scvm-count-badge');
-        await expect.element(badge).toBeVisible();
-        await expect.element(badge).toHaveTextContent(/42 SCVMS/i);
-    });
-
-    it('opens login modal with session expired notice and clears the flag when closed', async () => {
-        await renderHeader({
-            auth: { isAuthenticated: true },
-            session: { isSessionExpired: true },
-        });
-
-        const modal = page.getByTestId('mock-auth-modal');
-        await expect.element(modal).toBeVisible();
-        await expect.element(modal).toHaveAttribute('data-session-expired', 'true');
-        expect(mockClearSessionExpiredFlag).not.toHaveBeenCalled();
-
-        await userEvent.click(page.getByRole('button', { name: /close/i }));
-        await expect.poll(() => mockClearSessionExpiredFlag).toHaveBeenCalled();
-    });
+    await userEvent.click(page.getByRole('button', { name: /close/i }));
+    await expect.poll(() => mockClearSessionExpiredFlag).toHaveBeenCalled();
+  });
 });

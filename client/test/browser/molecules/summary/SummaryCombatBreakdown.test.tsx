@@ -17,6 +17,10 @@ describe('SummaryCombatBreakdown Browser', () => {
     modifiersLabel: 'Modifiers',
     noModifiersLabel: 'No modifiers',
     statLabel: 'Agility',
+    formulaLabel: '12 - Agility modifier - active modifiers',
+    rollHintLabel: 'Roll d20 and meet or beat this number.',
+    baseDrLabel: 'Base DR',
+    finalDrLabel: 'Target DR 10',
   };
 
   it('renders base info and no modifiers message', async () => {
@@ -27,10 +31,11 @@ describe('SummaryCombatBreakdown Browser', () => {
     );
 
     await expect.element(page.getByText('DODGE')).toBeVisible();
-    await expect.element(page.getByText('DR 10')).toBeVisible();
+    await expect.element(page.getByText('Target DR 10')).toBeVisible();
     await expect.element(page.getByText('No modifiers')).toBeVisible();
     await expect.element(page.getByText('Base DR')).toBeVisible();
-    await expect.element(page.getByText('Agility mod')).toBeVisible();
+    await expect.element(page.getByText('12 - Agility modifier - active modifiers')).toBeVisible();
+    await expect.element(page.getByText('Agility mod', { exact: true })).toBeVisible();
     // abilityContribution = -abilityModifier = -2
     await expect.element(page.getByText('-2')).toBeVisible();
 

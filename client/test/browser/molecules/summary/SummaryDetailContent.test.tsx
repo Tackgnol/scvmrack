@@ -31,8 +31,8 @@ describe('SummaryDetailContent Browser', () => {
       </BrowserTestProvider>
     );
 
-    await expect.element(page.getByText('TO DODGE')).toBeVisible();
-    await expect.element(page.getByText('DR 11')).toBeVisible();
+    await expect.element(page.getByText('Dodge DR')).toBeVisible();
+    await expect.element(page.getByText('Target DR 11')).toBeVisible();
 
   });
 
@@ -47,8 +47,8 @@ describe('SummaryDetailContent Browser', () => {
       </BrowserTestProvider>
     );
 
-    await expect.element(page.getByText('TO HIT (MELEE)')).toBeVisible();
-    await expect.element(page.getByText('DR 14')).toBeVisible();
+    await expect.element(page.getByText('Melee DR')).toBeVisible();
+    await expect.element(page.getByText('Target DR 14')).toBeVisible();
 
   });
 
@@ -63,8 +63,8 @@ describe('SummaryDetailContent Browser', () => {
       </BrowserTestProvider>
     );
 
-    await expect.element(page.getByText('TO HIT (RANGED)')).toBeVisible();
-    await expect.element(page.getByText('DR 11')).toBeVisible();
+    await expect.element(page.getByText('Ranged DR')).toBeVisible();
+    await expect.element(page.getByText('Target DR 11')).toBeVisible();
 
   });
 

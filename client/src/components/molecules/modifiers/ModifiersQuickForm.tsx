@@ -13,6 +13,7 @@ import {
 } from '@mui/material';
 import { type ChangeEvent, type KeyboardEvent } from 'react';
 import { useTranslation } from 'react-i18next';
+import { MODIFIER_VALUE_MAX, MODIFIER_VALUE_MIN } from '@/validation/characterUpdate';
 
 interface ModifiersQuickFormProps {
   name: string;
@@ -82,6 +83,7 @@ export default function ModifiersQuickForm({
           htmlInput: {
             'data-testid': 'quick-mod-name-input',
             'aria-label': t('modifiers.name'),
+            maxLength: 255,
           },
         }}
       />
@@ -137,6 +139,9 @@ export default function ModifiersQuickForm({
           htmlInput: {
             'data-testid': 'quick-mod-value-input',
             'aria-label': t('modifiers.value'),
+            min: MODIFIER_VALUE_MIN,
+            max: MODIFIER_VALUE_MAX,
+            step: 1,
           },
         }}
       />

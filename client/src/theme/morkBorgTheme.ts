@@ -1288,6 +1288,7 @@ export const customStyles = {
       display: 'flex',
       alignItems: 'center',
       gap: 1,
+      maxWidth: 'min(100%, 720px)',
     },
     printButton: {
       minHeight: 24,
@@ -1393,6 +1394,26 @@ export const customStyles = {
       '@keyframes spin': {
         from: { transform: 'rotate(0deg)' },
         to: { transform: 'rotate(360deg)' },
+      },
+    },
+    validationChip: {
+      maxWidth: { xs: '100%', md: 360 },
+      bgcolor: morkBorgColors.black,
+      borderColor: morkBorgColors.pink,
+      color: morkBorgColors.yellow,
+      fontFamily: "'Antonio', sans-serif",
+      fontSize: '0.58rem',
+      letterSpacing: '0.08em',
+      textTransform: 'uppercase' as const,
+      '& .MuiChip-icon': {
+        color: morkBorgColors.pink,
+        fontSize: 16,
+      },
+      '& .MuiChip-label': {
+        minWidth: 0,
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        whiteSpace: 'nowrap',
       },
     },
     keyframesSpin: {
@@ -2069,6 +2090,16 @@ export const customStyles = {
     // Origin section — dark container
     originOpen: {
       mb: 0,
+    },
+    originLabel: {
+      fontFamily: "'Antonio', sans-serif",
+      fontSize: '0.62rem',
+      textTransform: 'uppercase' as const,
+      letterSpacing: '0.2em',
+      color: morkBorgColors.black,
+      opacity: 0.78,
+      mb: 0.5,
+      mt: 0.5,
     },
     originTextarea: {
       bgcolor: morkBorgColors.black,

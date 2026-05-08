@@ -5,15 +5,19 @@
   },
   "stats": {
     "hitPoints": "Hit Points",
-    "toDodge": "To Dodge",
-    "toHitMelee": "To Hit (Melee)",
-    "toHitRanged": "To Hit (Ranged)",
+    "toDodge": "Dodge DR",
+    "toHitMelee": "Melee DR",
+    "toHitRanged": "Ranged DR",
     "toCast": "To Cast",
     "omens": "Omens",
     "silver": "Silver",
     "armor": "Armor",
     "encumbrance": "Encumbrance",
-    "armorTier": "Armor Tier"
+    "armorTier": "Armor Tier",
+    "baseDr": "Base DR",
+    "drFormula": "12 - {{stat}} modifier - active modifiers",
+    "drRollHint": "Roll d20 and meet or beat this number.",
+    "finalDr": "Target DR {{dr}}"
   },
   "omensModal": {
     "title": "Omens",
@@ -43,7 +47,7 @@
     "title": "Modifiers",
     "fromEquipment": "From Equipment",
     "noModifiers": "No active modifiers",
-    "addModifier": "Add",
+    "addModifier": "Add modifier",
     "saveModifier": "Save",
     "name": "Name",
     "value": "Value",
@@ -123,6 +127,8 @@
     "drop": "Drop",
     "save": "Save",
     "equippedGear": "Equipped Gear",
+    "equippedWeapons": "Equipped weapons",
+    "equippedArmor": "Equipped armor",
     "namePlaceholder": "Name...",
     "detailPlaceholder": "Detail...",
     "offHand": "OFF-HAND",
@@ -262,6 +268,30 @@
     "guest": "Guest",
     "guestSession": "Guest session - sign up to keep your character",
     "connectionError": "Connection error"
+  },
+  "validation": {
+    "summaryPrefix": "Fix",
+    "numberRange": "{{field}} must be between {{min}} and {{max}}",
+    "textMax": "{{field}} must be {{max}} characters or fewer",
+    "fields": {
+      "name": "Name",
+      "currentHp": "HP",
+      "maxHp": "Max HP",
+      "omens": "Omens",
+      "silver": "Silver",
+      "strength": "Strength",
+      "agility": "Agility",
+      "presence": "Presence",
+      "toughness": "Toughness",
+      "trait1": "Trait 1",
+      "trait2": "Trait 2",
+      "habit": "Habit",
+      "tale": "Tale",
+      "bodyDescription": "Body",
+      "origin": "Origin",
+      "notes": "Notes",
+      "modifierValue": "Modifier value"
+    }
   },
   "notFound": {
     "title": "404",

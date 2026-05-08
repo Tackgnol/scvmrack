@@ -8,7 +8,6 @@ const apiPrefixes = [
   '/auth',
   '/characters',
   '/equipment',
-  '/session',
   '/health',
 ];
 

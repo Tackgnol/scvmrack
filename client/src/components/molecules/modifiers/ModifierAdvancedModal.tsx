@@ -19,6 +19,7 @@ import {
 } from '@mui/material';
 import { type ChangeEvent } from 'react';
 import { useTranslation } from 'react-i18next';
+import { MODIFIER_VALUE_MAX, MODIFIER_VALUE_MIN } from '@/validation/characterUpdate';
 
 interface ModifierAdvancedModalProps {
   open: boolean;
@@ -93,13 +94,14 @@ export default function ModifierAdvancedModal({
         autoFocus
         sx={{ mt: 0.5 }}
         InputLabelProps={{
+          shrink: true,
           sx: {
             color: morkBorgColors.pink,
             '&.Mui-focused': { color: morkBorgColors.yellow },
           },
         }}
         InputProps={{ sx: { color: morkBorgColors.white } }}
-        inputProps={{ 'data-testid': 'modal-mod-name-input' }}
+        inputProps={{ 'data-testid': 'modal-mod-name-input', maxLength: 255 }}
       />
 
       <Select
@@ -136,12 +138,18 @@ export default function ModifierAdvancedModal({
         fullWidth
         placeholder="+1"
         InputLabelProps={{
+          shrink: true,
           sx: {
             color: morkBorgColors.pink,
             '&.Mui-focused': { color: morkBorgColors.yellow },
           },
         }}
         InputProps={{ sx: { color: morkBorgColors.white } }}
+        inputProps={{
+          min: MODIFIER_VALUE_MIN,
+          max: MODIFIER_VALUE_MAX,
+          step: 1,
+        }}
       />
 
       <Select
@@ -228,12 +236,14 @@ export default function ModifierAdvancedModal({
         multiline
         rows={2}
         InputLabelProps={{
+          shrink: true,
           sx: {
             color: morkBorgColors.pink,
             '&.Mui-focused': { color: morkBorgColors.yellow },
           },
         }}
         InputProps={{ sx: { color: morkBorgColors.white } }}
+        inputProps={{ maxLength: 500 }}
       />
     </MorkBorgModal>
   );

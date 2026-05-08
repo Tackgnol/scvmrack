@@ -1,4 +1,5 @@
 import {CharacterResponse, CharacterUpdateRequest, OptimisticPatch} from "@/hooks/models.ts";
+import { sanitizeCharacterUpdateRequest } from '@/validation/characterUpdate';
 
 /**
  * Convert a patch to a request body.
@@ -152,5 +153,5 @@ export function buildRequestFromPatches(
         result.equippedArmor = currentCharacter.equippedArmor;
     }
 
-    return result;
+    return sanitizeCharacterUpdateRequest(result);
 }

@@ -139,7 +139,7 @@ const ModifierSchemaDefs = {
   properties: {
     id: { type: 'string', maxLength: 36 },
     name: { type: 'string', maxLength: 255 },
-    value: { type: 'number' },
+    value: { type: 'number', minimum: -20, maximum: 20 },
     source: { type: 'string', maxLength: 255 },
     statistic: {
       type: 'string',
@@ -159,7 +159,7 @@ const ComputedModifierSchemaDefs = {
   type: 'object',
   additionalProperties: false,
   properties: {
-    value: { type: 'number' },
+    value: { type: 'number', minimum: -20, maximum: 20 },
     source: { type: 'string', maxLength: 255 },
     statistic: {
       type: 'string',

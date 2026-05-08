@@ -96,7 +96,7 @@ test('useSummaryMetrics excludes ammo, pets, and carry items from encumbrance', 
       equipment: [
         { key: 'equipment.rope', name: 'Rope', tags: ['tool'] },
         { key: 'equipment.arrows', name: 'Arrows', tags: ['ammo'] },
-        { key: 'equipment.bolts', name: 'Bolts', tags: ['ammo', 'consumable'] },
+        { key: 'equipment.bolts', name: 'Bolts', tags: ['ammo'] },
         { key: 'equipment.backpack', name: 'Backpack', tags: ['carry'] },
         { key: 'equipment.donkey', name: 'Donkey', tags: ['carry'] },
         { key: 'pets.hawk', name: 'Hawk', tags: ['pet'] },

@@ -41,11 +41,12 @@ export default function NotesSection({ showTitle = true }: { showTitle?: boolean
                 placeholder={placeholderText}
                 value={character?.notes ?? ''}
                 onChange={handleNotesChange}
+                onKeyDown={(event) => event.stopPropagation()}
                 multiline
                 rows={4}
                 fullWidth
                 sx={customStyles.notes.input}
-                inputProps={{ "data-testid": "notes-input" }}
+                inputProps={{ "data-testid": "notes-input", maxLength: 10000 }}
             />
         </Box>
     );
