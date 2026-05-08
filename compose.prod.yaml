@@ -75,7 +75,7 @@ services:
       VITE_GLITCHTIP_DSN: ${VITE_GLITCHTIP_DSN:-}
     ports:
       - target: 3000
-        published: 3031
+        published: 3041
         protocol: tcp
     networks:
       - db
@@ -114,7 +114,7 @@ services:
         condition: on-failure
     ports:
       - target: 80
-        published: 3030
+        published: 3040
         protocol: tcp
     networks:
       - rpg-network
