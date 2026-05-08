@@ -1,5 +1,7 @@
 import { type EquipmentItem } from '@/hooks/models';
 
+const AMMO_ITEM_KEYS = new Set(['equipment.arrows', 'equipment.bolts']);
+
 export function isScrollItem(item: EquipmentItem): boolean {
   return item.key?.startsWith('scroll.') ?? false;
 }
@@ -12,7 +14,7 @@ export function isPetItem(item: EquipmentItem): boolean {
 
 export function isAmmoItem(item: EquipmentItem): boolean {
   const tags = item.tags ?? [];
-  return tags.includes('ammo') || Boolean(item.ammoType);
+  return tags.includes('ammo') || Boolean(item.ammoType) || AMMO_ITEM_KEYS.has(item.key ?? '');
 }
 
 export function isConsumableUseItem(item: EquipmentItem): boolean {
