@@ -128,6 +128,21 @@ steps:
           -v "db_password=$DATABASE_PASSWORD" \
           -f /tmp/sync-pw.sql
 
+        # If the legacy `user` table exists without the `email` column (left
+        # over from earlier broken-deploy state), drop the Prisma-managed
+        # tables so `db push` can recreate them with the current schema.
+        # When the schema already matches, this is a no-op — users are kept.
+        # Game data tables are `external` in prisma.config.ts and never touched.
+        legacy_user="$(docker exec "$db_container_id" psql -U p1002_scmgrinder -d p1002_scmgrinder -tAc "SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='user' AND NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='user' AND column_name='email');")"
+        if [ "$legacy_user" = "1" ]; then
+          echo "Detected legacy auth schema (user table without email column) — dropping Prisma-managed tables."
+          docker exec "$db_container_id" psql \
+            -U p1002_scmgrinder \
+            -d p1002_scmgrinder \
+            -v ON_ERROR_STOP=1 \
+            -c 'DROP TABLE IF EXISTS "claim_code", "verification", "session", "account", "user" CASCADE;'
+        fi
+
         # Build DATABASE_URL inside Node so encodeURIComponent handles every
         # URL-reserved character correctly. `tr -d '\r\n'` strips the trailing
         # CR that `docker run` adds in this CI environment — without it the
