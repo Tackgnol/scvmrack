@@ -3,7 +3,6 @@
 # Secrets (set in Woodpecker UI, repo-scoped):
 #   npmrc_content
 #   database_password
-#   database_url
 #   better_auth_secret
 #   logto_endpoint
 #   logto_app_id
@@ -33,8 +32,6 @@ steps:
         from_secret: npmrc_content
       DATABASE_PASSWORD:
         from_secret: database_password
-      DATABASE_URL:
-        from_secret: database_url
       BETTER_AUTH_SECRET:
         from_secret: better_auth_secret
       LOGTO_ENDPOINT:
@@ -74,6 +71,20 @@ steps:
         trap cleanup EXIT
 
         printf '%s\n' "$NPMRC_CONTENT" > .npmrc
+
+        db_password_url="$(printf '%s' "$DATABASE_PASSWORD" | sed \
+          -e 's/%/%25/g' \
+          -e 's/#/%23/g' \
+          -e 's/@/%40/g' \
+          -e 's/:/%3A/g' \
+          -e 's/\//%2F/g' \
+          -e 's/?/%3F/g' \
+          -e 's/&/%26/g' \
+          -e 's/=/%3D/g' \
+          -e 's/+/%2B/g' \
+          -e 's/ /%20/g')"
+        export DATABASE_URL="postgresql://p1002_scmgrinder:${db_password_url}@db:5432/p1002_scmgrinder"
+
         docker compose -f compose.prod.yaml build backend frontend
 
         if ! docker service inspect scvmrack_db > /dev/null 2>&1; then
