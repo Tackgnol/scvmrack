@@ -75,18 +75,11 @@ steps:
 
         printf '%s\n' "$NPMRC_CONTENT" > .npmrc
 
-        db_password_url="$(printf '%s' "$DATABASE_PASSWORD" | sed \
-          -e 's|%|%25|g' \
-          -e 's|#|%23|g' \
-          -e 's|@|%40|g' \
-          -e 's|:|%3A|g' \
-          -e 's|/|%2F|g' \
-          -e 's|?|%3F|g' \
-          -e 's|&|%26|g' \
-          -e 's|=|%3D|g' \
-          -e 's|+|%2B|g' \
-          -e 's| |%20|g')"
-        export DATABASE_URL="postgresql://p1002_scmgrinder:${db_password_url}@db:5432/p1002_scmgrinder"
+        # DATABASE_URL is required by compose.prod.yaml's :? guard during
+        # `docker stack deploy`. The actual URL-encoded value is computed below
+        # using Node (after the backend image is built) — the raw password is
+        # fine here because no DB connection is attempted at this stage.
+        export DATABASE_URL="postgresql://p1002_scmgrinder:placeholder@db:5432/p1002_scmgrinder"
 
         docker compose -f compose.prod.yaml build backend frontend
 
@@ -128,6 +121,21 @@ steps:
           -v "db_password=$DATABASE_PASSWORD" <<'SQL'
         ALTER USER p1002_scmgrinder WITH PASSWORD :'db_password';
         SQL
+
+        # URL-encode the password using Node from the built backend image.
+        # The previous sed-based encoder missed characters like ! ' ( ) * and
+        # non-ASCII bytes, so the encoded URL didn't round-trip back to the
+        # role's actual password and Prisma authentication failed.
+        db_password_url="$(docker run --rm \
+          -e RAW_PASS="$DATABASE_PASSWORD" \
+          scvmrack-backend:prod \
+          node -e 'process.stdout.write(encodeURIComponent(process.env.RAW_PASS))')"
+        if [ -z "$db_password_url" ]; then
+          echo "Failed to URL-encode DATABASE_PASSWORD" >&2
+          exit 1
+        fi
+        DATABASE_URL="postgresql://p1002_scmgrinder:${db_password_url}@db:5432/p1002_scmgrinder"
+        export DATABASE_URL
 
         docker run --rm --network scvmrack_db \
           -e DATABASE_USER=p1002_scmgrinder \
