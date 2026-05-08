@@ -21,12 +21,15 @@ export default function SummaryDetailContent({
       <SummaryCombatBreakdown
         title={t('stats.toDodge')}
         abilityModifier={summaryMetrics.agilityModifier}
-        currentDr={summaryMetrics.toDodge}
         breakdown={summaryMetrics.dodgeBreakdown}
         unknownOriginLabel={unknownOriginLabel}
         modifiersLabel={t('modifiers.title')}
         noModifiersLabel={t('modifiers.noModifiers')}
         statLabel={t('attributes.agility')}
+        formulaLabel={t('stats.drFormula', { stat: t('attributes.agility') })}
+        rollHintLabel={t('stats.drRollHint')}
+        baseDrLabel={t('stats.baseDr')}
+        finalDrLabel={t('stats.finalDr', { dr: summaryMetrics.toDodge })}
       />
     );
   }
@@ -36,12 +39,15 @@ export default function SummaryDetailContent({
       <SummaryCombatBreakdown
         title={t('stats.toHitMelee')}
         abilityModifier={summaryMetrics.strengthModifier}
-        currentDr={summaryMetrics.toHitMelee}
         breakdown={summaryMetrics.meleeBreakdown}
         unknownOriginLabel={unknownOriginLabel}
         modifiersLabel={t('modifiers.title')}
         noModifiersLabel={t('modifiers.noModifiers')}
         statLabel={t('attributes.strength')}
+        formulaLabel={t('stats.drFormula', { stat: t('attributes.strength') })}
+        rollHintLabel={t('stats.drRollHint')}
+        baseDrLabel={t('stats.baseDr')}
+        finalDrLabel={t('stats.finalDr', { dr: summaryMetrics.toHitMelee })}
       />
     );
   }
@@ -51,12 +57,15 @@ export default function SummaryDetailContent({
       <SummaryCombatBreakdown
         title={t('stats.toHitRanged')}
         abilityModifier={summaryMetrics.presenceModifier}
-        currentDr={summaryMetrics.toHitRanged}
         breakdown={summaryMetrics.rangedBreakdown}
         unknownOriginLabel={unknownOriginLabel}
         modifiersLabel={t('modifiers.title')}
         noModifiersLabel={t('modifiers.noModifiers')}
         statLabel={t('attributes.presence')}
+        formulaLabel={t('stats.drFormula', { stat: t('attributes.presence') })}
+        rollHintLabel={t('stats.drRollHint')}
+        baseDrLabel={t('stats.baseDr')}
+        finalDrLabel={t('stats.finalDr', { dr: summaryMetrics.toHitRanged })}
       />
     );
   }
@@ -68,8 +77,10 @@ export default function SummaryDetailContent({
         encumbrance={summaryMetrics.encumbrance}
         maxEncumbrance={summaryMetrics.maxEncumbrance}
         items={summaryMetrics.encumbranceItems}
+        groups={summaryMetrics.encumbranceGroups}
         emptyLabel={t('equipment.none')}
         unknownItemLabel={t('character.unknown')}
+        resolveGroupLabel={(labelKey) => t(labelKey)}
       />
     );
   }

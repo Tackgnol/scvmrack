@@ -5,7 +5,12 @@ import { createCharacterTestWrapper } from '../helpers/characterHookWrapper.ts';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
-    t: (key: string, fallback?: string) => fallback || key,
+    t: (key: string, fallback?: string, values?: Record<string, unknown>) => {
+      if (!fallback) return key;
+      return fallback.replace(/\{\{(\w+)}}/g, (_match, token) =>
+        String(values?.[token] ?? '')
+      );
+    },
   }),
 }));
 
@@ -42,12 +47,185 @@ test('useModifiersPanel manages quick add form and actions', () => {
     result.current.actions.handleQuickAdd();
   });
 
-  expect(addModifier).toHaveBeenCalledWith(expect.objectContaining({
-    name: 'Test Mod',
-    value: 2,
-    statistic: 'strength'
-  }));
+  expect(addModifier).toHaveBeenCalledWith(
+    expect.objectContaining({
+      name: 'Test Mod',
+      value: 2,
+      statistic: 'strength',
+    })
+  );
   expect(result.current.state.quickForm.name).toBe(''); // Reset after add
+});
+
+test('useModifiersPanel reports invalid modifier values until corrected', () => {
+  const addModifier = vi.fn();
+  const updateModifier = vi.fn();
+  const setValidationIssue = vi.fn();
+  const clearValidationIssue = vi.fn();
+  const wrapperState = createCharacterTestWrapper({
+    character: {
+      modifiers: [
+        { id: 'm1', name: 'Existing', value: 1, statistic: 'agility' },
+      ],
+    } as any,
+    addModifier,
+    updateModifier,
+    setValidationIssue,
+    clearValidationIssue,
+  });
+
+  const { result } = renderHook(() => useModifiersPanel(), {
+    wrapper: wrapperState.wrapper,
+  });
+
+  act(() => {
+    result.current.actions.setName('Too much');
+    result.current.actions.setValueStr('42');
+  });
+
+  expect(setValidationIssue).toHaveBeenCalledWith(
+    'modifier:quick:value',
+    'Modifier value must be between -20 and 20'
+  );
+
+  act(() => {
+    result.current.actions.handleQuickAdd();
+  });
+
+  expect(addModifier).not.toHaveBeenCalled();
+
+  act(() => {
+    result.current.actions.setValueStr('20');
+  });
+
+  expect(clearValidationIssue).toHaveBeenCalledWith('modifier:quick:value');
+
+  act(() => {
+    result.current.actions.handleQuickAdd();
+  });
+
+  expect(addModifier).toHaveBeenCalledWith(
+    expect.objectContaining({
+      value: 20,
+    })
+  );
+
+  act(() => {
+    result.current.actions.openEditModifierModal(
+      wrapperState.getContext().character?.modifiers?.[0] as any
+    );
+    result.current.actions.setModalValueStr('-99');
+  });
+
+  expect(setValidationIssue).toHaveBeenCalledWith(
+    'modifier:modal:value',
+    'Modifier value must be between -20 and 20'
+  );
+
+  act(() => {
+    result.current.actions.saveAdvancedModifier();
+  });
+
+  expect(updateModifier).not.toHaveBeenCalled();
+
+  act(() => {
+    result.current.actions.setModalValueStr('-20');
+  });
+  act(() => {
+    result.current.actions.saveAdvancedModifier();
+  });
+
+  expect(updateModifier).toHaveBeenCalledWith(
+    'm1',
+    expect.objectContaining({
+      value: -20,
+    })
+  );
+});
+
+test('useModifiersPanel blocks incomplete modifier values without surfacing typing errors', () => {
+  const addModifier = vi.fn();
+  const setValidationIssue = vi.fn();
+  const wrapperState = createCharacterTestWrapper({
+    character: { modifiers: [] } as any,
+    addModifier,
+    setValidationIssue,
+  });
+
+  const { result } = renderHook(() => useModifiersPanel(), {
+    wrapper: wrapperState.wrapper,
+  });
+
+  act(() => {
+    result.current.actions.setName('Half typed');
+    result.current.actions.setValueStr('-');
+  });
+
+  expect(setValidationIssue).not.toHaveBeenCalled();
+
+  act(() => {
+    result.current.actions.handleQuickAdd();
+  });
+
+  expect(addModifier).not.toHaveBeenCalled();
+
+  act(() => {
+    result.current.actions.openAdvancedModal();
+  });
+
+  expect(result.current.state.advancedModal.canSave).toBe(false);
+
+  act(() => {
+    result.current.actions.saveAdvancedModifier();
+  });
+
+  expect(addModifier).not.toHaveBeenCalled();
+});
+
+test('useModifiersPanel treats blank modifier values as zero', () => {
+  const addModifier = vi.fn();
+  const wrapperState = createCharacterTestWrapper({
+    character: { modifiers: [] } as any,
+    addModifier,
+  });
+
+  const { result } = renderHook(() => useModifiersPanel(), {
+    wrapper: wrapperState.wrapper,
+  });
+
+  act(() => {
+    result.current.actions.setName('Flat zero');
+  });
+  act(() => {
+    result.current.actions.handleQuickAdd();
+  });
+
+  expect(addModifier).toHaveBeenCalledWith(
+    expect.objectContaining({
+      name: 'Flat zero',
+      value: 0,
+    })
+  );
+
+  act(() => {
+    result.current.actions.setName('Modal zero');
+  });
+  act(() => {
+    result.current.actions.openAdvancedModal();
+  });
+
+  expect(result.current.state.advancedModal.canSave).toBe(true);
+
+  act(() => {
+    result.current.actions.saveAdvancedModifier();
+  });
+
+  expect(addModifier).toHaveBeenCalledWith(
+    expect.objectContaining({
+      name: 'Modal zero',
+      value: 0,
+    })
+  );
 });
 
 test('useModifiersPanel manages advanced modal for add and edit', () => {
@@ -55,7 +233,9 @@ test('useModifiersPanel manages advanced modal for add and edit', () => {
   const updateModifier = vi.fn();
   const wrapperState = createCharacterTestWrapper({
     character: {
-      modifiers: [{ id: 'm1', name: 'Existing', value: 1, statistic: 'agility' }]
+      modifiers: [
+        { id: 'm1', name: 'Existing', value: 1, statistic: 'agility' },
+      ],
     } as any,
     addModifier,
     updateModifier,
@@ -86,7 +266,9 @@ test('useModifiersPanel manages advanced modal for add and edit', () => {
 
   // Open for edit
   act(() => {
-    result.current.actions.openEditModifierModal(wrapperState.getContext().character?.modifiers?.[0] as any);
+    result.current.actions.openEditModifierModal(
+      wrapperState.getContext().character?.modifiers?.[0] as any
+    );
   });
   expect(result.current.state.advancedModal.isEditing).toBe(true);
   expect(result.current.state.advancedModal.name).toBe('Existing');
@@ -97,7 +279,10 @@ test('useModifiersPanel manages advanced modal for add and edit', () => {
   act(() => {
     result.current.actions.saveAdvancedModifier();
   });
-  expect(updateModifier).toHaveBeenCalledWith('m1', expect.objectContaining({ name: 'Updated' }));
+  expect(updateModifier).toHaveBeenCalledWith(
+    'm1',
+    expect.objectContaining({ name: 'Updated' })
+  );
 });
 
 test('useModifiersPanel handles removal with animation delay', async () => {
@@ -125,7 +310,7 @@ test('useModifiersPanel handles removal with animation delay', async () => {
 
   expect(removeModifier).toHaveBeenCalledWith('m1');
   expect(result.current.state.removingModifierIds).not.toContain('m1');
-  
+
   vi.useRealTimers();
 });
 
@@ -144,8 +329,8 @@ test('useModifiersPanel shows shift badge when computed modifiers change', () =>
   // Change computed modifiers
   wrapperState.setContext({
     character: {
-        computedModifiers: [{ originName: 'O', statistic: 'agility', value: 1 }]
-    } as any
+      computedModifiers: [{ originName: 'O', statistic: 'agility', value: 1 }],
+    } as any,
   });
   rerender();
 
@@ -162,7 +347,7 @@ test('useModifiersPanel shows shift badge when computed modifiers change', () =>
 test('useModifiersPanel handles modal scope changes and computed modifier details', () => {
   const wrapperState = createCharacterTestWrapper({
     character: {
-        computedModifiers: [{ originKey: 'c1', value: 5, statistic: 'agility' }]
+      computedModifiers: [{ originKey: 'c1', value: 5, statistic: 'agility' }],
     } as any,
   });
 
@@ -175,7 +360,13 @@ test('useModifiersPanel handles modal scope changes and computed modifier detail
   });
 
   expect(result.current.state.advancedModal.scope).toBe('all');
-  expect(result.current.state.advancedModal.includes).toEqual(['melee', 'ranged', 'defence', 'cast', 'ability']);
+  expect(result.current.state.advancedModal.includes).toEqual([
+    'melee',
+    'ranged',
+    'defence',
+    'cast',
+    'ability',
+  ]);
 
   act(() => {
     result.current.actions.handleModalScopeChange('defence');
@@ -186,11 +377,16 @@ test('useModifiersPanel handles modal scope changes and computed modifier detail
   act(() => {
     result.current.actions.toggleModalInclude('melee', true);
   });
-  expect(result.current.state.advancedModal.includes).toEqual(['defence', 'melee']);
+  expect(result.current.state.advancedModal.includes).toEqual([
+    'defence',
+    'melee',
+  ]);
 
   // Computed modal
   act(() => {
-    result.current.actions.openComputedModifierModal(result.current.state.computedModifiers[0]);
+    result.current.actions.openComputedModifierModal(
+      result.current.state.computedModifiers[0]
+    );
   });
   expect(result.current.state.computedModal.open).toBe(true);
   expect(result.current.state.computedModal.selectedModifier?.value).toBe(5);

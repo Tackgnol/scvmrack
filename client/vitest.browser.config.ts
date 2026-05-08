@@ -2,7 +2,8 @@ import { defineConfig, mergeConfig } from 'vitest/config';
 import viteConfig from './vite.config';
 import { playwright } from '@vitest/browser-playwright';
 
-const { test: _unitTestConfig, ...viteConfigWithoutUnitTests } = viteConfig as any;
+const { test: _unitTestConfig, ...viteConfigWithoutUnitTests } =
+  viteConfig as any;
 
 const browserInstances = (
   process.env.VITEST_BROWSER_INSTANCES ?? 'chromium,firefox,webkit'
@@ -15,13 +16,17 @@ const browserInstances = (
     context: { reducedMotion: 'reduce' as const },
   }));
 
-const isCiChromiumRun = process.env.CI === 'true'
-  && browserInstances.length === 1
-  && browserInstances[0]?.browser === 'chromium';
+const isCiChromiumRun =
+  process.env.CI === 'true' &&
+  browserInstances.length === 1 &&
+  browserInstances[0]?.browser === 'chromium';
 
 export default mergeConfig(
   viteConfigWithoutUnitTests,
   defineConfig({
+    optimizeDeps: {
+      include: ['@mui/icons-material/WarningAmber'],
+    },
     test: {
       name: 'browser',
       testTimeout: 30000,

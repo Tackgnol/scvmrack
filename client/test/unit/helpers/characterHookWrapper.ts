@@ -11,6 +11,10 @@ const BASE_CHARACTER_CONTEXT = {
   error: undefined,
   isLoading: false,
   locale: 'en',
+  validationIssues: [],
+  setValidationIssue: () => {},
+  clearValidationIssue: () => {},
+  clearValidationIssues: () => {},
   setCharacterId: () => {},
   changeLocale: async () => {},
   generateNew: () => {},
@@ -43,10 +47,11 @@ const BASE_CHARACTER_CONTEXT = {
   claimCharacter: async () => {},
   isClaiming: false,
   isJustLoggedOut: false,
+  isSessionExpired: false,
 } as unknown as CharacterHookContext;
 
 export function createCharacterTestContext(
-  overrides: Partial<CharacterHookContext> = {},
+  overrides: Partial<CharacterHookContext> = {}
 ): CharacterHookContext {
   return {
     ...BASE_CHARACTER_CONTEXT,
@@ -55,12 +60,16 @@ export function createCharacterTestContext(
 }
 
 export function createCharacterTestWrapper(
-  initialOverrides: Partial<CharacterHookContext> = {},
+  initialOverrides: Partial<CharacterHookContext> = {}
 ) {
   let contextValue = createCharacterTestContext(initialOverrides);
 
   const wrapper = ({ children }: { children: ReactNode }) =>
-    React.createElement(CharacterContext.Provider, { value: contextValue }, children);
+    React.createElement(
+      CharacterContext.Provider,
+      { value: contextValue },
+      children
+    );
 
   const setContext = (overrides: Partial<CharacterHookContext>) => {
     contextValue = createCharacterTestContext({

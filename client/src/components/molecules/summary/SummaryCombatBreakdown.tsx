@@ -10,12 +10,15 @@ import SummaryModifierRow from './SummaryModifierRow';
 interface SummaryCombatBreakdownProps {
   title: string;
   abilityModifier: number;
-  currentDr: number;
   breakdown: CombatBreakdown;
   unknownOriginLabel: string;
   modifiersLabel: string;
   noModifiersLabel: string;
   statLabel: string;
+  formulaLabel: string;
+  rollHintLabel: string;
+  baseDrLabel: string;
+  finalDrLabel: string;
 }
 
 const formatSigned = (value: number): string => {
@@ -36,12 +39,15 @@ const getModifierName = (
 export default function SummaryCombatBreakdown({
   title,
   abilityModifier,
-  currentDr,
   breakdown,
   unknownOriginLabel,
   modifiersLabel,
   noModifiersLabel,
   statLabel,
+  formulaLabel,
+  rollHintLabel,
+  baseDrLabel,
+  finalDrLabel,
 }: SummaryCombatBreakdownProps) {
   const abilityContribution = -abilityModifier;
   const modifiersContribution = -breakdown.modifierTotal;
@@ -61,8 +67,28 @@ export default function SummaryCombatBreakdown({
         {title}
       </Typography>
 
+      <Typography
+        sx={{
+          color: 'rgba(245,245,245,0.74)',
+          fontSize: '0.78rem',
+          mb: 0.45,
+        }}
+      >
+        {rollHintLabel}
+      </Typography>
+      <Typography
+        sx={{
+          color: 'rgba(245,245,245,0.56)',
+          fontSize: '0.72rem',
+          fontStyle: 'italic',
+          mb: 0.95,
+        }}
+      >
+        {formulaLabel}
+      </Typography>
+
       <Box sx={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 0.4, mb: 1.1 }}>
-        <SummaryBreakdownValueRow label="Base DR" value="12" />
+        <SummaryBreakdownValueRow label={baseDrLabel} value="12" />
         <SummaryBreakdownValueRow
           label={`${statLabel} mod`}
           value={formatSigned(abilityContribution)}
@@ -84,7 +110,7 @@ export default function SummaryCombatBreakdown({
           mb: 0.75,
         }}
       >
-        DR {currentDr}
+        {finalDrLabel}
       </Typography>
 
       {breakdown.applicable.length === 0 ? (

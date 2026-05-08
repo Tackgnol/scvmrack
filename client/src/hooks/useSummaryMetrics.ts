@@ -21,6 +21,12 @@ export type CombatBreakdown = {
   modifierTotal: number;
 };
 
+export type EncumbranceGroup = {
+  key: 'equipment' | 'weapons' | 'armor';
+  label: string;
+  items: EquipmentItem[];
+};
+
 export type SummaryMetrics = {
   characterKey: string;
   agilityModifier: number;
@@ -30,6 +36,7 @@ export type SummaryMetrics = {
   meleeBreakdown: CombatBreakdown;
   rangedBreakdown: CombatBreakdown;
   encumbranceItems: EquipmentItem[];
+  encumbranceGroups: EncumbranceGroup[];
   encumbrance: number;
   maxEncumbrance: number;
   toDodge: number;
@@ -101,13 +108,23 @@ export function useSummaryMetrics(
       'ranged',
     );
 
+    const carriedEquipment = (character?.equipment ?? []).filter(
+      (item) => !isEncumbranceExemptItem(item),
+    );
+    const carriedWeapons = (character?.equippedWeapons ?? []).filter(isCarriedItem);
+    const carriedArmor = (
+      character?.equippedArmor ? [character.equippedArmor] : []
+    ).filter(isCarriedItem);
     const encumbranceItems = [
-      ...(character?.equipment ?? []).filter((item) => !isEncumbranceExemptItem(item)),
-      ...(character?.equippedWeapons ?? []).filter(isCarriedItem),
-      ...(character?.equippedArmor ? [character.equippedArmor] : []).filter(
-        isCarriedItem,
-      ),
+      ...carriedEquipment,
+      ...carriedWeapons,
+      ...carriedArmor,
     ];
+    const encumbranceGroups: EncumbranceGroup[] = [
+      { key: 'equipment', label: 'equipment.onHand', items: carriedEquipment },
+      { key: 'weapons', label: 'equipment.equippedWeapons', items: carriedWeapons },
+      { key: 'armor', label: 'equipment.equippedArmor', items: carriedArmor },
+    ].filter((group) => group.items.length > 0) as EncumbranceGroup[];
     const encumbrance = encumbranceItems.length;
     const maxEncumbrance = Math.max(0, 8 + strengthModifier);
 
@@ -120,6 +137,7 @@ export function useSummaryMetrics(
       meleeBreakdown,
       rangedBreakdown,
       encumbranceItems,
+      encumbranceGroups,
       encumbrance,
       maxEncumbrance,
       toDodge: char?.drToDodge ?? 12 - agilityModifier - dodgeBreakdown.modifierTotal,

@@ -179,8 +179,8 @@ INSERT INTO public.equipment VALUES (56, 'equipment.elixir-vitalis', '{consumabl
 INSERT INTO public.equipment VALUES (57, 'equipment.spider-owl-soup', '{consumable,decoction}', NULL, NULL, NULL, NULL, NULL, NULL, 0, false, NULL, 1, NULL, NULL, '{"type": "SingleUse"}');
 INSERT INTO public.equipment VALUES (58, 'equipment.fernors-philtre', '{consumable,decoction}', NULL, NULL, NULL, NULL, NULL, NULL, 0, false, NULL, 1, NULL, NULL, '{"type": "SingleUse", "effectDie": 4}');
 INSERT INTO public.equipment VALUES (59, 'equipment.hyphos-snuff', '{consumable,decoction}', NULL, NULL, NULL, NULL, NULL, NULL, 0, false, NULL, 1, NULL, NULL, '{"type": "SingleUse", "statuses": [{"value": -2, "source": "Hyphos snuff", "exclude": ["ability", "heal", "ranged", "melee", "cast"], "statistic": "agility"}]}');
-INSERT INTO public.equipment VALUES (60, 'equipment.arrows', '{ammo,consumable}', NULL, NULL, NULL, NULL, NULL, NULL, 3, false, NULL, 1, 'Arrow', 10, NULL);
-INSERT INTO public.equipment VALUES (61, 'equipment.bolts', '{ammo,consumable}', NULL, NULL, NULL, NULL, NULL, NULL, 5, false, NULL, 1, 'Bolt', 10, NULL);
+INSERT INTO public.equipment VALUES (60, 'equipment.arrows', '{ammo}', NULL, NULL, NULL, NULL, NULL, NULL, 3, false, NULL, 1, 'Arrow', 10, NULL);
+INSERT INTO public.equipment VALUES (61, 'equipment.bolts', '{ammo}', NULL, NULL, NULL, NULL, NULL, NULL, 5, false, NULL, 1, 'Bolt', 10, NULL);
 
 
 --

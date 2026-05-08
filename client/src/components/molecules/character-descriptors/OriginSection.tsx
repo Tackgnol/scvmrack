@@ -18,7 +18,7 @@ export default function OriginSection({
       className="print-origin-section"
       sx={customStyles.characterDescriptors.originOpen}
     >
-      <Typography sx={customStyles.characterDescriptors.traitsLabel}>
+      <Typography sx={customStyles.characterDescriptors.originLabel}>
         {t('character.origin')}
       </Typography>
       <Box sx={customStyles.characterDescriptors.originTextarea}>
@@ -30,6 +30,7 @@ export default function OriginSection({
           placeholder={t('character.originPlaceholder')}
           variant="standard"
           sx={customStyles.characterDescriptors.originPlaceholder}
+          inputProps={{ maxLength: 1000, 'data-testid': 'origin-input' }}
         />
       </Box>
     </Box>

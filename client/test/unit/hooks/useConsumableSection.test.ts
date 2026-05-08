@@ -6,7 +6,7 @@ import {
   createCharacterTestWrapper,
 } from '../helpers/characterHookWrapper.ts';
 
-test('useConsumableSection returns only tracked consumables with uses', () => {
+test('useConsumableSection returns only tracked non-ammo consumables with uses', () => {
   const toggleCalls: Array<[number, number]> = [];
   const wrapperState = createCharacterTestWrapper({
     character: {
@@ -20,6 +20,20 @@ test('useConsumableSection returns only tracked consumables with uses', () => {
         { key: 'equipment.torch', name: 'Torch', tags: ['consumable'] },
         { key: 'scroll.fire', name: 'Fire Scroll', uses: [false] },
         { key: 'pet.wolf', name: 'Wolf', tags: ['pet'], uses: [false] },
+        {
+          key: 'equipment.arrows',
+          name: 'Arrows',
+          tags: ['ammo'],
+          uses: [false, false, false, false],
+          ammoType: 'arrow',
+        },
+        {
+          key: 'equipment.bolts',
+          name: 'Bolts',
+          tags: ['ammo'],
+          uses: [false, false],
+          ammoType: 'bolt',
+        },
         {
           key: 'equipment.lantern',
           name: 'Lantern',
@@ -39,6 +53,9 @@ test('useConsumableSection returns only tracked consumables with uses', () => {
   });
 
   expect(result.current.consumablesWithIndices).toHaveLength(2);
+  expect(
+    result.current.consumablesWithIndices.map(({ item }) => item.key)
+  ).toEqual(['equipment.medicine-chest', 'equipment.lantern']);
   expect(result.current.consumablesWithIndices[0].uses).toEqual([
     false,
     false,
@@ -51,12 +68,12 @@ test('useConsumableSection returns only tracked consumables with uses', () => {
   ]);
 
   act(() => {
-    result.current.markPipPending(4, 1);
+    result.current.markPipPending(6, 1);
   });
 
   expect(result.current.hasPendingPipSave).toBe(true);
-  expect(result.current.isPipPending(4, 1)).toBe(true);
-  expect(toggleCalls).toEqual([[4, 1]]);
+  expect(result.current.isPipPending(6, 1)).toBe(true);
+  expect(toggleCalls).toEqual([[6, 1]]);
 });
 
 test('useConsumableSection clears pending flag once saving turns off via context update', () => {

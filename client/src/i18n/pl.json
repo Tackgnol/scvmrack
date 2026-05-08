@@ -5,15 +5,19 @@
   },
   "stats": {
     "hitPoints": "Punkty Życia",
-    "toDodge": "Unik",
-    "toHitMelee": "Trafienie (Wręcz)",
-    "toHitRanged": "Trafienie (Dystans)",
+    "toDodge": "DR Uniku",
+    "toHitMelee": "DR Wręcz",
+    "toHitRanged": "DR Dystans",
     "toCast": "Czar",
     "omens": "Omeny",
     "silver": "Srebro",
     "armor": "Pancerz",
     "encumbrance": "Obciążenie",
-    "armorTier": "Poziom Pancerza"
+    "armorTier": "Poziom Pancerza",
+    "baseDr": "Bazowe DR",
+    "drFormula": "12 - modyfikator {{stat}} - aktywne modyfikatory",
+    "drRollHint": "Rzuć d20 i wyrównaj albo przebij tę wartość.",
+    "finalDr": "Cel: DR {{dr}}"
   },
   "omensModal": {
     "title": "Omeny",
@@ -43,7 +47,7 @@
     "title": "Modyfikatory",
     "fromEquipment": "Z Wyposażenia",
     "noModifiers": "Brak aktywnych modyfikatorów",
-    "addModifier": "Dodaj",
+    "addModifier": "Dodaj modyfikator",
     "saveModifier": "Zapisz",
     "name": "Nazwa",
     "value": "Wartość",
@@ -123,6 +127,8 @@
     "drop": "Wyrzuć",
     "save": "Zapisz",
     "equippedGear": "Wyposażenie",
+    "equippedWeapons": "Broń w ręku",
+    "equippedArmor": "Założony pancerz",
     "namePlaceholder": "Nazwa...",
     "detailPlaceholder": "Szczegół...",
     "offHand": "DRUGA RĘKA",
@@ -262,6 +268,30 @@
     "guest": "Gość",
     "guestSession": "Sesja gościa - zarejestruj się, aby zachować postać",
     "connectionError": "Błąd połączenia"
+  },
+  "validation": {
+    "summaryPrefix": "Napraw",
+    "numberRange": "{{field}} musi być między {{min}} i {{max}}",
+    "textMax": "{{field}} może mieć maks. {{max}} znaków",
+    "fields": {
+      "name": "Imię",
+      "currentHp": "PŻ",
+      "maxHp": "Maks. PŻ",
+      "omens": "Omeny",
+      "silver": "Srebro",
+      "strength": "Siła",
+      "agility": "Zwinność",
+      "presence": "Obecność",
+      "toughness": "Wytrzymałość",
+      "trait1": "Cecha 1",
+      "trait2": "Cecha 2",
+      "habit": "Nawyk",
+      "tale": "Historia",
+      "bodyDescription": "Ciało",
+      "origin": "Pochodzenie",
+      "notes": "Notatki",
+      "modifierValue": "Wartość modyfikatora"
+    }
   },
   "notFound": {
     "title": "404",

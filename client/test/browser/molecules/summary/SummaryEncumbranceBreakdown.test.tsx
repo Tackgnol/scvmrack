@@ -24,7 +24,6 @@ describe('SummaryEncumbranceBreakdown Browser', () => {
     await expect.element(page.getByText('ENCUMBRANCE')).toBeVisible();
     await expect.element(page.getByText('5 / 10')).toBeVisible();
     await expect.element(page.getByText('No items')).toBeVisible();
-
   });
 
   it('renders items correctly', async () => {
@@ -41,13 +40,69 @@ describe('SummaryEncumbranceBreakdown Browser', () => {
 
     await expect.element(page.getByText('Torch')).toBeVisible();
     await expect.element(page.getByText('Rope')).toBeVisible();
+  });
 
+  it('groups encumbrance items by source', async () => {
+    const groups = [
+      {
+        key: 'equipment',
+        label: 'On hand',
+        items: [{ key: 'torch', name: 'Torch' }],
+      },
+      {
+        key: 'weapons',
+        label: 'Equipped weapons',
+        items: [{ key: 'axe', name: 'Axe' }],
+      },
+    ];
+
+    await render(
+      <BrowserTestProvider>
+        <SummaryEncumbranceBreakdown
+          {...defaultProps}
+          items={
+            [
+              { key: 'torch', name: 'Torch' },
+              { key: 'axe', name: 'Axe' },
+            ] as any
+          }
+          groups={groups as any}
+        />
+      </BrowserTestProvider>
+    );
+
+    await expect.element(page.getByText('On hand')).toBeVisible();
+    await expect.element(page.getByText('Equipped weapons')).toBeVisible();
+    await expect.element(page.getByText('Torch')).toBeVisible();
+    await expect.element(page.getByText('Axe')).toBeVisible();
+  });
+
+  it('uses grouped items to decide whether the list is empty', async () => {
+    const groups = [
+      {
+        key: 'weapons',
+        label: 'Equipped weapons',
+        items: [{ key: 'axe', name: 'Axe' }],
+      },
+    ];
+
+    await render(
+      <BrowserTestProvider>
+        <SummaryEncumbranceBreakdown
+          {...defaultProps}
+          items={[]}
+          groups={groups as any}
+        />
+      </BrowserTestProvider>
+    );
+
+    await expect.element(page.getByText('Equipped weapons')).toBeVisible();
+    await expect.element(page.getByText('Axe')).toBeVisible();
+    await expect.element(page.getByText('No items')).not.toBeInTheDocument();
   });
 
   it('renders unknown label for missing name', async () => {
-    const items = [
-      { key: 'mystery' },
-    ];
+    const items = [{ key: 'mystery' }];
 
     await render(
       <BrowserTestProvider>
@@ -56,6 +111,5 @@ describe('SummaryEncumbranceBreakdown Browser', () => {
     );
 
     await expect.element(page.getByText('mystery')).toBeVisible();
-
   });
 });

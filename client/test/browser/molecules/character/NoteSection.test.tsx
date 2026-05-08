@@ -85,4 +85,25 @@ describe('NotesSection Browser', () => {
 
     await expect.poll(() => mockUpdateField).toHaveBeenCalledWith('notes', 'Debt to the ferryman.');
   });
+
+  it('keeps newline characters in notes', async () => {
+    vi.mocked(CharacterContextModule.useCharacter).mockReturnValue({
+      character: { id: 'char-1', notes: '' },
+      updateField: mockUpdateField,
+    } as any);
+
+    await render(
+      <BrowserTestProvider>
+        <NotesSection />
+      </BrowserTestProvider>
+    );
+
+    const textarea = page.getByTestId('notes-input');
+    await userEvent.fill(textarea, 'First line\nSecond line');
+
+    await expect.poll(() => mockUpdateField).toHaveBeenCalledWith(
+      'notes',
+      'First line\nSecond line',
+    );
+  });
 });

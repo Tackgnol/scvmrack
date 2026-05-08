@@ -11,6 +11,7 @@ export const authKeys = {
     me: () => [...authKeys.all, "me"] as const,
 };
 
+
 // ============================================
 // Character Query Keys
 // ============================================

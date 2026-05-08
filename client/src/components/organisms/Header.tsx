@@ -14,6 +14,7 @@ import PersonIcon from '@mui/icons-material/Person';
 import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
 import PrintIcon from '@mui/icons-material/Print';
 import SyncIcon from '@mui/icons-material/Sync';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import {
   Box,
   Button,
@@ -21,6 +22,7 @@ import {
   Drawer,
   IconButton,
   Paper,
+  Tooltip,
   Typography,
   useMediaQuery,
   useTheme,
@@ -97,8 +99,14 @@ function NavLink({
 export default function Header() {
   const { t } = useTranslation();
   const { user, isAuthenticated } = useAuth();
-  const { isSaving, isJustLoggedOut, character, characterId, lastCharacterId } =
-    useCharacter();
+  const {
+    isSaving,
+    isJustLoggedOut,
+    character,
+    characterId,
+    lastCharacterId,
+    validationIssues = [],
+  } = useCharacter();
   const { data: countData } = $api.useQuery('get', '/characters/count');
   const { isSessionExpired, clearSessionExpiredFlag } = useSessionExpiredFlag();
   const [authModalOpen, setAuthModalOpen] = useState(false);
@@ -116,6 +124,12 @@ export default function Header() {
   });
   const homeUrl = buildHomeCallbackUrl(characterId || lastCharacterId);
   const isSheetRoute = pathname === '/';
+  const validationSummary = validationIssues
+    .map(({ message }) => message)
+    .join(' · ');
+  const validationLabel = validationSummary
+    ? `${t('validation.summaryPrefix', 'Fix')}: ${validationSummary}`
+    : '';
 
   const openAuthModal = useCallback((showSessionExpiredNotice = false) => {
     setSessionExpiredNotice(showSessionExpiredNotice);
@@ -144,10 +158,7 @@ export default function Header() {
     }
 
     openAuthModal(true);
-  }, [
-    isSessionExpired,
-    openAuthModal,
-  ]);
+  }, [isSessionExpired, openAuthModal]);
 
   // Automatically open modal if just logged out without a character
   useEffect(() => {
@@ -222,6 +233,23 @@ export default function Header() {
     );
   };
 
+  const getValidationChip = () => {
+    if (!validationSummary) return null;
+
+    return (
+      <Tooltip title={validationSummary} placement="bottom">
+        <Chip
+          data-testid="validation-issues-chip"
+          size="small"
+          icon={<WarningAmberIcon />}
+          label={validationLabel}
+          variant="outlined"
+          sx={customStyles.header.validationChip}
+        />
+      </Tooltip>
+    );
+  };
+
   const handlePrint = () => {
     const printUrl = buildPrintCallbackUrl(characterId || lastCharacterId);
     window.open(printUrl, '_blank', 'noopener,noreferrer');
@@ -256,6 +284,7 @@ export default function Header() {
             <Box sx={customStyles.header.desktopNav}>
               <Box sx={customStyles.header.topBar}>
                 {getStatusChip()}
+                {getValidationChip()}
                 {isSheetRoute && (
                   <Button
                     data-testid="header-print-button"
@@ -369,6 +398,7 @@ export default function Header() {
         <Box sx={customStyles.header.drawerFooter}>
           <Box sx={customStyles.header.drawerStatusBox}>
             {getStatusChip()}
+            {getValidationChip()}
             {isSheetRoute && (
               <Button
                 data-testid="drawer-print-button"

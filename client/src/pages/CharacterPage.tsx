@@ -330,10 +330,14 @@ export function CharacterPage() {
                         : undefined
                 }
             >
-                <SummaryBar />
-                <ResourceRow />
-                <EquippedBar />
-                <CharacterNameAndClass />
+                <Box>
+                    <SummaryBar />
+                    <ResourceRow />
+                    <EquippedBar />
+                </Box>
+                <Box>
+                    <CharacterNameAndClass />
+                </Box>
                 <Abilities />
                 <CharacterDescriptors />
 
@@ -342,43 +346,45 @@ export function CharacterPage() {
                 </Box>
 
                 <ModifiersPanel />
-                <OnHandSection />
+                <Box>
+                    <OnHandSection />
 
-                {hasBackpack && (
-                    <SectionAccordion
-                        title={t('equipment.storedItems')}
-                        defaultExpanded={defaultExpanded}
-                    >
-                        <BackpackSection showTitle={false} />
-                    </SectionAccordion>
-                )}
+                    {hasBackpack && (
+                        <SectionAccordion
+                            title={t('equipment.storedItems')}
+                            defaultExpanded={defaultExpanded}
+                        >
+                            <BackpackSection showTitle={false} />
+                        </SectionAccordion>
+                    )}
 
-                {hasScrolls && (
-                    <SectionAccordion
-                        title={t('powers.title')}
-                        defaultExpanded={defaultExpanded}
-                    >
-                        <PowersSection showLabel={false} />
-                    </SectionAccordion>
-                )}
+                    {hasScrolls && (
+                        <SectionAccordion
+                            title={t('powers.title')}
+                            defaultExpanded={defaultExpanded}
+                        >
+                            <PowersSection showLabel={false} />
+                        </SectionAccordion>
+                    )}
 
-                {hasPets && (
-                    <SectionAccordion
-                        title={t('pets.title')}
-                        defaultExpanded={defaultExpanded}
-                    >
-                        <PetSection showLabel={false} />
-                    </SectionAccordion>
-                )}
+                    {hasPets && (
+                        <SectionAccordion
+                            title={t('pets.title')}
+                            defaultExpanded={defaultExpanded}
+                        >
+                            <PetSection showLabel={false} />
+                        </SectionAccordion>
+                    )}
 
-                {hasConsumables && (
-                    <SectionAccordion
-                        title={t('consumables.title')}
-                        defaultExpanded={defaultExpanded}
-                    >
-                        <ConsumableSection showLabel={false} />
-                    </SectionAccordion>
-                )}
+                    {hasConsumables && (
+                        <SectionAccordion
+                            title={t('consumables.title')}
+                            defaultExpanded={defaultExpanded}
+                        >
+                            <ConsumableSection showLabel={false} />
+                        </SectionAccordion>
+                    )}
+                </Box>
 
                 <Box className="print-hidden" sx={customStyles.zoneDivider}>
                     <Typography sx={customStyles.zoneDividerIcon}>✠</Typography>
