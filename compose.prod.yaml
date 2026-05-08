@@ -25,7 +25,10 @@ x-db-env: &db-env
 
 services:
   db:
-    image: postgres:16-alpine
+    image: scvmrack-db:prod
+    build:
+      context: backend
+      dockerfile: Dockerfile.prod-db
     deploy:
       restart_policy:
         condition: on-failure
@@ -35,7 +38,6 @@ services:
       POSTGRES_DB: p1002_scmgrinder
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ./backend/init:/docker-entrypoint-initdb.d:ro
     networks:
       - db
     healthcheck:
