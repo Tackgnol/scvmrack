@@ -75,11 +75,11 @@ scvmrack/
 ```
 
 ### 1.2 Concrete moves (use `git mv` so history follows)
-- [ ] `git mv client frontend`
-- [ ] `mkdir backend`
-- [ ] Move into `backend/`: `src/`, `scripts/`, `migrations/`, `init/`, `tests/`, `app.js`, `package.json`, `package-lock.json`, `tsconfig.json`, `pgtyped.json`, `.env*`, `DATABASE.md`, `Dockerfile*`, `.dockerignore`, `.prettierrc`.
-- [ ] Leave at root: `compose*.yaml`, `.woodpecker/`, `README.md`, `CLAUDE.md`, `AGENTS.md`, `docs/`, `materials/`, `.gitignore`.
-- [ ] Delete dev-only / artifacts (regeneratable): `coverage*/`, `dist/`, `e2e-report/`, `node_modules/`, `test-results/`, `reports/`, `e2e.log`, `localhost.har`, `replacements.txt`.
+- [x] `git mv client frontend`
+- [x] `mkdir backend`
+- [x] Move into `backend/`: `src/`, `scripts/`, `migrations/`, `init/`, `tests/`, `app.js`, `package.json`, `package-lock.json`, `tsconfig.json`, `pgtyped.json`, `.env*`, `DATABASE.md`, `Dockerfile*`, `.dockerignore`, `.prettierrc`.
+- [x] Leave at root: `compose*.yaml`, `.woodpecker/`, `README.md`, `CLAUDE.md`, `AGENTS.md`, `docs/`, `materials/`, `.gitignore`.
+- [x] Delete dev-only / artifacts (regeneratable): `coverage*/`, `dist/`, `e2e-report/`, `node_modules/`, `test-results/`, `reports/`, `e2e.log`, `localhost.har`, `replacements.txt`.
 
 ### 1.3 Update path references
 - [ ] In `backend/scripts/*.ts/.js`: any `path.join(process.cwd(), 'client', …)` → `path.join(process.cwd(), '..', 'frontend', …)`. Search `backend/scripts` for the string `'client'`.
