@@ -1,0 +1,17 @@
+scvmrack.rpgtools.eu.org {
+  import cloudflare_tls
+
+  @asset_routes path /assets/*
+  handle @asset_routes {
+    reverse_proxy 127.0.0.1:3030
+  }
+
+  @api_routes path /api/*
+  handle @api_routes {
+    reverse_proxy 127.0.0.1:3031
+  }
+
+  handle {
+    reverse_proxy 127.0.0.1:3030
+  }
+}

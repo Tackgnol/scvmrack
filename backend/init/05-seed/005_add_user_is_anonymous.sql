@@ -1,0 +1,1 @@
+-- Better Auth anonymous plugin support is now owned by Prisma's User model.

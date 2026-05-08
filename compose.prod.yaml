@@ -1,17 +1,19 @@
 # Production stack. Driven by Woodpecker; secrets come from the runner env.
 #
-# Required env (passed by Woodpecker via secrets):
+# Required env:
 #   DATABASE_PASSWORD
+#   DATABASE_URL
 #   BETTER_AUTH_SECRET
-#   EMAIL_PEPPER
-#   EMAIL_ENCRYPTION_KEY
-#   MAIL_USER
-#   MAIL_PASS
-#   TURNSTILE_SECRET_KEY
-#   GLITCHTIP_DSN
-#   VITE_GLITCHTIP_DSN
-#   CLIENT_ORIGIN, BETTER_AUTH_URL, AUTH_BASE_URL
-#   CLIENT_GATEWAY is optional.
+#   LOGTO_ENDPOINT
+#   LOGTO_APP_ID
+#   LOGTO_APP_SECRET
+#   LOGTO_REDIRECT_URI
+#   LOGTO_POST_LOGOUT_REDIRECT_URI
+#   CLIENT_ORIGIN
+#   APP_BASE_URL
+#   AUTH_BASE_URL
+#   VITE_BACKEND_URL
+#   VITE_LOGTO_ENDPOINT
 
 x-db-env: &db-env
   DATABASE_USER: p1002_scmgrinder
@@ -19,12 +21,7 @@ x-db-env: &db-env
   DATABASE_NAME: p1002_scmgrinder
   DATABASE_HOST: db
   DATABASE_PORT: 5432
-
-x-build-args: &build-args
-  VITE_BACKEND_URL: ${VITE_BACKEND_URL:?VITE_BACKEND_URL is required}
-  VITE_TURNSTILE_SITE_KEY: ${VITE_TURNSTILE_SITE_KEY:-}
-  VITE_SITE_URL: ${VITE_SITE_URL:-}
-  VITE_GLITCHTIP_DSN: ${VITE_GLITCHTIP_DSN:?VITE_GLITCHTIP_DSN is required}
+  DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
 
 services:
   db:
@@ -38,38 +35,22 @@ services:
       POSTGRES_DB: p1002_scmgrinder
     volumes:
       - pgdata:/var/lib/postgresql/data
+      - ./backend/init:/docker-entrypoint-initdb.d:ro
     networks:
       - db
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U p1002_scmgrinder"]
+      test: ["CMD-SHELL", "pg_isready -U p1002_scmgrinder -d p1002_scmgrinder"]
       interval: 5s
       timeout: 5s
       retries: 20
 
-  migrate:
-    image: scvmgrinder_be:prod
+  backend:
+    image: scvmrack-backend:prod
     build:
       context: .
-      args:
-        <<: *build-args
-    command: ["node", "scripts/migrate.js"]
-    environment:
-      <<: *db-env
-    networks:
-      - db
+      dockerfile: backend/Dockerfile
     deploy:
-      replicas: 0
-
-  api:
-    image: scvmgrinder_be:prod
-    ports:
-      - "3000:3000" # Expose host port 3000, route to container port 3000
-    build:
-      context: .
-      args:
-        <<: *build-args
-    deploy:
-      replicas: ${API_REPLICAS:-1}
+      replicas: ${BACKEND_REPLICAS:-1}
       update_config:
         order: start-first
         failure_action: rollback
@@ -82,31 +63,76 @@ services:
       NODE_ENV: production
       CLIENT_ORIGIN: ${CLIENT_ORIGIN:?CLIENT_ORIGIN is required}
       CLIENT_GATEWAY: ${CLIENT_GATEWAY:-}
-      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?BETTER_AUTH_SECRET is required}
-      BETTER_AUTH_URL: ${BETTER_AUTH_URL:?BETTER_AUTH_URL is required}
+      APP_BASE_URL: ${APP_BASE_URL:?APP_BASE_URL is required}
       AUTH_BASE_URL: ${AUTH_BASE_URL:?AUTH_BASE_URL is required}
-      EMAIL_PEPPER: ${EMAIL_PEPPER:?EMAIL_PEPPER is required}
-      EMAIL_ENCRYPTION_KEY: ${EMAIL_ENCRYPTION_KEY:?EMAIL_ENCRYPTION_KEY is required}
-      MAIL_USER: ${MAIL_USER:?MAIL_USER is required}
-      MAIL_PASS: ${MAIL_PASS:?MAIL_PASS is required}
-      TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY:-}
-      GLITCHTIP_DSN: ${GLITCHTIP_DSN:?GLITCHTIP_DSN is required}
-      VITE_GLITCHTIP_DSN: ${VITE_GLITCHTIP_DSN:?VITE_GLITCHTIP_DSN is required}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?BETTER_AUTH_SECRET is required}
+      LOGTO_ENDPOINT: ${LOGTO_ENDPOINT:?LOGTO_ENDPOINT is required}
+      LOGTO_APP_ID: ${LOGTO_APP_ID:?LOGTO_APP_ID is required}
+      LOGTO_APP_SECRET: ${LOGTO_APP_SECRET:?LOGTO_APP_SECRET is required}
+      LOGTO_REDIRECT_URI: ${LOGTO_REDIRECT_URI:?LOGTO_REDIRECT_URI is required}
+      LOGTO_POST_LOGOUT_REDIRECT_URI: ${LOGTO_POST_LOGOUT_REDIRECT_URI:?LOGTO_POST_LOGOUT_REDIRECT_URI is required}
+      GLITCHTIP_DSN: ${GLITCHTIP_DSN:-}
+      VITE_GLITCHTIP_DSN: ${VITE_GLITCHTIP_DSN:-}
+    ports:
+      - target: 3000
+        published: 3031
+        protocol: tcp
     networks:
       - db
       - rpg-network
+    depends_on:
+      db:
+        condition: service_healthy
     healthcheck:
       test:
         [
           "CMD",
           "node",
           "-e",
-          "fetch('http://localhost:3000/health').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+          "fetch('http://127.0.0.1:3000/api/health').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+
+  frontend:
+    image: scvmrack-frontend:prod
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      args:
+        VITE_BACKEND_URL: ${VITE_BACKEND_URL:?VITE_BACKEND_URL is required}
+        VITE_LOGTO_ENDPOINT: ${VITE_LOGTO_ENDPOINT:?VITE_LOGTO_ENDPOINT is required}
+        VITE_SITE_URL: ${VITE_SITE_URL:-}
+        VITE_GLITCHTIP_DSN: ${VITE_GLITCHTIP_DSN:-}
+    deploy:
+      replicas: ${FRONTEND_REPLICAS:-1}
+      update_config:
+        order: start-first
+        failure_action: rollback
+      restart_policy:
+        condition: on-failure
+    ports:
+      - target: 80
+        published: 3030
+        protocol: tcp
+    networks:
+      - rpg-network
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--spider",
+          "-q",
+          "http://127.0.0.1/"
         ]
       interval: 10s
       timeout: 5s
       retries: 30
       start_period: 10s
+
 volumes:
   pgdata:
     name: scvmrack-prod_pgdata

@@ -8,7 +8,7 @@ services:
     ports:
       - "5433:5432"
     volumes:
-      - ./init:/docker-entrypoint-initdb.d
+      - ./backend/init:/docker-entrypoint-initdb.d
       - pgdata-dev:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U p1002_scmgrinder"]
@@ -16,10 +16,26 @@ services:
       timeout: 5s
       retries: 5
 
+  migrate:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile.dev
+    command: npm run prisma:migrate
+    environment:
+      DATABASE_USER: p1002_scmgrinder
+      DATABASE_PASSWORD: p1002_scmgrinder
+      DATABASE_NAME: p1002_scmgrinder
+      DATABASE_HOST: db
+      DATABASE_PORT: 5432
+      DATABASE_URL: postgresql://p1002_scmgrinder:p1002_scmgrinder@db:5432/p1002_scmgrinder
+    depends_on:
+      db:
+        condition: service_healthy
+
   api:
     build:
       context: .
-      dockerfile: Dockerfile.dev
+      dockerfile: backend/Dockerfile.dev
     command: npm run dev:api
     ports:
       - "3000:3000"
@@ -30,48 +46,43 @@ services:
       DATABASE_NAME: p1002_scmgrinder
       DATABASE_HOST: db
       DATABASE_PORT: 5432
+      DATABASE_URL: postgresql://p1002_scmgrinder:p1002_scmgrinder@db:5432/p1002_scmgrinder
       PORT: 3000
       CLIENT_ORIGIN: http://localhost:5173
       CLIENT_GATEWAY: http://localhost:5173
-      AUTH_BASE_URL: http://localhost:3000/auth
+      APP_BASE_URL: http://localhost:5173
+      AUTH_BASE_URL: http://localhost:3000/api/auth
       BETTER_AUTH_SECRET: dev-only-better-auth-secret-change-for-prod
-      EMAIL_PEPPER: dev-only-email-pepper-at-least-thirty-two-chars
-      EMAIL_ENCRYPTION_KEY: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
-      MAIL_HOST: mailpit
-      MAIL_PORT: 1025
-      MAIL_SECURE: "false"
-      MAIL_USER: scvmrack-dev@localhost
-      MAIL_PASS: dev-only
+      LOGTO_ENDPOINT: ${LOGTO_ENDPOINT:-https://auth.rpgtools.eu.org}
+      LOGTO_APP_ID: ${LOGTO_APP_ID:-dev-logto-app-id}
+      LOGTO_APP_SECRET: ${LOGTO_APP_SECRET:-dev-logto-app-secret}
+      LOGTO_REDIRECT_URI: http://localhost:3000/api/auth/oauth2/callback/logto
+      LOGTO_POST_LOGOUT_REDIRECT_URI: http://localhost:5173/
       GLITCHTIP_DSN: ${GLITCHTIP_DSN:-}
       VITE_GLITCHTIP_DSN: ${VITE_GLITCHTIP_DSN:-}
     depends_on:
-      db:
-        condition: service_healthy
-      mailpit:
-        condition: service_started
+      migrate:
+        condition: service_completed_successfully
     develop:
       watch:
         - action: sync
-          path: ./src
-          target: /app/src
-        - action: sync
-          path: ./public
-          target: /app/public
+          path: ./backend/src
+          target: /app/backend/src
         - action: rebuild
-          path: package.json
+          path: ./backend/package.json
         - action: rebuild
-          path: package-lock.json
+          path: ./backend/package-lock.json
 
   web:
     build:
-      context: ./client
-      dockerfile: Dockerfile
+      context: ./frontend
+      dockerfile: Dockerfile.dev
     ports:
       - "5173:5173"
     environment:
       VITE_BACKEND_URL: http://localhost:3000
       VITE_SITE_URL: http://localhost:5173
-      VITE_TURNSTILE_SITE_KEY: 0x4AAAAAACgej00bMWX0fRul
+      VITE_LOGTO_ENDPOINT: ${LOGTO_ENDPOINT:-https://auth.rpgtools.eu.org}
       VITE_ALLOWED_HOSTS: localhost,127.0.0.1,web
       VITE_GLITCHTIP_DSN: ${VITE_GLITCHTIP_DSN:-}
     depends_on:
@@ -79,23 +90,18 @@ services:
     develop:
       watch:
         - action: sync
-          path: ./client/src
+          path: ./frontend/src
           target: /app/src
         - action: sync
-          path: ./client/static
+          path: ./frontend/static
           target: /app/static
         - action: sync
-          path: ./client/index.html
+          path: ./frontend/index.html
           target: /app/index.html
         - action: rebuild
-          path: ./client/package.json
+          path: ./frontend/package.json
         - action: rebuild
-          path: ./client/package-lock.json
-
-  mailpit:
-    image: axllent/mailpit:latest
-    ports:
-      - "8025:8025"
+          path: ./frontend/package-lock.json
 
 volumes:
   pgdata-dev:

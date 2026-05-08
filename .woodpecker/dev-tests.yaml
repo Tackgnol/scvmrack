@@ -1,4 +1,4 @@
-# Runs on the integration branch. Keep this fast: unit + backend integration only.
+# Runs on the integration branch. Keep this fast: unit + backend integration.
 
 when:
   - event: push
@@ -7,31 +7,28 @@ when:
 steps:
   unit-test:
     image: node:22-alpine
+    environment:
+      NPMRC_CONTENT:
+        from_secret: npmrc_content
     commands:
       - |
         set -e
         cleanup() {
-          rm -rf node_modules client/node_modules client/public client/coverage client/coverage-unit client/coverage-browser reports
+          rm -f .npmrc backend/.npmrc
+          rm -rf backend/node_modules frontend/node_modules frontend/dist frontend/coverage frontend/coverage-unit frontend/coverage-browser reports
           npm cache clean --force || true
         }
         cleanup
         trap cleanup EXIT
 
-        pwd
-        ls -la package-lock.json client/package-lock.json || true
+        printf '%s\n' "$NPMRC_CONTENT" > .npmrc
+        cp .npmrc backend/.npmrc
+        npm --prefix backend ci --no-audit --no-fund
+        rm -f .npmrc backend/.npmrc
+        npm --prefix backend/tests/unit-be run test
 
-        if [ -f package-lock.json ] || [ -f npm-shrinkwrap.json ]; then
-          npm ci --no-audit --no-fund
-        else
-          npm install --no-audit --no-fund
-        fi
-        npm --prefix tests/unit-be run test
-
-        rm -rf node_modules
-        npm cache clean --force || true
-
-        npm --prefix client ci --no-audit --no-fund
-        npm --prefix client run test:unit
+        npm --prefix frontend ci --no-audit --no-fund
+        npm --prefix frontend run test:unit
 
   integration-test:
     image: docker:27-cli
@@ -39,13 +36,22 @@ steps:
       - unit-test
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      NPMRC_CONTENT:
+        from_secret: npmrc_content
     commands:
       - |
         set -e
-        docker builder prune -af || true
-        docker image prune -f || true
-        docker compose -f compose.integration-be.yaml down --volumes --remove-orphans || true
-        trap 'docker compose -f compose.integration-be.yaml down --volumes --remove-orphans; docker builder prune -af || true; docker image prune -f || true' EXIT
+        cleanup() {
+          rm -f .npmrc backend/.npmrc
+          docker compose -f compose.integration-be.yaml down --volumes --remove-orphans || true
+          docker builder prune -af || true
+          docker image prune -f || true
+        }
+        cleanup
+        trap cleanup EXIT
+
+        printf '%s\n' "$NPMRC_CONTENT" > .npmrc
         docker compose -f compose.integration-be.yaml up \
           --build --abort-on-container-exit --exit-code-from integration \
-          db api integration
+          db migrate api integration

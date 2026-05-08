@@ -1,0 +1,15 @@
+node_modules
+../frontend/node_modules
+../frontend/public
+../frontend/coverage
+../frontend/dist
+../.npm-cache
+tests/unit-be
+tests/integration-be
+tests/e2e
+.git
+.env
+.env.*
+dist
+*.md
+.claude

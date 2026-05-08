@@ -1,22 +1,23 @@
 # Deploys master only. Tests are reported separately on the branch / pull request.
 #
 # Secrets (set in Woodpecker UI, repo-scoped):
+#   npmrc_content
 #   database_password
+#   database_url
 #   better_auth_secret
-#   email_pepper
-#   email_encryption_key
-#   mail_user
-#   mail_pass
-#   turnstile_secret_key
+#   logto_endpoint
+#   logto_app_id
+#   logto_app_secret
+#   logto_redirect_uri
+#   logto_post_logout_redirect_uri
 #   glitchtip_dsn
 #   vite_glitchtip_dsn
 #   client_origin
 #   client_gateway
-#   better_auth_url
+#   app_base_url
 #   auth_base_url
 #   vite_backend_url
-#   vite_turnstile_site_key
-#   vite_site_url
+#   vite_logto_endpoint
 
 when:
   - event: [push]
@@ -28,53 +29,60 @@ steps:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
-      # --- Backend Secrets ---
+      NPMRC_CONTENT:
+        from_secret: npmrc_content
       DATABASE_PASSWORD:
         from_secret: database_password
+      DATABASE_URL:
+        from_secret: database_url
       BETTER_AUTH_SECRET:
         from_secret: better_auth_secret
-      EMAIL_PEPPER:
-        from_secret: email_pepper
-      EMAIL_ENCRYPTION_KEY:
-        from_secret: email_encryption_key
-      MAIL_USER:
-        from_secret: mail_user
-      MAIL_PASS:
-        from_secret: mail_pass
-      TURNSTILE_SECRET_KEY:
-        from_secret: turnstile_secret_key
+      LOGTO_ENDPOINT:
+        from_secret: logto_endpoint
+      LOGTO_APP_ID:
+        from_secret: logto_app_id
+      LOGTO_APP_SECRET:
+        from_secret: logto_app_secret
+      LOGTO_REDIRECT_URI:
+        from_secret: logto_redirect_uri
+      LOGTO_POST_LOGOUT_REDIRECT_URI:
+        from_secret: logto_post_logout_redirect_uri
       GLITCHTIP_DSN:
         from_secret: glitchtip_dsn
+      VITE_GLITCHTIP_DSN:
+        from_secret: vite_glitchtip_dsn
       CLIENT_ORIGIN:
         from_secret: client_origin
       CLIENT_GATEWAY:
         from_secret: client_gateway
-      BETTER_AUTH_URL:
-        from_secret: better_auth_url
+      APP_BASE_URL:
+        from_secret: app_base_url
       AUTH_BASE_URL:
         from_secret: auth_base_url
-
-      # --- Frontend Build Secrets ---
       VITE_BACKEND_URL:
         from_secret: vite_backend_url
-      VITE_TURNSTILE_SITE_KEY:
-        from_secret: vite_turnstile_site_key
-      VITE_SITE_URL:
-        from_secret: vite_site_url
-      VITE_GLITCHTIP_DSN:
-        from_secret: vite_glitchtip_dsn
+      VITE_LOGTO_ENDPOINT:
+        from_secret: vite_logto_endpoint
 
     commands:
-      - docker compose -f compose.prod.yaml build
       - |
         set -e
+        cleanup() {
+          rm -f .npmrc backend/.npmrc
+        }
+        cleanup
+        trap cleanup EXIT
+
+        printf '%s\n' "$NPMRC_CONTENT" > .npmrc
+        docker compose -f compose.prod.yaml build backend frontend
 
         if ! docker service inspect scvmrack_db > /dev/null 2>&1; then
           COMPOSE_PROJECT_NAME=scvmrack-prod docker compose -f compose.prod.yaml down --remove-orphans || true
-          API_REPLICAS=0 docker stack deploy -c compose.prod.yaml scvmrack --detach=false --resolve-image never
+          BACKEND_REPLICAS=0 FRONTEND_REPLICAS=0 docker stack deploy -c compose.prod.yaml scvmrack --detach=false --resolve-image never
         fi
 
         deadline=$(( $(date +%s) + 180 ))
+        health=""
         while [ "$(date +%s)" -lt "$deadline" ]; do
           container_id="$(docker ps --filter label=com.docker.swarm.service.name=scvmrack_db --format '{{.ID}}' | head -n 1)"
           if [ -n "$container_id" ]; then
@@ -96,9 +104,10 @@ steps:
           -e DATABASE_USER=p1002_scmgrinder \
           -e DATABASE_PASSWORD="$DATABASE_PASSWORD" \
           -e DATABASE_NAME=p1002_scmgrinder \
-          -e DATABASE_HOST=scvmrack_db \
+          -e DATABASE_HOST=db \
           -e DATABASE_PORT=5432 \
-          scvmgrinder_be:prod node scripts/migrate.js
+          -e DATABASE_URL="$DATABASE_URL" \
+          scvmrack-backend:prod npm run prisma:migrate
 
         docker stack deploy -c compose.prod.yaml scvmrack --detach=false --resolve-image never
         docker stack services scvmrack
