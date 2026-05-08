@@ -82,8 +82,8 @@ scvmrack/
 - [x] Delete dev-only / artifacts (regeneratable): `coverage*/`, `dist/`, `e2e-report/`, `node_modules/`, `test-results/`, `reports/`, `e2e.log`, `localhost.har`, `replacements.txt`.
 
 ### 1.3 Update path references
-- [ ] In `backend/scripts/*.ts/.js`: any `path.join(process.cwd(), 'client', …)` → `path.join(process.cwd(), '..', 'frontend', …)`. Search `backend/scripts` for the string `'client'`.
-- [ ] In `backend/src/routes/root.ts`: SPA fallback `spaIndexCandidates` paths — irrelevant after Phase 7 (this whole file is deleted), but for now point to `../frontend/dist/index.html` so the temporary monolith still works.
+- [x] In `backend/scripts/*.ts/.js`: any `path.join(process.cwd(), 'client', …)` → `path.join(process.cwd(), '..', 'frontend', …)`. Search `backend/scripts` for the string `'client'`.
+- [x] In `backend/src/routes/root.ts`: SPA fallback `spaIndexCandidates` paths — irrelevant after Phase 7 (this whole file is deleted), but for now point to `../frontend/dist/index.html` so the temporary monolith still works.
 - [ ] In `backend/package.json` scripts: replace `npm --prefix client` / `cd client` → `npm --prefix ../frontend` / `cd ../frontend`.
 - [ ] In `backend/Dockerfile` (temporary, will be replaced Phase 7): adjust the `COPY client/package*.json` etc. to `COPY frontend/package*.json` and `COPY frontend/ ./frontend/`. Build context from compose stays repo root.
 - [ ] In root `compose*.yaml`: build contexts and Dockerfile paths.
