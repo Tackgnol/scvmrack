@@ -121,12 +121,13 @@ steps:
           exit 1
         fi
 
-        docker exec "$db_container_id" psql \
+        docker exec -i "$db_container_id" psql \
           -U p1002_scmgrinder \
           -d p1002_scmgrinder \
           -v ON_ERROR_STOP=1 \
-          -v "db_password=$DATABASE_PASSWORD" \
-          -c "ALTER USER p1002_scmgrinder WITH PASSWORD :'db_password';"
+          -v "db_password=$DATABASE_PASSWORD" <<'SQL'
+        ALTER USER p1002_scmgrinder WITH PASSWORD :'db_password';
+        SQL
 
         docker run --rm --network scvmrack_db \
           -e DATABASE_USER=p1002_scmgrinder \
