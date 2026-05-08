@@ -16,21 +16,21 @@
 ## Phase 0 — Preflight
 
 ### 0.1 Create branch + scratch notes
-- [ ] `git checkout -b feat/logto-migration`
-- [ ] Note current commit SHA in PR description for rollback reference.
+- [x] `git checkout -b feat/logto-migration`
+- [x] Note current commit SHA in PR description for rollback reference.
 
 ### 0.2 Logto setup (manual, one-time)
 Done in Logto Admin Console at `https://admin-auth.rpgtools.eu.org`:
-- [ ] Create application: type **Traditional Web**, name `scvmrack`.
-- [ ] Add redirect URI: `https://scvmrack.rpgtools.eu.org/api/auth/oauth2/callback/logto` (and `http://localhost:3000/api/auth/oauth2/callback/logto` for dev).
-- [ ] Add post-logout redirect: `https://scvmrack.rpgtools.eu.org/`.
-- [ ] Capture `LOGTO_APP_ID`, `LOGTO_APP_SECRET`. Endpoint is `https://auth.rpgtools.eu.org`.
-- [ ] In Logto: enable email passwordless + Google social (or whichever providers you want). All sign-up/sign-in lives there now.
+- [x] Create application: type **Traditional Web**, name `scvmrack`.
+- [x] Add redirect URI: `https://scvmrack.rpgtools.eu.org/api/auth/oauth2/callback/logto` (and `http://localhost:3000/api/auth/oauth2/callback/logto` for dev).
+- [x] Add post-logout redirect: `https://scvmrack.rpgtools.eu.org/`.
+- [x] Capture `LOGTO_APP_ID`, `LOGTO_APP_SECRET`. Endpoint is `https://auth.rpgtools.eu.org`.
+- [x] In Logto: enable email passwordless + Google social (or whichever providers you want). All sign-up/sign-in lives there now.
 
 ### 0.3 Confirm decisions in writing (commit a `MIGRATION.md`)
-- [ ] Drop email/password, magic link, Turnstile, blind-index encryption, login lockout, all `nodemailer` + email templates. (Logto handles all of these.)
-- [ ] Drop `verification` table and the `guest_sessions` table (Better Auth's `anonymous` plugin uses `user`+`session` for this).
-- [ ] No data migration script. Single-user assumption.
+- [x] Drop email/password, magic link, Turnstile, blind-index encryption, login lockout, all `nodemailer` + email templates. (Logto handles all of these.)
+- [x] Drop `verification` table and the `guest_sessions` table (Better Auth's `anonymous` plugin uses `user`+`session` for this).
+- [x] No data migration script. Single-user assumption.
 
 **Gate 0:** Logto app created, secrets captured, branch exists.
 
