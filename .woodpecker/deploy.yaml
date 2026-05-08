@@ -163,9 +163,32 @@ steps:
         echo "url char count: $(printf '%s' "$DATABASE_URL" | wc -c)"
         echo "encoded pw char count: $(printf '%s' "$db_password_url" | wc -c)"
 
-        # Diagnostic: connect with node-pg (which the backend image has installed)
-        # using the SAME DATABASE_URL Prisma will use. If pg works and Prisma fails,
-        # the bug is inside Prisma's URL handling, not our string.
+        # Diagnostic: dump exactly what node-pg's connection-string parser sees.
+        echo "=== inspect parsed DATABASE_URL ==="
+        docker run --rm \
+          -e DATABASE_URL="$DATABASE_URL" \
+          scvmrack-backend:prod \
+          node -e '
+            const url = process.env.DATABASE_URL;
+            console.log("raw URL length:", url.length);
+            try {
+              const u = new URL(url);
+              console.log("WHATWG URL: protocol=%s username=%s passwordType=%s passwordLen=%d host=%s pathname=%s",
+                u.protocol, u.username, typeof u.password, (u.password||"").length, u.host, u.pathname);
+            } catch (e) {
+              console.log("WHATWG URL parse failed:", e.message);
+            }
+            try {
+              const parse = require("pg-connection-string").parse;
+              const cfg = parse(url);
+              console.log("pg-connection-string: user=%s passwordType=%s passwordLen=%d host=%s database=%s port=%s",
+                cfg.user, typeof cfg.password, (cfg.password||"").length, cfg.host, cfg.database, cfg.port);
+            } catch (e) {
+              console.log("pg-connection-string failed:", e.message);
+            }
+          '
+
+        # Connect with node-pg using the SAME DATABASE_URL.
         echo "=== node-pg probe via DATABASE_URL ==="
         docker run --rm --network scvmrack_db \
           -e DATABASE_URL="$DATABASE_URL" \
