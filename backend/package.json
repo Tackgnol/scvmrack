@@ -42,6 +42,7 @@
     "@fastify/sensible": "^6.0.0",
     "@fastify/swagger": "^9.0.0",
     "@fastify/swagger-ui": "^5.0.0",
+    "@prisma/adapter-pg": "^6.19.3",
     "@prisma/client": "6.19.3",
     "@sentry/node": "^10.50.0",
     "@tackgnol/rpgtools-shared-auth": "^1.1.0",
