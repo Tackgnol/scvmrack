@@ -130,9 +130,10 @@ steps:
 
         # If the legacy `user` table exists without the `email` column (left
         # over from earlier broken-deploy state), drop the Prisma-managed
-        # tables so `db push` can recreate them with the current schema.
-        # When the schema already matches, this is a no-op — users are kept.
-        # Game data tables are `external` in prisma.config.ts and never touched.
+        # auth tables so they can be recreated with the current schema.
+        # When the schema already matches, this is a no-op.
+        # Game data tables (armors, abilities, etc.) are managed by init
+        # scripts and are NOT touched here.
         legacy_user="$(docker exec "$db_container_id" psql -U p1002_scmgrinder -d p1002_scmgrinder -tAc "SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='user' AND NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='user' AND column_name='email');")"
         if [ "$legacy_user" = "1" ]; then
           echo "Detected legacy auth schema (user table without email column) — dropping Prisma-managed tables."
@@ -141,6 +142,24 @@ steps:
             -d p1002_scmgrinder \
             -v ON_ERROR_STOP=1 \
             -c 'DROP TABLE IF EXISTS "claim_code", "verification", "session", "account", "user" CASCADE;'
+        fi
+
+        # If auth tables are missing, apply the Prisma migration SQL files
+        # directly via psql. This bootstraps the auth schema without using
+        # `prisma db push` (which doesn't respect externalTables and would
+        # try to drop the init-managed game tables).
+        user_exists="$(docker exec "$db_container_id" psql -U p1002_scmgrinder -d p1002_scmgrinder -tAc "SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='user';")"
+        if [ "$user_exists" != "1" ]; then
+          echo "Auth tables missing — applying Prisma migration SQL files directly."
+          for migration in $(ls backend/prisma/migrations | sort); do
+            echo "  Applying $migration"
+            docker cp "backend/prisma/migrations/$migration/migration.sql" "$db_container_id:/tmp/$migration.sql"
+            docker exec "$db_container_id" psql \
+              -U p1002_scmgrinder \
+              -d p1002_scmgrinder \
+              -v ON_ERROR_STOP=1 \
+              -f "/tmp/$migration.sql"
+          done
         fi
 
         # Build DATABASE_URL inside Node so encodeURIComponent handles every
@@ -159,9 +178,20 @@ steps:
           | tr -d '\r\n')"
         export DATABASE_URL
 
+        # Baseline _prisma_migrations so `migrate deploy` knows which
+        # migrations have already been applied (the ones we just ran via
+        # psql, plus any from prior runs). `resolve --applied` is idempotent
+        # if already marked, so `|| true` covers re-runs.
+        for migration in $(ls backend/prisma/migrations | sort); do
+          docker run --rm --network scvmrack_db \
+            -e DATABASE_URL="$DATABASE_URL" \
+            scvmrack-backend:prod npx prisma migrate resolve --applied "$migration" || true
+        done
+
+        # Apply any future migrations added to backend/prisma/migrations/
         docker run --rm --network scvmrack_db \
           -e DATABASE_URL="$DATABASE_URL" \
-          scvmrack-backend:prod npx prisma db push --accept-data-loss --skip-generate
+          scvmrack-backend:prod npx prisma migrate deploy
 
         docker stack deploy -c compose.prod.yaml scvmrack --detach=false --resolve-image never
         docker stack services scvmrack
