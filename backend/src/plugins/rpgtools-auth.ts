@@ -1,6 +1,6 @@
 import fp from 'fastify-plugin';
 import type { FastifyInstance } from 'fastify';
-import { rpgtoolsSharedAuth } from '@tackgnol/rpgtools-shared-auth';
+import { prismaAdapter, rpgtoolsSharedAuth } from '@tackgnol/rpgtools-shared-auth';
 import prisma from '../lib/prisma.js';
 
 const defaultTrustedOrigins = [
@@ -18,6 +18,7 @@ export default fp(async function rpgtoolsAuthPlugin(fastify: FastifyInstance) {
   const appBaseUrl = envOrDefault('APP_BASE_URL', process.env.CLIENT_ORIGIN || 'http://localhost:5173');
   await fastify.register(rpgtoolsSharedAuth, {
     baseURL: authBaseUrl,
+    database: prismaAdapter(prisma, { provider: 'postgresql' }),
     trustedOrigins: Array.from(
       new Set(
         [
