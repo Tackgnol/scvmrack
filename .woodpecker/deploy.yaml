@@ -70,19 +70,22 @@ steps:
         cleanup
         trap cleanup EXIT
 
+        : "${NPMRC_CONTENT:?npmrc_content secret is required}"
+        : "${DATABASE_PASSWORD:?database_password secret is required}"
+
         printf '%s\n' "$NPMRC_CONTENT" > .npmrc
 
         db_password_url="$(printf '%s' "$DATABASE_PASSWORD" | sed \
-          -e 's/%/%25/g' \
-          -e 's/#/%23/g' \
-          -e 's/@/%40/g' \
-          -e 's/:/%3A/g' \
-          -e 's/\//%2F/g' \
-          -e 's/?/%3F/g' \
-          -e 's/&/%26/g' \
-          -e 's/=/%3D/g' \
-          -e 's/+/%2B/g' \
-          -e 's/ /%20/g')"
+          -e 's|%|%25|g' \
+          -e 's|#|%23|g' \
+          -e 's|@|%40|g' \
+          -e 's|:|%3A|g' \
+          -e 's|/|%2F|g' \
+          -e 's|?|%3F|g' \
+          -e 's|&|%26|g' \
+          -e 's|=|%3D|g' \
+          -e 's|+|%2B|g' \
+          -e 's| |%20|g')"
         export DATABASE_URL="postgresql://p1002_scmgrinder:${db_password_url}@db:5432/p1002_scmgrinder"
 
         docker compose -f compose.prod.yaml build backend frontend
