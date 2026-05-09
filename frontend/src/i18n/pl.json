@@ -223,7 +223,7 @@
     "saved": "Zapisano",
     "synced": "Zsynchronizowano",
     "guest": "Gość",
-    "guestSession": "Sesja gościa - zarejestruj się, aby zachować postać",
+    "guestSession": "Sesja gościa — tylko jedna postać. Zarejestruj się, żeby ją zachować.",
     "connectionError": "Błąd połączenia"
   },
   "validation": {
@@ -315,15 +315,15 @@
     },
     "guestVsAccount": {
       "q": "Czy potrzebuję konta?",
-      "a": "Nie! Możesz używać Scvm Rack jako gość. Twoja postać będzie zapisana przez 7 dni. Jeśli założysz konto, twoje postacie są zapisywane na stałe i możesz je używać z dowolnego urządzenia."
+      "a": "Nie potrzebujesz konta, żeby zacząć. Jako gość masz jedną postać — wygenerowanie nowej zastępuje poprzednią. Postacie są przechowywane 7 dni. Zarejestruj się (za darmo), żeby trzymać dowolną liczbę postaci na stałe, z każdego urządzenia."
     },
     "howToSave": {
       "q": "Jak zapisać moją postać?",
-      "a": "Postacie są zapisywane automatycznie przy każdej zmianie. Jako gość, twoja postać jest przechowywana przez 7 dni. Zarejestruj się, aby zachować postacie na zawsze."
+      "a": "Postacie są zapisywane automatycznie. Jako gość twoja jedyna postać jest przechowywana 7 dni. Zarejestruj się, żeby ją zachować na stałe i tworzyć więcej."
     },
     "multipleCharacters": {
       "q": "Czy mogę mieć wiele postaci?",
-      "a": "Tak! Z kontem możesz tworzyć i przełączać się między wieloma postaciami. Lista postaci jest dostępna z menu."
+      "a": "Z kontem tak — twórz dowolną liczbę postaci i przełączaj się między nimi z menu Scvmy. Jako gość masz dokładnie jedną. Wygenerowanie nowego scvma zastępuje poprzedniego."
     },
     "mobileSupport": {
       "q": "Czy działa na telefonie?",

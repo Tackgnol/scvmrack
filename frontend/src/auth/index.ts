@@ -61,5 +61,5 @@ export function loginUrl(): string {
 
 export function profileUrl(): string {
   const endpoint = import.meta.env.VITE_LOGTO_ENDPOINT ?? 'https://auth.rpgtools.eu.org';
-  return `${endpoint.replace(/\/+$/, '')}/profile`;
+  return `${endpoint.replace(/\/+$/, '')}/account/security`;
 }

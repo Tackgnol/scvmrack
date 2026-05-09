@@ -358,7 +358,7 @@ export function CharactersListPage() {
                         <Typography sx={listStyles.emptyStateText}>
                             {t('characters.noCharacters', 'No characters yet. Create your first scvm!')}
                         </Typography>
-                        <Button component={Link} to="/" variant="contained" sx={listStyles.createButton}>
+                        <Button component={Link} to="/character" variant="contained" sx={listStyles.createButton}>
                             {t('characters.createFirst', 'Create Character')}
                         </Button>
                     </Box>

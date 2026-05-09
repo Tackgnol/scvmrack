@@ -10,6 +10,12 @@ const rootRoute = createRootRoute({
 const indexRoute = createRoute({
     getParentRoute: () => rootRoute,
     path: '/',
+    component: lazyRouteComponent(() => import('@/pages/LandingPage').then(m => ({ default: m.LandingPage }))),
+});
+
+const characterRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: '/character',
     component: lazyRouteComponent(() => import('@/pages/CharacterPage').then(m => ({ default: m.CharacterPage }))),
 });
 
@@ -40,6 +46,7 @@ const releaseRoute = createRoute({
 
 const routeTree = rootRoute.addChildren([
     indexRoute,
+    characterRoute,
     charactersRoute,
     printRoute,
     faqRoute,

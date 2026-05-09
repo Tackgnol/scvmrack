@@ -223,7 +223,7 @@
     "saved": "Saved",
     "synced": "Synced",
     "guest": "Guest",
-    "guestSession": "Guest session - sign up to keep your character",
+    "guestSession": "Guest session — one character only. Sign up to keep it.",
     "connectionError": "Connection error"
   },
   "validation": {
@@ -315,15 +315,15 @@
     },
     "guestVsAccount": {
       "q": "Do I need an account?",
-      "a": "No! You can use Scvm Rack as a guest. Your character will be saved for 7 days. If you create an account, your characters are saved permanently and you can access them from any device."
+      "a": "No account needed to start. As a guest, you get one character — generating a new one replaces it. Characters are kept for 7 days. Sign up (free) to keep unlimited characters permanently, accessible from any device."
     },
     "howToSave": {
       "q": "How do I save my character?",
-      "a": "Characters are saved automatically as you make changes. As a guest, your character is stored for 7 days. Sign up for a free account to keep your characters forever."
+      "a": "Characters save automatically as you edit. As a guest, your single character is stored for 7 days. Sign up to keep it permanently and create more."
     },
     "multipleCharacters": {
       "q": "Can I have multiple characters?",
-      "a": "Yes! With an account, you can create and switch between multiple characters. Access your character list from the menu."
+      "a": "With an account, yes — create and switch between as many characters as you like from the Scvms menu. As a guest, you get exactly one. Generating a new scvm replaces the current one."
     },
     "mobileSupport": {
       "q": "Does it work on mobile?",
