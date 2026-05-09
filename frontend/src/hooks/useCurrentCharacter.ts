@@ -146,7 +146,7 @@ export function useCurrentCharacter() {
 
   // ---- Check for existing characters, then auto-create if none found ----
   useEffect(() => {
-    if (pathname !== '/') return;
+    if (pathname !== '/character') return;
     if (authLoading) return;
     if (characterId) return;
     if (isJustLoggedOut) return;

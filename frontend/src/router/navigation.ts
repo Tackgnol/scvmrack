@@ -5,7 +5,7 @@ export const SESSION_EXPIRED_QUERY_PARAM = 'expired';
 export const CHARACTER_ID_QUERY_PARAM = 'character';
 export const CLAIM_CHARACTER_QUERY_PARAM = 'claim-character';
 
-const HOME_PATH = '/';
+const HOME_PATH = '/character';
 const PRINT_PATH = '/print';
 
 const normalizeHash = (hash: string): string => {
