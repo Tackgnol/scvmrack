@@ -7,10 +7,10 @@ const s = {
         minHeight: '100vh',
         display: 'flex',
         flexDirection: 'column' as const,
-        alignItems: 'center',
-        justifyContent: 'center',
-        px: 2,
-        py: 8,
+        alignItems: 'flex-start',
+        px: { xs: 2, sm: 4, md: 6 },
+        pt: { xs: 8, sm: 12 },
+        pb: { xs: 10, sm: 14 },
     },
     stamp: {
         display: 'inline-block',
@@ -27,9 +27,9 @@ const s = {
         mb: 5,
     },
     hero: {
-        maxWidth: 680,
+        maxWidth: 660,
         width: '100%',
-        textAlign: 'center' as const,
+        mb: { xs: 6, sm: 8 },
     },
     kicker: {
         fontFamily: '"MedievalSharp", serif',
@@ -42,25 +42,23 @@ const s = {
     headline: {
         fontFamily: '"MedievalSharp", serif',
         color: morkBorgColors.white,
-        fontSize: { xs: '2rem', sm: '2.6rem', md: '3.2rem' },
-        lineHeight: 1.1,
+        fontSize: { xs: '2rem', sm: '2.8rem', md: '3.4rem' },
+        lineHeight: 1.08,
         mb: 3,
         fontWeight: 'normal',
     },
     lede: {
-        color: '#999',
+        color: 'rgba(255, 255, 255, 0.68)',
         fontSize: { xs: '0.95rem', sm: '1.05rem' },
         lineHeight: 1.7,
         mb: 4.5,
-        maxWidth: 520,
-        mx: 'auto',
+        maxWidth: 500,
     },
     ctaRow: {
         flexDirection: 'row' as const,
         gap: 2,
-        justifyContent: 'center',
         flexWrap: 'wrap' as const,
-        mb: 8,
+        mb: { xs: 8, sm: 10 },
     },
     ctaPrimary: {
         bgcolor: morkBorgColors.pink,
@@ -96,17 +94,17 @@ const s = {
         },
     },
     noticeGrid: {
-        maxWidth: 860,
+        maxWidth: 900,
         width: '100%',
         display: 'grid',
-        gridTemplateColumns: { xs: '1fr', md: '1fr 1fr 1fr' },
-        gap: 2.5,
+        gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1.5fr 1fr 0.85fr' },
+        gap: { xs: 2, sm: 2.5 },
     },
     noticeCard: {
         border: `3px solid ${morkBorgColors.black}`,
         boxShadow: `4px 4px 0 ${morkBorgColors.black}`,
         bgcolor: '#0f0f0f',
-        p: 3,
+        p: { xs: 2.5, sm: 3 },
     },
     noticeNum: {
         fontFamily: '"MedievalSharp", serif',
@@ -124,7 +122,7 @@ const s = {
         mb: 1,
     },
     noticeBody: {
-        color: '#888',
+        color: 'rgba(255, 255, 255, 0.62)',
         fontSize: '0.875rem',
         lineHeight: 1.7,
     },
@@ -132,33 +130,33 @@ const s = {
 
 const notices = [
     {
-        num: '01',
         title: 'Bring the book',
-        body: 'You need MÖRK BORG to play. This tracks what happens when you do — stats, wounds, Omens, and everything else your scvm is about to lose.',
+        num: '01',
+        body: `You need MÖRK BORG to play. This tracks what happens when you do — stats, wounds, Omens, and everything else your scvm is about to lose.`,
     },
     {
         num: '02',
         title: 'One scvm per guest',
-        body: 'Guests get one character. Generate a new one and the old one is gone. Sign up — it\u2019s free — to keep as many doomed wretches as you like.',
+        body: `Guests get one character. Generate a new one and the old one is gone. Sign up — it’s free — to keep as many doomed wretches as you like.`,
     },
     {
         num: '03',
         title: 'Mark them dead',
-        body: 'Characters don\u2019t last long at the end of the world. When yours falls, mark them deceased. Their record stays. A warning to whoever comes next.',
+        body: `Characters don’t last long at the end of the world. When yours falls, mark them deceased. Their record stays. A warning to whoever comes next.`,
     },
 ];
 
 export function LandingPage() {
     return (
         <Box sx={s.page}>
-            <Stack alignItems="center" sx={{ width: '100%' }}>
+            <Stack alignItems="flex-start" sx={{ width: '100%' }}>
                 <Box component="span" sx={s.stamp}>
                     Fan made · Non-commercial
                 </Box>
 
                 <Box sx={s.hero}>
                     <Typography sx={s.kicker}>
-                        For MÖRK BORG tables
+                        MÖRK BORG character sheet
                     </Typography>
 
                     <Typography component="h1" sx={s.headline}>
@@ -171,8 +169,8 @@ export function LandingPage() {
                     </Typography>
 
                     <Stack sx={s.ctaRow}>
-                        <Button component={Link} to="/characters" sx={s.ctaPrimary}>
-                            Open the registry
+                        <Button component={Link} to="/character" sx={s.ctaPrimary}>
+                            Open your sheet
                         </Button>
                         <Button
                             component="a"

@@ -112,7 +112,7 @@ export default function Header() {
     select: (state) => state.location.pathname,
   });
   const homeUrl = buildHomeCallbackUrl(characterId || lastCharacterId);
-  const isSheetRoute = pathname === '/';
+  const isSheetRoute = pathname === '/character';
   const validationSummary = validationIssues
     .map(({ message }) => message)
     .join(' · ');
@@ -300,7 +300,7 @@ export default function Header() {
                 </Box>
               )}
               <Box sx={customStyles.header.navBar}>
-                <NavLink to="/" href={homeUrl} text={t('nav.home')} />
+                <NavLink to="/character" href={homeUrl} text={t('nav.home')} />
                 {isAuthenticated && (
                   <NavLink to="/characters" text={t('nav.characters')} />
                 )}
