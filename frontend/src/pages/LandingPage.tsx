@@ -8,6 +8,7 @@ const s = {
         display: 'flex',
         flexDirection: 'column' as const,
         alignItems: 'flex-start',
+        bgcolor: morkBorgColors.black,
         px: { xs: 2, sm: 4, md: 6 },
         pt: { xs: 8, sm: 12 },
         pb: { xs: 10, sm: 14 },
