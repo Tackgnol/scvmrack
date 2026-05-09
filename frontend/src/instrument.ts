@@ -6,7 +6,7 @@ if (dsn && !import.meta.env.DEV) {
   Sentry.init({
     dsn,
     environment: import.meta.env.MODE,
-    tracesSampleRate: 0.01,
+    tracesSampleRate: 1.0,
     integrations: (defaultIntegrations) => [
       ...defaultIntegrations.filter(
         (integration) => integration.name !== 'BrowserSession'

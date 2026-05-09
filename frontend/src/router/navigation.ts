@@ -67,7 +67,12 @@ export const getCurrentSearchParamValue = (queryParam: string): string | null =>
 };
 
 export const getCurrentCharacterIdParam = (): string | null => {
-    return getCurrentSearchParamValue(CHARACTER_ID_QUERY_PARAM);
+    const queryId = getCurrentSearchParamValue(CHARACTER_ID_QUERY_PARAM);
+    if (queryId) return queryId;
+
+    const pathname = appHistory.location.pathname;
+    const match = pathname.match(/^\/character\/([^/]+)/);
+    return match ? match[1] : null;
 };
 
 export const getCurrentPendingClaimCharacterId = (): string | null => {
@@ -98,24 +103,28 @@ export const buildHomeCallbackUrl = (
     characterId: string | null,
     claimCharacterId: string | null = null
 ): string => {
-    const searchParams = new URLSearchParams();
-    if (characterId) {
-        searchParams.set(CHARACTER_ID_QUERY_PARAM, characterId);
-    }
     if (claimCharacterId) {
+        const searchParams = new URLSearchParams();
+        if (characterId) {
+            searchParams.set(CHARACTER_ID_QUERY_PARAM, characterId);
+        }
         searchParams.set(CLAIM_CHARACTER_QUERY_PARAM, claimCharacterId);
+        return buildPath(HOME_PATH, searchParams, '');
     }
 
-    return buildPath(HOME_PATH, searchParams, '');
+    if (characterId) {
+        return `${HOME_PATH}/${characterId}`;
+    }
+
+    return HOME_PATH;
 };
 
 export const buildPrintCallbackUrl = (characterId: string | null): string => {
-    const searchParams = new URLSearchParams();
     if (characterId) {
-        searchParams.set(CHARACTER_ID_QUERY_PARAM, characterId);
+        return `${PRINT_PATH}?${CHARACTER_ID_QUERY_PARAM}=${characterId}`;
     }
 
-    return buildPath(PRINT_PATH, searchParams, '');
+    return PRINT_PATH;
 };
 
 export const clearCurrentSearchParam = async (queryParam: string): Promise<void> => {
