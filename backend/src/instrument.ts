@@ -27,7 +27,7 @@ const dsn = process.env.GLITCHTIP_DSN;
 if (process.env.NODE_ENV !== 'test' && dsn) {
   Sentry.init({
     dsn,
-    tracesSampleRate: 0.01,
+    tracesSampleRate: 1,
     environment: process.env.NODE_ENV ?? 'development',
     integrations: (defaultIntegrations) => [
       ...defaultIntegrations.filter(

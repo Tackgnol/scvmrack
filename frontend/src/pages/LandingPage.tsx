@@ -1,6 +1,8 @@
 import { morkBorgColors } from '@/theme/morkBorgTheme';
 import { Box, Button, Stack, Typography } from '@mui/material';
 import { Link } from '@tanstack/react-router';
+import { useCharacterId } from '@/hooks/useCharacterId';
+import { buildHomeCallbackUrl } from '@/router/navigation';
 
 const s = {
     page: {
@@ -148,6 +150,8 @@ const notices = [
 ];
 
 export function LandingPage() {
+    const { lastCharacterId } = useCharacterId();
+
     return (
         <Box sx={s.page}>
             <Stack alignItems="flex-start" sx={{ width: '100%' }}>
@@ -170,7 +174,7 @@ export function LandingPage() {
                     </Typography>
 
                     <Stack sx={s.ctaRow}>
-                        <Button component={Link} to="/character" sx={s.ctaPrimary}>
+                        <Button component={Link} to={buildHomeCallbackUrl(lastCharacterId)} sx={s.ctaPrimary}>
                             Open your sheet
                         </Button>
                         <Button
