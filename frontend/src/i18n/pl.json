@@ -8,7 +8,10 @@
       "title": "Darmowa karta postaci Mork Borg",
       "description": "Scvm Rack to darmowa interaktywna karta postaci Mork Borg do generowania, prowadzenia, zapisywania i drukowania skazanych scvmów."
     },
-    "stamp": "Fanowskie. Niekomercyjne.",
+    "license": {
+      "copyright": "MÖRK BORG jest chroniony prawem autorskim Ockult Örtmästare Games oraz Stockholm Kartell.",
+      "production": "Scvmrack to niezależna produkcja Adama Kościelniaka; nie jest ona powiązana z Ockult Örtmästare Games ani Stockholm Kartell. Została opublikowana na mocy licencji MÖRK BORG Third Party License."
+    },
     "headlineLine1": "Zagłada",
     "headlineLine2": "w zapisie",
     "lede": "Wygeneruj skazanego scvma, śledź rany, Omeny, ekwipunek, moce, zwierzęta i notatki, a potem wydrukuj dowód dla stołu.",
@@ -227,7 +230,7 @@
   },
   "footer": {
     "worldEnding": "Świat Się Kończy",
-    "legalNotice": "Stworzone przez Adama Kościelniaka, wszelkie prawa zastrzeżone 2026, kompatybilne z Mork Borg. <privacyLink>Sprawdź ustawienia prywatności</privacyLink>"
+    "legalNotice": "MÖRK BORG jest chroniony prawem autorskim Ockult Örtmästare Games oraz Stockholm Kartell. Scvmrack to niezależna produkcja Adama Kościelniaka; nie jest ona powiązana z Ockult Örtmästare Games ani Stockholm Kartell. Została opublikowana na mocy licencji MÖRK BORG Third Party License. <privacyLink>Sprawdź ustawienia prywatności</privacyLink>"
   },
   "actions": {
     "print": "Drukuj kartę",

@@ -5,6 +5,7 @@ import { Link } from '@tanstack/react-router';
 import { useCharacterId } from '@/hooks/useCharacterId';
 import { buildHomeCallbackUrl } from '@/router/navigation';
 import { useTranslation } from 'react-i18next';
+import licenseHoriz from '@/assets/CompWith_MORKBORG_horiz.svg';
 
 const s = {
   page: {
@@ -51,19 +52,12 @@ const s = {
   stamp: {
     display: 'inline-flex',
     alignItems: 'center',
-    bgcolor: morkBorgColors.yellow,
-    color: morkBorgColors.black,
-    border: `3px solid ${morkBorgColors.black}`,
-    boxShadow: `4px 4px 0 ${morkBorgColors.black}`,
-    fontFamily: '"Antonio", sans-serif',
-    fontSize: '0.72rem',
-    letterSpacing: '0.18em',
-    lineHeight: 1,
-    textTransform: 'uppercase' as const,
-    transform: 'rotate(-0.7deg)',
-    px: 1.5,
-    py: 0.75,
     mb: { xs: 3, sm: 4 },
+    '& img': {
+      height: { xs: 40, sm: 48 },
+      width: 'auto',
+      filter: 'brightness(0) invert(1)', // Make it white to contrast with black hero band
+    },
   },
   headline: {
     color: morkBorgColors.yellow,
@@ -283,6 +277,21 @@ const s = {
     fontSize: '0.95rem',
     lineHeight: 1.55,
   },
+  licenseSection: {
+    mt: { xs: 4, md: 5 },
+    pt: 4,
+    borderTop: `1px solid ${morkBorgColors.black}22`,
+    display: 'flex',
+    flexDirection: 'column' as const,
+    gap: 2,
+    maxWidth: 800,
+  },
+  licenseText: {
+    fontFamily: '"Alegreya", Georgia, serif',
+    fontSize: '0.75rem',
+    color: 'rgba(10, 10, 10, 0.45)',
+    lineHeight: 1.6,
+  },
 };
 
 const noticeKeys = ['book', 'guest', 'grave'] as const;
@@ -312,8 +321,8 @@ export function LandingPage() {
       <Box sx={s.page}>
         <Box component="section" sx={s.heroBand}>
           <Box sx={s.heroCopy}>
-            <Box component="span" sx={s.stamp}>
-              {t('landing.stamp', 'Fan made. Non-commercial.')}
+            <Box sx={s.stamp}>
+              <img src={licenseHoriz} alt="Compatible with MÖRK BORG" />
             </Box>
 
             <Typography component="h1" sx={s.headline}>
@@ -411,6 +420,15 @@ export function LandingPage() {
               </Typography>
             </Box>
           ))}
+        </Box>
+
+        <Box component="footer" sx={s.licenseSection}>
+          <Typography sx={s.licenseText}>
+            {t('landing.license.copyright')}
+          </Typography>
+          <Typography sx={s.licenseText}>
+            {t('landing.license.production')}
+          </Typography>
         </Box>
       </Box>
     </>
