@@ -1,10 +1,10 @@
-export type AggregatedItem<T extends { name?: string | null; comments?: string | null; amount?: number }> = {
+export type AggregatedItem<T extends { name?: string | null; comments?: string | null }> = {
     item: T;
     indices: number[];
     quantity: number;
 };
 
-export function aggregateItems<T extends { name?: string | null; comments?: string | null; amount?: number }>(
+export function aggregateItems<T extends { name?: string | null; comments?: string | null }>(
     items: Array<T | null | undefined>
 ): Array<AggregatedItem<T>> {
     const groups = new Map<string, AggregatedItem<T>>();
