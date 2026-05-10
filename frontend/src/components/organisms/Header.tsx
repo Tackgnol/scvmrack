@@ -29,12 +29,7 @@ import {
 } from '@mui/material';
 import { useRouterState } from '@tanstack/react-router';
 import { customStyles } from '@theme/morkBorgTheme';
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   BoneIconContainer,
@@ -67,7 +62,11 @@ function NavLink({
   fullWidth?: boolean;
 }) {
   const routerState = useRouterState();
-  const isActive = routerState.location.pathname === to;
+  const pathname = routerState.location.pathname;
+  const isActive =
+    to === '/character'
+      ? pathname === '/character' || pathname.startsWith('/character/')
+      : pathname === to;
 
   const handleClick = href
     ? (e: React.MouseEvent) => {
@@ -112,7 +111,9 @@ export default function Header() {
     select: (state) => state.location.pathname,
   });
   const homeUrl = buildHomeCallbackUrl(characterId || lastCharacterId);
-  const isSheetRoute = pathname === '/character';
+  const isLandingRoute = pathname === '/';
+  const isSheetRoute =
+    pathname === '/character' || pathname.startsWith('/character/');
   const validationSummary = validationIssues
     .map(({ message }) => message)
     .join(' · ');
@@ -242,8 +243,8 @@ export default function Header() {
           ) : (
             <Box sx={customStyles.header.desktopNav}>
               <Box sx={customStyles.header.topBar}>
-                {getStatusChip()}
-                {getValidationChip()}
+                {isSheetRoute && getStatusChip()}
+                {isSheetRoute && getValidationChip()}
                 {isSheetRoute && (
                   <Button
                     data-testid="header-print-button"
@@ -300,6 +301,7 @@ export default function Header() {
                 </Box>
               )}
               <Box sx={customStyles.header.navBar}>
+                <NavLink to="/" text={t('nav.start', 'Start')} />
                 <NavLink to="/character" href={homeUrl} text={t('nav.home')} />
                 {isAuthenticated && (
                   <NavLink to="/characters" text={t('nav.characters')} />
@@ -340,6 +342,12 @@ export default function Header() {
         <Box sx={customStyles.header.drawerNav}>
           <NavLink
             to="/"
+            text={t('nav.start', 'Start')}
+            fullWidth
+            onClick={() => setMobileMenuOpen(false)}
+          />
+          <NavLink
+            to="/character"
             href={homeUrl}
             text={t('nav.home')}
             fullWidth
@@ -369,8 +377,8 @@ export default function Header() {
 
         <Box sx={customStyles.header.drawerFooter}>
           <Box sx={customStyles.header.drawerStatusBox}>
-            {getStatusChip()}
-            {getValidationChip()}
+            {!isLandingRoute && isSheetRoute && getStatusChip()}
+            {!isLandingRoute && isSheetRoute && getValidationChip()}
             {isSheetRoute && (
               <Button
                 data-testid="drawer-print-button"

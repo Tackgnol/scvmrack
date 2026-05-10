@@ -81,19 +81,21 @@ export const StyledNavLink = styled(Link, {
     shouldForwardProp: (prop) => prop !== 'isActive' && prop !== 'fullWidth',
 })<StyledNavLinkProps>(({ isActive, fullWidth }) => ({
     ...customStyles.navLink.base,
-    width: fullWidth ? '100%' : 100,
+    width: fullWidth ? '100%' : 'auto',
     transitionProperty: 'box-shadow, color, border-color, background-color, opacity, transform',
-    transitionDuration: '320ms',
+    transitionDuration: '180ms',
     transitionTimingFunction: 'cubic-bezier(0.22, 1, 0.36, 1)',
     backfaceVisibility: 'hidden',
     opacity: isActive ? 1 : 0.93,
     ...(isActive ? customStyles.navLink.active : customStyles.navLink.inactive),
     '&:hover': {
         ...customStyles.navLink.hover,
-        // Keep transform stable on hover to avoid compositing flicker.
-        transform: isActive ? customStyles.navLink.active.transform : customStyles.navLink.inactive.transform,
         opacity: 1,
         backgroundColor: '#151515',
+    },
+    '&:active': {
+        transform: isActive ? customStyles.navLink.active.transform : customStyles.navLink.inactive.transform,
+        boxShadow: isActive ? `2px 2px 0 ${morkBorgColors.pink}` : `1px 1px 0 ${morkBorgColors.black}`,
     },
     '&:focus-visible': {
         opacity: 1,

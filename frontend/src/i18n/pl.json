@@ -3,6 +3,54 @@
     "title": "Scvmrack",
     "subtitle": "Interaktywna karta postaci Mörk Borg"
   },
+  "landing": {
+    "seo": {
+      "title": "Darmowa karta postaci Mork Borg",
+      "description": "Scvm Rack to darmowa interaktywna karta postaci Mork Borg do generowania, prowadzenia, zapisywania i drukowania skazanych scvmów."
+    },
+    "stamp": "Fanowskie. Niekomercyjne.",
+    "headlineLine1": "Zagłada",
+    "headlineLine2": "w zapisie",
+    "lede": "Wygeneruj skazanego scvma, śledź rany, Omeny, ekwipunek, moce, zwierzęta i notatki, a potem wydrukuj dowód dla stołu.",
+    "openSheet": "Otwórz kartę",
+    "sourcebook": "Zdobądź podręcznik",
+    "noticeLabel": "Co warto wiedzieć",
+    "mock": {
+      "name": "Gnijąca Sigrid",
+      "class": "Rynsztokowy Scvm",
+      "stats": {
+        "agi": { "label": "ZWI", "value": "-1" },
+        "pre": { "label": "OBE", "value": "+2" },
+        "str": { "label": "SIŁ", "value": "0" },
+        "tou": { "label": "WYT", "value": "-2" }
+      },
+      "rows": {
+        "gear": {
+          "label": "Sprzęt",
+          "text": "Maczuga z kości, plugawy zwój, 23 srebra"
+        },
+        "omen": { "label": "Omen", "text": "Trzy szanse, zanim świat zauważy" },
+        "print": {
+          "label": "Druk",
+          "text": "Czysta karta na stół, gdy ekran ma zginąć"
+        }
+      }
+    },
+    "notices": {
+      "book": {
+        "title": "Przynieś księgę",
+        "body": "Do gry potrzebujesz MÖRK BORG. Scvm Rack pilnuje zapisu postaci szybko, czytelnie i pod ręką."
+      },
+      "guest": {
+        "title": "Zacznij jako gość",
+        "body": "Logowanie nie jest wymagane. Gość trzyma jednego scvma. Konto przyda się, gdy chcesz pełny stojak nieszczęśników."
+      },
+      "grave": {
+        "title": "Zostaw grób",
+        "body": "Oznacz poległą postać jako martwą zamiast ją wymazywać. Zapis zostaje jako ostrzeżenie dla następnej biednej duszy."
+      }
+    }
+  },
   "stats": {
     "hitPoints": "Punkty Życia",
     "toDodge": "DR Uniku",
@@ -265,6 +313,7 @@
     "decreaseHitPoints": "Zmniejsz punkty życia"
   },
   "nav": {
+    "start": "Start",
     "home": "Karta",
     "characters": "Scvmy",
     "faq": "FAQ",
