@@ -8,7 +8,10 @@
       "title": "Free Mork Borg Character Sheet",
       "description": "Scvm Rack is a free interactive Mork Borg character sheet for generating, tracking, saving, and printing doomed scvms."
     },
-    "stamp": "Fan made. Non-commercial.",
+    "license": {
+      "copyright": "MÖRK BORG is copyright Ockult Örtmästare Games and Stockholm Kartell.",
+      "production": "Scvmrack is an independent production by Adam Koscielniak and is not affiliated with Ockult Örtmästare Games or Stockholm Kartell. It is published under the MÖRK BORG Third Party License."
+    },
     "headlineLine1": "Doom",
     "headlineLine2": "on record",
     "lede": "Generate a doomed scvm, track wounds, Omens, gear, powers, pets, and notes, then print the evidence when the table demands it.",
@@ -230,7 +233,7 @@
   },
   "footer": {
     "worldEnding": "The World Is Ending",
-    "legalNotice": "Created by Adam Koscielniak, all rights reserved 2026, Compatible with Mork Borg. <privacyLink>Review your privacy settings</privacyLink>"
+    "legalNotice": "MÖRK BORG is copyright Ockult Örtmästare Games and Stockholm Kartell. Scvmrack is an independent production by Adam Koscielniak and is not affiliated with Ockult Örtmästare Games or Stockholm Kartell. It is published under the MÖRK BORG Third Party License. <privacyLink>Review your privacy settings</privacyLink>"
   },
   "actions": {
     "print": "Print Sheet",
