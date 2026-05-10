@@ -37,3 +37,14 @@ test('aggregateItems uses "Unknown" grouping when item name is missing', () => {
   expect(grouped[0].quantity).toBe(2);
   expect(grouped[0].indices).toEqual([0, 2]);
 });
+
+test('aggregateItems handles pre-existing amount values correctly', () => {
+    const input = [
+        { name: 'Rations', amount: 5 },
+        { name: 'rations', amount: 2 },
+    ];
+
+    const grouped = aggregateItems(input);
+    expect(grouped).toHaveLength(1);
+    expect(grouped[0].quantity).toBe(7);
+});
