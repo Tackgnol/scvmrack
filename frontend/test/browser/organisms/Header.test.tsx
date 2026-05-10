@@ -7,6 +7,30 @@ import * as AuthContextModule from '@/hooks/useAuth';
 import * as CharacterContextModule from '@/CharacterContext/CharacterContext';
 import * as AuthLinks from '@/auth';
 import { $api } from '@/api';
+import { useRouterState } from '@tanstack/react-router';
+import type { AnchorHTMLAttributes, ReactNode } from 'react';
+
+type HeaderRenderOptions = {
+  auth?: Partial<ReturnType<typeof AuthContextModule.useAuth>>;
+  character?: Partial<ReturnType<typeof CharacterContextModule.useCharacter>>;
+  queryReturn?: unknown;
+  pathname?: string;
+};
+
+type RouterStateStub = {
+  location: {
+    pathname: string;
+  };
+};
+
+type RouterStateSelector = {
+  select?: (state: RouterStateStub) => unknown;
+};
+
+type MockLinkProps = {
+  children: ReactNode;
+  to: string;
+} & AnchorHTMLAttributes<HTMLAnchorElement>;
 
 vi.mock('@/hooks/useAuth', () => ({
   useAuth: vi.fn(),
@@ -33,11 +57,8 @@ vi.mock('@/router/navigation', () => ({
 }));
 
 vi.mock('@tanstack/react-router', () => ({
-  useRouterState: vi.fn().mockImplementation((opts) => {
-    const state = { location: { pathname: '/' } };
-    return opts?.select ? opts.select(state) : state;
-  }),
-  Link: ({ children, to, ...props }: any) => (
+  useRouterState: vi.fn(),
+  Link: ({ children, to, ...props }: MockLinkProps) => (
     <a href={to} {...props}>
       {children}
     </a>
@@ -49,19 +70,26 @@ vi.mock('@/router/history', () => ({
 }));
 
 describe('Header Component', () => {
-  const renderHeader = async (overrides = {}) => {
+  const renderHeader = async (overrides: HeaderRenderOptions = {}) => {
     const {
       auth = {},
       character = {},
-      queryReturn = undefined as any,
-    } = overrides as any;
+      queryReturn = undefined,
+      pathname = '/character',
+    } = overrides;
+
+    vi.mocked(useRouterState).mockImplementation((opts: unknown) => {
+      const state = { location: { pathname } };
+      const selector = (opts as RouterStateSelector | undefined)?.select;
+      return selector ? selector(state) : state;
+    });
 
     vi.mocked(AuthContextModule.useAuth).mockReturnValue({
       isAuthenticated: false,
       user: null,
       signOut: { mutateAsync: vi.fn(), isPending: false },
       ...auth,
-    } as any);
+    } as unknown as ReturnType<typeof AuthContextModule.useAuth>);
 
     vi.mocked(CharacterContextModule.useCharacter).mockReturnValue({
       isSaving: false,
@@ -71,16 +99,16 @@ describe('Header Component', () => {
       lastCharacterId: null,
       validationIssues: [],
       ...character,
-    } as any);
+    } as ReturnType<typeof CharacterContextModule.useCharacter>);
 
     vi.mocked($api.useQuery).mockReturnValue({
       data: queryReturn,
-    } as any);
+    } as unknown as ReturnType<typeof $api.useQuery>);
 
     return render(
       <BrowserTestProvider>
         <Header />
-      </BrowserTestProvider>
+      </BrowserTestProvider>,
     );
   };
 
@@ -93,6 +121,13 @@ describe('Header Component', () => {
 
     const title = page.getByTestId('app-title');
     await expect.element(title).toBeInTheDocument();
+
+    const printBtn = page.getByTestId('header-print-button');
+    await expect.element(printBtn).toBeVisible();
+  });
+
+  it('shows print action on saved character routes', async () => {
+    await renderHeader({ pathname: '/character/char-123' });
 
     const printBtn = page.getByTestId('header-print-button');
     await expect.element(printBtn).toBeVisible();
@@ -134,7 +169,7 @@ describe('Header Component', () => {
     await expect
       .element(validationChip)
       .toHaveTextContent(
-        /Fix: Modifier value must be -20 to \+20 · Name max 255 chars/i
+        /Fix: Modifier value must be -20 to \+20 · Name max 255 chars/i,
       );
   });
 
@@ -142,7 +177,9 @@ describe('Header Component', () => {
     await renderHeader();
 
     const authBtn = page.getByTestId('auth-button');
-    await expect.element(authBtn).toHaveAttribute('href', '/api/auth/oauth2/login/logto');
+    await expect
+      .element(authBtn)
+      .toHaveAttribute('href', '/api/auth/oauth2/login/logto');
     expect(AuthLinks.loginUrl).toHaveBeenCalled();
   });
 
@@ -163,7 +200,9 @@ describe('Header Component', () => {
     });
 
     const authBtn = page.getByTestId('auth-button');
-    await expect.element(authBtn).toHaveAttribute('href', 'https://auth.example.test/profile');
+    await expect
+      .element(authBtn)
+      .toHaveAttribute('href', 'https://auth.example.test/profile');
     await expect.element(authBtn).toHaveAttribute('target', '_blank');
     expect(AuthLinks.profileUrl).toHaveBeenCalled();
 

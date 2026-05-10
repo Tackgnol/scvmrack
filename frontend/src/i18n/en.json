@@ -3,6 +3,57 @@
     "title": "Scvmrack",
     "subtitle": "Interactive Mörk Borg character sheet"
   },
+  "landing": {
+    "seo": {
+      "title": "Free Mork Borg Character Sheet",
+      "description": "Scvm Rack is a free interactive Mork Borg character sheet for generating, tracking, saving, and printing doomed scvms."
+    },
+    "stamp": "Fan made. Non-commercial.",
+    "headlineLine1": "Doom",
+    "headlineLine2": "on record",
+    "lede": "Generate a doomed scvm, track wounds, Omens, gear, powers, pets, and notes, then print the evidence when the table demands it.",
+    "openSheet": "Open sheet",
+    "sourcebook": "Get the sourcebook",
+    "noticeLabel": "What to know",
+    "mock": {
+      "name": "Rot-Prone Sigrid",
+      "class": "Gutterborn Scvm",
+      "stats": {
+        "agi": { "label": "AGI", "value": "-1" },
+        "pre": { "label": "PRE", "value": "+2" },
+        "str": { "label": "STR", "value": "0" },
+        "tou": { "label": "TOU", "value": "-2" }
+      },
+      "rows": {
+        "gear": {
+          "label": "Gear",
+          "text": "Femur club, filthy scroll, 23 silver"
+        },
+        "omen": {
+          "label": "Omen",
+          "text": "Three chances before the world notices"
+        },
+        "print": {
+          "label": "Print",
+          "text": "A clean table sheet when the screen must die"
+        }
+      }
+    },
+    "notices": {
+      "book": {
+        "title": "Bring the book",
+        "body": "You need MÖRK BORG to play. Scvm Rack keeps the character record fast, legible, and ready for the table."
+      },
+      "guest": {
+        "title": "Start as a guest",
+        "body": "No login is required. Guests keep one scvm. Create an account when you want a full rack of doomed wretches."
+      },
+      "grave": {
+        "title": "Keep the grave",
+        "body": "Mark a fallen character deceased instead of erasing them. Their record stays as a warning to the next poor soul."
+      }
+    }
+  },
   "stats": {
     "hitPoints": "Hit Points",
     "toDodge": "Dodge DR",
@@ -265,6 +316,7 @@
     "decreaseHitPoints": "Decrease hit points"
   },
   "nav": {
+    "start": "Start",
     "home": "Sheet",
     "characters": "Scvms",
     "faq": "FAQ",
