@@ -8,7 +8,6 @@ import {
 import { appHistory } from '@/router/history';
 import { buildHomeCallbackUrl, buildPrintCallbackUrl } from '@/router/navigation';
 import { Seo } from '@/seo/Seo';
-import { aggregateItems } from '@/utils/aggregateItems';
 import { statToModifier } from '@/utils/stats';
 import { Box, Button, Stack } from '@mui/material';
 import { useEffect } from 'react';
@@ -30,9 +29,9 @@ function modifier(value: number | null | undefined): string {
     return value > 0 ? `+${value}` : String(value);
 }
 
-function itemName(item: EquipmentItem, quantity: number = 1): string {
-    const amountLabel = quantity > 1 ? `${quantity}x ` : '';
-    return `${amountLabel}${item.name ?? item.key ?? '-'}`;
+function itemName(item: EquipmentItem): string {
+    const amount = item.amount && item.amount > 1 ? `${item.amount}x ` : '';
+    return `${amount}${item.name ?? item.key ?? '-'}`;
 }
 
 function PrintSection({
@@ -123,13 +122,11 @@ function EquipmentList({ items }: { items: EquipmentItem[] }) {
         return <p className="print-native-empty">-</p>;
     }
 
-    const aggregated = aggregateItems(items);
-
     return (
         <ul className="print-native-list">
-            {aggregated.map(({ item, quantity }, index) => (
+            {items.map((item, index) => (
                 <li key={`${item.key ?? item.name ?? 'item'}-${index}`}>
-                    <strong>{itemName(item, quantity)}</strong>
+                    <strong>{itemName(item)}</strong>
                     {item.description && <span>{item.description}</span>}
                     {item.comments && <span>{item.comments}</span>}
                 </li>
@@ -143,14 +140,12 @@ function UsesList({ items }: { items: EquipmentItem[] }) {
         return <p className="print-native-empty">-</p>;
     }
 
-    const aggregated = aggregateItems(items);
-
     return (
         <ul className="print-native-list print-native-uses">
-            {aggregated.map(({ item, quantity }, index) => (
+            {items.map((item, index) => (
                 <li key={`${item.key ?? item.name ?? 'use'}-${index}`}>
                     <div>
-                        <strong>{itemName(item, quantity)}</strong>
+                        <strong>{itemName(item)}</strong>
                         {item.description && <span>{item.description}</span>}
                     </div>
                     {(item.uses ?? []).length > 0 && (

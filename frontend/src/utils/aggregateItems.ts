@@ -17,7 +17,7 @@ export function aggregateItems<T extends { name?: string | null; comments?: stri
 
         if (existing) {
             existing.indices.push(index);
-            existing.quantity += (item.amount ?? 1);
+            existing.quantity += 1;
 
             if (item.comments && !existing.item.comments?.includes(item.comments)) {
                 existing.item = {
@@ -33,7 +33,7 @@ export function aggregateItems<T extends { name?: string | null; comments?: stri
         groups.set(groupKey, {
             item: { ...item },
             indices: [index],
-            quantity: item.amount ?? 1,
+            quantity: 1,
         });
     });
 
