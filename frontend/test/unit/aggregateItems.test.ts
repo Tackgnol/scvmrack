@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
 
-import { aggregateItems } from '../../src/utils/aggregateItems.ts';
+import { aggregateItems } from '@/utils/aggregateItems.ts';
 
 test('aggregateItems groups by name case-insensitively and tracks indices', () => {
   const input = [
@@ -47,4 +47,15 @@ test('aggregateItems handles pre-existing amount values correctly', () => {
     const grouped = aggregateItems(input);
     expect(grouped).toHaveLength(1);
     expect(grouped[0].quantity).toBe(7);
+});
+
+test('aggregateItems treats amount: 0 as quantity: 1', () => {
+    const input = [
+        { name: 'Crowbar', amount: 0 },
+        { name: 'Crowbar', amount: 0 },
+    ];
+
+    const grouped = aggregateItems(input);
+    expect(grouped).toHaveLength(1);
+    expect(grouped[0].quantity).toBe(2);
 });
