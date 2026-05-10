@@ -90,4 +90,32 @@ describe('PrintPage Browser', () => {
 
         await expect.element(page.getByText('7x Rations')).toBeVisible();
     });
+
+    it('groups equipment items with amount: 0 correctly (treating as 1)', async () => {
+        const mockCharacter = {
+            name: 'Test Character',
+            equipment: [
+                { key: 'weapons.crowbar', name: 'Crowbar', amount: 0 },
+                { key: 'weapons.crowbar', name: 'Crowbar', amount: 0 },
+            ],
+            storage: [],
+            computedModifiers: [],
+            modifiers: [],
+            abilities: [],
+        };
+
+        vi.mocked(CharacterContextModule.useCharacter).mockReturnValue({
+            character: mockCharacter,
+            characterId: 'char-123',
+            isLoading: false,
+        } as any);
+
+        await render(
+            <BrowserTestProvider>
+                <PrintPage />
+            </BrowserTestProvider>
+        );
+
+        await expect.element(page.getByText('2x Crowbar')).toBeVisible();
+    });
 });
