@@ -5,6 +5,7 @@ import {
     isPetItem,
     isScrollItem,
 } from '@/hooks/useEquipmentSections';
+import { aggregateItems } from '@/utils/aggregateItems';
 import { appHistory } from '@/router/history';
 import { buildHomeCallbackUrl, buildPrintCallbackUrl } from '@/router/navigation';
 import { Seo } from '@/seo/Seo';
@@ -122,15 +123,23 @@ function EquipmentList({ items }: { items: EquipmentItem[] }) {
         return <p className="print-native-empty">-</p>;
     }
 
+    const aggregated = aggregateItems(items);
+
     return (
         <ul className="print-native-list">
-            {items.map((item, index) => (
-                <li key={`${item.key ?? item.name ?? 'item'}-${index}`}>
-                    <strong>{itemName(item)}</strong>
-                    {item.description && <span>{item.description}</span>}
-                    {item.comments && <span>{item.comments}</span>}
-                </li>
-            ))}
+            {aggregated.map(({ item, quantity }, index) => {
+                const displayName =
+                    quantity > 1
+                        ? `${quantity}x ${item.name ?? item.key ?? '-'}`
+                        : itemName(item);
+                return (
+                    <li key={`${item.key ?? item.name ?? 'item'}-${index}`}>
+                        <strong>{displayName}</strong>
+                        {item.description && <span>{item.description}</span>}
+                        {item.comments && <span>{item.comments}</span>}
+                    </li>
+                );
+            })}
         </ul>
     );
 }
