@@ -30,7 +30,7 @@ test('aggregateItems uses "Unknown" grouping when item name is missing', () => {
   const grouped = aggregateItems([
     { comments: 'mystery 1' },
     undefined,
-    { name: '', comments: 'mystery 3' },
+    { name: '', comments: 'mystery 2' },
   ]);
 
   expect(grouped).toHaveLength(1);
