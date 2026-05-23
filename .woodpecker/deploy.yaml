@@ -196,6 +196,44 @@ steps:
           -e DATABASE_URL="$DATABASE_URL" \
           scvmrack-backend:prod npx prisma migrate deploy
 
+        # Reapply read-only SQL definitions. init/03-functions/ and init/04-views/
+        # use CREATE OR REPLACE, so this is idempotent and safe on every deploy.
+        # The Postgres image's /docker-entrypoint-initdb.d only runs on first
+        # volume init, so without this step any function/view change after
+        # bootstrap would never reach the live DB.
+        # init/01-extensions/ and init/02-schema/ are NOT included — those have
+        # side effects (CREATE TABLE / CREATE EXTENSION) and stay one-shot.
+        echo "Reapplying SQL functions..."
+        for f in backend/init/03-functions/*.sql; do
+          filename=$(basename "$f")
+          echo "  -> $filename"
+          docker cp "$f" "$db_container_id:/tmp/$filename"
+          docker exec "$db_container_id" psql \
+            -U p1002_scmgrinder \
+            -d p1002_scmgrinder \
+            -v ON_ERROR_STOP=1 \
+            -f "/tmp/$filename"
+        done
+
+        echo "Reapplying SQL views..."
+        for f in backend/init/04-views/*.sql; do
+          filename=$(basename "$f")
+          echo "  -> $filename"
+          docker cp "$f" "$db_container_id:/tmp/$filename"
+          docker exec "$db_container_id" psql \
+            -U p1002_scmgrinder \
+            -d p1002_scmgrinder \
+            -v ON_ERROR_STOP=1 \
+            -f "/tmp/$filename"
+        done
+
+        echo "Refreshing materialized views..."
+        docker exec "$db_container_id" psql \
+          -U p1002_scmgrinder \
+          -d p1002_scmgrinder \
+          -v ON_ERROR_STOP=1 \
+          -c "REFRESH MATERIALIZED VIEW item_search;"
+
         # Scale backend/frontend back to normal replicas now that the db is
         # ready and migrations are applied. This is the same stack spec as
         # the deploy at the top, just without the REPLICAS=0 overrides.
