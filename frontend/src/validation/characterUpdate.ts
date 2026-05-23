@@ -150,14 +150,44 @@ const statisticSchema = z.enum([
   'toughness',
 ]);
 
+const scopeOptionSchema = z.enum([
+  'all',
+  'combat',
+  'defence',
+  'melee',
+  'ranged',
+  'powers',
+]);
+
+const modifierSchema = z.object({
+  id: limitedString(36).optional(),
+  name: limitedString(255).optional(),
+  value: modifierValueSchema.optional(),
+  source: limitedString(255).optional(),
+  statistic: statisticSchema.optional(),
+  exclude: limitedStringArray(15, 50).optional(),
+  scope: scopeOptionSchema.optional(),
+  comment: limitedString(500).optional(),
+});
+
+const useCountRuleSchema = z.object({
+  mode: z.enum(['fixed', 'fixedPlusModifier']).optional(),
+  base: boundedInteger(0, 50, 0).optional(),
+  statistic: statisticSchema.optional(),
+});
+
 const equipmentItemSchema = z.object({
   key: limitedString(100).optional(),
   name: limitedString(255).optional(),
   description: limitedString(1000).optional(),
+  comments: limitedString(1000).optional(),
+  source: limitedString(50).optional(),
+  category: limitedString(50).optional(),
+  value: boundedInteger(0, 1000000, 0).optional(),
   uses: z
     .array(z.boolean())
     .catch([])
-    .transform((uses) => uses.slice(0, 10))
+    .transform((uses) => uses.slice(0, 50))
     .optional(),
   dice: z
     .array(boundedInteger(1, 20, 1))
@@ -169,25 +199,37 @@ const equipmentItemSchema = z.object({
   currentTier: boundedInteger(0, 4, 0).optional(),
   amount: boundedInteger(0, 999, 0).optional(),
   ammoType: limitedString(50).optional(),
+  useCountRule: useCountRuleSchema.optional(),
+  modifiers: limitedObjectArray(modifierSchema, 10).optional(),
 });
 
 const weaponSchema = equipmentItemSchema.pick({
   key: true,
   name: true,
   description: true,
+  comments: true,
+  source: true,
+  category: true,
+  value: true,
   dice: true,
   tags: true,
   ammoType: true,
+  modifiers: true,
 });
 
 const armorSchema = equipmentItemSchema.pick({
   key: true,
   name: true,
   description: true,
+  comments: true,
+  source: true,
+  category: true,
+  value: true,
   dice: true,
   tags: true,
   maxTier: true,
   currentTier: true,
+  modifiers: true,
 });
 
 const abilitySchema = z.object({
@@ -195,16 +237,6 @@ const abilitySchema = z.object({
   name: limitedString(500).optional(),
   description: limitedString(2000).optional(),
   comment: limitedString(1000).optional(),
-});
-
-const modifierSchema = z.object({
-  id: limitedString(36).optional(),
-  name: limitedString(255).optional(),
-  value: modifierValueSchema.optional(),
-  source: limitedString(255).optional(),
-  statistic: statisticSchema.optional(),
-  exclude: limitedStringArray(15, 50).optional(),
-  comment: limitedString(500).optional(),
 });
 
 export const characterUpdateSchema = z.object({

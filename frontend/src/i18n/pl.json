@@ -102,6 +102,7 @@
     "saveModifier": "Zapisz",
     "name": "Nazwa",
     "value": "Wartość",
+    "statistic": "Cecha",
     "comment": "Komentarz",
     "scope": "Zakres",
     "commentPlaceholder": "Komentarz (opcjonalnie)",
@@ -195,7 +196,46 @@
     "noResults": "Nie znaleziono przedmiotów",
     "unequip": "Zdejmij",
     "selectArmor": "Wybierz",
-    "selectWeapon": "Wybierz"
+    "selectWeapon": "Wybierz",
+    "customItem": {
+      "button": "Własny",
+      "title": "Dodaj Własny Przedmiot",
+      "create": "Dodaj",
+      "kind": "Typ przedmiotu",
+      "value": "Wartość",
+      "comments": "Komentarze",
+      "weapon": "Broń",
+      "armor": "Pancerz",
+      "ammo": "Amunicja",
+      "consumable": "Zużywalny",
+      "damageDie": "Kość obrażeń",
+      "ammoType": "Typ amunicji",
+      "addAmmo": "Dodaj amunicję",
+      "amount": "Liczba",
+      "armorTier": "Poziom pancerza",
+      "armorDie": "Kość ochrony",
+      "maxTier": "Maks. poziom",
+      "consumeCount": "Liczba użyć",
+      "baseUses": "Bazowe użycia",
+      "statistic": "Cecha",
+      "appliesModifier": "Dodaje modyfikator",
+      "kinds": {
+        "misc": "Inne",
+        "weapon": "Broń",
+        "armor": "Pancerz",
+        "ammo": "Amunicja",
+        "consumable": "Zużywalny"
+      },
+      "armorPresets": {
+        "light": "Lekki",
+        "medium": "Średni",
+        "heavy": "Ciężki"
+      },
+      "consumeModes": {
+        "fixed": "Stała",
+        "fixedPlusModifier": "Stała + cecha"
+      }
+    }
   },
   "character": {
     "name": "Imię",

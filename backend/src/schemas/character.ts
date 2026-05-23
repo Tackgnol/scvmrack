@@ -58,10 +58,14 @@ const EquipmentItemSchema = {
     key: { type: 'string', maxLength: 100 },
     name: { type: 'string', maxLength: 255 },
     description: { type: 'string', maxLength: 1000 },
+    comments: { type: 'string', maxLength: 1000 },
+    source: { type: 'string', maxLength: 50 },
+    category: { type: 'string', maxLength: 50 },
+    value: { type: 'integer', minimum: 0, maximum: 1000000 },
     uses: {
       type: 'array',
       items: { type: 'boolean' },
-      maxItems: 10,
+      maxItems: 50,
     },
     dice: {
       type: 'array',
@@ -77,6 +81,46 @@ const EquipmentItemSchema = {
     currentTier: { type: 'integer', minimum: 0, maximum: 4 },
     amount: { type: 'integer', minimum: 0, maximum: 999 },
     ammoType: { type: 'string', maxLength: 50 },
+    useCountRule: {
+      type: 'object',
+      additionalProperties: false,
+      properties: {
+        mode: { type: 'string', enum: ['fixed', 'fixedPlusModifier'] },
+        base: { type: 'integer', minimum: 0, maximum: 50 },
+        statistic: {
+          type: 'string',
+          enum: ['agility', 'strength', 'presence', 'toughness'],
+        },
+      },
+    },
+    modifiers: {
+      type: 'array',
+      maxItems: 10,
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        properties: {
+          id: { type: 'string', maxLength: 36 },
+          name: { type: 'string', maxLength: 255 },
+          value: { type: 'number', minimum: -20, maximum: 20 },
+          source: { type: 'string', maxLength: 255 },
+          statistic: {
+            type: 'string',
+            enum: ['agility', 'strength', 'presence', 'toughness'],
+          },
+          exclude: {
+            type: 'array',
+            items: { type: 'string', maxLength: 50 },
+            maxItems: 15,
+          },
+          scope: {
+            type: 'string',
+            enum: ['all', 'combat', 'defence', 'melee', 'ranged', 'powers'],
+          },
+          comment: { type: 'string', maxLength: 500 },
+        },
+      },
+    },
   },
 };
 
@@ -98,6 +142,10 @@ const WeaponSchema = {
     key: { type: 'string', maxLength: 100 },
     name: { type: 'string', maxLength: 255 },
     description: { type: 'string', maxLength: 1000 },
+    comments: { type: 'string', maxLength: 1000 },
+    source: { type: 'string', maxLength: 50 },
+    category: { type: 'string', maxLength: 50 },
+    value: { type: 'integer', minimum: 0, maximum: 1000000 },
     dice: {
       type: 'array',
       items: { type: 'integer', minimum: 1, maximum: 20 },
@@ -109,6 +157,7 @@ const WeaponSchema = {
       maxItems: 10,
     },
     ammoType: { type: 'string', maxLength: 50 },
+    modifiers: EquipmentItemSchema.properties.modifiers,
   },
 };
 
@@ -119,6 +168,10 @@ const ArmorSchema = {
     key: { type: 'string', maxLength: 100 },
     name: { type: 'string', maxLength: 255 },
     description: { type: 'string', maxLength: 1000 },
+    comments: { type: 'string', maxLength: 1000 },
+    source: { type: 'string', maxLength: 50 },
+    category: { type: 'string', maxLength: 50 },
+    value: { type: 'integer', minimum: 0, maximum: 1000000 },
     dice: {
       type: 'array',
       items: { type: 'integer', minimum: 1, maximum: 20 },
@@ -131,6 +184,7 @@ const ArmorSchema = {
       items: { type: 'string', maxLength: 50 },
       maxItems: 10,
     },
+    modifiers: EquipmentItemSchema.properties.modifiers,
   },
 };
 
@@ -151,6 +205,10 @@ const ModifierSchemaDefs = {
       type: 'array',
       items: { type: 'string', maxLength: 50 },
       maxItems: 15,
+    },
+    scope: {
+      type: 'string',
+      enum: ['all', 'combat', 'defence', 'melee', 'ranged', 'powers'],
     },
     comment: { type: 'string', maxLength: 500 },
   },

@@ -27,6 +27,19 @@ export type Ability = {
     comment?: string;
 };
 
+export type CustomItemCategory =
+    | 'misc'
+    | 'weapon'
+    | 'armor'
+    | 'ammo'
+    | 'consumable';
+
+export type UseCountRule = {
+    mode?: 'fixed' | 'fixedPlusModifier';
+    base?: number;
+    statistic?: Statistic;
+};
+
 export type EquipmentItem = {
     key?: string;
     name?: string;
@@ -35,10 +48,15 @@ export type EquipmentItem = {
     dice?: number[];
     tags?: string[];
     comments?: string;
+    source?: 'custom' | 'catalog' | string;
+    category?: CustomItemCategory | string;
+    value?: number;
     maxTier?: number;
     currentTier?: number;
     amount?: number;
     ammoType?: string;
+    useCountRule?: UseCountRule;
+    modifiers?: CustomModifier[];
 };
 
 export type WeaponItem = EquipmentItem;
@@ -52,6 +70,10 @@ export type CustomModifier = {
     source?: string;
     statistic?: Statistic;
     exclude?: string[];
+    // Source-of-truth scope tag for modifiers authored via the custom-item form.
+    // `exclude` is the derived form used at calculation time; `scope` lets us
+    // recover the original intent if the scope→exclude mapping ever changes.
+    scope?: 'all' | 'combat' | 'defence' | 'melee' | 'ranged' | 'powers';
     comment?: string;
 };
 

@@ -105,6 +105,7 @@
     "saveModifier": "Save",
     "name": "Name",
     "value": "Value",
+    "statistic": "Statistic",
     "scope": "Scope",
     "comment": "Comment",
     "commentPlaceholder": "Comment (optional)",
@@ -198,7 +199,46 @@
     "noResults": "No equipment found",
     "unequip": "Unequip",
     "selectArmor": "Select armor",
-    "selectWeapon": "Select weapon"
+    "selectWeapon": "Select weapon",
+    "customItem": {
+      "button": "Custom",
+      "title": "Add Custom Item",
+      "create": "Add",
+      "kind": "Item kind",
+      "value": "Value",
+      "comments": "Comments",
+      "weapon": "Weapon",
+      "armor": "Armor",
+      "ammo": "Ammo",
+      "consumable": "Consumable",
+      "damageDie": "Damage die",
+      "ammoType": "Ammo type",
+      "addAmmo": "Add ammo",
+      "amount": "Amount",
+      "armorTier": "Armor tier",
+      "armorDie": "Protection die",
+      "maxTier": "Max tier",
+      "consumeCount": "Use count",
+      "baseUses": "Base uses",
+      "statistic": "Statistic",
+      "appliesModifier": "Applies modifier",
+      "kinds": {
+        "misc": "Misc",
+        "weapon": "Weapon",
+        "armor": "Armor",
+        "ammo": "Ammo",
+        "consumable": "Consumable"
+      },
+      "armorPresets": {
+        "light": "Light",
+        "medium": "Medium",
+        "heavy": "Heavy"
+      },
+      "consumeModes": {
+        "fixed": "Fixed",
+        "fixedPlusModifier": "Fixed + stat"
+      }
+    }
   },
   "character": {
     "name": "Name",

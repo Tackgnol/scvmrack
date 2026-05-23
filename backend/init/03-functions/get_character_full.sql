@@ -15,7 +15,7 @@ CREATE OR REPLACE FUNCTION resolve_item_default_uses(
     p_presence int,
     p_scroll_default boolean DEFAULT false
 ) RETURNS jsonb
-    LANGUAGE sql AS $$
+    LANGUAGE sql STABLE PARALLEL SAFE AS $$
     SELECT CASE
         WHEN p.hp IS NOT NULL AND p.hp > 0
             THEN to_jsonb(array_fill(true, ARRAY[LEAST(p.hp, 50)]))
@@ -47,7 +47,7 @@ CREATE OR REPLACE FUNCTION hydrate_inventory_uses(
     p_presence int,
     p_scroll_default boolean DEFAULT false
 ) RETURNS jsonb
-    LANGUAGE sql AS $$
+    LANGUAGE sql STABLE PARALLEL SAFE AS $$
     SELECT COALESCE(jsonb_agg(
         CASE
             WHEN item ? 'uses'
@@ -74,12 +74,20 @@ CREATE OR REPLACE FUNCTION resolve_character_inventory_items(
     p_scroll_default_uses boolean DEFAULT false,
     p_presence int DEFAULT 10
 ) RETURNS jsonb
-    LANGUAGE sql AS $$
+    LANGUAGE sql STABLE PARALLEL SAFE AS $$
     SELECT COALESCE(jsonb_agg(
-        jsonb_build_object(
+        jsonb_strip_nulls(jsonb_build_object(
             'key', item->>'key',
             'name', COALESCE(t.value, item->>'name', item->>'key'),
             'description', COALESCE(td.value, item->>'description', ''),
+            'comments', item->>'comments',
+            'source', item->>'source',
+            'category', item->>'category',
+            'value', CASE
+                WHEN item ? 'value' AND item->>'value' ~ '^[0-9]+$'
+                    THEN (item->>'value')::int
+                ELSE COALESCE(w.value, a.value, e_m.value)
+            END,
             'tags', (
                 SELECT COALESCE(jsonb_agg(DISTINCT tag_val), '[]'::jsonb)
                 FROM (
@@ -112,19 +120,56 @@ CREATE OR REPLACE FUNCTION resolve_character_inventory_items(
                 WHEN jsonb_typeof(item->'uses') = 'array' THEN item->'uses'
                 ELSE '[]'::jsonb
             END,
-            'ammo_type', COALESCE(w.ammo_type, e_m.ammo_type),
+            'ammo_type', COALESCE(w.ammo_type, e_m.ammo_type, item->>'ammo_type'),
             'amount', CASE
-                WHEN COALESCE(w.ammo_type, e_m.ammo_type) IS NOT NULL
+                WHEN COALESCE(w.ammo_type, e_m.ammo_type, item->>'ammo_type') IS NOT NULL
+                 AND item ? 'amount'
+                 AND item->>'amount' ~ '^[0-9]+$'
                 THEN (item->>'amount')::int
                 ELSE NULL
+            END,
+            'use_count_rule', CASE
+                WHEN jsonb_typeof(item->'use_count_rule') = 'object' THEN item->'use_count_rule'
+                ELSE NULL
+            END,
+            'modifiers', CASE
+                WHEN jsonb_typeof(item->'modifiers') = 'array' THEN item->'modifiers'
+                ELSE '[]'::jsonb
             END
         ) || CASE
-            WHEN a.key IS NOT NULL THEN jsonb_build_object(
-                'max_tier', a.max_tier,
-                'current_tier', COALESCE((item->>'current_tier')::int, a.max_tier)
+            -- Gate the armor sub-object on either a catalog match or an explicit "armor" tag
+            -- in the stored JSONB. Tag-based detection mirrors how the frontend decides
+            -- whether an item is armor, and prevents stray max_tier/current_tier keys on
+            -- non-armor items from synthesizing a tier-0 armor block.
+            WHEN a.key IS NOT NULL
+              OR (jsonb_typeof(item->'tags') = 'array' AND item->'tags' @> '["armor"]'::jsonb)
+            THEN jsonb_build_object(
+                'max_tier', COALESCE(
+                    CASE
+                        WHEN item ? 'max_tier' AND item->>'max_tier' ~ '^[0-9]+$'
+                            THEN (item->>'max_tier')::int
+                        ELSE NULL
+                    END,
+                    a.max_tier,
+                    0
+                ),
+                'current_tier', COALESCE(
+                    CASE
+                        WHEN item ? 'current_tier' AND item->>'current_tier' ~ '^[0-9]+$'
+                            THEN (item->>'current_tier')::int
+                        ELSE NULL
+                    END,
+                    CASE
+                        WHEN item ? 'max_tier' AND item->>'max_tier' ~ '^[0-9]+$'
+                            THEN (item->>'max_tier')::int
+                        ELSE NULL
+                    END,
+                    a.max_tier,
+                    0
+                )
             )
             ELSE '{}'::jsonb
-        END
+        END)
     ), '[]'::jsonb)
     FROM jsonb_array_elements(COALESCE(p_items, '[]'::jsonb)) item
     LEFT JOIN weapons w ON w.key = item->>'key'
@@ -139,16 +184,44 @@ CREATE OR REPLACE FUNCTION resolve_character_equipped_weapons(
     p_items jsonb,
     p_locale text
 ) RETURNS jsonb
-    LANGUAGE sql AS $$
+    LANGUAGE sql STABLE PARALLEL SAFE AS $$
     SELECT COALESCE(jsonb_agg(
-        jsonb_build_object(
+        jsonb_strip_nulls(jsonb_build_object(
             'key', ew->>'key',
-            'name', COALESCE(t.value, ew->>'key'),
-            'description', COALESCE(td.value, ''),
-            'dice', COALESCE(to_jsonb(w.dice), '[]'::jsonb),
-            'tags', COALESCE(to_jsonb(w.tags), '[]'::jsonb),
-            'ammo_type', w.ammo_type
-        )
+            'name', COALESCE(t.value, ew->>'name', ew->>'key'),
+            'description', COALESCE(td.value, ew->>'description', ''),
+            'comments', ew->>'comments',
+            'source', ew->>'source',
+            'category', ew->>'category',
+            'value', CASE
+                WHEN ew ? 'value' AND ew->>'value' ~ '^[0-9]+$'
+                    THEN (ew->>'value')::int
+                ELSE w.value
+            END,
+            'dice', (
+                SELECT COALESCE(jsonb_agg(DISTINCT dice_val), '[]'::jsonb)
+                FROM (
+                    SELECT jsonb_array_elements_text(ew->'dice') AS dice_val
+                    WHERE ew ? 'dice' AND jsonb_typeof(ew->'dice') = 'array'
+                    UNION ALL
+                    SELECT jsonb_array_elements_text(to_jsonb(w.dice)) AS dice_val WHERE w.dice IS NOT NULL
+                ) dice_sub
+            ),
+            'tags', (
+                SELECT COALESCE(jsonb_agg(DISTINCT tag_val), '[]'::jsonb)
+                FROM (
+                    SELECT jsonb_array_elements_text(ew->'tags') AS tag_val
+                    WHERE ew ? 'tags' AND jsonb_typeof(ew->'tags') = 'array'
+                    UNION ALL
+                    SELECT jsonb_array_elements_text(to_jsonb(w.tags)) AS tag_val WHERE w.tags IS NOT NULL
+                ) tags_sub
+            ),
+            'ammo_type', COALESCE(w.ammo_type, ew->>'ammo_type'),
+            'modifiers', CASE
+                WHEN jsonb_typeof(ew->'modifiers') = 'array' THEN ew->'modifiers'
+                ELSE '[]'::jsonb
+            END
+        ))
     ), '[]'::jsonb)
     FROM jsonb_array_elements(COALESCE(p_items, '[]'::jsonb)) ew
     LEFT JOIN weapons w ON w.key = ew->>'key'
@@ -160,23 +233,72 @@ CREATE OR REPLACE FUNCTION resolve_character_equipped_armor(
     p_item jsonb,
     p_locale text
 ) RETURNS jsonb
-    LANGUAGE sql AS $$
+    LANGUAGE sql STABLE PARALLEL SAFE AS $$
     SELECT CASE
         WHEN p_item IS NULL THEN NULL
         ELSE (
-            SELECT jsonb_build_object(
+            SELECT jsonb_strip_nulls(jsonb_build_object(
                 'key', p_item->>'key',
-                'name', COALESCE(t.value, p_item->>'key'),
-                'description', COALESCE(td.value, ''),
-                'dice', COALESCE(to_jsonb(a.dice), '[]'::jsonb),
-                'max_tier', a.max_tier,
-                'current_tier', COALESCE((p_item->>'current_tier')::int, a.max_tier),
-                'tags', COALESCE(to_jsonb(a.tags), '[]'::jsonb)
-            )
-            FROM armors a
+                'name', COALESCE(t.value, p_item->>'name', p_item->>'key'),
+                'description', COALESCE(td.value, p_item->>'description', ''),
+                'comments', p_item->>'comments',
+                'source', p_item->>'source',
+                'category', p_item->>'category',
+                'value', CASE
+                    WHEN p_item ? 'value' AND p_item->>'value' ~ '^[0-9]+$'
+                        THEN (p_item->>'value')::int
+                    ELSE a.value
+                END,
+                'dice', (
+                    SELECT COALESCE(jsonb_agg(DISTINCT dice_val), '[]'::jsonb)
+                    FROM (
+                        SELECT jsonb_array_elements_text(p_item->'dice') AS dice_val
+                        WHERE p_item ? 'dice' AND jsonb_typeof(p_item->'dice') = 'array'
+                        UNION ALL
+                        SELECT jsonb_array_elements_text(to_jsonb(a.dice)) AS dice_val WHERE a.dice IS NOT NULL
+                    ) dice_sub
+                ),
+                'max_tier', COALESCE(
+                    CASE
+                        WHEN p_item ? 'max_tier' AND p_item->>'max_tier' ~ '^[0-9]+$'
+                            THEN (p_item->>'max_tier')::int
+                        ELSE NULL
+                    END,
+                    a.max_tier,
+                    0
+                ),
+                'current_tier', COALESCE(
+                    CASE
+                        WHEN p_item ? 'current_tier' AND p_item->>'current_tier' ~ '^[0-9]+$'
+                            THEN (p_item->>'current_tier')::int
+                        ELSE NULL
+                    END,
+                    CASE
+                        WHEN p_item ? 'max_tier' AND p_item->>'max_tier' ~ '^[0-9]+$'
+                            THEN (p_item->>'max_tier')::int
+                        ELSE NULL
+                    END,
+                    a.max_tier,
+                    0
+                ),
+                'tags', (
+                    SELECT COALESCE(jsonb_agg(DISTINCT tag_val), '[]'::jsonb)
+                    FROM (
+                        SELECT jsonb_array_elements_text(p_item->'tags') AS tag_val
+                        WHERE p_item ? 'tags' AND jsonb_typeof(p_item->'tags') = 'array'
+                        UNION ALL
+                        SELECT jsonb_array_elements_text(to_jsonb(a.tags)) AS tag_val WHERE a.tags IS NOT NULL
+                    ) tags_sub
+                ),
+                'modifiers', CASE
+                    WHEN jsonb_typeof(p_item->'modifiers') = 'array' THEN p_item->'modifiers'
+                    ELSE '[]'::jsonb
+                END
+            ))
+            FROM (SELECT 1) seed
+            LEFT JOIN armors a ON a.key = p_item->>'key'
             LEFT JOIN translations t ON t.key = p_item->>'key' AND t.locale = p_locale
             LEFT JOIN translations td ON td.key = (p_item->>'key') || '.description' AND td.locale = p_locale
-            WHERE a.key = p_item->>'key'
         )
     END;
 $$;
@@ -185,7 +307,7 @@ CREATE OR REPLACE FUNCTION resolve_character_abilities(
     p_abilities jsonb,
     p_locale text
 ) RETURNS jsonb
-    LANGUAGE sql AS $$
+    LANGUAGE sql STABLE PARALLEL SAFE AS $$
     SELECT COALESCE(jsonb_agg(
         CASE
             WHEN ab->>'key' IS NOT NULL THEN jsonb_build_object(
@@ -209,7 +331,7 @@ CREATE OR REPLACE FUNCTION calculate_character_encumbrance(
     p_equipped_weapons jsonb,
     p_equipped_armor jsonb
 ) RETURNS int
-    LANGUAGE sql AS $$
+    LANGUAGE sql STABLE PARALLEL SAFE AS $$
     SELECT
         COALESCE((
             SELECT COUNT(*)
@@ -261,7 +383,7 @@ CREATE OR REPLACE FUNCTION resolve_character_computed_modifiers(
     p_abilities jsonb,
     p_locale text
 ) RETURNS jsonb
-    LANGUAGE plpgsql AS $$
+    LANGUAGE plpgsql STABLE PARALLEL SAFE AS $$
 DECLARE
     v_result jsonb := '[]'::jsonb;
     v_strength_modifier int;
@@ -289,37 +411,70 @@ BEGIN
         v_double_capacity_source := 'It is impossible to carry more than twice your capacity';
     END IF;
 
-    v_result := v_result || (
-        SELECT COALESCE(jsonb_agg(
-            m || jsonb_build_object(
-                'origin', 'armor',
-                'origin_key', 'armor.' || a.key,
-                'origin_name', COALESCE(t.value, a.key)
+    -- Armor modifiers. Rule: catalog rows always use their own modifiers; only items with
+    -- no catalog match may contribute the modifiers stored on the JSONB blob (i.e. custom
+    -- armor). One pass handles both cases.
+    IF p_equipped_armor IS NOT NULL
+       AND jsonb_typeof(p_equipped_armor) = 'object'
+       AND COALESCE(p_equipped_armor->>'key', '') <> '' THEN
+        v_result := v_result || COALESCE((
+            SELECT jsonb_agg(
+                m || jsonb_build_object(
+                    'origin', 'armor',
+                    'origin_key', CASE
+                        WHEN a.key IS NOT NULL THEN 'armor.' || a.key
+                        ELSE COALESCE(p_equipped_armor->>'key', 'custom.armor')
+                    END,
+                    'origin_name', CASE
+                        WHEN a.key IS NOT NULL THEN COALESCE(t.value, a.key)
+                        ELSE COALESCE(p_equipped_armor->>'name', p_equipped_armor->>'key', 'Custom armor')
+                    END
+                )
             )
-        ), '[]'::jsonb)
-        FROM armors a
-        CROSS JOIN LATERAL jsonb_array_elements(a.modifiers) m
-        LEFT JOIN translations t ON t.key = a.key AND t.locale = p_locale
-        WHERE a.key = p_equipped_armor->>'key'
-    );
+            FROM (SELECT 1) seed
+            LEFT JOIN armors a ON a.key = p_equipped_armor->>'key'
+            LEFT JOIN translations t ON t.key = a.key AND t.locale = p_locale
+            CROSS JOIN LATERAL jsonb_array_elements(
+                CASE
+                    WHEN a.key IS NOT NULL THEN COALESCE(a.modifiers, '[]'::jsonb)
+                    WHEN jsonb_typeof(p_equipped_armor->'modifiers') = 'array' THEN p_equipped_armor->'modifiers'
+                    ELSE '[]'::jsonb
+                END
+            ) m
+            WHERE jsonb_typeof(m) = 'object'
+        ), '[]'::jsonb);
+    END IF;
 
+    -- Weapon modifiers. Same rule as armor: catalog rows always use their own modifiers,
+    -- custom rows (no catalog match) fall back to the JSONB modifiers on the item.
     IF p_equipped_weapons IS NOT NULL AND jsonb_array_length(p_equipped_weapons) > 0 THEN
-        v_result := v_result || (
-            SELECT COALESCE(jsonb_agg(
+        v_result := v_result || COALESCE((
+            SELECT jsonb_agg(
                 m || jsonb_build_object(
                     'origin', 'weapon',
-                    'origin_key', 'weapon.' || w.key,
-                    'origin_name', COALESCE(t.value, w.key)
+                    'origin_key', CASE
+                        WHEN w.key IS NOT NULL THEN 'weapon.' || w.key
+                        ELSE COALESCE(ew->>'key', 'custom.weapon')
+                    END,
+                    'origin_name', CASE
+                        WHEN w.key IS NOT NULL THEN COALESCE(t.value, w.key)
+                        ELSE COALESCE(ew->>'name', ew->>'key', 'Custom weapon')
+                    END
                 )
-            ), '[]'::jsonb)
-            FROM weapons w
-            CROSS JOIN LATERAL jsonb_array_elements(w.modifiers) m
-            LEFT JOIN translations t ON t.key = w.key AND t.locale = p_locale
-            WHERE w.key IN (
-                SELECT ew->>'key'
-                FROM jsonb_array_elements(p_equipped_weapons) ew
             )
-        );
+            FROM jsonb_array_elements(p_equipped_weapons) ew
+            LEFT JOIN weapons w ON w.key = ew->>'key'
+            LEFT JOIN translations t ON t.key = w.key AND t.locale = p_locale
+            CROSS JOIN LATERAL jsonb_array_elements(
+                CASE
+                    WHEN w.key IS NOT NULL THEN COALESCE(w.modifiers, '[]'::jsonb)
+                    WHEN jsonb_typeof(ew->'modifiers') = 'array' THEN ew->'modifiers'
+                    ELSE '[]'::jsonb
+                END
+            ) m
+            WHERE jsonb_typeof(ew) = 'object'
+              AND jsonb_typeof(m) = 'object'
+        ), '[]'::jsonb);
     END IF;
 
     IF p_equipment IS NOT NULL THEN
@@ -411,7 +566,7 @@ CREATE OR REPLACE FUNCTION calculate_character_dr(
     p_statistic text,
     p_excluded text[]
 ) RETURNS int
-    LANGUAGE sql AS $$
+    LANGUAGE sql STABLE PARALLEL SAFE AS $$
     SELECT 12
         - roll_to_modifier(p_ability)
         - COALESCE(
@@ -590,4 +745,4 @@ BEGIN
         result.created_at::timestamptz,
         result.updated_at::timestamptz;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql STABLE PARALLEL SAFE;

@@ -1,5 +1,6 @@
 import {useCharacter} from '@/CharacterContext/CharacterContext';
 import {type EquipmentItem} from '@/hooks/models';
+import {collectKnownAmmoTypes} from '@/inventory/customItems';
 import {type ItemSearchHit} from '@/hooks/useEquipmentSearch';
 import {type AggregatedItem, aggregateItems} from '@/utils/aggregateItems';
 import {useCallback, useMemo, useState} from 'react';
@@ -10,6 +11,13 @@ type AddEquipmentPayload = EquipmentItem & {
     default_amount?: number;
     ammo_start?: number;
 };
+
+const isAmmoStack = (item: EquipmentItem): boolean =>
+    item.category === 'ammo' ||
+    (Array.isArray(item.tags) && item.tags.includes('ammo'));
+
+const normalizeAmmoType = (value: string | undefined): string =>
+    value?.trim().toLowerCase() ?? '';
 
 export function useOnHandSection() {
     const {
@@ -22,6 +30,10 @@ export function useOnHandSection() {
 
     const equipment = character?.equipment ?? [];
     const aggregated = useMemo(() => aggregateItems(equipment), [equipment]);
+    const ammoTypes = useMemo(
+        () => collectKnownAmmoTypes(character),
+        [character],
+    );
     const [editingGroup, setEditingGroup] =
         useState<AggregatedItem<EquipmentItem> | null>(null);
     const [loadingItems, setLoadingItems] = useState<ItemSearchHit[]>([]);
@@ -125,12 +137,55 @@ export function useOnHandSection() {
         [addEquipmentItem],
     );
 
+    const handleAddCustomItems = useCallback(
+        (items: EquipmentItem[]) => {
+            // Snapshot the current equipment so we can resolve ammo merge targets
+            // against a stable view. We intentionally do NOT re-read between
+            // updates — each call processes at most one ammo item (see
+            // buildCustomItemBundle), so there's no within-batch collision risk.
+            const currentEquipment = character?.equipment ?? [];
+
+            items.forEach((item) => {
+                if (!isAmmoStack(item)) {
+                    addEquipmentItem(item);
+                    return;
+                }
+
+                const normalizedType = normalizeAmmoType(item.ammoType);
+                const matchIndex = normalizedType
+                    ? currentEquipment.findIndex(
+                          (existing) =>
+                              isAmmoStack(existing) &&
+                              normalizeAmmoType(existing.ammoType) ===
+                                  normalizedType,
+                      )
+                    : -1;
+
+                if (matchIndex >= 0) {
+                    const existing = currentEquipment[matchIndex];
+                    const mergedAmount =
+                        (existing.amount ?? 0) + (item.amount ?? 0);
+                    updateEquipmentItem(matchIndex, {
+                        ...existing,
+                        amount: mergedAmount,
+                    });
+                } else {
+                    addEquipmentItem(item);
+                }
+            });
+        },
+        [addEquipmentItem, updateEquipmentItem, character?.equipment],
+    );
+
     return {
+        character,
         aggregated,
+        ammoTypes,
         loadingItems,
         editingGroup,
         setEditingGroup,
         handleAddItem,
+        handleAddCustomItems,
         handleAdjustQuantity,
         handleUpdate: (indices: number[], updated: EquipmentItem) =>
             indices.forEach((idx) => updateEquipmentItem(idx, updated)),
