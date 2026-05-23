@@ -9,33 +9,33 @@ interface KindSelectorProps {
   onChange: (next: CustomItemKind) => void;
 }
 
-// Asymmetric editorial-brutalist grid:
-//   ┌──────────────┬──────┬──────┐
-//   │   WEAPON     │ MISC │ ARMOR│
-//   ├──────────────┴──┬───┴──────┤
-//   │     AMMO        │ CONSUM.  │
-//   └─────────────────┴──────────┘
-// Weapon double-wide top-left (the most common path), ammo/consumable share
-// the bottom row, misc and armor slot in next to weapon. Falls back to a
-// single column on xs.
-const GRID_AREAS_MD = `"weapon weapon misc armor" "ammo ammo consumable consumable"`;
-const GRID_AREAS_XS = `"weapon weapon" "armor misc" "ammo consumable"`;
+// Quieter, single-row grid: five equal tiles. Glyph above a small label.
+// Brutalist enough to be on-brand (sharp corners, yellow-on-black selected
+// state) without dominating the modal.
+const KINDS: CustomItemKind[] = [
+  'weapon',
+  'armor',
+  'ammo',
+  'consumable',
+  'misc',
+];
 
 const tileBase = {
   display: 'grid',
-  gridTemplateRows: 'auto 1fr',
+  gridTemplateRows: 'auto auto',
   alignItems: 'center',
   justifyItems: 'center',
-  gap: 0.75,
-  minHeight: 96,
-  px: 1,
-  py: 1.5,
+  gap: 0.5,
+  minHeight: 64,
+  px: 0.75,
+  py: 1,
   border: `1px solid ${morkBorgColors.darkGrey}`,
   color: morkBorgColors.white,
   bgcolor: 'transparent',
   textTransform: 'uppercase',
-  fontFamily: "'Bebas Neue', sans-serif",
-  letterSpacing: '0.16em',
+  fontFamily: "'Antonio', sans-serif",
+  fontSize: '0.7rem',
+  letterSpacing: '0.1em',
   cursor: 'pointer',
   transition: 'background-color 0.12s ease, color 0.12s ease',
   '&:hover': {
@@ -58,14 +58,6 @@ const tileSelected = {
   },
 } as const;
 
-const KINDS: CustomItemKind[] = [
-  'weapon',
-  'misc',
-  'armor',
-  'ammo',
-  'consumable',
-];
-
 export default function KindSelector({ value, onChange }: KindSelectorProps) {
   const { t } = useTranslation();
 
@@ -75,23 +67,18 @@ export default function KindSelector({ value, onChange }: KindSelectorProps) {
       aria-label={t('equipment.customItem.kind', 'Item kind')}
       sx={{
         display: 'grid',
-        gridTemplateAreas: { xs: GRID_AREAS_XS, sm: GRID_AREAS_MD },
         gridTemplateColumns: {
-          xs: 'repeat(2, minmax(0, 1fr))',
-          sm: 'repeat(4, minmax(0, 1fr))',
+          xs: 'repeat(3, minmax(0, 1fr))',
+          sm: 'repeat(5, minmax(0, 1fr))',
         },
-        gap: 1,
+        gap: 0.75,
       }}
     >
       {KINDS.map((kind) => {
         const selected = value === kind;
         const label = t(
           `equipment.customItem.kinds.${kind}`,
-          kind === 'misc'
-            ? 'Trinket'
-            : kind === 'ammo'
-              ? 'Ammo'
-              : kind.charAt(0).toUpperCase() + kind.slice(1),
+          kind.charAt(0).toUpperCase() + kind.slice(1),
         );
         return (
           <ButtonBase
@@ -102,20 +89,15 @@ export default function KindSelector({ value, onChange }: KindSelectorProps) {
             onClick={() => onChange(kind)}
             sx={{
               ...tileBase,
-              gridArea: kind,
-              ...(kind === 'weapon' && {
-                fontSize: '1.05rem',
-                minHeight: { xs: 112, sm: 132 },
-              }),
               ...(selected && tileSelected),
             }}
           >
-            <KindGlyph kind={kind} size={kind === 'weapon' ? 44 : 32} />
+            <KindGlyph kind={kind} size={22} />
             <Typography
               component="span"
               sx={{
                 fontFamily: 'inherit',
-                fontSize: kind === 'weapon' ? '0.95rem' : '0.78rem',
+                fontSize: 'inherit',
                 letterSpacing: 'inherit',
                 lineHeight: 1,
               }}

@@ -12,24 +12,23 @@ interface CustomItemPreviewProps {
 
 const headingRuleStyle = {
   display: 'grid',
-  gridTemplateColumns: '1fr auto 1fr',
+  gridTemplateColumns: 'auto 1fr',
   alignItems: 'center',
-  gap: 1.5,
-  mb: 1,
-  '&::before, &::after': {
-    content: '""',
-    height: '3px',
-    backgroundColor: morkBorgColors.yellow,
-  },
+  gap: 1,
+  mb: 0.75,
 } as const;
 
 const headingLabelStyle = {
   color: morkBorgColors.yellow,
-  fontFamily: "'Bebas Neue', sans-serif",
-  fontSize: '0.95rem',
+  fontFamily: "'Antonio', sans-serif",
+  fontSize: '0.7rem',
   letterSpacing: '0.18em',
   textTransform: 'uppercase',
-  px: 1,
+} as const;
+
+const headingRuleLineStyle = {
+  height: '1px',
+  backgroundColor: morkBorgColors.darkGrey,
 } as const;
 
 const emptyStateStyle = {
@@ -121,8 +120,9 @@ export default function CustomItemPreview({
     <Box>
       <Box sx={headingRuleStyle}>
         <Typography sx={headingLabelStyle}>
-          ◢ {t('equipment.customItem.previewHeading', 'Preview')} ◣
+          {t('equipment.customItem.previewHeading', 'Preview')}
         </Typography>
+        <Box sx={headingRuleLineStyle} aria-hidden />
       </Box>
 
       {!primary ? (

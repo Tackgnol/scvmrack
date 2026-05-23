@@ -16,10 +16,10 @@ const wrapStyle = {
   // Keeping it flush-left (not centered) matches editorial layout, not SaaS.
 } as const;
 
-const bracketStyle = {
+const labelStyle = {
   color: morkBorgColors.yellow,
-  fontFamily: "'Bebas Neue', sans-serif",
-  fontSize: '1.05rem',
+  fontFamily: "'Antonio', sans-serif",
+  fontSize: '0.75rem',
   letterSpacing: '0.18em',
   textTransform: 'uppercase',
   lineHeight: 1,
@@ -27,18 +27,18 @@ const bracketStyle = {
 } as const;
 
 const ruleStyle = {
-  height: '3px',
+  height: '2px',
   backgroundColor: morkBorgColors.yellow,
   display: 'block',
 } as const;
 
-// Yellow editorial rule with a flush-left Bebas Neue heading. Used as the
+// Yellow editorial rule with a flush-left Antonio heading. Used as the
 // top divider of every sub-panel in the custom-item modal so each block
-// reads as a discrete movement instead of a continuous form.
+// reads as a discrete movement.
 export default function PanelHeading({ children }: PanelHeadingProps) {
   return (
     <Box sx={wrapStyle}>
-      <Typography sx={bracketStyle}>◢ {children} ◣</Typography>
+      <Typography sx={labelStyle}>{children}</Typography>
       <Box sx={ruleStyle} aria-hidden />
     </Box>
   );
