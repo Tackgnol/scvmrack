@@ -14,19 +14,25 @@ export function snakeToCamel(key: string): string {
   return key.replace(/_([a-z])/g, (_, c) => c.toUpperCase());
 }
 
+// Bounds recursive traversal. Character JSONB shape is at most ~4 levels deep
+// (character → equipment[] → modifiers[] → primitives); 8 leaves headroom while
+// rejecting adversarially-nested payloads that slip past JSON-schema limits.
+const MAX_TRANSFORM_DEPTH = 8;
+
 /**
  * Recursively transform all object keys using the given function.
- * Arrays are traversed, primitives are left as-is.
+ * Arrays are traversed, primitives are left as-is. Bounded depth.
  */
-export function transformKeys(obj: unknown, keyFn: (key: string) => string): unknown {
-  if (Array.isArray(obj)) return obj.map((item) => transformKeys(item, keyFn));
+export function transformKeys(obj: unknown, keyFn: (key: string) => string, depth = 0): unknown {
+  if (depth >= MAX_TRANSFORM_DEPTH) return obj;
+  if (Array.isArray(obj)) return obj.map((item) => transformKeys(item, keyFn, depth + 1));
   if (obj !== null && typeof obj === 'object') {
     const prototype = Object.getPrototypeOf(obj);
     if (prototype !== Object.prototype && prototype !== null) {
       return obj;
     }
     return Object.fromEntries(
-      Object.entries(obj as Record<string, unknown>).map(([k, v]) => [keyFn(k), transformKeys(v, keyFn)])
+      Object.entries(obj as Record<string, unknown>).map(([k, v]) => [keyFn(k), transformKeys(v, keyFn, depth + 1)])
     );
   }
   return obj;
