@@ -60,6 +60,6 @@ export function loginUrl(): string {
 }
 
 export function profileUrl(): string {
-  const endpoint = import.meta.env.VITE_LOGTO_ENDPOINT ?? 'https://auth.rpgtools.eu.org';
+  const endpoint = import.meta.env.VITE_LOGTO_ENDPOINT ?? 'https://auth.rpgtools.co';
   return `${endpoint.replace(/\/+$/, '')}/account/security`;
 }

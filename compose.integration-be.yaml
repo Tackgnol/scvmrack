@@ -55,7 +55,7 @@ services:
       APP_BASE_URL: http://localhost:5173
       AUTH_BASE_URL: http://api:3000/api/auth
       BETTER_AUTH_SECRET: integration-secret-change-for-prod
-      LOGTO_ENDPOINT: https://auth.rpgtools.eu.org
+      LOGTO_ENDPOINT: https://auth.rpgtools.co
       LOGTO_APP_ID: integration-logto-app-id
       LOGTO_APP_SECRET: integration-logto-app-secret
       LOGTO_REDIRECT_URI: http://api:3000/api/auth/oauth2/callback/logto

@@ -1,4 +1,4 @@
-scvmrack.rpgtools.eu.org {
+scvmrack.rpgtools.co {
   import cloudflare_tls
 
   @asset_routes path /assets/*

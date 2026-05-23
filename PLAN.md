@@ -9,7 +9,7 @@
 5. **Use Prisma everywhere it's a clean fit.** Drop `@pgtyped/*` entirely. Keep raw SQL only for stored-proc calls (`generate_character`, `get_character_full`) via `prisma.$queryRaw`.
 6. **No more `better-auth` direct dep in scvmrack.** Mirror trench-rats: depend only on `@tackgnol/rpgtools-shared-auth`, which re-exports what's needed.
 7. **No login/registration UI in the SPA.** A single profile/login button in the header. Logged-out → redirect to Logto. Logged-in → opens Logto user profile in a new tab. That's it.
-8. **Single host via Caddy** (`scvmrack.rpgtools.eu.org/api/*` → backend, `/*` → frontend). Cookies stay same-origin.
+8. **Single host via Caddy** (`scvmrack.rpgtools.co/api/*` → backend, `/*` → frontend). Cookies stay same-origin.
 
 ---
 
@@ -20,11 +20,11 @@
 - [x] Note current commit SHA in PR description for rollback reference.
 
 ### 0.2 Logto setup (manual, one-time)
-Done in Logto Admin Console at `https://admin-auth.rpgtools.eu.org`:
+Done in Logto Admin Console at `https://admin-auth.rpgtools.co`:
 - [x] Create application: type **Traditional Web**, name `scvmrack`.
-- [x] Add redirect URI: `https://scvmrack.rpgtools.eu.org/api/auth/oauth2/callback/logto` (and `http://localhost:3000/api/auth/oauth2/callback/logto` for dev).
-- [x] Add post-logout redirect: `https://scvmrack.rpgtools.eu.org/`.
-- [x] Capture `LOGTO_APP_ID`, `LOGTO_APP_SECRET`. Endpoint is `https://auth.rpgtools.eu.org`.
+- [x] Add redirect URI: `https://scvmrack.rpgtools.co/api/auth/oauth2/callback/logto` (and `http://localhost:3000/api/auth/oauth2/callback/logto` for dev).
+- [x] Add post-logout redirect: `https://scvmrack.rpgtools.co/`.
+- [x] Capture `LOGTO_APP_ID`, `LOGTO_APP_SECRET`. Endpoint is `https://auth.rpgtools.co`.
 - [x] In Logto: enable email passwordless + Google social (or whichever providers you want). All sign-up/sign-in lives there now.
 
 ### 0.3 Confirm decisions in writing (commit a `MIGRATION.md`)
@@ -276,7 +276,7 @@ export default fp(async function rpgtoolsAuthPlugin(fastify: FastifyInstance) {
     trustedOrigins: [
       'http://localhost:3000',
       'http://localhost:5173',
-      'https://scvmrack.rpgtools.eu.org',
+      'https://scvmrack.rpgtools.co',
     ],
     onLinkAccount: async ({ anonymousUser, newUser }) => {
       await prisma.character.updateMany({
@@ -309,7 +309,7 @@ export default fp(async function rpgtoolsAuthPlugin(fastify: FastifyInstance) {
 DATABASE_URL=postgresql://p1002_scmgrinder:p1002_scmgrinder@localhost:5433/p1002_scmgrinder
 AUTH_BASE_URL=http://localhost:3000/api/auth
 BETTER_AUTH_SECRET=<32+ random chars; reuse old one>
-LOGTO_ENDPOINT=https://auth.rpgtools.eu.org
+LOGTO_ENDPOINT=https://auth.rpgtools.co
 LOGTO_APP_ID=<from Logto>
 LOGTO_APP_SECRET=<from Logto>
 LOGTO_REDIRECT_URI=http://localhost:3000/api/auth/oauth2/callback/logto
@@ -320,7 +320,7 @@ CLIENT_ORIGIN=http://localhost:5173
 ### 3.7 Verification
 - [ ] `cd backend && npm run dev`; backend starts without error.
 - [ ] `curl http://localhost:3000/api/csrf-token` returns `{"token":"..."}`.
-- [ ] `curl -i http://localhost:3000/api/auth/oauth2/login/logto` returns a 302 with `Location:` pointing to `auth.rpgtools.eu.org/oidc/auth?...`.
+- [ ] `curl -i http://localhost:3000/api/auth/oauth2/login/logto` returns a 302 with `Location:` pointing to `auth.rpgtools.co/oidc/auth?...`.
 - [ ] Visit the URL in a browser → Logto login → after auth, lands on `localhost:3000/api/auth/oauth2/callback/logto` and ultimately redirects to root with a `__Secure-better-auth.session_token` cookie.
 - [ ] `curl --cookie "__Secure-better-auth.session_token=…" http://localhost:3000/api/auth/get-session` returns the session JSON.
 
@@ -567,7 +567,7 @@ Mirror trench-rats's. Three services: `db`, `backend`, `frontend`. Backend on po
 
 Update the host's `Caddyfile` (server-side, manual change in your infra repo):
 ```
-scvmrack.rpgtools.eu.org {
+scvmrack.rpgtools.co {
   import cloudflare_tls
   @asset_routes path /assets/*
   handle @asset_routes {
@@ -583,7 +583,7 @@ scvmrack.rpgtools.eu.org {
 }
 ```
 - [ ] Update `Caddyfile.example` in scvmrack repo to match.
-- [ ] Update Logto redirect URIs to `https://scvmrack.rpgtools.eu.org/api/auth/oauth2/callback/logto`.
+- [ ] Update Logto redirect URIs to `https://scvmrack.rpgtools.co/api/auth/oauth2/callback/logto`.
 
 **Gate 8:** Caddy config staged; not yet deployed. Test plan documented for cutover.
 
@@ -666,7 +666,7 @@ Otherwise every consumer needs to override CSP.
 ### 11.2 Prod smoke (after merge + deploy)
 - [ ] Update Caddyfile on the host.
 - [ ] Trigger Woodpecker deploy.
-- [ ] Same six smoke steps, against `https://scvmrack.rpgtools.eu.org`.
+- [ ] Same six smoke steps, against `https://scvmrack.rpgtools.co`.
 - [ ] Glitchtip shows no new errors after 24h.
 
 ### 11.3 Final cleanup

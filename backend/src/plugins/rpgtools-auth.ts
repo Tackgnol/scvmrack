@@ -6,7 +6,7 @@ import prisma from '../lib/prisma.js';
 const defaultTrustedOrigins = [
   'http://localhost:5173',
   'http://localhost:3000',
-  'https://scvmrack.rpgtools.eu.org',
+  'https://scvmrack.rpgtools.co',
 ];
 
 function envOrDefault(name: string, fallback: string): string {
@@ -29,7 +29,7 @@ export default fp(async function rpgtoolsAuthPlugin(fastify: FastifyInstance) {
       )
     ),
     logto: {
-      endpoint: envOrDefault('LOGTO_ENDPOINT', 'https://auth.rpgtools.eu.org'),
+      endpoint: envOrDefault('LOGTO_ENDPOINT', 'https://auth.rpgtools.co'),
       clientId: envOrDefault('LOGTO_APP_ID', 'dev-logto-app-id'),
       clientSecret: envOrDefault('LOGTO_APP_SECRET', 'dev-logto-app-secret'),
       redirectUri: envOrDefault(
