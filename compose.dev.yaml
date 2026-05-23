@@ -53,7 +53,7 @@ services:
       APP_BASE_URL: http://localhost:5173
       AUTH_BASE_URL: http://localhost:3000/api/auth
       BETTER_AUTH_SECRET: dev-only-better-auth-secret-change-for-prod
-      LOGTO_ENDPOINT: ${LOGTO_ENDPOINT:-https://auth.rpgtools.eu.org}
+      LOGTO_ENDPOINT: ${LOGTO_ENDPOINT:-https://auth.rpgtools.co}
       LOGTO_APP_ID: ${LOGTO_APP_ID:-dev-logto-app-id}
       LOGTO_APP_SECRET: ${LOGTO_APP_SECRET:-dev-logto-app-secret}
       LOGTO_REDIRECT_URI: http://localhost:3000/api/auth/oauth2/callback/logto
@@ -82,7 +82,7 @@ services:
     environment:
       VITE_BACKEND_URL: http://localhost:3000
       VITE_SITE_URL: http://localhost:5173
-      VITE_LOGTO_ENDPOINT: ${LOGTO_ENDPOINT:-https://auth.rpgtools.eu.org}
+      VITE_LOGTO_ENDPOINT: ${LOGTO_ENDPOINT:-https://auth.rpgtools.co}
       VITE_ALLOWED_HOSTS: localhost,127.0.0.1,web
       VITE_GLITCHTIP_DSN: ${VITE_GLITCHTIP_DSN:-}
     depends_on:

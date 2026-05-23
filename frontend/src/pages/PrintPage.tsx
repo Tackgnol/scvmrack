@@ -267,7 +267,7 @@ function PrintSheet({ character }: { character: Character }) {
                 <div>
                     <p className="print-native-brand-line">
                         <span>SCVMRACK</span>
-                        <span>visit us at scvmrack.rpgtools.eu.org</span>
+                        <span>visit us at scvmrack.rpgtools.co</span>
                     </p>
                     <h1>{valueOrDash(character.name)}</h1>
                 </div>
