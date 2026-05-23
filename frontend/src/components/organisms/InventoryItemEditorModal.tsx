@@ -1,14 +1,17 @@
-import { useEffect, useState } from 'react';
+import { useId, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Box, Button, TextField, Typography } from '@mui/material';
+import { Box, Button, TextField } from '@mui/material';
 import { type AggregatedItem } from '@/utils/aggregateItems';
 import { type EquipmentItem } from '@/hooks/models';
 import { useCharacter } from '@/CharacterContext/CharacterContext';
 import { customStyles } from '@/theme/morkBorgTheme';
-import {
-  AnimatedNumber,
-  MorkBorgModal,
-} from '@components/index';
+import { MorkBorgModal } from '@components/index';
+import PanelHeading from './customItem/PanelHeading';
+import ItemIdentityHeader from './inventoryItem/ItemIdentityHeader';
+import QuantityStepper from './inventoryItem/QuantityStepper';
+import InventoryItemActionTray from './inventoryItem/InventoryItemActionTray';
+import EquipSlotButton from './inventoryItem/EquipSlotButton';
+import { useInventoryItemEditor } from '@/hooks/useInventoryItemEditor';
 
 export type InventoryLocation = 'equipment' | 'storage';
 
@@ -28,9 +31,13 @@ interface InventoryItemEditorModalProps {
 }
 
 const modalInputStyles = customStyles.modal.input;
-const counterBtnStyle = customStyles.buttons.counter;
-const actionBtnStyle = customStyles.buttons.action;
-const equipBtnStyle = customStyles.buttons.equip;
+const sectionGap = { mt: 2.5 } as const;
+const equipGridStyle = {
+  display: 'grid',
+  gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' },
+  gap: 1,
+  mt: 1,
+} as const;
 
 export default function InventoryItemEditorModal({
   open,
@@ -43,207 +50,152 @@ export default function InventoryItemEditorModal({
   onAdjustQuantity,
 }: InventoryItemEditorModalProps) {
   const { t } = useTranslation();
-  const { character, updateField, equipWeapon, equipArmor } = useCharacter();
+  const { character, equipWeapon, equipArmor } = useCharacter();
+  const formId = useId();
 
-  const item = aggregated?.item;
-  const indices = aggregated?.indices ?? [];
-  const quantity = aggregated?.quantity ?? 1;
+  const editor = useInventoryItemEditor(aggregated, open, {
+    onUpdate,
+    onDelete,
+    onAdjustQuantity,
+    onClose,
+  });
+
+  if (!aggregated || !editor.item) return null;
+
+  const { item, indices, localQuantity, setLocalQuantity } = editor;
+  const tags = item.tags ?? [];
+  const isArmor = tags.includes('armor');
+  const isWeaponOrShield = tags.includes('weapon') || tags.includes('shield');
   const isOnHand = location === 'equipment';
   const moveLabel = isOnHand
     ? t('equipment.moveToStorage')
     : t('equipment.moveToOnHand');
-
-  const [editName, setEditName] = useState(item?.name ?? '');
-  const [editDescription, setEditDescription] = useState(item?.description ?? '');
-  const [editComments, setEditComments] = useState(item?.comments ?? '');
-  const [localQuantity, setLocalQuantity] = useState(quantity);
-
-  useEffect(() => {
-    if (!open || !item) return;
-
-    setEditName(item.name ?? '');
-    setEditDescription(item.description ?? '');
-    setEditComments(item.comments ?? '');
-    setLocalQuantity(quantity);
-  }, [open, item, quantity]);
-
-  if (!aggregated || !item) return null;
-
-  const tags = item.tags ?? [];
-  const isArmor = tags.includes('armor');
-  const isWeaponOrShield = tags.includes('weapon') || tags.includes('shield');
   const quantityCacheKey = `${location}:${item.key ?? item.name ?? 'item'}:${indices[0] ?? 0}`;
+  const equippedWeapons = character?.equippedWeapons ?? [];
+  const equippedArmor = character?.equippedArmor;
 
-  const handleSave = () => {
-    // Strip amount so new slots get amount: 1 (especially important for ammo items
-    // where the existing amount on the item would otherwise be spread onto new slots)
-    const { amount: _amount, ...itemWithoutAmount } = item;
-    const updatedItem: EquipmentItem = {
-      ...itemWithoutAmount,
-      name: editName,
-      description: editDescription,
-      comments: editComments,
-    };
-
-    if (localQuantity !== quantity) {
-      onAdjustQuantity(updatedItem, localQuantity, indices);
-    }
-
-    const retainedCount = Math.min(indices.length, localQuantity);
-    const retainedIndices = indices.slice(0, retainedCount);
-
-    if (retainedIndices.length > 0) {
-      onUpdate(retainedIndices, updatedItem);
-    }
-
-    onClose();
-  };
-
-  const handleSell = () => {
-    const itemValue = 10;
-    if (character) {
-      updateField('silver', (character.silver || 0) + itemValue * quantity);
-    }
-    onDelete(indices);
-    onClose();
+  const handleSubmit = (event: FormEvent) => {
+    event.preventDefault();
+    editor.save();
   };
 
   return (
     <MorkBorgModal
       open={open}
       onClose={onClose}
-      title={editName || t('equipment.itemDetails')}
-      maxWidth="sm"
+      title={t('equipment.itemDetails')}
+      maxWidth="md"
       actions={
         <>
           <Button onClick={onClose}>{t('actions.cancel')}</Button>
-          <Button onClick={handleSave} variant="contained">
+          <Button type="submit" form={formId} variant="contained">
             {t('equipment.save')}
           </Button>
         </>
       }
     >
-      <Box sx={customStyles.inventorySection.modalContent}>
+      <Box
+        component="form"
+        id={formId}
+        onSubmit={handleSubmit}
+        sx={customStyles.inventorySection.modalContent}
+      >
+        <ItemIdentityHeader
+          displayName={editor.editName}
+          unnamedFallback={t('equipment.unnamedItem', 'Unnamed item')}
+          item={item}
+        />
+
         <TextField
           fullWidth
           label={t('equipment.itemName')}
-          value={editName}
-          onChange={(event) => setEditName(event.target.value)}
+          value={editor.editName}
+          onChange={(event) => editor.setEditName(event.target.value)}
           sx={modalInputStyles}
         />
 
-        <Box>
-          <Typography sx={customStyles.inventorySection.quantityLabel}>
-            {t('equipment.quantity')}
-          </Typography>
-          <Box sx={customStyles.inventorySection.quantityControls}>
-            <Button
-              onClick={() => setLocalQuantity(Math.max(1, localQuantity - 1))}
-              sx={counterBtnStyle}
-            >
-              -
-            </Button>
-            <Typography sx={customStyles.inventorySection.quantityNumber}>
-              <AnimatedNumber
-                value={localQuantity}
-                cacheKey={`${quantityCacheKey}:modal`}
-                durationMs={220}
-              />
-            </Typography>
-            <Button
-              onClick={() => setLocalQuantity(localQuantity + 1)}
-              sx={counterBtnStyle}
-            >
-              +
-            </Button>
-          </Box>
-        </Box>
+        <QuantityStepper
+          value={localQuantity}
+          onChange={setLocalQuantity}
+          cacheKey={`${quantityCacheKey}:modal`}
+        />
 
         <TextField
           fullWidth
           multiline
           rows={2}
           label={t('character.description')}
-          value={editDescription}
-          onChange={(event) => setEditDescription(event.target.value)}
+          value={editor.editDescription}
+          onChange={(event) => editor.setEditDescription(event.target.value)}
           sx={modalInputStyles}
         />
         <TextField
           fullWidth
           multiline
           rows={2}
-          label="Comments / Notes"
-          value={editComments}
-          onChange={(event) => setEditComments(event.target.value)}
+          label={t('equipment.comments', 'Comments / Notes')}
+          value={editor.editComments}
+          onChange={(event) => editor.setEditComments(event.target.value)}
           sx={modalInputStyles}
         />
 
         {isOnHand && (isArmor || isWeaponOrShield) && (
-          <Box sx={customStyles.inventorySection.equipButtons}>
-            {isArmor && (
-              <Button
-                onClick={() => {
-                  equipArmor(indices[0]);
-                  onClose();
-                }}
-                sx={equipBtnStyle}
-                fullWidth
-              >
-                EQUIP ARMOR
-              </Button>
-            )}
-            {isWeaponOrShield && (
-              <>
-                <Button
+          <Box sx={sectionGap}>
+            <PanelHeading>{t('equipment.equip', 'Equip')}</PanelHeading>
+            <Box sx={equipGridStyle}>
+              {isArmor && (
+                <EquipSlotButton
+                  slotLabel={t('equipment.armorLabel', 'Armor')}
+                  currentItemName={equippedArmor?.name}
                   onClick={() => {
-                    equipWeapon(indices[0], 0);
+                    equipArmor(indices[0]);
                     onClose();
                   }}
-                  sx={equipBtnStyle}
-                  fullWidth
-                >
-                  EQUIP SLOT 1
-                </Button>
-                <Button
-                  onClick={() => {
-                    equipWeapon(indices[0], 1);
-                    onClose();
-                  }}
-                  sx={equipBtnStyle}
-                  fullWidth
-                >
-                  EQUIP SLOT 2
-                </Button>
-              </>
-            )}
+                  dataTestId="equip-armor-slot"
+                />
+              )}
+              {isWeaponOrShield && (
+                <>
+                  <EquipSlotButton
+                    slotLabel={t('equipment.mainHand', 'Main hand')}
+                    currentItemName={equippedWeapons[0]?.name}
+                    onClick={() => {
+                      equipWeapon(indices[0], 0);
+                      onClose();
+                    }}
+                    dataTestId="equip-weapon-slot-0"
+                  />
+                  <EquipSlotButton
+                    slotLabel={t('equipment.offHand', 'Off hand')}
+                    currentItemName={equippedWeapons[1]?.name}
+                    onClick={() => {
+                      equipWeapon(indices[0], 1);
+                      onClose();
+                    }}
+                    dataTestId="equip-weapon-slot-1"
+                  />
+                </>
+              )}
+            </Box>
           </Box>
         )}
 
-        <Box sx={customStyles.inventorySection.actionButtons}>
-          <Button
-            onClick={() => {
+        <Box sx={sectionGap}>
+          <InventoryItemActionTray
+            moveLabel={moveLabel}
+            onMove={() => {
               onMove(indices);
               onClose();
             }}
-            sx={actionBtnStyle}
-          >
-            {moveLabel}
-          </Button>
-          <Button onClick={handleSell} sx={actionBtnStyle}>
-            {t('equipment.sell', { amount: 10 * localQuantity })}
-          </Button>
-          <Button
-            onClick={() => {
+            onSell={editor.sell}
+            onDrop={() => {
               onDelete(indices);
               onClose();
             }}
-            sx={{
-              ...actionBtnStyle,
-              ...customStyles.inventorySection.dropButton,
-            }}
-          >
-            {t('equipment.drop')}
-          </Button>
+            sellPrice={editor.sellPrice}
+            sellTotal={editor.sellTotal}
+            quantity={localQuantity}
+          />
         </Box>
       </Box>
     </MorkBorgModal>
