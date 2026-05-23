@@ -104,16 +104,20 @@ CREATE OR REPLACE FUNCTION resolve_character_inventory_items(
                 ) tags_sub
             ),
             'dice', (
+                -- Emit JSONB integers (not text). The response schema declares
+                -- `dice: { items: { type: 'integer' } }` and fast-json-stringify's
+                -- strict oneOf rejects the armor branch if these come through as
+                -- strings.
                 SELECT COALESCE(jsonb_agg(DISTINCT dice_val), '[]'::jsonb)
                 FROM (
-                    SELECT jsonb_array_elements_text(item->'dice') AS dice_val
+                    SELECT jsonb_array_elements(item->'dice') AS dice_val
                     WHERE item ? 'dice' AND jsonb_typeof(item->'dice') = 'array'
                     UNION ALL
-                    SELECT jsonb_array_elements_text(to_jsonb(w.dice)) AS dice_val WHERE w.dice IS NOT NULL
+                    SELECT jsonb_array_elements(to_jsonb(w.dice)) AS dice_val WHERE w.dice IS NOT NULL
                     UNION ALL
-                    SELECT jsonb_array_elements_text(to_jsonb(a.dice)) AS dice_val WHERE a.dice IS NOT NULL
+                    SELECT jsonb_array_elements(to_jsonb(a.dice)) AS dice_val WHERE a.dice IS NOT NULL
                     UNION ALL
-                    SELECT jsonb_array_elements_text(to_jsonb(p.action_die)) AS dice_val WHERE p.action_die IS NOT NULL
+                    SELECT jsonb_array_elements(to_jsonb(p.action_die)) AS dice_val WHERE p.action_die IS NOT NULL
                 ) dice_sub
             ),
             'uses', CASE
@@ -199,12 +203,13 @@ CREATE OR REPLACE FUNCTION resolve_character_equipped_weapons(
                 ELSE w.value
             END,
             'dice', (
+                -- Emit JSONB integers (not text) — schema declares integer items.
                 SELECT COALESCE(jsonb_agg(DISTINCT dice_val), '[]'::jsonb)
                 FROM (
-                    SELECT jsonb_array_elements_text(ew->'dice') AS dice_val
+                    SELECT jsonb_array_elements(ew->'dice') AS dice_val
                     WHERE ew ? 'dice' AND jsonb_typeof(ew->'dice') = 'array'
                     UNION ALL
-                    SELECT jsonb_array_elements_text(to_jsonb(w.dice)) AS dice_val WHERE w.dice IS NOT NULL
+                    SELECT jsonb_array_elements(to_jsonb(w.dice)) AS dice_val WHERE w.dice IS NOT NULL
                 ) dice_sub
             ),
             'tags', (
@@ -250,12 +255,14 @@ CREATE OR REPLACE FUNCTION resolve_character_equipped_armor(
                     ELSE a.value
                 END,
                 'dice', (
+                    -- Emit JSONB integers (not text) — schema declares integer items
+                    -- and fast-json-stringify's oneOf for equippedArmor is strict.
                     SELECT COALESCE(jsonb_agg(DISTINCT dice_val), '[]'::jsonb)
                     FROM (
-                        SELECT jsonb_array_elements_text(p_item->'dice') AS dice_val
+                        SELECT jsonb_array_elements(p_item->'dice') AS dice_val
                         WHERE p_item ? 'dice' AND jsonb_typeof(p_item->'dice') = 'array'
                         UNION ALL
-                        SELECT jsonb_array_elements_text(to_jsonb(a.dice)) AS dice_val WHERE a.dice IS NOT NULL
+                        SELECT jsonb_array_elements(to_jsonb(a.dice)) AS dice_val WHERE a.dice IS NOT NULL
                     ) dice_sub
                 ),
                 'max_tier', COALESCE(

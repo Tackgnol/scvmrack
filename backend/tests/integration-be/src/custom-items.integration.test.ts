@@ -173,7 +173,10 @@ test('custom weapon with modifier round-trips through PATCH→GET', async () => 
   assert.equal(weapon.key, customWeaponKey);
   assert.equal(weapon.name, 'Rusted shiv');
   assert.equal(weapon.value, 12);
-  assert.deepEqual(weapon.dice, ['4']);
+  // dice must round-trip as JSON integers — the response schema declares
+  // `dice: { items: { type: 'integer' } }`, and fast-json-stringify's strict
+  // oneOf for equippedArmor rejected string dice in prod (req-k/p/t).
+  assert.deepEqual(weapon.dice, [4]);
   const weaponModifiers = weapon.modifiers as Array<Record<string, unknown>>;
   assert.equal(weaponModifiers?.length, 1);
   assert.equal(weaponModifiers[0].value, -1);
