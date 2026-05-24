@@ -17,6 +17,7 @@
 #   auth_base_url
 #   vite_backend_url
 #   vite_logto_endpoint
+#   debug_boom_token
 
 when:
   - event: [push]
@@ -60,6 +61,8 @@ steps:
         from_secret: vite_backend_url
       VITE_LOGTO_ENDPOINT:
         from_secret: vite_logto_endpoint
+      DEBUG_BOOM_TOKEN:
+        from_secret: debug_boom_token
 
     commands:
       - |

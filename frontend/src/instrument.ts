@@ -12,6 +12,7 @@ if (dsn && !import.meta.env.DEV) {
         (integration) => integration.name !== 'BrowserSession'
       ),
       Sentry.browserTracingIntegration(),
+      Sentry.captureConsoleIntegration({ levels: ['error'] }),
     ],
   });
 }
