@@ -24,6 +24,7 @@ if (dsn && !import.meta.env.DEV) {
   Sentry.init({
     dsn,
     tunnel: `${backendUrl}/api/tunnel`,
+    initialScope: { tags: { source: 'frontend' } },
     transport: (options) =>
       makeFetchTransport(options, async (url, init) => {
         const token = csrfToken ?? (await fetchCsrfToken());

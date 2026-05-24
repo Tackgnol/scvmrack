@@ -1,8 +1,16 @@
 import type { FastifyPluginAsync } from 'fastify';
 
-const ALLOWED_PROJECTS = new Set(['5', '6']);
+const ALLOWED_PROJECTS = new Set(['6']);
 
 const tunnel: FastifyPluginAsync = async (fastify): Promise<void> => {
+  const upstreamHost = process.env.GLITCHTIP_UPSTREAM;
+  if (!upstreamHost) {
+    fastify.log.warn(
+      'GLITCHTIP_UPSTREAM not set; /api/tunnel route not registered'
+    );
+    return;
+  }
+
   fastify.addContentTypeParser(
     'application/x-sentry-envelope',
     { parseAs: 'string' },
@@ -26,21 +34,20 @@ const tunnel: FastifyPluginAsync = async (fastify): Promise<void> => {
       }
 
       const headerLine = envelope.split('\n', 1)[0];
-      let dsnUrl: URL;
+      let projectId: string;
       try {
         const header = JSON.parse(headerLine) as { dsn?: unknown };
         if (typeof header.dsn !== 'string') throw new Error('no dsn');
-        dsnUrl = new URL(header.dsn);
+        projectId = new URL(header.dsn).pathname.replace(/^\/+/, '');
       } catch {
         return reply.code(400).send({ error: 'invalid envelope header' });
       }
 
-      const projectId = dsnUrl.pathname.replace(/^\/+/, '');
       if (!ALLOWED_PROJECTS.has(projectId)) {
         return reply.code(400).send({ error: 'unknown project' });
       }
 
-      const upstream = `${dsnUrl.protocol}//${dsnUrl.host}/api/${projectId}/envelope/`;
+      const upstream = `${upstreamHost.replace(/\/+$/, '')}/api/${projectId}/envelope/`;
       const response = await fetch(upstream, {
         method: 'POST',
         headers: { 'content-type': 'application/x-sentry-envelope' },
