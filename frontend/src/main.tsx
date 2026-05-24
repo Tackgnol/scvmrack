@@ -2,7 +2,12 @@ import './instrument';
 import { CharacterProvider } from "@/CharacterContext/CharacterContext";
 import { SnackbarProvider } from "@/SnackbarContext/SnackbarProvider";
 import { initializeAnalyticsConsent } from '@/analytics/googleAnalytics';
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {
+    MutationCache,
+    QueryCache,
+    QueryClient,
+    QueryClientProvider,
+} from "@tanstack/react-query";
 import { RouterProvider } from '@tanstack/react-router';
 import * as Sentry from '@sentry/react';
 import React from 'react';
@@ -19,6 +24,12 @@ const queryClient = new QueryClient({
             retry: 1,
         },
     },
+    queryCache: new QueryCache({
+        onError: (error) => Sentry.captureException(error),
+    }),
+    mutationCache: new MutationCache({
+        onError: (error) => Sentry.captureException(error),
+    }),
 });
 
 const RuntimeErrorFallback = React.lazy(() =>
