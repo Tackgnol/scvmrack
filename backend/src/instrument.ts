@@ -29,6 +29,7 @@ if (process.env.NODE_ENV !== 'test' && dsn) {
     dsn,
     tracesSampleRate: 1,
     environment: process.env.NODE_ENV ?? 'development',
+    initialScope: { tags: { source: 'backend' } },
     integrations: (defaultIntegrations) => [
       ...defaultIntegrations.filter(
         (integration) => integration.name !== 'ProcessSession'
