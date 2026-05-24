@@ -35,10 +35,14 @@ const tunnel: FastifyPluginAsync = async (fastify): Promise<void> => {
 
       const headerLine = envelope.split('\n', 1)[0];
       let projectId: string;
+      let sentryKey: string;
       try {
         const header = JSON.parse(headerLine) as { dsn?: unknown };
         if (typeof header.dsn !== 'string') throw new Error('no dsn');
-        projectId = new URL(header.dsn).pathname.replace(/^\/+/, '');
+        const dsnUrl = new URL(header.dsn);
+        projectId = dsnUrl.pathname.replace(/^\/+/, '');
+        sentryKey = dsnUrl.username;
+        if (!sentryKey) throw new Error('no key');
       } catch {
         return reply.code(400).send({ error: 'invalid envelope header' });
       }
@@ -50,7 +54,10 @@ const tunnel: FastifyPluginAsync = async (fastify): Promise<void> => {
       const upstream = `${upstreamHost.replace(/\/+$/, '')}/api/${projectId}/envelope/`;
       const response = await fetch(upstream, {
         method: 'POST',
-        headers: { 'content-type': 'application/x-sentry-envelope' },
+        headers: {
+          'content-type': 'application/x-sentry-envelope',
+          'x-sentry-auth': `Sentry sentry_version=7, sentry_key=${sentryKey}, sentry_client=scvmrack-tunnel/1.0`,
+        },
         body: envelope,
       });
 
