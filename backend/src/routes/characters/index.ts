@@ -18,7 +18,6 @@ import {camelCaseJsonbFields, isValidLocale, isValidUUID, sanitizeCharacterUpdat
 type AuthSession = FastifyRequest['appSession'];
 type GeneratedCharacterRow = { generateCharacter: string | null };
 type CharacterRow = Record<string, unknown>;
-type CharacterAccessRow = { userId: string | null };
 type CharacterListRow = {
     id: string;
     name: string;
