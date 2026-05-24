@@ -34,8 +34,7 @@ if (process.env.NODE_ENV !== 'test' && dsn) {
         (integration) => integration.name !== 'ProcessSession'
       ),
       Sentry.fastifyIntegration({
-        shouldHandleError: (_error, _request, reply) =>
-          reply.statusCode >= 500 || reply.statusCode <= 299,
+        shouldHandleError: (_error, _request, reply) => reply.statusCode >= 500,
       }),
     ],
     beforeSend: redactSensitiveRequestHeaders,
