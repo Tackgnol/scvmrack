@@ -12,7 +12,7 @@ services:
       POSTGRES_PASSWORD: p1002_scmgrinder
       POSTGRES_DB: p1002_scmgrinder
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U p1002_scmgrinder"]
+      test: ["CMD-SHELL", "psql -U p1002_scmgrinder -d p1002_scmgrinder -c 'SELECT 1' || exit 1"]
       interval: 5s
       timeout: 5s
       retries: 20
