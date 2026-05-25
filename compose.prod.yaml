@@ -76,7 +76,6 @@ services:
       GLITCHTIP_DSN: ${GLITCHTIP_DSN:-}
       VITE_GLITCHTIP_DSN: ${VITE_GLITCHTIP_DSN:-}
       GLITCHTIP_UPSTREAM: ${GLITCHTIP_UPSTREAM:-https://glitchtip.rpgtools.co}
-      DEBUG_BOOM_TOKEN: ${DEBUG_BOOM_TOKEN:-}
     ports:
       - target: 3000
         published: 3041
