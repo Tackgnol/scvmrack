@@ -25,6 +25,24 @@ services:
       timeout: 5s
       retries: 20
 
+  migrate:
+    image: scvmgrinder_be:e2e
+    pull_policy: never
+    build:
+      context: .
+      dockerfile: backend/Dockerfile.dev
+    command: npm run prisma:migrate
+    environment:
+      DATABASE_USER: p1002_scmgrinder
+      DATABASE_PASSWORD: p1002_scmgrinder
+      DATABASE_NAME: p1002_scmgrinder
+      DATABASE_HOST: db
+      DATABASE_PORT: 5432
+      DATABASE_URL: postgresql://p1002_scmgrinder:p1002_scmgrinder@db:5432/p1002_scmgrinder
+    depends_on:
+      db:
+        condition: service_healthy
+
   api:
     image: scvmgrinder_be:e2e
     pull_policy: never
@@ -37,6 +55,7 @@ services:
       DATABASE_NAME: p1002_scmgrinder
       DATABASE_HOST: db
       DATABASE_PORT: 5432
+      DATABASE_URL: postgresql://p1002_scmgrinder:p1002_scmgrinder@db:5432/p1002_scmgrinder
       PORT: 3000
       NODE_ENV: test
       CLIENT_ORIGIN: http://web:5173
@@ -60,8 +79,8 @@ services:
       TURNSTILE_SECRET_KEY: ""
       ENABLE_TEST_ROUTES: "1"
     depends_on:
-      db:
-        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
       mailpit:
         condition: service_healthy
     healthcheck:
