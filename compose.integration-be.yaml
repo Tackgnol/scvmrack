@@ -5,8 +5,8 @@ services:
     image: scvmrack-db:integration
     pull_policy: never
     build:
-      context: ./backend
-      dockerfile: Dockerfile.integration-db
+      context: .
+      dockerfile: backend/Dockerfile.integration-db
     environment:
       POSTGRES_USER: p1002_scmgrinder
       POSTGRES_PASSWORD: p1002_scmgrinder
