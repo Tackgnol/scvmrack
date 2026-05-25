@@ -1,5 +1,5 @@
 FROM postgres:16-alpine
 
-COPY init /docker-entrypoint-initdb.d
+COPY backend/init /docker-entrypoint-initdb.d
 
 USER postgres
