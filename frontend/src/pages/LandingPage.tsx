@@ -3,9 +3,16 @@ import { Seo } from '@/seo/Seo';
 import { Box, Button, Stack, Typography } from '@mui/material';
 import { Link } from '@tanstack/react-router';
 import { useCharacterId } from '@/hooks/useCharacterId';
+import { useAuth } from '@/hooks/useAuth';
+import { useCharacterRepository } from '@/hooks/useCharacterRepository';
+import { getApiLocale } from '@/hooks/utils';
+import type { PathsApiCharactersNewPostParametersQueryLocale } from '@/api/schema';
 import { buildHomeCallbackUrl } from '@/router/navigation';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import licenseHoriz from '@/assets/CompWith_MORKBORG_horiz.svg';
+
+const PREGEN_SESSION_FLAG = 'scvmrack:pregen-attempted';
 
 const s = {
   page: {
@@ -17,6 +24,10 @@ const s = {
   heroBand: {
     position: 'relative' as const,
     overflow: 'hidden',
+    // Own stacking context: keeps the CTA hover transform from triggering a
+    // repaint of the rotated mock sheet (was causing a one-frame antialiasing
+    // flicker on the card during the button's 180ms transition).
+    isolation: 'isolate' as const,
     display: 'grid',
     gridTemplateColumns: {
       xs: '1fr',
@@ -54,7 +65,7 @@ const s = {
     alignItems: 'center',
     mb: { xs: 3, sm: 4 },
     '& img': {
-      height: { xs: 40, sm: 48 },
+      height: { xs: 64, sm: 88, md: 104 },
       width: 'auto',
       filter: 'brightness(0) invert(1)', // Make it white to contrast with black hero band
     },
@@ -149,6 +160,9 @@ const s = {
     border: `3px solid ${morkBorgColors.black}`,
     boxShadow: `8px 8px 0 ${morkBorgColors.black}`,
     transform: { xs: 'rotate(0.6deg)', md: 'rotate(1.4deg)' },
+    // Forces its own composite layer — without this the rotated card shares a
+    // paint scope with the CTAs and visibly flickers when they animate.
+    willChange: 'transform',
     p: { xs: 2, sm: 2.5 },
   },
   mockHeader: {
@@ -167,8 +181,8 @@ const s = {
   },
   mockClass: {
     fontFamily: '"Antonio", sans-serif',
-    fontSize: '0.65rem',
-    letterSpacing: '0.16em',
+    fontSize: '0.78rem',
+    letterSpacing: '0.12em',
     textTransform: 'uppercase' as const,
     mt: 0.75,
   },
@@ -201,8 +215,8 @@ const s = {
     display: 'block',
     color: morkBorgColors.pink,
     fontFamily: '"Antonio", sans-serif',
-    fontSize: '0.58rem',
-    letterSpacing: '0.12em',
+    fontSize: '0.72rem',
+    letterSpacing: '0.08em',
     lineHeight: 1,
   },
   mockStatValue: {
@@ -230,8 +244,8 @@ const s = {
   mockRowLabel: {
     color: morkBorgColors.yellow,
     fontFamily: '"Antonio", sans-serif',
-    fontSize: '0.62rem',
-    letterSpacing: '0.12em',
+    fontSize: '0.74rem',
+    letterSpacing: '0.08em',
     textTransform: 'uppercase' as const,
   },
   mockRowText: {
@@ -243,15 +257,28 @@ const s = {
   },
   noticeGrid: {
     display: 'grid',
-    gridTemplateColumns: { xs: '1fr', md: 'repeat(3, minmax(0, 1fr))' },
-    gap: { xs: 1.5, md: 2 },
+    gridTemplateColumns: { xs: '1fr', md: 'minmax(0, 1.7fr) minmax(0, 1fr)' },
+    alignItems: 'start',
+    gap: { xs: 1.5, md: 3 },
+    px: { md: 1 },
   },
   noticeCard: {
-    bgcolor: morkBorgColors.black,
     color: morkBorgColors.white,
-    border: `3px solid ${morkBorgColors.black}`,
-    boxShadow: `4px 4px 0 ${morkBorgColors.black}`,
     p: { xs: 2.25, sm: 2.5 },
+    // Per-card overrides land in noticeCardLoud / noticeCardQuiet below.
+  },
+  noticeCardLoud: {
+    bgcolor: morkBorgColors.black,
+    border: `3px solid ${morkBorgColors.black}`,
+    boxShadow: { xs: `5px 5px 0 ${morkBorgColors.pink}`, md: `8px 8px 0 ${morkBorgColors.pink}` },
+    transform: { md: 'rotate(-0.7deg)' },
+    p: { xs: 2.5, sm: 3 },
+  },
+  noticeCardQuiet: {
+    bgcolor: morkBorgColors.black,
+    border: `3px solid ${morkBorgColors.pink}`,
+    boxShadow: `4px 4px 0 ${morkBorgColors.black}`,
+    transform: { md: 'rotate(0.5deg) translateY(12px)' },
   },
   noticeKicker: {
     color: morkBorgColors.pink,
@@ -294,13 +321,87 @@ const s = {
   },
 };
 
-const noticeKeys = ['book', 'guest', 'grave'] as const;
+const noticeKeys = ['book', 'guest'] as const;
 const mockStatKeys = ['agi', 'pre', 'str', 'tou'] as const;
 const mockRowKeys = ['gear', 'omen', 'print'] as const;
 
 export function LandingPage() {
-  const { t } = useTranslation();
-  const { lastCharacterId } = useCharacterId();
+  const { t, i18n } = useTranslation();
+  const { lastCharacterId, setCharacterId } = useCharacterId();
+  const { isLoading: authLoading } = useAuth();
+  const repo = useCharacterRepository(null, i18n.language);
+  const [pregenerating, setPregenerating] = useState(false);
+  const [showLoadingLabel, setShowLoadingLabel] = useState(false);
+  const pregenAttemptedRef = useRef(false);
+
+  // Pregen a scvm in the background so OPEN SHEET routes straight to a fresh
+  // character. Skips if the user already has one (anonymous or signed in).
+  useEffect(() => {
+    if (authLoading) return;
+    if (lastCharacterId) return;
+    if (pregenAttemptedRef.current) return;
+    if (sessionStorage.getItem(PREGEN_SESSION_FLAG)) return;
+
+    pregenAttemptedRef.current = true;
+    sessionStorage.setItem(PREGEN_SESSION_FLAG, '1');
+
+    const controller = new AbortController();
+    const baseUrl = import.meta.env.VITE_BACKEND_URL || '';
+    const trimmedLocale =
+      getApiLocale<PathsApiCharactersNewPostParametersQueryLocale>(i18n.language);
+
+    let cancelled = false;
+    setPregenerating(true);
+
+    (async () => {
+      try {
+        // Don't clobber an existing scvm — the anonymous session may already own one.
+        const listRes = await fetch(`${baseUrl}/api/characters`, {
+          credentials: 'include',
+          signal: controller.signal,
+        });
+        if (cancelled) return;
+        if (listRes.ok) {
+          const existing = (await listRes.json()) as Array<{ id: string }>;
+          if (existing.length > 0) {
+            await setCharacterId(existing[0].id);
+            return;
+          }
+        }
+
+        const created = await repo.createCharacter.mutateAsync({
+          body: {},
+          params: { query: { locale: trimmedLocale } },
+          signal: controller.signal,
+        });
+        if (cancelled) return;
+        if (created?.id) {
+          await setCharacterId(created.id);
+        }
+      } catch (error) {
+        if (error instanceof DOMException && error.name === 'AbortError') return;
+        // Silent failure — clicking OPEN SHEET will run the same flow on /character.
+      } finally {
+        if (!cancelled) setPregenerating(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authLoading, lastCharacterId, i18n.language]);
+
+  // Only flip the CTA label after 200ms — fast pregens stay invisible.
+  useEffect(() => {
+    if (!pregenerating) {
+      setShowLoadingLabel(false);
+      return;
+    }
+    const id = window.setTimeout(() => setShowLoadingLabel(true), 200);
+    return () => window.clearTimeout(id);
+  }, [pregenerating]);
 
   return (
     <>
@@ -325,13 +426,6 @@ export function LandingPage() {
               <img src={licenseHoriz} alt="Compatible with MÖRK BORG" />
             </Box>
 
-            <Typography component="h1" sx={s.headline}>
-              {t('landing.headlineLine1', 'Doom')}
-              <Box component="span">
-                {t('landing.headlineLine2', 'on record')}
-              </Box>
-            </Typography>
-
             <Typography sx={s.lede}>
               {t(
                 'landing.lede',
@@ -344,8 +438,11 @@ export function LandingPage() {
                 component={Link}
                 to={buildHomeCallbackUrl(lastCharacterId)}
                 sx={s.ctaPrimary}
+                aria-busy={pregenerating || undefined}
               >
-                {t('landing.openSheet', 'Open sheet')}
+                {showLoadingLabel
+                  ? t('landing.openSheetRolling', 'Rolling a scvm…')
+                  : t('landing.openSheet', 'Open sheet')}
               </Button>
               <Button
                 component="a"
@@ -407,19 +504,28 @@ export function LandingPage() {
           sx={s.noticeGrid}
           aria-label={t('landing.noticeLabel', 'What to know')}
         >
-          {noticeKeys.map((key, index) => (
-            <Box key={key} sx={s.noticeCard}>
-              <Typography sx={s.noticeKicker}>
-                {String(index + 1).padStart(2, '0')}
-              </Typography>
-              <Typography component="h2" sx={s.noticeTitle}>
-                {t(`landing.notices.${key}.title`)}
-              </Typography>
-              <Typography sx={s.noticeBody}>
-                {t(`landing.notices.${key}.body`)}
-              </Typography>
-            </Box>
-          ))}
+          {noticeKeys.map((key, index) => {
+            const loud = index === 0;
+            return (
+              <Box
+                key={key}
+                sx={{ ...s.noticeCard, ...(loud ? s.noticeCardLoud : s.noticeCardQuiet) }}
+              >
+                <Typography sx={s.noticeKicker}>
+                  {String(index + 1).padStart(2, '0')}
+                </Typography>
+                <Typography
+                  component="h2"
+                  sx={{ ...s.noticeTitle, ...(loud ? { fontSize: { xs: '1.7rem', md: '2.4rem' } } : {}) }}
+                >
+                  {t(`landing.notices.${key}.title`)}
+                </Typography>
+                <Typography sx={{ ...s.noticeBody, ...(loud ? { fontSize: { xs: '1.05rem', md: '1.2rem' } } : {}) }}>
+                  {t(`landing.notices.${key}.body`)}
+                </Typography>
+              </Box>
+            );
+          })}
         </Box>
 
         <Box component="footer" sx={s.licenseSection}>

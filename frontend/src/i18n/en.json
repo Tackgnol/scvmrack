@@ -16,6 +16,7 @@
     "headlineLine2": "on record",
     "lede": "Generate a doomed scvm, track wounds, Omens, gear, powers, pets, and notes, then print the evidence when the table demands it.",
     "openSheet": "Open sheet",
+    "openSheetRolling": "Rolling a scvm…",
     "sourcebook": "Get the sourcebook",
     "noticeLabel": "What to know",
     "mock": {
@@ -45,15 +46,11 @@
     "notices": {
       "book": {
         "title": "Bring the book",
-        "body": "You need MÖRK BORG to play. Scvm Rack keeps the character record fast, legible, and ready for the table."
+        "body": "Buy the fucking book, then burn it and buy it again."
       },
       "guest": {
         "title": "Start as a guest",
         "body": "No login is required. Guests keep one scvm. Create an account when you want a full rack of doomed wretches."
-      },
-      "grave": {
-        "title": "Keep the grave",
-        "body": "Mark a fallen character deceased instead of erasing them. Their record stays as a warning to the next poor soul."
       }
     }
   },

@@ -2611,6 +2611,11 @@ export const morkBorgTheme = createTheme({
           background-color: ${morkBorgColors.yellow};
         }
 
+        /*
+         * Focus ring is two-tone so it stays visible on both the yellow body
+         * and the black/pink surfaces: black inner ring carries contrast on
+         * yellow, pink halo carries contrast on black.
+         */
         button:focus-visible,
         [role="button"]:focus-visible,
         a:focus-visible,
@@ -2618,8 +2623,9 @@ export const morkBorgTheme = createTheme({
         textarea:focus-visible,
         select:focus-visible,
         [tabindex]:focus-visible {
-          outline: 2px solid ${morkBorgColors.yellow};
+          outline: 2px solid ${morkBorgColors.black};
           outline-offset: 2px;
+          box-shadow: 0 0 0 6px ${morkBorgColors.pink};
         }
       `,
     },
@@ -2628,8 +2634,9 @@ export const morkBorgTheme = createTheme({
       styleOverrides: {
         root: {
           '&.Mui-focusVisible': {
-            outline: `2px solid ${morkBorgColors.yellow}`,
+            outline: `2px solid ${morkBorgColors.black}`,
             outlineOffset: '2px',
+            boxShadow: `0 0 0 6px ${morkBorgColors.pink}`,
           },
         },
       },

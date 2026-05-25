@@ -16,6 +16,7 @@
     "headlineLine2": "w zapisie",
     "lede": "Wygeneruj skazanego scvma, śledź rany, Omeny, ekwipunek, moce, zwierzęta i notatki, a potem wydrukuj dowód dla stołu.",
     "openSheet": "Otwórz kartę",
+    "openSheetRolling": "Losujemy scvma…",
     "sourcebook": "Zdobądź podręcznik",
     "noticeLabel": "Co warto wiedzieć",
     "mock": {
@@ -42,15 +43,11 @@
     "notices": {
       "book": {
         "title": "Przynieś księgę",
-        "body": "Do gry potrzebujesz MÖRK BORG. Scvm Rack pilnuje zapisu postaci szybko, czytelnie i pod ręką."
+        "body": "Kup tę pierdoloną księgę, potem ją spal i kup jeszcze raz."
       },
       "guest": {
         "title": "Zacznij jako gość",
         "body": "Logowanie nie jest wymagane. Gość trzyma jednego scvma. Konto przyda się, gdy chcesz pełny stojak nieszczęśników."
-      },
-      "grave": {
-        "title": "Zostaw grób",
-        "body": "Oznacz poległą postać jako martwą zamiast ją wymazywać. Zapis zostaje jako ostrzeżenie dla następnej biednej duszy."
       }
     }
   },
