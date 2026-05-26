@@ -1,9 +1,10 @@
-import { render } from 'vitest-browser-react';
-import { page, userEvent } from 'vitest/browser';
+import '@testing-library/jest-dom/vitest';
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
-import ComputedModifiersGrid from '../../../src/components/molecules/modifiers/ComputedModifiersGrid';
-import BrowserTestProvider from '../BrowserTestProvider';
-import { type ComputedModifier } from '../../../src/hooks/models';
+import ComputedModifiersGrid from '@/components/molecules/modifiers/ComputedModifiersGrid';
+import UnitTestProvider from '../../UnitTestProvider';
+import { type ComputedModifier } from '@/hooks/models';
 
 describe('ComputedModifiersGrid', () => {
   const mockModifiers: ComputedModifier[] = [
@@ -26,40 +27,41 @@ describe('ComputedModifiersGrid', () => {
   ];
 
   it('renders nothing when modifiers list is empty', async () => {
-    const rendered = await render(
-      <BrowserTestProvider>
+    render(
+      <UnitTestProvider>
         <ComputedModifiersGrid
           modifiers={[]}
           reduceMotion={false}
           onOpenModifier={vi.fn()}
         />
-      </BrowserTestProvider>
+      </UnitTestProvider>
     );
 
     // If it returns null, the test-id should not be found
-    await expect.element(page.getByText(/From Equipment/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/From Equipment/i)).not.toBeInTheDocument();
   });
 
   it('renders a list of modifier tags', async () => {
     const onOpenModifier = vi.fn();
-    await render(
-      <BrowserTestProvider>
+    render(
+      <UnitTestProvider>
         <ComputedModifiersGrid
           modifiers={mockModifiers}
           reduceMotion={false}
           onOpenModifier={onOpenModifier}
         />
-      </BrowserTestProvider>
+      </UnitTestProvider>
     );
+    const user = userEvent.setup();
 
-    await expect.element(page.getByText(/From Equipment/i)).toBeInTheDocument();
-    await expect.element(page.getByText('Armor')).toBeInTheDocument();
-    await expect.element(page.getByText('Shield')).toBeInTheDocument();
+    expect(screen.getByText(/From Equipment/i)).toBeInTheDocument();
+    expect(screen.getByText('Armor')).toBeInTheDocument();
+    expect(screen.getByText('Shield')).toBeInTheDocument();
 
     // Interaction check
-    const armorTag = page.getByText('Armor');
-    await userEvent.click(armorTag);
-    await expect.poll(() => onOpenModifier).toHaveBeenCalledWith(mockModifiers[0]);
+    const armorTag = screen.getByText('Armor');
+    await user.click(armorTag);
+    await waitFor(() => expect(onOpenModifier).toHaveBeenCalledWith(mockModifiers[0]));
 
   });
 });

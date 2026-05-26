@@ -1,8 +1,8 @@
-import { render } from 'vitest-browser-react';
+import '@testing-library/jest-dom/vitest';
+import { render, screen } from '@testing-library/react';
 import { expect, describe, it, vi, beforeEach } from 'vitest';
-import { page } from 'vitest/browser';
 import EquippedBar from '@/components/molecules/equipped/EquippedBar';
-import BrowserTestProvider from '../../BrowserTestProvider';
+import UnitTestProvider from '../../../UnitTestProvider';
 import * as useEquippedBarHook from '@/hooks/useEquippedBar';
 
 vi.mock('@/hooks/useEquippedBar', () => ({
@@ -51,14 +51,14 @@ describe('EquippedBar Browser', () => {
       canOpenWeaponSlot0: false,
     } as any);
 
-    await render(
-      <BrowserTestProvider>
+    render(
+      <UnitTestProvider>
         <EquippedBar />
-      </BrowserTestProvider>
+      </UnitTestProvider>
     );
 
-    await expect.element(page.getByTestId('equipped-weapon-slot-0')).toBeVisible();
-    await expect.element(page.getByText('Bare handed', { exact: true })).toBeVisible();
+    expect(screen.getByTestId('equipped-weapon-slot-0')).toBeVisible();
+    expect(screen.getByText('Bare handed', { exact: true })).toBeVisible();
   });
 
   it('shows equipped weapon name and dice', async () => {
@@ -69,15 +69,15 @@ describe('EquippedBar Browser', () => {
       mainWeaponAmmo: { ammoCount: null, equipmentIndex: null },
     } as any);
 
-    await render(
-      <BrowserTestProvider>
+    render(
+      <UnitTestProvider>
         <EquippedBar />
-      </BrowserTestProvider>
+      </UnitTestProvider>
     );
 
-    await expect.element(page.getByTestId('equipped-weapon-slot-0')).toBeVisible();
-    await expect.element(page.getByText('Rusty Sword', { exact: true })).toBeVisible();
-    await expect.element(page.getByText('d6', { exact: true })).toBeVisible();
+    expect(screen.getByTestId('equipped-weapon-slot-0')).toBeVisible();
+    expect(screen.getByText('Rusty Sword', { exact: true })).toBeVisible();
+    expect(screen.getByText('d6', { exact: true })).toBeVisible();
   });
 
   it('shows offhand weapon when equipped', async () => {
@@ -91,15 +91,15 @@ describe('EquippedBar Browser', () => {
       offhandWeaponAmmo: { ammoCount: null, equipmentIndex: null },
     } as any);
 
-    await render(
-      <BrowserTestProvider>
+    render(
+      <UnitTestProvider>
         <EquippedBar />
-      </BrowserTestProvider>
+      </UnitTestProvider>
     );
 
-    await expect.element(page.getByTestId('equipped-weapon-slot-0')).toBeVisible();
-    await expect.element(page.getByTestId('equipped-weapon-slot-1')).toBeVisible();
-    await expect.element(page.getByText('Rusty Dagger', { exact: true })).toBeVisible();
+    expect(screen.getByTestId('equipped-weapon-slot-0')).toBeVisible();
+    expect(screen.getByTestId('equipped-weapon-slot-1')).toBeVisible();
+    expect(screen.getByText('Rusty Dagger', { exact: true })).toBeVisible();
   });
 
   it('shows armor slot with unarmored when no armor equipped', async () => {
@@ -109,14 +109,14 @@ describe('EquippedBar Browser', () => {
       canOpenArmor: false,
     } as any);
 
-    await render(
-      <BrowserTestProvider>
+    render(
+      <UnitTestProvider>
         <EquippedBar />
-      </BrowserTestProvider>
+      </UnitTestProvider>
     );
 
-    await expect.element(page.getByTestId('equipped-armor-slot')).toBeVisible();
-    await expect.element(page.getByText('Birthday suit', { exact: true })).toBeVisible();
+    expect(screen.getByTestId('equipped-armor-slot')).toBeVisible();
+    expect(screen.getByText('Birthday suit', { exact: true })).toBeVisible();
   });
 
   it('shows equipped armor name and dice', async () => {
@@ -126,15 +126,15 @@ describe('EquippedBar Browser', () => {
       canOpenArmor: true,
     } as any);
 
-    await render(
-      <BrowserTestProvider>
+    render(
+      <UnitTestProvider>
         <EquippedBar />
-      </BrowserTestProvider>
+      </UnitTestProvider>
     );
 
-    await expect.element(page.getByTestId('equipped-armor-slot')).toBeVisible();
-    await expect.element(page.getByText('Leather Armor', { exact: true })).toBeVisible();
-    await expect.element(page.getByText('-d4', { exact: true })).toBeVisible();
+    expect(screen.getByTestId('equipped-armor-slot')).toBeVisible();
+    expect(screen.getByText('Leather Armor', { exact: true })).toBeVisible();
+    expect(screen.getByText('-d4', { exact: true })).toBeVisible();
   });
 
   it('shows ammo count when weapon has ammo', async () => {
@@ -145,13 +145,13 @@ describe('EquippedBar Browser', () => {
       mainWeaponAmmo: { ammoCount: 12, equipmentIndex: 5 },
     } as any);
 
-    await render(
-      <BrowserTestProvider>
+    render(
+      <UnitTestProvider>
         <EquippedBar />
-      </BrowserTestProvider>
+      </UnitTestProvider>
     );
 
-    await expect.element(page.getByTestId('equipped-weapon-slot-0-ammo')).toBeVisible();
-    await expect.element(page.getByText('12', { exact: true })).toBeVisible();
+    expect(screen.getByTestId('equipped-weapon-slot-0-ammo')).toBeVisible();
+    expect(screen.getByText('12', { exact: true })).toBeVisible();
   });
 });

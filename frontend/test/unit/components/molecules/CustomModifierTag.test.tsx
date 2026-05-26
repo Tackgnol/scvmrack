@@ -1,9 +1,10 @@
+import '@testing-library/jest-dom/vitest';
 import {Statistic} from "@/hooks/models.ts";
-import { render } from 'vitest-browser-react';
-import { page, userEvent } from 'vitest/browser';
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi } from 'vitest';
 import CustomModifierTag from '@/components/molecules/CustomModifierTag';
-import BrowserTestProvider from '../BrowserTestProvider';
+import UnitTestProvider from '../../UnitTestProvider';
 
 describe('CustomModifierTag Browser', () => {
   const mockModifier = {
@@ -24,50 +25,52 @@ describe('CustomModifierTag Browser', () => {
   };
 
   it('renders name, statistic, and value', async () => {
-    await render(
-      <BrowserTestProvider>
+    render(
+      <UnitTestProvider>
         <CustomModifierTag {...defaultProps} />
-      </BrowserTestProvider>
+      </UnitTestProvider>
     );
 
-    await expect.element(page.getByText('Custom Bonus')).toBeVisible();
-    await expect.element(page.getByText('AGILITY', { exact: true })).toBeVisible();
-    await expect.element(page.getByText('+1')).toBeVisible();
+    expect(screen.getByText('Custom Bonus')).toBeVisible();
+    expect(screen.getByText('AGILITY', { exact: true })).toBeVisible();
+    expect(screen.getByText('+1')).toBeVisible();
 
   });
 
   it('triggers onEdit when clicked', async () => {
     const onEdit = vi.fn();
-    await render(
-      <BrowserTestProvider>
+    render(
+      <UnitTestProvider>
         <CustomModifierTag {...defaultProps} onEdit={onEdit} />
-      </BrowserTestProvider>
+      </UnitTestProvider>
     );
+    const user = userEvent.setup();
 
-    const tag = page.getByText('Custom Bonus');
-    await userEvent.click(tag);
+    const tag = screen.getByText('Custom Bonus');
+    await user.click(tag);
 
-    await expect.poll(() => onEdit).toHaveBeenCalled();
+    await waitFor(() => expect(onEdit).toHaveBeenCalled());
 
   });
 
   it('triggers onRemove when close button is clicked', async () => {
     const onRemove = vi.fn();
-    await render(
-      <BrowserTestProvider>
+    render(
+      <UnitTestProvider>
         <CustomModifierTag {...defaultProps} onRemove={onRemove} />
-      </BrowserTestProvider>
+      </UnitTestProvider>
     );
+    const user = userEvent.setup();
 
-    const removeButton = page.getByRole('button', {
+    const removeButton = screen.getByRole('button', {
       name: 'Remove modifier: Custom Bonus',
       exact: true,
     });
-    await expect.element(removeButton).toBeVisible();
+    expect(removeButton).toBeVisible();
 
-    await userEvent.click(removeButton);
+    await user.click(removeButton);
 
-    await expect.poll(() => onRemove).toHaveBeenCalled();
+    await waitFor(() => expect(onRemove).toHaveBeenCalled());
 
   });
 });
