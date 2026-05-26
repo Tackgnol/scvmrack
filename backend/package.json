@@ -17,7 +17,7 @@
     "test:coverage:client": "npm --prefix ../frontend run test:coverage:unit && npm --prefix ../frontend run test:coverage:browser",
     "test:coverage:merge": "node --import tsx scripts/merge-all-coverage.ts",
     "test:coverage": "npm run test:coverage:backend && npm run test:coverage:client && npm run test:coverage:merge",
-    "test:all": "npm run test:unit && npm run test:integration && npm run test:browser && node --import tsx scripts/run-e2e-docker.ts --include-regression",
+    "test:all": "npm run test:unit && npm run test:integration && npm run test:browser && npm run test:e2e",
     "start": "npm run build:ts && fastify start -l info dist/app.js",
     "build:ts": "tsc",
     "watch:ts": "tsc -w",
