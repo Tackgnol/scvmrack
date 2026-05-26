@@ -1,8 +1,7 @@
-import { render } from 'vitest-browser-react';
+import { render, screen } from '@testing-library/react';
 import { expect, describe, it, vi, beforeEach } from 'vitest';
-import { page } from 'vitest/browser';
 import { CharacterNameAndClass } from '@/components/molecules/character/CharacterNameAndClass';
-import BrowserTestProvider from '../../BrowserTestProvider';
+import UnitTestProvider from '../../../UnitTestProvider';
 import * as characterNameAndClassHook from '@/hooks/useCharacterNameAndClass';
 
 vi.mock('@/hooks/useCharacterNameAndClass', () => ({
@@ -23,7 +22,7 @@ const baseReturn = {
   fallbackClassName: 'Classless',
 };
 
-describe('CharacterNameAndClass Browser', () => {
+describe('CharacterNameAndClass Unit', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -34,13 +33,13 @@ describe('CharacterNameAndClass Browser', () => {
       isLoading: true,
     } as any);
 
-    await render(
-      <BrowserTestProvider>
+    render(
+      <UnitTestProvider>
         <CharacterNameAndClass />
-      </BrowserTestProvider>
+      </UnitTestProvider>
     );
 
-    await expect.element(page.getByRole('progressbar')).toBeVisible();
+    expect(screen.getByRole('progressbar')).toBeVisible();
   });
 
   it('shows empty state text when no character is loaded', async () => {
@@ -50,13 +49,13 @@ describe('CharacterNameAndClass Browser', () => {
       character: null,
     } as any);
 
-    await render(
-      <BrowserTestProvider>
+    render(
+      <UnitTestProvider>
         <CharacterNameAndClass />
-      </BrowserTestProvider>
+      </UnitTestProvider>
     );
 
-    await expect.element(page.getByText('No Character loaded, refresh the page')).toBeVisible();
+    expect(screen.getByText('No Character loaded, refresh the page')).toBeVisible();
   });
 
   it('renders character name and class when a character is loaded', async () => {
@@ -74,14 +73,14 @@ describe('CharacterNameAndClass Browser', () => {
       hasCharacter: true,
     } as any);
 
-    await render(
-      <BrowserTestProvider>
+    render(
+      <UnitTestProvider>
         <CharacterNameAndClass />
-      </BrowserTestProvider>
+      </UnitTestProvider>
     );
 
-    await expect.element(page.getByText('Grim Harald')).toBeVisible();
-    await expect.element(page.getByText('Fanged Deserter', { exact: true })).toBeVisible();
+    expect(screen.getByText('Grim Harald')).toBeVisible();
+    expect(screen.getByText('Fanged Deserter', { exact: true })).toBeVisible();
   });
 
   it('shows class description when present', async () => {
@@ -99,13 +98,13 @@ describe('CharacterNameAndClass Browser', () => {
       hasCharacter: true,
     } as any);
 
-    await render(
-      <BrowserTestProvider>
+    render(
+      <UnitTestProvider>
         <CharacterNameAndClass />
-      </BrowserTestProvider>
+      </UnitTestProvider>
     );
 
-    await expect.element(page.getByText('Born in a gutter, dies in a gutter.')).toBeVisible();
+    expect(screen.getByText('Born in a gutter, dies in a gutter.')).toBeVisible();
   });
 
   it('falls back to i18n strings when name and class are missing', async () => {
@@ -123,13 +122,13 @@ describe('CharacterNameAndClass Browser', () => {
       hasCharacter: true,
     } as any);
 
-    await render(
-      <BrowserTestProvider>
+    render(
+      <UnitTestProvider>
         <CharacterNameAndClass />
-      </BrowserTestProvider>
+      </UnitTestProvider>
     );
 
-    await expect.element(page.getByText('Unnamed Wretch')).toBeVisible();
-    await expect.element(page.getByText('Classless')).toBeVisible();
+    expect(screen.getByText('Unnamed Wretch')).toBeVisible();
+    expect(screen.getByText('Classless')).toBeVisible();
   });
 });

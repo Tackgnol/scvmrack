@@ -1,10 +1,9 @@
-import { render } from 'vitest-browser-react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { expect, describe, it, vi } from 'vitest';
-import { page, userEvent } from 'vitest/browser';
 import DescriptorAbilityItem from '@/components/molecules/character-descriptors/DescriptorAbilityItem';
-import BrowserTestProvider from '../../BrowserTestProvider';
+import UnitTestProvider from '../../../UnitTestProvider';
 
-describe('DescriptorAbilityItem Browser', () => {
+describe('DescriptorAbilityItem Unit', () => {
   const defaultProps = {
     ability: {
       name: 'Test Ability',
@@ -15,40 +14,39 @@ describe('DescriptorAbilityItem Browser', () => {
     onUpdateComment: vi.fn(),
   };
 
-  it('renders name and description', async () => {
-    await render(
-      <BrowserTestProvider>
+  it('renders name and description', () => {
+    render(
+      <UnitTestProvider>
         <DescriptorAbilityItem {...defaultProps} />
-      </BrowserTestProvider>
+      </UnitTestProvider>
     );
 
-    await expect.element(page.getByText('Test Ability')).toBeVisible();
-    await expect.element(page.getByText('Test Description')).toBeVisible();
+    expect(screen.getByText('Test Ability')).toBeVisible();
+    expect(screen.getByText('Test Description')).toBeVisible();
 
   });
 
   it('triggers onUpdateComment when comment is changed', async () => {
     const onUpdateComment = vi.fn();
-    await render(
-      <BrowserTestProvider>
+    render(
+      <UnitTestProvider>
         <DescriptorAbilityItem 
           {...defaultProps} 
           onUpdateComment={onUpdateComment} 
           ability={{ ...defaultProps.ability, comment: 'old' }}
         />
-      </BrowserTestProvider>
+      </UnitTestProvider>
     );
-
-    const input = page.getByTestId('ability-comment-0-input');
-    await userEvent.fill(input, 'new comment');
+    const input = screen.getByTestId('ability-comment-0-input');
+    fireEvent.change(input, { target: { value: 'new comment' } });
 
     expect(onUpdateComment).toHaveBeenCalledWith('new comment');
 
   });
 
-  it('shows decoctions button for Occult Herbmaster with Portable Laboratory', async () => {
-    await render(
-      <BrowserTestProvider>
+  it('shows decoctions button for Occult Herbmaster with Portable Laboratory', () => {
+    render(
+      <UnitTestProvider>
         <DescriptorAbilityItem 
           {...defaultProps} 
           isOccultHerbmaster={true}
@@ -58,11 +56,11 @@ describe('DescriptorAbilityItem Browser', () => {
             comment: '' 
           }}
         />
-      </BrowserTestProvider>
+      </UnitTestProvider>
     );
 
-    const button = page.getByRole('button', { name: /VIEW DECOCTIONS/i });
-    await expect.element(button).toBeVisible();
+    const button = screen.getByRole('button', { name: /VIEW DECOCTIONS/i });
+    expect(button).toBeVisible();
 
   });
 });

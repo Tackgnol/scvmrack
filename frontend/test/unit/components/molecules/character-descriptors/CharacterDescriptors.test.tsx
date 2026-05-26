@@ -1,8 +1,7 @@
-import { render } from 'vitest-browser-react';
+import { render, screen } from '@testing-library/react';
 import { expect, describe, it, vi, beforeEach } from 'vitest';
-import { page } from 'vitest/browser';
 import { CharacterDescriptors } from '@/components/molecules/character-descriptors/CharacterDescriptors';
-import BrowserTestProvider from '../../BrowserTestProvider';
+import UnitTestProvider from '../../../UnitTestProvider';
 import * as characterDescriptorsHook from '@/hooks/useCharacterDescriptors';
 
 vi.mock('@/hooks/useCharacterDescriptors', () => ({
@@ -18,7 +17,7 @@ const baseReturn = {
   updateDescriptorField: vi.fn(),
 };
 
-describe('CharacterDescriptors Browser', () => {
+describe('CharacterDescriptors Unit', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -29,13 +28,13 @@ describe('CharacterDescriptors Browser', () => {
       isLoading: true,
     } as any);
 
-    await render(
-      <BrowserTestProvider>
+    render(
+      <UnitTestProvider>
         <CharacterDescriptors />
-      </BrowserTestProvider>
+      </UnitTestProvider>
     );
 
-    await expect.element(page.getByRole('progressbar')).toBeVisible();
+    expect(screen.getByRole('progressbar')).toBeVisible();
   });
 
   it('shows empty state text when no character is loaded', async () => {
@@ -44,13 +43,13 @@ describe('CharacterDescriptors Browser', () => {
       character: null,
     } as any);
 
-    await render(
-      <BrowserTestProvider>
+    render(
+      <UnitTestProvider>
         <CharacterDescriptors />
-      </BrowserTestProvider>
+      </UnitTestProvider>
     );
 
-    await expect.element(page.getByText('No Character loaded, refresh the page')).toBeVisible();
+    expect(screen.getByText('No Character loaded, refresh the page')).toBeVisible();
   });
 
   it('renders character traits and origin when character is loaded', async () => {
@@ -68,16 +67,16 @@ describe('CharacterDescriptors Browser', () => {
       isLoading: false,
     } as any);
 
-    await render(
-      <BrowserTestProvider>
+    render(
+      <UnitTestProvider>
         <CharacterDescriptors />
-      </BrowserTestProvider>
+      </UnitTestProvider>
     );
 
-    await expect.element(page.getByTestId('trait1-input')).toHaveValue('cowardly');
-    await expect.element(page.getByTestId('trait2-input')).toHaveValue('weak');
-    await expect.element(page.getByTestId('habit-input')).toHaveValue('twitches nervously');
-    await expect.element(page.getByTestId('body-description-input')).toHaveValue('thin and pale');
+    expect(screen.getByTestId('trait1-input')).toHaveValue('cowardly');
+    expect(screen.getByTestId('trait2-input')).toHaveValue('weak');
+    expect(screen.getByTestId('habit-input')).toHaveValue('twitches nervously');
+    expect(screen.getByTestId('body-description-input')).toHaveValue('thin and pale');
   });
 
   it('renders character abilities section', async () => {
@@ -98,14 +97,14 @@ describe('CharacterDescriptors Browser', () => {
       isLoading: false,
     } as any);
 
-    await render(
-      <BrowserTestProvider>
+    render(
+      <UnitTestProvider>
         <CharacterDescriptors />
-      </BrowserTestProvider>
+      </UnitTestProvider>
     );
 
     // Verify abilities section heading is visible
-    await expect.element(page.getByText('Class Abilities', { exact: true })).toBeVisible();
+    expect(screen.getByText('Class Abilities', { exact: true })).toBeVisible();
   });
 
   it('shows occult herbmaster indicator when character class is 6', async () => {
@@ -125,13 +124,13 @@ describe('CharacterDescriptors Browser', () => {
       isOccultHerbmaster: true,
     } as any);
 
-    await render(
-      <BrowserTestProvider>
+    render(
+      <UnitTestProvider>
         <CharacterDescriptors />
-      </BrowserTestProvider>
+      </UnitTestProvider>
     );
 
     // Just verify the component renders without error in occult herbmaster mode
-    await expect.element(page.getByTestId('trait1-input')).toHaveValue('cursed');
+    expect(screen.getByTestId('trait1-input')).toHaveValue('cursed');
   });
 });
