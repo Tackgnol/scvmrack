@@ -1,7 +1,7 @@
 import { expect, Page } from '@playwright/test';
 
 function isCharacterPatchResponse(url: string): boolean {
-  return /\/characters\/[^/?]+(?:\?.*)?$/.test(url);
+  return /\/api\/characters\/[^/?]+(?:\?.*)?$/.test(url);
 }
 
 export async function waitForCharacterSave(

@@ -2,7 +2,7 @@ import { expect, test } from '../../fixtures';
 import { waitForCharacterSave } from '../utils/save.js';
 
 test('quick modifier and advanced modal modifier can be added', async ({ page, seededCharacter }) => {
-  await page.goto(`/?character=${seededCharacter.id}`);
+  await page.goto(`/character/${seededCharacter.id}`);
   await expect(page.getByTestId('generate-new-button')).toBeVisible({ timeout: 30000 });
 
   // Add quick modifier

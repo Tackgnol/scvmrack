@@ -3,7 +3,7 @@ import { selectSearchResult } from '../utils/character-sheet.js';
 import { waitForCharacterSave } from '../utils/save.js';
 
 test('equipment can be searched, equipped, and unequipped', async ({ page, seededCharacter }) => {
-  await page.goto(`/?character=${seededCharacter.id}`);
+  await page.goto(`/character/${seededCharacter.id}`);
   await expect(page.getByTestId('generate-new-button')).toBeVisible({ timeout: 30000 });
 
   const syncBadge = page.getByText('Synced', { exact: true });
