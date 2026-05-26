@@ -59,7 +59,7 @@ function serializeCookies(cookies: CookieJar): string {
 }
 
 async function getCsrfToken(cookies: CookieJar): Promise<string> {
-  const response = await fetch(`${apiBaseURL}/csrf-token`, {
+  const response = await fetch(`${apiBaseURL}/api/csrf-token`, {
     headers: { cookie: serializeCookies(cookies) },
   });
 
