@@ -1,9 +1,10 @@
-import { render } from 'vitest-browser-react';
-import { page, userEvent } from 'vitest/browser';
+import '@testing-library/jest-dom/vitest';
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
-import ComputedModifierDetailsModal from '../../../src/components/molecules/modifiers/ComputedModifierDetailsModal';
-import BrowserTestProvider from '../BrowserTestProvider';
-import { type ComputedModifier } from '../../../src/hooks/models';
+import ComputedModifierDetailsModal from '@/components/molecules/modifiers/ComputedModifierDetailsModal';
+import UnitTestProvider from '../../UnitTestProvider';
+import { type ComputedModifier } from '@/hooks/models';
 
 describe('ComputedModifierDetailsModal', () => {
   const mockModifier: ComputedModifier = {
@@ -17,35 +18,35 @@ describe('ComputedModifierDetailsModal', () => {
 
   it('renders correctly when open with a modifier', async () => {
     const onClose = vi.fn();
-    await render(
-      <BrowserTestProvider>
+    render(
+      <UnitTestProvider>
         <ComputedModifierDetailsModal
           open={true}
           modifier={mockModifier}
           onClose={onClose}
         />
-      </BrowserTestProvider>
+      </UnitTestProvider>
     );
 
     // Check title and source
-    await expect.element(page.getByRole('heading', { name: /Effect Details/i })).toBeInTheDocument();
-    await expect.element(page.getByText(/Source/i)).toBeInTheDocument();
-    await expect.element(page.getByText(/From Test Item/i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Effect Details/i })).toBeInTheDocument();
+    expect(screen.getByText(/Source/i)).toBeInTheDocument();
+    expect(screen.getByText(/From Test Item/i)).toBeInTheDocument();
 
     // Check effect/source description
-    await expect.element(page.getByText(/^Effect$/i)).toBeInTheDocument();
-    await expect.element(page.getByText(/Heavy Strike ability/i)).toBeInTheDocument();
+    expect(screen.getByText(/^Effect$/i)).toBeInTheDocument();
+    expect(screen.getByText(/Heavy Strike ability/i)).toBeInTheDocument();
 
     // Check stat and value (ModifierStatChip and SignedModifierValue)
-    await expect.element(page.getByText('STRENGTH')).toBeInTheDocument();
-    await expect.element(page.getByText('+2')).toBeInTheDocument();
+    expect(screen.getByText('STRENGTH')).toBeInTheDocument();
+    expect(screen.getByText('+2')).toBeInTheDocument();
 
     // Check applies to (inverse of excluded)
     // allIncludeOptions are melee, ranged, defence, cast, ability
     // excluded: ranged, cast -> applies to: melee, defence, ability
-    await expect.element(page.getByText(/Applies to/i)).toBeInTheDocument();
+    expect(screen.getByText(/Applies to/i)).toBeInTheDocument();
     // In allIncludeOptions: melee="Melee attacks", defence="Defence rolls", ability="Ability tests"
-    await expect.element(page.getByText(/Melee attacks, Defence rolls, Ability tests/i)).toBeInTheDocument();
+    expect(screen.getByText(/Melee attacks, Defence rolls, Ability tests/i)).toBeInTheDocument();
 
   });
 
@@ -55,17 +56,17 @@ describe('ComputedModifierDetailsModal', () => {
       exclude: ['melee', 'ranged', 'defence', 'cast', 'ability'],
     };
 
-    await render(
-      <BrowserTestProvider>
+    render(
+      <UnitTestProvider>
         <ComputedModifierDetailsModal
           open={true}
           modifier={modifier}
           onClose={vi.fn()}
         />
-      </BrowserTestProvider>
+      </UnitTestProvider>
     );
 
-    await expect.element(page.getByText(/No tests/i)).toBeInTheDocument();
+    expect(screen.getByText(/No tests/i)).toBeInTheDocument();
   });
 
   it('renders "All" when no contexts are excluded', async () => {
@@ -74,35 +75,36 @@ describe('ComputedModifierDetailsModal', () => {
       exclude: [],
     };
 
-    await render(
-      <BrowserTestProvider>
+    render(
+      <UnitTestProvider>
         <ComputedModifierDetailsModal
           open={true}
           modifier={modifier}
           onClose={vi.fn()}
         />
-      </BrowserTestProvider>
+      </UnitTestProvider>
     );
 
-    await expect.element(page.getByText(/All tests/i)).toBeInTheDocument();
+    expect(screen.getByText(/All tests/i)).toBeInTheDocument();
   });
 
   it('calls onClose when close button is clicked', async () => {
     const onClose = vi.fn();
-    await render(
-      <BrowserTestProvider>
+    render(
+      <UnitTestProvider>
         <ComputedModifierDetailsModal
           open={true}
           modifier={mockModifier}
           onClose={onClose}
         />
-      </BrowserTestProvider>
+      </UnitTestProvider>
     );
+    const user = userEvent.setup();
 
-    const closeButton = page.getByRole('button', { name: 'Close', exact: true });
+    const closeButton = screen.getByRole('button', { name: 'Close', exact: true });
     // Use click and await interaction
-    await closeButton.click({ force: true });
+    await user.click(closeButton);
 
-    await expect.poll(() => onClose).toHaveBeenCalled();
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
   });
 });

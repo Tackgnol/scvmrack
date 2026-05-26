@@ -1,8 +1,9 @@
-import { render } from 'vitest-browser-react';
-import { page, userEvent } from 'vitest/browser';
+import '@testing-library/jest-dom/vitest';
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi } from 'vitest';
 import ComputedModifierTag from '@/components/molecules/ComputedModifierTag';
-import BrowserTestProvider from '../BrowserTestProvider';
+import UnitTestProvider from '../../UnitTestProvider';
 
 describe('ComputedModifierTag Browser', () => {
   const mockModifier = {
@@ -20,30 +21,31 @@ describe('ComputedModifierTag Browser', () => {
   };
 
   it('renders origin name, statistic, and value', async () => {
-    await render(
-      <BrowserTestProvider>
+    render(
+      <UnitTestProvider>
         <ComputedModifierTag {...defaultProps} />
-      </BrowserTestProvider>
+      </UnitTestProvider>
     );
 
-    await expect.element(page.getByText('Belt of Giant Strength')).toBeVisible();
-    await expect.element(page.getByText('STRENGTH', { exact: true })).toBeVisible();
-    await expect.element(page.getByText('+2')).toBeVisible();
+    expect(screen.getByText('Belt of Giant Strength')).toBeVisible();
+    expect(screen.getByText('STRENGTH', { exact: true })).toBeVisible();
+    expect(screen.getByText('+2')).toBeVisible();
 
   });
 
   it('triggers onOpen when clicked', async () => {
     const onOpen = vi.fn();
-    await render(
-      <BrowserTestProvider>
+    render(
+      <UnitTestProvider>
         <ComputedModifierTag {...defaultProps} onOpen={onOpen} />
-      </BrowserTestProvider>
+      </UnitTestProvider>
     );
+    const user = userEvent.setup();
 
-    const tag = page.getByRole('button');
-    await userEvent.click(tag);
+    const tag = screen.getByRole('button');
+    await user.click(tag);
 
-    await expect.poll(() => onOpen).toHaveBeenCalledWith(mockModifier);
+    await waitFor(() => expect(onOpen).toHaveBeenCalledWith(mockModifier));
 
   });
 });

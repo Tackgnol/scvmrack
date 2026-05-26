@@ -1,8 +1,9 @@
-import { render } from 'vitest-browser-react';
+import '@testing-library/jest-dom/vitest';
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { expect, describe, it, vi, beforeEach } from 'vitest';
-import { page, userEvent } from 'vitest/browser';
 import ConsumableSection from '@/components/molecules/consumables/ConsumableSection';
-import BrowserTestProvider from '../../BrowserTestProvider';
+import UnitTestProvider from '../../../UnitTestProvider';
 import * as consumableHook from '@/hooks/useConsumableSection';
 
 vi.mock('@/hooks/useConsumableSection', () => ({
@@ -26,13 +27,13 @@ describe('ConsumableSection Component', () => {
       markPipPending: mockMarkPipPending,
     } as any);
 
-    await render(
-      <BrowserTestProvider>
+    render(
+      <UnitTestProvider>
         <ConsumableSection />
-      </BrowserTestProvider>
+      </UnitTestProvider>
     );
 
-    await expect.element(page.getByText(/consumables/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/consumables/i)).not.toBeInTheDocument();
   });
 
   it('shows the section label when showLabel is true', async () => {
@@ -53,14 +54,14 @@ describe('ConsumableSection Component', () => {
       markPipPending: mockMarkPipPending,
     } as any);
 
-    await render(
-      <BrowserTestProvider>
+    render(
+      <UnitTestProvider>
         <ConsumableSection showLabel={true} />
-      </BrowserTestProvider>
+      </UnitTestProvider>
     );
 
-    await expect.element(page.getByText(/CONSUMABLES/i)).toBeVisible();
-    await expect.element(page.getByText('Medicine Chest')).toBeVisible();
+    expect(screen.getByText(/CONSUMABLES/i)).toBeVisible();
+    expect(screen.getByText('Medicine Chest')).toBeVisible();
   });
 
   it('hides the section label when showLabel is false', async () => {
@@ -81,14 +82,14 @@ describe('ConsumableSection Component', () => {
       markPipPending: mockMarkPipPending,
     } as any);
 
-    await render(
-      <BrowserTestProvider>
+    render(
+      <UnitTestProvider>
         <ConsumableSection showLabel={false} />
-      </BrowserTestProvider>
+      </UnitTestProvider>
     );
 
-    await expect.element(page.getByText(/CONSUMABLES/i)).not.toBeInTheDocument();
-    await expect.element(page.getByText('Lantern')).toBeVisible();
+    expect(screen.queryByText(/CONSUMABLES/i)).not.toBeInTheDocument();
+    expect(screen.getByText('Lantern')).toBeVisible();
   });
 
   it('clicking a pip calls markPipPending with correct indices', async () => {
@@ -109,20 +110,21 @@ describe('ConsumableSection Component', () => {
       markPipPending: mockMarkPipPending,
     } as any);
 
-    await render(
-      <BrowserTestProvider>
+    render(
+      <UnitTestProvider>
         <ConsumableSection />
-      </BrowserTestProvider>
+      </UnitTestProvider>
     );
+    const user = userEvent.setup();
 
-    const firstPip = page.getByRole('button', {
+    const firstPip = screen.getByRole('button', {
       name: 'Mark used: Life Elixir use 1',
       exact: true,
     });
-    await expect.element(firstPip).toBeVisible();
+    expect(firstPip).toBeVisible();
 
-    await userEvent.click(firstPip);
+    await user.click(firstPip);
 
-    await expect.poll(() => mockMarkPipPending).toHaveBeenCalledWith(6, 0);
+    await waitFor(() => expect(mockMarkPipPending).toHaveBeenCalledWith(6, 0));
   });
 });

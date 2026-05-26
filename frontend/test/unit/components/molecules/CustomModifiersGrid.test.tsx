@@ -1,9 +1,10 @@
-import { render } from 'vitest-browser-react';
-import { page, userEvent } from 'vitest/browser';
+import '@testing-library/jest-dom/vitest';
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
-import CustomModifiersGrid from '../../../src/components/molecules/modifiers/CustomModifiersGrid';
-import BrowserTestProvider from '../BrowserTestProvider';
-import { type CustomModifier } from '../../../src/hooks/models';
+import CustomModifiersGrid from '@/components/molecules/modifiers/CustomModifiersGrid';
+import UnitTestProvider from '../../UnitTestProvider';
+import { type CustomModifier } from '@/hooks/models';
 
 describe('CustomModifiersGrid', () => {
   const mockModifiers: CustomModifier[] = [
@@ -24,8 +25,8 @@ describe('CustomModifiersGrid', () => {
   ];
 
   it('renders placeholder message when no modifiers are present', async () => {
-    await render(
-      <BrowserTestProvider>
+    render(
+      <UnitTestProvider>
         <CustomModifiersGrid
           modifiers={[]}
           removingModifierIds={[]}
@@ -33,17 +34,17 @@ describe('CustomModifiersGrid', () => {
           onEditModifier={vi.fn()}
           onRemoveModifier={vi.fn()}
         />
-      </BrowserTestProvider>
+      </UnitTestProvider>
     );
 
-    await expect.element(page.getByText(/No active modifiers/i)).toBeInTheDocument();
+    expect(screen.getByText(/No active modifiers/i)).toBeInTheDocument();
   });
 
   it('renders a list of custom modifier tags', async () => {
     const onEditModifier = vi.fn();
     const onRemoveModifier = vi.fn();
-    await render(
-      <BrowserTestProvider>
+    render(
+      <UnitTestProvider>
         <CustomModifiersGrid
           modifiers={mockModifiers}
           removingModifierIds={[]}
@@ -51,27 +52,28 @@ describe('CustomModifiersGrid', () => {
           onEditModifier={onEditModifier}
           onRemoveModifier={onRemoveModifier}
         />
-      </BrowserTestProvider>
+      </UnitTestProvider>
     );
+    const user = userEvent.setup();
 
-    await expect.element(page.getByText(/Bleeding/i)).toBeInTheDocument();
-    await expect.element(page.getByText(/Rage/i)).toBeInTheDocument();
+    expect(screen.getByText(/Bleeding/i)).toBeInTheDocument();
+    expect(screen.getByText(/Rage/i)).toBeInTheDocument();
 
     // Interaction check - Edit (clicking the tag)
-    const bleedingTag = page.getByText('Bleeding');
-    await userEvent.click(bleedingTag);
-    await expect.poll(() => onEditModifier).toHaveBeenCalledWith(mockModifiers[0]);
+    const bleedingTag = screen.getByText('Bleeding');
+    await user.click(bleedingTag);
+    await waitFor(() => expect(onEditModifier).toHaveBeenCalledWith(mockModifiers[0]));
 
     // Interaction check - Remove (clicking the remove button)
-    const removeButton = page.getByRole('button', { name: 'Remove modifier: Bleeding', exact: true });
-    await userEvent.click(removeButton);
-    await expect.poll(() => onRemoveModifier).toHaveBeenCalledWith('mod-1');
+    const removeButton = screen.getByRole('button', { name: 'Remove modifier: Bleeding', exact: true });
+    await user.click(removeButton);
+    await waitFor(() => expect(onRemoveModifier).toHaveBeenCalledWith('mod-1'));
 
   });
 
   it('hides modifiers that are in removing state', async () => {
-    await render(
-      <BrowserTestProvider>
+    render(
+      <UnitTestProvider>
         <CustomModifiersGrid
           modifiers={mockModifiers}
           removingModifierIds={['mod-1']}
@@ -79,11 +81,11 @@ describe('CustomModifiersGrid', () => {
           onEditModifier={vi.fn()}
           onRemoveModifier={vi.fn()}
         />
-      </BrowserTestProvider>
+      </UnitTestProvider>
     );
 
-    await expect.element(page.getByText(/Bleeding/i)).not.toBeInTheDocument();
-    await expect.element(page.getByText(/Rage/i)).toBeInTheDocument();
+    expect(screen.queryByText(/Bleeding/i)).not.toBeInTheDocument();
+    expect(screen.getByText(/Rage/i)).toBeInTheDocument();
 
   });
 });

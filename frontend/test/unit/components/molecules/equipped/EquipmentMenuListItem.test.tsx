@@ -1,8 +1,9 @@
-import { render } from 'vitest-browser-react';
+import '@testing-library/jest-dom/vitest';
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { expect, describe, it, vi } from 'vitest';
-import { page, userEvent } from 'vitest/browser';
 import EquipmentMenuListItem from '@/components/molecules/equipped/EquipmentMenuListItem';
-import BrowserTestProvider from '../../BrowserTestProvider';
+import UnitTestProvider from '../../../UnitTestProvider';
 
 describe('EquipmentMenuListItem Browser', () => {
   const defaultProps = {
@@ -14,49 +15,50 @@ describe('EquipmentMenuListItem Browser', () => {
   };
 
   it('renders name and description', async () => {
-    await render(
-      <BrowserTestProvider>
+    render(
+      <UnitTestProvider>
         <EquipmentMenuListItem {...defaultProps} />
-      </BrowserTestProvider>
+      </UnitTestProvider>
     );
 
-    await expect.element(page.getByText('Sword')).toBeVisible();
-    await expect.element(page.getByText('1d8 damage')).toBeVisible();
+    expect(screen.getByText('Sword')).toBeVisible();
+    expect(screen.getByText('1d8 damage')).toBeVisible();
 
   });
 
   it('renders quantity when > 1', async () => {
-    await render(
-      <BrowserTestProvider>
+    render(
+      <UnitTestProvider>
         <EquipmentMenuListItem {...defaultProps} quantity={2} />
-      </BrowserTestProvider>
+      </UnitTestProvider>
     );
 
-    await expect.element(page.getByText('Sword x2')).toBeVisible();
+    expect(screen.getByText('Sword x2')).toBeVisible();
 
   });
 
   it('renders ammo count when provided', async () => {
-    await render(
-      <BrowserTestProvider>
+    render(
+      <UnitTestProvider>
         <EquipmentMenuListItem {...defaultProps} ammoCount={5} />
-      </BrowserTestProvider>
+      </UnitTestProvider>
     );
 
-    await expect.element(page.getByText('(5 ammo)')).toBeVisible();
+    expect(screen.getByText('(5 ammo)')).toBeVisible();
 
   });
 
   it('triggers onClick when clicked', async () => {
     const onClick = vi.fn();
-    await render(
-      <BrowserTestProvider>
+    render(
+      <UnitTestProvider>
         <EquipmentMenuListItem {...defaultProps} onClick={onClick} />
-      </BrowserTestProvider>
+      </UnitTestProvider>
     );
+    const user = userEvent.setup();
 
-    await userEvent.click(page.getByTestId('item-1'));
-    await expect.poll(() => onClick).toHaveBeenCalled();
+    await user.click(screen.getByTestId('item-1'));
+    await waitFor(() => expect(onClick).toHaveBeenCalled());
 
   });
 });
