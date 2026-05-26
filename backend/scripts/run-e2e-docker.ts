@@ -4,10 +4,6 @@ if (process.argv.includes('--debug')) {
   process.env.PLAYWRIGHT_DEBUG = '1';
 }
 
-if (process.argv.includes('--include-regression')) {
-  process.env.PLAYWRIGHT_INCLUDE_REGRESSION = '1';
-}
-
 const composeBaseArgs = ['compose', '-f', '../compose.e2e.yaml'];
 const cleanupArgs = [...composeBaseArgs, 'down', '--volumes', '--remove-orphans'];
 

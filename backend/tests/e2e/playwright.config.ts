@@ -3,7 +3,6 @@ import { defineConfig, devices } from '@playwright/test';
 const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:5173';
 const debug = process.env.PLAYWRIGHT_DEBUG === '1';
 const isCI = process.env.CI === 'true';
-const includeRegression = process.env.PLAYWRIGHT_INCLUDE_REGRESSION === '1';
 const parsedWorkers = process.env.PLAYWRIGHT_WORKERS
   ? Number(process.env.PLAYWRIGHT_WORKERS)
   : undefined;
@@ -12,7 +11,7 @@ const configuredWorkers = Number.isFinite(parsedWorkers) ? parsedWorkers : undef
 export default defineConfig({
   testDir: './tests',
   fullyParallel: true,
-  workers: configuredWorkers ?? (includeRegression ? 1 : 2),
+  workers: configuredWorkers ?? 2,
   retries: isCI ? 1 : 0,
   timeout: 60000,
   expect: {
@@ -42,18 +41,6 @@ export default defineConfig({
         ...devices['Desktop Chrome'],
       },
     },
-
-    ...(includeRegression
-      ? [
-          {
-            name: 'regression',
-            testDir: './tests/regression',
-            use: {
-              ...devices['Desktop Chrome'],
-            },
-          },
-        ]
-      : []),
   ],
 
   reporter: [

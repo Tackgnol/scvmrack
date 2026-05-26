@@ -133,7 +133,6 @@ services:
       PLAYWRIGHT_BASE_URL: http://web:5173
       PLAYWRIGHT_MAILPIT_URL: http://mailpit:8025
       PLAYWRIGHT_DEBUG: ${PLAYWRIGHT_DEBUG:-0}
-      PLAYWRIGHT_INCLUDE_REGRESSION: ${PLAYWRIGHT_INCLUDE_REGRESSION:-0}
       API_BASE_URL: http://api:3000
     volumes:
       - e2e-playwright-report:/e2e/playwright-report
