@@ -1,8 +1,8 @@
-import { render } from 'vitest-browser-react';
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { expect, describe, it, vi, beforeEach } from 'vitest';
-import { page, userEvent } from 'vitest/browser';
 import PetSection from '@/components/molecules/pets/PetSection';
-import BrowserTestProvider from '../../BrowserTestProvider';
+import UnitTestProvider from '../../../UnitTestProvider';
 import * as petHook from '@/hooks/usePetSection';
 
 vi.mock('@/hooks/usePetSection', () => ({
@@ -26,13 +26,13 @@ describe('PetSection Component', () => {
       markPipPending: mockMarkPipPending,
     } as any);
 
-    await render(
-      <BrowserTestProvider>
+    render(
+      <UnitTestProvider>
         <PetSection />
-      </BrowserTestProvider>
+      </UnitTestProvider>
     );
 
-    await expect.element(page.getByText(/pets/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/pets/i)).toBeNull();
   });
 
   it('shows the section label when showLabel is true', async () => {
@@ -45,14 +45,14 @@ describe('PetSection Component', () => {
       markPipPending: mockMarkPipPending,
     } as any);
 
-    await render(
-      <BrowserTestProvider>
+    render(
+      <UnitTestProvider>
         <PetSection showLabel={true} />
-      </BrowserTestProvider>
+      </UnitTestProvider>
     );
 
-    await expect.element(page.getByText(/PETS/i)).toBeVisible();
-    await expect.element(page.getByText('Loyal Hound')).toBeVisible();
+    expect(screen.getByText(/PETS/i)).toBeTruthy();
+    expect(screen.getByText('Loyal Hound')).toBeTruthy();
   });
 
   it('hides the section label when showLabel is false', async () => {
@@ -65,14 +65,14 @@ describe('PetSection Component', () => {
       markPipPending: mockMarkPipPending,
     } as any);
 
-    await render(
-      <BrowserTestProvider>
+    render(
+      <UnitTestProvider>
         <PetSection showLabel={false} />
-      </BrowserTestProvider>
+      </UnitTestProvider>
     );
 
-    await expect.element(page.getByText(/PETS/i)).not.toBeInTheDocument();
-    await expect.element(page.getByText('Loyal Hound')).toBeVisible();
+    expect(screen.queryByText(/PETS/i)).toBeNull();
+    expect(screen.getByText('Loyal Hound')).toBeTruthy();
   });
 
   it('clicking a pip calls markPipPending with correct indices', async () => {
@@ -85,22 +85,23 @@ describe('PetSection Component', () => {
       markPipPending: mockMarkPipPending,
     } as any);
 
-    await render(
-      <BrowserTestProvider>
+    render(
+      <UnitTestProvider>
         <PetSection />
-      </BrowserTestProvider>
+      </UnitTestProvider>
     );
 
+    const user = userEvent.setup();
     // PetSection doesn't pass pipTestId to TrackedUseRow, so no data-testid on pips.
     // Use aria-label which is always set by UsePipButton.
-    const firstPip = page.getByRole('button', {
+    const firstPip = screen.getByRole('button', {
       name: 'Mark hit point filled: Shadow Cat point 1',
       exact: true,
     });
-    await expect.element(firstPip).toBeVisible();
+    expect(firstPip).toBeTruthy();
 
-    await userEvent.click(firstPip);
+    await user.click(firstPip);
 
-    await expect.poll(() => mockMarkPipPending).toHaveBeenCalledWith(7, 0);
+    await waitFor(() => expect(mockMarkPipPending).toHaveBeenCalledWith(7, 0));
   });
 });

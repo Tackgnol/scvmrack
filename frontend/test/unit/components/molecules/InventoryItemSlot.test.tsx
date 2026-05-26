@@ -1,10 +1,10 @@
-import { render } from 'vitest-browser-react';
-import { page, userEvent } from 'vitest/browser';
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi } from 'vitest';
 import InventoryItemSlot from '@/components/molecules/InventoryItemSlot';
-import BrowserTestProvider from '../BrowserTestProvider';
+import UnitTestProvider from '../../UnitTestProvider';
 
-describe('InventoryItemSlot Browser', () => {
+describe('InventoryItemSlot', () => {
   const mockItem = {
     key: 'test-item',
     name: 'TEST SWORD',
@@ -23,62 +23,57 @@ describe('InventoryItemSlot Browser', () => {
   };
 
   it('renders item name and description', async () => {
-    await render(
-      <BrowserTestProvider>
+    render(
+      <UnitTestProvider>
         <InventoryItemSlot {...defaultProps} />
-      </BrowserTestProvider>
+      </UnitTestProvider>
     );
 
-    await expect.element(page.getByText('TEST SWORD')).toBeVisible();
-    await expect.element(page.getByText('A sharp test blade.')).toBeVisible();
-
+    expect(screen.getByText('TEST SWORD')).toBeTruthy();
+    expect(screen.getByText('A sharp test blade.')).toBeTruthy();
   });
 
   it('shows quantity badge when quantity > 1', async () => {
-    await render(
-      <BrowserTestProvider>
+    render(
+      <UnitTestProvider>
         <InventoryItemSlot 
           {...defaultProps} 
           aggregated={{ ...defaultProps.aggregated, quantity: 3 }} 
         />
-      </BrowserTestProvider>
+      </UnitTestProvider>
     );
 
-    await expect.element(page.getByText('3')).toBeVisible();
-    await expect.element(page.getByText('×')).toBeVisible(); // 'stored' variant uses '×'
-
+    expect(screen.getByText('3×')).toBeTruthy();
   });
 
   it('triggers onOpenEditor when clicked', async () => {
     const onOpenEditor = vi.fn();
-    await render(
-      <BrowserTestProvider>
+    render(
+      <UnitTestProvider>
         <InventoryItemSlot {...defaultProps} onOpenEditor={onOpenEditor} />
-      </BrowserTestProvider>
+      </UnitTestProvider>
     );
 
-    const slotLabel = page.getByText('TEST SWORD');
-    await expect.element(slotLabel).toBeVisible();
+    const user = userEvent.setup();
+    const slotLabel = screen.getByText('TEST SWORD');
+    expect(slotLabel).toBeTruthy();
 
-    await userEvent.click(slotLabel);
+    await user.click(slotLabel);
 
     expect(onOpenEditor).toHaveBeenCalledWith(defaultProps.aggregated);
-
   });
 
   it('uses different quantity symbol for open variant', async () => {
-    await render(
-      <BrowserTestProvider>
+    render(
+      <UnitTestProvider>
         <InventoryItemSlot 
           {...defaultProps} 
           variant="open"
           aggregated={{ ...defaultProps.aggregated, quantity: 5 }} 
         />
-      </BrowserTestProvider>
+      </UnitTestProvider>
     );
 
-    await expect.element(page.getByText('5')).toBeVisible();
-    await expect.element(page.getByText('x')).toBeVisible(); // 'open' variant uses 'x'
-
+    expect(screen.getByText('5x')).toBeTruthy();
   });
 });
