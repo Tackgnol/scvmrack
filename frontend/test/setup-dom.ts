@@ -1,8 +1,10 @@
 import { cleanup } from '@testing-library/react';
 import { afterAll, afterEach, beforeAll, vi } from 'vitest';
+import { loadLanguage } from '@/i18n';
 
-beforeAll(() => {
+beforeAll(async () => {
   vi.stubEnv('VITE_BACKEND_URL', 'http://localhost:3000');
+  await loadLanguage('en');
 });
 
 afterAll(() => {
