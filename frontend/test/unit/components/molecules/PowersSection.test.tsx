@@ -1,8 +1,8 @@
-import { render } from 'vitest-browser-react';
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { expect, describe, it, vi, beforeEach } from 'vitest';
-import { page, userEvent } from 'vitest/browser';
 import PowersSection from '@/components/molecules/PowersSection';
-import BrowserTestProvider from '../BrowserTestProvider';
+import UnitTestProvider from '../../UnitTestProvider';
 import * as powersHook from '@/hooks/usePowersSection';
 
 vi.mock('@/hooks/usePowersSection', () => ({
@@ -25,14 +25,14 @@ describe('PowersSection Component', () => {
             markPipPending: mockMarkPipPending,
         } as any);
 
-        const { container } = await render(
-            <BrowserTestProvider>
+        render(
+            <UnitTestProvider>
                 <PowersSection />
-            </BrowserTestProvider>
+            </UnitTestProvider>
         );
 
         // The Provider wrapper exists, but PowersSection renders nothing
-        await expect.element(page.getByText('POWERS', { exact: false })).not.toBeInTheDocument();
+        expect(screen.queryByText('POWERS', { exact: false })).toBeNull();
     });
 
     it('renders scrolls and shows label when showLabel is true', async () => {
@@ -45,14 +45,14 @@ describe('PowersSection Component', () => {
             markPipPending: mockMarkPipPending,
         } as any);
 
-        await render(
-            <BrowserTestProvider>
+        render(
+            <UnitTestProvider>
                 <PowersSection showLabel={true} />
-            </BrowserTestProvider>
+            </UnitTestProvider>
         );
 
-        await expect.element(page.getByText('POWERS', { exact: false })).toBeVisible();
-        await expect.element(page.getByText('Fireball', { exact: false })).toBeVisible();
+        expect(screen.getByText('POWERS', { exact: false })).toBeTruthy();
+        expect(screen.getByText('Fireball', { exact: false })).toBeTruthy();
     });
 
     it('renders scrolls and hides label when showLabel is false', async () => {
@@ -65,14 +65,14 @@ describe('PowersSection Component', () => {
             markPipPending: mockMarkPipPending,
         } as any);
 
-        await render(
-            <BrowserTestProvider>
+        render(
+            <UnitTestProvider>
                 <PowersSection showLabel={false} />
-            </BrowserTestProvider>
+            </UnitTestProvider>
         );
 
-        await expect.element(page.getByText('POWERS', { exact: false })).not.toBeInTheDocument();
-        await expect.element(page.getByText('Fireball', { exact: false })).toBeVisible();
+        expect(screen.queryByText('POWERS', { exact: false })).toBeNull();
+        expect(screen.getByText('Fireball', { exact: false })).toBeTruthy();
     });
 
     it('interactions with TrackedUseRow trigger pip marking', async () => {
@@ -85,21 +85,22 @@ describe('PowersSection Component', () => {
             markPipPending: mockMarkPipPending,
         } as any);
 
-        await render(
-            <BrowserTestProvider>
+        render(
+            <UnitTestProvider>
                 <PowersSection />
-            </BrowserTestProvider>
+            </UnitTestProvider>
         );
 
+        const user = userEvent.setup();
         // find the pip button
-        const firstPip = page.getByRole('button', {
+        const firstPip = screen.getByRole('button', {
             name: 'Mark used: Frost use 1',
             exact: true,
         });
-        await expect.element(firstPip).toBeVisible();
+        expect(firstPip).toBeTruthy();
 
-        await userEvent.click(firstPip);
+        await user.click(firstPip);
 
-        await expect.poll(() => mockMarkPipPending).toHaveBeenCalledWith(5, 0);
+        await waitFor(() => expect(mockMarkPipPending).toHaveBeenCalledWith(5, 0));
     });
 });
