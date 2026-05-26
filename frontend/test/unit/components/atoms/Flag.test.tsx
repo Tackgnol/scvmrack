@@ -1,8 +1,8 @@
-import { render } from 'vitest-browser-react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { expect, describe, it, vi } from 'vitest';
-import { page, userEvent } from 'vitest/browser';
+import userEvent from '@testing-library/user-event';
 import { Flag } from '@/components/atoms/Flag';
-import BrowserTestProvider from '../BrowserTestProvider';
+import UnitTestProvider from '../../UnitTestProvider';
 import { CharacterContext } from '@/CharacterContext/CharacterContext';
 
 describe('Flag Component', () => {
@@ -13,27 +13,27 @@ describe('Flag Component', () => {
             changeLocale: mockChangeLocale,
         } as any;
 
-        const { rerender } = await render(
-            <BrowserTestProvider>
+        const { rerender } = render(
+            <UnitTestProvider>
                 <CharacterContext.Provider value={enContextValue}>
                     <Flag locale="en" />
                 </CharacterContext.Provider>
-            </BrowserTestProvider>
+            </UnitTestProvider>
         );
 
-        const button = page.getByRole('button', { name: 'English' });
-        await expect.element(button).toBeVisible();
+        const button = screen.getByRole('button', { name: 'English' });
+        expect(button).toBeVisible();
 
-        await rerender(
-            <BrowserTestProvider>
+        rerender(
+            <UnitTestProvider>
                 <CharacterContext.Provider value={enContextValue}>
                     <Flag locale="pl" />
                 </CharacterContext.Provider>
-            </BrowserTestProvider>
+            </UnitTestProvider>
         );
 
-        await expect.element(page.getByRole('button', { name: 'Polski' })).toBeVisible();
-        await expect.element(page.getByRole('button', { name: 'English' })).not.toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Polski' })).toBeVisible();
+        expect(screen.queryByRole('button', { name: 'English' })).not.toBeInTheDocument();
     });
 
     it('calls changeLocale with correct locale when clicked', async () => {
@@ -43,17 +43,18 @@ describe('Flag Component', () => {
             changeLocale: mockChangeLocale,
         } as any;
 
-        await render(
-            <BrowserTestProvider>
+        render(
+            <UnitTestProvider>
                 <CharacterContext.Provider value={mockContextValue}>
                     <Flag locale="pl" />
                 </CharacterContext.Provider>
-            </BrowserTestProvider>
+            </UnitTestProvider>
         );
+        const user = userEvent.setup();
 
-        const button = page.getByRole('button', { name: 'Polski' });
-        await userEvent.click(button);
+        const button = screen.getByRole('button', { name: 'Polski' });
+        await user.click(button);
 
-        await expect.poll(() => mockChangeLocale).toHaveBeenCalledWith('pl');
+        await waitFor(() => expect(mockChangeLocale).toHaveBeenCalledWith('pl'));
     });
 });
