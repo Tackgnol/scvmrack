@@ -2,7 +2,7 @@ import { expect, test } from '../../fixtures';
 import { fillAndSave } from '../utils/character-sheet.js';
 
 test('traits, habit, and body description can be edited', async ({ page, seededCharacter }) => {
-  await page.goto(`/?character=${seededCharacter.id}`);
+  await page.goto(`/character/${seededCharacter.id}`);
   await expect(page.getByTestId('generate-new-button')).toBeVisible({ timeout: 30000 });
 
   await fillAndSave(page, 'trait1-input', 'Obsessive');

@@ -6,7 +6,7 @@ import { waitForCharacterSave as waitForCharacterPatch } from '../utils/save.js'
 test('all edits persist after page reload', async ({ page, seededCharacter }) => {
   test.setTimeout(90000);
 
-  await page.goto(`/?character=${seededCharacter.id}`);
+  await page.goto(`/character/${seededCharacter.id}`);
   await expect(page.getByTestId('generate-new-button')).toBeVisible({ timeout: 30000 });
 
   // Wait for initial sync

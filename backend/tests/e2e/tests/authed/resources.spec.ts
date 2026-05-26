@@ -2,7 +2,7 @@ import { expect, test } from '../../fixtures';
 import { changeHpByOne, fillAndSave } from '../utils/character-sheet.js';
 
 test('HP and silver can be edited and persists', async ({ page, seededCharacter }) => {
-  await page.goto(`/?character=${seededCharacter.id}`);
+  await page.goto(`/character/${seededCharacter.id}`);
   await expect(page.getByTestId('generate-new-button')).toBeVisible({ timeout: 30000 });
 
   const hpTarget = await changeHpByOne(page);
