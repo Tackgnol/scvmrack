@@ -314,6 +314,7 @@
     "killConfirmTitle": "ZABIĆ TEGO SCVMA?",
     "killConfirm": "Zabij i Zastąp",
     "killConfirmDesc": "\"{{name}}\" zostanie trwale usunięty i nowy scvm się wyczołga.",
+    "killConfirmDontAskAgain": "Nie pokazuj tego ponownie",
     "testModal": "Testuj Modal",
     "cancel": "Anuluj",
     "retry": "Ponów"
