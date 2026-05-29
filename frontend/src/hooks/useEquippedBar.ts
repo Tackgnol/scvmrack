@@ -20,7 +20,7 @@ const EMPTY_EQUIPPED_WEAPONS: [EquipmentItem | null, EquipmentItem | null] = [
 ];
 
 export function useEquippedBar() {
-  const { character, equipWeapon, unequipWeapon, equipArmor, unequipArmor, useAmmo } =
+  const { character, equipWeapon, unequipWeapon, equipArmor, unequipArmor, consumeAmmo } =
     useCharacter();
   const prefersReducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
 
@@ -125,15 +125,15 @@ export function useEquippedBar() {
 
   const useMainWeaponAmmo = useCallback(() => {
     if (mainWeaponAmmo.equipmentIndex !== null && mainWeaponAmmo.ammoCount !== null && mainWeaponAmmo.ammoCount > 0) {
-      useAmmo(mainWeaponAmmo.equipmentIndex);
+      consumeAmmo(mainWeaponAmmo.equipmentIndex);
     }
-  }, [mainWeaponAmmo.equipmentIndex, mainWeaponAmmo.ammoCount, useAmmo]);
+  }, [mainWeaponAmmo.equipmentIndex, mainWeaponAmmo.ammoCount, consumeAmmo]);
 
   const useOffhandWeaponAmmo = useCallback(() => {
     if (offhandWeaponAmmo.equipmentIndex !== null && offhandWeaponAmmo.ammoCount !== null && offhandWeaponAmmo.ammoCount > 0) {
-      useAmmo(offhandWeaponAmmo.equipmentIndex);
+      consumeAmmo(offhandWeaponAmmo.equipmentIndex);
     }
-  }, [offhandWeaponAmmo.equipmentIndex, offhandWeaponAmmo.ammoCount, useAmmo]);
+  }, [offhandWeaponAmmo.equipmentIndex, offhandWeaponAmmo.ammoCount, consumeAmmo]);
 
   const canOpenWeaponSlot0 = inventoryWeapons.length > 0 || Boolean(mainWeapon?.key);
   const canOpenWeaponSlot1 =

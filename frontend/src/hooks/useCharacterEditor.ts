@@ -322,7 +322,7 @@ export function useCharacterEditor(
     [queuePatch]
   );
 
-  const useAmmo = useCallback(
+  const consumeAmmo = useCallback(
     (equipmentIndex: number) => {
       queuePatch({ kind: 'ammo-use', equipmentIndex });
     },
@@ -381,7 +381,7 @@ export function useCharacterEditor(
     flush,
 
     toggleScrollUse,
-    useAmmo,
+    consumeAmmo,
 
     // Simple fields
     updateField,

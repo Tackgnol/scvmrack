@@ -279,7 +279,7 @@ function generateHtml(suites: Suite[]): string {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>SCVM GRINDER &mdash; Test Report</title>
+<title>SCVM RACK &mdash; Test Report</title>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -455,7 +455,7 @@ function generateHtml(suites: Suite[]): string {
 </style>
 </head>
 <body>
-<h1>SCVM GRINDER</h1>
+<h1>SCVM RACK</h1>
 <p class="subtitle">Test Report &nbsp;&middot;&nbsp; Generated ${htmlEsc(now)}</p>
 
 <div class="summary">
@@ -476,7 +476,7 @@ ${suites.map((s, i) => renderSuite(s, i)).join('\n')}
 ${renderLinks()}
 
 <footer>
-  <p>SCVM GRINDER &middot; Node ${process.version} &middot; ${htmlEsc(now)}</p>
+  <p>SCVM RACK &middot; Node ${process.version} &middot; ${htmlEsc(now)}</p>
 </footer>
 
 <script>

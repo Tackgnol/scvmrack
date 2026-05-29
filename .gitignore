@@ -102,7 +102,10 @@ frontend/.vitest-attachments/
 frontend/test/**/__screenshots__/
 
 # typescript build info
-frontend/tsconfig.node.tsbuildinfo
+*.tsbuildinfo
+
+# network captures (may contain session cookies / tokens)
+*.har
 
 # build outputs
 frontend/public/

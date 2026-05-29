@@ -1,5 +1,5 @@
 ---
-name: Scvm Grinder
+name: Scvm Rack
 description: Interactive Mörk Borg character sheet, fashioned as a punk grimoire for tabletop apocalypse
 colors:
   yellow: "#FFE900"
@@ -187,13 +187,13 @@ components:
     padding: "8px 12px"
 ---
 
-# Design System: Scvm Grinder
+# Design System: Scvm Rack
 
 ## 1. Overview
 
 **Creative North Star: "The Punk Grimoire"**
 
-Scvm Grinder is an interactive character sheet for Mörk Borg, the Swedish doom-metal tabletop RPG, and the interface dresses for the part. It is a xerox-punk illuminated manuscript: a black bunker stamped onto a screaming yellow page, with hot pink interruptions and blood-red warnings. Every surface is hard-edged, slightly tilted, and sits on top of a faint fractal-noise overlay so the screen reads less like a web app and more like a photocopied zine that survived the apocalypse.
+Scvm Rack is an interactive character sheet for Mörk Borg, the Swedish doom-metal tabletop RPG, and the interface dresses for the part. It is a xerox-punk illuminated manuscript: a black bunker stamped onto a screaming yellow page, with hot pink interruptions and blood-red warnings. Every surface is hard-edged, slightly tilted, and sits on top of a faint fractal-noise overlay so the screen reads less like a web app and more like a photocopied zine that survived the apocalypse.
 
 Density is high, rhythm is jagged. Section headings are stamped on like rubber-stamp insignia (yellow ground, black 3px border, hard 4px black drop shadow, rotated 0.3–0.6°). Buttons lift with `translate(-2px, -2px)` and grow their shadow rather than fading or scaling — every interaction has a physical "ka-chunk" feel. There are no gradients, no rounded corners (`borderRadius: 0` is the global doctrine), no glass, no soft drop shadows. Shadows are always solid offsets in a brand color — the chunky black-or-pink box-shadow is the project's signature.
 

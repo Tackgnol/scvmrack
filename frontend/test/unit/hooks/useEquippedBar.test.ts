@@ -125,7 +125,7 @@ test('useEquippedBar resolves ammo from both stacked and duplicate inventory ite
 });
 
 test('useEquippedBar consumes ammo only for equipped weapons with available ammo', () => {
-  const useAmmo = vi.fn();
+  const consumeAmmo = vi.fn();
   const wrapperState = createCharacterTestWrapper({
     character: {
       equipment: [
@@ -143,7 +143,7 @@ test('useEquippedBar consumes ammo only for equipped weapons with available ammo
       ],
       equippedArmor: null,
     },
-    useAmmo,
+    consumeAmmo,
   });
 
   const { result } = renderHook(() => useEquippedBar(), {
@@ -155,6 +155,6 @@ test('useEquippedBar consumes ammo only for equipped weapons with available ammo
     result.current.useOffhandWeaponAmmo();
   });
 
-  expect(useAmmo).toHaveBeenCalledTimes(1);
-  expect(useAmmo).toHaveBeenCalledWith(0);
+  expect(consumeAmmo).toHaveBeenCalledTimes(1);
+  expect(consumeAmmo).toHaveBeenCalledWith(0);
 });

@@ -58,6 +58,18 @@ async function fetchCsrfToken(): Promise<string> {
     return csrfToken;
 }
 
+/**
+ * Returns a CSRF token for callers that issue raw `fetch()` requests outside the
+ * openapi-fetch client (which applies {@link csrfMiddleware} automatically) — e.g.
+ * the feedback reporter. Reuses the cached token and fetches one on first use.
+ */
+export async function getCsrfToken(): Promise<string> {
+    if (!csrfToken) {
+        await fetchCsrfToken();
+    }
+    return csrfToken!;
+}
+
 const MUTATING_METHODS = ["POST", "PUT", "PATCH", "DELETE"];
 
 export const csrfMiddleware: Middleware = {

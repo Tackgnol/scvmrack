@@ -55,8 +55,8 @@ describe('static route pages', () => {
     await expect
       .element(page.getByRole('heading', { name: /release notes/i }))
       .toBeVisible();
-    await expect.element(page.getByText('v1.0.0')).toBeVisible();
-    await expect.element(page.getByText(/major/i)).toBeVisible();
+    await expect.element(page.getByText('v0.2.0')).toBeVisible();
+    await expect.element(page.getByText(/minor/i)).toBeVisible();
   });
 
   it('renders router-mode not found page with a home link', async () => {

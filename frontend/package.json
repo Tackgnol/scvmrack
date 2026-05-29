@@ -1,7 +1,7 @@
 {
   "name": "mork-borg-character-sheet",
   "private": true,
-  "version": "1.0.0",
+  "version": "0.2.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -11,6 +11,7 @@
     "test": "npm run test:unit",
     "test:unit": "vitest run",
     "test:browser": "vitest run --config vitest.browser.config.ts",
+    "test:browser:all": "node scripts/run-browser-matrix.mjs",
     "test:browser:ui": "vitest --ui --config vitest.browser.config.ts",
     "test:report": "npm run test:report:unit",
     "test:report:unit": "vitest run --reporter=verbose --reporter=junit --outputFile.junit=../backend/reports/client-unit.xml",
@@ -21,8 +22,8 @@
     "test:coverage": "npm run test:coverage:unit && npm run test:coverage:browser && npm run test:coverage:merge",
     "test:unit:report": "npm run test:report:unit",
     "test:browser:report": "npm run test:report:browser",
-    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "lint:fix": "eslint . --ext ts,tsx --fix",
+    "lint": "eslint . --report-unused-disable-directives",
+    "lint:fix": "eslint . --fix",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,scss,md}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,scss,md}\"",
     "generate-api": "openapi-typescript http://localhost:3000/openapi.json -o src/api/schema.ts --enum",

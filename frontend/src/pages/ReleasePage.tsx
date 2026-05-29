@@ -21,41 +21,19 @@ interface ReleaseNote {
 export function ReleasePage() {
     const { t } = useTranslation();
 
-    // Release notes - could be fetched from an API in the future
+    // Source of truth: the /release/*.md files at the repo root. Keep entries
+    // newest-first and in sync with that folder when cutting a release.
     const releases: ReleaseNote[] = [
         {
-            version: '1.0.0',
-            date: '2026-01-20',
-            type: 'major',
-            changes: [
-                t('release.v100.auth', 'User accounts with email verification'),
-                t('release.v100.magicLink', 'Magic link login'),
-                t('release.v100.guestSessions', 'Guest sessions with 7-day persistence'),
-                t('release.v100.characterClaim', 'Claim guest characters after signup'),
-                t('release.v100.multiChar', 'Multiple characters per account'),
-                t('release.v100.i18n', 'Polish and English language support'),
-            ],
-        },
-        {
-            version: '0.9.0',
-            date: '2026-01-15',
+            version: '0.2.0',
+            date: '2026-05-29',
             type: 'minor',
             changes: [
-                t('release.v090.equipment', 'Equipment management system'),
-                t('release.v090.powers', 'Powers and scrolls tracking'),
-                t('release.v090.notes', 'Character notes section'),
-                t('release.v090.autoSave', 'Auto-save with debouncing'),
-            ],
-        },
-        {
-            version: '0.8.0',
-            date: '2026-01-10',
-            type: 'minor',
-            changes: [
-                t('release.v080.generator', 'Random character generator'),
-                t('release.v080.classes', 'All core MÖRK BORG classes'),
-                t('release.v080.stats', 'Stat tracking and modifiers'),
-                t('release.v080.theme', 'MÖRK BORG-inspired dark theme'),
+                t('release.v020.feedback', 'Server-side feedback and crash reporting'),
+                t('release.v020.errorDialog', 'Automatic dialog to report unexpected errors'),
+                t('release.v020.apiErrors', 'Consistent, structured API error messages'),
+                t('release.v020.tests', 'Hardened automated test suite (unit, integration, end-to-end)'),
+                t('release.v020.tooling', 'Tooling fixes: green test run and a working linter'),
             ],
         },
     ];
