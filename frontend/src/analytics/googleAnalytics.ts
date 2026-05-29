@@ -65,7 +65,7 @@ export const initGoogleAnalytics = (): void => {
     }
 
     analyticsInstance = Analytics({
-        app: 'scvm-grinder',
+        app: 'scvm-rack',
         plugins: [
             googleAnalytics({
                 measurementIds: [measurementId],

@@ -3,6 +3,7 @@ import {
   sendFeedbackReport,
   serializeError,
 } from '@/components/molecules/feedback/feedbackCapture';
+import { trackEvent } from '@/analytics/googleAnalytics';
 import {
   getApiErrorCode,
   getApiErrorStatus,
@@ -118,6 +119,11 @@ export default function FeedbackDialog({
         context: contextPayload,
         tags: feedbackTags(kind, enrichedContext),
         error: kind === 'error' ? serializeError(error) : undefined,
+      });
+
+      trackEvent('feedback_submitted', {
+        kind,
+        source: kind === 'error' ? 'unexpected_error_dialog' : 'feedback_form',
       });
 
       onSubmitted?.(feedbackEventId);

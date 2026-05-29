@@ -7,6 +7,7 @@ import {
 } from '@/hooks/useEquipmentSections';
 import { aggregateItems } from '@/utils/aggregateItems';
 import { useErrorFeedback } from '@/components/molecules/feedback/ErrorFeedbackProvider';
+import { trackEvent } from '@/analytics/googleAnalytics';
 import { appHistory } from '@/router/history';
 import { buildHomeCallbackUrl, buildPrintCallbackUrl } from '@/router/navigation';
 import { Seo } from '@/seo/Seo';
@@ -414,6 +415,7 @@ export function PrintPage() {
     };
 
     const handlePrint = () => {
+        trackEvent('print_character', { surface: 'print_page' });
         window.print();
     };
 

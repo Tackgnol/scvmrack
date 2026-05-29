@@ -1,4 +1,5 @@
 import { loginUrl, profileUrl } from '@/auth';
+import { trackEvent } from '@/analytics/googleAnalytics';
 import { useAuth } from '@/hooks/useAuth';
 import { useCharacter } from '@/CharacterContext/CharacterContext';
 import { appHistory } from '@/router/history';
@@ -265,6 +266,11 @@ export default function Header() {
                   href={authButtonHref}
                   target={isAuthenticated ? '_blank' : undefined}
                   rel={isAuthenticated ? 'noopener noreferrer' : undefined}
+                  onClick={() => {
+                    if (!isAuthenticated) {
+                      trackEvent('sign_in', { method: 'logto' });
+                    }
+                  }}
                   sx={customStyles.header.authButton}
                   aria-label={
                     isAuthenticated
