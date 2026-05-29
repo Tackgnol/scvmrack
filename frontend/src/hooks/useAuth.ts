@@ -6,6 +6,7 @@ import {
     type AuthSession,
     type AuthSessionUser,
 } from '@/auth';
+import { trackEvent } from '@/analytics/googleAnalytics';
 import { appHistory } from '@/router/history';
 import {
     hasCurrentSearchParam,
@@ -78,6 +79,7 @@ export function useAuth() {
             await signOutRequest();
         },
         onSuccess: () => {
+            trackEvent('sign_out');
             queryClient.setQueryData(authKeys.session(), null);
             void navigateToLoggedOut();
         },
