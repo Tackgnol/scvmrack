@@ -1,0 +1,171 @@
+import MorkBorgModal, { ModalButton } from '@/components/molecules/modal/MorkBorgModal';
+import {
+  sendFeedbackReport,
+  serializeError,
+} from '@/components/molecules/feedback/feedbackCapture';
+import {
+  getApiErrorCode,
+  getApiErrorStatus,
+  getApiRequestId,
+} from '@/utils/errorUtils';
+import { Box, Stack, TextField, Typography } from '@mui/material';
+import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+
+export type FeedbackDialogKind = 'feedback' | 'error';
+
+export type FeedbackContext = Record<
+  string,
+  string | number | boolean | null | undefined
+>;
+
+type FeedbackDialogProps = {
+  open: boolean;
+  kind?: FeedbackDialogKind;
+  error?: unknown;
+  context?: FeedbackContext;
+  title?: string;
+  description?: string;
+  promptLabel?: string;
+  submitLabel?: string;
+  skipLabel?: string;
+  onClose: () => void;
+  onSubmitted?: (eventId: string) => void;
+};
+
+function cleanedContext(context?: FeedbackContext): Record<string, unknown> {
+  if (!context) return {};
+
+  return Object.fromEntries(
+    Object.entries(context).filter(([, value]) => value !== undefined)
+  );
+}
+
+function feedbackTags(kind: FeedbackDialogKind, context?: FeedbackContext) {
+  const cleaned = cleanedContext(context);
+  return {
+    feedback_kind: kind,
+    feedback_source: String(cleaned.source ?? kind),
+    ...(cleaned.status ? { http_status: String(cleaned.status) } : {}),
+    ...(cleaned.code ? { api_code: String(cleaned.code) } : {}),
+  };
+}
+
+export default function FeedbackDialog({
+  open,
+  kind = 'feedback',
+  error,
+  context,
+  title,
+  description,
+  promptLabel,
+  submitLabel,
+  skipLabel,
+  onClose,
+  onSubmitted,
+}: FeedbackDialogProps) {
+  const { t } = useTranslation();
+  const [message, setMessage] = useState('');
+  const [isSending, setIsSending] = useState(false);
+
+  const enrichedContext = useMemo<FeedbackContext>(
+    () => ({
+      ...context,
+      status: context?.status ?? getApiErrorStatus(error),
+      code: context?.code ?? getApiErrorCode(error),
+      requestId: context?.requestId ?? getApiRequestId(error),
+      url: context?.url ?? window.location.href,
+    }),
+    [context, error]
+  );
+
+  useEffect(() => {
+    if (open) {
+      setMessage('');
+      setIsSending(false);
+    }
+  }, [open, kind, error]);
+
+  const resolvedTitle =
+    title ??
+    (kind === 'error'
+      ? t('feedback.errorTitle', 'Unexpected error occurred')
+      : t('feedback.title', 'Send feedback'));
+
+  const resolvedDescription =
+    description ??
+    (kind === 'error'
+      ? t(
+          'feedback.errorDescription',
+          'Tell us what you were doing. We will attach the technical error details in the background.'
+        )
+      : t('feedback.description', 'Tell us what happened.'));
+
+  const handleSubmit = async () => {
+    const trimmed = message.trim();
+    if (!trimmed || isSending) return;
+
+    setIsSending(true);
+
+    const contextPayload = cleanedContext(enrichedContext);
+
+    try {
+      const feedbackEventId = await sendFeedbackReport({
+        kind,
+        message: trimmed,
+        source: kind === 'error' ? 'unexpected_error_dialog' : 'feedback_form',
+        url: String(contextPayload.url ?? window.location.href),
+        context: contextPayload,
+        tags: feedbackTags(kind, enrichedContext),
+        error: kind === 'error' ? serializeError(error) : undefined,
+      });
+
+      onSubmitted?.(feedbackEventId);
+      onClose();
+    } catch (submitError) {
+      // Keep the dialog open so the user can retry; surface details for debugging.
+      console.error('Failed to send feedback report', submitError);
+      setIsSending(false);
+    }
+  };
+
+  return (
+    <MorkBorgModal
+      open={open}
+      onClose={onClose}
+      title={resolvedTitle}
+      closeOnBackdrop={false}
+      maxWidth="sm"
+      actions={
+        <Stack direction="row" spacing={1} justifyContent="flex-end">
+          <ModalButton variant="secondary" onClick={onClose}>
+            {skipLabel ?? t('feedback.skip', 'Skip')}
+          </ModalButton>
+          <ModalButton
+            variant="primary"
+            onClick={handleSubmit}
+            disabled={message.trim().length === 0 || isSending}
+          >
+            {isSending
+              ? t('feedback.sending', 'Sending...')
+              : submitLabel ?? t('feedback.sendReport', 'Send report')}
+          </ModalButton>
+        </Stack>
+      }
+    >
+      <Box sx={{ display: 'grid', gap: 2 }}>
+        <Typography>{resolvedDescription}</Typography>
+        <TextField
+          label={promptLabel ?? t('feedback.prompt', 'What were you doing?')}
+          value={message}
+          onChange={(event) => setMessage(event.target.value)}
+          multiline
+          minRows={4}
+          fullWidth
+          autoFocus
+          inputProps={{ maxLength: 2000, 'data-testid': 'feedback-message' }}
+        />
+      </Box>
+    </MorkBorgModal>
+  );
+}

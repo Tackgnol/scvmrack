@@ -6,10 +6,17 @@ import {
     isScrollItem,
 } from '@/hooks/useEquipmentSections';
 import { aggregateItems } from '@/utils/aggregateItems';
+import { useErrorFeedback } from '@/components/molecules/feedback/ErrorFeedbackProvider';
 import { appHistory } from '@/router/history';
 import { buildHomeCallbackUrl, buildPrintCallbackUrl } from '@/router/navigation';
 import { Seo } from '@/seo/Seo';
 import { statToModifier } from '@/utils/stats';
+import {
+    getUserFacingApiErrorMessage,
+    isApiForbidden,
+    isApiNotFound,
+    isUnexpectedApiError,
+} from '@/utils/errorUtils';
 import { Box, Button, Stack } from '@mui/material';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -371,8 +378,9 @@ function PrintSheet({ character }: { character: Character }) {
 }
 
 export function PrintPage() {
-    const { character, characterId, lastCharacterId, isLoading } = useCharacter();
+    const { character, characterId, lastCharacterId, isLoading, error } = useCharacter();
     const { t } = useTranslation();
+    const { showUnexpectedError } = useErrorFeedback();
 
     const effectiveId = characterId || lastCharacterId;
 
@@ -389,6 +397,18 @@ export function PrintPage() {
         };
     }, []);
 
+    useEffect(() => {
+        if (character || isLoading || !error || !isUnexpectedApiError(error)) {
+            return;
+        }
+
+        showUnexpectedError(error, {
+            source: 'print_page',
+            operation: 'load_character_for_print',
+            characterId: effectiveId,
+        });
+    }, [character, effectiveId, error, isLoading, showUnexpectedError]);
+
     const handleBack = () => {
         void appHistory.push(buildHomeCallbackUrl(effectiveId));
     };
@@ -396,6 +416,25 @@ export function PrintPage() {
     const handlePrint = () => {
         window.print();
     };
+
+    const emptyMessage = (() => {
+        if (isLoading) {
+            return t('common.loading', 'Loading...');
+        }
+
+        if (error && isApiForbidden(error)) {
+            return t(
+                'characters.accessDeniedDescription',
+                'This scvm belongs to another session or account. Generate a new one or open one of yours.'
+            );
+        }
+
+        if (error && !isApiNotFound(error)) {
+            return getUserFacingApiErrorMessage(error, t, 'Failed to load character');
+        }
+
+        return t('characters.notFound', 'Scvm not found');
+    })();
 
     return (
         <>
@@ -426,9 +465,7 @@ export function PrintPage() {
                         <PrintSheet character={character} />
                     ) : (
                         <div className="print-native-empty-page">
-                            {isLoading
-                                ? t('common.loading', 'Loading...')
-                                : t('characters.notFound', 'Scvm not found')}
+                            {emptyMessage}
                         </div>
                     )}
                 </Box>

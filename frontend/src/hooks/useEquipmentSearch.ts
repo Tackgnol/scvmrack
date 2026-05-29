@@ -2,6 +2,7 @@ import {useState, useMemo} from 'react';
 import {useDebounce} from 'use-debounce';
 import {useTranslation} from 'react-i18next';
 import {useQuery} from '@tanstack/react-query';
+import { toApiClientError } from '@/utils/errorUtils';
 
 export interface ItemSearchHit {
     itemType: 'weapon' | 'armor' | 'equipment' | 'pet';
@@ -28,6 +29,14 @@ function isRawItemSearchHit(value: unknown): value is RawItemSearchHit {
     );
 }
 
+async function readErrorBody(response: Response): Promise<unknown> {
+    if (typeof response.json !== 'function') {
+        return null;
+    }
+
+    return response.json().catch(() => null);
+}
+
 async function fetchItemSearch(
     query: string,
     locale: string,
@@ -44,7 +53,8 @@ async function fetchItemSearch(
     );
 
     if (!response.ok) {
-        throw new Error('Search failed');
+        const errorBody = await readErrorBody(response);
+        throw toApiClientError(errorBody, response, 'Search failed');
     }
 
     const payload = await response.json() as unknown;
@@ -107,7 +117,8 @@ async function fetchFullItem(itemType: string, id: number) {
     );
 
     if (!response.ok) {
-        throw new Error('Failed to fetch item');
+        const errorBody = await readErrorBody(response);
+        throw toApiClientError(errorBody, response, 'Failed to fetch item');
     }
 
     return response.json();

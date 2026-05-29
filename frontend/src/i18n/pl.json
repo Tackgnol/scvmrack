@@ -315,7 +315,8 @@
     "killConfirm": "Zabij i Zastąp",
     "killConfirmDesc": "\"{{name}}\" zostanie trwale usunięty i nowy scvm się wyczołga.",
     "testModal": "Testuj Modal",
-    "cancel": "Anuluj"
+    "cancel": "Anuluj",
+    "retry": "Ponów"
   },
   "powers": {
     "title": "Moce",
@@ -376,6 +377,29 @@
       "modifierValue": "Wartość modyfikatora"
     }
   },
+  "errors": {
+    "unexpected": "Wystąpił nieoczekiwany błąd.",
+    "badRequest": "Sprawdź żądanie i spróbuj ponownie.",
+    "unauthorized": "Sesja wygasła. Zaloguj się ponownie.",
+    "unauthorizedTitle": "Sesja wygasła",
+    "forbidden": "Nie masz dostępu do tego zasobu.",
+    "forbiddenTitle": "Brak dostępu",
+    "notFound": "Nie znaleziono żądanego elementu.",
+    "preconditionFailed": "Te dane zmieniły się gdzie indziej. Odśwież i spróbuj ponownie.",
+    "network": "Nie udało się połączyć. Sprawdź sieć i spróbuj ponownie.",
+    "requestFailed": "Żądanie nie powiodło się"
+  },
+  "feedback": {
+    "title": "Wyślij opinię",
+    "description": "Napisz, co się stało.",
+    "errorTitle": "Wystąpił nieoczekiwany błąd",
+    "errorDescription": "Napisz, co robiłeś. Szczegóły techniczne błędu dołączymy w tle.",
+    "prompt": "Co robiłeś?",
+    "sendReport": "Wyślij raport",
+    "sending": "Wysyłanie...",
+    "skip": "Pomiń",
+    "sent": "Raport wysłany."
+  },
   "notFound": {
     "title": "404",
     "tagline": "Wracaj, koleś.",
@@ -387,6 +411,7 @@
     "backToHome": "Powrót do strony głównej",
     "cancel": "Anuluj",
     "apply": "Zastosuj",
+    "loading": "Ładowanie...",
     "increaseHitPoints": "Zwiększ punkty życia",
     "decreaseHitPoints": "Zmniejsz punkty życia"
   },
@@ -424,6 +449,8 @@
     "unnamed": "Bezimienny Scvm",
     "notFound": "Nie ma takiego Scvma",
     "notFoundDescription": "Ta postać już nie istnieje. Wygenerować nową?",
+    "accessDenied": "Nie masz dostępu do tego Scvma",
+    "accessDeniedDescription": "Ten Scvm należy do innej sesji albo konta. Wygeneruj nowego albo otwórz jednego ze swoich.",
     "generateNew": "Wygeneruj nowego Scvma"
   },
   "faq": {

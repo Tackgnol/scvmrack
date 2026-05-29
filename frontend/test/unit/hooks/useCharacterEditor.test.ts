@@ -2,13 +2,25 @@ import { act, renderHook } from '@testing-library/react';
 import { beforeEach, expect, test, vi } from 'vitest';
 import { useCharacterEditor } from '../../../src/hooks/useCharacterEditor.ts';
 import { useQueryClient } from '@tanstack/react-query';
+import { trackCharacterEdited } from '@/analytics/characterAnalytics';
+
+const snackbarMocks = vi.hoisted(() => ({
+  showError: vi.fn(),
+}));
+const errorFeedbackMocks = vi.hoisted(() => ({
+  showUnexpectedError: vi.fn(() => true),
+}));
 
 vi.mock('@tanstack/react-query', () => ({
   useQueryClient: vi.fn(),
 }));
 
 vi.mock('../../../src/SnackbarContext/SnackbarProvider.tsx', () => ({
-  useSnackbar: () => ({ showError: vi.fn() }),
+  useSnackbar: () => ({ showError: snackbarMocks.showError }),
+}));
+
+vi.mock('@/components/molecules/feedback/ErrorFeedbackProvider', () => ({
+  useErrorFeedback: () => errorFeedbackMocks,
 }));
 
 vi.mock('use-debounce', () => ({
@@ -37,6 +49,7 @@ vi.mock('react-i18next', () => ({
 
 beforeEach(() => {
   vi.clearAllMocks();
+  errorFeedbackMocks.showUnexpectedError.mockReturnValue(true);
 });
 
 test('useCharacterEditor queues patches and applies them optimistically', () => {
@@ -251,6 +264,66 @@ test('useCharacterEditor handles failed save and retries', () => {
   // This increments internal retryCountRef.
 });
 
+test('useCharacterEditor reports repeated 5xx saves after retry tolerance and keeps retry action', () => {
+  const character = { id: 'char-1' };
+  const queryClient = {
+    getQueryData: vi.fn().mockReturnValue(character),
+    setQueryData: vi.fn(),
+  };
+  (useQueryClient as any).mockReturnValue(queryClient);
+
+  const mutate = vi.fn();
+  const updateCharacter = { mutate, isPending: false } as any;
+
+  const { result } = renderHook(() =>
+    useCharacterEditor('char-1', updateCharacter, (id) => [id])
+  );
+
+  act(() => {
+    result.current.updateField('hp', 10);
+  });
+  act(() => {
+    result.current.flush();
+  });
+
+  const callbacks = mutate.mock.calls[0][1];
+  const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+  const serverError = {
+    statusCode: 500,
+    code: 'INTERNAL_ERROR',
+    message: 'Unexpected error occurred.',
+  };
+
+  act(() => {
+    callbacks.onError(serverError);
+    callbacks.onError(serverError);
+  });
+
+  expect(errorFeedbackMocks.showUnexpectedError).not.toHaveBeenCalled();
+  expect(snackbarMocks.showError).not.toHaveBeenCalled();
+
+  act(() => {
+    callbacks.onError(serverError);
+  });
+
+  expect(errorFeedbackMocks.showUnexpectedError).toHaveBeenCalledWith(
+    serverError,
+    expect.objectContaining({
+      source: 'character_save',
+      operation: 'patch_character',
+      characterId: 'char-1',
+    })
+  );
+  expect(snackbarMocks.showError).toHaveBeenCalledWith(
+    'Unexpected error occurred.',
+    expect.objectContaining({
+      label: 'Retry',
+      onClick: expect.any(Function),
+    })
+  );
+  spy.mockRestore();
+});
+
 test('useCharacterEditor supports equipment and storage operations', () => {
   const character = { id: 'char-1', equipment: [], storage: [] };
   const queryClient = {
@@ -312,4 +385,80 @@ test('useCharacterEditor supports modifier operations', () => {
   });
 
   expect(mutate).toHaveBeenCalled();
+});
+
+test('useCharacterEditor tracks successful equipment saves and invalidates hydrated character data', () => {
+  const character = { id: 'char-1', equipment: [] };
+  const queryClient = {
+    getQueryData: vi.fn().mockReturnValue(character),
+    setQueryData: vi.fn(),
+    invalidateQueries: vi.fn(),
+  };
+  (useQueryClient as any).mockReturnValue(queryClient);
+
+  const mutate = vi.fn();
+  const updateCharacter = { mutate, isPending: false } as any;
+
+  const { result } = renderHook(() =>
+    useCharacterEditor('char-1', updateCharacter, (id, locale) => [
+      'char',
+      id,
+      locale,
+    ], 'pl')
+  );
+
+  act(() => {
+    result.current.addEquipmentItem({ key: 'torch', name: 'Torch' } as any);
+  });
+
+  act(() => {
+    result.current.flush();
+  });
+
+  const callbacks = mutate.mock.calls[0][1];
+  act(() => {
+    callbacks.onSuccess();
+  });
+
+  expect(trackCharacterEdited).toHaveBeenCalledWith(
+    [expect.objectContaining({ kind: 'equipment-add' })],
+    'pl'
+  );
+  expect(queryClient.invalidateQueries).toHaveBeenCalledWith({
+    queryKey: ['char', 'char-1', 'pl'],
+  });
+});
+
+test('useCharacterEditor surfaces rate limits without retry actions', () => {
+  const character = { id: 'char-1' };
+  const queryClient = {
+    getQueryData: vi.fn().mockReturnValue(character),
+    setQueryData: vi.fn(),
+  };
+  (useQueryClient as any).mockReturnValue(queryClient);
+
+  const mutate = vi.fn();
+  const updateCharacter = { mutate, isPending: false } as any;
+
+  const { result } = renderHook(() =>
+    useCharacterEditor('char-1', updateCharacter, (id) => [id])
+  );
+
+  act(() => {
+    result.current.updateField('hp', 10);
+  });
+  act(() => {
+    result.current.flush();
+  });
+
+  const callbacks = mutate.mock.calls[0][1];
+  const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+  act(() => {
+    callbacks.onError({ status: 429 });
+  });
+
+  expect(snackbarMocks.showError).toHaveBeenCalledWith(
+    'Too many requests. Please try again later.'
+  );
+  spy.mockRestore();
 });

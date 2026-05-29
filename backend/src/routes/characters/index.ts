@@ -11,6 +11,15 @@ import {
 import prisma from '../../lib/prisma.js';
 import type {CharacterUpdate, GenerateCharacterParams,} from '../../types/character.js';
 import {camelCaseJsonbFields, isValidLocale, isValidUUID, sanitizeCharacterUpdate, toDbPatch,} from '../../utils.js';
+import {
+    apiError,
+    badRequest,
+    normalizeKnownApiError,
+    notFound,
+    sendApiError,
+    unauthorized,
+    type ApiHttpError,
+} from '../../errors.js';
 
 // ============================================
 // Helper: Check character access
@@ -36,10 +45,10 @@ function sessionUserId(session: AuthSession): string | null {
 async function checkCharacterAccess(
     characterId: string,
     session: AuthSession
-): Promise<{ allowed: boolean; reason?: string }> {
+): Promise<{ allowed: true } | { allowed: false; error: ApiHttpError }> {
     const userId = sessionUserId(session);
     if (!userId) {
-        return {allowed: false, reason: 'No session'};
+        return {allowed: false, error: unauthorized()};
     }
 
     const character = await prisma.character.findUnique({
@@ -48,14 +57,41 @@ async function checkCharacterAccess(
     });
 
     if (!character) {
-        return {allowed: false, reason: 'Character not found'};
+        return {allowed: false, error: notFound('CHARACTER_NOT_FOUND', 'Character not found')};
     }
 
     if (character.userId !== userId) {
-        return {allowed: false, reason: 'Access denied'};
+        return {
+            allowed: false,
+            error: apiError(
+                403,
+                'CHARACTER_ACCESS_DENIED',
+                "You don't have access to this scvm"
+            ),
+        };
     }
 
     return {allowed: true};
+}
+
+function knownOrUnexpected(
+    error: unknown,
+    code: string,
+    message: string
+): ApiHttpError {
+    return normalizeKnownApiError(error) ?? apiError(500, code, message);
+}
+
+function characterNotFoundOrUnexpected(
+    error: unknown,
+    code: string,
+    message: string
+): ApiHttpError {
+    if (error instanceof Error && error.message.includes('Character not found')) {
+        return notFound('CHARACTER_NOT_FOUND', 'Character not found');
+    }
+
+    return knownOrUnexpected(error, code, message);
 }
 
 function resolveListLocale(acceptLanguage: unknown): 'en' | 'pl' {
@@ -104,7 +140,9 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
                 body: GenerateBodySchema,
                 response: {
                     201: CharacterSchema,
+                    400: ErrorSchema,
                     401: ErrorSchema,
+                    429: ErrorSchema,
                     500: ErrorSchema,
                 },
             },
@@ -114,7 +152,7 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
 
             const userId = sessionUserId(session);
             if (!userId) {
-                return reply.status(401).send({error: 'Session required'});
+                return sendApiError(reply, request, unauthorized());
             }
 
             const classId = request.body?.classId;
@@ -126,9 +164,11 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
                 `;
 
                 if (!result) {
-                    return reply
-                        .status(500)
-                        .send({error: 'Failed to generate character'});
+                    throw apiError(
+                        500,
+                        'CHARACTER_GENERATION_FAILED',
+                        'Failed to generate character'
+                    );
                 }
 
                 const characterId = result.generateCharacter;
@@ -141,17 +181,21 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
 
                 const character = await getCharacterFullById(characterId!, locale);
                 if (!character) {
-                    return reply
-                        .status(500)
-                        .send({error: 'Failed to fetch generated character'});
+                    throw apiError(
+                        500,
+                        'CHARACTER_GENERATION_FETCH_FAILED',
+                        'Failed to fetch generated character'
+                    );
                 }
 
                 return reply.status(201).send(camelCaseJsonbFields(character));
             } catch (err) {
                 request.log.error(err);
-                return reply
-                    .status(500)
-                    .send({error: 'Failed to generate character'});
+                throw knownOrUnexpected(
+                    err,
+                    'CHARACTER_GENERATION_FAILED',
+                    'Failed to generate character'
+                );
             }
         }
     );
@@ -181,7 +225,11 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
                 return { total };
             } catch (err) {
                 request.log.error(err);
-                return reply.status(500).send({ error: 'Failed to count characters' });
+                throw knownOrUnexpected(
+                    err,
+                    'CHARACTER_COUNT_FAILED',
+                    'Failed to count characters'
+                );
             }
         }
     );
@@ -200,6 +248,7 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
                 querystring: LocaleQuerySchema,
                 response: {
                     200: CharacterSchema,
+                    400: ErrorSchema,
                     401: ErrorSchema,
                     403: ErrorSchema,
                     404: ErrorSchema,
@@ -213,31 +262,37 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
             const session = request.appSession;
 
             if (!isValidUUID(id)) {
-                return reply.status(400).send({error: 'Invalid character ID'});
+                return sendApiError(
+                    reply,
+                    request,
+                    badRequest('INVALID_CHARACTER_ID', 'Invalid character ID')
+                );
             }
 
             // Check access
             const access = await checkCharacterAccess(id, session);
             if (!access.allowed) {
-                const status =
-                    access.reason === 'No session'
-                        ? 401
-                        : access.reason === 'Character not found'
-                            ? 404
-                            : 403;
-                return reply.status(status).send({error: access.reason});
+                return sendApiError(reply, request, access.error);
             }
 
             try {
                 const character = await getCharacterFullById(id, locale);
                 if (!character) {
-                    return reply.status(404).send({error: 'Character not found'});
+                    return sendApiError(
+                        reply,
+                        request,
+                        notFound('CHARACTER_NOT_FOUND', 'Character not found')
+                    );
                 }
 
                 return camelCaseJsonbFields(character);
             } catch (err) {
                 request.log.error(err);
-                return reply.status(500).send({error: 'Failed to fetch character'});
+                throw knownOrUnexpected(
+                    err,
+                    'CHARACTER_FETCH_FAILED',
+                    'Failed to fetch character'
+                );
             }
         }
     );
@@ -268,6 +323,7 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
                     401: ErrorSchema,
                     403: ErrorSchema,
                     404: ErrorSchema,
+                    429: ErrorSchema,
                     500: ErrorSchema,
                 },
             },
@@ -278,19 +334,17 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
 
             // Validate UUID
             if (!isValidUUID(id)) {
-                return reply.status(400).send({error: 'Invalid character ID'});
+                return sendApiError(
+                    reply,
+                    request,
+                    badRequest('INVALID_CHARACTER_ID', 'Invalid character ID')
+                );
             }
 
             // Check access
             const access = await checkCharacterAccess(id, session);
             if (!access.allowed) {
-                const status =
-                    access.reason === 'No session'
-                        ? 401
-                        : access.reason === 'Character not found'
-                            ? 404
-                            : 403;
-                return reply.status(status).send({error: access.reason});
+                return sendApiError(reply, request, access.error);
             }
 
             // Validate and default locale
@@ -304,7 +358,11 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
             );
 
             if (Object.keys(updates).length === 0) {
-                return reply.status(400).send({error: 'No valid fields to update'});
+                return sendApiError(
+                    reply,
+                    request,
+                    badRequest('EMPTY_CHARACTER_UPDATE', 'No valid fields to update')
+                );
             }
 
             try {
@@ -314,16 +372,21 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
 
                 const character = await getCharacterFullById(id, locale);
                 if (!character) {
-                    return reply.status(404).send({error: 'Character not found'});
+                    return sendApiError(
+                        reply,
+                        request,
+                        notFound('CHARACTER_NOT_FOUND', 'Character not found')
+                    );
                 }
 
                 return camelCaseJsonbFields(character);
             } catch (err: unknown) {
-                if (err instanceof Error && err.message.includes('Character not found')) {
-                    return reply.status(404).send({error: 'Character not found'});
-                }
                 request.log.error(err, 'Failed to update character');
-                return reply.status(500).send({error: 'Failed to update character'});
+                throw characterNotFoundOrUnexpected(
+                    err,
+                    'CHARACTER_UPDATE_FAILED',
+                    'Failed to update character'
+                );
             }
         }
     );
@@ -348,7 +411,7 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
 
             const userId = sessionUserId(session);
             if (!userId) {
-                return reply.status(401).send({error: 'Session required'});
+                return sendApiError(reply, request, unauthorized());
             }
 
             try {
@@ -373,7 +436,11 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
                 return rows;
             } catch (err) {
                 request.log.error(err);
-                return reply.status(500).send({error: 'Failed to list characters'});
+                throw knownOrUnexpected(
+                    err,
+                    'CHARACTER_LIST_FAILED',
+                    'Failed to list characters'
+                );
             }
         }
     );
@@ -390,6 +457,7 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
                 params: CharacterIdParamsSchema,
                 response: {
                     204: {type: 'null', description: 'Character deleted'},
+                    400: ErrorSchema,
                     401: ErrorSchema,
                     403: ErrorSchema,
                     404: ErrorSchema,
@@ -402,19 +470,17 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
             const session = request.appSession;
 
             if (!isValidUUID(id)) {
-                return reply.status(400).send({error: 'Invalid character ID'});
+                return sendApiError(
+                    reply,
+                    request,
+                    badRequest('INVALID_CHARACTER_ID', 'Invalid character ID')
+                );
             }
 
             // Check access
             const access = await checkCharacterAccess(id, session);
             if (!access.allowed) {
-                const status =
-                    access.reason === 'No session'
-                        ? 401
-                        : access.reason === 'Character not found'
-                            ? 404
-                            : 403;
-                return reply.status(status).send({error: access.reason});
+                return sendApiError(reply, request, access.error);
             }
 
             try {
@@ -423,13 +489,21 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
                 });
 
                 if (result.count === 0) {
-                    return reply.status(404).send({error: 'Character not found'});
+                    return sendApiError(
+                        reply,
+                        request,
+                        notFound('CHARACTER_NOT_FOUND', 'Character not found')
+                    );
                 }
 
                 return reply.status(204).send();
             } catch (err) {
                 request.log.error(err);
-                return reply.status(500).send({error: 'Failed to delete character'});
+                throw characterNotFoundOrUnexpected(
+                    err,
+                    'CHARACTER_DELETE_FAILED',
+                    'Failed to delete character'
+                );
             }
         }
     );

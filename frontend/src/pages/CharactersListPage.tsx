@@ -4,10 +4,15 @@ import { CharacterListItem } from "@/hooks/models.ts";
 import { getCharacterKey } from "@/hooks/utils.ts";
 import { AnimatedNumber } from "@components/index";
 import { useAuth } from '@/hooks/useAuth';
+import { useErrorFeedback } from '@/components/molecules/feedback/ErrorFeedbackProvider';
 import { appHistory } from '@/router/history';
 import { buildHomeCallbackUrl } from '@/router/navigation';
 import { Seo } from '@/seo/Seo';
 import { customStyles, morkBorgColors } from '@/theme/morkBorgTheme';
+import {
+    getUserFacingApiErrorMessage,
+    isUnexpectedApiError,
+} from '@/utils/errorUtils';
 import {
     Alert,
     Box,
@@ -18,7 +23,7 @@ import {
 } from '@mui/material';
 import { Link } from '@tanstack/react-router';
 import { useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const listStyles = {
@@ -185,6 +190,7 @@ const listStyles = {
 export function CharactersListPage() {
     const { t, i18n } = useTranslation();
     const { isAuthenticated, isGuest } = useAuth();
+    const { showUnexpectedError } = useErrorFeedback();
     const queryClient = useQueryClient();
     const { characterId, lastCharacterId, setCharacterId, generateNew } = useCharacter();
     const [isCreating, setIsCreating] = useState(false);
@@ -199,6 +205,17 @@ export function CharactersListPage() {
     );
     const deleteCharacter = $api.useMutation('delete', '/api/characters/{id}');
     const characters = (charactersQuery.data as CharacterListItem[] | undefined) ?? [];
+
+    useEffect(() => {
+        if (!charactersQuery.error || !isUnexpectedApiError(charactersQuery.error)) {
+            return;
+        }
+
+        showUnexpectedError(charactersQuery.error, {
+            source: 'characters_list',
+            operation: 'list_characters',
+        });
+    }, [charactersQuery.error, showUnexpectedError]);
 
     const handleOpenCharacter = async (id?: string) => {
         if (!id) return;
@@ -221,9 +238,31 @@ export function CharactersListPage() {
             onSuccess: (newCharacterId) => {
                 void appHistory.push(buildHomeCallbackUrl(newCharacterId));
             },
-            onError: () => {
+            onError: (error) => {
                 setIsCreating(false);
-                setDeleteError(t('characters.createError', 'Failed to create character'));
+                if (isUnexpectedApiError(error)) {
+                    const reported = showUnexpectedError(error, {
+                        source: 'characters_list_create',
+                        operation: 'create_character',
+                    });
+                    if (!reported) {
+                        setDeleteError(
+                            getUserFacingApiErrorMessage(
+                                error,
+                                t,
+                                'Failed to create character'
+                            )
+                        );
+                    }
+                    return;
+                }
+                setDeleteError(
+                    getUserFacingApiErrorMessage(
+                        error,
+                        t,
+                        'Failed to create character'
+                    )
+                );
             },
         });
     };
@@ -253,8 +292,31 @@ export function CharactersListPage() {
             }
 
             await charactersQuery.refetch();
-        } catch {
-            setDeleteError(t('characters.deleteError', 'Failed to delete character'));
+        } catch (error) {
+            if (isUnexpectedApiError(error)) {
+                const reported = showUnexpectedError(error, {
+                    source: 'characters_list_delete',
+                    operation: 'delete_character',
+                    characterId: character.id,
+                });
+                if (!reported) {
+                    setDeleteError(
+                        getUserFacingApiErrorMessage(
+                            error,
+                            t,
+                            'Failed to delete character'
+                        )
+                    );
+                }
+            } else {
+                setDeleteError(
+                    getUserFacingApiErrorMessage(
+                        error,
+                        t,
+                        'Failed to delete character'
+                    )
+                );
+            }
         } finally {
             setDeletingId(null);
         }
@@ -343,7 +405,11 @@ export function CharactersListPage() {
 
                 {charactersQuery.error && (
                     <Alert severity="error" sx={{ mb: 2 }}>
-                        {t('characters.loadError', 'Failed to load characters')}
+                        {getUserFacingApiErrorMessage(
+                            charactersQuery.error,
+                            t,
+                            'Failed to load characters'
+                        )}
                     </Alert>
                 )}
 
@@ -382,7 +448,11 @@ export function CharactersListPage() {
                                 const key = id ?? `${character.name ?? 'character'}-${index}`;
 
                                 return (
-                                    <Box key={key} sx={listStyles.row(isActive)}>
+                                    <Box
+                                        key={key}
+                                        sx={listStyles.row(isActive)}
+                                        data-testid={id ? `character-row-${id}` : undefined}
+                                    >
                                         <Box sx={listStyles.cell}>
                                             <Typography sx={listStyles.mobileLabel}>
                                                 {t('characters.columns.name', 'Name')}
@@ -428,6 +498,7 @@ export function CharactersListPage() {
                                                 size="small"
                                                 variant="contained"
                                                 sx={listStyles.openButton}
+                                                data-testid={id ? `open-character-${id}` : undefined}
                                                 onClick={() => {
                                                     void handleOpenCharacter(character.id);
                                                 }}
@@ -439,6 +510,7 @@ export function CharactersListPage() {
                                                 size="small"
                                                 variant="outlined"
                                                 sx={listStyles.deleteButton}
+                                                data-testid={id ? `delete-character-${id}` : undefined}
                                                 onClick={() => handleDeleteCharacter(character)}
                                                 disabled={!character.id || isDeleting}
                                             >

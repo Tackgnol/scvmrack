@@ -1,6 +1,7 @@
 import fp from 'fastify-plugin';
 import type { FastifyInstance } from 'fastify';
 import prisma from '../lib/prisma.js';
+import { apiError, badRequest, sendApiError } from '../errors.js';
 
 interface CreateUserBody {
   name?: string;
@@ -10,6 +11,7 @@ interface CreateUserBody {
 
 interface CreateCharacterBody {
   userId: string;
+  name?: string;
 }
 
 export default fp(async function testRoutesPlugin(fastify: FastifyInstance) {
@@ -30,7 +32,12 @@ export default fp(async function testRoutesPlugin(fastify: FastifyInstance) {
 
     if (!response.ok) {
       const text = await response.text();
-      return reply.status(502).send({ error: 'anonymous_sign_in_failed', detail: text });
+      request.log.warn({ detail: text }, 'Anonymous test sign-in failed');
+      return sendApiError(
+        reply,
+        request,
+        apiError(502, 'ANONYMOUS_SIGN_IN_FAILED', 'Anonymous sign-in failed')
+      );
     }
 
     const setCookies = response.headers.getSetCookie?.() ?? [];
@@ -39,7 +46,15 @@ export default fp(async function testRoutesPlugin(fastify: FastifyInstance) {
     const userId = payload?.user?.id;
 
     if (!userId || !sessionCookie) {
-      return reply.status(502).send({ error: 'anonymous_sign_in_invalid_response' });
+      return sendApiError(
+        reply,
+        request,
+        apiError(
+          502,
+          'ANONYMOUS_SIGN_IN_INVALID_RESPONSE',
+          'Anonymous sign-in returned an invalid response'
+        )
+      );
     }
 
     if (name || email) {
@@ -57,10 +72,14 @@ export default fp(async function testRoutesPlugin(fastify: FastifyInstance) {
   });
 
   fastify.post<{ Body: CreateCharacterBody }>('/test/characters', async (request, reply) => {
-    const { userId } = request.body ?? ({} as CreateCharacterBody);
+    const { userId, name } = request.body ?? ({} as CreateCharacterBody);
 
     if (!userId) {
-      return reply.status(400).send({ error: 'userId required' });
+      return sendApiError(
+        reply,
+        request,
+        badRequest('USER_ID_REQUIRED', 'userId required')
+      );
     }
 
     const [result] = await prisma.$queryRaw<{ generateCharacter: string }[]>`
@@ -69,12 +88,19 @@ export default fp(async function testRoutesPlugin(fastify: FastifyInstance) {
 
     const characterId = result?.generateCharacter;
     if (!characterId) {
-      return reply.status(500).send({ error: 'character_generation_failed' });
+      return sendApiError(
+        reply,
+        request,
+        apiError(500, 'CHARACTER_GENERATION_FAILED', 'Failed to generate character')
+      );
     }
 
     await prisma.character.update({
       where: { id: characterId },
-      data: { userId },
+      data: {
+        userId,
+        ...(name ? { name: name.slice(0, 255) } : {}),
+      },
     });
 
     return reply.status(201).send({ id: characterId });

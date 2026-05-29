@@ -16,10 +16,17 @@ export interface AppOptions
 const options: AppOptions = {};
 
 const app: FastifyPluginAsync<AppOptions> = async (fastify, opts) => {
+  const healthHandler = async () => ({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+  });
+
   await fastify.register(AutoLoad, {
     dir: join(__dirname, 'plugins'),
     options: opts,
   });
+
+  fastify.get('/health', healthHandler);
 
   fastify.addHook('preHandler', async (request) => {
     if (!Sentry.isInitialized()) {

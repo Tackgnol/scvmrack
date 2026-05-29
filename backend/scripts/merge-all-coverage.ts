@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const rootDir = resolve(__dirname, '..');
+const repoDir = resolve(rootDir, '..');
 const clientDir = resolve(rootDir, '../frontend');
 const nycBin = resolve(clientDir, 'node_modules/nyc/bin/nyc.js');
 const mergeInputDir = resolve(rootDir, '.nyc_output/full-coverage-input');
@@ -76,6 +77,8 @@ const reportResult = spawnSync(
   [
     nycBin,
     'report',
+    '--cwd',
+    repoDir,
     '--temp-dir',
     mergeOutputDir,
     '--reporter=html',
@@ -85,7 +88,7 @@ const reportResult = spawnSync(
     '--report-dir',
     reportDir,
   ],
-  { cwd: rootDir, stdio: 'inherit' },
+  { cwd: repoDir, stdio: 'inherit' },
 );
 
 process.exit(reportResult.status ?? 1);

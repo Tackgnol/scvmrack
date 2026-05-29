@@ -123,3 +123,38 @@ test('useEquippedBar resolves ammo from both stacked and duplicate inventory ite
   expect(result.current.resolveAmmo('Bolt')).toBe(2);
   expect(result.current.mainWeaponAmmo.ammoCount).toBe(5);
 });
+
+test('useEquippedBar consumes ammo only for equipped weapons with available ammo', () => {
+  const useAmmo = vi.fn();
+  const wrapperState = createCharacterTestWrapper({
+    character: {
+      equipment: [
+        {
+          key: 'equipment.arrows',
+          name: 'Arrows',
+          ammoType: 'Arrow',
+          tags: ['ammo'],
+          amount: 2,
+        },
+      ],
+      equippedWeapons: [
+        { key: 'weapons.bow', name: 'Bow', ammoType: 'Arrow' },
+        { key: 'weapons.crossbow', name: 'Crossbow', ammoType: 'Bolt' },
+      ],
+      equippedArmor: null,
+    },
+    useAmmo,
+  });
+
+  const { result } = renderHook(() => useEquippedBar(), {
+    wrapper: wrapperState.wrapper,
+  });
+
+  act(() => {
+    result.current.useMainWeaponAmmo();
+    result.current.useOffhandWeaponAmmo();
+  });
+
+  expect(useAmmo).toHaveBeenCalledTimes(1);
+  expect(useAmmo).toHaveBeenCalledWith(0);
+});

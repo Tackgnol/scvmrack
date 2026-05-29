@@ -44,5 +44,22 @@ export const ErrorSchema = {
   type: 'object',
   properties: {
     error: { type: 'string' },
+    message: { type: 'string' },
+    code: { type: 'string' },
+    statusCode: { type: 'integer' },
+    requestId: { type: 'string' },
+    details: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          field: { type: 'string' },
+          message: { type: 'string' },
+          code: { type: 'string' },
+        },
+        required: ['message'],
+      },
+    },
   },
+  required: ['error', 'message', 'code', 'statusCode', 'requestId'],
 };

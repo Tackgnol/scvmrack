@@ -318,7 +318,8 @@
     "killConfirm": "Kill & Replace",
     "killConfirmDesc": "\"{{name}}\" will be permanently deleted and a new scvm will crawl out.",
     "testModal": "Test Modal",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "retry": "Retry"
   },
   "powers": {
     "title": "Powers",
@@ -379,6 +380,29 @@
       "modifierValue": "Modifier value"
     }
   },
+  "errors": {
+    "unexpected": "Unexpected error occurred.",
+    "badRequest": "Check the request and try again.",
+    "unauthorized": "Your session expired. Sign in again.",
+    "unauthorizedTitle": "Session expired",
+    "forbidden": "You do not have access to this resource.",
+    "forbiddenTitle": "Access denied",
+    "notFound": "The requested item was not found.",
+    "preconditionFailed": "This changed somewhere else. Reload and try again.",
+    "network": "Connection failed. Check your network and try again.",
+    "requestFailed": "Request failed"
+  },
+  "feedback": {
+    "title": "Send feedback",
+    "description": "Tell us what happened.",
+    "errorTitle": "Unexpected error occurred",
+    "errorDescription": "Tell us what you were doing. We will attach the technical error details in the background.",
+    "prompt": "What were you doing?",
+    "sendReport": "Send report",
+    "sending": "Sending...",
+    "skip": "Skip",
+    "sent": "Report sent."
+  },
   "notFound": {
     "title": "404",
     "tagline": "Go back, mate.",
@@ -390,6 +414,7 @@
     "backToHome": "Back to Home",
     "cancel": "Cancel",
     "apply": "Apply",
+    "loading": "Loading...",
     "increaseHitPoints": "Increase hit points",
     "decreaseHitPoints": "Decrease hit points"
   },
@@ -427,6 +452,8 @@
     "unnamed": "Unnamed Scvm",
     "notFound": "Scvm not found",
     "notFoundDescription": "This character no longer exists. Generate a new one?",
+    "accessDenied": "You don't have access to this scvm",
+    "accessDeniedDescription": "This scvm belongs to another session or account. Generate a new one or open one of yours.",
     "generateNew": "Generate new Scvm"
   },
   "faq": {

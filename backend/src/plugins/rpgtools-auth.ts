@@ -2,6 +2,7 @@ import fp from 'fastify-plugin';
 import type { FastifyInstance } from 'fastify';
 import { prismaAdapter, rpgtoolsSharedAuth } from '@tackgnol/rpgtools-shared-auth';
 import prisma from '../lib/prisma.js';
+import { apiError, sendApiError } from '../errors.js';
 
 const defaultTrustedOrigins = [
   'http://localhost:5173',
@@ -107,7 +108,15 @@ export default fp(async function rpgtoolsAuthPlugin(fastify: FastifyInstance) {
 
     const payload = JSON.parse(text) as { url?: string };
     if (!payload.url) {
-      return reply.status(502).send({ error: 'missing_oauth_redirect_url' });
+      return sendApiError(
+        reply,
+        request,
+        apiError(
+          502,
+          'OAUTH_REDIRECT_MISSING',
+          'OAuth provider did not return a redirect URL'
+        )
+      );
     }
 
     return reply.redirect(payload.url);

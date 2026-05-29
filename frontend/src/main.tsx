@@ -1,5 +1,6 @@
 import './instrument';
 import { CharacterProvider } from "@/CharacterContext/CharacterContext";
+import { ErrorFeedbackProvider } from '@/components/molecules/feedback/ErrorFeedbackProvider';
 import { SnackbarProvider } from "@/SnackbarContext/SnackbarProvider";
 import { initializeAnalyticsConsent } from '@/analytics/googleAnalytics';
 import {
@@ -60,11 +61,13 @@ ReactDOM.createRoot(document.getElementById('root')!, {
             )}
         >
             <SnackbarProvider>
-                <QueryClientProvider client={queryClient}>
-                    <CharacterProvider>
-                        <RouterProvider router={router} />
-                    </CharacterProvider>
-                </QueryClientProvider>
+                <ErrorFeedbackProvider>
+                    <QueryClientProvider client={queryClient}>
+                        <CharacterProvider>
+                            <RouterProvider router={router} />
+                        </CharacterProvider>
+                    </QueryClientProvider>
+                </ErrorFeedbackProvider>
             </SnackbarProvider>
         </Sentry.ErrorBoundary>
     </React.StrictMode>
