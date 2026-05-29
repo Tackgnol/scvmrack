@@ -25,6 +25,10 @@ import {
     isScrollItem,
 } from '@/hooks/useEquipmentSections';
 import { Seo } from '@/seo/Seo';
+import {
+    shouldSkipKillConfirm,
+    setSkipKillConfirm,
+} from '@/preferences/killConfirmation';
 import { customStyles, morkBorgColors } from '@/theme/morkBorgTheme';
 import {
     getUserFacingApiErrorMessage,
@@ -39,6 +43,8 @@ import {
     AccordionDetails,
     AccordionSummary,
     Box,
+    Checkbox,
+    FormControlLabel,
     Typography,
     useMediaQuery,
     useTheme,
@@ -205,6 +211,7 @@ export function CharacterPage() {
     const prefersReducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
 
     const [killConfirmOpen, setKillConfirmOpen] = useState(false);
+    const [killConfirmDontAskAgain, setKillConfirmDontAskAgain] = useState(false);
     const [stampDate, setStampDate] = useState<Date | null>(null);
     const [pendingAction, setPendingAction] = useState<'generate' | 'kill' | null>(null);
     const [fallbackUnexpectedLoadError, setFallbackUnexpectedLoadError] = useState(false);
@@ -264,13 +271,7 @@ export function CharacterPage() {
         triggerStamp();
     };
 
-    const handleKillRequest = () => {
-        setKillConfirmOpen(true);
-    };
-
-    const handleKillConfirm = () => {
-        setKillConfirmOpen(false);
-
+    const performKill = () => {
         if (prefersReducedMotion) {
             killAndReplace();
             return;
@@ -278,6 +279,26 @@ export function CharacterPage() {
 
         setPendingAction('kill');
         triggerStamp();
+    };
+
+    const handleKillRequest = () => {
+        // Honor the user's "Don't show this again" choice — kill straight away.
+        if (shouldSkipKillConfirm()) {
+            performKill();
+            return;
+        }
+
+        setKillConfirmDontAskAgain(false);
+        setKillConfirmOpen(true);
+    };
+
+    const handleKillConfirm = () => {
+        if (killConfirmDontAskAgain) {
+            setSkipKillConfirm(true);
+        }
+
+        setKillConfirmOpen(false);
+        performKill();
     };
 
     return (
@@ -514,6 +535,22 @@ export function CharacterPage() {
                         }
                     )}
                 </Typography>
+                <FormControlLabel
+                    sx={{ mt: 1 }}
+                    control={
+                        <Checkbox
+                            checked={killConfirmDontAskAgain}
+                            onChange={(event) =>
+                                setKillConfirmDontAskAgain(event.target.checked)
+                            }
+                            data-testid="kill-confirm-dont-ask"
+                        />
+                    }
+                    label={t(
+                        'actions.killConfirmDontAskAgain',
+                        "Don't show this again"
+                    )}
+                />
             </MorkBorgModal>
         </>
     );

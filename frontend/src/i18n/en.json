@@ -317,6 +317,7 @@
     "killConfirmTitle": "KILL THIS SCVM?",
     "killConfirm": "Kill & Replace",
     "killConfirmDesc": "\"{{name}}\" will be permanently deleted and a new scvm will crawl out.",
+    "killConfirmDontAskAgain": "Don't show this again",
     "testModal": "Test Modal",
     "cancel": "Cancel",
     "retry": "Retry"

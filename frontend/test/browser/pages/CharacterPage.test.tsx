@@ -151,6 +151,7 @@ describe('CharacterPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     errorFeedbackMocks.showUnexpectedError.mockReturnValue(true);
+    localStorage.removeItem('scvmrack-skip-kill-confirm-v1');
   });
 
   it('offers a replacement when a requested character is not found', async () => {
@@ -275,5 +276,26 @@ describe('CharacterPage', () => {
     await userEvent.click(page.getByTestId('kill-confirm-button'));
 
     expect(killAndReplace).toHaveBeenCalled();
+  });
+
+  it('skips the confirmation after opting out via "Don\'t show this again"', async () => {
+    await renderCharacterPage({ isAuthenticated: true });
+
+    // First kill: tick "Don't show this again", then confirm.
+    await userEvent.click(page.getByRole('button', { name: /kill scvm/i }));
+    await expect
+      .element(page.getByRole('dialog', { name: /kill this scvm/i }))
+      .toBeVisible();
+    await userEvent.click(page.getByTestId('kill-confirm-dont-ask'));
+    await userEvent.click(page.getByTestId('kill-confirm-button'));
+
+    expect(killAndReplace).toHaveBeenCalledTimes(1);
+    expect(localStorage.getItem('scvmrack-skip-kill-confirm-v1')).toBe('true');
+
+    // Second kill: the dialog is skipped and the kill happens directly.
+    await userEvent.click(page.getByRole('button', { name: /kill scvm/i }));
+
+    expect(killAndReplace).toHaveBeenCalledTimes(2);
+    expect(document.body.querySelector('[role="dialog"]')).toBeNull();
   });
 });
