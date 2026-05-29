@@ -41,13 +41,23 @@ export const loadLanguage = async (lng: string) => {
     }
 };
 
+// Keep <html lang> in sync so screen readers pronounce content correctly and
+// crawlers see the right language (a11y + SEO).
+const syncHtmlLang = (lng: string) => {
+    if (typeof document !== 'undefined') {
+        document.documentElement.lang = lng.split('-')[0];
+    }
+};
+
 // Initial load for the detected language
 const initialLng = i18n.resolvedLanguage || i18n.language || 'en';
 loadLanguage(initialLng);
+syncHtmlLang(initialLng);
 
-// Automatically load new languages when they are changed
+// Automatically load new languages and update <html lang> when they change
 i18n.on('languageChanged', (lng) => {
     loadLanguage(lng);
+    syncHtmlLang(lng);
 });
 
 export default i18n;

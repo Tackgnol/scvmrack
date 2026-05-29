@@ -46,6 +46,7 @@ vi.mock('@/api', () => ({
     useQuery: vi.fn(),
     useMutation: vi.fn(),
   },
+  getCsrfToken: vi.fn().mockResolvedValue('test-csrf-token'),
 }));
 
 vi.mock('@/hooks/useAuth', () => ({
@@ -67,6 +68,7 @@ vi.mock('@/router/navigation', () => ({
   buildHomeCallbackUrl: vi.fn((characterId: string | null) =>
     characterId ? `/character/${characterId}` : '/character'
   ),
+  navigateToSessionExpired: vi.fn(),
 }));
 
 describe('CharactersListPage', () => {

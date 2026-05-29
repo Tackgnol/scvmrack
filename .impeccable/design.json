@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "generatedAt": "2026-05-08T00:00:00.000Z",
-  "title": "Design System: Scvm Grinder",
+  "title": "Design System: Scvm Rack",
   "extensions": {
     "colorMeta": {
       "yellow": {
@@ -258,7 +258,7 @@
   ],
   "narrative": {
     "northStar": "The Punk Grimoire",
-    "overview": "Scvm Grinder is an interactive character sheet for Mörk Borg, the Swedish doom-metal tabletop RPG, and the interface dresses for the part. It is a xerox-punk illuminated manuscript: a black bunker stamped onto a screaming yellow page, with hot pink interruptions and blood-red warnings. Every surface is hard-edged, slightly tilted, and sits on top of a faint fractal-noise overlay so the screen reads less like a web app and more like a photocopied zine that survived the apocalypse.\n\nDensity is high, rhythm is jagged. Section headings are stamped on like rubber-stamp insignia (yellow ground, black 3px border, hard 4px black drop shadow, rotated 0.3–0.6°). Buttons lift with translate(-2px, -2px) and grow their shadow rather than fading or scaling — every interaction has a physical 'ka-chunk' feel. There are no gradients, no rounded corners (borderRadius: 0 is the global doctrine), no glass, no soft drop shadows. Shadows are always solid offsets in a brand color — the chunky black-or-pink box-shadow is the project's signature.\n\nThis system explicitly rejects: SaaS-clean Material rounded corners, dark-mode 'elegant' interfaces, gradient-text headlines, glassmorphism, parchment-and-gold 'fantasy generic' aesthetics, soft pastels, and the hero-metric template.",
+    "overview": "Scvm Rack is an interactive character sheet for Mörk Borg, the Swedish doom-metal tabletop RPG, and the interface dresses for the part. It is a xerox-punk illuminated manuscript: a black bunker stamped onto a screaming yellow page, with hot pink interruptions and blood-red warnings. Every surface is hard-edged, slightly tilted, and sits on top of a faint fractal-noise overlay so the screen reads less like a web app and more like a photocopied zine that survived the apocalypse.\n\nDensity is high, rhythm is jagged. Section headings are stamped on like rubber-stamp insignia (yellow ground, black 3px border, hard 4px black drop shadow, rotated 0.3–0.6°). Buttons lift with translate(-2px, -2px) and grow their shadow rather than fading or scaling — every interaction has a physical 'ka-chunk' feel. There are no gradients, no rounded corners (borderRadius: 0 is the global doctrine), no glass, no soft drop shadows. Shadows are always solid offsets in a brand color — the chunky black-or-pink box-shadow is the project's signature.\n\nThis system explicitly rejects: SaaS-clean Material rounded corners, dark-mode 'elegant' interfaces, gradient-text headlines, glassmorphism, parchment-and-gold 'fantasy generic' aesthetics, soft pastels, and the hero-metric template.",
     "keyCharacteristics": [
       "Yellow-as-paper, black-as-ink, pink-as-blood. The body background is #FFE900; cards and content surfaces are #0a0a0a islands stamped onto it.",
       "Zero corner radius everywhere. shape.borderRadius: 0 overrides MUI's defaults; sharp edges are the brand.",

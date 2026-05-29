@@ -522,25 +522,12 @@
     "typeMinor": "Mała",
     "typePatch": "Poprawka",
     "moreUpdates": "Więcej aktualizacji wkrótce. Świat się kończy, ale my dalej dostarczamy.",
-    "v100": {
-      "auth": "Konta użytkowników z weryfikacją email",
-      "magicLink": "Logowanie przez magiczny link",
-      "guestSessions": "Sesje gości z 7-dniowym przechowywaniem",
-      "characterClaim": "Przejmowanie postaci gości po rejestracji",
-      "multiChar": "Wiele postaci na konto",
-      "i18n": "Wsparcie języka polskiego i angielskiego"
-    },
-    "v090": {
-      "equipment": "System zarządzania wyposażeniem",
-      "powers": "Śledzenie mocy i zwojów",
-      "notes": "Sekcja notatek postaci",
-      "autoSave": "Auto-zapis z opóźnieniem"
-    },
-    "v080": {
-      "generator": "Generator losowych postaci",
-      "classes": "Wszystkie podstawowe klasy MÖRK BORG",
-      "stats": "Śledzenie statystyk i modyfikatorów",
-      "theme": "Ciemny motyw inspirowany MÖRK BORG"
+    "v020": {
+      "feedback": "Zgłaszanie opinii i błędów po stronie serwera",
+      "errorDialog": "Automatyczne okno do zgłaszania nieoczekiwanych błędów",
+      "apiErrors": "Spójne, ustrukturyzowane komunikaty błędów API",
+      "tests": "Wzmocniony zestaw testów automatycznych (jednostkowe, integracyjne, end-to-end)",
+      "tooling": "Poprawki narzędzi: zielony przebieg testów i działający linter"
     }
   }
 }

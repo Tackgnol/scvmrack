@@ -13,7 +13,7 @@ const swaggerPlugin: FastifyPluginAsync = async (fastify) => {
       openapi: '3.0.0',
       info: {
         title: 'Mörk Borg Character API',
-        version: '1.0.0',
+        version: '0.2.0',
       },
     },
     transform: ({ schema, url }) => {

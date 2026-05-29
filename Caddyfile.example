@@ -1,8 +1,23 @@
+# Security headers for the frontend (HTML document + static assets). Mirrors the
+# backend's helmet policy so the app — not just the API JSON — is protected.
+# NOT applied to /api/* because the backend (helmet) already sets its own headers;
+# setting them in both places would produce conflicting/duplicate CSP headers.
+(frontend_security_headers) {
+  header {
+    Strict-Transport-Security "max-age=31536000; includeSubDomains"
+    X-Frame-Options "SAMEORIGIN"
+    X-Content-Type-Options "nosniff"
+    Referrer-Policy "no-referrer"
+    Content-Security-Policy "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; img-src 'self' data: https://flagsapi.com https://www.google-analytics.com; font-src 'self' https://fonts.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com; connect-src 'self' https://www.google-analytics.com https://region1.google-analytics.com; upgrade-insecure-requests"
+  }
+}
+
 scvmrack.rpgtools.co {
   import cloudflare_tls
 
   @asset_routes path /assets/*
   handle @asset_routes {
+    import frontend_security_headers
     reverse_proxy 127.0.0.1:3030
   }
 
@@ -12,6 +27,7 @@ scvmrack.rpgtools.co {
   }
 
   handle {
+    import frontend_security_headers
     reverse_proxy 127.0.0.1:3030
   }
 }

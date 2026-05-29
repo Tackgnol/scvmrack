@@ -30,6 +30,7 @@ vi.mock('@/router/navigation', () => ({
   buildPrintCallbackUrl: vi.fn((characterId: string | null) =>
     characterId ? `/print?character=${characterId}` : '/print'
   ),
+  navigateToSessionExpired: vi.fn(),
 }));
 
 const printableCharacter = {

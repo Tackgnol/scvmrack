@@ -525,25 +525,12 @@
     "typeMinor": "Minor",
     "typePatch": "Patch",
     "moreUpdates": "More updates coming soon. The world is ending, but we keep shipping.",
-    "v100": {
-      "auth": "User accounts with email verification",
-      "magicLink": "Magic link login",
-      "guestSessions": "Guest sessions with 7-day persistence",
-      "characterClaim": "Claim guest characters after signup",
-      "multiChar": "Multiple characters per account",
-      "i18n": "Polish and English language support"
-    },
-    "v090": {
-      "equipment": "Equipment management system",
-      "powers": "Powers and scrolls tracking",
-      "notes": "Character notes section",
-      "autoSave": "Auto-save with debouncing"
-    },
-    "v080": {
-      "generator": "Random character generator",
-      "classes": "All core MÖRK BORG classes",
-      "stats": "Stat tracking and modifiers",
-      "theme": "MÖRK BORG-inspired dark theme"
+    "v020": {
+      "feedback": "Server-side feedback and crash reporting",
+      "errorDialog": "Automatic dialog to report unexpected errors",
+      "apiErrors": "Consistent, structured API error messages",
+      "tests": "Hardened automated test suite (unit, integration, end-to-end)",
+      "tooling": "Tooling fixes: green test run and a working linter"
     }
   }
 }
