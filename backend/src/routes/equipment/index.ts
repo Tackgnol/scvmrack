@@ -1,6 +1,15 @@
 import { FastifyPluginAsync } from 'fastify';
 import { Prisma } from '@prisma/client';
 import prisma from '../../lib/prisma.js';
+import { ErrorSchema } from '../../schemas/equipment.js';
+import {
+  apiError,
+  badRequest,
+  normalizeKnownApiError,
+  notFound,
+  sendApiError,
+  type ApiHttpError,
+} from '../../errors.js';
 
 type Json = Prisma.JsonValue;
 
@@ -12,6 +21,14 @@ type SearchItemRow = {
   name: string | null;
 };
 type ItemFullRow = { getItemFull: Json | null };
+
+function knownOrUnexpected(
+  error: unknown,
+  code: string,
+  message: string
+): ApiHttpError {
+  return normalizeKnownApiError(error) ?? apiError(500, code, message);
+}
 
 async function getItemFullByKey(itemType: SupportedItemType, key: string): Promise<Json | null> {
   if (itemType === 'weapon') {
@@ -78,13 +95,22 @@ const equipment: FastifyPluginAsync = async (fastify) => {
               },
             },
           },
+          400: ErrorSchema,
+          429: ErrorSchema,
+          500: ErrorSchema,
         },
       },
     },
     async (request, reply) => {
       const { q, locale, limit = 20 } = request.query;
 
-      if (!q || q.trim().length === 0) return [];
+      if (!q || q.trim().length === 0) {
+        return sendApiError(
+          reply,
+          request,
+          badRequest('EMPTY_SEARCH_QUERY', 'Search query is required')
+        );
+      }
 
       try {
         const rows = await prisma.$queryRaw<SearchItemRow[]>`
@@ -153,7 +179,7 @@ const equipment: FastifyPluginAsync = async (fastify) => {
           .filter((row): row is { itemType: 'weapon' | 'armor' | 'equipment' | 'pet'; id: number; key: string; name: string } => row !== null);
       } catch (err) {
         request.log.error(err, 'Search failed');
-        return reply.status(500).send({ error: 'Search failed' });
+        throw knownOrUnexpected(err, 'EQUIPMENT_SEARCH_FAILED', 'Search failed');
       }
     }
   );
@@ -189,6 +215,11 @@ const equipment: FastifyPluginAsync = async (fastify) => {
             key: { type: 'string', minLength: 1 },
           },
         },
+        response: {
+          400: ErrorSchema,
+          404: ErrorSchema,
+          500: ErrorSchema,
+        },
       },
     },
     async (request, reply) => {
@@ -207,13 +238,13 @@ const equipment: FastifyPluginAsync = async (fastify) => {
         }
 
         if (!item) {
-          return reply.status(404).send({ error: 'Item not found' });
+          return sendApiError(reply, request, notFound('ITEM_NOT_FOUND', 'Item not found'));
         }
 
         return item;
       } catch (err) {
         request.log.error(err, 'Item fetch failed');
-        return reply.status(500).send({ error: 'Failed to fetch item' });
+        throw knownOrUnexpected(err, 'ITEM_FETCH_FAILED', 'Failed to fetch item');
       }
     }
   );

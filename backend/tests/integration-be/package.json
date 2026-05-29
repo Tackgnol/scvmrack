@@ -3,8 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --import tsx --test \"src/**/*.test.ts\"",
+    "test": "node --import tsx src/wait-for-api.ts && node --import tsx --test \"src/**/*.test.ts\"",
     "test:run": "npm run test",
-    "test:report": "node --import tsx --test --test-reporter=spec --test-reporter-destination=stdout --test-reporter=junit --test-reporter-destination=../../reports/integration-be.xml \"src/**/*.test.ts\""
+    "test:report": "node --import tsx src/wait-for-api.ts && node --import tsx --test --test-reporter=spec --test-reporter-destination=stdout --test-reporter=junit --test-reporter-destination=../../reports/integration-be.xml \"src/**/*.test.ts\""
   }
 }

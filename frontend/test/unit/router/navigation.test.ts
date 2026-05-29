@@ -83,13 +83,19 @@ describe('navigation router utils', () => {
     describe('buildHomeCallbackUrl', () => {
         it('should build URL with provided params', () => {
             const url = buildHomeCallbackUrl('char1', 'claim1');
-            expect(url).toContain(`${CHARACTER_ID_QUERY_PARAM}=char1`);
-            expect(url).toContain(`${CLAIM_CHARACTER_QUERY_PARAM}=claim1`);
+            expect(url).toBe(
+                `/character?${CHARACTER_ID_QUERY_PARAM}=char1&${CLAIM_CHARACTER_QUERY_PARAM}=claim1`
+            );
         });
 
         it('should build URL with only character ID', () => {
             const url = buildHomeCallbackUrl('char1');
-            expect(url).toBe(`/?${CHARACTER_ID_QUERY_PARAM}=char1`);
+            expect(url).toBe('/character/char1');
+        });
+
+        it('should build character home URL without params when no character is active', () => {
+            const url = buildHomeCallbackUrl(null);
+            expect(url).toBe('/character');
         });
     });
 
@@ -116,21 +122,25 @@ describe('navigation router utils', () => {
     describe('navigateToLoggedOut', () => {
         it('should navigate to home with logged-out flag', async () => {
             await navigateToLoggedOut();
-            expect(appHistory.replace).toHaveBeenCalledWith(`/?${LOGGED_OUT_QUERY_PARAM}=true`);
+            expect(appHistory.replace).toHaveBeenCalledWith(
+                `/character?${LOGGED_OUT_QUERY_PARAM}=true`
+            );
         });
     });
 
     describe('navigateToSessionExpired', () => {
         it('should navigate to home with expired flag', async () => {
             await navigateToSessionExpired();
-            expect(appHistory.replace).toHaveBeenCalledWith(`/?${SESSION_EXPIRED_QUERY_PARAM}=true`);
+            expect(appHistory.replace).toHaveBeenCalledWith(
+                `/character?${SESSION_EXPIRED_QUERY_PARAM}=true`
+            );
         });
 
         it('should preserve current character when navigating to expired session flow', async () => {
             appHistory.location.search = `?${CHARACTER_ID_QUERY_PARAM}=char1`;
             await navigateToSessionExpired();
             expect(appHistory.replace).toHaveBeenCalledWith(
-                `/?${CHARACTER_ID_QUERY_PARAM}=char1&${SESSION_EXPIRED_QUERY_PARAM}=true`
+                `/character?${CHARACTER_ID_QUERY_PARAM}=char1&${SESSION_EXPIRED_QUERY_PARAM}=true`
             );
         });
     });

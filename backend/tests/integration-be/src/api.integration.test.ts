@@ -88,8 +88,53 @@ async function expectStatus(response: Response, expectedStatus: number): Promise
   );
 }
 
+type ApiErrorPayload = {
+  error?: string;
+  message?: string;
+  code?: string;
+  statusCode?: number;
+  requestId?: string;
+  details?: Array<{ field?: string; message?: string; code?: string }>;
+};
+
+async function expectApiError(
+  response: Response,
+  expectedStatus: number,
+  expectedCode: string,
+  expectedMessage?: string
+): Promise<ApiErrorPayload> {
+  await expectStatus(response, expectedStatus);
+
+  const payload = (await response.json()) as ApiErrorPayload;
+  assert.equal(payload.statusCode, expectedStatus);
+  assert.equal(payload.code, expectedCode);
+  const requestId = payload.requestId;
+  assert.ok(typeof requestId === 'string');
+  assert.ok(requestId.length > 0);
+  assert.equal(payload.error, payload.message);
+  if (expectedMessage) {
+    assert.equal(payload.message, expectedMessage);
+  } else {
+    const message = payload.message;
+    assert.ok(typeof message === 'string');
+    assert.ok(message.length > 0);
+  }
+
+  return payload;
+}
+
 test('GET /health returns service status', async () => {
   const response = await request('/health');
+  await expectStatus(response, 200);
+
+  const payload = (await response.json()) as { status: string; timestamp: string };
+  assert.equal(payload.status, 'ok');
+  assert.equal(typeof payload.timestamp, 'string');
+  assert.ok(!Number.isNaN(Date.parse(payload.timestamp)));
+});
+
+test('GET /api/health returns service status for proxied checks', async () => {
+  const response = await request('/api/health');
   await expectStatus(response, 200);
 
   const payload = (await response.json()) as { status: string; timestamp: string };
@@ -193,7 +238,12 @@ test('anonymous session can create, list, fetch and delete character', async () 
   const fetchAfterDeleteResponse = await request(`/api/characters/${createdCharacter.id}`, {
     jar,
   });
-  await expectStatus(fetchAfterDeleteResponse, 404);
+  await expectApiError(
+    fetchAfterDeleteResponse,
+    404,
+    'CHARACTER_NOT_FOUND',
+    'Character not found'
+  );
 });
 
 test('DELETE /api/characters/:id returns 404 when the same character is deleted twice', async () => {
@@ -214,7 +264,12 @@ test('DELETE /api/characters/:id returns 404 when the same character is deleted 
     headers: { 'x-csrf-token': secondCsrf },
     jar,
   });
-  await expectStatus(secondDeleteResponse, 404);
+  await expectApiError(
+    secondDeleteResponse,
+    404,
+    'CHARACTER_NOT_FOUND',
+    'Character not found'
+  );
 });
 
 // ── Helpers used by tests below ───────────────────────────────────────────────
@@ -271,7 +326,12 @@ test('PATCH /api/characters/:id with empty body returns 400', async () => {
     headers: { 'x-csrf-token': csrf },
     jar,
   });
-  await expectStatus(patchResponse, 400);
+  await expectApiError(
+    patchResponse,
+    400,
+    'EMPTY_CHARACTER_UPDATE',
+    'No valid fields to update'
+  );
 });
 
 test('PATCH /api/characters/:id requires CSRF token', async () => {
@@ -295,7 +355,12 @@ test('GET /api/characters/:id returns 403 for a character owned by a different s
   // Different session — no access
   const otherJar = await bootstrapAnonymousSession();
   const getResponse = await request(`/api/characters/${id}`, { jar: otherJar });
-  await expectStatus(getResponse, 403);
+  await expectApiError(
+    getResponse,
+    403,
+    'CHARACTER_ACCESS_DENIED',
+    "You don't have access to this scvm"
+  );
 });
 
 test('PATCH /api/characters/:id returns 403 for a character owned by a different session', async () => {
@@ -310,7 +375,12 @@ test('PATCH /api/characters/:id returns 403 for a character owned by a different
     headers: { 'x-csrf-token': csrf },
     jar: otherJar,
   });
-  await expectStatus(patchResponse, 403);
+  await expectApiError(
+    patchResponse,
+    403,
+    'CHARACTER_ACCESS_DENIED',
+    "You don't have access to this scvm"
+  );
 });
 
 test('DELETE /api/characters/:id returns 403 for a character owned by a different session', async () => {
@@ -324,7 +394,12 @@ test('DELETE /api/characters/:id returns 403 for a character owned by a differen
     headers: { 'x-csrf-token': csrf },
     jar: otherJar,
   });
-  await expectStatus(deleteResponse, 403);
+  await expectApiError(
+    deleteResponse,
+    403,
+    'CHARACTER_ACCESS_DENIED',
+    "You don't have access to this scvm"
+  );
 });
 
 test('GET /api/characters/:id returns 401 with no session', async () => {
@@ -332,7 +407,7 @@ test('GET /api/characters/:id returns 401 with no session', async () => {
   const id = await createCharacter(ownerJar);
 
   const response = await request(`/api/characters/${id}`); // no jar
-  await expectStatus(response, 401);
+  await expectApiError(response, 401, 'SESSION_REQUIRED', 'Session required');
 });
 
 // ── Input validation ──────────────────────────────────────────────────────────
@@ -340,7 +415,8 @@ test('GET /api/characters/:id returns 401 with no session', async () => {
 test('GET /api/characters/:id returns 400 for a non-UUID id', async () => {
   const jar = await bootstrapAnonymousSession();
   const response = await request('/api/characters/not-a-valid-uuid', { jar });
-  await expectStatus(response, 400);
+  const payload = await expectApiError(response, 400, 'VALIDATION_ERROR');
+  assert.ok(payload.details?.some((detail) => detail.field === 'id'));
 });
 
 test('PATCH /api/characters/:id returns 400 for a non-UUID id', async () => {
@@ -352,7 +428,8 @@ test('PATCH /api/characters/:id returns 400 for a non-UUID id', async () => {
     headers: { 'x-csrf-token': csrf },
     jar,
   });
-  await expectStatus(response, 400);
+  const payload = await expectApiError(response, 400, 'VALIDATION_ERROR');
+  assert.ok(payload.details?.some((detail) => detail.field === 'id'));
 });
 
 // ── GET /api/characters/count ─────────────────────────────────────────────────────
@@ -421,5 +498,16 @@ test('GET /api/equipment/search result items have expected shape', async () => {
 
 test('GET /api/equipment/search returns 400 when q param is missing', async () => {
   const response = await request('/api/equipment/search');
-  await expectStatus(response, 400);
+  const payload = await expectApiError(response, 400, 'VALIDATION_ERROR');
+  assert.ok(payload.details?.some((detail) => detail.field === 'q'));
+});
+
+test('GET /api/equipment/search returns 400 when q param is blank', async () => {
+  const response = await request('/api/equipment/search?q=%20%20');
+  await expectApiError(
+    response,
+    400,
+    'EMPTY_SEARCH_QUERY',
+    'Search query is required'
+  );
 });

@@ -13,11 +13,17 @@ import {
   getSimpleFieldLimitMessage,
   sanitizeSimpleFieldValue,
 } from '@/validation/characterUpdate';
+import { useErrorFeedback } from '@/components/molecules/feedback/ErrorFeedbackProvider';
 import { useSnackbar } from '@/SnackbarContext/SnackbarProvider.tsx';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useDebouncedCallback } from 'use-debounce';
+import {
+  getUserFacingApiErrorMessage,
+  isApiRateLimited,
+  isUnexpectedApiError,
+} from '@/utils/errorUtils';
 
 type ValidationIssueHandlers = {
   setValidationIssue?: (id: string, message: string) => void;
@@ -36,6 +42,7 @@ export function useCharacterEditor(
   const queryClient = useQueryClient();
   const [pending, setPending] = useState<OptimisticPatch[]>([]);
   const { showError } = useSnackbar();
+  const { showUnexpectedError } = useErrorFeedback();
   const { t } = useTranslation();
 
   // Retry tracking
@@ -79,21 +86,46 @@ export function useCharacterEditor(
           console.error('Failed to save:', error);
           retryCountRef.current++;
 
-          const isRateLimit =
-            error?.statusCode === 429 ||
-            error?.status === 429 ||
-            error?.message === 'RATE_LIMIT_EXCEEDED';
-          if (isRateLimit) {
+          if (isApiRateLimited(error)) {
             showError(
               t('auth.rateLimit', 'Too many requests. Please try again later.')
             );
             return;
           }
 
+          if (isUnexpectedApiError(error)) {
+            if (retryCountRef.current < maxRetries) {
+              return;
+            }
+
+            showUnexpectedError(error, {
+              source: 'character_save',
+              characterId,
+              operation: 'patch_character',
+              locale,
+            });
+            showError(
+              getUserFacingApiErrorMessage(
+                error,
+                t,
+                'Failed to save changes. Please try again.'
+              ),
+              {
+                label: t('actions.retry', 'Retry'),
+                onClick: () => {
+                  retryCountRef.current = 0;
+                  flush();
+                },
+              }
+            );
+            return;
+          }
+
           if (retryCountRef.current >= maxRetries) {
             showError(
-              t(
-                'characters.saveError',
+              getUserFacingApiErrorMessage(
+                error,
+                t,
                 'Failed to save changes. Please try again.'
               ),
               {
@@ -118,6 +150,7 @@ export function useCharacterEditor(
     getCharacterKey,
     locale,
     showError,
+    showUnexpectedError,
     t,
   ]);
 

@@ -1,4 +1,5 @@
 import type { FastifyPluginAsync } from 'fastify';
+import { badRequest, sendApiError } from '../errors.js';
 
 const ALLOWED_PROJECTS = new Set(['6']);
 
@@ -30,7 +31,11 @@ const tunnel: FastifyPluginAsync = async (fastify): Promise<void> => {
     async (request, reply) => {
       const envelope = request.body;
       if (typeof envelope !== 'string' || envelope.length === 0) {
-        return reply.code(400).send({ error: 'empty envelope' });
+        return sendApiError(
+          reply,
+          request,
+          badRequest('EMPTY_ENVELOPE', 'Sentry envelope is required')
+        );
       }
 
       const headerLine = envelope.split('\n', 1)[0];
@@ -44,11 +49,19 @@ const tunnel: FastifyPluginAsync = async (fastify): Promise<void> => {
         sentryKey = dsnUrl.username;
         if (!sentryKey) throw new Error('no key');
       } catch {
-        return reply.code(400).send({ error: 'invalid envelope header' });
+        return sendApiError(
+          reply,
+          request,
+          badRequest('INVALID_ENVELOPE_HEADER', 'Sentry envelope header is invalid')
+        );
       }
 
       if (!ALLOWED_PROJECTS.has(projectId)) {
-        return reply.code(400).send({ error: 'unknown project' });
+        return sendApiError(
+          reply,
+          request,
+          badRequest('UNKNOWN_SENTRY_PROJECT', 'Sentry project is not allowed')
+        );
       }
 
       const upstream = `${upstreamHost.replace(/\/+$/, '')}/api/${projectId}/envelope/`;

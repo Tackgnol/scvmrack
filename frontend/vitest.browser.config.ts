@@ -52,6 +52,8 @@ export default mergeConfig(
       coverage: {
         provider: 'istanbul',
         reportsDirectory: './coverage-browser',
+        include: ['src/**/*.{ts,tsx}'],
+        exclude: ['src/**/*.d.ts', 'src/api/schema.ts', 'src/main.tsx'],
       },
     },
   })

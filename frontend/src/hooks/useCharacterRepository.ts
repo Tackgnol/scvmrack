@@ -3,6 +3,7 @@ import { PathsApiCharactersIdGetParametersQueryLocale } from "@/api/schema.ts";
 
 import { CharacterResponse, UpdateMutationContext } from "@/hooks/models.ts";
 import { getApiLocale, getCharacterKey } from "@/hooks/utils.ts";
+import { toApiClientError } from '@/utils/errorUtils';
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
 
@@ -42,16 +43,12 @@ export function useCharacterRepository(
             } as any);
 
             const responseOk = response?.ok ?? !error;
-            const responseStatus = response?.status ?? (error as any)?.statusCode;
 
             if (error || !responseOk) {
                 if (signal?.aborted) {
                     throw new DOMException('The operation was aborted.', 'AbortError');
                 }
-                if (responseStatus === 429) {
-                    throw new Error('RATE_LIMIT_EXCEEDED');
-                }
-                throw new Error((error as any)?.error || (error as any)?.message || 'Failed to create character');
+                throw toApiClientError(error, response, 'Failed to create character');
             }
 
             if (!data) {

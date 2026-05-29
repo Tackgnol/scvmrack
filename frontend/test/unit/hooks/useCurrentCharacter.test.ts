@@ -6,6 +6,7 @@ import { useAuth } from '@/hooks/useAuth.ts';
 import { useCharacterRepository } from '@/hooks/useCharacterRepository.ts';
 import { useCharacterEditor } from '@/hooks/useCharacterEditor.ts';
 import { hasCurrentSearchParam } from '@/router/navigation';
+import { appHistory } from '@/router/history';
 
 vi.mock('../../../src/hooks/useCharacterId.ts', () => ({
   useCharacterId: vi.fn(),
@@ -36,8 +37,8 @@ vi.mock('../../../src/SnackbarContext/SnackbarProvider.tsx', () => ({
 
 vi.mock('@/router/history', () => ({
   appHistory: {
-    subscribe: vi.fn(),
-    location: { pathname: '/' },
+    subscribe: vi.fn(() => vi.fn()),
+    location: { pathname: '/character', search: '', hash: '' },
   },
 }));
 
@@ -54,6 +55,9 @@ vi.mock('@/analytics/googleAnalytics', () => ({
 beforeEach(() => {
   vi.clearAllMocks();
   (hasCurrentSearchParam as any).mockReturnValue(false);
+  appHistory.location.pathname = '/character';
+  appHistory.location.search = '';
+  appHistory.location.hash = '';
 });
 
 test('useCurrentCharacter aggregates repository, editor and auth state', () => {
@@ -307,4 +311,99 @@ test('useCurrentCharacter pauses auto-create while session expired', async () =>
   });
   expect(global.fetch).not.toHaveBeenCalled();
   expect(createMutate).not.toHaveBeenCalled();
+});
+
+test('useCurrentCharacter selects an existing character before auto-create', async () => {
+  const setCharacterId = vi.fn();
+  (useCharacterId as any).mockReturnValue({
+    characterId: null,
+    lastCharacterId: null,
+    setCharacterId,
+  });
+  (useAuth as any).mockReturnValue({
+    isAuthenticated: true,
+    isGuest: false,
+    isLoading: false,
+  });
+
+  const createMutate = vi.fn();
+  (useCharacterRepository as any).mockReturnValue({
+    createCharacter: { mutate: createMutate, data: null },
+  });
+  (useCharacterEditor as any).mockReturnValue({ flush: vi.fn() });
+  global.fetch = vi.fn().mockResolvedValue({
+    ok: true,
+    json: async () => [{ id: 'existing-char' }],
+  });
+
+  renderHook(() => useCurrentCharacter());
+
+  await vi.waitFor(() => {
+    expect(setCharacterId).toHaveBeenCalledWith('existing-char');
+  });
+  expect(createMutate).not.toHaveBeenCalled();
+});
+
+test('useCurrentCharacter does not manually generate while session is expired', () => {
+  (hasCurrentSearchParam as any).mockImplementation(
+    (queryParam: string) => queryParam === 'expired'
+  );
+  (useCharacterId as any).mockReturnValue({
+    characterId: 'char-1',
+    lastCharacterId: 'char-1',
+    setCharacterId: vi.fn(),
+  });
+  (useAuth as any).mockReturnValue({
+    isAuthenticated: false,
+    isGuest: false,
+    isLoading: false,
+  });
+
+  const createMutate = vi.fn();
+  (useCharacterRepository as any).mockReturnValue({
+    createCharacter: { mutate: createMutate, data: null },
+  });
+  (useCharacterEditor as any).mockReturnValue({ flush: vi.fn() });
+
+  const { result } = renderHook(() => useCurrentCharacter());
+
+  act(() => {
+    result.current.generateNew(1);
+  });
+
+  expect(createMutate).not.toHaveBeenCalled();
+});
+
+test('useCurrentCharacter killAndReplace generates when there is no current character', () => {
+  (useCharacterId as any).mockReturnValue({
+    characterId: null,
+    lastCharacterId: null,
+    setCharacterId: vi.fn(),
+  });
+  (useAuth as any).mockReturnValue({
+    isAuthenticated: true,
+    isGuest: false,
+    isLoading: false,
+  });
+
+  const createMutate = vi.fn();
+  const deleteMutate = vi.fn();
+  (useCharacterRepository as any).mockReturnValue({
+    createCharacter: { mutate: createMutate, data: null },
+    deleteCharacter: { mutate: deleteMutate },
+  });
+  (useCharacterEditor as any).mockReturnValue({ flush: vi.fn() });
+  global.fetch = vi.fn().mockResolvedValue({
+    ok: true,
+    json: async () => [{ id: 'existing-char' }],
+  });
+
+  const { result } = renderHook(() => useCurrentCharacter());
+
+  act(() => {
+    result.current.killAndReplace();
+  });
+
+  expect(deleteMutate).not.toHaveBeenCalled();
+  expect(createMutate).toHaveBeenCalled();
 });

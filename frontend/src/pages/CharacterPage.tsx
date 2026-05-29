@@ -1,4 +1,5 @@
 import { useCharacter } from '@/CharacterContext/CharacterContext';
+import { useErrorFeedback } from '@/components/molecules/feedback/ErrorFeedbackProvider';
 import { Abilities } from '@/components/organisms/Abilities';
 import { BackpackSection } from '@/components/organisms/StorageSection';
 import { CharacterDescriptors } from '@/components/molecules/character-descriptors/CharacterDescriptors';
@@ -25,6 +26,13 @@ import {
 } from '@/hooks/useEquipmentSections';
 import { Seo } from '@/seo/Seo';
 import { customStyles, morkBorgColors } from '@/theme/morkBorgTheme';
+import {
+    getUserFacingApiErrorMessage,
+    isApiForbidden,
+    isApiNotFound,
+    isApiUnauthorized,
+    isUnexpectedApiError,
+} from '@/utils/errorUtils';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import {
     Accordion,
@@ -36,7 +44,7 @@ import {
     useTheme,
 } from '@mui/material';
 import { keyframes } from '@mui/system';
-import { type ReactNode, useMemo, useState } from 'react';
+import { type ReactNode, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const homeKeywords = [
@@ -191,6 +199,7 @@ export function CharacterPage() {
     } = useCharacter();
 
     const { t } = useTranslation();
+    const { showUnexpectedError } = useErrorFeedback();
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
     const prefersReducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
@@ -198,8 +207,30 @@ export function CharacterPage() {
     const [killConfirmOpen, setKillConfirmOpen] = useState(false);
     const [stampDate, setStampDate] = useState<Date | null>(null);
     const [pendingAction, setPendingAction] = useState<'generate' | 'kill' | null>(null);
+    const [fallbackUnexpectedLoadError, setFallbackUnexpectedLoadError] = useState(false);
 
-    const isNotFound = !isSessionExpired && !!error && !character && !!characterId && !isLoading;
+    const hasLoadError = !isSessionExpired && !!error && !character && !!characterId && !isLoading;
+    const isNotFound = hasLoadError && isApiNotFound(error);
+    const isAccessDenied = hasLoadError && isApiForbidden(error);
+    const hasKnownLoadIssue =
+        hasLoadError &&
+        !isNotFound &&
+        !isAccessDenied &&
+        (!isUnexpectedApiError(error) || fallbackUnexpectedLoadError);
+
+    useEffect(() => {
+        if (!hasLoadError || !isUnexpectedApiError(error)) {
+            setFallbackUnexpectedLoadError(false);
+            return;
+        }
+
+        const reported = showUnexpectedError(error, {
+            source: 'character_page',
+            operation: 'load_character',
+            characterId,
+        });
+        setFallbackUnexpectedLoadError(!reported);
+    }, [characterId, error, hasLoadError, showUnexpectedError]);
 
     const equipment = character?.equipment ?? [];
 
@@ -264,6 +295,54 @@ export function CharacterPage() {
                 }
             >
                 <Typography>{t('characters.notFoundDescription')}</Typography>
+            </MorkBorgModal>
+
+            <MorkBorgModal
+                open={isAccessDenied}
+                onClose={handleNew}
+                title={t(
+                    'characters.accessDenied',
+                    "You don't have access to this scvm"
+                )}
+                closeOnBackdrop={false}
+                showCloseButton={false}
+                actions={
+                    <ModalButton variant="primary" onClick={handleNew}>
+                        {t('characters.generateNew')}
+                    </ModalButton>
+                }
+            >
+                <Typography>
+                    {t(
+                        'characters.accessDeniedDescription',
+                        'This scvm belongs to another session or account. Generate a new one or open one of yours.'
+                    )}
+                </Typography>
+            </MorkBorgModal>
+
+            <MorkBorgModal
+                open={hasKnownLoadIssue}
+                onClose={handleNew}
+                title={
+                    isApiUnauthorized(error)
+                        ? t('errors.unauthorizedTitle', 'Session expired')
+                        : t('characters.loadError', 'Failed to load character')
+                }
+                closeOnBackdrop={false}
+                showCloseButton={false}
+                actions={
+                    <ModalButton variant="primary" onClick={handleNew}>
+                        {t('characters.generateNew')}
+                    </ModalButton>
+                }
+            >
+                <Typography>
+                    {getUserFacingApiErrorMessage(
+                        error,
+                        t,
+                        'Failed to load character'
+                    )}
+                </Typography>
             </MorkBorgModal>
 
             <Seo

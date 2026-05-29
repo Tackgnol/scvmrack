@@ -41,6 +41,7 @@ services:
     build:
       context: .
       dockerfile: backend/Dockerfile.dev
+    command: npm run start
     environment:
       DATABASE_USER: p1002_scmgrinder
       DATABASE_PASSWORD: p1002_scmgrinder

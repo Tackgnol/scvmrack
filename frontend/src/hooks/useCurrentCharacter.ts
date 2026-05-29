@@ -12,6 +12,13 @@ import {
 } from '@/router/navigation';
 import { getApiLocale } from '@/hooks/utils.ts';
 import { useSnackbar } from '@/SnackbarContext/SnackbarProvider.tsx';
+import { useErrorFeedback } from '@/components/molecules/feedback/ErrorFeedbackProvider';
+import {
+  getUserFacingApiErrorMessage,
+  isApiRateLimited,
+  isUnexpectedApiError,
+  toApiClientError,
+} from '@/utils/errorUtils';
 
 import {
   useCallback,
@@ -54,9 +61,25 @@ export function useCurrentCharacter() {
   const trimmedLocale =
     getApiLocale<PathsApiCharactersNewPostParametersQueryLocale>(locale);
   const { showError } = useSnackbar();
+  const { showUnexpectedError } = useErrorFeedback();
   const [validationIssueMap, setValidationIssueMap] = useState<
     Record<string, string>
   >({});
+
+  const reportUnexpectedError = useCallback(
+    (
+      error: unknown,
+      context: Parameters<typeof showUnexpectedError>[1],
+      fallbackMessage: string
+    ) => {
+      if (showUnexpectedError(error, context)) {
+        return;
+      }
+
+      showError(getUserFacingApiErrorMessage(error, t, fallbackMessage));
+    },
+    [showError, showUnexpectedError, t]
+  );
 
   const setValidationIssue = useCallback((id: string, message: string) => {
     setValidationIssueMap((previous) => {
@@ -176,6 +199,30 @@ export function useCurrentCharacter() {
             return;
           }
         }
+
+        if (!cancelled && !res.ok) {
+          const errorBody = await res.json().catch(() => null);
+          const apiError = toApiClientError(
+            errorBody,
+            res,
+            'Failed to load characters'
+          );
+
+          if (isUnexpectedApiError(apiError)) {
+            setAutoCreateFailed(true);
+            setCheckingExisting(false);
+            reportUnexpectedError(
+              apiError,
+              {
+                source: 'character_auto_create_list',
+                operation: 'list_characters',
+                locale: trimmedLocale,
+              },
+              'Failed to load characters'
+            );
+            return;
+          }
+        }
       } catch (e) {
         if (e instanceof DOMException && e.name === 'AbortError') return;
         // List fetch failed — fall through to create
@@ -207,8 +254,24 @@ export function useCurrentCharacter() {
               return;
             }
             setAutoCreateFailed(true);
+            if (isUnexpectedApiError(error)) {
+              reportUnexpectedError(
+                error,
+                {
+                  source: 'character_auto_create',
+                  operation: 'create_character',
+                  locale: trimmedLocale,
+                },
+                'Failed to create character'
+              );
+              return;
+            }
             showError(
-              'Failed to create character. The server may be experiencing issues.'
+              getUserFacingApiErrorMessage(
+                error,
+                t,
+                'Failed to create character'
+              )
             );
           },
         }
@@ -273,18 +336,32 @@ export function useCurrentCharacter() {
               is_guest: isGuest,
             });
           },
-          onError: (error: any) => {
-            const msg = error instanceof Error ? error.message : String(error);
-            if (msg === 'RATE_LIMIT_EXCEEDED') {
+          onError: (error) => {
+            if (isApiRateLimited(error)) {
               showError(
                 t(
                   'auth.rateLimit',
                   'Too many requests. Please try again later.'
                 )
               );
+            } else if (isUnexpectedApiError(error)) {
+              reportUnexpectedError(
+                error,
+                {
+                  source: 'character_generate',
+                  operation: 'create_character',
+                  locale: trimmedLocale,
+                  classId: id,
+                },
+                'Failed to create character'
+              );
             } else {
               showError(
-                t('characters.createError', 'Failed to create character')
+                getUserFacingApiErrorMessage(
+                  error,
+                  t,
+                  'Failed to create character'
+                )
               );
             }
             options?.onError?.(error);
@@ -302,6 +379,7 @@ export function useCurrentCharacter() {
       setCharacterId,
       setAutoCreateFailed,
       showError,
+      reportUnexpectedError,
       t,
     ]
   );
@@ -335,7 +413,26 @@ export function useCurrentCharacter() {
             generateNewCharacter(undefined, options);
           },
           onError: (error) => {
-            showError('Failed to kill character');
+            if (isUnexpectedApiError(error)) {
+              reportUnexpectedError(
+                error,
+                {
+                  source: 'character_kill',
+                  operation: 'delete_character',
+                  characterId: idToKill,
+                  locale: trimmedLocale,
+                },
+                'Failed to kill character'
+              );
+            } else {
+              showError(
+                getUserFacingApiErrorMessage(
+                  error,
+                  t,
+                  'Failed to kill character'
+                )
+              );
+            }
             options?.onError?.(error);
           },
         }
@@ -351,6 +448,8 @@ export function useCurrentCharacter() {
       isGuest,
       isSessionExpired,
       showError,
+      reportUnexpectedError,
+      t,
     ]
   );
 

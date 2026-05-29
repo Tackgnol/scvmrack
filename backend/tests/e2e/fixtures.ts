@@ -5,6 +5,9 @@ import { resolve } from 'node:path';
 
 export interface Fixtures {
   cleanContext: void;
+  seedCharacter: (options?: { name?: string }) => Promise<{
+    id: string;
+  }>;
   seededCharacter: {
     id: string;
   };
@@ -91,6 +94,26 @@ async function postTestRoute(path: string, data: unknown, cookies: CookieJar): P
 
   storeResponseCookies(response.headers, cookies);
   return response;
+}
+
+async function createSeededCharacter(
+  userId: string,
+  options: { name?: string } = {}
+): Promise<{ id: string }> {
+  const testRouteCookies: CookieJar = new Map();
+  const charRes = await postTestRoute(
+    '/test/characters',
+    { userId, ...options },
+    testRouteCookies
+  );
+
+  if (!charRes.ok) {
+    throw new Error(
+      `Failed to create seeded character: ${charRes.status} ${await charRes.text()}`
+    );
+  }
+
+  return (await charRes.json()) as { id: string };
 }
 
 export const test = base.extend<Fixtures, WorkerFixtures>({
@@ -206,26 +229,16 @@ export const test = base.extend<Fixtures, WorkerFixtures>({
     { auto: true },
   ],
 
-  seededCharacter: async ({ workerUserId }, use) => {
+  seedCharacter: async ({ workerUserId }, use) => {
     if (!workerUserId) {
-      throw new Error('seededCharacter is only available in the authed Playwright project');
+      throw new Error('seedCharacter is only available in the authed Playwright project');
     }
 
-    const testRouteCookies: CookieJar = new Map();
-    const charRes = await postTestRoute(
-      '/test/characters',
-      { userId: workerUserId },
-      testRouteCookies
-    );
+    await use((options) => createSeededCharacter(workerUserId, options));
+  },
 
-    if (!charRes.ok) {
-      throw new Error(
-        `Failed to create seeded character: ${charRes.status} ${await charRes.text()}`
-      );
-    }
-
-    const { id } = (await charRes.json()) as { id: string };
-    await use({ id });
+  seededCharacter: async ({ seedCharacter }, use) => {
+    await use(await seedCharacter());
   },
 });
 
