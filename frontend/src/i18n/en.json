@@ -97,7 +97,7 @@
   "modifiers": {
     "title": "Modifiers",
     "fromEquipment": "From Equipment",
-    "noModifiers": "No active modifiers",
+    "noModifiers": "No modifiers yet — add bonuses or penalties from spells, gear, or afflictions below.",
     "addModifier": "Add modifier",
     "saveModifier": "Save",
     "name": "Name",
@@ -424,7 +424,7 @@
     "home": "Sheet",
     "characters": "Scvms",
     "faq": "FAQ",
-    "release": "log"
+    "release": "Updates"
   },
   "characters": {
     "title": "Your Characters",

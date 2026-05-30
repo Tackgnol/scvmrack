@@ -6,8 +6,6 @@ interface SummaryStatButtonProps {
   label: string;
   children: ReactNode;
   isActive: boolean;
-  onHoverOpen: (element: HTMLElement) => void;
-  onHoverClose: () => void;
   onPinToggle: (element: HTMLElement) => void;
 }
 
@@ -15,24 +13,21 @@ export default function SummaryStatButton({
   label,
   children,
   isActive,
-  onHoverOpen,
-  onHoverClose,
   onPinToggle,
 }: SummaryStatButtonProps) {
+  // Tap to toggle the detail popover; it dismisses on click-away. We deliberately
+  // do NOT open on hover/focus — on touch that fired on incidental focus and
+  // covered the stats the user was reading.
   return (
     <Box
       component="button"
       type="button"
-      onMouseEnter={(event) => onHoverOpen(event.currentTarget)}
-      onMouseLeave={onHoverClose}
-      onFocus={(event) => onHoverOpen(event.currentTarget)}
-      onBlur={onHoverClose}
       onClick={(event) => onPinToggle(event.currentTarget)}
       aria-expanded={isActive}
       aria-haspopup="dialog"
       sx={{
         ...customStyles.summaryStat,
-        cursor: 'help',
+        cursor: 'pointer',
         width: '100%',
         borderTop: 'none',
         borderBottom: 'none',

@@ -94,7 +94,7 @@
   "modifiers": {
     "title": "Modyfikatory",
     "fromEquipment": "Z Wyposażenia",
-    "noModifiers": "Brak aktywnych modyfikatorów",
+    "noModifiers": "Brak modyfikatorów — dodaj premie lub kary od zaklęć, ekwipunku lub przypadłości poniżej.",
     "addModifier": "Dodaj modyfikator",
     "saveModifier": "Zapisz",
     "name": "Nazwa",

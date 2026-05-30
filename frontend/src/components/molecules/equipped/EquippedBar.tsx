@@ -42,7 +42,6 @@ export default function EquippedBar() {
     <Box sx={customStyles.equippedBar.container}>
       <EquippedQuickCard
         ref={weaponSlotRef}
-        icon="⚔"
         type={t('equipment.weapon')}
         name={mainWeapon?.name ?? t('equipment.unarmed')}
         detail={mainWeapon?.dice ? formatDice(mainWeapon.dice) : 'd2'}
@@ -57,7 +56,6 @@ export default function EquippedBar() {
 
       {offhandWeapon && (
         <EquippedQuickCard
-          icon="⚚"
           type={t('equipment.offHand')}
           name={offhandWeapon.name ?? t('equipment.none')}
           detail={offhandWeapon.dice ? formatDice(offhandWeapon.dice) : ''}
@@ -73,7 +71,6 @@ export default function EquippedBar() {
 
       <EquippedQuickCard
         ref={armorSlotRef}
-        icon="🛡"
         type={t('equipment.armorLabel')}
         name={equippedArmor?.name ?? t('equipment.unarmored')}
         detail={equippedArmor?.dice ? `-${formatDice(equippedArmor.dice)}` : '−'}

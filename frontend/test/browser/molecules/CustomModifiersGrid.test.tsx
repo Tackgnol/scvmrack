@@ -36,7 +36,7 @@ describe('CustomModifiersGrid', () => {
       </BrowserTestProvider>
     );
 
-    await expect.element(page.getByText(/No active modifiers/i)).toBeInTheDocument();
+    await expect.element(page.getByText(/no modifiers yet/i)).toBeInTheDocument();
   });
 
   it('renders a list of custom modifier tags', async () => {
