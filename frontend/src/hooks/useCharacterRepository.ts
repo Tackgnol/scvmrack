@@ -3,7 +3,7 @@ import { PathsApiCharactersIdGetParametersQueryLocale } from "@/api/schema.ts";
 
 import { CharacterResponse, UpdateMutationContext } from "@/hooks/models.ts";
 import { getApiLocale, getCharacterKey } from "@/hooks/utils.ts";
-import { toApiClientError } from '@/utils/errorUtils';
+import { getApiErrorStatus, toApiClientError } from '@/utils/errorUtils';
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
 
@@ -26,7 +26,18 @@ export function useCharacterRepository(
                 query: { locale: trimmedLocale }
             }
         },
-        { enabled: queryEnabled && !!characterId }
+        {
+            enabled: queryEnabled && !!characterId,
+            // Don't retry client errors (e.g. 404 for a just-deleted character,
+            // 403 access denied) — retrying can't fix them and only spams 404s.
+            retry: (failureCount, error) => {
+                const status = getApiErrorStatus(error);
+                if (status !== undefined && status >= 400 && status < 500) {
+                    return false;
+                }
+                return failureCount < 2;
+            },
+        }
     );
 
     // ---- Create Character ----

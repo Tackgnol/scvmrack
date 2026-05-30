@@ -205,13 +205,21 @@ test('useCurrentCharacter handles killAndReplace', () => {
     result.current.killAndReplace();
   });
 
-  expect(deleteMutate).toHaveBeenCalled();
-
-  // Simulate delete success
-  const deleteCallbacks = deleteMutate.mock.calls[0][1];
-  deleteCallbacks.onSuccess();
-
+  // Generate-first: the replacement is created before the old one is deleted,
+  // so a failed generation can't leave the app pointed at a deleted character.
   expect(createMutate).toHaveBeenCalled();
+  expect(deleteMutate).not.toHaveBeenCalled();
+
+  // Simulate successful generation -> deletes the previously active character.
+  const createCallbacks = createMutate.mock.calls[0][1];
+  act(() => {
+    createCallbacks.onSuccess({ id: 'char-2' });
+  });
+
+  expect(deleteMutate).toHaveBeenCalled();
+  expect(deleteMutate.mock.calls[0][0]).toMatchObject({
+    params: { path: { id: 'char-1' } },
+  });
 });
 
 test('useCurrentCharacter handles changeLocale', async () => {
