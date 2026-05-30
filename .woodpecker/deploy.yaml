@@ -227,15 +227,15 @@ steps:
             -f "/tmp/$filename"
         done
 
-        # Reapply idempotent reference-data seeds. These are external tables (see
-        # prisma.config.ts) not managed by Prisma migrations, and init/05-seed/
-        # only runs on first volume init — so without this step, reference data
-        # added after the prod DB was bootstrapped never reaches it (e.g. the
-        # class_ability_modifiers that drive Stealthy / Clumsy DR modifiers).
-        # ONLY list seeds that are safe to run on every deploy (INSERT ... ON
-        # CONFLICT DO NOTHING — no DELETE/UPDATE side effects).
-        echo "Reapplying idempotent reference seeds..."
-        for f in 002_class_ability_modifiers.sql 003_extra_modifiers.sql; do
+        # Reapply the authoritative reference-data sync. class_ability_modifiers is
+        # an external table (see prisma.config.ts) not managed by Prisma migrations,
+        # and init/05-seed/ only runs on first volume init — so without this step,
+        # reference data added/corrected after the prod DB was bootstrapped never
+        # reaches it (e.g. Stealthy/Clumsy DR modifiers). 009 is a full DELETE +
+        # INSERT of the canonical set, so it is idempotent and converges any
+        # database to exactly the right rows (no duplicates, no stale entries).
+        echo "Reapplying authoritative reference seeds..."
+        for f in 009_sync_class_ability_modifiers.sql; do
           echo "  -> $f"
           docker cp "backend/init/05-seed/$f" "$db_container_id:/tmp/$f"
           docker exec "$db_container_id" psql \
