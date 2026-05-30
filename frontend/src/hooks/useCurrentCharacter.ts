@@ -15,6 +15,7 @@ import { useSnackbar } from '@/SnackbarContext/SnackbarProvider.tsx';
 import { useErrorFeedback } from '@/components/molecules/feedback/ErrorFeedbackProvider';
 import {
   getUserFacingApiErrorMessage,
+  isApiNotFound,
   isApiRateLimited,
   isUnexpectedApiError,
   toApiClientError,
@@ -400,43 +401,47 @@ export function useCurrentCharacter() {
 
       editor.flush();
 
-      // Delete first, then generate
-      repo.deleteCharacter.mutate(
-        { params: { path: { id: idToKill } } } as any,
-        {
-          onSuccess: () => {
-            trackEvent('kill_character', {
-              locale: trimmedLocale,
-              is_authenticated: isAuthenticated,
-              is_guest: isGuest,
-            });
-            generateNewCharacter(undefined, options);
-          },
-          onError: (error) => {
-            if (isUnexpectedApiError(error)) {
-              reportUnexpectedError(
-                error,
-                {
-                  source: 'character_kill',
-                  operation: 'delete_character',
-                  characterId: idToKill,
+      // Generate the replacement FIRST, then delete the old one once the new
+      // character exists and is the active selection. Generate-then-delete keeps
+      // the operation safe if generation fails (e.g. rate limited) — the old
+      // character survives instead of leaving the app pointed at a deleted id —
+      // and because the active query has already moved to the new id, removing
+      // the old character's cache entry no longer refetches a deleted record.
+      generateNewCharacter(undefined, {
+        ...options,
+        onSuccess: (newCharacterId) => {
+          options?.onSuccess?.(newCharacterId);
+
+          repo.deleteCharacter.mutate(
+            { params: { path: { id: idToKill } } } as any,
+            {
+              onSuccess: () => {
+                trackEvent('kill_character', {
                   locale: trimmedLocale,
-                },
-                'Failed to kill character'
-              );
-            } else {
-              showError(
-                getUserFacingApiErrorMessage(
-                  error,
-                  t,
-                  'Failed to kill character'
-                )
-              );
+                  is_authenticated: isAuthenticated,
+                  is_guest: isGuest,
+                });
+              },
+              onError: (error) => {
+                // The replacement is already active; a failure to delete the old
+                // record is non-blocking. 404 means it was already gone.
+                if (!isApiNotFound(error) && isUnexpectedApiError(error)) {
+                  reportUnexpectedError(
+                    error,
+                    {
+                      source: 'character_kill',
+                      operation: 'delete_character',
+                      characterId: idToKill,
+                      locale: trimmedLocale,
+                    },
+                    'Failed to delete the replaced character'
+                  );
+                }
+              },
             }
-            options?.onError?.(error);
-          },
-        }
-      );
+          );
+        },
+      });
     },
     [
       characterId,
@@ -447,9 +452,7 @@ export function useCurrentCharacter() {
       isAuthenticated,
       isGuest,
       isSessionExpired,
-      showError,
       reportUnexpectedError,
-      t,
     ]
   );
 
