@@ -6,7 +6,6 @@ import BrowserTestProvider from '../../BrowserTestProvider';
 
 describe('EquippedQuickCard Browser', () => {
   const defaultProps = {
-    icon: '⚔️',
     type: 'WEAPON',
     name: 'Broadsword',
     detail: '1d10 damage',
@@ -20,7 +19,6 @@ describe('EquippedQuickCard Browser', () => {
       </BrowserTestProvider>
     );
 
-    await expect.element(page.getByText('⚔️')).toBeVisible();
     await expect.element(page.getByText('WEAPON')).toBeVisible();
     await expect.element(page.getByText('Broadsword')).toBeVisible();
     await expect.element(page.getByText('1d10 damage')).toBeVisible();

@@ -1,7 +1,8 @@
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import { Box, Tooltip, Typography } from '@mui/material';
+import { Box, ClickAwayListener, Tooltip, Typography } from '@mui/material';
 import {
   forwardRef,
+  useState,
   type KeyboardEvent,
   type MouseEvent,
 } from 'react';
@@ -9,7 +10,6 @@ import { customStyles } from '@/theme/morkBorgTheme';
 import { StyledEquipmentCard } from './EquippedBar.styled';
 
 interface EquippedQuickCardProps {
-  icon: string;
   type: string;
   name: string;
   detail?: string;
@@ -24,11 +24,12 @@ interface EquippedQuickCardProps {
 
 const EquippedQuickCard = forwardRef<HTMLDivElement, EquippedQuickCardProps>(
   function EquippedQuickCard(
-    { icon, type, name, detail, description, noneName, onClick, dataTestId, actionLabel, ammoCount, onAmmoUse },
+    { type, name, detail, description, noneName, onClick, dataTestId, actionLabel, ammoCount, onAmmoUse },
     ref,
   ) {
     const hasClick = Boolean(onClick);
     const resolvedActionLabel = actionLabel ?? 'Change';
+    const [infoOpen, setInfoOpen] = useState(false);
 
     const handleKeyDown = (event: KeyboardEvent<HTMLElement>) => {
       if (!onClick) return;
@@ -49,7 +50,6 @@ const EquippedQuickCard = forwardRef<HTMLDivElement, EquippedQuickCardProps>(
         tabIndex={hasClick ? 0 : undefined}
         aria-haspopup={hasClick ? 'menu' : undefined}
       >
-        <Typography sx={customStyles.equippedBar.icon}>{icon}</Typography>
         <Box sx={customStyles.equippedBar.contentBox}>
           <Typography
             variant="subtitle2"
@@ -68,31 +68,42 @@ const EquippedQuickCard = forwardRef<HTMLDivElement, EquippedQuickCardProps>(
           )}
         </Box>
         {description && (
-          <Tooltip
-            title={description}
-            placement="top"
-            enterTouchDelay={0}
-            leaveTouchDelay={2000}
-            arrow
-          >
-            <Box
-              component="span"
-              role="button"
-              tabIndex={0}
-              aria-label={description}
-              onClick={(e: MouseEvent<HTMLElement>) => e.stopPropagation()}
-              onKeyDown={(e: KeyboardEvent<HTMLElement>) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  e.stopPropagation();
-                }
-              }}
-              sx={customStyles.equippedBar.infoPeg}
-              className="print-hidden"
+          <ClickAwayListener onClickAway={() => setInfoOpen(false)}>
+            <Tooltip
+              title={description}
+              placement="top"
+              arrow
+              open={infoOpen}
+              disableHoverListener
+              disableFocusListener
+              disableTouchListener
             >
-              i
-            </Box>
-          </Tooltip>
+              <Box
+                component="span"
+                role="button"
+                tabIndex={0}
+                aria-label={description}
+                aria-expanded={infoOpen}
+                onClick={(e: MouseEvent<HTMLElement>) => {
+                  e.stopPropagation();
+                  setInfoOpen((open) => !open);
+                }}
+                onKeyDown={(e: KeyboardEvent<HTMLElement>) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setInfoOpen((open) => !open);
+                  } else if (e.key === 'Escape') {
+                    setInfoOpen(false);
+                  }
+                }}
+                sx={customStyles.equippedBar.infoPeg}
+                className="print-hidden"
+              >
+                i
+              </Box>
+            </Tooltip>
+          </ClickAwayListener>
         )}
         {ammoCount !== null && ammoCount !== undefined && (
           <Box

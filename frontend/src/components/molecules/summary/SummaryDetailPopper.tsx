@@ -13,8 +13,8 @@ interface SummaryDetailPopperProps {
   anchorEl: HTMLElement | null;
   accentColor: string;
   onClickAway: () => void;
-  onMouseEnter: () => void;
-  onMouseLeave: () => void;
+  onMouseEnter?: () => void;
+  onMouseLeave?: () => void;
   children: ReactNode;
 }
 

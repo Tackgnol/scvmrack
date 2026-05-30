@@ -24,8 +24,6 @@ export default function SummaryBar() {
       <SummaryStatButton
         label={t('stats.toDodge')}
         isActive={summaryDetailState.activeDetail === 'dodge'}
-        onHoverOpen={(element) => summaryDetailState.openHoverDetail('dodge', element)}
-        onHoverClose={summaryDetailState.scheduleClose}
         onPinToggle={(element) => summaryDetailState.togglePinnedDetail('dodge', element)}
       >
         <Typography variant="h3" color="primary">
@@ -40,8 +38,6 @@ export default function SummaryBar() {
       <SummaryStatButton
         label={t('stats.toHitMelee')}
         isActive={summaryDetailState.activeDetail === 'melee'}
-        onHoverOpen={(element) => summaryDetailState.openHoverDetail('melee', element)}
-        onHoverClose={summaryDetailState.scheduleClose}
         onPinToggle={(element) => summaryDetailState.togglePinnedDetail('melee', element)}
       >
         <Typography variant="h3" color="primary">
@@ -56,8 +52,6 @@ export default function SummaryBar() {
       <SummaryStatButton
         label={t('stats.toHitRanged')}
         isActive={summaryDetailState.activeDetail === 'ranged'}
-        onHoverOpen={(element) => summaryDetailState.openHoverDetail('ranged', element)}
-        onHoverClose={summaryDetailState.scheduleClose}
         onPinToggle={(element) => summaryDetailState.togglePinnedDetail('ranged', element)}
       >
         <Typography variant="h3" color="primary">
@@ -72,8 +66,6 @@ export default function SummaryBar() {
       <SummaryStatButton
         label={t('stats.encumbrance')}
         isActive={summaryDetailState.activeDetail === 'encumbrance'}
-        onHoverOpen={(element) => summaryDetailState.openHoverDetail('encumbrance', element)}
-        onHoverClose={summaryDetailState.scheduleClose}
         onPinToggle={(element) =>
           summaryDetailState.togglePinnedDetail('encumbrance', element)
         }
@@ -98,8 +90,6 @@ export default function SummaryBar() {
         anchorEl={summaryDetailState.anchorEl}
         accentColor={summaryDetailState.popperAccent}
         onClickAway={summaryDetailState.closeNow}
-        onMouseEnter={summaryDetailState.clearCloseTimer}
-        onMouseLeave={summaryDetailState.scheduleClose}
       >
         <SummaryDetailContent
           activeDetail={summaryDetailState.activeDetail}
