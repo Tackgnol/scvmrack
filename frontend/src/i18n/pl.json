@@ -383,6 +383,8 @@
     "badRequest": "Sprawdź żądanie i spróbuj ponownie.",
     "unauthorized": "Sesja wygasła. Zaloguj się ponownie.",
     "unauthorizedTitle": "Sesja wygasła",
+    "signInAgain": "Zaloguj się",
+    "continueAsGuest": "Kontynuuj jako gość",
     "forbidden": "Nie masz dostępu do tego zasobu.",
     "forbiddenTitle": "Brak dostępu",
     "notFound": "Nie znaleziono żądanego elementu.",

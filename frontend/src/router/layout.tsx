@@ -1,5 +1,6 @@
 import { AnalyticsPageTracker } from '@/analytics/AnalyticsPageTracker';
 import { Header, NetworkActivityIndicator } from '@components/index';
+import { SessionExpiredGate } from '@components/molecules/session/SessionExpiredGate';
 import { Outlet, useRouterState } from '@tanstack/react-router';
 import { Box, Container, CssBaseline, ThemeProvider } from '@mui/material';
 import { customStyles, morkBorgTheme } from '@/theme/morkBorgTheme';
@@ -28,6 +29,7 @@ export function RootLayout() {
     return (
         <ThemeProvider theme={morkBorgTheme}>
             <AnalyticsPageTracker />
+            {!isPrintRoute && <SessionExpiredGate />}
             {!isPrintRoute && (
                 <Suspense fallback={null}>
                     <PrivacyNoticeDrawer />
