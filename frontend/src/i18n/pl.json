@@ -94,7 +94,7 @@
   "modifiers": {
     "title": "Modyfikatory",
     "fromEquipment": "Z Wyposażenia",
-    "noModifiers": "Brak modyfikatorów — dodaj premie lub kary od zaklęć, ekwipunku lub przypadłości poniżej.",
+    "noModifiers": "Brak własnych modyfikatorów. Efekty broni i pancerza działają automatycznie — dodaj własne premie lub kary poniżej.",
     "addModifier": "Dodaj modyfikator",
     "saveModifier": "Zapisz",
     "name": "Nazwa",

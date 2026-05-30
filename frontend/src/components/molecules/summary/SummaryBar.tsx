@@ -89,7 +89,7 @@ export default function SummaryBar() {
         open={summaryDetailState.popperOpen}
         anchorEl={summaryDetailState.anchorEl}
         accentColor={summaryDetailState.popperAccent}
-        onClickAway={summaryDetailState.closeNow}
+        onClickAway={summaryDetailState.handleClickAway}
       >
         <SummaryDetailContent
           activeDetail={summaryDetailState.activeDetail}
