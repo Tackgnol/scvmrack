@@ -386,6 +386,8 @@
     "badRequest": "Check the request and try again.",
     "unauthorized": "Your session expired. Sign in again.",
     "unauthorizedTitle": "Session expired",
+    "signInAgain": "Sign in",
+    "continueAsGuest": "Continue as guest",
     "forbidden": "You do not have access to this resource.",
     "forbiddenTitle": "Access denied",
     "notFound": "The requested item was not found.",

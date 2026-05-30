@@ -13,8 +13,9 @@ import {
     navigateToLoggedOut,
     SESSION_EXPIRED_QUERY_PARAM,
 } from '@/router/navigation';
+import { clearLastAuthKind, setLastAuthKind } from '@/preferences/lastAuthKind';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useSyncExternalStore } from 'react';
+import { useEffect, useSyncExternalStore } from 'react';
 
 // ============================================
 // Types
@@ -60,6 +61,15 @@ export function useAuth() {
     const effectiveSessionUser = isSessionExpired ? undefined : sessionUser;
     const isAnonymousUser = Boolean(sessionUser?.isAnonymous);
 
+    // Record the kind of the live session so the session-expired recovery can
+    // tell a real account (prompt to sign in) apart from a guest (silently
+    // re-bootstrap) after the session — and thus this signal — is gone.
+    useEffect(() => {
+        if (sessionUser?.id) {
+            setLastAuthKind(isAnonymousUser ? 'anonymous' : 'account');
+        }
+    }, [sessionUser?.id, isAnonymousUser]);
+
     const anonymousBootstrapQuery = useQuery({
         queryKey: ['auth', 'anonymous-bootstrap'],
         enabled: !isSessionExpired && !sessionQuery.isLoading && !sessionUser,
@@ -80,6 +90,7 @@ export function useAuth() {
         },
         onSuccess: () => {
             trackEvent('sign_out');
+            clearLastAuthKind();
             queryClient.setQueryData(authKeys.session(), null);
             void navigateToLoggedOut();
         },
