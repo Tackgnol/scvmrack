@@ -1,5 +1,5 @@
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import { Box, ClickAwayListener, Tooltip, Typography } from '@mui/material';
+import { Box, ClickAwayListener, Tooltip, Typography, useMediaQuery } from '@mui/material';
 import {
   forwardRef,
   useState,
@@ -30,6 +30,9 @@ const EquippedQuickCard = forwardRef<HTMLDivElement, EquippedQuickCardProps>(
     const hasClick = Boolean(onClick);
     const resolvedActionLabel = actionLabel ?? 'Change';
     const [infoOpen, setInfoOpen] = useState(false);
+    // Desktop (real mouse) shows the description on hover; touch keeps the
+    // deliberate tap-to-open / tap-away-to-close behaviour and won't get stuck.
+    const prefersHover = useMediaQuery('(hover: hover) and (pointer: fine)');
 
     const handleKeyDown = (event: KeyboardEvent<HTMLElement>) => {
       if (!onClick) return;
@@ -84,6 +87,12 @@ const EquippedQuickCard = forwardRef<HTMLDivElement, EquippedQuickCardProps>(
                 tabIndex={0}
                 aria-label={description}
                 aria-expanded={infoOpen}
+                onMouseEnter={() => {
+                  if (prefersHover) setInfoOpen(true);
+                }}
+                onMouseLeave={() => {
+                  if (prefersHover) setInfoOpen(false);
+                }}
                 onClick={(e: MouseEvent<HTMLElement>) => {
                   e.stopPropagation();
                   setInfoOpen((open) => !open);
