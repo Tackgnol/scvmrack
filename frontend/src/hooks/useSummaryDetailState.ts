@@ -11,6 +11,10 @@ const getAccentColor = (detail: SummaryDetailKey): string => {
 
 export function useSummaryDetailState() {
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Timestamp of the last stat-button tap. The popover's ClickAwayListener fires
+  // on the same click that switches stats; we use this to ignore that click-away
+  // so switching never momentarily closes the popover (which flashed empty).
+  const interactionAtRef = useRef(0);
   const [activeDetail, setActiveDetail] = useState<SummaryDetailKey | null>(null);
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const [isPinned, setIsPinned] = useState(false);
@@ -47,6 +51,7 @@ export function useSummaryDetailState() {
   };
 
   const togglePinnedDetail = (detail: SummaryDetailKey, element: HTMLElement) => {
+    interactionAtRef.current = Date.now();
     clearCloseTimer();
     if (isPinned && activeDetail === detail) {
       closeNow();
@@ -56,6 +61,15 @@ export function useSummaryDetailState() {
     setActiveDetail(detail);
     setAnchorEl(element);
     setIsPinned(true);
+  };
+
+  const handleClickAway = () => {
+    // Ignore the click-away that is part of tapping another stat button, so
+    // switching stats swaps content directly instead of close-then-reopen.
+    if (Date.now() - interactionAtRef.current < 150) {
+      return;
+    }
+    closeNow();
   };
 
   useEffect(() => {
@@ -79,5 +93,6 @@ export function useSummaryDetailState() {
     scheduleClose,
     openHoverDetail,
     togglePinnedDetail,
+    handleClickAway,
   };
 }

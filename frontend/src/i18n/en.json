@@ -97,7 +97,7 @@
   "modifiers": {
     "title": "Modifiers",
     "fromEquipment": "From Equipment",
-    "noModifiers": "No modifiers yet — add bonuses or penalties from spells, gear, or afflictions below.",
+    "noModifiers": "No custom modifiers yet. Weapon and armor effects already apply automatically — add your own bonuses or penalties below.",
     "addModifier": "Add modifier",
     "saveModifier": "Save",
     "name": "Name",
