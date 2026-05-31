@@ -316,7 +316,7 @@ const s = {
   licenseText: {
     fontFamily: '"Alegreya", Georgia, serif',
     fontSize: '0.75rem',
-    color: 'rgba(10, 10, 10, 0.45)',
+    color: 'rgba(10, 10, 10, 0.75)',
     lineHeight: 1.6,
   },
 };
@@ -423,7 +423,12 @@ export function LandingPage() {
         <Box component="section" sx={s.heroBand}>
           <Box sx={s.heroCopy}>
             <Box sx={s.stamp}>
-              <img src={licenseHoriz} alt="Compatible with MÖRK BORG" />
+              <img
+                src={licenseHoriz}
+                alt="Compatible with MÖRK BORG"
+                width="269"
+                height="77"
+              />
             </Box>
 
             <Typography sx={s.lede}>

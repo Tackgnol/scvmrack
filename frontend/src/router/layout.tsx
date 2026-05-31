@@ -1,5 +1,6 @@
 import { AnalyticsPageTracker } from '@/analytics/AnalyticsPageTracker';
-import { Header, NetworkActivityIndicator } from '@components/index';
+import { NetworkActivityIndicator } from '@/components/atoms/NetworkActivityIndicator';
+import Header from '@/components/organisms/Header';
 import { SessionExpiredGate } from '@components/molecules/session/SessionExpiredGate';
 import { Outlet, useRouterState } from '@tanstack/react-router';
 import { Box, Container, CssBaseline, ThemeProvider } from '@mui/material';
@@ -7,7 +8,11 @@ import { customStyles, morkBorgTheme } from '@/theme/morkBorgTheme';
 import { keyframes } from '@mui/system';
 import { lazy, Suspense } from 'react';
 
-const PrivacyNoticeDrawer = lazy(() => import('@components/index').then(m => ({ default: m.PrivacyNoticeDrawer })));
+const PrivacyNoticeDrawer = lazy(() =>
+    import('@/components/organisms/PrivacyNoticeDrawer').then((m) => ({
+        default: m.PrivacyNoticeDrawer,
+    }))
+);
 
 const routeFadeIn = keyframes`
     from {

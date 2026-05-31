@@ -1,10 +1,9 @@
-import Analytics from 'analytics';
-import googleAnalytics from '@analytics/google-analytics'
 import type { AnalyticsInstance } from 'analytics';
 import { getRuntimeDocumentTitle, isBrowserRuntime } from '@/platform/runtime';
 import { getPrivacySettings, isAnalyticsAllowed } from '@/privacy/privacySettings';
 
 let analyticsInstance: AnalyticsInstance | null = null;
+let analyticsInitPromise: Promise<AnalyticsInstance | null> | null = null;
 let analyticsConsentGranted = false;
 
 const getGaMeasurementId = (): string | undefined => {
@@ -33,6 +32,7 @@ export const setAnalyticsEnabled = (enabled: boolean): void => {
 
     if (!enabled) {
         analyticsInstance = null;
+        analyticsInitPromise = null;
         return;
     }
 
@@ -54,28 +54,56 @@ export const initializeAnalyticsConsent = (): void => {
     setAnalyticsEnabled(isAnalyticsAllowed(privacySettings));
 };
 
-export const initGoogleAnalytics = (): void => {
-    if (!analyticsConsentGranted || analyticsInstance || !isBrowserRuntime()) {
-        return;
+const loadGoogleAnalytics = async (): Promise<AnalyticsInstance | null> => {
+    if (!analyticsConsentGranted || !isBrowserRuntime()) {
+        return null;
+    }
+
+    if (analyticsInstance) {
+        return analyticsInstance;
+    }
+
+    if (analyticsInitPromise) {
+        return analyticsInitPromise;
     }
 
     const measurementId = getGaMeasurementId();
     if (!measurementId) {
-        return;
+        return null;
     }
 
-    analyticsInstance = Analytics({
-        app: 'scvm-rack',
-        plugins: [
-            googleAnalytics({
-                measurementIds: [measurementId],
-                gtagConfig: {
-                    send_page_view: false,
-                    anonymize_ip: true,
-                },
-            }),
-        ],
+    analyticsInitPromise = Promise.all([
+        import('analytics'),
+        import('@analytics/google-analytics'),
+    ]).then(([analyticsModule, googleAnalyticsModule]) => {
+        if (!analyticsConsentGranted) {
+            return null;
+        }
+
+        analyticsInstance = analyticsModule.default({
+            app: 'scvm-rack',
+            plugins: [
+                googleAnalyticsModule.default({
+                    measurementIds: [measurementId],
+                    gtagConfig: {
+                        send_page_view: false,
+                        anonymize_ip: true,
+                    },
+                }),
+            ],
+        });
+
+        return analyticsInstance;
+    }).catch(() => {
+        analyticsInitPromise = null;
+        return null;
     });
+
+    return analyticsInitPromise;
+};
+
+export const initGoogleAnalytics = (): void => {
+    void loadGoogleAnalytics();
 };
 
 interface PageViewPayload {
@@ -88,14 +116,15 @@ interface PageViewPayload {
 export const trackPageView = ({ path, title, url, search }: PageViewPayload): void => {
     if (!analyticsConsentGranted || !isBrowserRuntime()) return;
 
-    initGoogleAnalytics();
-    if (!analyticsInstance) return;
+    void loadGoogleAnalytics().then((instance) => {
+        if (!analyticsConsentGranted || !instance) return;
 
-    void analyticsInstance.page({
-        path,
-        title: title ?? getRuntimeDocumentTitle(),
-        url,
-        search,
+        void instance.page({
+            path,
+            title: title ?? getRuntimeDocumentTitle(),
+            url,
+            search,
+        });
     });
 };
 
@@ -105,7 +134,9 @@ export const trackEvent = (
 ): void => {
     if (!analyticsConsentGranted) return;
 
-    initGoogleAnalytics();
-    if (!analyticsInstance) return;
-    void analyticsInstance.track(eventName, params ?? {});
+    void loadGoogleAnalytics().then((instance) => {
+        if (!analyticsConsentGranted || !instance) return;
+
+        void instance.track(eventName, params ?? {});
+    });
 };
