@@ -6,13 +6,35 @@ import { Outlet, useRouterState } from '@tanstack/react-router';
 import { Box, Container, CssBaseline, ThemeProvider } from '@mui/material';
 import { customStyles, morkBorgTheme } from '@/theme/morkBorgTheme';
 import { keyframes } from '@mui/system';
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
+import { getPrivacySettings } from '@/privacy/privacySettings';
+import { subscribeOpenPrivacyDrawer } from '@/privacy/privacyDrawerBus';
 
 const PrivacyNoticeDrawer = lazy(() =>
     import('@/components/organisms/PrivacyNoticeDrawer').then((m) => ({
         default: m.PrivacyNoticeDrawer,
     }))
 );
+
+function PrivacyNoticeHost() {
+    const [loadReason, setLoadReason] = useState<'initial' | 'request' | null>(() =>
+        getPrivacySettings().acknowledged ? null : 'initial'
+    );
+
+    useEffect(() => {
+        return subscribeOpenPrivacyDrawer(() => setLoadReason('request'));
+    }, []);
+
+    if (!loadReason) {
+        return null;
+    }
+
+    return (
+        <Suspense fallback={null}>
+            <PrivacyNoticeDrawer openOnMount={loadReason === 'request'} />
+        </Suspense>
+    );
+}
 
 const routeFadeIn = keyframes`
     from {
@@ -35,11 +57,7 @@ export function RootLayout() {
         <ThemeProvider theme={morkBorgTheme}>
             <AnalyticsPageTracker />
             {!isPrintRoute && <SessionExpiredGate />}
-            {!isPrintRoute && (
-                <Suspense fallback={null}>
-                    <PrivacyNoticeDrawer />
-                </Suspense>
-            )}
+            {!isPrintRoute && <PrivacyNoticeHost />}
             <CssBaseline />
             <Box
                 className={isPrintRoute ? 'print-layout-root' : undefined}

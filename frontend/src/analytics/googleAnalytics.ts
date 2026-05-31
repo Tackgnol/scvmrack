@@ -5,6 +5,7 @@ import { getPrivacySettings, isAnalyticsAllowed } from '@/privacy/privacySetting
 let analyticsInstance: AnalyticsInstance | null = null;
 let analyticsInitPromise: Promise<AnalyticsInstance | null> | null = null;
 let analyticsConsentGranted = false;
+const DEFERRED_PAGE_VIEW_DELAY_MS = 8000;
 
 const getGaMeasurementId = (): string | undefined => {
     const measurementId = import.meta.env.VITE_GA_MEASUREMENT_ID?.trim();
@@ -36,8 +37,6 @@ export const setAnalyticsEnabled = (enabled: boolean): void => {
         return;
     }
 
-    initGoogleAnalytics();
-
     if (!wasEnabled && isBrowserRuntime()) {
         const path = `${window.location.pathname}${window.location.search}${window.location.hash}`;
         trackPageView({
@@ -51,7 +50,13 @@ export const setAnalyticsEnabled = (enabled: boolean): void => {
 
 export const initializeAnalyticsConsent = (): void => {
     const privacySettings = getPrivacySettings();
-    setAnalyticsEnabled(isAnalyticsAllowed(privacySettings));
+    analyticsConsentGranted = isAnalyticsAllowed(privacySettings);
+    applyGaDisableFlag(!analyticsConsentGranted);
+
+    if (!analyticsConsentGranted) {
+        analyticsInstance = null;
+        analyticsInitPromise = null;
+    }
 };
 
 const loadGoogleAnalytics = async (): Promise<AnalyticsInstance | null> => {
@@ -106,6 +111,25 @@ export const initGoogleAnalytics = (): void => {
     void loadGoogleAnalytics();
 };
 
+const runWithGoogleAnalytics = (
+    callback: (instance: AnalyticsInstance) => void,
+    deferred = false
+): void => {
+    const run = () => {
+        void loadGoogleAnalytics().then((instance) => {
+            if (!analyticsConsentGranted || !instance) return;
+            callback(instance);
+        });
+    };
+
+    if (!deferred) {
+        run();
+        return;
+    }
+
+    window.setTimeout(run, DEFERRED_PAGE_VIEW_DELAY_MS);
+};
+
 interface PageViewPayload {
     path: string;
     title?: string;
@@ -116,16 +140,17 @@ interface PageViewPayload {
 export const trackPageView = ({ path, title, url, search }: PageViewPayload): void => {
     if (!analyticsConsentGranted || !isBrowserRuntime()) return;
 
-    void loadGoogleAnalytics().then((instance) => {
-        if (!analyticsConsentGranted || !instance) return;
-
+    runWithGoogleAnalytics(
+        (instance) => {
         void instance.page({
             path,
             title: title ?? getRuntimeDocumentTitle(),
             url,
             search,
         });
-    });
+        },
+        true
+    );
 };
 
 export const trackEvent = (
@@ -134,9 +159,7 @@ export const trackEvent = (
 ): void => {
     if (!analyticsConsentGranted) return;
 
-    void loadGoogleAnalytics().then((instance) => {
-        if (!analyticsConsentGranted || !instance) return;
-
+    runWithGoogleAnalytics((instance) => {
         void instance.track(eventName, params ?? {});
     });
 };

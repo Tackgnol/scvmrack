@@ -13,13 +13,17 @@ import { useTranslation } from 'react-i18next';
 
 const PRIVACY_DRAWER_WIDTH = 390;
 
-export function PrivacyNoticeDrawer() {
+interface PrivacyNoticeDrawerProps {
+    openOnMount?: boolean;
+}
+
+export function PrivacyNoticeDrawer({ openOnMount = false }: PrivacyNoticeDrawerProps) {
     const { t } = useTranslation();
     const [savedSettings, setSavedSettings] = useState<PrivacySettings>(() => getPrivacySettings());
     const [analyticsEnabled, setAnalyticsEnabledPreference] = useState<boolean>(
         savedSettings.analyticsEnabled
     );
-    const [open, setOpen] = useState<boolean>(() => !savedSettings.acknowledged);
+    const [open, setOpen] = useState<boolean>(() => openOnMount || !savedSettings.acknowledged);
 
     const isFirstNotice = useMemo(() => !savedSettings.acknowledged, [savedSettings.acknowledged]);
     const legalSections: string[] = [
