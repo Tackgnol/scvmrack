@@ -226,6 +226,7 @@ export default function Header() {
             </Typography>
             <Typography
               variant="subtitle1"
+              component="p"
               sx={customStyles.header.subtitle(isMobile)}
             >
               {t('app.subtitle')}
