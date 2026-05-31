@@ -25,6 +25,17 @@ export function ReleasePage() {
     // newest-first and in sync with that folder when cutting a release.
     const releases: ReleaseNote[] = [
         {
+            version: '0.2.1',
+            date: '2026-05-31',
+            type: 'patch',
+            changes: [
+                t('release.v021.alpha', 'Added an Alpha badge to the Scvmrack title'),
+                t('release.v021.openSheet', 'Hardened Open Sheet so fast clicks use a safe bootstrap route'),
+                t('release.v021.authorLink', 'Linked the Adam Kościelniak production credit'),
+                t('release.v021.deployPackaging', 'Fixed deploy packaging to ship built frontend static files'),
+            ],
+        },
+        {
             version: '0.2.0',
             date: '2026-05-29',
             type: 'minor',

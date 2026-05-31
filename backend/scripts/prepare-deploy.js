@@ -36,7 +36,7 @@ fs.rmSync(out, { recursive: true, force: true });
 fs.mkdirSync(out, { recursive: true });
 
 fs.cpSync("dist", path.join(out, "dist"), { recursive: true });
-fs.cpSync(path.join("..", "frontend", "public"), path.join(out, "public"), { recursive: true });
+fs.cpSync(path.join(clientPath, "dist"), path.join(out, "public"), { recursive: true });
 
 fs.copyFileSync("app.js", path.join(out, "app.js"));
 

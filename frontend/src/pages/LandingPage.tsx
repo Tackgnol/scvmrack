@@ -9,7 +9,7 @@ import { getApiLocale } from '@/hooks/utils';
 import type { PathsApiCharactersNewPostParametersQueryLocale } from '@/api/schema';
 import { buildHomeCallbackUrl } from '@/router/navigation';
 import { useEffect, useRef, useState } from 'react';
-import { useTranslation } from 'react-i18next';
+import { Trans, useTranslation } from 'react-i18next';
 import licenseHoriz from '@/assets/CompWith_MORKBORG_horiz.svg';
 
 const PREGEN_SESSION_FLAG = 'scvmrack:pregen-attempted';
@@ -319,6 +319,19 @@ const s = {
     color: 'rgba(10, 10, 10, 0.75)',
     lineHeight: 1.6,
   },
+  licenseLink: {
+    color: morkBorgColors.black,
+    fontWeight: 700,
+    textDecoration: 'underline',
+    textDecorationColor: morkBorgColors.black,
+    textDecorationThickness: '2px',
+    textUnderlineOffset: '2px',
+    transition: 'color 180ms cubic-bezier(0.22, 1, 0.36, 1), text-decoration-color 180ms cubic-bezier(0.22, 1, 0.36, 1)',
+    '&:hover': {
+      color: morkBorgColors.pink,
+      textDecorationColor: morkBorgColors.pink,
+    },
+  },
 };
 
 const noticeKeys = ['book', 'guest'] as const;
@@ -330,15 +343,16 @@ export function LandingPage() {
   const { lastCharacterId, setCharacterId } = useCharacterId();
   const { isLoading: authLoading } = useAuth();
   const repo = useCharacterRepository(null, i18n.language);
+  const [preparedCharacterId, setPreparedCharacterId] = useState<string | null>(null);
   const [pregenerating, setPregenerating] = useState(false);
   const [showLoadingLabel, setShowLoadingLabel] = useState(false);
   const pregenAttemptedRef = useRef(false);
 
-  // Pregen a scvm in the background so OPEN SHEET routes straight to a fresh
-  // character. Skips if the user already has one (anonymous or signed in).
+  // Validate or pregen a scvm in the background so OPEN SHEET only links to a
+  // known-good id. Until this finishes, the CTA falls back to /character where
+  // the shared sheet bootstrap flow can safely list/create.
   useEffect(() => {
     if (authLoading) return;
-    if (lastCharacterId) return;
     if (pregenAttemptedRef.current) return;
     if (sessionStorage.getItem(PREGEN_SESSION_FLAG)) return;
 
@@ -363,8 +377,13 @@ export function LandingPage() {
         if (cancelled) return;
         if (listRes.ok) {
           const existing = (await listRes.json()) as Array<{ id: string }>;
-          if (existing.length > 0) {
-            await setCharacterId(existing[0].id);
+          const selectedId =
+            existing.find(({ id }) => id === lastCharacterId)?.id ??
+            existing[0]?.id;
+
+          if (selectedId) {
+            setPreparedCharacterId(selectedId);
+            await setCharacterId(selectedId);
             return;
           }
         }
@@ -376,6 +395,7 @@ export function LandingPage() {
         });
         if (cancelled) return;
         if (created?.id) {
+          setPreparedCharacterId(created.id);
           await setCharacterId(created.id);
         }
       } catch (error) {
@@ -441,7 +461,7 @@ export function LandingPage() {
             <Stack sx={s.ctaRow}>
               <Button
                 component={Link}
-                to={buildHomeCallbackUrl(lastCharacterId)}
+                to={buildHomeCallbackUrl(preparedCharacterId)}
                 sx={s.ctaPrimary}
                 aria-busy={pregenerating || undefined}
               >
@@ -538,7 +558,20 @@ export function LandingPage() {
             {t('landing.license.copyright')}
           </Typography>
           <Typography sx={s.licenseText}>
-            {t('landing.license.production')}
+            <Trans
+              i18nKey="landing.license.production"
+              components={{
+                authorLink: (
+                  <Box
+                    component="a"
+                    href="https://adamkoscielniak.me"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    sx={s.licenseLink}
+                  />
+                ),
+              }}
+            />
           </Typography>
         </Box>
       </Box>

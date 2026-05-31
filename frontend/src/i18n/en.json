@@ -1,6 +1,7 @@
 {
   "app": {
     "title": "Scvmrack",
+    "alphaBadge": "Alpha",
     "subtitle": "Interactive Mörk Borg character sheet"
   },
   "landing": {
@@ -10,7 +11,7 @@
     },
     "license": {
       "copyright": "MÖRK BORG is copyright Ockult Örtmästare Games and Stockholm Kartell.",
-      "production": "Scvmrack is an independent production by Adam Koscielniak and is not affiliated with Ockult Örtmästare Games or Stockholm Kartell. It is published under the MÖRK BORG Third Party License."
+      "production": "Scvmrack is an independent production by <authorLink>Adam Kościelniak</authorLink> and is not affiliated with Ockult Örtmästare Games or Stockholm Kartell. It is published under the MÖRK BORG Third Party License."
     },
     "headlineLine1": "Doom",
     "headlineLine2": "on record",
@@ -528,6 +529,12 @@
     "typeMinor": "Minor",
     "typePatch": "Patch",
     "moreUpdates": "More updates coming soon. The world is ending, but we keep shipping.",
+    "v021": {
+      "alpha": "Added an Alpha badge to the Scvmrack title",
+      "openSheet": "Hardened Open Sheet so fast clicks use a safe bootstrap route",
+      "authorLink": "Linked the Adam Kościelniak production credit",
+      "deployPackaging": "Fixed deploy packaging to ship built frontend static files"
+    },
     "v020": {
       "feedback": "Server-side feedback and crash reporting",
       "errorDialog": "Automatic dialog to report unexpected errors",
