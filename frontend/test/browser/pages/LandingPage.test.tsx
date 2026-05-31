@@ -18,6 +18,11 @@ const createCharacter = vi.fn();
 const setCharacterId = vi.fn();
 const mockFetch = vi.fn();
 
+const getOpenSheetHref = () =>
+  Array.from(document.querySelectorAll('a'))
+    .find((anchor) => /open sheet|rolling a scvm/i.test(anchor.textContent ?? ''))
+    ?.getAttribute('href');
+
 vi.mock('@/seo/Seo', () => ({
   Seo: () => null,
 }));
@@ -92,22 +97,64 @@ describe('LandingPage', () => {
     vi.unstubAllGlobals();
   });
 
-  it('links the CTA to a fresh sheet when no character is remembered', async () => {
+  it('keeps the CTA on the safe sheet bootstrap route while preparing the first character', async () => {
+    let resolveFetch: (value: { ok: boolean; json: () => Promise<Array<{ id: string }>> }) => void =
+      () => {};
+    mockFetch.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveFetch = resolve;
+      })
+    );
+
     await renderLanding();
 
     await expect
       .element(page.getByRole('link', { name: /open sheet/i }))
       .toHaveAttribute('href', '/character');
     expect(buildHomeCallbackUrl).toHaveBeenCalledWith(null);
+
+    resolveFetch({
+      ok: true,
+      json: async () => [],
+    });
+    await expect.poll(() => createCharacter).toHaveBeenCalled();
   });
 
   it('links the CTA to the remembered character', async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => [{ id: 'char-1' }],
+    });
+
     await renderLanding({ lastCharacterId: 'char-1' });
+
+    await expect.poll(getOpenSheetHref).toBe('/character/char-1');
+    expect(setCharacterId).toHaveBeenCalledWith('char-1');
+    expect(createCharacter).not.toHaveBeenCalled();
+  });
+
+  it('keeps a stale remembered id out of the CTA until validation finishes', async () => {
+    let resolveFetch: (value: { ok: boolean; json: () => Promise<Array<{ id: string }>> }) => void =
+      () => {};
+    mockFetch.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveFetch = resolve;
+      })
+    );
+
+    await renderLanding({ lastCharacterId: 'stale-char' });
 
     await expect
       .element(page.getByRole('link', { name: /open sheet/i }))
-      .toHaveAttribute('href', '/character/char-1');
-    expect(mockFetch).not.toHaveBeenCalled();
+      .toHaveAttribute('href', '/character');
+
+    resolveFetch({
+      ok: true,
+      json: async () => [{ id: 'existing-char' }],
+    });
+
+    await expect.poll(getOpenSheetHref).toBe('/character/existing-char');
+    expect(setCharacterId).toHaveBeenCalledWith('existing-char');
     expect(createCharacter).not.toHaveBeenCalled();
   });
 
@@ -167,5 +214,13 @@ describe('LandingPage', () => {
 
     await expect.element(page.getByRole('link', { name: /open sheet/i })).toBeVisible();
     await expect.poll(() => setCharacterId).not.toHaveBeenCalled();
+  });
+
+  it('links the production credit to the author site', async () => {
+    await renderLanding({ authLoading: true });
+
+    await expect
+      .element(page.getByRole('link', { name: /adam kościelniak/i }))
+      .toHaveAttribute('href', 'https://adamkoscielniak.me');
   });
 });

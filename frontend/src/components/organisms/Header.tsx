@@ -221,9 +221,22 @@ export default function Header() {
       <Paper data-testid="app-title" sx={customStyles.header.paper}>
         <Box sx={customStyles.header.container(isMobile)}>
           <Box sx={customStyles.header.titleBox}>
-            <Typography variant="h1" sx={customStyles.header.title(isMobile)}>
-              SC<span>V</span>MRACK
-            </Typography>
+            <Box sx={customStyles.header.titleRow(isMobile)}>
+              <Typography
+                variant="h1"
+                aria-label={`${t('app.title', 'Scvmrack')} ${t('app.alphaBadge', 'Alpha')}`}
+                sx={customStyles.header.title(isMobile)}
+              >
+                SC<span>V</span>MRACK
+              </Typography>
+              <Box
+                component="span"
+                aria-hidden="true"
+                sx={customStyles.header.alphaBadge(isMobile)}
+              >
+                {t('app.alphaBadge', 'Alpha')}
+              </Box>
+            </Box>
             <Typography
               variant="subtitle1"
               component="p"

@@ -1,6 +1,7 @@
 {
   "app": {
     "title": "Scvmrack",
+    "alphaBadge": "Alpha",
     "subtitle": "Interaktywna karta postaci Mörk Borg"
   },
   "landing": {
@@ -10,7 +11,7 @@
     },
     "license": {
       "copyright": "MÖRK BORG jest chroniony prawem autorskim Ockult Örtmästare Games oraz Stockholm Kartell.",
-      "production": "Scvmrack to niezależna produkcja Adama Kościelniaka; nie jest ona powiązana z Ockult Örtmästare Games ani Stockholm Kartell. Została opublikowana na mocy licencji MÖRK BORG Third Party License."
+      "production": "Scvmrack to niezależna produkcja <authorLink>Adama Kościelniaka</authorLink>; nie jest ona powiązana z Ockult Örtmästare Games ani Stockholm Kartell. Została opublikowana na mocy licencji MÖRK BORG Third Party License."
     },
     "headlineLine1": "Zagłada",
     "headlineLine2": "w zapisie",
@@ -525,6 +526,12 @@
     "typeMinor": "Mała",
     "typePatch": "Poprawka",
     "moreUpdates": "Więcej aktualizacji wkrótce. Świat się kończy, ale my dalej dostarczamy.",
+    "v021": {
+      "alpha": "Dodano oznaczenie Alpha przy tytule Scvmrack",
+      "openSheet": "Wzmocniono Open Sheet, aby szybkie kliknięcia używały bezpiecznej ścieżki startowej",
+      "authorLink": "Podlinkowano autorski kredyt Adam Kościelniak",
+      "deployPackaging": "Naprawiono pakowanie wdrożenia, aby wysyłało zbudowane pliki statyczne frontendu"
+    },
     "v020": {
       "feedback": "Zgłaszanie opinii i błędów po stronie serwera",
       "errorDialog": "Automatyczne okno do zgłaszania nieoczekiwanych błędów",
