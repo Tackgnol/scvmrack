@@ -38,8 +38,8 @@ function PrivacyNoticeHost() {
 
 const routeFadeIn = keyframes`
     from {
-        opacity: 0;
-        transform: translateY(6px);
+        opacity: 0.55;
+        transform: translateY(4px);
     }
     to {
         opacity: 1;
@@ -74,7 +74,7 @@ export function RootLayout() {
                         id="main-content"
                         key={pathname}
                         sx={{
-                            animation: `${routeFadeIn} 400ms cubic-bezier(0.22, 1, 0.36, 1)`,
+                            animation: `${routeFadeIn} 280ms cubic-bezier(0.22, 1, 0.36, 1)`,
                             '@media (prefers-reduced-motion: reduce)': {
                                 animation: 'none',
                             },
