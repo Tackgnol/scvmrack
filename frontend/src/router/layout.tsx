@@ -38,7 +38,7 @@ function PrivacyNoticeHost() {
 
 const routeFadeIn = keyframes`
     from {
-        opacity: 0.55;
+        opacity: 0.85;
     }
     to {
         opacity: 1;
@@ -75,7 +75,7 @@ export function RootLayout() {
                             // Reserve vertical space so the layout doesn't collapse
                             // (and snap back) during the brief empty frame on route swap.
                             minHeight: isPrintRoute ? undefined : '70vh',
-                            animation: `${routeFadeIn} 380ms cubic-bezier(0.22, 1, 0.36, 1)`,
+                            animation: `${routeFadeIn} 200ms cubic-bezier(0.22, 1, 0.36, 1)`,
                             '@media (prefers-reduced-motion: reduce)': {
                                 animation: 'none',
                             },
