@@ -74,7 +74,7 @@ export function RootLayout() {
                         id="main-content"
                         key={pathname}
                         sx={{
-                            animation: `${routeFadeIn} 280ms cubic-bezier(0.22, 1, 0.36, 1)`,
+                            animation: `${routeFadeIn} 380ms cubic-bezier(0.22, 1, 0.36, 1)`,
                             '@media (prefers-reduced-motion: reduce)': {
                                 animation: 'none',
                             },
