@@ -74,6 +74,9 @@ export function RootLayout() {
                         id="main-content"
                         key={pathname}
                         sx={{
+                            // Reserve vertical space so the layout doesn't collapse
+                            // (and snap back) during the brief empty frame on route swap.
+                            minHeight: isPrintRoute ? undefined : '70vh',
                             animation: `${routeFadeIn} 380ms cubic-bezier(0.22, 1, 0.36, 1)`,
                             '@media (prefers-reduced-motion: reduce)': {
                                 animation: 'none',

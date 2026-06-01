@@ -67,6 +67,10 @@ const NotFoundComponent = lazyRouteComponent(() =>
 export const router = createRouter({
     routeTree,
     history: appHistory,
+    // Preload each route's lazy chunk on hover/touch intent so the component is
+    // ready by click time. Without this, navigating to an unvisited route leaves
+    // the content area blank while the chunk downloads, which reads as a flash.
+    defaultPreload: 'intent',
     defaultNotFoundComponent: () => <NotFoundComponent />,
 });
 
