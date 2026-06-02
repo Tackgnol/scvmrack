@@ -26,7 +26,7 @@ describe('ComputedModifiersGrid', () => {
   ];
 
   it('renders nothing when modifiers list is empty', async () => {
-    const rendered = await render(
+    await render(
       <BrowserTestProvider>
         <ComputedModifiersGrid
           modifiers={[]}
@@ -61,5 +61,83 @@ describe('ComputedModifiersGrid', () => {
     await userEvent.click(armorTag);
     await expect.poll(() => onOpenModifier).toHaveBeenCalledWith(mockModifiers[0]);
 
+  });
+
+  it('keeps same-origin class modifiers distinct across equipment changes', async () => {
+    const classModifiers: ComputedModifier[] = [
+      {
+        value: 2,
+        source: 'Stealthy',
+        statistic: 'agility',
+        exclude: [],
+        origin: 'system',
+        originKey: 'class_ability.abilities.gutterborn_scum.stealthy',
+        originName: 'Stealthy',
+      },
+      {
+        value: 2,
+        source: 'Stealthy',
+        statistic: 'presence',
+        exclude: [],
+        origin: 'system',
+        originKey: 'class_ability.abilities.gutterborn_scum.stealthy',
+        originName: 'Stealthy',
+      },
+    ];
+    const weaponModifier: ComputedModifier = {
+      value: 4,
+      source: 'Sword of strength',
+      statistic: 'strength',
+      exclude: [],
+      origin: 'weapon',
+      originKey: 'custom.weapon.ilqp808mpvcxgx2',
+      originName: 'Sword of strength',
+    };
+
+    const { rerender } = await render(
+      <BrowserTestProvider>
+        <ComputedModifiersGrid
+          modifiers={classModifiers}
+          reduceMotion={false}
+          onOpenModifier={vi.fn()}
+        />
+      </BrowserTestProvider>
+    );
+
+    await expect
+      .poll(async () => page.getByText('Stealthy').all())
+      .toHaveLength(2);
+
+    await rerender(
+      <BrowserTestProvider>
+        <ComputedModifiersGrid
+          modifiers={[weaponModifier, ...classModifiers]}
+          reduceMotion={false}
+          onOpenModifier={vi.fn()}
+        />
+      </BrowserTestProvider>
+    );
+
+    await expect
+      .poll(async () => page.getByText('Stealthy').all())
+      .toHaveLength(2);
+    await expect.element(page.getByText('Sword of strength')).toBeVisible();
+
+    await rerender(
+      <BrowserTestProvider>
+        <ComputedModifiersGrid
+          modifiers={classModifiers}
+          reduceMotion={false}
+          onOpenModifier={vi.fn()}
+        />
+      </BrowserTestProvider>
+    );
+
+    await expect
+      .poll(async () => page.getByText('Stealthy').all())
+      .toHaveLength(2);
+    await expect
+      .element(page.getByText('Sword of strength'))
+      .not.toBeInTheDocument();
   });
 });
