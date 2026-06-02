@@ -12,6 +12,8 @@ import QuantityStepper from './inventoryItem/QuantityStepper';
 import InventoryItemActionTray from './inventoryItem/InventoryItemActionTray';
 import EquipSlotButton from './inventoryItem/EquipSlotButton';
 import { useInventoryItemEditor } from '@/hooks/useInventoryItemEditor';
+import { getTextLimitMessage } from '@/validation/characterUpdate';
+import { useValidationAlert } from '@/hooks/useValidationAlert';
 
 export type InventoryLocation = 'equipment' | 'storage';
 
@@ -60,6 +62,23 @@ export default function InventoryItemEditorModal({
     onClose,
   });
 
+  const hasActiveItem = Boolean(open && editor.item);
+  const nameErrorMessage = hasActiveItem
+    ? getTextLimitMessage(t, 'itemName', editor.editName)
+    : null;
+  const descriptionErrorMessage = hasActiveItem
+    ? getTextLimitMessage(t, 'itemDescription', editor.editDescription)
+    : null;
+  const commentsErrorMessage = hasActiveItem
+    ? getTextLimitMessage(t, 'itemComments', editor.editComments)
+    : null;
+  const hasTextErrors = Boolean(
+    nameErrorMessage || descriptionErrorMessage || commentsErrorMessage,
+  );
+  useValidationAlert(nameErrorMessage);
+  useValidationAlert(descriptionErrorMessage);
+  useValidationAlert(commentsErrorMessage);
+
   if (!aggregated || !editor.item) return null;
 
   const { item, indices, localQuantity, setLocalQuantity } = editor;
@@ -76,6 +95,7 @@ export default function InventoryItemEditorModal({
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
+    if (hasTextErrors) return;
     editor.save();
   };
 
@@ -88,7 +108,12 @@ export default function InventoryItemEditorModal({
       actions={
         <>
           <Button onClick={onClose}>{t('actions.cancel')}</Button>
-          <Button type="submit" form={formId} variant="contained">
+          <Button
+            type="submit"
+            form={formId}
+            variant="contained"
+            disabled={hasTextErrors}
+          >
             {t('equipment.save')}
           </Button>
         </>
@@ -110,6 +135,7 @@ export default function InventoryItemEditorModal({
           fullWidth
           label={t('equipment.itemName')}
           value={editor.editName}
+          error={Boolean(nameErrorMessage)}
           onChange={(event) => editor.setEditName(event.target.value)}
           sx={modalInputStyles}
         />
@@ -126,6 +152,7 @@ export default function InventoryItemEditorModal({
           rows={2}
           label={t('character.description')}
           value={editor.editDescription}
+          error={Boolean(descriptionErrorMessage)}
           onChange={(event) => editor.setEditDescription(event.target.value)}
           sx={modalInputStyles}
         />
@@ -135,6 +162,7 @@ export default function InventoryItemEditorModal({
           rows={2}
           label={t('equipment.comments', 'Comments / Notes')}
           value={editor.editComments}
+          error={Boolean(commentsErrorMessage)}
           onChange={(event) => editor.setEditComments(event.target.value)}
           sx={modalInputStyles}
         />

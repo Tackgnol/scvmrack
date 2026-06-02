@@ -31,3 +31,26 @@ scvmrack.rpgtools.co {
     reverse_proxy 127.0.0.1:3030
   }
 }
+
+# Dev environment — deployed from the `dev` branch (.woodpecker/deploy-dev.yaml).
+# Same routing as prod, pointed at the scvmrack-dev stack's published ports
+# (frontend 3050, backend 3051).
+scvmrack-dev.rpgtools.co {
+  import cloudflare_tls
+
+  @asset_routes path /assets/*
+  handle @asset_routes {
+    import frontend_security_headers
+    reverse_proxy 127.0.0.1:3050
+  }
+
+  @api_routes path /api/*
+  handle @api_routes {
+    reverse_proxy 127.0.0.1:3051
+  }
+
+  handle {
+    import frontend_security_headers
+    reverse_proxy 127.0.0.1:3050
+  }
+}

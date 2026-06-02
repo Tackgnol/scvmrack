@@ -11,6 +11,7 @@ import {
   type Statistic,
 } from '@/hooks/models';
 import { type ScopeOption } from '@components/modifiers/types';
+import { getTextLimitIssue } from '@/validation/characterUpdate';
 
 export type CustomItemFormState = {
   kind: CustomItemKind;
@@ -98,6 +99,11 @@ export type UseCustomItemForm = {
   // Per-field out-of-range flags. `true` means the current string fails
   // the bounds in FIELD_BOUNDS — used to colour helper text and block save.
   fieldErrors: Record<FieldName, boolean>;
+  textErrors: {
+    name: boolean;
+    description: boolean;
+    comments: boolean;
+  };
 };
 
 export function useCustomItemForm(
@@ -196,7 +202,16 @@ export function useCustomItemForm(
   );
 
   const hasFieldErrors = activeFields.some((field) => fieldErrors[field]);
-  const canSave = state.name.trim().length > 0 && !hasFieldErrors;
+  const textErrors = {
+    name: Boolean(getTextLimitIssue('itemName', state.name)),
+    description: Boolean(
+      getTextLimitIssue('itemDescription', state.description)
+    ),
+    comments: Boolean(getTextLimitIssue('itemComments', state.comments)),
+  };
+  const hasTextErrors = Object.values(textErrors).some(Boolean);
+  const canSave =
+    state.name.trim().length > 0 && !hasFieldErrors && !hasTextErrors;
 
   const buildBundle = (): EquipmentItem[] => {
     if (!canSave) return [];
@@ -291,5 +306,6 @@ export function useCustomItemForm(
     buildBundle,
     previewItems,
     fieldErrors,
+    textErrors,
   };
 }

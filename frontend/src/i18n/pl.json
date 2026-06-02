@@ -357,6 +357,7 @@
   },
   "validation": {
     "summaryPrefix": "Napraw",
+    "issueCount": "{{count}} problemy",
     "numberRange": "{{field}} musi być między {{min}} i {{max}}",
     "textMax": "{{field}} może mieć maks. {{max}} znaków",
     "fields": {
@@ -376,7 +377,14 @@
       "bodyDescription": "Ciało",
       "origin": "Pochodzenie",
       "notes": "Notatki",
-      "modifierValue": "Wartość modyfikatora"
+      "modifierValue": "Wartość modyfikatora",
+      "modifierName": "Nazwa modyfikatora",
+      "modifierComment": "Komentarz modyfikatora",
+      "abilityComment": "Komentarz zdolności",
+      "itemName": "Nazwa przedmiotu",
+      "itemDescription": "Opis przedmiotu",
+      "itemComments": "Komentarze przedmiotu",
+      "equipmentSearch": "Wyszukiwanie wyposażenia"
     }
   },
   "errors": {

@@ -1,4 +1,14 @@
-# Production stack. Driven by Woodpecker; secrets come from the runner env.
+# Shared deploy stack, driven by Woodpecker; secrets come from the runner env.
+# Serves BOTH environments:
+#   - prod (master  -> .woodpecker/deploy.yaml):     defaults below
+#   - dev  (dev     -> .woodpecker/deploy-dev.yaml):  via env overrides
+#
+# Environment selection (all default to prod values, so an unset env is a
+# no-op for the master deploy):
+#   IMAGE_TAG      image tag for db/backend/frontend   (default: prod)
+#   FRONTEND_PORT  host port published for the frontend (default: 3040)
+#   BACKEND_PORT   host port published for the backend  (default: 3041)
+#   PGDATA_VOLUME  named volume for the db data dir     (default: scvmrack-prod_pgdata)
 #
 # Required env:
 #   DATABASE_PASSWORD
@@ -25,7 +35,7 @@ x-db-env: &db-env
 
 services:
   db:
-    image: scvmrack-db:prod
+    image: scvmrack-db:${IMAGE_TAG:-prod}
     build:
       context: backend
       dockerfile: Dockerfile.prod-db
@@ -47,7 +57,7 @@ services:
       retries: 20
 
   backend:
-    image: scvmrack-backend:prod
+    image: scvmrack-backend:${IMAGE_TAG:-prod}
     build:
       context: .
       dockerfile: backend/Dockerfile
@@ -78,7 +88,7 @@ services:
       GLITCHTIP_UPSTREAM: ${GLITCHTIP_UPSTREAM:-https://glitchtip.rpgtools.co}
     ports:
       - target: 3000
-        published: 3041
+        published: ${BACKEND_PORT:-3041}
         protocol: tcp
     networks:
       - db
@@ -99,7 +109,7 @@ services:
       start_period: 20s
 
   frontend:
-    image: scvmrack-frontend:prod
+    image: scvmrack-frontend:${IMAGE_TAG:-prod}
     build:
       context: .
       dockerfile: frontend/Dockerfile
@@ -110,7 +120,9 @@ services:
         VITE_GLITCHTIP_DSN: ${VITE_GLITCHTIP_DSN:-}
         # Public GA4 measurement ID (shipped in the client bundle, not a secret).
         # Override via the runner env; defaults to the project's GA property.
-        VITE_GA_MEASUREMENT_ID: ${VITE_GA_MEASUREMENT_ID:-G-BS7LNTWRW8}
+        # No colon in the default so an explicitly-empty value (dev) disables GA
+        # rather than falling back to the prod property.
+        VITE_GA_MEASUREMENT_ID: ${VITE_GA_MEASUREMENT_ID-G-BS7LNTWRW8}
     deploy:
       replicas: ${FRONTEND_REPLICAS:-1}
       update_config:
@@ -120,7 +132,7 @@ services:
         condition: on-failure
     ports:
       - target: 80
-        published: 3040
+        published: ${FRONTEND_PORT:-3040}
         protocol: tcp
     networks:
       - rpg-network
@@ -140,7 +152,7 @@ services:
 
 volumes:
   pgdata:
-    name: scvmrack-prod_pgdata
+    name: ${PGDATA_VOLUME:-scvmrack-prod_pgdata}
 
 networks:
   db:

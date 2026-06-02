@@ -360,6 +360,7 @@
   },
   "validation": {
     "summaryPrefix": "Fix",
+    "issueCount": "{{count}} issues",
     "numberRange": "{{field}} must be between {{min}} and {{max}}",
     "textMax": "{{field}} must be {{max}} characters or fewer",
     "fields": {
@@ -379,7 +380,14 @@
       "bodyDescription": "Body",
       "origin": "Origin",
       "notes": "Notes",
-      "modifierValue": "Modifier value"
+      "modifierValue": "Modifier value",
+      "modifierName": "Modifier name",
+      "modifierComment": "Modifier comment",
+      "abilityComment": "Ability comment",
+      "itemName": "Item name",
+      "itemDescription": "Item description",
+      "itemComments": "Item comments",
+      "equipmentSearch": "Equipment search"
     }
   },
   "errors": {

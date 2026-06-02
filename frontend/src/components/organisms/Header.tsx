@@ -118,8 +118,15 @@ export default function Header() {
   const validationSummary = validationIssues
     .map(({ message }) => message)
     .join(' · ');
+  const validationCount = validationIssues.length;
   const validationLabel = validationSummary
-    ? `${t('validation.summaryPrefix', 'Fix')}: ${validationSummary}`
+    ? validationCount === 1
+      ? `${t('validation.summaryPrefix', 'Fix')}: ${validationSummary}`
+      : `${t('validation.summaryPrefix', 'Fix')}: ${t(
+          'validation.issueCount',
+          '{{count}} issues',
+          { count: validationCount }
+        )}`
     : '';
 
   useEffect(() => {
@@ -198,6 +205,7 @@ export default function Header() {
           size="small"
           icon={<WarningAmberIcon />}
           label={validationLabel}
+          aria-label={`${validationLabel}: ${validationSummary}`}
           variant="outlined"
           sx={customStyles.header.validationChip}
         />

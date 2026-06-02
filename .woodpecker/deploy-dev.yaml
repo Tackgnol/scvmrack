@@ -1,0 +1,281 @@
+# Deploys the `dev` branch to scvmrack-dev.rpgtools.co.
+#
+# Parallel to deploy.yaml (master -> scvmrack.rpgtools.co). Same DB-bootstrap
+# logic, but a fully isolated swarm stack: separate images (:dev), ports
+# (3050/3051), pgdata volume, and stack-scoped `db` network. Both stacks share
+# the external `rpg-network` and the host Docker daemon only.
+#
+# Caddy routes scvmrack-dev.rpgtools.co -> 127.0.0.1:3050 (frontend),
+# /api/* -> 127.0.0.1:3051 (backend). See Caddyfile.example.
+#
+# Secrets (set in Woodpecker UI, repo-scoped). dev_* mirror the prod secrets
+# with dev-environment values; npmrc_content is shared with the prod pipeline:
+#   npmrc_content                         (shared)
+#   dev_database_password
+#   dev_better_auth_secret
+#   dev_logto_endpoint
+#   dev_logto_app_id
+#   dev_logto_app_secret
+#   dev_logto_redirect_uri
+#   dev_logto_post_logout_redirect_uri
+#   dev_glitchtip_dsn
+#   dev_vite_glitchtip_dsn
+#   dev_client_origin
+#   dev_client_gateway
+#   dev_app_base_url
+#   dev_auth_base_url
+#   dev_vite_backend_url
+#   dev_vite_logto_endpoint
+
+when:
+  - event: [push]
+    branch: dev
+
+steps:
+  deploy:
+    image: docker:27-cli
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      NPMRC_CONTENT:
+        from_secret: npmrc_content
+      DATABASE_PASSWORD:
+        from_secret: dev_database_password
+      BETTER_AUTH_SECRET:
+        from_secret: dev_better_auth_secret
+      LOGTO_ENDPOINT:
+        from_secret: dev_logto_endpoint
+      LOGTO_APP_ID:
+        from_secret: dev_logto_app_id
+      LOGTO_APP_SECRET:
+        from_secret: dev_logto_app_secret
+      LOGTO_REDIRECT_URI:
+        from_secret: dev_logto_redirect_uri
+      LOGTO_POST_LOGOUT_REDIRECT_URI:
+        from_secret: dev_logto_post_logout_redirect_uri
+      GLITCHTIP_DSN:
+        from_secret: dev_glitchtip_dsn
+      VITE_GLITCHTIP_DSN:
+        from_secret: dev_vite_glitchtip_dsn
+      CLIENT_ORIGIN:
+        from_secret: dev_client_origin
+      CLIENT_GATEWAY:
+        from_secret: dev_client_gateway
+      APP_BASE_URL:
+        from_secret: dev_app_base_url
+      AUTH_BASE_URL:
+        from_secret: dev_auth_base_url
+      VITE_BACKEND_URL:
+        from_secret: dev_vite_backend_url
+      VITE_LOGTO_ENDPOINT:
+        from_secret: dev_vite_logto_endpoint
+
+    commands:
+      - |
+        set -e
+
+        # Environment selection — everything below this block is identical to
+        # the prod deploy (deploy.yaml). compose.prod.yaml reads these to pick
+        # the image tag, published ports, and pgdata volume.
+        STACK=scvmrack-dev
+        export IMAGE_TAG=dev
+        export FRONTEND_PORT=3050
+        export BACKEND_PORT=3051
+        export PGDATA_VOLUME=scvmrack-dev_pgdata
+        # Keep GA dormant on the dev build (no colon in compose default, so an
+        # explicit empty value disables it instead of falling back to prod's ID).
+        export VITE_GA_MEASUREMENT_ID=""
+
+        cleanup() {
+          rm -f .npmrc backend/.npmrc
+        }
+        cleanup
+        trap cleanup EXIT
+
+        : "${NPMRC_CONTENT:?npmrc_content secret is required}"
+        : "${DATABASE_PASSWORD:?dev_database_password secret is required}"
+
+        printf '%s\n' "$NPMRC_CONTENT" > .npmrc
+
+        # DATABASE_URL is required by compose.prod.yaml's :? guard during
+        # `docker stack deploy`. The actual URL-encoded value is computed below
+        # using Node (after the backend image is built) — the raw password is
+        # fine here because no DB connection is attempted at this stage.
+        export DATABASE_URL="postgresql://p1002_scmgrinder:placeholder@db:5432/p1002_scmgrinder"
+
+        docker compose -f compose.prod.yaml build backend frontend db
+
+        # Always deploy the stack so the latest service specs (image, mounts,
+        # ports, env) get applied — including for the db service. Use
+        # BACKEND_REPLICAS=0 FRONTEND_REPLICAS=0 so the backend doesn't burn
+        # restart cycles failing to connect before we sync the password and
+        # apply migrations below. We scale them back up at the end.
+        # `--detach=true` because we don't wait here for backend to converge.
+        BACKEND_REPLICAS=0 FRONTEND_REPLICAS=0 docker stack deploy -c compose.prod.yaml "$STACK" --detach=true --resolve-image never
+
+        deadline=$(( $(date +%s) + 180 ))
+        health=""
+        while [ "$(date +%s)" -lt "$deadline" ]; do
+          container_id="$(docker ps --filter label=com.docker.swarm.service.name=${STACK}_db --format '{{.ID}}' | head -n 1)"
+          if [ -n "$container_id" ]; then
+            health="$(docker inspect "$container_id" --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' 2>/dev/null || true)"
+            if [ "$health" = "healthy" ]; then
+              break
+            fi
+          fi
+          sleep 3
+        done
+
+        if [ "$health" != "healthy" ]; then
+          echo "Timed out waiting for ${STACK}_db to become healthy" >&2
+          docker stack ps "$STACK" --no-trunc >&2 || true
+          exit 1
+        fi
+
+        db_container_id="$(docker ps --filter label=com.docker.swarm.service.name=${STACK}_db --format '{{.ID}}' | head -n 1)"
+        if [ -z "$db_container_id" ]; then
+          echo "Could not find running ${STACK}_db container" >&2
+          docker stack ps "$STACK" --no-trunc >&2 || true
+          exit 1
+        fi
+
+        # Sync the db role password to the current secret. The Postgres data
+        # directory persists in pgdata, so POSTGRES_PASSWORD only takes effect
+        # on first init — after that, the secret can drift from the role's
+        # actual stored password and Prisma will fail with P1000.
+        # Use a temp SQL file because psql `-c` doesn't support `:'var'`.
+        printf "ALTER USER p1002_scmgrinder WITH PASSWORD :'db_password';\n" > /tmp/sync-pw.sql
+        docker cp /tmp/sync-pw.sql "$db_container_id:/tmp/sync-pw.sql"
+        docker exec "$db_container_id" psql \
+          -U p1002_scmgrinder \
+          -d p1002_scmgrinder \
+          -v ON_ERROR_STOP=1 \
+          -v "db_password=$DATABASE_PASSWORD" \
+          -f /tmp/sync-pw.sql
+
+        # If the legacy `user` table exists without the `email` column (left
+        # over from earlier broken-deploy state), drop the Prisma-managed
+        # auth tables so they can be recreated with the current schema.
+        # When the schema already matches, this is a no-op.
+        # Game data tables (armors, abilities, etc.) are managed by init
+        # scripts and are NOT touched here.
+        legacy_user="$(docker exec "$db_container_id" psql -U p1002_scmgrinder -d p1002_scmgrinder -tAc "SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='user' AND NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='user' AND column_name='email');")"
+        if [ "$legacy_user" = "1" ]; then
+          echo "Detected legacy auth schema (user table without email column) — dropping Prisma-managed tables."
+          docker exec "$db_container_id" psql \
+            -U p1002_scmgrinder \
+            -d p1002_scmgrinder \
+            -v ON_ERROR_STOP=1 \
+            -c 'DROP TABLE IF EXISTS "claim_code", "verification", "session", "account", "user" CASCADE;'
+        fi
+
+        # If auth tables are missing, apply the Prisma migration SQL files
+        # directly via psql. This bootstraps the auth schema without using
+        # `prisma db push` (which doesn't respect externalTables and would
+        # try to drop the init-managed game tables).
+        user_exists="$(docker exec "$db_container_id" psql -U p1002_scmgrinder -d p1002_scmgrinder -tAc "SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='user';")"
+        if [ "$user_exists" != "1" ]; then
+          echo "Auth tables missing — applying Prisma migration SQL files directly."
+          for migration in $(ls backend/prisma/migrations | sort); do
+            echo "  Applying $migration"
+            docker cp "backend/prisma/migrations/$migration/migration.sql" "$db_container_id:/tmp/$migration.sql"
+            docker exec "$db_container_id" psql \
+              -U p1002_scmgrinder \
+              -d p1002_scmgrinder \
+              -v ON_ERROR_STOP=1 \
+              -f "/tmp/$migration.sql"
+          done
+        fi
+
+        # Build DATABASE_URL inside Node so encodeURIComponent handles every
+        # URL-reserved character correctly. `tr -d '\r\n'` strips the trailing
+        # CR that `docker run` adds in this CI environment — without it the
+        # captured value carried a stray \r that broke shell concatenation,
+        # producing a URL with an empty password slot.
+        DATABASE_URL="$(docker run --rm \
+          -e RAW_PASS="$DATABASE_PASSWORD" \
+          -e DB_USER=p1002_scmgrinder \
+          -e DB_HOST=db \
+          -e DB_PORT=5432 \
+          -e DB_NAME=p1002_scmgrinder \
+          scvmrack-backend:$IMAGE_TAG \
+          node -e 'process.stdout.write("postgresql://"+encodeURIComponent(process.env.DB_USER)+":"+encodeURIComponent(process.env.RAW_PASS)+"@"+process.env.DB_HOST+":"+process.env.DB_PORT+"/"+process.env.DB_NAME)' \
+          | tr -d '\r\n')"
+        export DATABASE_URL
+
+        # Baseline _prisma_migrations so `migrate deploy` knows which
+        # migrations have already been applied (the ones we just ran via
+        # psql, plus any from prior runs). `resolve --applied` is idempotent
+        # if already marked, so `|| true` covers re-runs.
+        for migration in $(ls backend/prisma/migrations | sort); do
+          docker run --rm --network ${STACK}_db \
+            -e DATABASE_URL="$DATABASE_URL" \
+            scvmrack-backend:$IMAGE_TAG npx prisma migrate resolve --applied "$migration" || true
+        done
+
+        # Apply any future migrations added to backend/prisma/migrations/
+        docker run --rm --network ${STACK}_db \
+          -e DATABASE_URL="$DATABASE_URL" \
+          scvmrack-backend:$IMAGE_TAG npx prisma migrate deploy
+
+        # Reapply read-only SQL definitions. init/03-functions/ and init/04-views/
+        # use CREATE OR REPLACE, so this is idempotent and safe on every deploy.
+        # The Postgres image's /docker-entrypoint-initdb.d only runs on first
+        # volume init, so without this step any function/view change after
+        # bootstrap would never reach the live DB.
+        # init/01-extensions/ and init/02-schema/ are NOT included — those have
+        # side effects (CREATE TABLE / CREATE EXTENSION) and stay one-shot.
+        echo "Reapplying SQL functions..."
+        for f in backend/init/03-functions/*.sql; do
+          filename=$(basename "$f")
+          echo "  -> $filename"
+          docker cp "$f" "$db_container_id:/tmp/$filename"
+          docker exec "$db_container_id" psql \
+            -U p1002_scmgrinder \
+            -d p1002_scmgrinder \
+            -v ON_ERROR_STOP=1 \
+            -f "/tmp/$filename"
+        done
+
+        echo "Reapplying SQL views..."
+        for f in backend/init/04-views/*.sql; do
+          filename=$(basename "$f")
+          echo "  -> $filename"
+          docker cp "$f" "$db_container_id:/tmp/$filename"
+          docker exec "$db_container_id" psql \
+            -U p1002_scmgrinder \
+            -d p1002_scmgrinder \
+            -v ON_ERROR_STOP=1 \
+            -f "/tmp/$filename"
+        done
+
+        # Reapply the authoritative reference-data sync. class_ability_modifiers is
+        # an external table (see prisma.config.ts) not managed by Prisma migrations,
+        # and init/05-seed/ only runs on first volume init — so without this step,
+        # reference data added/corrected after the dev DB was bootstrapped never
+        # reaches it (e.g. Stealthy/Clumsy DR modifiers). 009 is a full DELETE +
+        # INSERT of the canonical set, so it is idempotent and converges any
+        # database to exactly the right rows (no duplicates, no stale entries).
+        echo "Reapplying authoritative reference seeds..."
+        for f in 009_sync_class_ability_modifiers.sql; do
+          echo "  -> $f"
+          docker cp "backend/init/05-seed/$f" "$db_container_id:/tmp/$f"
+          docker exec "$db_container_id" psql \
+            -U p1002_scmgrinder \
+            -d p1002_scmgrinder \
+            -v ON_ERROR_STOP=1 \
+            -f "/tmp/$f"
+        done
+
+        echo "Refreshing materialized views..."
+        docker exec "$db_container_id" psql \
+          -U p1002_scmgrinder \
+          -d p1002_scmgrinder \
+          -v ON_ERROR_STOP=1 \
+          -c "REFRESH MATERIALIZED VIEW item_search;"
+
+        # Scale backend/frontend back to normal replicas now that the db is
+        # ready and migrations are applied. This is the same stack spec as
+        # the deploy at the top, just without the REPLICAS=0 overrides.
+        docker stack deploy -c compose.prod.yaml "$STACK" --detach=false --resolve-image never
+        docker stack services "$STACK"

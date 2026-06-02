@@ -3,6 +3,7 @@ import {useDebounce} from 'use-debounce';
 import {useTranslation} from 'react-i18next';
 import {useQuery} from '@tanstack/react-query';
 import { toApiClientError } from '@/utils/errorUtils';
+import { textFieldLimits } from '@/validation/characterUpdate';
 
 export interface ItemSearchHit {
     itemType: 'weapon' | 'armor' | 'equipment' | 'pet';
@@ -78,7 +79,9 @@ export function useItemSearch(options: { debounceMs?: number; limit?: number } =
     const trimmedQuery = query.trim();
     const [debouncedQuery] = useDebounce(query.trim(), debounceMs);
 
-    const enabled = debouncedQuery.length > 0;
+    const enabled =
+        debouncedQuery.length > 0 &&
+        debouncedQuery.length <= textFieldLimits.equipmentSearch;
 
     const locale = (i18n.resolvedLanguage ?? i18n.language ?? 'en').split('-')[0];
 
@@ -103,7 +106,11 @@ export function useItemSearch(options: { debounceMs?: number; limit?: number } =
     };
 
     return {
-        results: trimmedQuery.length === 0 ? [] : (data ?? []),
+        results:
+            trimmedQuery.length === 0 ||
+            trimmedQuery.length > textFieldLimits.equipmentSearch
+                ? []
+                : (data ?? []),
         isLoading,
         error: error instanceof Error ? error.message : null,
         search: setQuery,

@@ -62,6 +62,26 @@ const simpleStringLimits: Partial<Record<SimpleField, number>> = {
   notes: 10000,
 };
 
+export const textFieldLimits = {
+  name: 255,
+  trait1: 255,
+  trait2: 255,
+  habit: 1000,
+  tale: 1000,
+  bodyDescription: 1000,
+  origin: 1000,
+  notes: 10000,
+  modifierName: 255,
+  modifierComment: 500,
+  abilityComment: 1000,
+  itemName: 255,
+  itemDescription: 1000,
+  itemComments: 1000,
+  equipmentSearch: 100,
+} as const;
+
+export type TextLimitField = keyof typeof textFieldLimits;
+
 const simpleFieldLabels: Partial<Record<SimpleField, ValidationField>> = {
   name: { key: 'validation.fields.name', fallback: 'Name' },
   currentHp: { key: 'validation.fields.currentHp', fallback: 'HP' },
@@ -84,6 +104,45 @@ const simpleFieldLabels: Partial<Record<SimpleField, ValidationField>> = {
   notes: { key: 'validation.fields.notes', fallback: 'Notes' },
 };
 
+const textFieldLabels: Record<TextLimitField, ValidationField> = {
+  name: { key: 'validation.fields.name', fallback: 'Name' },
+  trait1: { key: 'validation.fields.trait1', fallback: 'Trait 1' },
+  trait2: { key: 'validation.fields.trait2', fallback: 'Trait 2' },
+  habit: { key: 'validation.fields.habit', fallback: 'Habit' },
+  tale: { key: 'validation.fields.tale', fallback: 'Tale' },
+  bodyDescription: {
+    key: 'validation.fields.bodyDescription',
+    fallback: 'Body',
+  },
+  origin: { key: 'validation.fields.origin', fallback: 'Origin' },
+  notes: { key: 'validation.fields.notes', fallback: 'Notes' },
+  modifierName: {
+    key: 'validation.fields.modifierName',
+    fallback: 'Modifier name',
+  },
+  modifierComment: {
+    key: 'validation.fields.modifierComment',
+    fallback: 'Modifier comment',
+  },
+  abilityComment: {
+    key: 'validation.fields.abilityComment',
+    fallback: 'Ability comment',
+  },
+  itemName: { key: 'validation.fields.itemName', fallback: 'Item name' },
+  itemDescription: {
+    key: 'validation.fields.itemDescription',
+    fallback: 'Item description',
+  },
+  itemComments: {
+    key: 'validation.fields.itemComments',
+    fallback: 'Item comments',
+  },
+  equipmentSearch: {
+    key: 'validation.fields.equipmentSearch',
+    fallback: 'Equipment search',
+  },
+};
+
 const modifierValueField: ValidationField = {
   key: 'validation.fields.modifierValue',
   fallback: 'Modifier value',
@@ -103,7 +162,7 @@ const limitedString = (maxLength: number) =>
   z
     .string()
     .catch('')
-    .transform((value) => value.slice(0, maxLength));
+    .pipe(z.string().max(maxLength));
 
 const limitedStringArray = (maxItems: number, maxLength: number) =>
   z.preprocess(
@@ -343,6 +402,23 @@ export function getSimpleFieldLimitIssue(
   return null;
 }
 
+export function getTextLimitIssue(
+  field: TextLimitField,
+  value: unknown
+): FieldLimitIssue | null {
+  const stringValue = String(value ?? '');
+  const max = textFieldLimits[field];
+
+  if (stringValue.length <= max) return null;
+
+  return {
+    kind: 'textMax',
+    max,
+    field: textFieldLabels[field],
+    message: textMaxMessage,
+  };
+}
+
 export function sanitizeModifierValue(value: unknown): number {
   return modifierValueSchema.parse(value);
 }
@@ -411,5 +487,14 @@ export function getModifierValueLimitMessage(
   value: string
 ): string | null {
   const issue = getModifierValueLimitIssue(value);
+  return issue ? translateFieldLimitIssue(t, issue) : null;
+}
+
+export function getTextLimitMessage(
+  t: ValidationTranslate,
+  field: TextLimitField,
+  value: unknown
+): string | null {
+  const issue = getTextLimitIssue(field, value);
   return issue ? translateFieldLimitIssue(t, issue) : null;
 }

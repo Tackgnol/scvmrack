@@ -5,6 +5,8 @@ import { customStyles } from '@/theme/morkBorgTheme';
 import { type Ability } from '@/hooks/models';
 import { DecoctionsModal } from '@components/index';
 import { ABILITY_ROTATIONS } from '@components/character-descriptors/abilityRotations';
+import { getTextLimitMessage } from '@/validation/characterUpdate';
+import { useValidationAlert } from '@/hooks/useValidationAlert';
 
 interface DescriptorAbilityItemProps {
   ability: Ability;
@@ -23,6 +25,10 @@ export default function DescriptorAbilityItem({
   const hasComment = Boolean(ability.comment);
   const [showComment, setShowComment] = useState(hasComment);
   const [showDecoctions, setShowDecoctions] = useState(false);
+  const [commentErrorMessage, setCommentErrorMessage] = useState<string | null>(
+    null
+  );
+  useValidationAlert(commentErrorMessage);
   const rotate = ABILITY_ROTATIONS[index % ABILITY_ROTATIONS.length];
 
   const isPortableLaboratory =
@@ -89,7 +95,18 @@ export default function DescriptorAbilityItem({
             multiline
             size="small"
             value={ability.comment || ''}
-            onChange={(event) => onUpdateComment(event.target.value)}
+            onChange={(event) => {
+              const nextValue = event.target.value;
+              const nextError = getTextLimitMessage(
+                t,
+                'abilityComment',
+                nextValue
+              );
+              setCommentErrorMessage(nextError);
+              if (nextError) return;
+              onUpdateComment(nextValue);
+            }}
+            error={Boolean(commentErrorMessage)}
             placeholder={t('modifiers.commentPlaceholder')}
             variant="standard"
             sx={customStyles.characterDescriptors.abilityComment}

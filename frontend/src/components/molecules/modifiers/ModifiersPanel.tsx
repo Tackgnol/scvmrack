@@ -73,6 +73,9 @@ export default function ModifiersPanel() {
           stat={state.quickForm.stat}
           valueStr={state.quickForm.valueStr}
           scope={state.quickForm.scope}
+          nameErrorMessage={state.quickForm.nameErrorMessage}
+          valueErrorMessage={state.quickForm.valueErrorMessage}
+          canSubmit={state.quickForm.canSubmit}
           onNameChange={actions.setName}
           onStatChange={actions.setStat}
           onValueChange={actions.setValueStr}
@@ -91,6 +94,9 @@ export default function ModifiersPanel() {
           scope={state.advancedModal.scope}
           includes={state.advancedModal.includes}
           comment={state.advancedModal.comment}
+          nameErrorMessage={state.advancedModal.nameErrorMessage}
+          valueErrorMessage={state.advancedModal.valueErrorMessage}
+          commentErrorMessage={state.advancedModal.commentErrorMessage}
           onClose={actions.closeAdvancedModal}
           onSave={actions.saveAdvancedModifier}
           onNameChange={actions.setModalName}
