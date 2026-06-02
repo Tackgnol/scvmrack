@@ -137,11 +137,11 @@ test('useCharacterEditor rejects invalid simple fields and keeps them out of the
     result.current.updateField('silver', 1000001);
   });
 
-  expect(setValidationIssue).toHaveBeenCalledWith(
-    'field:silver',
+  expect(setValidationIssue).not.toHaveBeenCalled();
+  expect(clearValidationIssue).toHaveBeenCalledWith('field:silver');
+  expect(snackbarMocks.showError).toHaveBeenCalledWith(
     'Silver must be between 0 and 1000000'
   );
-  expect(snackbarMocks.showError).not.toHaveBeenCalled();
   expect(queryClient.setQueryData).not.toHaveBeenCalled();
 
   act(() => {

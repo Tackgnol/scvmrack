@@ -83,6 +83,40 @@ test('buildRequestFromPatches rejects outgoing strings beyond backend limits', (
     ).toThrow();
 });
 
+test('buildRequestFromPatches rejects outgoing shortened text limits', () => {
+    expect(() =>
+        buildRequestFromPatches(
+            [
+                {
+                    kind: 'simple',
+                    field: 'trait1',
+                    value: 'T'.repeat(36),
+                },
+            ] as any,
+            { name: 'Old' } as any,
+        )
+    ).toThrow();
+
+    expect(() =>
+        buildRequestFromPatches(
+            [{ kind: 'equipment-item', index: 0, item: {} } as any],
+            {
+                equipment: [
+                    {
+                        key: 'item',
+                        name: 'Item',
+                        description: 'D'.repeat(251),
+                    },
+                ],
+                storage: [],
+                equippedWeapons: [],
+                equippedArmor: null,
+                modifiers: [],
+            } as any,
+        )
+    ).toThrow();
+});
+
 test('buildRequestFromPatches clamps outgoing numbers and collection sizes', () => {
     const currentCharacter: CharacterResponse = {
         name: 'Old',

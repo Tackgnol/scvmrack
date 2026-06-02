@@ -106,7 +106,8 @@ export function useCurrentCharacter() {
     delete shownValidationMessagesRef.current[id];
     setValidationIssueMap((previous) => {
       if (!(id in previous)) return previous;
-      const { [id]: _removed, ...next } = previous;
+      const next = { ...previous };
+      delete next[id];
       return next;
     });
   }, []);

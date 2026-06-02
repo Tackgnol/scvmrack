@@ -80,12 +80,14 @@ export default function ItemAutocomplete({
             }
             filterOptions={(x) => x}
             renderOption={(props, option) => {
-                const { key: _ignoredKey, ...rest } = props;
+                const { key, ...optionProps } = props as typeof props & {
+                    key?: unknown;
+                };
                 return (
                     <Box
                         component="li"
-                        key={`${option.itemType}-${option.id}`}
-                        {...rest}
+                        key={`${option.itemType}-${option.id}-${String(key ?? '')}`}
+                        {...optionProps}
                     >
                         <Typography sx={customStyles.itemAutocomplete.itemName}>
                             {option.name}&nbsp;
