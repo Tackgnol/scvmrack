@@ -6,6 +6,8 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { customStyles } from '@theme/morkBorgTheme.ts';
 import MorkBorgModal from '../molecules/modal/MorkBorgModal';
+import { getTextLimitMessage } from '@/validation/characterUpdate';
+import { useValidationAlert } from '@/hooks/useValidationAlert';
 
 interface GearSlotProps {
   label: string;
@@ -64,6 +66,27 @@ export function EquipmentSection() {
   const weapon0 = character?.equippedWeapons?.[0];
   const weapon1 = character?.equippedWeapons?.[1];
   const armor = character?.equippedArmor;
+  const nameErrorMessage = getTextLimitMessage(
+    t,
+    'itemName',
+    editingSlot.name
+  );
+  const descriptionErrorMessage = getTextLimitMessage(
+    t,
+    'itemDescription',
+    editingSlot.description
+  );
+  const commentsErrorMessage = getTextLimitMessage(
+    t,
+    'itemComments',
+    editingSlot.comments
+  );
+  const hasTextErrors = Boolean(
+    nameErrorMessage || descriptionErrorMessage || commentsErrorMessage
+  );
+  useValidationAlert(nameErrorMessage);
+  useValidationAlert(descriptionErrorMessage);
+  useValidationAlert(commentsErrorMessage);
 
   const handleSlotClick = (
     type: 'weapon' | 'armor' | 'other',
@@ -83,6 +106,8 @@ export function EquipmentSection() {
   };
 
   const handleSave = () => {
+    if (hasTextErrors) return;
+
     if (
       editingSlot.type === 'weapon' &&
       typeof editingSlot.index === 'number'
@@ -187,7 +212,11 @@ export function EquipmentSection() {
         actions={
           <>
             <Button onClick={() => setModalOpen(false)}>Cancel</Button>
-            <Button onClick={handleSave} variant="contained">
+            <Button
+              onClick={handleSave}
+              variant="contained"
+              disabled={hasTextErrors}
+            >
               Save
             </Button>
           </>
@@ -197,6 +226,7 @@ export function EquipmentSection() {
           autoFocus
           label="Name"
           value={editingSlot.name}
+          error={Boolean(nameErrorMessage)}
           onChange={(e) =>
             setEditingSlot((prev) => ({ ...prev, name: e.target.value }))
           }
@@ -207,6 +237,7 @@ export function EquipmentSection() {
         <TextField
           label="Description / Damage"
           value={editingSlot.description}
+          error={Boolean(descriptionErrorMessage)}
           onChange={(e) =>
             setEditingSlot((prev) => ({ ...prev, description: e.target.value }))
           }
@@ -221,6 +252,7 @@ export function EquipmentSection() {
         <TextField
           label="Comments / Notes"
           value={editingSlot.comments}
+          error={Boolean(commentsErrorMessage)}
           onChange={(e) =>
             setEditingSlot((prev) => ({ ...prev, comments: e.target.value }))
           }

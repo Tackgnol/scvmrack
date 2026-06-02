@@ -1,5 +1,10 @@
 import {ItemSearchHit, useItemSearch} from '@/hooks/useEquipmentSearch.ts';
 import {customStyles} from '@/theme/morkBorgTheme';
+import {
+    getTextLimitIssue,
+    getTextLimitMessage,
+} from '@/validation/characterUpdate';
+import { useValidationAlert } from '@/hooks/useValidationAlert';
 import {Autocomplete, Box, TextField, Typography} from '@mui/material';
 import {SyntheticEvent, useState} from 'react';
 import {useTranslation} from 'react-i18next';
@@ -19,6 +24,12 @@ export default function ItemAutocomplete({
     const [inputValue, setInputValue] = useState('');
     const [selectedValue, setSelectedValue] = useState<ItemSearchHit | null>(null);
     const {results, isLoading, search, clearResults} = useItemSearch({limit: 15});
+    const searchErrorMessage = getTextLimitMessage(
+        t,
+        'equipmentSearch',
+        inputValue
+    );
+    useValidationAlert(searchErrorMessage);
 
     const resetAutocomplete = () => {
         setSelectedValue(null);
@@ -37,6 +48,11 @@ export default function ItemAutocomplete({
         }
 
         setInputValue(value);
+        if (getTextLimitIssue('equipmentSearch', value)) {
+            clearResults();
+            return;
+        }
+
         if (value.length >= 2) search(value);
         else clearResults();
     };
@@ -85,6 +101,7 @@ export default function ItemAutocomplete({
                     {...params}
                     label={label ?? t('equipment.addItem')}
                     placeholder={placeholder}
+                    error={Boolean(searchErrorMessage)}
                     size="small"
                     slotProps={{
                         htmlInput: {

@@ -20,6 +20,9 @@ interface ModifiersQuickFormProps {
   stat: LocalStatistic;
   valueStr: string;
   scope: ScopeOption;
+  nameErrorMessage?: string | null;
+  valueErrorMessage?: string | null;
+  canSubmit?: boolean;
   onNameChange: (value: string) => void;
   onStatChange: (value: LocalStatistic) => void;
   onValueChange: (value: string) => void;
@@ -33,6 +36,9 @@ export default function ModifiersQuickForm({
   stat,
   valueStr,
   scope,
+  nameErrorMessage,
+  valueErrorMessage,
+  canSubmit = true,
   onNameChange,
   onStatChange,
   onValueChange,
@@ -65,6 +71,7 @@ export default function ModifiersQuickForm({
       <TextField
         placeholder={t('modifiers.namePlaceholder')}
         value={name}
+        error={Boolean(nameErrorMessage)}
         onChange={(event: ChangeEvent<HTMLInputElement>) =>
           onNameChange(event.target.value)
         }
@@ -83,7 +90,6 @@ export default function ModifiersQuickForm({
           htmlInput: {
             'data-testid': 'quick-mod-name-input',
             'aria-label': t('modifiers.name'),
-            maxLength: 255,
           },
         }}
       />
@@ -120,6 +126,7 @@ export default function ModifiersQuickForm({
         type="number"
         placeholder="+1"
         value={valueStr}
+        error={Boolean(valueErrorMessage)}
         onChange={(event: ChangeEvent<HTMLInputElement>) =>
           onValueChange(event.target.value)
         }
@@ -178,6 +185,7 @@ export default function ModifiersQuickForm({
       <Button
         variant="contained"
         onClick={onSubmit}
+        disabled={!canSubmit}
         data-testid="quick-mod-add-btn"
         sx={{
           gridColumn: { xs: '2 / 3', sm: 'auto' },

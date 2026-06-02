@@ -18,6 +18,8 @@ import {
 import {
   getModifierValueLimitMessage,
   getModifierValueLimitIssue,
+  getTextLimitIssue,
+  getTextLimitMessage,
   isCompleteFiniteModifierValueInput,
   sanitizeModifierValue,
 } from '@/validation/characterUpdate';
@@ -27,8 +29,11 @@ import { useTranslation } from 'react-i18next';
 
 const REMOVE_ANIMATION_MS = 220;
 const SHIFT_BADGE_TIMEOUT_MS = 900;
+const QUICK_MODIFIER_NAME_ISSUE_ID = 'modifier:quick:name';
 const QUICK_MODIFIER_VALUE_ISSUE_ID = 'modifier:quick:value';
+const MODAL_MODIFIER_NAME_ISSUE_ID = 'modifier:modal:name';
 const MODAL_MODIFIER_VALUE_ISSUE_ID = 'modifier:modal:value';
+const MODAL_MODIFIER_COMMENT_ISSUE_ID = 'modifier:modal:comment';
 
 export function useModifiersPanel() {
   const {
@@ -72,10 +77,31 @@ export function useModifiersPanel() {
 
   const customModifiers = character?.modifiers ?? [];
   const computedModifiers = character?.computedModifiers ?? [];
+  const quickNameIssue = getTextLimitIssue('modifierName', name);
   const quickValueIssue = getModifierValueLimitIssue(valueStr);
+  const modalNameIssue = getTextLimitIssue('modifierName', modalName);
   const modalValueIssue = getModifierValueLimitIssue(modalValueStr);
+  const modalCommentIssue = getTextLimitIssue(
+    'modifierComment',
+    modalComment
+  );
+  const quickNameIssueMessage = getTextLimitMessage(
+    t,
+    'modifierName',
+    name
+  );
   const quickValueIssueMessage = getModifierValueLimitMessage(t, valueStr);
+  const modalNameIssueMessage = getTextLimitMessage(
+    t,
+    'modifierName',
+    modalName
+  );
   const modalValueIssueMessage = getModifierValueLimitMessage(t, modalValueStr);
+  const modalCommentIssueMessage = getTextLimitMessage(
+    t,
+    'modifierComment',
+    modalComment
+  );
   const canSubmitQuickValue = isCompleteFiniteModifierValueInput(valueStr);
   const canSubmitModalValue = isCompleteFiniteModifierValueInput(modalValueStr);
   const quickValue = sanitizeModifierValue(valueStr);
@@ -142,6 +168,15 @@ export function useModifiersPanel() {
   );
 
   useEffect(() => {
+    if (quickNameIssueMessage) {
+      setValidationIssue?.(QUICK_MODIFIER_NAME_ISSUE_ID, quickNameIssueMessage);
+      return;
+    }
+
+    clearValidationIssue?.(QUICK_MODIFIER_NAME_ISSUE_ID);
+  }, [clearValidationIssue, quickNameIssueMessage, setValidationIssue]);
+
+  useEffect(() => {
     if (quickValueIssueMessage) {
       setValidationIssue?.(
         QUICK_MODIFIER_VALUE_ISSUE_ID,
@@ -152,6 +187,20 @@ export function useModifiersPanel() {
 
     clearValidationIssue?.(QUICK_MODIFIER_VALUE_ISSUE_ID);
   }, [clearValidationIssue, quickValueIssueMessage, setValidationIssue]);
+
+  useEffect(() => {
+    if (modalOpen && modalNameIssueMessage) {
+      setValidationIssue?.(MODAL_MODIFIER_NAME_ISSUE_ID, modalNameIssueMessage);
+      return;
+    }
+
+    clearValidationIssue?.(MODAL_MODIFIER_NAME_ISSUE_ID);
+  }, [
+    clearValidationIssue,
+    modalNameIssueMessage,
+    modalOpen,
+    setValidationIssue,
+  ]);
 
   useEffect(() => {
     if (modalOpen && modalValueIssueMessage) {
@@ -170,6 +219,23 @@ export function useModifiersPanel() {
     setValidationIssue,
   ]);
 
+  useEffect(() => {
+    if (modalOpen && modalCommentIssueMessage) {
+      setValidationIssue?.(
+        MODAL_MODIFIER_COMMENT_ISSUE_ID,
+        modalCommentIssueMessage
+      );
+      return;
+    }
+
+    clearValidationIssue?.(MODAL_MODIFIER_COMMENT_ISSUE_ID);
+  }, [
+    clearValidationIssue,
+    modalCommentIssueMessage,
+    modalOpen,
+    setValidationIssue,
+  ]);
+
   const resetQuickForm = () => {
     setName('');
     setStat('agility');
@@ -180,7 +246,9 @@ export function useModifiersPanel() {
   const closeAdvancedModal = () => {
     setModalOpen(false);
     setEditingModifierId(null);
+    clearValidationIssue?.(MODAL_MODIFIER_NAME_ISSUE_ID);
     clearValidationIssue?.(MODAL_MODIFIER_VALUE_ISSUE_ID);
+    clearValidationIssue?.(MODAL_MODIFIER_COMMENT_ISSUE_ID);
   };
 
   const openAdvancedModal = () => {
@@ -215,7 +283,14 @@ export function useModifiersPanel() {
   };
 
   const handleQuickAdd = () => {
-    if (!name.trim() || quickValueIssue || !canSubmitQuickValue) return;
+    if (
+      !name.trim() ||
+      quickNameIssue ||
+      quickValueIssue ||
+      !canSubmitQuickValue
+    ) {
+      return;
+    }
 
     const scopeConfig = scopeIncludeOptions.find(
       (option) => option.value === scope
@@ -251,7 +326,15 @@ export function useModifiersPanel() {
   };
 
   const saveAdvancedModifier = () => {
-    if (!modalName.trim() || modalValueIssue || !canSubmitModalValue) return;
+    if (
+      !modalName.trim() ||
+      modalNameIssue ||
+      modalValueIssue ||
+      modalCommentIssue ||
+      !canSubmitModalValue
+    ) {
+      return;
+    }
 
     const modifierPayload: CustomModifier = {
       name: modalName.trim(),
@@ -310,6 +393,13 @@ export function useModifiersPanel() {
         stat,
         valueStr,
         scope,
+        nameErrorMessage: quickNameIssueMessage,
+        valueErrorMessage: quickValueIssueMessage,
+        canSubmit:
+          Boolean(name.trim()) &&
+          !quickNameIssue &&
+          !quickValueIssue &&
+          canSubmitQuickValue,
       },
       customModifiers,
       computedModifiers,
@@ -318,11 +408,18 @@ export function useModifiersPanel() {
         open: modalOpen,
         isEditing: editingModifierId !== null,
         canSave:
-          Boolean(modalName.trim()) && !modalValueIssue && canSubmitModalValue,
+          Boolean(modalName.trim()) &&
+          !modalNameIssue &&
+          !modalValueIssue &&
+          !modalCommentIssue &&
+          canSubmitModalValue,
         name: modalName,
         stat: modalStat,
         valueStr: modalValueStr,
         comment: modalComment,
+        nameErrorMessage: modalNameIssueMessage,
+        valueErrorMessage: modalValueIssueMessage,
+        commentErrorMessage: modalCommentIssueMessage,
         scope: modalScope,
         includes: modalIncludes,
       },

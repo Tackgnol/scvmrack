@@ -37,6 +37,8 @@ import {
   type FieldName,
   useCustomItemForm,
 } from '@/hooks/useCustomItemForm';
+import { getTextLimitMessage } from '@/validation/characterUpdate';
+import { useValidationAlert } from '@/hooks/useValidationAlert';
 import KindSelector from './customItem/KindSelector';
 import PanelHeading from './customItem/PanelHeading';
 import CustomItemPreview from './customItem/CustomItemPreview';
@@ -152,7 +154,22 @@ export default function CustomItemModal({
     buildBundle,
     previewItems,
     fieldErrors,
+    textErrors,
   } = useCustomItemForm(open, character);
+  const nameErrorMessage = getTextLimitMessage(t, 'itemName', state.name);
+  const descriptionErrorMessage = getTextLimitMessage(
+    t,
+    'itemDescription',
+    state.description,
+  );
+  const commentsErrorMessage = getTextLimitMessage(
+    t,
+    'itemComments',
+    state.comments,
+  );
+  useValidationAlert(nameErrorMessage);
+  useValidationAlert(descriptionErrorMessage);
+  useValidationAlert(commentsErrorMessage);
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
@@ -208,6 +225,7 @@ export default function CustomItemModal({
               required
               label={t('equipment.itemName')}
               value={state.name}
+              error={textErrors.name}
               onChange={(event) => update('name', event.target.value)}
               sx={modalInputStyles}
             />
@@ -242,6 +260,7 @@ export default function CustomItemModal({
               rows={2}
               label={t('character.description')}
               value={state.description}
+              error={textErrors.description}
               onChange={(event) => update('description', event.target.value)}
               sx={modalInputStyles}
             />
@@ -250,6 +269,7 @@ export default function CustomItemModal({
               rows={2}
               label={t('equipment.customItem.comments', 'Comments')}
               value={state.comments}
+              error={textErrors.comments}
               onChange={(event) => update('comments', event.target.value)}
               sx={modalInputStyles}
             />

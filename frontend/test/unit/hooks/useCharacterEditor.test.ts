@@ -114,7 +114,7 @@ test('useCharacterEditor flushes patches to server', () => {
   );
 });
 
-test('useCharacterEditor keeps invalid simple fields local and out of the save queue', () => {
+test('useCharacterEditor rejects invalid simple fields and keeps them out of the save queue', () => {
   const queryClient = {
     getQueryData: vi.fn().mockReturnValue({ id: 'char-1', silver: 10 }),
     setQueryData: vi.fn(),
@@ -141,12 +141,8 @@ test('useCharacterEditor keeps invalid simple fields local and out of the save q
     'field:silver',
     'Silver must be between 0 and 1000000'
   );
-  expect(queryClient.setQueryData).toHaveBeenCalledWith(
-    ['char', 'char-1'],
-    expect.any(Function)
-  );
-  const invalidUpdater = (queryClient.setQueryData as any).mock.calls[0][1];
-  expect(invalidUpdater({ silver: 10 })).toEqual({ silver: 1000001 });
+  expect(snackbarMocks.showError).not.toHaveBeenCalled();
+  expect(queryClient.setQueryData).not.toHaveBeenCalled();
 
   act(() => {
     result.current.flush();

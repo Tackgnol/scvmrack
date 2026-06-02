@@ -148,7 +148,7 @@ describe('Header Component', () => {
     await expect.element(syncedChip).toBeVisible();
   });
 
-  it('concatenates active validation issues in the top bar', async () => {
+  it('summarizes active validation issues in the top bar', async () => {
     await renderHeader({
       character: {
         validationIssues: [
@@ -168,8 +168,12 @@ describe('Header Component', () => {
     await expect.element(validationChip).toBeVisible();
     await expect
       .element(validationChip)
-      .toHaveTextContent(
-        /Fix: Modifier value must be -20 to \+20 · Name max 255 chars/i,
+      .toHaveTextContent(/Fix: 2 issues/i);
+    await expect
+      .element(validationChip)
+      .toHaveAttribute(
+        'aria-label',
+        'Fix: 2 issues: Modifier value must be -20 to +20 · Name max 255 chars',
       );
   });
 

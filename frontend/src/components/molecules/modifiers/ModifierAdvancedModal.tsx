@@ -31,6 +31,9 @@ interface ModifierAdvancedModalProps {
   scope: ScopeOption;
   includes: IncludeContext[];
   comment: string;
+  nameErrorMessage?: string | null;
+  valueErrorMessage?: string | null;
+  commentErrorMessage?: string | null;
   onClose: () => void;
   onSave: () => void;
   onNameChange: (value: string) => void;
@@ -51,6 +54,9 @@ export default function ModifierAdvancedModal({
   scope,
   includes,
   comment,
+  nameErrorMessage,
+  valueErrorMessage,
+  commentErrorMessage,
   onClose,
   onSave,
   onNameChange,
@@ -87,6 +93,7 @@ export default function ModifierAdvancedModal({
       <TextField
         label={t('modifiers.name')}
         value={name}
+        error={Boolean(nameErrorMessage)}
         onChange={(event: ChangeEvent<HTMLInputElement>) =>
           onNameChange(event.target.value)
         }
@@ -101,7 +108,7 @@ export default function ModifierAdvancedModal({
           },
         }}
         InputProps={{ sx: { color: morkBorgColors.white } }}
-        inputProps={{ 'data-testid': 'modal-mod-name-input', maxLength: 255 }}
+        inputProps={{ 'data-testid': 'modal-mod-name-input' }}
       />
 
       <Select
@@ -132,6 +139,7 @@ export default function ModifierAdvancedModal({
         label={t('modifiers.value')}
         type="number"
         value={valueStr}
+        error={Boolean(valueErrorMessage)}
         onChange={(event: ChangeEvent<HTMLInputElement>) =>
           onValueChange(event.target.value)
         }
@@ -229,6 +237,7 @@ export default function ModifierAdvancedModal({
       <TextField
         label={t('modifiers.comment')}
         value={comment}
+        error={Boolean(commentErrorMessage)}
         onChange={(event: ChangeEvent<HTMLInputElement>) =>
           onCommentChange(event.target.value)
         }
@@ -243,7 +252,6 @@ export default function ModifierAdvancedModal({
           },
         }}
         InputProps={{ sx: { color: morkBorgColors.white } }}
-        inputProps={{ maxLength: 500 }}
       />
     </MorkBorgModal>
   );

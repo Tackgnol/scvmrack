@@ -60,25 +60,48 @@ test('buildRequestFromPatches handles multiple patches and state requirements', 
     });
 });
 
-test('buildRequestFromPatches sanitizes outgoing fields to backend limits', () => {
+test('buildRequestFromPatches rejects outgoing strings beyond backend limits', () => {
+    const currentCharacter: CharacterResponse = {
+        name: 'Old',
+        modifiers: [
+            {
+                id: 'm1',
+                name: 'M'.repeat(300),
+                statistic: 'agility',
+            },
+        ],
+    } as any;
+
+    expect(() =>
+        buildRequestFromPatches(
+            [
+                { kind: 'simple', field: 'name', value: 'N'.repeat(300) },
+                { kind: 'modifier-add', modifier: {} },
+            ] as any,
+            currentCharacter,
+        )
+    ).toThrow();
+});
+
+test('buildRequestFromPatches clamps outgoing numbers and collection sizes', () => {
     const currentCharacter: CharacterResponse = {
         name: 'Old',
         notes: '',
         modifiers: [
             {
                 id: 'm1',
-                name: 'M'.repeat(300),
+                name: 'Modifier',
                 value: 99,
                 statistic: 'agility',
                 exclude: Array(20).fill('defence'),
-                comment: 'C'.repeat(600),
+                comment: 'Comment',
             },
         ],
     } as any;
 
     const result = buildRequestFromPatches(
         [
-            { kind: 'simple', field: 'name', value: 'N'.repeat(300) },
+            { kind: 'simple', field: 'name', value: 'Name' },
             { kind: 'simple', field: 'silver', value: 10000000 },
             { kind: 'simple', field: 'notes', value: 'line one\nline two' },
             { kind: 'modifier-add', modifier: {} },
@@ -86,13 +109,13 @@ test('buildRequestFromPatches sanitizes outgoing fields to backend limits', () =
         currentCharacter,
     );
 
-    expect(result.name).toHaveLength(255);
+    expect(result.name).toBe('Name');
     expect(result.silver).toBe(1000000);
     expect(result.notes).toBe('line one\nline two');
-    expect(result.modifiers?.[0].name).toHaveLength(255);
+    expect(result.modifiers?.[0].name).toBe('Modifier');
     expect(result.modifiers?.[0].value).toBe(20);
     expect(result.modifiers?.[0].exclude).toHaveLength(15);
-    expect(result.modifiers?.[0].comment).toHaveLength(500);
+    expect(result.modifiers?.[0].comment).toBe('Comment');
 });
 
 test('buildRequestFromPatches handles ammo-use', () => {

@@ -25,6 +25,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
   useSyncExternalStore,
 } from 'react';
@@ -63,6 +64,7 @@ export function useCurrentCharacter() {
     getApiLocale<PathsApiCharactersNewPostParametersQueryLocale>(locale);
   const { showError } = useSnackbar();
   const { showUnexpectedError } = useErrorFeedback();
+  const shownValidationMessagesRef = useRef<Record<string, string>>({});
   const [validationIssueMap, setValidationIssueMap] = useState<
     Record<string, string>
   >({});
@@ -82,17 +84,26 @@ export function useCurrentCharacter() {
     [showError, showUnexpectedError, t]
   );
 
-  const setValidationIssue = useCallback((id: string, message: string) => {
-    setValidationIssueMap((previous) => {
-      if (previous[id] === message) return previous;
-      return {
-        ...previous,
-        [id]: message,
-      };
-    });
-  }, []);
+  const setValidationIssue = useCallback(
+    (id: string, message: string) => {
+      if (shownValidationMessagesRef.current[id] !== message) {
+        shownValidationMessagesRef.current[id] = message;
+        showError(message);
+      }
+
+      setValidationIssueMap((previous) => {
+        if (previous[id] === message) return previous;
+        return {
+          ...previous,
+          [id]: message,
+        };
+      });
+    },
+    [showError]
+  );
 
   const clearValidationIssue = useCallback((id: string) => {
+    delete shownValidationMessagesRef.current[id];
     setValidationIssueMap((previous) => {
       if (!(id in previous)) return previous;
       const { [id]: _removed, ...next } = previous;
@@ -101,6 +112,7 @@ export function useCurrentCharacter() {
   }, []);
 
   const clearValidationIssues = useCallback(() => {
+    shownValidationMessagesRef.current = {};
     setValidationIssueMap({});
   }, []);
 

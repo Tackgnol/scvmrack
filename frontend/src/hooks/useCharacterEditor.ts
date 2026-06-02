@@ -189,7 +189,6 @@ export function useCharacterEditor(
 
       if (issueMessage) {
         validationIssues?.setValidationIssue?.(validationId, issueMessage);
-        applyLocalPatch({ kind: 'simple', field, value });
         return;
       }
 
@@ -200,7 +199,7 @@ export function useCharacterEditor(
         value: sanitizeSimpleFieldValue(field, value),
       });
     },
-    [applyLocalPatch, queuePatch, t, validationIssues]
+    [queuePatch, t, validationIssues]
   );
 
   // Armor updates
