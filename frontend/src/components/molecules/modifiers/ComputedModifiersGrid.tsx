@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import ComputedModifierTag from '@components/molecules/ComputedModifierTag';
 import { getModifierTileMotion } from '@components/modifiers/motion';
 import { getModifierTileSpan } from '@components/modifiers/utils';
+import { getComputedModifierKey } from '@/utils/modifierKeys';
 
 interface ComputedModifiersGridProps {
   modifiers: ComputedModifier[];
@@ -55,9 +56,7 @@ export default function ComputedModifiersGrid({
           {modifiers.map((modifier, index) => {
             const nameLength = (modifier.originName ?? '').trim().length;
             const tileSpan = getModifierTileSpan(nameLength);
-            const key =
-              modifier.originKey ??
-              `${modifier.originName ?? 'computed'}-${modifier.statistic ?? 'agility'}-${modifier.value ?? 0}-${index}`;
+            const key = getComputedModifierKey(modifier, index);
 
             return (
               <Box

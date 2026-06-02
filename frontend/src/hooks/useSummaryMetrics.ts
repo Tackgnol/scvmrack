@@ -8,6 +8,7 @@ import {
 } from '@/hooks/models';
 import { isEncumbranceExemptItem } from '@/hooks/useEquipmentSections';
 import { statToModifier } from '@/utils/stats';
+import { getComputedModifierKey } from '@/utils/modifierKeys';
 
 export type SummaryDetailKey = 'dodge' | 'melee' | 'ranged' | 'encumbrance';
 export type CombatContext = 'defence' | 'melee' | 'ranged';
@@ -50,7 +51,7 @@ const decorateModifiers = (
 ): DecoratedModifier[] => [
   ...computedModifiers.map((modifier, index) => ({
     ...modifier,
-    listKey: `computed-${modifier.originKey ?? index}`,
+    listKey: `computed-${getComputedModifierKey(modifier, index)}`,
   })),
   ...customModifiers.map((modifier, index) => ({
     ...modifier,
