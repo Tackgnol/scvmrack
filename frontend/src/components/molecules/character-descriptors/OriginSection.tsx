@@ -30,7 +30,7 @@ export default function OriginSection({
           placeholder={t('character.originPlaceholder')}
           variant="standard"
           sx={customStyles.characterDescriptors.originPlaceholder}
-          inputProps={{ maxLength: 1000, 'data-testid': 'origin-input' }}
+          inputProps={{ 'data-testid': 'origin-input' }}
         />
       </Box>
     </Box>

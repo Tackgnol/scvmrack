@@ -75,8 +75,14 @@ export function useModifiersPanel() {
   const [selectedComputedModifier, setSelectedComputedModifier] =
     useState<ComputedModifier | null>(null);
 
-  const customModifiers = character?.modifiers ?? [];
-  const computedModifiers = character?.computedModifiers ?? [];
+  const customModifiers = useMemo(
+    () => character?.modifiers ?? [],
+    [character?.modifiers]
+  );
+  const computedModifiers = useMemo(
+    () => character?.computedModifiers ?? [],
+    [character?.computedModifiers]
+  );
   const quickNameIssue = getTextLimitIssue('modifierName', name);
   const quickValueIssue = getModifierValueLimitIssue(valueStr);
   const modalNameIssue = getTextLimitIssue('modifierName', modalName);

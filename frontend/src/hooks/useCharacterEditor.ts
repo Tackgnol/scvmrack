@@ -44,6 +44,7 @@ export function useCharacterEditor(
   const { showError } = useSnackbar();
   const { showUnexpectedError } = useErrorFeedback();
   const { t } = useTranslation();
+  const shownFieldValidationMessagesRef = useRef<Record<string, string>>({});
 
   // Retry tracking
   const retryCountRef = useRef(0);
@@ -188,10 +189,18 @@ export function useCharacterEditor(
       const validationId = getSimpleFieldValidationId(field);
 
       if (issueMessage) {
-        validationIssues?.setValidationIssue?.(validationId, issueMessage);
+        if (
+          shownFieldValidationMessagesRef.current[validationId] !==
+          issueMessage
+        ) {
+          shownFieldValidationMessagesRef.current[validationId] = issueMessage;
+          showError(issueMessage);
+        }
+        validationIssues?.clearValidationIssue?.(validationId);
         return;
       }
 
+      delete shownFieldValidationMessagesRef.current[validationId];
       validationIssues?.clearValidationIssue?.(validationId);
       queuePatch({
         kind: 'simple',
@@ -199,7 +208,7 @@ export function useCharacterEditor(
         value: sanitizeSimpleFieldValue(field, value),
       });
     },
-    [queuePatch, t, validationIssues]
+    [queuePatch, showError, t, validationIssues]
   );
 
   // Armor updates
