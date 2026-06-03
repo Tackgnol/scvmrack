@@ -1,7 +1,8 @@
 import { render } from 'vitest-browser-react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { page } from 'vitest/browser';
+import { page, userEvent } from 'vitest/browser';
 import BrowserTestProvider from '../BrowserTestProvider';
+import { ErrorFeedbackProvider } from '@/components/molecules/feedback/ErrorFeedbackProvider';
 import { FaqPage } from '@/pages/FaqPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 import { ReleasePage } from '@/pages/ReleasePage';
@@ -43,6 +44,26 @@ describe('static route pages', () => {
       .element(page.getByRole('link', { name: /^back$/i }))
       .toBeVisible();
     await expect.element(page.getByText(/what is m.rk borg/i)).toBeVisible();
+  });
+
+  it('opens the bug report dialog from the FAQ bug answer', async () => {
+    await render(
+      <BrowserTestProvider>
+        <ErrorFeedbackProvider>
+          <FaqPage />
+        </ErrorFeedbackProvider>
+      </BrowserTestProvider>
+    );
+
+    await userEvent.click(page.getByText(/i found a bug/i));
+
+    const reportButton = page.getByRole('button', { name: /open bug report/i });
+    await expect.element(reportButton).toBeVisible();
+    await userEvent.click(reportButton);
+
+    await expect
+      .element(page.getByRole('dialog', { name: /report a bug/i }))
+      .toBeVisible();
   });
 
   it('renders release notes with typed release chips', async () => {

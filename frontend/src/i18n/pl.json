@@ -404,6 +404,12 @@
   "feedback": {
     "title": "Wyślij opinię",
     "description": "Napisz, co się stało.",
+    "reportBugAction": "Zgłoś błąd",
+    "bugTitle": "Zgłoś błąd",
+    "bugDescription": "Opisz, co się zepsuło i czego oczekiwałeś. Do raportu dołączymy adres bieżącej strony.",
+    "bugPrompt": "Co poszło nie tak?",
+    "sendBugReport": "Wyślij raport błędu",
+    "bugSent": "Raport błędu wysłany.",
     "errorTitle": "Wystąpił nieoczekiwany błąd",
     "errorDescription": "Napisz, co robiłeś. Szczegóły techniczne błędu dołączymy w tle.",
     "prompt": "Co robiłeś?",
@@ -501,7 +507,8 @@
     },
     "bugReport": {
       "q": "Znalazłem błąd! Jak go zgłosić?",
-      "a": "Zgłoś błędy przez GitHub issues lub skontaktuj się z nami bezpośrednio. Doceniamy pomoc w ulepszaniu Scvm Rack!"
+      "a": "Znalazłeś coś zepsutego? Otwórz raport błędu tutaj i opisz, co się stało, albo użyj GitHub issues, jeśli wolisz publiczny ślad. Każde zgłoszenie pomaga wzmacniać Scvm Rack.",
+      "reportAction": "Otwórz raport błędu"
     },
     "howCanIHelp": {
       "q": "Jak mogę pomóc?",

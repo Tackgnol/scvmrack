@@ -407,6 +407,12 @@
   "feedback": {
     "title": "Send feedback",
     "description": "Tell us what happened.",
+    "reportBugAction": "Report bug",
+    "bugTitle": "Report a bug",
+    "bugDescription": "Describe what broke and what you expected. We will include the current page URL with the report.",
+    "bugPrompt": "What went wrong?",
+    "sendBugReport": "Send bug report",
+    "bugSent": "Bug report sent.",
     "errorTitle": "Unexpected error occurred",
     "errorDescription": "Tell us what you were doing. We will attach the technical error details in the background.",
     "prompt": "What were you doing?",
@@ -504,7 +510,8 @@
     },
     "bugReport": {
       "q": "I found a bug! How do I report it?",
-      "a": "Please report bugs via GitHub issues or contact us directly. We appreciate your help making Scvm Rack better!"
+      "a": "Found something broken? Open a bug report here with what happened, or use GitHub issues if you prefer a public trail. Every report helps keep Scvm Rack sturdy.",
+      "reportAction": "Open bug report"
     },
     "howCanIHelp": {
       "q": "How can I help?",

@@ -2,6 +2,7 @@ import { loginUrl, profileUrl } from '@/auth';
 import { trackEvent } from '@/analytics/googleAnalytics';
 import { useAuth } from '@/hooks/useAuth';
 import { useCharacter } from '@/CharacterContext/CharacterContext';
+import { useErrorFeedback } from '@/components/molecules/feedback/ErrorFeedbackProvider';
 import { appHistory } from '@/router/history';
 import {
   buildHomeCallbackUrl,
@@ -9,6 +10,7 @@ import {
 } from '@/router/navigation';
 import { Flag } from '@components/atoms/Flag';
 import { FlagContainer } from '@components/atoms/FlagContainer';
+import BugReportIcon from '@mui/icons-material/BugReport';
 import CloudDoneIcon from '@mui/icons-material/CloudDone';
 import LogoutIcon from '@mui/icons-material/Logout';
 import PersonIcon from '@mui/icons-material/Person';
@@ -99,6 +101,7 @@ export default function Header() {
     lastCharacterId,
     validationIssues = [],
   } = useCharacter();
+  const { showBugReport } = useErrorFeedback();
   const { data: countData } = $api.useQuery('get', '/api/characters/count');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showSaving, setShowSaving] = useState(false);
@@ -115,6 +118,7 @@ export default function Header() {
   const isLandingRoute = pathname === '/';
   const isSheetRoute =
     pathname === '/character' || pathname.startsWith('/character/');
+  const activeCharacterId = characterId || lastCharacterId || undefined;
   const validationSummary = validationIssues
     .map(({ message }) => message)
     .join(' · ');
@@ -218,6 +222,17 @@ export default function Header() {
     window.open(printUrl, '_blank', 'noopener,noreferrer');
   };
 
+  const handleReportBug = useCallback(
+    (source: string) => {
+      showBugReport({
+        source,
+        route: pathname,
+        characterId: activeCharacterId,
+      });
+    },
+    [activeCharacterId, pathname, showBugReport]
+  );
+
   const handleLogout = useCallback(() => {
     void signOut.mutateAsync();
   }, [signOut]);
@@ -278,6 +293,14 @@ export default function Header() {
                     {t('actions.print')}
                   </Button>
                 )}
+                <Button
+                  data-testid="header-report-bug-button"
+                  onClick={() => handleReportBug('header_bug_report')}
+                  startIcon={<BugReportIcon sx={{ fontSize: 14 }} />}
+                  sx={customStyles.header.reportBugButton}
+                >
+                  {t('feedback.reportBugAction', 'Report bug')}
+                </Button>
                 <FlagContainer>
                   <Flag locale="en" />
                   <Flag locale="pl" />
@@ -420,6 +443,17 @@ export default function Header() {
                 {t('actions.print')}
               </Button>
             )}
+            <Button
+              data-testid="drawer-report-bug-button"
+              onClick={() => {
+                setMobileMenuOpen(false);
+                handleReportBug('header_drawer_bug_report');
+              }}
+              startIcon={<BugReportIcon fontSize="small" />}
+              sx={customStyles.header.drawerReportBugButton}
+            >
+              {t('feedback.reportBugAction', 'Report bug')}
+            </Button>
           </Box>
           <Box sx={customStyles.header.drawerAuthBox}>
             <FlagContainer>

@@ -9,6 +9,7 @@ import {
   getApiErrorStatus,
   getApiRequestId,
 } from '@/utils/errorUtils';
+import { customStyles } from '@/theme/morkBorgTheme';
 import { Box, Stack, TextField, Typography } from '@mui/material';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -30,6 +31,7 @@ type FeedbackDialogProps = {
   promptLabel?: string;
   submitLabel?: string;
   skipLabel?: string;
+  source?: string;
   onClose: () => void;
   onSubmitted?: (eventId: string) => void;
 };
@@ -62,6 +64,7 @@ export default function FeedbackDialog({
   promptLabel,
   submitLabel,
   skipLabel,
+  source,
   onClose,
   onSubmitted,
 }: FeedbackDialogProps) {
@@ -109,12 +112,14 @@ export default function FeedbackDialog({
     setIsSending(true);
 
     const contextPayload = cleanedContext(enrichedContext);
+    const reportSource =
+      source ?? (kind === 'error' ? 'unexpected_error_dialog' : 'feedback_form');
 
     try {
       const feedbackEventId = await sendFeedbackReport({
         kind,
         message: trimmed,
-        source: kind === 'error' ? 'unexpected_error_dialog' : 'feedback_form',
+        source: reportSource,
         url: String(contextPayload.url ?? window.location.href),
         context: contextPayload,
         tags: feedbackTags(kind, enrichedContext),
@@ -123,7 +128,7 @@ export default function FeedbackDialog({
 
       trackEvent('feedback_submitted', {
         kind,
-        source: kind === 'error' ? 'unexpected_error_dialog' : 'feedback_form',
+        source: reportSource,
       });
 
       onSubmitted?.(feedbackEventId);
@@ -143,7 +148,7 @@ export default function FeedbackDialog({
       closeOnBackdrop={false}
       maxWidth="sm"
       actions={
-        <Stack direction="row" spacing={1} justifyContent="flex-end">
+        <Stack sx={customStyles.feedbackDialog.actions}>
           <ModalButton variant="secondary" onClick={onClose}>
             {skipLabel ?? t('feedback.skip', 'Skip')}
           </ModalButton>
@@ -159,8 +164,10 @@ export default function FeedbackDialog({
         </Stack>
       }
     >
-      <Box sx={{ display: 'grid', gap: 2 }}>
-        <Typography>{resolvedDescription}</Typography>
+      <Box sx={customStyles.feedbackDialog.body}>
+        <Typography sx={customStyles.feedbackDialog.description}>
+          {resolvedDescription}
+        </Typography>
         <TextField
           label={promptLabel ?? t('feedback.prompt', 'What were you doing?')}
           value={message}
@@ -170,6 +177,7 @@ export default function FeedbackDialog({
           fullWidth
           autoFocus
           inputProps={{ maxLength: 2000, 'data-testid': 'feedback-message' }}
+          sx={customStyles.feedbackDialog.field}
         />
       </Box>
     </MorkBorgModal>

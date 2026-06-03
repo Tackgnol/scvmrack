@@ -1,4 +1,5 @@
 import { Link } from '@tanstack/react-router';
+import { useErrorFeedback } from '@/components/molecules/feedback/ErrorFeedbackProvider';
 import { useTranslation } from 'react-i18next';
 import {
     Box,
@@ -11,14 +12,50 @@ import {
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { customStyles, morkBorgColors } from '@/theme/morkBorgTheme';
 import {Seo} from '@/seo/Seo';
+import type { ReactNode } from 'react';
 
 interface FaqItem {
     question: string;
     answer: string;
+    renderAnswer?: (answer: string) => ReactNode;
 }
 
 export function FaqPage() {
     const { t } = useTranslation();
+    const { showBugReport } = useErrorFeedback();
+
+    const handleReportBug = () => {
+        showBugReport({
+            source: 'faq_bug_report',
+            route: '/faq',
+        });
+    };
+
+    const renderAnswerSegments = (answer: string) =>
+        answer.split(/(\s+)/).map((segment, i) => {
+            const urlMatch = segment.match(/^(https?:\/\/[^\s]+?)([.,!?;:)]*)$/);
+            if (urlMatch) {
+                const [, url, trailing] = urlMatch;
+                return (
+                    <span key={i}>
+                        <a
+                            href={url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                                color: morkBorgColors.pink,
+                                textDecoration: 'underline',
+                                fontWeight: 'bold',
+                            }}
+                        >
+                            {url}
+                        </a>
+                        {trailing}
+                    </span>
+                );
+            }
+            return <span key={i}>{segment}</span>;
+        });
 
     const faqs: FaqItem[] = [
         {
@@ -55,7 +92,22 @@ export function FaqPage() {
         },
         {
             question: t('faq.bugReport.q', 'I found a bug! How do I report it?'),
-            answer: t('faq.bugReport.a', 'Please report bugs via GitHub issues or contact us directly. We appreciate your help making Scvm Rack better!'),
+            answer: t('faq.bugReport.a', 'Found something broken? Open a bug report here with what happened, or use GitHub issues if you prefer a public trail. Every report helps keep Scvm Rack sturdy.'),
+            renderAnswer: (answer) => (
+                <Box sx={customStyles.faqPage.answerWithAction}>
+                    <Typography sx={customStyles.faqPage.answer}>
+                        {renderAnswerSegments(answer)}
+                    </Typography>
+                    <Button
+                        type="button"
+                        variant="contained"
+                        onClick={handleReportBug}
+                        sx={customStyles.faqPage.reportBugButton}
+                    >
+                        {t('faq.bugReport.reportAction', 'Open bug report')}
+                    </Button>
+                </Box>
+            ),
         },
         {
             question: t('faq.howCanIHelp.q', 'How can I help?'),
@@ -120,32 +172,13 @@ export function FaqPage() {
                                 </Typography>
                             </AccordionSummary>
                             <AccordionDetails>
-                                <Typography sx={customStyles.faqPage.answer}>
-                                    {faq.answer.split(/(\s+)/).map((segment, i) => {
-                                        const urlMatch = segment.match(/^(https?:\/\/[^\s]+?)([.,!?;:)]*)$/);
-                                        if (urlMatch) {
-                                            const [, url, trailing] = urlMatch;
-                                            return (
-                                                <span key={i}>
-                                                    <a
-                                                        href={url}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        style={{
-                                                            color: morkBorgColors.pink,
-                                                            textDecoration: 'underline',
-                                                            fontWeight: 'bold',
-                                                        }}
-                                                    >
-                                                        {url}
-                                                    </a>
-                                                    {trailing}
-                                                </span>
-                                            );
-                                        }
-                                        return <span key={i}>{segment}</span>;
-                                    })}
-                                </Typography>
+                                {faq.renderAnswer ? (
+                                    faq.renderAnswer(faq.answer)
+                                ) : (
+                                    <Typography sx={customStyles.faqPage.answer}>
+                                        {renderAnswerSegments(faq.answer)}
+                                    </Typography>
+                                )}
                             </AccordionDetails>
                         </Accordion>
                     ))}
