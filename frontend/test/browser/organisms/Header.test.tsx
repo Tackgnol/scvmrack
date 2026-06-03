@@ -3,6 +3,7 @@ import { expect, describe, it, vi, beforeEach } from 'vitest';
 import { page, userEvent } from 'vitest/browser';
 import Header from '@/components/organisms/Header';
 import BrowserTestProvider from '../BrowserTestProvider';
+import { ErrorFeedbackProvider } from '@/components/molecules/feedback/ErrorFeedbackProvider';
 import * as AuthContextModule from '@/hooks/useAuth';
 import * as CharacterContextModule from '@/CharacterContext/CharacterContext';
 import * as AuthLinks from '@/auth';
@@ -49,6 +50,7 @@ vi.mock('@/api', () => ({
   $api: {
     useQuery: vi.fn(),
   },
+  getCsrfToken: vi.fn().mockResolvedValue('test-csrf-token'),
 }));
 
 vi.mock('@/router/navigation', () => ({
@@ -107,7 +109,9 @@ describe('Header Component', () => {
 
     return render(
       <BrowserTestProvider>
-        <Header />
+        <ErrorFeedbackProvider>
+          <Header />
+        </ErrorFeedbackProvider>
       </BrowserTestProvider>,
     );
   };
@@ -124,6 +128,13 @@ describe('Header Component', () => {
 
     const printBtn = page.getByTestId('header-print-button');
     await expect.element(printBtn).toBeVisible();
+
+    const reportBugBtn = page.getByTestId('header-report-bug-button');
+    await expect.element(reportBugBtn).toBeVisible();
+    await userEvent.click(reportBugBtn);
+    await expect
+      .element(page.getByRole('dialog', { name: /report a bug/i }))
+      .toBeVisible();
   });
 
   it('shows print action on saved character routes', async () => {

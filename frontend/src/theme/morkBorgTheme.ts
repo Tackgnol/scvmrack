@@ -1346,6 +1346,29 @@ export const customStyles = {
         ml: 0,
       },
     },
+    reportBugButton: {
+      minHeight: 24,
+      px: 1.25,
+      py: 0.2,
+      borderRadius: 0,
+      backgroundColor: morkBorgColors.black,
+      border: `1px solid ${morkBorgColors.pink}`,
+      color: morkBorgColors.yellow,
+      fontFamily: "'Antonio', sans-serif",
+      fontSize: '0.58rem',
+      letterSpacing: '0.14em',
+      textTransform: 'uppercase' as const,
+      lineHeight: 1,
+      '&:hover': {
+        backgroundColor: morkBorgColors.pink,
+        color: morkBorgColors.black,
+        borderColor: morkBorgColors.black,
+      },
+      '& .MuiButton-startIcon': {
+        mr: 0.35,
+        ml: 0,
+      },
+    },
     navBar: {
       display: 'flex',
       alignItems: 'center',
@@ -1397,6 +1420,23 @@ export const customStyles = {
       borderRadius: 0,
       backgroundColor: morkBorgColors.black,
       border: `1px solid ${morkBorgColors.yellow}`,
+      color: morkBorgColors.yellow,
+      fontFamily: "'Antonio', sans-serif",
+      fontSize: '0.65rem',
+      letterSpacing: '0.12em',
+      textTransform: 'uppercase' as const,
+      '&:hover': {
+        backgroundColor: morkBorgColors.pink,
+        color: morkBorgColors.black,
+        borderColor: morkBorgColors.black,
+      },
+    },
+    drawerReportBugButton: {
+      minHeight: 32,
+      px: 1.25,
+      borderRadius: 0,
+      backgroundColor: morkBorgColors.black,
+      border: `1px solid ${morkBorgColors.pink}`,
       color: morkBorgColors.yellow,
       fontFamily: "'Antonio', sans-serif",
       fontSize: '0.65rem',
@@ -1517,6 +1557,10 @@ export const customStyles = {
       justifyContent: 'space-between',
       alignItems: 'center',
       pr: 1,
+      fontFamily: "'Bebas Neue', sans-serif",
+      fontSize: '1.6rem',
+      letterSpacing: '0.04em',
+      textTransform: 'uppercase' as const,
     },
     closeButton: {
       bgcolor: morkBorgColors.black,
@@ -1538,12 +1582,78 @@ export const customStyles = {
     },
   },
 
+  // Feedback / bug report dialog styles
+  feedbackDialog: {
+    body: {
+      display: 'grid',
+      gap: 2.25,
+    },
+    description: {
+      color: morkBorgColors.white,
+      fontFamily: "'Alegreya', Georgia, serif",
+      fontSize: { xs: '1rem', sm: '0.98rem' },
+      lineHeight: 1.55,
+      maxWidth: '66ch',
+      textWrap: 'pretty' as const,
+    },
+    field: {
+      '& .MuiInputLabel-root': {
+        color: morkBorgColors.pink,
+        fontFamily: "'Antonio', sans-serif",
+        fontSize: '0.75rem',
+        letterSpacing: '0.12em',
+        textTransform: 'uppercase' as const,
+      },
+      '& .MuiInputLabel-root.Mui-focused': {
+        color: morkBorgColors.yellow,
+      },
+      '& .MuiOutlinedInput-root': {
+        bgcolor: morkBorgColors.grey,
+        color: morkBorgColors.white,
+        borderRadius: 0,
+        '& fieldset': {
+          borderColor: morkBorgColors.darkGrey,
+          borderWidth: 2,
+        },
+        '&:hover fieldset': {
+          borderColor: morkBorgColors.yellow,
+        },
+        '&.Mui-focused fieldset': {
+          borderColor: morkBorgColors.pink,
+        },
+      },
+      '& .MuiInputBase-input': {
+        color: morkBorgColors.white,
+        fontFamily: "'Alegreya', Georgia, serif",
+        fontSize: '1rem',
+        lineHeight: 1.5,
+      },
+    },
+    actions: {
+      flexDirection: { xs: 'column', sm: 'row' },
+      gap: { xs: 1.25, sm: 1 },
+      justifyContent: 'flex-end',
+      alignItems: { xs: 'stretch', sm: 'center' },
+      width: '100%',
+      '& .MuiButton-root': {
+        minHeight: 40,
+      },
+    },
+  },
+
   // Modal button variants
   modalButton: {
     primary: {
       bgcolor: morkBorgColors.pink,
       color: morkBorgColors.black,
+      border: `2px solid ${morkBorgColors.black}`,
       '&:hover': { bgcolor: morkBorgColors.yellow },
+      '&.Mui-disabled': {
+        bgcolor: morkBorgColors.darkGrey,
+        color: morkBorgColors.white,
+        borderColor: morkBorgColors.grey,
+        opacity: 0.62,
+      },
     },
     secondary: {
       bgcolor: morkBorgColors.grey,
@@ -1553,13 +1663,25 @@ export const customStyles = {
         bgcolor: morkBorgColors.white,
         color: morkBorgColors.black,
       },
+      '&.Mui-disabled': {
+        color: morkBorgColors.white,
+        borderColor: morkBorgColors.darkGrey,
+        opacity: 0.55,
+      },
     },
     danger: {
       bgcolor: '#8b0000',
       color: morkBorgColors.white,
+      border: `2px solid ${morkBorgColors.black}`,
       '&:hover': {
         bgcolor: morkBorgColors.pink,
         color: morkBorgColors.black,
+      },
+      '&.Mui-disabled': {
+        bgcolor: morkBorgColors.darkGrey,
+        color: morkBorgColors.white,
+        borderColor: morkBorgColors.grey,
+        opacity: 0.62,
       },
     },
   },
@@ -1612,6 +1734,33 @@ export const customStyles = {
     },
     answer: {
       color: morkBorgColors.white,
+    },
+    answerWithAction: {
+      display: 'grid',
+      gap: 1.5,
+      alignItems: 'start',
+    },
+    reportBugButton: {
+      justifySelf: 'flex-start',
+      bgcolor: morkBorgColors.pink,
+      color: morkBorgColors.black,
+      border: `2px solid ${morkBorgColors.black}`,
+      borderRadius: 0,
+      boxShadow: `3px 3px 0 ${morkBorgColors.yellow}`,
+      fontFamily: "'Antonio', sans-serif",
+      fontSize: '0.7rem',
+      letterSpacing: '0.14em',
+      textTransform: 'uppercase' as const,
+      '&:hover': {
+        bgcolor: morkBorgColors.yellow,
+        color: morkBorgColors.black,
+        transform: 'translate(-1px, -1px)',
+        boxShadow: `4px 4px 0 ${morkBorgColors.pink}`,
+      },
+      '&:active': {
+        transform: 'translate(0, 0)',
+        boxShadow: `2px 2px 0 ${morkBorgColors.yellow}`,
+      },
     },
     footer: {
       mt: 4,

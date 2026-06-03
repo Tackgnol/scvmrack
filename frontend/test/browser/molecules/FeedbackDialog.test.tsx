@@ -1,5 +1,5 @@
 import FeedbackDialog from '@/components/molecules/feedback/FeedbackDialog';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { I18nextProvider } from 'react-i18next';
@@ -75,6 +75,35 @@ describe('FeedbackDialog', () => {
     expect((request.body.error as { message?: string }).message).toBe('Boom');
     expect((request.body.tags as Record<string, string>).feedback_kind).toBe(
       'error'
+    );
+  });
+
+  it('posts manual feedback with a custom report source', async () => {
+    render(
+      <I18nextProvider i18n={i18n}>
+        <FeedbackDialog
+          open
+          kind="feedback"
+          source="faq_bug_report"
+          context={{ source: 'faq_bug_report' }}
+          title="Report a bug"
+          onClose={() => {}}
+          onSubmitted={() => {}}
+        />
+      </I18nextProvider>
+    );
+
+    const dialog = screen.getByRole('dialog', { name: /report a bug/i });
+    const textbox = await within(dialog).findByTestId('feedback-message');
+    await userEvent.type(textbox, 'The FAQ button opened a report');
+    await userEvent.click(within(dialog).getByText(/send report/i));
+
+    expect(feedbackRequests).toHaveLength(1);
+    const [request] = feedbackRequests;
+    expect(request.body.kind).toBe('feedback');
+    expect(request.body.source).toBe('faq_bug_report');
+    expect((request.body.tags as Record<string, string>).feedback_source).toBe(
+      'faq_bug_report'
     );
   });
 });
