@@ -8,6 +8,7 @@ import { ErrorSchema } from '../../schemas/equipment.js';
 const sentryAdapter: FeedbackSentry = {
   withScope: (callback) => Sentry.withScope((scope) => callback(scope)),
   captureException: (error) => Sentry.captureException(error),
+  captureMessage: (message) => Sentry.captureMessage(message),
   captureFeedback: (feedback, hint) => Sentry.captureFeedback(feedback, hint),
 };
 

@@ -27,6 +27,7 @@ function fakeSentry() {
   const contexts: Array<[string, Record<string, unknown> | null]> = [];
   const tags: Array<[string, string]> = [];
   const exceptions: unknown[] = [];
+  const messages: string[] = [];
   const feedbacks: CapturedFeedback[] = [];
 
   const sentry: FeedbackSentry = {
@@ -39,13 +40,17 @@ function fakeSentry() {
       exceptions.push(error);
       return 'exception-event-id';
     },
+    captureMessage: (message) => {
+      messages.push(message);
+      return 'message-event-id';
+    },
     captureFeedback: (feedback, hint) => {
       feedbacks.push({ feedback, hint });
       return 'feedback-event-id';
     },
   };
 
-  return { sentry, contexts, tags, exceptions, feedbacks };
+  return { sentry, contexts, tags, exceptions, messages, feedbacks };
 }
 
 describe('reconstructError', () => {
@@ -107,20 +112,21 @@ describe('recordFeedback', () => {
     assert.ok(containsEqual(tags, ['http_status', '500']));
   });
 
-  it('does not capture an exception for plain feedback', () => {
-    const { sentry, exceptions, feedbacks } = fakeSentry();
+  it('captures a message event for plain feedback and associates the feedback', () => {
+    const { sentry, exceptions, messages, feedbacks } = fakeSentry();
 
     const result = recordFeedback(
       {
         kind: 'feedback',
-        message: 'Nice app',
-        source: 'feedback_form',
+        message: 'The report modal is broken',
+        source: 'faq_bug_report',
       },
       sentry
     );
 
     assert.equal(exceptions.length, 0);
-    assert.equal(feedbacks[0].feedback.associatedEventId, undefined);
+    assert.deepEqual(messages, ['Bug report from faq_bug_report']);
+    assert.equal(feedbacks[0].feedback.associatedEventId, 'message-event-id');
     assert.equal(result.eventId, 'feedback-event-id');
   });
 
@@ -135,7 +141,7 @@ describe('recordFeedback', () => {
     assert.equal(exceptions.length, 0);
   });
 
-  it('skips setting an empty context', () => {
+  it('skips setting an empty client context', () => {
     const { sentry, contexts } = fakeSentry();
 
     recordFeedback(
@@ -148,6 +154,35 @@ describe('recordFeedback', () => {
       sentry
     );
 
-    assert.equal(contexts.length, 0);
+    assert.equal(
+      contexts.some(([name]) => name === 'feedback_context'),
+      false
+    );
+  });
+
+  it('adds report details to Sentry context for visibility in GlitchTip', () => {
+    const { sentry, contexts } = fakeSentry();
+
+    recordFeedback(
+      {
+        kind: 'feedback',
+        message: 'Header button failed',
+        source: 'header_bug_report',
+        url: 'https://example.test/character',
+      },
+      sentry
+    );
+
+    assert.ok(
+      containsEqual(contexts, [
+        'feedback_report',
+        {
+          kind: 'feedback',
+          source: 'header_bug_report',
+          url: 'https://example.test/character',
+          message: 'Header button failed',
+        },
+      ])
+    );
   });
 });
