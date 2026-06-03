@@ -40,6 +40,7 @@ export interface FeedbackScope {
 export interface FeedbackSentry {
   withScope(callback: (scope: FeedbackScope) => void): void;
   captureException(error: unknown): string;
+  captureMessage(message: string): string;
   captureFeedback(
     feedback: FeedbackPayload,
     hint?: { includeReplay?: boolean }
@@ -62,6 +63,16 @@ export function reconstructError(info: FeedbackErrorInfo | undefined): Error | n
   return error;
 }
 
+function reportTitle(input: FeedbackInput): string {
+  if (input.kind === 'feedback') {
+    return input.source.includes('bug_report')
+      ? `Bug report from ${input.source}`
+      : `Feedback report from ${input.source}`;
+  }
+
+  return `Error feedback from ${input.source}`;
+}
+
 /**
  * Forwards a client-submitted feedback report to GlitchTip/Sentry. For error
  * reports the original exception is captured first so the feedback can reference
@@ -78,6 +89,12 @@ export function recordFeedback(
     if (input.context && Object.keys(input.context).length > 0) {
       scope.setContext('feedback_context', input.context);
     }
+    scope.setContext('feedback_report', {
+      kind: input.kind,
+      source: input.source,
+      url: input.url,
+      message: input.message,
+    });
 
     for (const [key, value] of Object.entries(input.tags ?? {})) {
       scope.setTag(key, value);
@@ -86,6 +103,8 @@ export function recordFeedback(
     const error = reconstructError(input.error);
     if (input.kind === 'error' && error) {
       associatedEventId = sentry.captureException(error);
+    } else if (input.kind === 'feedback') {
+      associatedEventId = sentry.captureMessage(reportTitle(input));
     }
 
     feedbackEventId = sentry.captureFeedback(
