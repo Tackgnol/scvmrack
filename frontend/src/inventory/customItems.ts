@@ -60,7 +60,7 @@ type ArmorPresetConfig = {
 
 export const CUSTOM_DAMAGE_DICE = [2, 4, 6, 8, 10, 12] as const;
 export const CUSTOM_ARMOR_DICE = [2, 4, 6] as const;
-export const DEFAULT_AMMO_TYPES = ['Arrow', 'Bolt'] as const;
+const DEFAULT_AMMO_TYPES = ['Arrow', 'Bolt'] as const;
 
 export const ARMOR_PRESETS: Record<ArmorPreset, ArmorPresetConfig> = {
   light: { die: 2, tier: 1, tags: ['armor', 'light-armor'] },

@@ -11,9 +11,7 @@ import {
 import {
   createContext,
   type ReactNode,
-  useCallback,
-  useContext,
-  useMemo,
+  use,
   useRef,
   useState,
 } from 'react';
@@ -38,6 +36,7 @@ type ActiveReport = UnexpectedErrorReport | ManualBugReport;
 type ErrorFeedbackContextValue = {
   showUnexpectedError: (error: unknown, context?: FeedbackContext) => boolean;
   showBugReport: (context?: FeedbackContext) => void;
+  canReportUnexpectedError: boolean;
 };
 
 const ErrorFeedbackContext = createContext<ErrorFeedbackContextValue | null>(
@@ -50,31 +49,28 @@ export function ErrorFeedbackProvider({ children }: { children: ReactNode }) {
   const [activeReport, setActiveReport] = useState<ActiveReport | null>(null);
   const nextReportIdRef = useRef(0);
 
-  const showUnexpectedError = useCallback(
-    (error: unknown, context?: FeedbackContext) => {
-      if (!isUnexpectedApiError(error)) {
-        return false;
-      }
+  const showUnexpectedError = (error: unknown, context?: FeedbackContext) => {
+    if (!isUnexpectedApiError(error)) {
+      return false;
+    }
 
-      nextReportIdRef.current += 1;
-      setActiveReport({
-        id: nextReportIdRef.current,
-        kind: 'error',
-        error,
-        context: {
-          ...context,
-          status: context?.status ?? getApiErrorStatus(error),
-          code: context?.code ?? getApiErrorCode(error),
-          requestId: context?.requestId ?? getApiRequestId(error),
-        },
-      });
+    nextReportIdRef.current += 1;
+    setActiveReport({
+      id: nextReportIdRef.current,
+      kind: 'error',
+      error,
+      context: {
+        ...context,
+        status: context?.status ?? getApiErrorStatus(error),
+        code: context?.code ?? getApiErrorCode(error),
+        requestId: context?.requestId ?? getApiRequestId(error),
+      },
+    });
 
-      return true;
-    },
-    []
-  );
+    return true;
+  };
 
-  const showBugReport = useCallback((context?: FeedbackContext) => {
+  const showBugReport = (context?: FeedbackContext) => {
     nextReportIdRef.current += 1;
     const source =
       typeof context?.source === 'string' ? context.source : 'bug_report';
@@ -88,12 +84,13 @@ export function ErrorFeedbackProvider({ children }: { children: ReactNode }) {
         source,
       },
     });
-  }, []);
+  };
 
-  const value = useMemo(
-    () => ({ showUnexpectedError, showBugReport }),
-    [showUnexpectedError, showBugReport]
-  );
+  const value = {
+    showUnexpectedError,
+    showBugReport,
+    canReportUnexpectedError: true,
+  };
 
   const isBugReport = activeReport?.kind === 'bug';
 
@@ -144,9 +141,10 @@ export function ErrorFeedbackProvider({ children }: { children: ReactNode }) {
 
 export function useErrorFeedback(): ErrorFeedbackContextValue {
   return (
-    useContext(ErrorFeedbackContext) ?? {
+    use(ErrorFeedbackContext) ?? {
       showUnexpectedError: () => false,
       showBugReport: () => {},
+      canReportUnexpectedError: false,
     }
   );
 }

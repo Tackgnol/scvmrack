@@ -24,7 +24,7 @@ import {
   sanitizeModifierValue,
 } from '@/validation/characterUpdate';
 import { useReducedMotion } from 'motion/react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const REMOVE_ANIMATION_MS = 220;
@@ -75,14 +75,8 @@ export function useModifiersPanel() {
   const [selectedComputedModifier, setSelectedComputedModifier] =
     useState<ComputedModifier | null>(null);
 
-  const customModifiers = useMemo(
-    () => character?.modifiers ?? [],
-    [character?.modifiers]
-  );
-  const computedModifiers = useMemo(
-    () => character?.computedModifiers ?? [],
-    [character?.computedModifiers]
-  );
+  const customModifiers = character?.modifiers ?? [];
+  const computedModifiers = character?.computedModifiers ?? [];
   const quickNameIssue = getTextLimitIssue('modifierName', name);
   const quickValueIssue = getModifierValueLimitIssue(valueStr);
   const modalNameIssue = getTextLimitIssue('modifierName', modalName);
@@ -113,24 +107,16 @@ export function useModifiersPanel() {
   const quickValue = sanitizeModifierValue(valueStr);
   const modalValue = sanitizeModifierValue(modalValueStr);
 
-  const computedSignature = useMemo(
-    () =>
-      computedModifiers
-        .map(
-          (modifier) =>
-            `${modifier.originKey ?? modifier.originName ?? 'origin'}:${modifier.statistic ?? 'stat'}:${modifier.value ?? 0}:${(modifier.exclude ?? []).join('.')}`
-        )
-        .join('|'),
-    [computedModifiers]
-  );
+  const computedSignature = computedModifiers
+    .map(
+      (modifier) =>
+        `${modifier.originKey ?? modifier.originName ?? 'origin'}:${modifier.statistic ?? 'stat'}:${modifier.value ?? 0}:${(modifier.exclude ?? []).join('.')}`
+    )
+    .join('|');
 
-  const computedTotal = useMemo(
-    () =>
-      computedModifiers.reduce(
-        (sum, modifier) => sum + (modifier.value ?? 0),
-        0
-      ),
-    [computedModifiers]
+  const computedTotal = computedModifiers.reduce(
+    (sum, modifier) => sum + (modifier.value ?? 0),
+    0
   );
 
   useEffect(() => {

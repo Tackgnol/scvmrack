@@ -10,6 +10,7 @@ const generateNew = vi.fn();
 const killAndReplace = vi.fn();
 const errorFeedbackMocks = vi.hoisted(() => ({
   showUnexpectedError: vi.fn(() => true),
+  canReportUnexpectedError: true,
 }));
 
 vi.mock('@mui/material', async (importOriginal) => {
@@ -151,6 +152,7 @@ describe('CharacterPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     errorFeedbackMocks.showUnexpectedError.mockReturnValue(true);
+    errorFeedbackMocks.canReportUnexpectedError = true;
     localStorage.removeItem('scvmrack-skip-kill-confirm-v1');
   });
 
@@ -211,7 +213,7 @@ describe('CharacterPage', () => {
   });
 
   it('keeps unexpected load errors visible when the feedback provider is unavailable', async () => {
-    errorFeedbackMocks.showUnexpectedError.mockReturnValueOnce(false);
+    errorFeedbackMocks.canReportUnexpectedError = false;
 
     await renderCharacterPage({
       isAuthenticated: true,

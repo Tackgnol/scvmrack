@@ -24,7 +24,7 @@ type ApiClientErrorOptions = {
   raw?: unknown;
 };
 
-export class ApiClientError extends Error {
+class ApiClientError extends Error {
   readonly status?: number;
   readonly code?: string;
   readonly requestId?: string;
@@ -76,7 +76,7 @@ function detailsValue(value: unknown): ApiErrorDetail[] | undefined {
   return details;
 }
 
-export function getApiErrorPayload(error: unknown): ApiErrorPayload | undefined {
+function getApiErrorPayload(error: unknown): ApiErrorPayload | undefined {
   if (error instanceof ApiClientError && error.payload) {
     return error.payload;
   }
@@ -144,7 +144,7 @@ export function getApiErrorCode(error: unknown): string | undefined {
   return stringValue(error.code) ?? getApiErrorPayload(error)?.code;
 }
 
-export function getApiErrorMessage(error: unknown): string | undefined {
+function getApiErrorMessage(error: unknown): string | undefined {
   const payload = getApiErrorPayload(error);
   if (payload?.message) return payload.message;
   if (payload?.error) return payload.error;
@@ -209,10 +209,6 @@ export function isApiForbidden(error: unknown): boolean {
 
 export function isApiUnauthorized(error: unknown): boolean {
   return getApiErrorStatus(error) === 401;
-}
-
-export function isApiPreconditionFailed(error: unknown): boolean {
-  return getApiErrorStatus(error) === 412;
 }
 
 export function isApiRateLimited(error: unknown): boolean {

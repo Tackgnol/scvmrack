@@ -1,4 +1,4 @@
-import {useState, useMemo} from 'react';
+import {useState} from 'react';
 import {useDebounce} from 'use-debounce';
 import {useTranslation} from 'react-i18next';
 import {useQuery} from '@tanstack/react-query';
@@ -61,13 +61,15 @@ async function fetchItemSearch(
     const payload = await response.json() as unknown;
     const data = Array.isArray(payload) ? payload : [];
 
-    return data
-        .filter(isRawItemSearchHit)
-        .map((item) => ({
-        ...item,
-        itemType: item.itemType ?? item.item_type ?? 'equipment',
-        tags: item.tags ?? [],
-    }));
+    return data.flatMap((item) =>
+        isRawItemSearchHit(item)
+            ? [{
+                ...item,
+                itemType: item.itemType ?? item.item_type ?? 'equipment',
+                tags: item.tags ?? [],
+            }]
+            : [],
+    );
 }
 
 
@@ -85,13 +87,8 @@ export function useItemSearch(options: { debounceMs?: number; limit?: number } =
 
     const locale = (i18n.resolvedLanguage ?? i18n.language ?? 'en').split('-')[0];
 
-    const queryKey = useMemo(
-        () => ['item-search', debouncedQuery, locale, limit],
-        [debouncedQuery, locale, limit]
-    );
-
     const {data, isLoading, error} = useQuery({
-        queryKey,
+        queryKey: ['item-search', debouncedQuery, locale, limit],
         queryFn: () =>
             fetchItemSearch(
                 debouncedQuery,
@@ -120,7 +117,7 @@ export function useItemSearch(options: { debounceMs?: number; limit?: number } =
 
 async function fetchFullItem(itemType: string, id: number) {
     const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/c/${itemType}/${id}`
+        `${import.meta.env.VITE_BACKEND_URL || ''}/c/${itemType}/${id}`
     );
 
     if (!response.ok) {

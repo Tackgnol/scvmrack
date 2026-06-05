@@ -2,6 +2,8 @@ import fp from 'fastify-plugin';
 import type { FastifyInstance } from 'fastify';
 import prisma from '../lib/prisma.js';
 import { apiError, badRequest, sendApiError } from '../errors.js';
+import { generateCharacter } from '../lib/generate-character.js';
+import { Roller, OSRandomEngine } from '@tackgnol/rpg-tools-roller';
 
 interface CreateUserBody {
   name?: string;
@@ -82,12 +84,11 @@ export default fp(async function testRoutesPlugin(fastify: FastifyInstance) {
       );
     }
 
-    const [result] = await prisma.$queryRaw<{ generateCharacter: string }[]>`
-      SELECT generate_character(NULL::integer) AS "generateCharacter"
-    `;
-
-    const characterId = result?.generateCharacter;
-    if (!characterId) {
+    const roller = new Roller({ engine: new OSRandomEngine() });
+    let characterId: string;
+    try {
+      characterId = await generateCharacter(null, roller);
+    } catch {
       return sendApiError(
         reply,
         request,

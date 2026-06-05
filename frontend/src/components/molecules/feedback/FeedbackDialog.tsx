@@ -11,7 +11,7 @@ import {
 } from '@/utils/errorUtils';
 import { customStyles } from '@/theme/morkBorgTheme';
 import { Box, Stack, TextField, Typography } from '@mui/material';
-import { useEffect, useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 export type FeedbackDialogKind = 'feedback' | 'error';
@@ -34,6 +34,14 @@ type FeedbackDialogProps = {
   source?: string;
   onClose: () => void;
   onSubmitted?: (eventId: string) => void;
+};
+
+type FeedbackFormState = {
+  open: boolean;
+  kind: FeedbackDialogKind;
+  error: unknown;
+  message: string;
+  isSending: boolean;
 };
 
 function cleanedContext(context?: FeedbackContext): Record<string, unknown> {
@@ -69,26 +77,51 @@ export default function FeedbackDialog({
   onSubmitted,
 }: FeedbackDialogProps) {
   const { t } = useTranslation();
-  const [message, setMessage] = useState('');
-  const [isSending, setIsSending] = useState(false);
+  const [formState, setFormState] = useState<FeedbackFormState>(() => ({
+    open,
+    kind,
+    error,
+    message: '',
+    isSending: false,
+  }));
 
-  const enrichedContext = useMemo<FeedbackContext>(
-    () => ({
-      ...context,
-      status: context?.status ?? getApiErrorStatus(error),
-      code: context?.code ?? getApiErrorCode(error),
-      requestId: context?.requestId ?? getApiRequestId(error),
-      url: context?.url ?? window.location.href,
-    }),
-    [context, error]
-  );
+  if (
+    formState.open !== open ||
+    formState.kind !== kind ||
+    formState.error !== error
+  ) {
+    setFormState({
+      open,
+      kind,
+      error,
+      message: open ? '' : formState.message,
+      isSending: open ? false : formState.isSending,
+    });
+  }
 
-  useEffect(() => {
-    if (open) {
-      setMessage('');
-      setIsSending(false);
-    }
-  }, [open, kind, error]);
+  const { message, isSending } = formState;
+
+  const setMessage = (nextMessage: string) => {
+    setFormState((previous) => ({
+      ...previous,
+      message: nextMessage,
+    }));
+  };
+
+  const setIsSending = (nextIsSending: boolean) => {
+    setFormState((previous) => ({
+      ...previous,
+      isSending: nextIsSending,
+    }));
+  };
+
+  const enrichedContext: FeedbackContext = {
+    ...context,
+    status: context?.status ?? getApiErrorStatus(error),
+    code: context?.code ?? getApiErrorCode(error),
+    requestId: context?.requestId ?? getApiRequestId(error),
+    url: context?.url ?? window.location.href,
+  };
 
   const resolvedTitle =
     title ??

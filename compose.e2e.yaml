@@ -10,11 +10,7 @@ services:
       retries: 10
 
   db:
-    image: scvmgrinder_db:e2e
-    pull_policy: never
-    build:
-      context: .
-      dockerfile: backend/Dockerfile.integration-db
+    image: postgres:16-alpine
     environment:
       POSTGRES_USER: p1002_scmgrinder
       POSTGRES_PASSWORD: p1002_scmgrinder
@@ -31,7 +27,7 @@ services:
     build:
       context: .
       dockerfile: backend/Dockerfile.dev
-    command: npm run prisma:migrate
+    command: sh -c "npm run prisma:migrate && npm run prisma:seed"
     environment:
       DATABASE_USER: p1002_scmgrinder
       DATABASE_PASSWORD: p1002_scmgrinder

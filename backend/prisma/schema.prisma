@@ -117,6 +117,7 @@ model Character {
   notes           String?  @default("")
   sessionId       String?  @map("session_id")
   userId          String?  @map("user_id")
+  modifiers       Json     @default("[]") @map("modifiers")
   user            User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([classId], map: "idx_characters_class")
@@ -124,4 +125,181 @@ model Character {
   @@index([sessionId], map: "idx_characters_session_id")
   @@index([userId], map: "idx_characters_user_id")
   @@map("characters")
+}
+
+model Class {
+  id                  Int      @id @default(autoincrement())
+  name                String   @unique @db.VarChar(255)
+  roll                Int?
+  appendix            String?
+  hpDie               Int?     @default(8) @map("hp_die")
+  weaponDie           Int?     @default(10) @map("weapon_die")
+  armorDie            Int?     @default(4) @map("armor_die")
+  silverDice          Int[]    @default([6, 6]) @map("silver_dice")
+  silverModifier      Int?     @default(10) @map("silver_modifier")
+  statModifiers       Json?    @default("{}") @map("stat_modifiers")
+  classAbilities      Json?    @default("[]") @map("class_abilities")
+  randomAbilities     Json?    @default("[]") @map("random_abilities")
+  randomAbilityCount  Int?     @default(1) @map("random_ability_count")
+  nameKey             String?  @db.VarChar(255) @map("name_key")
+  descriptionKey      String?  @db.VarChar(255) @map("description_key")
+
+  @@map("classes")
+}
+
+model Ability {
+  id        Int      @id @default(autoincrement())
+  classId   Int?     @map("class_id")
+  key       String   @unique @db.VarChar(255)
+  isRandom  Boolean? @default(false) @map("is_random")
+  rollValue Int?     @map("roll_value")
+
+  @@map("abilities")
+}
+
+model Origin {
+  id      Int    @id @default(autoincrement())
+  classId Int?   @map("class_id")
+  roll    Int
+  key     String @db.VarChar(255)
+
+  @@map("origins")
+}
+
+model Weapon {
+  id             Int     @id @default(autoincrement())
+  key            String  @unique @db.VarChar(255)
+  tags           String[]
+  amountMin      Int?    @map("amount_min")
+  amountMax      Int?    @map("amount_max")
+  mod            String? @db.VarChar(50)
+  dice           Int[]   @default([])
+  roll           Int?
+  value          Int?    @default(0)
+  exp            Boolean? @default(false)
+  effectDie      Int?    @map("effect_die")
+  effect         Json?
+  damageModifier Int?    @default(0) @map("damage_modifier")
+  modifiers      Json?   @default("[]")
+  ammoType       String? @db.VarChar(50) @map("ammo_type")
+  defaultAmount  Int?    @map("default_amount")
+
+  @@map("weapons")
+}
+
+model Armor {
+  id        Int      @id @default(autoincrement())
+  key       String   @unique @db.VarChar(255)
+  tags      String[]
+  dice      Int[]    @default([])
+  roll      Int?
+  value     Int?     @default(0)
+  exp       Boolean? @default(false)
+  maxTier   Int?     @default(1) @map("max_tier")
+  modifiers Json?    @default("[]")
+
+  @@map("armors")
+}
+
+model Equipment {
+  id            Int      @id @default(autoincrement())
+  key           String   @unique @db.VarChar(255)
+  tags          String[]
+  amountMin     Int?     @map("amount_min")
+  amountMax     Int?     @map("amount_max")
+  mod           String?  @db.VarChar(50)
+  hpMin         Int?     @map("hp_min")
+  hpMax         Int?     @map("hp_max")
+  hpMod         Int?     @map("hp_mod")
+  value         Int?     @default(0)
+  exp           Boolean? @default(false)
+  roll          Int?
+  multiple      Int?     @default(1)
+  ammoType      String?  @db.VarChar(50) @map("ammo_type")
+  defaultAmount Int?     @map("default_amount")
+  useEffect     Json?    @map("use_effect")
+
+  @@map("equipment")
+}
+
+model Pet {
+  id         Int      @id @default(autoincrement())
+  key        String   @unique @db.VarChar(255)
+  hp         Int      @default(1)
+  tags       String[] @default([])
+  exp        Boolean? @default(false)
+  actionDie  Int[]    @default([]) @map("action_die")
+  actionType String?  @default("melee") @db.VarChar(50) @map("action_type")
+  amount     Int?     @default(1)
+  amountDie  Int?     @map("amount_die")
+  buff       Json?    @default("[]")
+  value      Int?     @default(0)
+
+  @@map("pets")
+}
+
+model Name {
+  id   Int    @id @default(autoincrement())
+  name String @db.VarChar(255)
+
+  @@map("names")
+}
+
+model BodyDescription {
+  id   Int    @id @default(autoincrement())
+  key  String @unique @db.VarChar(255)
+  roll Int?
+
+  @@map("body_descriptions")
+}
+
+model Habit {
+  id    Int      @id @default(autoincrement())
+  key   String   @unique @db.VarChar(255)
+  roll  Int?
+  exp   Boolean? @default(false)
+  items Json?    @default("[]")
+
+  @@map("habits")
+}
+
+model Tale {
+  id    Int      @id @default(autoincrement())
+  key   String   @unique @db.VarChar(255)
+  roll  Int?
+  exp   Boolean? @default(false)
+  items Json?    @default("[]")
+
+  @@map("tales")
+}
+
+model Trait {
+  id   Int    @id @default(autoincrement())
+  key  String @unique @db.VarChar(255)
+  roll Int?
+
+  @@map("traits")
+}
+
+model Translation {
+  locale String @db.VarChar(10)
+  key    String @db.VarChar(255)
+  value  String
+
+  @@id([locale, key])
+  @@map("translations")
+}
+
+model ClassAbilityModifier {
+  id         Int    @id @default(autoincrement())
+  classId    Int    @map("class_id")
+  abilityKey String @db.VarChar(255) @map("ability_key")
+  value      Int
+  statistic  String @db.VarChar(20)
+  exclude    Json   @default("[]")
+  source     String
+  notes      String?
+
+  @@unique([classId, abilityKey, statistic, value, exclude])
+  @@map("class_ability_modifiers")
 }

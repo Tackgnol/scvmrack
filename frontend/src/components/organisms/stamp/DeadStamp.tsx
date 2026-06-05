@@ -2,11 +2,12 @@ import { DistressFilter } from '@/components/atoms/stamp/DistressFilter';
 import { StampContainer } from '@/components/molecules/stamp/StampContainer';
 import { StampTypography } from '@/components/molecules/stamp/StampTypography';
 
+// Built once at module scope — Intl formatters are expensive to construct.
+const stampMonthFormat = new Intl.DateTimeFormat('en-US', { month: 'short' });
+
 function formatStampDate(d: Date) {
   // Match the intended stamp vibe: "OCT 31 2024"
-  const month = new Intl.DateTimeFormat('en-US', { month: 'short' })
-    .format(d)
-    .toUpperCase();
+  const month = stampMonthFormat.format(d).toUpperCase();
   const day = String(d.getDate()).padStart(2, '0');
   const year = String(d.getFullYear());
   return `${month} ${day} ${year}`;

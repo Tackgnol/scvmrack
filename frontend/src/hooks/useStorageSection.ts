@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useCharacter } from '@/CharacterContext/CharacterContext';
 import { type EquipmentItem } from '@/hooks/models';
 import { aggregateItems, type AggregatedItem } from '@/utils/aggregateItems';
@@ -13,7 +13,7 @@ export function useStorageSection() {
   } = useCharacter();
 
   const storage = character?.storage ?? [];
-  const aggregated = useMemo(() => aggregateItems(storage), [storage]);
+  const aggregated = aggregateItems(storage);
   const [editingGroup, setEditingGroup] =
     useState<AggregatedItem<EquipmentItem> | null>(null);
 

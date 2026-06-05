@@ -284,6 +284,6 @@ describe('CharactersListPage', () => {
     });
     await userEvent.click(page.getByRole('button', { name: /delete/i }));
 
-    await expect.element(page.getByText(/unexpected error occurred/i)).toBeVisible();
+    await expect.element(page.getByText(/failed to delete character/i)).toBeVisible();
   });
 });

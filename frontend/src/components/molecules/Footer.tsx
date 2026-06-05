@@ -9,16 +9,16 @@ interface FooterProps {
   onKillScvm?: () => void;
 }
 
+const handleOpenPrivacy = () => {
+  requestOpenPrivacyDrawer();
+};
+
 export default function Footer({
   onGenerateNew,
   generateNewLabel,
   onKillScvm,
 }: FooterProps) {
   const { t } = useTranslation();
-
-  const handleOpenPrivacy = () => {
-    requestOpenPrivacyDrawer();
-  };
 
   return (
     <Box sx={customStyles.footer.paper}>

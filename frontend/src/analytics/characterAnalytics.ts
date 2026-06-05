@@ -79,7 +79,9 @@ function patchToField(patch: OptimisticPatch): string {
 export function trackCharacterEdited(patches: OptimisticPatch[], locale: string): void {
     if (patches.length === 0) return;
 
-    const fields = [...new Set(patches.map(patchToField))].sort().join(',');
+    const fields = Array.from(new Set(patches.map(patchToField)))
+        .sort()
+        .join(',');
 
     trackEvent('character_edited', {
         fields,

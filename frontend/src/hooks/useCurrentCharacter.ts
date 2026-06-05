@@ -18,17 +18,18 @@ import {
   isApiNotFound,
   isApiRateLimited,
   isUnexpectedApiError,
-  toApiClientError,
 } from '@/utils/errorUtils';
+import {
+  charactersListQueryKey,
+  fetchCharacterList,
+} from '@/hooks/charactersListQuery';
 
 import {
-  useCallback,
   useEffect,
-  useMemo,
-  useRef,
   useState,
   useSyncExternalStore,
 } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 
 const subscribeToHistory = (onStoreChange: () => void): (() => void) => {
@@ -52,7 +53,28 @@ type GenerateNewOptions = {
   onError?: (error: unknown) => void;
 };
 
+type ValidationState = {
+  key: string;
+  issues: Record<string, string>;
+  shownMessages: Record<string, string>;
+};
+
 let pendingAutoCreateController: AbortController | null = null;
+
+function createValidationState(key: string): ValidationState {
+  return {
+    key,
+    issues: {},
+    shownMessages: {},
+  };
+}
+
+function normalizeValidationState(
+  state: ValidationState,
+  key: string,
+): ValidationState {
+  return state.key === key ? state : createValidationState(key);
+}
 
 export function useCurrentCharacter() {
   const { characterId, lastCharacterId, setCharacterId } = useCharacterId();
@@ -64,79 +86,96 @@ export function useCurrentCharacter() {
     getApiLocale<PathsApiCharactersNewPostParametersQueryLocale>(locale);
   const { showError } = useSnackbar();
   const { showUnexpectedError } = useErrorFeedback();
-  const shownValidationMessagesRef = useRef<Record<string, string>>({});
-  const [validationIssueMap, setValidationIssueMap] = useState<
-    Record<string, string>
-  >({});
-
-  const reportUnexpectedError = useCallback(
-    (
-      error: unknown,
-      context: Parameters<typeof showUnexpectedError>[1],
-      fallbackMessage: string
-    ) => {
-      if (showUnexpectedError(error, context)) {
-        return;
-      }
-
-      showError(getUserFacingApiErrorMessage(error, t, fallbackMessage));
-    },
-    [showError, showUnexpectedError, t]
+  const queryClient = useQueryClient();
+  const validationStateKey = `${characterId ?? 'none'}:${trimmedLocale}`;
+  const [validationState, setValidationState] = useState<ValidationState>(() =>
+    createValidationState(validationStateKey)
   );
 
-  const setValidationIssue = useCallback(
-    (id: string, message: string) => {
-      if (shownValidationMessagesRef.current[id] !== message) {
-        shownValidationMessagesRef.current[id] = message;
-        showError(message);
+  if (validationState.key !== validationStateKey) {
+    setValidationState(createValidationState(validationStateKey));
+  }
+
+  const activeValidationState = normalizeValidationState(
+    validationState,
+    validationStateKey
+  );
+  const validationIssueMap = activeValidationState.issues;
+  const shownValidationMessages = activeValidationState.shownMessages;
+
+  const reportUnexpectedError = (
+    error: unknown,
+    context: Parameters<typeof showUnexpectedError>[1],
+    fallbackMessage: string
+  ) => {
+    if (showUnexpectedError(error, context)) {
+      return;
+    }
+
+    showError(getUserFacingApiErrorMessage(error, t, fallbackMessage));
+  };
+
+  const setValidationIssue = (id: string, message: string) => {
+    if (shownValidationMessages[id] !== message) {
+      showError(message);
+    }
+
+    setValidationState((previous) => {
+      const current = normalizeValidationState(previous, validationStateKey);
+      if (
+        current.issues[id] === message &&
+        current.shownMessages[id] === message
+      ) {
+        return previous;
       }
 
-      setValidationIssueMap((previous) => {
-        if (previous[id] === message) return previous;
-        return {
-          ...previous,
+      return {
+        key: validationStateKey,
+        issues: {
+          ...current.issues,
           [id]: message,
-        };
-      });
-    },
-    [showError]
-  );
-
-  const clearValidationIssue = useCallback((id: string) => {
-    delete shownValidationMessagesRef.current[id];
-    setValidationIssueMap((previous) => {
-      if (!(id in previous)) return previous;
-      const next = { ...previous };
-      delete next[id];
-      return next;
+        },
+        shownMessages: {
+          ...current.shownMessages,
+          [id]: message,
+        },
+      };
     });
-  }, []);
+  };
 
-  const clearValidationIssues = useCallback(() => {
-    shownValidationMessagesRef.current = {};
-    setValidationIssueMap({});
-  }, []);
+  const clearValidationIssue = (id: string) => {
+    setValidationState((previous) => {
+      const current = normalizeValidationState(previous, validationStateKey);
+      if (!(id in current.issues) && !(id in current.shownMessages)) {
+        return previous;
+      }
 
-  useEffect(() => {
-    clearValidationIssues();
-  }, [characterId, clearValidationIssues, trimmedLocale]);
+      const nextIssues = { ...current.issues };
+      const nextShownMessages = { ...current.shownMessages };
+      delete nextIssues[id];
+      delete nextShownMessages[id];
 
-  const validationIssues = useMemo(
-    () =>
-      Object.entries(validationIssueMap).map(([id, message]) => ({
-        id,
-        message,
-      })),
-    [validationIssueMap]
-  );
+      return {
+        key: validationStateKey,
+        issues: nextIssues,
+        shownMessages: nextShownMessages,
+      };
+    });
+  };
 
-  const validationIssueHandlers = useMemo(
-    () => ({
-      setValidationIssue,
-      clearValidationIssue,
-    }),
-    [clearValidationIssue, setValidationIssue]
-  );
+  const clearValidationIssues = () => {
+    setValidationState(createValidationState(validationStateKey));
+  };
+
+  const validationIssues = Object.entries(validationIssueMap).map(([id, message]) => ({
+    id,
+    message,
+  }));
+
+  const validationIssueHandlers = {
+    setValidationIssue,
+    clearValidationIssue,
+  };
 
   const isJustLoggedOut = useSyncExternalStore(
     subscribeToHistory,
@@ -172,74 +211,71 @@ export function useCurrentCharacter() {
   const [autoCreateFailed, setAutoCreateFailed] = useState(false);
   const [checkingExisting, setCheckingExisting] = useState(false);
 
+  if (isJustLoggedOut && autoCreateFailed) {
+    setAutoCreateFailed(false);
+  }
+
   // ---- Handle logout side effects ----
   useEffect(() => {
     if (isJustLoggedOut && (characterId || lastCharacterId)) {
       // Force clear current and remembered character ID when user logs out.
       setCharacterId(null);
-      setAutoCreateFailed(false);
     }
   }, [isJustLoggedOut, characterId, lastCharacterId, setCharacterId]);
 
+  const shouldAutoCreateCharacter =
+    pathname === '/character' &&
+    !authLoading &&
+    !characterId &&
+    !isJustLoggedOut &&
+    !isSessionExpired &&
+    !autoCreateFailed;
+
+  if (shouldAutoCreateCharacter && !checkingExisting) {
+    setCheckingExisting(true);
+  }
+
   // ---- Check for existing characters, then auto-create if none found ----
   useEffect(() => {
-    if (pathname !== '/character') return;
-    if (authLoading) return;
-    if (characterId) return;
-    if (isJustLoggedOut) return;
-    if (isSessionExpired) return;
-    if (autoCreateFailed) return;
+    if (!shouldAutoCreateCharacter) return;
 
     let cancelled = false;
     const controller = new AbortController();
 
     pendingAutoCreateController?.abort();
     pendingAutoCreateController = controller;
-    setCheckingExisting(true);
 
     (async () => {
-      // Step 1: Check if user already has characters (raw fetch to avoid auth middleware redirect)
+      // Step 1: Check if the session already owns characters. Routed through React
+      // Query (fetchQuery) so the list call is cached/deduped; the queryFn keeps the
+      // deliberate raw-fetch auth-middleware bypass.
       try {
-        const baseUrl = import.meta.env.VITE_BACKEND_URL || '';
-        const res = await fetch(`${baseUrl}/api/characters`, {
-          credentials: 'include',
-          signal: controller.signal,
+        const chars = await queryClient.fetchQuery({
+          queryKey: charactersListQueryKey,
+          queryFn: () => fetchCharacterList(controller.signal),
         });
-        if (!cancelled && res.ok) {
-          const chars = (await res.json()) as Array<{ id: string }>;
-          if (chars.length > 0) {
-            setCharacterId(chars[0].id);
-            setCheckingExisting(false);
-            return;
-          }
-        }
-
-        if (!cancelled && !res.ok) {
-          const errorBody = await res.json().catch(() => null);
-          const apiError = toApiClientError(
-            errorBody,
-            res,
-            'Failed to load characters'
-          );
-
-          if (isUnexpectedApiError(apiError)) {
-            setAutoCreateFailed(true);
-            setCheckingExisting(false);
-            reportUnexpectedError(
-              apiError,
-              {
-                source: 'character_auto_create_list',
-                operation: 'list_characters',
-                locale: trimmedLocale,
-              },
-              'Failed to load characters'
-            );
-            return;
-          }
+        if (!cancelled && chars.length > 0) {
+          setCharacterId(chars[0].id);
+          setCheckingExisting(false);
+          return;
         }
       } catch (e) {
         if (e instanceof DOMException && e.name === 'AbortError') return;
-        // List fetch failed — fall through to create
+        if (isUnexpectedApiError(e)) {
+          setAutoCreateFailed(true);
+          setCheckingExisting(false);
+          reportUnexpectedError(
+            e,
+            {
+              source: 'character_auto_create_list',
+              operation: 'list_characters',
+              locale: trimmedLocale,
+            },
+            'Failed to load characters'
+          );
+          return;
+        }
+        // Other errors (4xx / network) — fall through to create.
       }
 
       if (cancelled) return;
@@ -306,6 +342,7 @@ export function useCurrentCharacter() {
     isJustLoggedOut,
     isSessionExpired,
     autoCreateFailed,
+    shouldAutoCreateCharacter,
     trimmedLocale,
   ]);
 
@@ -318,166 +355,135 @@ export function useCurrentCharacter() {
   }, [repo.createCharacter.data, setCharacterId]);
 
   // ---- Generate new character (original logic) ----
-  const generateNewCharacter = useCallback(
-    (classId?: number, options?: GenerateNewOptions) => {
-      if (isSessionExpired) {
-        return;
-      }
+  const generateNewCharacter = (classId?: number, options?: GenerateNewOptions) => {
+    if (isSessionExpired) {
+      return;
+    }
 
-      pendingAutoCreateController?.abort();
-      pendingAutoCreateController = null;
-      setAutoCreateFailed(false);
+    pendingAutoCreateController?.abort();
+    pendingAutoCreateController = null;
+    setAutoCreateFailed(false);
 
-      editor.flush();
-      const id = classId ?? Math.floor(Math.random() * (6 - 1 + 1)) + 1;
+    editor.flush();
+    const id = classId ?? Math.floor(Math.random() * (6 - 1 + 1)) + 1;
 
-      repo.createCharacter.mutate(
-        {
-          body: { classId: id },
-          params: { query: { locale: trimmedLocale } },
+    repo.createCharacter.mutate(
+      {
+        body: { classId: id },
+        params: { query: { locale: trimmedLocale } },
+      },
+      {
+        onSuccess: (character) => {
+          if (character?.id) {
+            setCharacterId(character.id);
+            options?.onSuccess?.(character.id);
+          }
+          trackEvent('generate_character', {
+            source: 'manual',
+            locale: trimmedLocale,
+            classId: id,
+            is_authenticated: isAuthenticated,
+            is_guest: isGuest,
+          });
         },
-        {
-          onSuccess: (character) => {
-            if (character?.id) {
-              setCharacterId(character.id);
-              options?.onSuccess?.(character.id);
-            }
-            trackEvent('generate_character', {
-              source: 'manual',
-              locale: trimmedLocale,
-              classId: id,
-              is_authenticated: isAuthenticated,
-              is_guest: isGuest,
-            });
-          },
-          onError: (error) => {
-            if (isApiRateLimited(error)) {
-              showError(
-                t(
-                  'auth.rateLimit',
-                  'Too many requests. Please try again later.'
-                )
-              );
-            } else if (isUnexpectedApiError(error)) {
-              reportUnexpectedError(
+        onError: (error) => {
+          if (isApiRateLimited(error)) {
+            showError(
+              t(
+                'auth.rateLimit',
+                'Too many requests. Please try again later.'
+              )
+            );
+          } else if (isUnexpectedApiError(error)) {
+            reportUnexpectedError(
+              error,
+              {
+                source: 'character_generate',
+                operation: 'create_character',
+                locale: trimmedLocale,
+                classId: id,
+              },
+              'Failed to create character'
+            );
+          } else {
+            showError(
+              getUserFacingApiErrorMessage(
                 error,
-                {
-                  source: 'character_generate',
-                  operation: 'create_character',
-                  locale: trimmedLocale,
-                  classId: id,
-                },
+                t,
                 'Failed to create character'
-              );
-            } else {
-              showError(
-                getUserFacingApiErrorMessage(
-                  error,
-                  t,
-                  'Failed to create character'
-                )
-              );
-            }
-            options?.onError?.(error);
-          },
-        }
-      );
-    },
-    [
-      editor,
-      repo.createCharacter,
-      trimmedLocale,
-      isAuthenticated,
-      isGuest,
-      isSessionExpired,
-      setCharacterId,
-      setAutoCreateFailed,
-      showError,
-      reportUnexpectedError,
-      t,
-    ]
-  );
+              )
+            );
+          }
+          options?.onError?.(error);
+        },
+      }
+    );
+  };
 
   // ---- Kill current character and generate a new one ----
-  const killAndReplace = useCallback(
-    (options?: GenerateNewOptions) => {
-      if (isSessionExpired) {
-        return;
-      }
+  const killAndReplace = (options?: GenerateNewOptions) => {
+    if (isSessionExpired) {
+      return;
+    }
 
-      const idToKill = characterId;
-      if (!idToKill) {
-        // No character to kill, just generate
-        generateNewCharacter(undefined, options);
-        return;
-      }
+    const idToKill = characterId;
+    if (!idToKill) {
+      // No character to kill, just generate
+      generateNewCharacter(undefined, options);
+      return;
+    }
 
-      editor.flush();
+    editor.flush();
 
-      // Generate the replacement FIRST, then delete the old one once the new
-      // character exists and is the active selection. Generate-then-delete keeps
-      // the operation safe if generation fails (e.g. rate limited) — the old
-      // character survives instead of leaving the app pointed at a deleted id —
-      // and because the active query has already moved to the new id, removing
-      // the old character's cache entry no longer refetches a deleted record.
-      generateNewCharacter(undefined, {
-        ...options,
-        onSuccess: (newCharacterId) => {
-          options?.onSuccess?.(newCharacterId);
+    // Generate the replacement FIRST, then delete the old one once the new
+    // character exists and is the active selection. Generate-then-delete keeps
+    // the operation safe if generation fails (e.g. rate limited) — the old
+    // character survives instead of leaving the app pointed at a deleted id —
+    // and because the active query has already moved to the new id, removing
+    // the old character's cache entry no longer refetches a deleted record.
+    generateNewCharacter(undefined, {
+      ...options,
+      onSuccess: (newCharacterId) => {
+        options?.onSuccess?.(newCharacterId);
 
-          repo.deleteCharacter.mutate(
-            { params: { path: { id: idToKill } } } as any,
-            {
-              onSuccess: () => {
-                trackEvent('kill_character', {
-                  locale: trimmedLocale,
-                  is_authenticated: isAuthenticated,
-                  is_guest: isGuest,
-                });
-              },
-              onError: (error) => {
-                // The replacement is already active; a failure to delete the old
-                // record is non-blocking. 404 means it was already gone.
-                if (!isApiNotFound(error) && isUnexpectedApiError(error)) {
-                  reportUnexpectedError(
-                    error,
-                    {
-                      source: 'character_kill',
-                      operation: 'delete_character',
-                      characterId: idToKill,
-                      locale: trimmedLocale,
-                    },
-                    'Failed to delete the replaced character'
-                  );
-                }
-              },
-            }
-          );
-        },
-      });
-    },
-    [
-      characterId,
-      editor,
-      repo.deleteCharacter,
-      generateNewCharacter,
-      trimmedLocale,
-      isAuthenticated,
-      isGuest,
-      isSessionExpired,
-      reportUnexpectedError,
-    ]
-  );
+        repo.deleteCharacter.mutate(
+          { params: { path: { id: idToKill } } } as any,
+          {
+            onSuccess: () => {
+              trackEvent('kill_character', {
+                locale: trimmedLocale,
+                is_authenticated: isAuthenticated,
+                is_guest: isGuest,
+              });
+            },
+            onError: (error) => {
+              // The replacement is already active; a failure to delete the old
+              // record is non-blocking. 404 means it was already gone.
+              if (!isApiNotFound(error) && isUnexpectedApiError(error)) {
+                reportUnexpectedError(
+                  error,
+                  {
+                    source: 'character_kill',
+                    operation: 'delete_character',
+                    characterId: idToKill,
+                    locale: trimmedLocale,
+                  },
+                  'Failed to delete the replaced character'
+                );
+              }
+            },
+          }
+        );
+      },
+    });
+  };
 
   // ---- Change locale (original logic) ----
-  const changeLocale = useCallback(
-    async (newLocale: 'en' | 'pl') => {
-      if (newLocale === trimmedLocale) return;
-      await changeLanguage(newLocale);
-      trackEvent('language_changed', { from: trimmedLocale, to: newLocale });
-    },
-    [trimmedLocale, changeLanguage]
-  );
+  const changeLocale = async (newLocale: 'en' | 'pl') => {
+    if (newLocale === trimmedLocale) return;
+    await changeLanguage(newLocale);
+    trackEvent('language_changed', { from: trimmedLocale, to: newLocale });
+  };
 
   return {
     // Original returns

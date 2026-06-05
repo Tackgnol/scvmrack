@@ -1,10 +1,10 @@
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { Box, ClickAwayListener, Tooltip, Typography, useMediaQuery } from '@mui/material';
 import {
-  forwardRef,
   useState,
   type KeyboardEvent,
   type MouseEvent,
+  type Ref,
 } from 'react';
 import { customStyles } from '@/theme/morkBorgTheme';
 import { StyledEquipmentCard } from './EquippedBar.styled';
@@ -20,13 +20,22 @@ interface EquippedQuickCardProps {
   actionLabel?: string;
   ammoCount?: number | null;
   onAmmoUse?: () => void;
+  ref?: Ref<HTMLDivElement>;
 }
 
-const EquippedQuickCard = forwardRef<HTMLDivElement, EquippedQuickCardProps>(
-  function EquippedQuickCard(
-    { type, name, detail, description, noneName, onClick, dataTestId, actionLabel, ammoCount, onAmmoUse },
-    ref,
-  ) {
+function EquippedQuickCard({
+  type,
+  name,
+  detail,
+  description,
+  noneName,
+  onClick,
+  dataTestId,
+  actionLabel,
+  ammoCount,
+  onAmmoUse,
+  ref,
+}: EquippedQuickCardProps) {
     const hasClick = Boolean(onClick);
     const resolvedActionLabel = actionLabel ?? 'Change';
     const [infoOpen, setInfoOpen] = useState(false);
@@ -153,7 +162,6 @@ const EquippedQuickCard = forwardRef<HTMLDivElement, EquippedQuickCardProps>(
         )}
       </StyledEquipmentCard>
     );
-  },
-);
+}
 
 export default EquippedQuickCard;

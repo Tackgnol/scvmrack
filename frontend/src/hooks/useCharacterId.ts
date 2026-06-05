@@ -1,6 +1,6 @@
 import {appHistory} from '@/router/history';
 import {getCurrentCharacterIdParam, setCurrentCharacterIdParam} from '@/router/navigation';
-import {useCallback, useEffect, useState} from 'react';
+import {useEffect, useState} from 'react';
 
 const LAST_CHARACTER_ID_STORAGE_KEY = 'last-character-id';
 
@@ -53,7 +53,7 @@ export function useCharacterId() {
         });
     }, []);
 
-    const setCharacterId = useCallback(async (id: string | null) => {
+    const setCharacterId = async (id: string | null) => {
         if (id === characterId) {
             return;
         }
@@ -61,7 +61,7 @@ export function useCharacterId() {
         setLastCharacterId(id);
         writeLastCharacterId(id);
         await setCurrentCharacterIdParam(id);
-    }, [characterId]);
+    };
 
     return {
         characterId,

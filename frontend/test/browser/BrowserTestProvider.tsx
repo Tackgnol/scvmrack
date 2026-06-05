@@ -4,6 +4,7 @@ import { morkBorgTheme } from '@/theme/morkBorgTheme';
 import '@/styles/global.css';
 import i18n from '@/i18n';
 import { I18nextProvider } from 'react-i18next';
+import { LazyMotion, domMax } from 'motion/react';
 import { SnackbarProvider } from '@/SnackbarContext/SnackbarProvider';
 
 interface BrowserTestProviderProps {
@@ -15,6 +16,7 @@ export default function BrowserTestProvider({ children }: BrowserTestProviderPro
     <I18nextProvider i18n={i18n}>
       <ThemeProvider theme={morkBorgTheme}>
         <CssBaseline />
+        <LazyMotion features={domMax}>
         <SnackbarProvider>
           <div
             style={{
@@ -34,6 +36,7 @@ export default function BrowserTestProvider({ children }: BrowserTestProviderPro
             {children}
           </div>
         </SnackbarProvider>
+        </LazyMotion>
       </ThemeProvider>
     </I18nextProvider>
   );

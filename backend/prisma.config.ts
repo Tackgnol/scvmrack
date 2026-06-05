@@ -16,23 +16,4 @@ export default defineConfig({
   migrations: {
     path: 'prisma/migrations',
   },
-  tables: {
-    external: [
-      'public.abilities',
-      'public.armors',
-      'public.body_descriptions',
-      'public.class_ability_modifiers',
-      'public.characters',
-      'public.classes',
-      'public.equipment',
-      'public.habits',
-      'public.names',
-      'public.origins',
-      'public.pets',
-      'public.tales',
-      'public.traits',
-      'public.translations',
-      'public.weapons',
-    ],
-  },
 });

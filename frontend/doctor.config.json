@@ -1,0 +1,21 @@
+{
+  "$schema": "https://react.doctor/schema/config.json",
+  "ignore": {
+    "files": [
+      "public/**"
+    ],
+    "overrides": [
+      {
+        "files": [
+          "**/*.test.ts",
+          "**/*.test.tsx",
+          "test/**"
+        ],
+        "rules": [
+          "react-doctor/prefer-html-dialog",
+          "react-doctor/no-danger"
+        ]
+      }
+    ]
+  }
+}

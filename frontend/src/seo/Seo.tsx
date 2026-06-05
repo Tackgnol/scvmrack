@@ -1,8 +1,7 @@
 import { useEffect } from 'react';
-import { getRuntimeOrigin } from '@/platform/runtime';
+import { getSiteUrl } from './siteUrl';
 
 const SITE_NAME = 'Scvm Rack';
-const DEFAULT_SITE_URL = 'https://scvmrack.rpgtools.co';
 const DEFAULT_IMAGE_PATH = '/preview.png';
 
 type JsonLd = Record<string, unknown> | Array<Record<string, unknown>>;
@@ -17,8 +16,6 @@ interface SeoProps {
     noIndex?: boolean;
     jsonLd?: JsonLd;
 }
-
-const stripTrailingSlashes = (value: string): string => value.replace(/\/+$/, '');
 
 const toAbsoluteUrl = (siteUrl: string, path: string): string => {
     if (!path) {
@@ -85,20 +82,6 @@ const upsertJsonLd = (serializedJsonLd: string | undefined): void => {
     }
 
     scriptTag.textContent = serializedJsonLd;
-};
-
-export const getSiteUrl = (): string => {
-    const configuredSiteUrl = import.meta.env.VITE_SITE_URL?.trim();
-    if (configuredSiteUrl) {
-        return stripTrailingSlashes(configuredSiteUrl);
-    }
-
-    const runtimeOrigin = getRuntimeOrigin();
-    if (runtimeOrigin) {
-        return stripTrailingSlashes(runtimeOrigin);
-    }
-
-    return DEFAULT_SITE_URL;
 };
 
 export function Seo({

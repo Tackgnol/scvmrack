@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useState } from 'react';
 import {
   ARMOR_PRESETS,
   type ArmorPreset,
@@ -80,6 +80,13 @@ export const FIELD_BOUNDS = {
 
 export type FieldName = keyof typeof FIELD_BOUNDS;
 
+const isOutOfRange = (raw: string, field: FieldName): boolean => {
+  const n = Number(raw);
+  if (!Number.isFinite(n)) return true;
+  const { min, max } = FIELD_BOUNDS[field];
+  return n < min || n > max;
+};
+
 export type UseCustomItemForm = {
   state: CustomItemFormState;
   update: <K extends keyof CustomItemFormState>(
@@ -110,11 +117,33 @@ export function useCustomItemForm(
   open: boolean,
   character: Character | null | undefined,
 ): UseCustomItemForm {
-  const [state, setState] = useState<CustomItemFormState>(initialFormState);
+  const [formState, setFormState] = useState(() => ({
+    open,
+    state: initialFormState(),
+  }));
 
-  useEffect(() => {
-    if (open) setState(initialFormState());
-  }, [open]);
+  if (formState.open !== open) {
+    setFormState({
+      open,
+      state: open ? initialFormState() : formState.state,
+    });
+  }
+
+  const state = formState.state;
+
+  const setState = (
+    nextState:
+      | CustomItemFormState
+      | ((previous: CustomItemFormState) => CustomItemFormState),
+  ) => {
+    setFormState((previous) => ({
+      ...previous,
+      state:
+        typeof nextState === 'function'
+          ? nextState(previous.state)
+          : nextState,
+    }));
+  };
 
   const update = <K extends keyof CustomItemFormState>(
     key: K,
@@ -148,20 +177,12 @@ export function useCustomItemForm(
     }));
   };
 
-  const stats: Stats = useMemo(
-    () => ({
-      agility: character?.agility,
-      strength: character?.strength,
-      presence: character?.presence,
-      toughness: character?.toughness,
-    }),
-    [
-      character?.agility,
-      character?.presence,
-      character?.strength,
-      character?.toughness,
-    ],
-  );
+  const stats: Stats = {
+    agility: character?.agility,
+    strength: character?.strength,
+    presence: character?.presence,
+    toughness: character?.toughness,
+  };
 
   const showModifierPanel = state.kind === 'weapon' || state.kind === 'armor';
   const showQuantity = state.kind === 'misc' || state.kind === 'consumable';
@@ -184,13 +205,6 @@ export function useCustomItemForm(
     }
     return fields;
   })();
-
-  const isOutOfRange = (raw: string, field: FieldName): boolean => {
-    const n = Number(raw);
-    if (!Number.isFinite(n)) return true;
-    const { min, max } = FIELD_BOUNDS[field];
-    return n < min || n > max;
-  };
 
   const fieldErrors = (Object.keys(FIELD_BOUNDS) as FieldName[]).reduce(
     (acc, field) => {

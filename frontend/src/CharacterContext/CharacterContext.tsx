@@ -1,5 +1,5 @@
 import {useCurrentCharacter} from "@/hooks/useCurrentCharacter.ts";
-import { createContext, useContext, ReactNode } from 'react';
+import { createContext, use, type ReactNode } from 'react';
 
 export const CharacterContext = createContext<ReturnType<typeof useCurrentCharacter> | null>(null);
 
@@ -13,7 +13,7 @@ export function CharacterProvider({ children }: { children: ReactNode }) {
 }
 
 export function useCharacter() {
-    const context = useContext(CharacterContext);
+    const context = use(CharacterContext);
     if (!context) {
         throw new Error('useCharacter must be used within CharacterProvider');
     }

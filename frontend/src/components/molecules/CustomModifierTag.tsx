@@ -5,7 +5,7 @@ import { type CustomModifier } from '@/hooks/models';
 import { morkBorgColors } from '@/theme/morkBorgTheme';
 import ModifierStatChip from '@components/atoms/ModifierStatChip';
 import SignedModifierValue from '@components/atoms/SignedModifierValue';
-import { useEffect, useRef, useState } from 'react';
+import { useValuePulse } from '@/hooks/useValuePulse';
 
 interface CustomModifierTagProps {
   modifier: CustomModifier;
@@ -24,24 +24,8 @@ export default function CustomModifierTag({
   removeLabel,
   reduceMotion,
 }: CustomModifierTagProps) {
-  const [pulse, setPulse] = useState(false);
-  const previousValueRef = useRef<number | null>(null);
   const value = modifier.value ?? 0;
-
-  useEffect(() => {
-    if (reduceMotion) return;
-    if (previousValueRef.current === null) {
-      previousValueRef.current = value;
-      return;
-    }
-    if (previousValueRef.current !== value) {
-      setPulse(true);
-      const timeoutId = window.setTimeout(() => setPulse(false), 180);
-      previousValueRef.current = value;
-      return () => window.clearTimeout(timeoutId);
-    }
-    previousValueRef.current = value;
-  }, [value, reduceMotion]);
+  const pulse = useValuePulse(value, reduceMotion);
 
   return (
     <Box

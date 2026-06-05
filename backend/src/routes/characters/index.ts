@@ -1,7 +1,6 @@
 import {FastifyPluginAsync, type FastifyRequest} from 'fastify';
 import {
     CharacterIdParamsSchema,
-    CharacterPatch,
     CharacterSchema,
     ErrorSchema,
     GenerateBodySchema,
@@ -9,8 +8,12 @@ import {
     UpdateBodySchema,
 } from '../../schemas/character.js';
 import prisma from '../../lib/prisma.js';
+import { Prisma } from '@prisma/client';
 import type {CharacterUpdate, GenerateCharacterParams,} from '../../types/character.js';
-import {camelCaseJsonbFields, isValidLocale, isValidUUID, sanitizeCharacterUpdate, toDbPatch,} from '../../utils.js';
+import {isValidLocale, isValidUUID, rollToModifier, sanitizeCharacterUpdate,} from '../../utils.js';
+import { getCharacterFull } from '../../lib/get-character-full.js';
+import { generateCharacter } from '../../lib/generate-character.js';
+import { hydrateInventoryUses } from '../../lib/inventory.js';
 import {
     apiError,
     badRequest,
@@ -20,12 +23,16 @@ import {
     unauthorized,
     type ApiHttpError,
 } from '../../errors.js';
+import { Roller, OSRandomEngine  } from '@tackgnol/rpg-tools-roller';
+
+// ============================================
+// Route-local types
+// ============================================
 
 // ============================================
 // Helper: Check character access
 // ============================================
 type AuthSession = FastifyRequest['appSession'];
-type GeneratedCharacterRow = { generateCharacter: string | null };
 type CharacterRow = Record<string, unknown>;
 type CharacterListRow = {
     id: string;
@@ -111,13 +118,7 @@ function resolveListLocale(acceptLanguage: unknown): 'en' | 'pl' {
     return 'en';
 }
 
-async function getCharacterFullById(id: string, locale: string): Promise<CharacterRow | null> {
-    const [character] = await prisma.$queryRaw<CharacterRow[]>`
-        SELECT * FROM get_character_full(${id}::uuid, ${locale})
-    `;
-
-    return character ?? null;
-}
+// Phase 4+5: both getCharacterFull and generateCharacter are pure TypeScript — no raw SQL.
 
 const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
     // POST /api/characters/new - Generate new character (bound to session)
@@ -159,27 +160,16 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
             const locale = request.query.locale ?? 'en';
 
             try {
-                const [result] = await prisma.$queryRaw<GeneratedCharacterRow[]>`
-                    SELECT generate_character(${classId ?? null}::integer) AS "generateCharacter"
-                `;
-
-                if (!result) {
-                    throw apiError(
-                        500,
-                        'CHARACTER_GENERATION_FAILED',
-                        'Failed to generate character'
-                    );
-                }
-
-                const characterId = result.generateCharacter;
+                const roller = new Roller({ engine: new OSRandomEngine() });
+                const characterId = await generateCharacter(classId ?? null, roller);
 
                 // Bind character to user
                 await prisma.character.update({
-                    where: {id: characterId!},
+                    where: {id: characterId},
                     data: {userId},
                 });
 
-                const character = await getCharacterFullById(characterId!, locale);
+                const character = await getCharacterFull(characterId, locale);
                 if (!character) {
                     throw apiError(
                         500,
@@ -188,7 +178,7 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
                     );
                 }
 
-                return reply.status(201).send(camelCaseJsonbFields(character));
+                return reply.status(201).send(character);
             } catch (err) {
                 request.log.error(err);
                 throw knownOrUnexpected(
@@ -276,7 +266,7 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
             }
 
             try {
-                const character = await getCharacterFullById(id, locale);
+                const character = await getCharacterFull(id, locale);
                 if (!character) {
                     return sendApiError(
                         reply,
@@ -285,7 +275,7 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
                     );
                 }
 
-                return camelCaseJsonbFields(character);
+                return character;
             } catch (err) {
                 request.log.error(err);
                 throw knownOrUnexpected(
@@ -307,7 +297,7 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
         {
             config: {
                 rateLimit: {
-                    max: process.env.NODE_ENV === 'test' ? 10000 : 30,
+                    max: process.env.NODE_ENV === 'test' ? 10000 : 50,
                     timeWindow: '1 minute',
                 },
             },
@@ -366,11 +356,47 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
             }
 
             try {
-                await prisma.$queryRaw`
-                    SELECT update_character(${id}::uuid, ${JSON.stringify(toDbPatch(updates) as CharacterPatch)}::jsonb)
-                `;
+                // Hydrate inventory uses for equipment and storage if present
+                if (Array.isArray(updates['equipment']) || Array.isArray(updates['storage'])) {
+                    const roller = new Roller({ engine: new OSRandomEngine() });
 
-                const character = await getCharacterFullById(id, locale);
+                    // Determine presence: use patch value if present, otherwise fetch from DB
+                    let presence: number;
+                    if (typeof updates['presence'] === 'number') {
+                        presence = updates['presence'];
+                    } else {
+                        const char = await prisma.character.findUnique({
+                            where: { id },
+                            select: { presence: true },
+                        });
+                        presence = char?.presence ?? 10;
+                    }
+
+                    if (Array.isArray(updates['equipment'])) {
+                        updates['equipment'] = await hydrateInventoryUses(
+                            updates['equipment'] as unknown[],
+                            presence,
+                            true,
+                            roller
+                        );
+                    }
+
+                    if (Array.isArray(updates['storage'])) {
+                        updates['storage'] = await hydrateInventoryUses(
+                            updates['storage'] as unknown[],
+                            presence,
+                            false,
+                            roller
+                        );
+                    }
+                }
+
+                await prisma.character.update({
+                    where: { id },
+                    data: updates as Prisma.CharacterUpdateInput,
+                });
+
+                const character = await getCharacterFull(id, locale);
                 if (!character) {
                     return sendApiError(
                         reply,
@@ -379,14 +405,13 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
                     );
                 }
 
-                return camelCaseJsonbFields(character);
+                return character;
             } catch (err: unknown) {
                 request.log.error(err, 'Failed to update character');
-                throw characterNotFoundOrUnexpected(
-                    err,
-                    'CHARACTER_UPDATE_FAILED',
-                    'Failed to update character'
-                );
+                if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {
+                    return sendApiError(reply, request, notFound('CHARACTER_NOT_FOUND', 'Character not found'));
+                }
+                throw knownOrUnexpected(err, 'CHARACTER_UPDATE_FAILED', 'Failed to update character');
             }
         }
     );
@@ -415,24 +440,61 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
             }
 
             try {
-                const rows = await prisma.$queryRaw<CharacterListRow[]>`
-                    SELECT
-                        c.id,
-                        c.name,
-                        c.class_id AS "classId",
-                        COALESCE(t_class_name.value, cl.name) AS "className",
-                        c.current_hp AS "currentHp",
-                        c.max_hp AS "maxHp",
-                        c.created_at AS "createdAt",
-                        c.updated_at AS "updatedAt"
-                    FROM characters c
-                    LEFT JOIN classes cl ON cl.id = c.class_id
-                    LEFT JOIN translations t_class_name
-                        ON t_class_name.key = cl.name_key
-                        AND t_class_name.locale = ${locale}
-                    WHERE c.user_id = ${userId}
-                    ORDER BY c.updated_at DESC
-                `;
+                // 1. Fetch characters for this user
+                const characters = await prisma.character.findMany({
+                    where: { userId },
+                    orderBy: { updatedAt: 'desc' },
+                    select: {
+                        id: true,
+                        name: true,
+                        classId: true,
+                        currentHp: true,
+                        maxHp: true,
+                        createdAt: true,
+                        updatedAt: true,
+                    },
+                });
+
+                // 2. Look up localized class names for classes present in this result set
+                const classIds = [...new Set(
+                    characters.map(c => c.classId).filter((id): id is number => id !== null)
+                )];
+
+                let classNameMap = new Map<number, string>();
+                if (classIds.length > 0) {
+                    const classes = await prisma.class.findMany({
+                        where: { id: { in: classIds } },
+                        select: { id: true, name: true, nameKey: true },
+                    });
+
+                    const nameKeys = classes.map(c => c.nameKey).filter((k): k is string => k !== null);
+                    const translations = nameKeys.length > 0
+                        ? await prisma.translation.findMany({
+                            where: { locale, key: { in: nameKeys } },
+                            select: { key: true, value: true },
+                          })
+                        : [];
+
+                    const translationMap = new Map(translations.map(t => [t.key, t.value]));
+                    for (const cls of classes) {
+                        classNameMap.set(
+                            cls.id,
+                            (cls.nameKey ? translationMap.get(cls.nameKey) : null) ?? cls.name
+                        );
+                    }
+                }
+
+                // 3. Merge
+                const rows: CharacterListRow[] = characters.map(c => ({
+                    id: c.id,
+                    name: c.name,
+                    classId: c.classId,
+                    className: c.classId !== null ? (classNameMap.get(c.classId) ?? null) : null,
+                    currentHp: c.currentHp,
+                    maxHp: c.maxHp,
+                    createdAt: c.createdAt,
+                    updatedAt: c.updatedAt,
+                }));
                 return rows;
             } catch (err) {
                 request.log.error(err);

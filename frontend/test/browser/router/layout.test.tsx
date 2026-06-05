@@ -11,10 +11,28 @@ vi.mock('@tanstack/react-router', () => ({
     return opts?.select ? opts.select(state) : state;
   }),
   Outlet: () => <div data-testid="outlet-content">Page Content</div>,
+  Link: ({ children, ...props }: { children?: React.ReactNode; [key: string]: unknown }) =>
+    <a {...(props as React.AnchorHTMLAttributes<HTMLAnchorElement>)}>{children}</a>,
 }));
 
-// Heavy children mocked — each is tested in its own suite
-vi.mock('@components/index', () => ({
+// Heavy children mocked; each is tested in its own suite.
+vi.mock('@/components/organisms/Header', () => ({
+  default: () => <div data-testid="mock-header">Header</div>,
+}));
+
+vi.mock('@/components/atoms/NetworkActivityIndicator', () => ({
+  NetworkActivityIndicator: () => <div data-testid="mock-network-indicator" />,
+}));
+
+vi.mock('@components/molecules/session/SessionExpiredGate', () => ({
+  SessionExpiredGate: () => null,
+}));
+
+vi.mock('@/components/organisms/PrivacyNoticeDrawer', () => ({
+  PrivacyNoticeDrawer: () => null,
+}));
+
+vi.mock('@/components/index', () => ({
   Header: () => <div data-testid="mock-header">Header</div>,
   NetworkActivityIndicator: () => <div data-testid="mock-network-indicator" />,
   PrivacyNoticeDrawer: () => null,

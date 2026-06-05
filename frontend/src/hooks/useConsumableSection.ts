@@ -2,7 +2,6 @@ import { useCharacter } from '@/CharacterContext/CharacterContext';
 import { useTrackedUsePips } from '@/hooks/useTrackedUsePips';
 import { isConsumableUseItem } from '@/hooks/useEquipmentSections';
 import { type EquipmentUseEntry } from '@components/uses/types';
-import { useMemo } from 'react';
 
 export function useConsumableSection() {
   const { character, toggleScrollUse, isSaving } = useCharacter();
@@ -11,16 +10,11 @@ export function useConsumableSection() {
     onToggle: toggleScrollUse,
   });
 
-  const consumablesWithIndices = useMemo<EquipmentUseEntry[]>(
-    () =>
-      (character?.equipment ?? [])
-        .map((item, index) => ({
-          item,
-          equipmentIndex: index,
-          uses: item.uses ?? [],
-        }))
-        .filter(({ item }) => isConsumableUseItem(item)),
-    [character?.equipment],
+  const consumablesWithIndices: EquipmentUseEntry[] = (character?.equipment ?? []).flatMap(
+    (item, index) =>
+      isConsumableUseItem(item)
+        ? [{ item, equipmentIndex: index, uses: item.uses ?? [] }]
+        : [],
   );
 
   return {

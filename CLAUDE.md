@@ -42,7 +42,17 @@ npm run test:browser # Run browser component tests
 npm run lint         # Run ESLint
 npm run lint:fix     # Fix linting issues
 npm run format       # Format code with Prettier
+npm run doctor       # React health check (react-doctor) — run after touching hooks/components
 ```
+
+### Validation checklist (run before committing frontend changes)
+| Step | Command | When |
+|---|---|---|
+| TypeScript | `cd frontend && npx tsc --noEmit` | Always |
+| Lint | `cd frontend && npm run lint` | Always |
+| Unit tests | `cd backend && npm run test:unit` | Always |
+| Browser tests | `cd frontend && npm run test:browser` | When touching components/hooks |
+| React health | `cd frontend && npm run doctor` | When touching components/hooks |
 
 ## Architecture
 

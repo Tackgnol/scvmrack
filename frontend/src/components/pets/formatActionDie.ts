@@ -3,9 +3,10 @@ export function formatActionDie(dice?: number[]): string {
     return '-';
   }
 
-  const normalized = dice
-    .map((value) => Number(value))
-    .filter((value) => Number.isFinite(value) && value > 0);
+  const normalized = dice.flatMap((value) => {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) && parsed > 0 ? [parsed] : [];
+  });
 
   if (normalized.length === 0) {
     return '-';

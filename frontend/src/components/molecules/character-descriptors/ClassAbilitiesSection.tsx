@@ -27,7 +27,7 @@ export default function ClassAbilitiesSection({
           <Box sx={customStyles.characterDescriptors.abilitiesList}>
             {abilities.map((ability, index) => (
               <DescriptorAbilityItem
-                key={index}
+                key={ability.key ?? ability.name ?? `ability-${index}`}
                 ability={ability}
                 index={index}
                 isOccultHerbmaster={isOccultHerbmaster}

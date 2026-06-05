@@ -1,7 +1,7 @@
 import { type CustomModifier } from '@/hooks/models';
 import { morkBorgColors } from '@/theme/morkBorgTheme';
 import { Box, Typography } from '@mui/material';
-import { AnimatePresence, motion } from 'motion/react';
+import { AnimatePresence, m } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 import CustomModifierTag from '@components/molecules/CustomModifierTag';
 import { getModifierTileMotion } from '@components/modifiers/motion';
@@ -65,7 +65,7 @@ export default function CustomModifiersGrid({
             return (
               <Box
                 key={key}
-                component={motion.div}
+                component={m.div}
                 layout={!reduceMotion}
                 initial={tileMotion.initial}
                 animate={tileMotion.animate}

@@ -60,7 +60,7 @@ export default function EquipmentSelectionMenu({
 
       {options.map(({ item, index, quantity }) => (
         <EquipmentMenuListItem
-          key={`${item.key}-${index}`}
+          key={item.key}
           name={item.name}
           description={item.description}
           quantity={quantity}

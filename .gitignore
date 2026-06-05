@@ -81,7 +81,8 @@ materials
 # test results & reports
 reports/
 coverage/
-coverage-backend/
+coverage-backend*/
+backend/coverage*/
 backend/tests/e2e/playwright-report
 backend/tests/e2e/test-results
 backend/tests/e2e/.auth
@@ -117,3 +118,6 @@ frontend/stats.html
 
 # Lighthouse reports
 *.usermd.net-*.json
+
+# Golden corpus snapshots (may contain user/character data from live backend)
+backend/tests/fixtures/golden-corpus.json
