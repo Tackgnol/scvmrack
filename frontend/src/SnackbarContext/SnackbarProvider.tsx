@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, ReactNode } from "react";
+import { createContext, use, useState, type ReactNode } from "react";
 import { Snackbar, Alert, AlertColor, Button } from "@mui/material";
 import { customStyles } from "@/theme/morkBorgTheme";
 
@@ -49,51 +49,39 @@ export function SnackbarProvider({ children }: SnackbarProviderProps) {
     const [current, setCurrent] = useState<SnackbarMessage | null>(null);
     const [open, setOpen] = useState(false);
 
-    const showSnackbar = useCallback(
-        (
-            message: string,
-            severity: AlertColor = "info",
-            options?: {
-                action?: SnackbarAction;
-                autoHideDuration?: number | null;
-            }
-        ) => {
-            setCurrent({
-                id: Date.now().toString(),
-                message,
-                severity,
-                action: options?.action,
-                autoHideDuration: options?.autoHideDuration ?? 4000,
-            });
-            setOpen(true);
-        },
-        []
-    );
+    const showSnackbar = (
+        message: string,
+        severity: AlertColor = "info",
+        options?: {
+            action?: SnackbarAction;
+            autoHideDuration?: number | null;
+        }
+    ) => {
+        setCurrent({
+            id: Date.now().toString(),
+            message,
+            severity,
+            action: options?.action,
+            autoHideDuration: options?.autoHideDuration ?? 4000,
+        });
+        setOpen(true);
+    };
 
-    const hideSnackbar = useCallback(() => {
+    const hideSnackbar = () => {
         setOpen(false);
-    }, []);
+    };
 
-    const showError = useCallback(
-        (message: string, action?: SnackbarAction) => {
-            showSnackbar(message, "error", { action, autoHideDuration: action ? null : 6000 });
-        },
-        [showSnackbar]
-    );
+    const showError = (message: string, action?: SnackbarAction) => {
+        showSnackbar(message, "error", { action, autoHideDuration: action ? null : 6000 });
+    };
 
-    const showSuccess = useCallback(
-        (message: string) => {
-            showSnackbar(message, "success", { autoHideDuration: 2000 });
-        },
-        [showSnackbar]
-    );
+    const showSuccess = (message: string) => {
+        showSnackbar(message, "success", { autoHideDuration: 2000 });
+    };
 
-    const showInfo = useCallback(
-        (message: string) => {
-            showSnackbar(message, "info");
-        },
-        [showSnackbar]
-    );
+    const showInfo = (message: string) => {
+        showSnackbar(message, "info");
+    };
 
     const handleClose = (_event?: React.SyntheticEvent | Event, reason?: string) => {
         if (reason === "clickaway") return;
@@ -148,7 +136,7 @@ export function SnackbarProvider({ children }: SnackbarProviderProps) {
 // Hook
 // ============================================
 export function useSnackbar(): SnackbarContextType {
-    const context = useContext(SnackbarContext);
+    const context = use(SnackbarContext);
     if (!context) {
         throw new Error("useSnackbar must be used within a SnackbarProvider");
     }

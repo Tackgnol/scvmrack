@@ -10,6 +10,7 @@ import {
     QueryClientProvider,
 } from "@tanstack/react-query";
 import { RouterProvider } from '@tanstack/react-router';
+import { LazyMotion, domMax } from 'motion/react';
 import * as Sentry from '@sentry/react';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
@@ -64,7 +65,12 @@ ReactDOM.createRoot(document.getElementById('root')!, {
                 <ErrorFeedbackProvider>
                     <QueryClientProvider client={queryClient}>
                         <CharacterProvider>
-                            <RouterProvider router={router} />
+                            {/* Load motion features once, lazily, so components use the
+                                lightweight `m` primitives. domMax includes layout
+                                projection (the modifier grids animate layout). */}
+                            <LazyMotion features={domMax}>
+                                <RouterProvider router={router} />
+                            </LazyMotion>
                         </CharacterProvider>
                     </QueryClientProvider>
                 </ErrorFeedbackProvider>

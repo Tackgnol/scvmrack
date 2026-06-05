@@ -38,6 +38,11 @@ function modifier(value: number | null | undefined): string {
     return value > 0 ? `+${value}` : String(value);
 }
 
+const handlePrint = () => {
+    trackEvent('print_character', { surface: 'print_page' });
+    window.print();
+};
+
 function itemName(item: EquipmentItem): string {
     const amount = item.amount && item.amount > 1 ? `${item.amount}x ` : '';
     return `${amount}${item.name ?? item.key ?? '-'}`;
@@ -412,11 +417,6 @@ export function PrintPage() {
 
     const handleBack = () => {
         void appHistory.push(buildHomeCallbackUrl(effectiveId));
-    };
-
-    const handlePrint = () => {
-        trackEvent('print_character', { surface: 'print_page' });
-        window.print();
     };
 
     const emptyMessage = (() => {

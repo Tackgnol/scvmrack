@@ -1,6 +1,6 @@
 {
   "name": "scvmgrinder_be",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "This project was bootstrapped with Fastify-CLI.",
   "main": "app.ts",
   "type": "module",
@@ -32,7 +32,12 @@
     "postinstall": "prisma generate",
     "prisma:generate": "prisma generate",
     "prisma:push": "prisma db push",
-    "prisma:migrate": "prisma migrate deploy"
+    "prisma:migrate": "prisma migrate deploy",
+    "prisma:baseline": "prisma migrate resolve --applied 20260603000000_init_full",
+    "prisma:seed": "node --import tsx prisma/seed.ts"
+  },
+  "prisma": {
+    "seed": "node --import tsx prisma/seed.ts"
   },
   "keywords": [],
   "author": "",
@@ -45,11 +50,13 @@
     "@prisma/adapter-pg": "^6.19.3",
     "@prisma/client": "6.19.3",
     "@sentry/node": "^10.50.0",
+    "@tackgnol/rpg-tools-roller": "^0.0.1",
     "@tackgnol/rpgtools-shared-auth": "^1.1.0",
     "dotenv": "^17.3.1",
     "fastify": "5.8.5",
     "fastify-cli": "^7.4.1",
     "fastify-plugin": "^5.1.0",
+    "minisearch": "^7.2.0",
     "pg": "^8.16.3",
     "validator": "^13.15.26"
   },

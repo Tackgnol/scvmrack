@@ -10,6 +10,12 @@ vi.mock('@tanstack/react-router', () => ({
 
 import { useRouterState } from '@tanstack/react-router';
 
+function mockRouterLocation(location: { pathname: string; searchStr: string; hash: string }) {
+    vi.mocked(useRouterState).mockImplementation((opts: any) =>
+        opts?.select ? opts.select({ location }) : location,
+    );
+}
+
 // Mock dependencies
 vi.mock('@/analytics/googleAnalytics', () => ({
     trackPageView: vi.fn(),
@@ -28,11 +34,7 @@ describe('AnalyticsPageTracker Browser', () => {
     });
 
     it('renders nothing (is a null component)', async () => {
-        vi.mocked(useRouterState).mockReturnValue({
-            pathname: '/characters',
-            searchStr: '',
-            hash: '',
-        } as any);
+        mockRouterLocation({ pathname: '/characters', searchStr: '', hash: '' });
 
         await render(
             <BrowserTestProvider>
@@ -50,7 +52,7 @@ describe('AnalyticsPageTracker Browser', () => {
             hash: '#details',
         };
 
-        vi.mocked(useRouterState).mockReturnValue(mockLocation as any);
+        mockRouterLocation(mockLocation);
 
         await render(
             <BrowserTestProvider>
@@ -73,7 +75,7 @@ describe('AnalyticsPageTracker Browser', () => {
             hash: '',
         };
 
-        vi.mocked(useRouterState).mockReturnValue(mockLocation as any);
+        mockRouterLocation(mockLocation);
 
         await render(
             <BrowserTestProvider>
@@ -93,7 +95,7 @@ describe('AnalyticsPageTracker Browser', () => {
             hash: '',
         };
 
-        vi.mocked(useRouterState).mockReturnValue(mockLocation as any);
+        mockRouterLocation(mockLocation);
 
         await render(
             <BrowserTestProvider>
@@ -115,7 +117,7 @@ describe('AnalyticsPageTracker Browser', () => {
             hash: '#equipment',
         };
 
-        vi.mocked(useRouterState).mockReturnValue(mockLocation as any);
+        mockRouterLocation(mockLocation);
 
         await render(
             <BrowserTestProvider>

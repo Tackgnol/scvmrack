@@ -1,6 +1,7 @@
 import { render } from 'vitest-browser-react';
 import { expect, describe, it, afterEach } from 'vitest';
-import { Seo, getSiteUrl } from '@/seo/Seo';
+import { Seo } from '@/seo/Seo';
+import { getSiteUrl } from '@/seo/siteUrl';
 import BrowserTestProvider from '../BrowserTestProvider';
 
 describe('Seo Component', () => {

@@ -2619,7 +2619,7 @@ export const customStyles = {
       mt: 0.5,
       lineHeight: 1.5,
     },
-    usePipsContainer: {
+    pipsContainer: {
       display: 'flex',
       flexWrap: 'wrap' as const,
       gap: { xs: 0.75, sm: 0.6 },

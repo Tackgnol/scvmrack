@@ -53,6 +53,16 @@ vi.mock('@/hooks/useCharacterRepository', () => ({
   useCharacterRepository: vi.fn(),
 }));
 
+// The repository hook is mocked, so the tree has no real QueryClientProvider.
+// Stub useQueryClient with a passthrough fetchQuery so the pregen effect still runs
+// its queryFn (which calls the stubbed global fetch).
+vi.mock('@tanstack/react-query', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@tanstack/react-query')>()),
+  useQueryClient: () => ({
+    fetchQuery: ({ queryFn }: { queryFn: () => unknown }) => queryFn(),
+  }),
+}));
+
 describe('LandingPage', () => {
   const renderLanding = async ({
     authLoading = false,

@@ -1,5 +1,13 @@
-import {motion, useMotionValue, useReducedMotion, useSpring} from 'motion/react';
-import {useEffect, useMemo, useRef, useState} from 'react';
+import {
+    m,
+    useMotionValue,
+    useMotionValueEvent,
+    useReducedMotion,
+    useSpring,
+    useTransform,
+} from 'motion/react';
+import { useEffect, useRef } from 'react';
+import { useValuePulse } from '@/hooks/useValuePulse';
 
 type AnimatedNumberProps = {
     value: number;
@@ -29,6 +37,12 @@ function durationToSpring(durationMs: number): SpringConfig {
     };
 }
 
+function getInitialValue(cacheKey: string | undefined, value: number): number {
+    return cacheKey && lastRenderedValueCache.has(cacheKey)
+        ? (lastRenderedValueCache.get(cacheKey) as number)
+        : value;
+}
+
 export default function AnimatedNumber({
     value,
     durationMs = 260,
@@ -38,46 +52,34 @@ export default function AnimatedNumber({
     cacheKey,
 }: AnimatedNumberProps) {
     const prefersReducedMotion = Boolean(useReducedMotion());
-    const springConfig = useMemo(() => durationToSpring(durationMs), [durationMs]);
+    const springConfig = durationToSpring(durationMs);
 
-    const initialValueRef = useRef<number>(
-        cacheKey && lastRenderedValueCache.has(cacheKey)
-            ? (lastRenderedValueCache.get(cacheKey) as number)
-            : value
-    );
+    const formatter = format ?? ((raw: number) => raw.toFixed(decimals));
 
-    const motionValue = useMotionValue(initialValueRef.current);
+    // The displayed text is rendered straight off the spring as a MotionValue, so
+    // updates patch the DOM without re-rendering React (no displayValue state to copy
+    // into, no setState inside effects).
+    const motionValue = useMotionValue(getInitialValue(cacheKey, value));
     const springValue = useSpring(motionValue, springConfig);
-    const [displayValue, setDisplayValue] = useState<number>(initialValueRef.current);
-    const [isPulsing, setIsPulsing] = useState(false);
-    const previousValueRef = useRef<number>(initialValueRef.current);
+    const display = useTransform(springValue, (latest) => formatter(latest));
+
+    const isPulsing = useValuePulse(
+        value,
+        prefersReducedMotion || durationMs <= 0,
+        Math.min(320, Math.max(180, durationMs)),
+    );
+    const previousValueRef = useRef<number>(motionValue.get());
     const previousCacheKeyRef = useRef<string | undefined>(cacheKey);
-    const pulseTimeoutRef = useRef<number | null>(null);
 
-    const formatter = useMemo(() => {
-        if (format) {
-            return format;
+    // Remember the latest value per cacheKey (no re-render) so a remounted instance
+    // with the same key resumes where it left off.
+    useMotionValueEvent(springValue, 'change', (latest) => {
+        if (cacheKey) {
+            lastRenderedValueCache.set(cacheKey, latest);
         }
-        return (raw: number) => raw.toFixed(decimals);
-    }, [format, decimals]);
+    });
 
-    useEffect(() => {
-        const unsubscribe = springValue.on('change', (latest) => {
-            setDisplayValue(latest);
-            if (cacheKey) {
-                lastRenderedValueCache.set(cacheKey, latest);
-            }
-        });
-
-        return () => {
-            unsubscribe();
-            if (pulseTimeoutRef.current !== null) {
-                window.clearTimeout(pulseTimeoutRef.current);
-                pulseTimeoutRef.current = null;
-            }
-        };
-    }, [springValue, cacheKey]);
-
+    // When the cacheKey identity changes, jump to that key's remembered value.
     useEffect(() => {
         if (previousCacheKeyRef.current === cacheKey) return;
 
@@ -89,55 +91,27 @@ export default function AnimatedNumber({
 
         previousValueRef.current = nextValue;
         motionValue.jump(nextValue);
-        setDisplayValue(nextValue);
     }, [cacheKey, value, motionValue]);
 
+    // Animate toward the latest value (or jump it when motion is off / unchanged).
     useEffect(() => {
         const from = previousValueRef.current;
         const to = value;
         previousValueRef.current = to;
 
-        if (from === to) {
+        if (from === to || prefersReducedMotion || durationMs <= 0) {
             motionValue.jump(to);
-            setDisplayValue(to);
             if (cacheKey) {
                 lastRenderedValueCache.set(cacheKey, to);
             }
             return;
         }
-
-        if (prefersReducedMotion || durationMs <= 0) {
-            motionValue.jump(to);
-            setDisplayValue(to);
-            if (cacheKey) {
-                lastRenderedValueCache.set(cacheKey, to);
-            }
-            return;
-        }
-
-        setIsPulsing(true);
-        if (pulseTimeoutRef.current !== null) {
-            window.clearTimeout(pulseTimeoutRef.current);
-        }
-        pulseTimeoutRef.current = window.setTimeout(() => {
-            setIsPulsing(false);
-            pulseTimeoutRef.current = null;
-        }, Math.min(320, Math.max(180, durationMs)));
 
         motionValue.set(to);
     }, [value, durationMs, cacheKey, prefersReducedMotion, motionValue]);
 
-    useEffect(() => {
-        return () => {
-            if (pulseTimeoutRef.current !== null) {
-                window.clearTimeout(pulseTimeoutRef.current);
-                pulseTimeoutRef.current = null;
-            }
-        };
-    }, []);
-
     return (
-        <motion.span
+        <m.span
             className={className}
             animate={isPulsing ? {y: -1, scale: 1.03} : {y: 0, scale: 1}}
             transition={prefersReducedMotion ? {duration: 0} : {duration: 0.18, ease: 'easeOut'}}
@@ -146,7 +120,7 @@ export default function AnimatedNumber({
                 display: 'inline-block',
             }}
         >
-            {formatter(displayValue)}
-        </motion.span>
+            {display}
+        </m.span>
     );
 }

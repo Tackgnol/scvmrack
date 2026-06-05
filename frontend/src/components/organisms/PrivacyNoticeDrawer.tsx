@@ -8,7 +8,7 @@ import {
 import { subscribeOpenPrivacyDrawer } from '@/privacy/privacyDrawerBus';
 import { morkBorgColors } from '@/theme/morkBorgTheme';
 import { Box, Button, Divider, Drawer, FormControlLabel, Switch, Typography } from '@mui/material';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const PRIVACY_DRAWER_WIDTH = 390;
@@ -25,7 +25,7 @@ export function PrivacyNoticeDrawer({ openOnMount = false }: PrivacyNoticeDrawer
     );
     const [open, setOpen] = useState<boolean>(() => openOnMount || !savedSettings.acknowledged);
 
-    const isFirstNotice = useMemo(() => !savedSettings.acknowledged, [savedSettings.acknowledged]);
+    const isFirstNotice = !savedSettings.acknowledged;
     const legalSections: string[] = [
         t('privacy.sections.storage'),
         t('privacy.sections.backend'),

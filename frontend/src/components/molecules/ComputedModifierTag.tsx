@@ -4,7 +4,7 @@ import { type ComputedModifier } from '@/hooks/models';
 import { morkBorgColors } from '@/theme/morkBorgTheme';
 import ModifierStatChip from '@components/atoms/ModifierStatChip';
 import SignedModifierValue from '@components/atoms/SignedModifierValue';
-import { useEffect, useRef, useState } from 'react';
+import { useValuePulse } from '@/hooks/useValuePulse';
 import { useTranslation } from 'react-i18next';
 
 interface ComputedModifierTagProps {
@@ -21,26 +21,10 @@ export default function ComputedModifierTag({
   reduceMotion,
 }: ComputedModifierTagProps) {
   const { t } = useTranslation();
-  const [pulse, setPulse] = useState(false);
-  const previousValueRef = useRef<number | null>(null);
   const value = modifier.value ?? 0;
+  const pulse = useValuePulse(value, reduceMotion);
   const originName =
     modifier.originName ?? t('modifiers.computed.unknownOrigin');
-
-  useEffect(() => {
-    if (reduceMotion) return;
-    if (previousValueRef.current === null) {
-      previousValueRef.current = value;
-      return;
-    }
-    if (previousValueRef.current !== value) {
-      setPulse(true);
-      const timeoutId = window.setTimeout(() => setPulse(false), 180);
-      previousValueRef.current = value;
-      return () => window.clearTimeout(timeoutId);
-    }
-    previousValueRef.current = value;
-  }, [value, reduceMotion]);
 
   return (
     <Box

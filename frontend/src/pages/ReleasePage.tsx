@@ -18,6 +18,17 @@ interface ReleaseNote {
     changes: string[];
 }
 
+const getTypeColor = (type: ReleaseNote['type']) => {
+    switch (type) {
+        case 'major':
+            return morkBorgColors.pink;
+        case 'minor':
+            return morkBorgColors.yellow;
+        case 'patch':
+            return morkBorgColors.white;
+    }
+};
+
 export function ReleasePage() {
     const { t } = useTranslation();
 
@@ -48,17 +59,6 @@ export function ReleasePage() {
             ],
         },
     ];
-
-    const getTypeColor = (type: ReleaseNote['type']) => {
-        switch (type) {
-            case 'major':
-                return morkBorgColors.pink;
-            case 'minor':
-                return morkBorgColors.yellow;
-            case 'patch':
-                return morkBorgColors.white;
-        }
-    };
 
     const getTypeLabel = (type: ReleaseNote['type']) => {
         switch (type) {

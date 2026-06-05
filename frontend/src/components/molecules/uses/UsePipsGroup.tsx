@@ -18,7 +18,7 @@ export default function UsePipsGroup({
   pipTestId,
 }: UsePipsGroupProps) {
   return (
-    <Box sx={customStyles.powersSection.usePipsContainer}>
+    <Box sx={customStyles.powersSection.pipsContainer}>
       {uses.map((used, useIndex) => (
         <UsePipButton
           key={useIndex}

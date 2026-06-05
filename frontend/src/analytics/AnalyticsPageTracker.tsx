@@ -16,15 +16,30 @@ const toAbsoluteUrl = (path: string): string | undefined => {
     return new URL(path, origin).href;
 };
 
+type RouterLocation = {
+    pathname?: string;
+    searchStr?: string;
+    hash?: string;
+};
+
+const toTrackedLocation = (location: RouterLocation) => {
+    const pathname = location.pathname ?? '/';
+    const search = location.searchStr || undefined;
+    return {
+        path: toPagePath(pathname, location.searchStr, location.hash),
+        search,
+    };
+};
+
 export function AnalyticsPageTracker() {
-    const location = useRouterState({
-        select: (state) => state.location,
+    const trackedLocation = useRouterState({
+        select: (state) => toTrackedLocation(state.location),
     });
 
     const lastTrackedPathRef = useRef<string>('');
 
     useEffect(() => {
-        const currentPath = toPagePath(location.pathname, location.searchStr, location.hash);
+        const currentPath = trackedLocation.path;
 
         // React StrictMode runs effects twice in development.
         if (lastTrackedPathRef.current === currentPath) {
@@ -36,9 +51,9 @@ export function AnalyticsPageTracker() {
             path: currentPath,
             title: getRuntimeDocumentTitle(),
             url: toAbsoluteUrl(currentPath),
-            search: location.searchStr || undefined,
+            search: trackedLocation.search,
         });
-    }, [location.hash, location.pathname, location.searchStr]);
+    }, [trackedLocation.path, trackedLocation.search]);
 
     return null;
 }

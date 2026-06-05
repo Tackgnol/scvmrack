@@ -511,3 +511,164 @@ test('GET /api/equipment/search returns 400 when q param is blank', async () => 
     'Search query is required'
   );
 });
+
+// ── Character generation shape invariants ─────────────────────────────────────
+
+test('POST /api/characters/new returns a fully-shaped character', async () => {
+  const jar = await bootstrapAnonymousSession();
+  const csrf = await fetchCsrfToken(jar);
+
+  const response = await request('/api/characters/new', {
+    method: 'POST',
+    json: {},
+    headers: { 'x-csrf-token': csrf },
+    jar,
+  });
+  await expectStatus(response, 201);
+
+  const char = (await response.json()) as Record<string, unknown>;
+
+  assert.equal(typeof char.id, 'string', 'id should be a string (UUID)');
+  assert.ok((char.id as string).length > 0, 'id should be non-empty');
+  assert.match(
+    char.id as string,
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+    'id should be a valid UUID'
+  );
+
+  assert.equal(typeof char.name, 'string', 'name should be a string');
+  assert.ok((char.name as string).length > 0, 'name should be non-empty');
+
+  for (const stat of ['strength', 'agility', 'presence', 'toughness'] as const) {
+    assert.ok(Number.isInteger(char[stat] as number), `${stat} should be an integer`);
+  }
+
+  assert.ok(Number.isInteger(char.currentHp as number), 'currentHp should be an integer');
+  assert.ok((char.currentHp as number) >= 1, 'currentHp should be >= 1');
+
+  assert.ok(Number.isInteger(char.maxHp as number), 'maxHp should be an integer');
+  assert.ok((char.maxHp as number) >= 1, 'maxHp should be >= 1');
+
+  assert.ok(Number.isInteger(char.omens as number), 'omens should be an integer');
+  assert.ok((char.omens as number) >= 0, 'omens should be >= 0');
+
+  assert.ok(Number.isInteger(char.maxOmens as number), 'maxOmens should be an integer');
+  assert.ok((char.maxOmens as number) >= 0, 'maxOmens should be >= 0');
+
+  assert.ok(Number.isInteger(char.silver as number), 'silver should be an integer');
+  assert.ok((char.silver as number) >= 0, 'silver should be >= 0');
+
+  assert.ok(Array.isArray(char.abilities), 'abilities should be an array');
+  assert.ok(Array.isArray(char.equipment), 'equipment should be an array');
+  assert.ok(Array.isArray(char.storage), 'storage should be an array');
+  assert.ok(Array.isArray(char.equippedWeapons), 'equippedWeapons should be an array');
+
+  assert.ok(Number.isInteger(char.encumbrance as number), 'encumbrance should be an integer');
+  assert.ok(Number.isInteger(char.maxEncumbrance as number), 'maxEncumbrance should be an integer');
+
+  assert.equal(typeof char.createdAt, 'string', 'createdAt should be a string');
+  assert.ok(
+    !Number.isNaN(Date.parse(char.createdAt as string)),
+    'createdAt should parse as a valid date'
+  );
+});
+
+test('POST /api/characters/new with explicit classId returns a character bound to that class', async () => {
+  const jar = await bootstrapAnonymousSession();
+  const csrf = await fetchCsrfToken(jar);
+
+  const response = await request('/api/characters/new', {
+    method: 'POST',
+    json: { classId: 1 },
+    headers: { 'x-csrf-token': csrf },
+    jar,
+  });
+  await expectStatus(response, 201);
+
+  const char = (await response.json()) as Record<string, unknown>;
+
+  assert.equal(char.classId, 1, 'classId should equal the requested classId (1)');
+  // classId 1 is "Fanged Deserter" in the seed data
+  assert.equal(
+    typeof char.className,
+    'string',
+    'className should be a string (classId 1 = "Fanged Deserter" in seed data)'
+  );
+  assert.ok((char.className as string).length > 0, 'className should be non-empty');
+});
+
+test('POST /api/characters/new — inventory items with use_effect have boolean uses arrays', async () => {
+  const jar = await bootstrapAnonymousSession();
+  const csrf = await fetchCsrfToken(jar);
+
+  const response = await request('/api/characters/new', {
+    method: 'POST',
+    json: {},
+    headers: { 'x-csrf-token': csrf },
+    jar,
+  });
+  await expectStatus(response, 201);
+
+  const char = (await response.json()) as {
+    equipment: Array<Record<string, unknown>>;
+    storage: Array<Record<string, unknown>>;
+  };
+
+  const allItems = [...char.equipment, ...char.storage];
+
+  for (const item of allItems) {
+    if (!Object.prototype.hasOwnProperty.call(item, 'uses')) continue;
+    assert.ok(
+      Array.isArray(item.uses),
+      `item.uses should be an array, got ${typeof item.uses} for item: ${JSON.stringify(item)}`
+    );
+    for (const use of item.uses as unknown[]) {
+      assert.equal(
+        typeof use,
+        'boolean',
+        `each element of item.uses should be boolean, got ${typeof use} for item: ${JSON.stringify(item)}`
+      );
+    }
+  }
+});
+
+// ── GET /api/equipment/:itemType/:id ──────────────────────────────────────────
+
+test('GET /api/equipment/:itemType/:id returns a full item for each valid type', async () => {
+  const searchResponse = await request('/api/equipment/search?q=a&limit=4');
+  await expectStatus(searchResponse, 200);
+  const searchItems = (await searchResponse.json()) as Array<{
+    itemType: 'weapon' | 'armor' | 'equipment' | 'pet';
+    id: number;
+    key: string;
+    name: string;
+  }>;
+
+  // Build a map of itemType -> first seen id (search may not return all four types)
+  const byType = new Map<string, number>();
+  for (const item of searchItems) {
+    if (!byType.has(item.itemType)) {
+      byType.set(item.itemType, item.id);
+    }
+  }
+
+  for (const [itemType, id] of byType.entries()) {
+    const response = await request(`/api/equipment/${itemType}/${id}`);
+    await expectStatus(response, 200);
+    const body = (await response.json()) as Record<string, unknown>;
+    assert.equal(typeof body.key, 'string', `${itemType}/${id}: key should be a string`);
+    assert.ok((body.key as string).length > 0, `${itemType}/${id}: key should be non-empty`);
+    assert.equal(typeof body.id, 'number', `${itemType}/${id}: id should be a number`);
+    assert.equal(body.id, id, `${itemType}/${id}: id in response should match requested id`);
+  }
+});
+
+test('GET /api/equipment/:itemType/:id returns 404 for a non-existent id', async () => {
+  const response = await request('/api/equipment/weapon/999999');
+  await expectApiError(response, 404, 'ITEM_NOT_FOUND');
+});
+
+test('GET /api/equipment/:itemType/:id returns 400 for invalid itemType', async () => {
+  const response = await request('/api/equipment/potion/1');
+  await expectApiError(response, 400, 'VALIDATION_ERROR');
+});

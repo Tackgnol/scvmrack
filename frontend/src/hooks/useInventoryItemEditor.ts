@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
 import { type EquipmentItem } from '@/hooks/models';
 import { type AggregatedItem } from '@/utils/aggregateItems';
 import { useCharacter } from '@/CharacterContext/CharacterContext';
@@ -45,6 +45,32 @@ export type UseInventoryItemEditor = {
   sell: () => void;
 };
 
+type InventoryEditorState = {
+  open: boolean;
+  item: EquipmentItem | null;
+  quantity: number;
+  editName: string;
+  editDescription: string;
+  editComments: string;
+  localQuantity: number;
+};
+
+function createEditorState(
+  open: boolean,
+  item: EquipmentItem | null,
+  quantity: number,
+): InventoryEditorState {
+  return {
+    open,
+    item,
+    quantity,
+    editName: item?.name ?? '',
+    editDescription: item?.description ?? '',
+    editComments: item?.comments ?? '',
+    localQuantity: quantity,
+  };
+}
+
 // Hook form of the inventory-item editor. Owns the local edit state, the
 // quantity-stepper readout, and the sell math. Parallel in shape to
 // useCustomItemForm so the two modals read as a family.
@@ -59,27 +85,42 @@ export function useInventoryItemEditor(
   const indices = aggregated?.indices ?? [];
   const quantity = aggregated?.quantity ?? 1;
 
-  const [editName, setEditName] = useState(item?.name ?? '');
-  const [editDescription, setEditDescription] = useState(
-    item?.description ?? '',
+  const [editorState, setEditorState] = useState(() =>
+    createEditorState(open, item, quantity),
   );
-  const [editComments, setEditComments] = useState(item?.comments ?? '');
-  const [localQuantity, setLocalQuantity] = useState(quantity);
 
-  useEffect(() => {
-    if (!open || !item) return;
-    setEditName(item.name ?? '');
-    setEditDescription(item.description ?? '');
-    setEditComments(item.comments ?? '');
-    setLocalQuantity(quantity);
-  }, [open, item, quantity]);
+  if (
+    editorState.open !== open ||
+    editorState.item !== item ||
+    editorState.quantity !== quantity
+  ) {
+    setEditorState(createEditorState(open, item, quantity));
+  }
+
+  const { editName, editDescription, editComments, localQuantity } = editorState;
+
+  const setEditName = (next: string) => {
+    setEditorState((previous) => ({ ...previous, editName: next }));
+  };
+
+  const setEditDescription = (next: string) => {
+    setEditorState((previous) => ({ ...previous, editDescription: next }));
+  };
+
+  const setEditComments = (next: string) => {
+    setEditorState((previous) => ({ ...previous, editComments: next }));
+  };
+
+  const setLocalQuantity = (next: number) => {
+    setEditorState((previous) => ({ ...previous, localQuantity: next }));
+  };
 
   const sellPrice: SellPrice = item
     ? resolveSellPrice(item)
     : { perUnit: 0, fromCatalog: false };
   const sellTotal = sellPrice.perUnit * localQuantity;
 
-  const save = useCallback(() => {
+  const save = () => {
     if (!item) return;
     // Strip `amount` so new slots get amount: 1 — important for ammo items
     // where the existing amount on the item would otherwise be spread onto
@@ -103,26 +144,15 @@ export function useInventoryItemEditor(
     }
 
     onClose();
-  }, [
-    item,
-    editName,
-    editDescription,
-    editComments,
-    localQuantity,
-    quantity,
-    indices,
-    onAdjustQuantity,
-    onUpdate,
-    onClose,
-  ]);
+  };
 
-  const sell = useCallback(() => {
+  const sell = () => {
     if (character) {
       updateField('silver', (character.silver || 0) + sellTotal);
     }
     onDelete(indices);
     onClose();
-  }, [character, sellTotal, indices, onDelete, onClose, updateField]);
+  };
 
   return {
     item,

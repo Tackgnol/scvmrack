@@ -24,6 +24,16 @@ vi.mock('../../../src/hooks/useCharacterEditor.ts', () => ({
   useCharacterEditor: vi.fn(),
 }));
 
+// The repository hook is mocked, so there is no real QueryClientProvider here.
+// Stub useQueryClient with a passthrough fetchQuery so the bootstrap effect still
+// runs its queryFn (which calls the mocked global.fetch under test).
+vi.mock('@tanstack/react-query', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@tanstack/react-query')>()),
+  useQueryClient: () => ({
+    fetchQuery: ({ queryFn }: { queryFn: () => unknown }) => queryFn(),
+  }),
+}));
+
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     i18n: { changeLanguage: vi.fn(), language: 'en' },

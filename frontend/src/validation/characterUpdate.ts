@@ -360,7 +360,7 @@ export function sanitizeSimpleFieldValue(
   return schema.parse(value) as number | string;
 }
 
-export function getSimpleFieldLimitIssue(
+function getSimpleFieldLimitIssue(
   field: SimpleField,
   value: number | string
 ): FieldLimitIssue | null {
@@ -453,7 +453,7 @@ export function getModifierValueLimitIssue(
   return null;
 }
 
-export function translateFieldLimitIssue(
+function translateFieldLimitIssue(
   t: ValidationTranslate,
   issue: FieldLimitIssue
 ): string {

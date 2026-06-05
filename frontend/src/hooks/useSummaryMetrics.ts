@@ -1,4 +1,3 @@
-import { useMemo } from 'react';
 import {
   type CharacterResponse,
   type ComputedModifier,
@@ -85,67 +84,65 @@ const isCarriedItem = (
 export function useSummaryMetrics(
   character: CharacterResponse | undefined,
 ): SummaryMetrics {
-  return useMemo(() => {
-    const char = character as CharacterResponse | undefined;
+  const char = character as CharacterResponse | undefined;
 
-    const allModifiers = decorateModifiers(
-      character?.computedModifiers ?? [],
-      character?.modifiers ?? [],
-    );
+  const allModifiers = decorateModifiers(
+    character?.computedModifiers ?? [],
+    character?.modifiers ?? [],
+  );
 
-    const agilityModifier = statToModifier(character?.agility ?? 10);
-    const strengthModifier = statToModifier(character?.strength ?? 10);
-    const presenceModifier = statToModifier(character?.presence ?? 10);
+  const agilityModifier = statToModifier(character?.agility ?? 10);
+  const strengthModifier = statToModifier(character?.strength ?? 10);
+  const presenceModifier = statToModifier(character?.presence ?? 10);
 
-    const dodgeBreakdown = buildCombatBreakdown(
-      allModifiers,
-      'agility',
-      'defence',
-    );
-    const meleeBreakdown = buildCombatBreakdown(allModifiers, 'strength', 'melee');
-    const rangedBreakdown = buildCombatBreakdown(
-      allModifiers,
-      'presence',
-      'ranged',
-    );
+  const dodgeBreakdown = buildCombatBreakdown(
+    allModifiers,
+    'agility',
+    'defence',
+  );
+  const meleeBreakdown = buildCombatBreakdown(allModifiers, 'strength', 'melee');
+  const rangedBreakdown = buildCombatBreakdown(
+    allModifiers,
+    'presence',
+    'ranged',
+  );
 
-    const carriedEquipment = (character?.equipment ?? []).filter(
-      (item) => !isEncumbranceExemptItem(item),
-    );
-    const carriedWeapons = (character?.equippedWeapons ?? []).filter(isCarriedItem);
-    const carriedArmor = (
-      character?.equippedArmor ? [character.equippedArmor] : []
-    ).filter(isCarriedItem);
-    const encumbranceItems = [
-      ...carriedEquipment,
-      ...carriedWeapons,
-      ...carriedArmor,
-    ];
-    const encumbranceGroups: EncumbranceGroup[] = [
-      { key: 'equipment', label: 'equipment.onHand', items: carriedEquipment },
-      { key: 'weapons', label: 'equipment.equippedWeapons', items: carriedWeapons },
-      { key: 'armor', label: 'equipment.equippedArmor', items: carriedArmor },
-    ].filter((group) => group.items.length > 0) as EncumbranceGroup[];
-    const encumbrance = encumbranceItems.length;
-    const maxEncumbrance = Math.max(0, 8 + strengthModifier);
+  const carriedEquipment = (character?.equipment ?? []).filter(
+    (item) => !isEncumbranceExemptItem(item),
+  );
+  const carriedWeapons = (character?.equippedWeapons ?? []).filter(isCarriedItem);
+  const carriedArmor = (
+    character?.equippedArmor ? [character.equippedArmor] : []
+  ).filter(isCarriedItem);
+  const encumbranceItems = [
+    ...carriedEquipment,
+    ...carriedWeapons,
+    ...carriedArmor,
+  ];
+  const encumbranceGroups: EncumbranceGroup[] = [
+    { key: 'equipment', label: 'equipment.onHand', items: carriedEquipment },
+    { key: 'weapons', label: 'equipment.equippedWeapons', items: carriedWeapons },
+    { key: 'armor', label: 'equipment.equippedArmor', items: carriedArmor },
+  ].filter((group) => group.items.length > 0) as EncumbranceGroup[];
+  const encumbrance = encumbranceItems.length;
+  const maxEncumbrance = Math.max(0, 8 + strengthModifier);
 
-    return {
-      characterKey: character?.id ?? 'unknown',
-      agilityModifier,
-      strengthModifier,
-      presenceModifier,
-      dodgeBreakdown,
-      meleeBreakdown,
-      rangedBreakdown,
-      encumbranceItems,
-      encumbranceGroups,
-      encumbrance,
-      maxEncumbrance,
-      toDodge: char?.drToDodge ?? 12 - agilityModifier - dodgeBreakdown.modifierTotal,
-      toHitMelee:
-        char?.drToMelee ?? 12 - strengthModifier - meleeBreakdown.modifierTotal,
-      toHitRanged:
-        char?.drToRanged ?? 12 - presenceModifier - rangedBreakdown.modifierTotal,
-    };
-  }, [character]);
+  return {
+    characterKey: character?.id ?? 'unknown',
+    agilityModifier,
+    strengthModifier,
+    presenceModifier,
+    dodgeBreakdown,
+    meleeBreakdown,
+    rangedBreakdown,
+    encumbranceItems,
+    encumbranceGroups,
+    encumbrance,
+    maxEncumbrance,
+    toDodge: char?.drToDodge ?? 12 - agilityModifier - dodgeBreakdown.modifierTotal,
+    toHitMelee:
+      char?.drToMelee ?? 12 - strengthModifier - meleeBreakdown.modifierTotal,
+    toHitRanged:
+      char?.drToRanged ?? 12 - presenceModifier - rangedBreakdown.modifierTotal,
+  };
 }

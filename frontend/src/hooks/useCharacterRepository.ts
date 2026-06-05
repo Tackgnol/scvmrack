@@ -5,7 +5,6 @@ import { CharacterResponse, UpdateMutationContext } from "@/hooks/models.ts";
 import { getApiLocale, getCharacterKey } from "@/hooks/utils.ts";
 import { getApiErrorStatus, toApiClientError } from '@/utils/errorUtils';
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useCallback } from "react";
 
 export function useCharacterRepository(
     characterId: string | null,
@@ -115,15 +114,12 @@ export function useCharacterRepository(
     });
 
     // ---- Refetch Character ----
-    const refetchCharacter = useCallback(
-        () => {
-            if (!characterId) return;
-            queryClient.invalidateQueries({
-                queryKey: getCharacterKey(characterId, locale)
-            });
-        },
-        [characterId, queryClient, locale]
-    );
+    const refetchCharacter = () => {
+        if (!characterId) return;
+        queryClient.invalidateQueries({
+            queryKey: getCharacterKey(characterId, locale)
+        });
+    };
 
     return {
         character: characterQuery.data as CharacterResponse | undefined,

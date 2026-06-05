@@ -20,6 +20,40 @@ interface FaqItem {
     renderAnswer?: (answer: string) => ReactNode;
 }
 
+// Splits an answer into words and linkifies any bare URLs. The segment list is
+// derived from an immutable string and never reorders, so the positional key is
+// stable here.
+function AnswerSegments({ answer }: { answer: string }) {
+    return (
+        <>
+            {answer.split(/(\s+)/).map((segment, i) => {
+                const urlMatch = segment.match(/^(https?:\/\/[^\s]+?)([.,!?;:)]*)$/);
+                if (urlMatch) {
+                    const [, url, trailing] = urlMatch;
+                    return (
+                        <span key={`${i}-${segment}`}>
+                            <a
+                                href={url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{
+                                    color: morkBorgColors.pink,
+                                    textDecoration: 'underline',
+                                    fontWeight: 'bold',
+                                }}
+                            >
+                                {url}
+                            </a>
+                            {trailing}
+                        </span>
+                    );
+                }
+                return <span key={`${i}-${segment}`}>{segment}</span>;
+            })}
+        </>
+    );
+}
+
 export function FaqPage() {
     const { t } = useTranslation();
     const { showBugReport } = useErrorFeedback();
@@ -30,32 +64,6 @@ export function FaqPage() {
             route: '/faq',
         });
     };
-
-    const renderAnswerSegments = (answer: string) =>
-        answer.split(/(\s+)/).map((segment, i) => {
-            const urlMatch = segment.match(/^(https?:\/\/[^\s]+?)([.,!?;:)]*)$/);
-            if (urlMatch) {
-                const [, url, trailing] = urlMatch;
-                return (
-                    <span key={i}>
-                        <a
-                            href={url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            style={{
-                                color: morkBorgColors.pink,
-                                textDecoration: 'underline',
-                                fontWeight: 'bold',
-                            }}
-                        >
-                            {url}
-                        </a>
-                        {trailing}
-                    </span>
-                );
-            }
-            return <span key={i}>{segment}</span>;
-        });
 
     const faqs: FaqItem[] = [
         {
@@ -96,7 +104,7 @@ export function FaqPage() {
             renderAnswer: (answer) => (
                 <Box sx={customStyles.faqPage.answerWithAction}>
                     <Typography sx={customStyles.faqPage.answer}>
-                        {renderAnswerSegments(answer)}
+                        <AnswerSegments answer={answer} />
                     </Typography>
                     <Button
                         type="button"
@@ -161,8 +169,8 @@ export function FaqPage() {
 
                 {/* FAQ Accordions */}
                 <Box>
-                    {faqs.map((faq, index) => (
-                        <Accordion key={index} sx={customStyles.faqPage.accordion}>
+                    {faqs.map((faq) => (
+                        <Accordion key={faq.question} sx={customStyles.faqPage.accordion}>
                             <AccordionSummary
                                 expandIcon={<ExpandMoreIcon sx={customStyles.faqPage.expandIcon} />}
                                 sx={customStyles.faqPage.accordionSummary}
@@ -176,7 +184,7 @@ export function FaqPage() {
                                     faq.renderAnswer(faq.answer)
                                 ) : (
                                     <Typography sx={customStyles.faqPage.answer}>
-                                        {renderAnswerSegments(faq.answer)}
+                                        <AnswerSegments answer={faq.answer} />
                                     </Typography>
                                 )}
                             </AccordionDetails>

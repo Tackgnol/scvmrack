@@ -11,12 +11,17 @@ const { test: _unitTestConfig, ...viteConfigWithoutUnitTests } =
 // sequentially (one vitest process per engine), or set VITEST_BROWSER_INSTANCES.
 const browserInstances = (process.env.VITEST_BROWSER_INSTANCES ?? 'chromium')
   .split(',')
-  .map((browser) => browser.trim())
-  .filter(Boolean)
-  .map((browser) => ({
-    browser: browser as 'chromium' | 'firefox' | 'webkit',
-    context: { reducedMotion: 'reduce' as const },
-  }));
+  .flatMap((rawBrowser) => {
+    const browser = rawBrowser.trim();
+    return browser
+      ? [
+          {
+            browser: browser as 'chromium' | 'firefox' | 'webkit',
+            context: { reducedMotion: 'reduce' as const },
+          },
+        ]
+      : [];
+  });
 
 const isCiChromiumRun =
   process.env.CI === 'true' &&

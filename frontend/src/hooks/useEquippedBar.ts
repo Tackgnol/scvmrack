@@ -6,8 +6,6 @@ import {
   type KeyboardEvent,
   type MouseEvent,
   type RefObject,
-  useCallback,
-  useMemo,
   useRef,
   useState,
 } from 'react';
@@ -31,86 +29,68 @@ export function useEquippedBar() {
   const weaponSlotRef = useRef<HTMLDivElement>(null);
   const armorSlotRef = useRef<HTMLDivElement>(null);
 
-  const animateSlot = useCallback(
-    (ref: RefObject<HTMLDivElement | null>, type: 'equip' | 'unequip') => {
-      if (prefersReducedMotion || !ref.current) return;
+  const animateSlot = (ref: RefObject<HTMLDivElement | null>, type: 'equip' | 'unequip') => {
+    if (prefersReducedMotion || !ref.current) return;
 
-      const element = ref.current;
-      element.style.transition = 'none';
+    const element = ref.current;
+    element.style.transition = 'none';
 
-      if (type === 'equip') {
-        element.style.boxShadow =
-          '0 0 20px rgba(255, 62, 181, 0.6), inset 0 0 20px rgba(255, 62, 181, 0.15)';
-        element.style.borderColor = '#FF3EB5';
-      } else {
-        element.style.transform = 'translateX(-4px)';
-      }
+    if (type === 'equip') {
+      element.style.boxShadow =
+        '0 0 20px rgba(255, 62, 181, 0.6), inset 0 0 20px rgba(255, 62, 181, 0.15)';
+      element.style.borderColor = '#FF3EB5';
+    } else {
+      element.style.transform = 'translateX(-4px)';
+    }
 
+    requestAnimationFrame(() => {
       requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          element.style.transition =
-            type === 'equip'
-              ? 'box-shadow 0.6s ease-out, border-color 0.6s ease-out'
-              : 'transform 0.08s ease-in-out';
-          if (type === 'equip') {
-            element.style.boxShadow = '';
-            element.style.borderColor = '';
-          } else {
-            element.style.transform = 'translateX(4px)';
+        element.style.transition =
+          type === 'equip'
+            ? 'box-shadow 0.6s ease-out, border-color 0.6s ease-out'
+            : 'transform 0.08s ease-in-out';
+        if (type === 'equip') {
+          element.style.boxShadow = '';
+          element.style.borderColor = '';
+        } else {
+          element.style.transform = 'translateX(4px)';
+          setTimeout(() => {
+            element.style.transition = 'transform 0.08s ease-in-out';
+            element.style.transform = 'translateX(-2px)';
             setTimeout(() => {
-              element.style.transition = 'transform 0.08s ease-in-out';
-              element.style.transform = 'translateX(-2px)';
-              setTimeout(() => {
-                element.style.transition = 'transform 0.1s ease-out';
-                element.style.transform = '';
-              }, 80);
+              element.style.transition = 'transform 0.1s ease-out';
+              element.style.transform = '';
             }, 80);
-          }
-        });
+          }, 80);
+        }
       });
-    },
-    [prefersReducedMotion],
-  );
+    });
+  };
 
   const inventory = character?.equipment ?? [];
-  const groupedInventory = useMemo(() => aggregateItems(inventory), [inventory]);
+  const groupedInventory = aggregateItems(inventory);
 
-  const resolveAmmo = useCallback(
-    (ammoType: string): number | null => {
-      let total = 0;
-      for (const item of inventory) {
-        if (item.ammoType === ammoType && item.tags?.includes('ammo')) {
-          const amt = item.amount;
-          total += typeof amt === 'number' && Number.isFinite(amt) && amt > 0 ? amt : 1;
-        }
+  const resolveAmmo = (ammoType: string): number | null => {
+    let total = 0;
+    for (const item of inventory) {
+      if (item.ammoType === ammoType && item.tags?.includes('ammo')) {
+        const amt = item.amount;
+        total += typeof amt === 'number' && Number.isFinite(amt) && amt > 0 ? amt : 1;
       }
-      return total;
-    },
-    [inventory],
+    }
+    return total;
+  };
+
+  const inventoryWeapons: EquipmentMenuOption[] = groupedInventory.flatMap((entry) =>
+    entry.item.tags?.includes('weapon')
+      ? [{ item: entry.item, index: entry.indices[0], quantity: entry.quantity }]
+      : [],
   );
 
-  const inventoryWeapons = useMemo<EquipmentMenuOption[]>(
-    () =>
-      groupedInventory
-        .filter((entry) => entry.item.tags?.includes('weapon'))
-        .map((entry) => ({
-          item: entry.item,
-          index: entry.indices[0],
-          quantity: entry.quantity,
-        })),
-    [groupedInventory],
-  );
-
-  const inventoryArmor = useMemo<EquipmentMenuOption[]>(
-    () =>
-      groupedInventory
-        .filter((entry) => entry.item.tags?.includes('armor'))
-        .map((entry) => ({
-          item: entry.item,
-          index: entry.indices[0],
-          quantity: entry.quantity,
-        })),
-    [groupedInventory],
+  const inventoryArmor: EquipmentMenuOption[] = groupedInventory.flatMap((entry) =>
+    entry.item.tags?.includes('armor')
+      ? [{ item: entry.item, index: entry.indices[0], quantity: entry.quantity }]
+      : [],
   );
 
   const equippedWeapons = (character?.equippedWeapons as
@@ -123,17 +103,17 @@ export function useEquippedBar() {
   const mainWeaponAmmo = useAmmoForWeapon(mainWeapon);
   const offhandWeaponAmmo = useAmmoForWeapon(offhandWeapon);
 
-  const useMainWeaponAmmo = useCallback(() => {
+  const useMainWeaponAmmo = () => {
     if (mainWeaponAmmo.equipmentIndex !== null && mainWeaponAmmo.ammoCount !== null && mainWeaponAmmo.ammoCount > 0) {
       consumeAmmo(mainWeaponAmmo.equipmentIndex);
     }
-  }, [mainWeaponAmmo.equipmentIndex, mainWeaponAmmo.ammoCount, consumeAmmo]);
+  };
 
-  const useOffhandWeaponAmmo = useCallback(() => {
+  const useOffhandWeaponAmmo = () => {
     if (offhandWeaponAmmo.equipmentIndex !== null && offhandWeaponAmmo.ammoCount !== null && offhandWeaponAmmo.ammoCount > 0) {
       consumeAmmo(offhandWeaponAmmo.equipmentIndex);
     }
-  }, [offhandWeaponAmmo.equipmentIndex, offhandWeaponAmmo.ammoCount, consumeAmmo]);
+  };
 
   const canOpenWeaponSlot0 = inventoryWeapons.length > 0 || Boolean(mainWeapon?.key);
   const canOpenWeaponSlot1 =

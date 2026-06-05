@@ -16,7 +16,7 @@ import {
 import { useErrorFeedback } from '@/components/molecules/feedback/ErrorFeedbackProvider';
 import { useSnackbar } from '@/SnackbarContext/SnackbarProvider.tsx';
 import { useQueryClient } from '@tanstack/react-query';
-import { useCallback, useRef, useState } from 'react';
+import { useInsertionEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useDebouncedCallback } from 'use-debounce';
 import {
@@ -48,9 +48,10 @@ export function useCharacterEditor(
 
   // Retry tracking
   const retryCountRef = useRef(0);
+  const flushRef = useRef<() => void>(() => {});
   const maxRetries = 3;
 
-  const flush = useCallback(() => {
+  const flush = () => {
     if (!characterId || pending.length === 0) return;
 
     const currentCharacter = queryClient.getQueryData<CharacterResponse>(
@@ -115,7 +116,7 @@ export function useCharacterEditor(
                 label: t('actions.retry', 'Retry'),
                 onClick: () => {
                   retryCountRef.current = 0;
-                  flush();
+                  flushRef.current();
                 },
               }
             );
@@ -133,7 +134,7 @@ export function useCharacterEditor(
                 label: t('actions.retry', 'Retry'),
                 onClick: () => {
                   retryCountRef.current = 0;
-                  flush();
+                  flushRef.current();
                 },
               }
             );
@@ -143,246 +144,170 @@ export function useCharacterEditor(
     );
 
     setPending([]);
-  }, [
-    characterId,
-    pending,
-    updateCharacter,
-    queryClient,
-    getCharacterKey,
-    locale,
-    showError,
-    showUnexpectedError,
-    t,
-  ]);
+  };
+
+  // useInsertionEffect fires synchronously before any DOM mutations, so
+  // flushRef.current is always current by the time any event handler fires.
+  useInsertionEffect(() => {
+    flushRef.current = flush;
+  });
 
   const debouncedFlush = useDebouncedCallback(flush, 1000);
 
-  const applyLocalPatch = useCallback(
-    (patch: OptimisticPatch) => {
-      if (!characterId) return;
+  const applyLocalPatch = (patch: OptimisticPatch) => {
+    if (!characterId) return;
 
-      queryClient.setQueryData(
-        getCharacterKey(characterId, locale),
-        (old: CharacterResponse | undefined) =>
-          old ? applyOptimisticPatch(old, patch) : old
-      );
-    },
-    [characterId, queryClient, getCharacterKey, locale]
-  );
+    queryClient.setQueryData(
+      getCharacterKey(characterId, locale),
+      (old: CharacterResponse | undefined) =>
+        old ? applyOptimisticPatch(old, patch) : old
+    );
+  };
 
-  const queuePatch = useCallback(
-    (patch: OptimisticPatch) => {
-      if (!characterId) return;
+  const queuePatch = (patch: OptimisticPatch) => {
+    if (!characterId) return;
 
-      setPending((prev) => [...prev, patch]);
-      applyLocalPatch(patch);
+    setPending((prev) => [...prev, patch]);
+    applyLocalPatch(patch);
 
-      debouncedFlush();
-    },
-    [characterId, applyLocalPatch, debouncedFlush]
-  );
+    debouncedFlush();
+  };
 
   // Simple field updates
-  const updateField = useCallback(
-    (field: SimpleField, value: number | string) => {
-      const issueMessage = getSimpleFieldLimitMessage(t, field, value);
-      const validationId = getSimpleFieldValidationId(field);
+  const updateField = (field: SimpleField, value: number | string) => {
+    const issueMessage = getSimpleFieldLimitMessage(t, field, value);
+    const validationId = getSimpleFieldValidationId(field);
 
-      if (issueMessage) {
-        if (
-          shownFieldValidationMessagesRef.current[validationId] !==
-          issueMessage
-        ) {
-          shownFieldValidationMessagesRef.current[validationId] = issueMessage;
-          showError(issueMessage);
-        }
-        validationIssues?.clearValidationIssue?.(validationId);
-        return;
+    if (issueMessage) {
+      if (
+        shownFieldValidationMessagesRef.current[validationId] !==
+        issueMessage
+      ) {
+        shownFieldValidationMessagesRef.current[validationId] = issueMessage;
+        showError(issueMessage);
       }
-
-      delete shownFieldValidationMessagesRef.current[validationId];
       validationIssues?.clearValidationIssue?.(validationId);
-      queuePatch({
-        kind: 'simple',
-        field,
-        value: sanitizeSimpleFieldValue(field, value),
-      });
-    },
-    [queuePatch, showError, t, validationIssues]
-  );
+      return;
+    }
+
+    delete shownFieldValidationMessagesRef.current[validationId];
+    validationIssues?.clearValidationIssue?.(validationId);
+    queuePatch({
+      kind: 'simple',
+      field,
+      value: sanitizeSimpleFieldValue(field, value),
+    });
+  };
 
   // Armor updates
-  const updateArmorField = useCallback(
-    (field: string, value: string | number) => {
-      queuePatch({ kind: 'armor', field, value });
-    },
-    [queuePatch]
-  );
+  const updateArmorField = (field: string, value: string | number) => {
+    queuePatch({ kind: 'armor', field, value });
+  };
 
   // Weapon updates
-  const updateWeaponField = useCallback(
-    (index: number, field: string, value: string) => {
-      queuePatch({ kind: 'weapon', index, field, value });
-    },
-    [queuePatch]
-  );
+  const updateWeaponField = (index: number, field: string, value: string) => {
+    queuePatch({ kind: 'weapon', index, field, value });
+  };
 
   // Abilities updates
-  const updateAbilities = useCallback(
-    (
-      abilities: {
-        key?: string;
-        name?: string;
-        description?: string;
-        comment?: string;
-      }[]
-    ) => {
-      queuePatch({ kind: 'abilities', abilities });
-    },
-    [queuePatch]
-  );
+  const updateAbilities = (
+    abilities: {
+      key?: string;
+      name?: string;
+      description?: string;
+      comment?: string;
+    }[]
+  ) => {
+    queuePatch({ kind: 'abilities', abilities });
+  };
 
   // Equipment operations
-  const updateEquipmentItem = useCallback(
-    (index: number, item: EquipmentItem) => {
-      queuePatch({ kind: 'equipment-item', index, item });
-    },
-    [queuePatch]
-  );
+  const updateEquipmentItem = (index: number, item: EquipmentItem) => {
+    queuePatch({ kind: 'equipment-item', index, item });
+  };
 
-  const addEquipmentItem = useCallback(
-    (item: EquipmentItem) => {
-      queuePatch({ kind: 'equipment-add', item });
-    },
-    [queuePatch]
-  );
+  const addEquipmentItem = (item: EquipmentItem) => {
+    queuePatch({ kind: 'equipment-add', item });
+  };
 
-  const removeEquipmentItem = useCallback(
-    (index: number) => {
-      queuePatch({ kind: 'equipment-remove', index });
-    },
-    [queuePatch]
-  );
+  const removeEquipmentItem = (index: number) => {
+    queuePatch({ kind: 'equipment-remove', index });
+  };
 
-  const moveEquipmentItem = useCallback(
-    (from: number, to: number) => {
-      queuePatch({ kind: 'equipment-move', from, to });
-    },
-    [queuePatch]
-  );
+  const moveEquipmentItem = (from: number, to: number) => {
+    queuePatch({ kind: 'equipment-move', from, to });
+  };
 
   // Storage operations
-  const updateStorageItem = useCallback(
-    (index: number, item: EquipmentItem) => {
-      queuePatch({ kind: 'storage-item', index, item });
-    },
-    [queuePatch]
-  );
+  const updateStorageItem = (index: number, item: EquipmentItem) => {
+    queuePatch({ kind: 'storage-item', index, item });
+  };
 
-  const addStorageItem = useCallback(
-    (item: EquipmentItem) => {
-      queuePatch({ kind: 'storage-add', item });
-    },
-    [queuePatch]
-  );
+  const addStorageItem = (item: EquipmentItem) => {
+    queuePatch({ kind: 'storage-add', item });
+  };
 
-  const removeStorageItem = useCallback(
-    (index: number) => {
-      queuePatch({ kind: 'storage-remove', index });
-    },
-    [queuePatch]
-  );
+  const removeStorageItem = (index: number) => {
+    queuePatch({ kind: 'storage-remove', index });
+  };
 
   // Cross-container operations
-  const moveToStorage = useCallback(
-    (equipmentIndex: number) => {
-      queuePatch({ kind: 'move-to-storage', equipmentIndex });
-    },
-    [queuePatch]
-  );
+  const moveToStorage = (equipmentIndex: number) => {
+    queuePatch({ kind: 'move-to-storage', equipmentIndex });
+  };
 
-  const moveToEquipment = useCallback(
-    (storageIndex: number, equipmentPosition?: number) => {
-      queuePatch({
-        kind: 'move-to-equipment',
-        storageIndex,
-        equipmentPosition,
-      });
-    },
-    [queuePatch]
-  );
+  const moveToEquipment = (storageIndex: number, equipmentPosition?: number) => {
+    queuePatch({
+      kind: 'move-to-equipment',
+      storageIndex,
+      equipmentPosition,
+    });
+  };
 
-  const swapEquipmentStorage = useCallback(
-    (equipmentIndex: number, storageIndex: number) => {
-      queuePatch({
-        kind: 'swap-equipment-storage',
-        equipmentIndex,
-        storageIndex,
-      });
-    },
-    [queuePatch]
-  );
+  const swapEquipmentStorage = (equipmentIndex: number, storageIndex: number) => {
+    queuePatch({
+      kind: 'swap-equipment-storage',
+      equipmentIndex,
+      storageIndex,
+    });
+  };
 
-  const toggleScrollUse = useCallback(
-    (equipmentIndex: number, useIndex: number) => {
-      queuePatch({ kind: 'toggle-scroll-use', equipmentIndex, useIndex });
-    },
-    [queuePatch]
-  );
+  const toggleScrollUse = (equipmentIndex: number, useIndex: number) => {
+    queuePatch({ kind: 'toggle-scroll-use', equipmentIndex, useIndex });
+  };
 
-  const consumeAmmo = useCallback(
-    (equipmentIndex: number) => {
-      queuePatch({ kind: 'ammo-use', equipmentIndex });
-    },
-    [queuePatch]
-  );
+  const consumeAmmo = (equipmentIndex: number) => {
+    queuePatch({ kind: 'ammo-use', equipmentIndex });
+  };
 
-  const equipWeapon = useCallback(
-    (equipmentIndex: number, slotIndex: number) => {
-      queuePatch({ kind: 'equip-weapon', equipmentIndex, slotIndex });
-    },
-    [queuePatch]
-  );
+  const equipWeapon = (equipmentIndex: number, slotIndex: number) => {
+    queuePatch({ kind: 'equip-weapon', equipmentIndex, slotIndex });
+  };
 
-  const unequipWeapon = useCallback(
-    (slotIndex: number) => {
-      queuePatch({ kind: 'unequip-weapon', slotIndex });
-    },
-    [queuePatch]
-  );
+  const unequipWeapon = (slotIndex: number) => {
+    queuePatch({ kind: 'unequip-weapon', slotIndex });
+  };
 
-  const equipArmor = useCallback(
-    (equipmentIndex: number) => {
-      queuePatch({ kind: 'equip-armor', equipmentIndex });
-    },
-    [queuePatch]
-  );
+  const equipArmor = (equipmentIndex: number) => {
+    queuePatch({ kind: 'equip-armor', equipmentIndex });
+  };
 
-  const unequipArmor = useCallback(() => {
+  const unequipArmor = () => {
     queuePatch({ kind: 'unequip-armor' });
-  }, [queuePatch]);
+  };
 
   // Modifier operations
-  const addModifier = useCallback(
-    (modifier: CustomModifier) => {
-      queuePatch({ kind: 'modifier-add', modifier });
-    },
-    [queuePatch]
-  );
+  const addModifier = (modifier: CustomModifier) => {
+    queuePatch({ kind: 'modifier-add', modifier });
+  };
 
-  const removeModifier = useCallback(
-    (modifierId: string) => {
-      queuePatch({ kind: 'modifier-remove', modifierId });
-    },
-    [queuePatch]
-  );
+  const removeModifier = (modifierId: string) => {
+    queuePatch({ kind: 'modifier-remove', modifierId });
+  };
 
-  const updateModifier = useCallback(
-    (modifierId: string, modifier: Partial<CustomModifier>) => {
-      queuePatch({ kind: 'modifier-update', modifierId, modifier });
-    },
-    [queuePatch]
-  );
+  const updateModifier = (modifierId: string, modifier: Partial<CustomModifier>) => {
+    queuePatch({ kind: 'modifier-update', modifierId, modifier });
+  };
 
   return {
     queuePatch,

@@ -1,7 +1,8 @@
 import { FastifyPluginAsync } from 'fastify';
-import { Prisma } from '@prisma/client';
 import prisma from '../../lib/prisma.js';
 import { ErrorSchema } from '../../schemas/equipment.js';
+import { searchItems } from '../../lib/item-search-service.js';
+import { isSupportedItemType, type SupportedItemType } from '../../lib/item-search.js';
 import {
   apiError,
   badRequest,
@@ -11,17 +12,6 @@ import {
   type ApiHttpError,
 } from '../../errors.js';
 
-type Json = Prisma.JsonValue;
-
-type SupportedItemType = 'weapon' | 'armor' | 'equipment' | 'pet';
-type SearchItemRow = {
-  item_type: string | null;
-  id: number | null;
-  key: string | null;
-  name: string | null;
-};
-type ItemFullRow = { getItemFull: Json | null };
-
 function knownOrUnexpected(
   error: unknown,
   code: string,
@@ -30,43 +20,22 @@ function knownOrUnexpected(
   return normalizeKnownApiError(error) ?? apiError(500, code, message);
 }
 
-async function getItemFullByKey(itemType: SupportedItemType, key: string): Promise<Json | null> {
-  if (itemType === 'weapon') {
-    const [row] = await prisma.$queryRaw<Array<{ item: Json | null }>>`
-      SELECT to_jsonb(w) AS item FROM weapons w WHERE w.key = ${key} LIMIT 1
-    `;
-    return row?.item ?? null;
-  }
-
-  if (itemType === 'armor') {
-    const [row] = await prisma.$queryRaw<Array<{ item: Json | null }>>`
-      SELECT to_jsonb(a) AS item FROM armors a WHERE a.key = ${key} LIMIT 1
-    `;
-    return row?.item ?? null;
-  }
-
-  if (itemType === 'equipment') {
-    const [row] = await prisma.$queryRaw<Array<{ item: Json | null }>>`
-      SELECT to_jsonb(e) AS item FROM equipment e WHERE e.key = ${key} LIMIT 1
-    `;
-    return row?.item ?? null;
-  }
-
-  const [row] = await prisma.$queryRaw<Array<{ item: Json | null }>>`
-    SELECT to_jsonb(p) AS item FROM pets p WHERE p.key = ${key} LIMIT 1
-  `;
-  return row?.item ?? null;
+async function getItemFullByKey(itemType: SupportedItemType, key: string): Promise<Record<string, unknown> | null> {
+  if (itemType === 'weapon') return prisma.weapon.findFirst({ where: { key } }) as Promise<Record<string, unknown> | null>;
+  if (itemType === 'armor') return prisma.armor.findFirst({ where: { key } }) as Promise<Record<string, unknown> | null>;
+  if (itemType === 'equipment') return prisma.equipment.findFirst({ where: { key } }) as Promise<Record<string, unknown> | null>;
+  return prisma.pet.findFirst({ where: { key } }) as Promise<Record<string, unknown> | null>;
 }
 
 const equipment: FastifyPluginAsync = async (fastify) => {
   fastify.get<{
-    Querystring: { q: string; locale: string; limit?: number };
+    Querystring: { q: string; locale?: string; limit?: number };
   }>(
     '/search',
     {
       config: {
         rateLimit: {
-          max: process.env.NODE_ENV === 'test' ? 10000 : 30,
+          max: process.env.NODE_ENV === 'test' ? 10000 : 50,
           timeWindow: '1 minute',
         },
       },
@@ -113,70 +82,9 @@ const equipment: FastifyPluginAsync = async (fastify) => {
       }
 
       try {
-        const rows = await prisma.$queryRaw<SearchItemRow[]>`
-          WITH ranked_matches AS (
-              SELECT
-                  s.item_type,
-                  s.id,
-                  s.key,
-                  s.name,
-                  s.locale,
-                  ts_rank(s.document, plainto_tsquery('simple', unaccent(${q}))) AS ts_score,
-                  similarity(s.normalized_name, lower(unaccent(${q}))) AS sim_score
-              FROM item_search s
-              WHERE (
-                  s.document @@ plainto_tsquery('simple', unaccent(${q}))
-                  OR s.normalized_name % lower(unaccent(${q}))
-                  OR s.normalized_name LIKE (lower(unaccent(${q})) || '%')
-              )
-          ),
-          best_matches AS (
-              SELECT DISTINCT ON (item_type, id)
-                  item_type,
-                  id,
-                  key,
-                  ts_score,
-                  sim_score
-              FROM ranked_matches
-              ORDER BY item_type, id, ts_score DESC, sim_score DESC
-          )
-          SELECT
-              b.item_type,
-              b.id,
-              b.key,
-              COALESCE(t.name, b.key) AS name
-          FROM best_matches b
-          LEFT JOIN item_search t
-              ON t.id = b.id
-              AND t.item_type = b.item_type
-              AND t.locale = ${locale}
-          ORDER BY b.ts_score DESC, b.sim_score DESC
-          LIMIT ${limit}
-        `;
-        return rows
-          .map((row) => {
-            const itemType = row.item_type;
-            if (
-              itemType !== 'weapon' &&
-              itemType !== 'armor' &&
-              itemType !== 'equipment' &&
-              itemType !== 'pet'
-            ) {
-              return null;
-            }
-
-            if (typeof row.id !== 'number' || !Number.isFinite(row.id)) {
-              return null;
-            }
-
-            return {
-              itemType,
-              id: row.id,
-              key: row.key ?? '',
-              name: row.name ?? row.key ?? '',
-            };
-          })
-          .filter((row): row is { itemType: 'weapon' | 'armor' | 'equipment' | 'pet'; id: number; key: string; name: string } => row !== null);
+        const mapped = await searchItems(q, locale, limit);
+        void reply.header('Cache-Control', 'public, max-age=300, stale-while-revalidate=60');
+        return mapped;
       } catch (err) {
         request.log.error(err, 'Search failed');
         throw knownOrUnexpected(err, 'EQUIPMENT_SEARCH_FAILED', 'Search failed');
@@ -227,13 +135,19 @@ const equipment: FastifyPluginAsync = async (fastify) => {
       const { key } = request.query;
 
       try {
-        const results = await prisma.$queryRaw<ItemFullRow[]>`
-          SELECT get_item_full(${itemType}, ${id}) AS "getItemFull"
-        `;
-        let item = results[0]?.getItemFull ?? null;
+        let item: Record<string, unknown> | null = null;
+        if (itemType === 'weapon') {
+          item = await prisma.weapon.findFirst({ where: { id } }) as Record<string, unknown> | null;
+        } else if (itemType === 'armor') {
+          item = await prisma.armor.findFirst({ where: { id } }) as Record<string, unknown> | null;
+        } else if (itemType === 'equipment') {
+          item = await prisma.equipment.findFirst({ where: { id } }) as Record<string, unknown> | null;
+        } else if (itemType === 'pet') {
+          item = await prisma.pet.findFirst({ where: { id } }) as Record<string, unknown> | null;
+        }
 
         // Fallback for stale search IDs: if the same hit key still exists, resolve by key.
-        if (!item && key && (itemType === 'weapon' || itemType === 'armor' || itemType === 'equipment' || itemType === 'pet')) {
+        if (!item && key && isSupportedItemType(itemType)) {
           item = await getItemFullByKey(itemType, key);
         }
 

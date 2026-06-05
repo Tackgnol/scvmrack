@@ -38,10 +38,12 @@ function PrivacyNoticeHost() {
 
 const routeFadeIn = keyframes`
     from {
-        opacity: 0.85;
+        opacity: 0.6;
+        transform: translateY(4px);
     }
     to {
         opacity: 1;
+        transform: translateY(0);
     }
 `;
 
