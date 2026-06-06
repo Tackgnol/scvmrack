@@ -98,7 +98,11 @@ export function sanitizeJsonb(obj: unknown): unknown {
 export function sanitizeCharacterUpdate(
   updates: Record<string, unknown>
 ): Record<string, unknown> {
-  // String fields with their max lengths
+  // Server-side backstop limits. These must never exceed the DB column size:
+  // `name` and `origin` are VarChar(255); the rest are text columns. The
+  // stricter, user-facing limits live in the frontend
+  // (`frontend/src/validation/characterUpdate.ts`); unifying both into one
+  // shared module is tracked with the Repository/Service refactor.
   const stringFields: Record<string, number> = {
     name: 255,
     habit: 1000,
@@ -106,7 +110,7 @@ export function sanitizeCharacterUpdate(
     trait1: 255,
     trait2: 255,
     bodyDescription: 1000,
-    origin: 1000,
+    origin: 255, // VarChar(255) column — must not exceed 255 or the insert throws
     notes: 10000,
   };
 

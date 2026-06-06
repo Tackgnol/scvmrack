@@ -505,6 +505,10 @@
       "q": "Czy mogę używać offline?",
       "a": "Obecnie Scvm Rack wymaga połączenia z internetem. Wsparcie offline może zostać dodane w przyszłości."
     },
+    "knownIssues": {
+      "q": "Czy są jakieś znane problemy?",
+      "a": "Dopracowujemy jeszcze kilka drobiazgów w ekwipunku: identyczne przedmioty łączą się w stosy dla porządku, ale edycja jednego przedmiotu w stosie przy jednoczesnej zmianie jego liczby może czasem zastosować zmianę do niewłaściwej kopii. Obejście: najpierw edytuj przedmiot, a potem osobno zmień liczbę. Pracujemy nad lepszym rozwiązaniem, które zachowa przedmioty w stosie jako osobne."
+    },
     "bugReport": {
       "q": "Znalazłem błąd! Jak go zgłosić?",
       "a": "Znalazłeś coś zepsutego? Otwórz raport błędu tutaj i opisz, co się stało, albo użyj GitHub issues, jeśli wolisz publiczny ślad. Każde zgłoszenie pomaga wzmacniać Scvm Rack.",

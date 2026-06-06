@@ -99,6 +99,10 @@ export function FaqPage() {
             answer: t('faq.offlineUse.a', 'Currently, Scvm Rack requires an internet connection. Offline support may be added in the future.'),
         },
         {
+            question: t('faq.knownIssues.q', 'Are there any known issues?'),
+            answer: t('faq.knownIssues.a', "A couple of inventory quirks we're still polishing: identical items stack together to keep things tidy, but editing one item in a stack while also changing its quantity can occasionally apply the edit to the wrong copy. Workaround: edit the item first, then change the quantity separately. A cleaner fix that keeps stacked items as individuals is on the way."),
+        },
+        {
             question: t('faq.bugReport.q', 'I found a bug! How do I report it?'),
             answer: t('faq.bugReport.a', 'Found something broken? Open a bug report here with what happened, or use GitHub issues if you prefer a public trail. Every report helps keep Scvm Rack sturdy.'),
             renderAnswer: (answer) => (

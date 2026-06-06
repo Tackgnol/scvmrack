@@ -506,6 +506,7 @@ async function pickPersonality(roller: Roller) {
 export async function generateCharacter(
   classId: number | null,
   roller: Roller,
+  userId?: string,
 ): Promise<string> {
   // 1. Resolve class (random if not supplied)
   let resolvedClassId: number;
@@ -588,6 +589,7 @@ export async function generateCharacter(
   // 12. Insert and return id
   const character = await prisma.character.create({
     data: {
+      ...(userId ? { userId } : {}),
       name,
       classId: resolvedClassId,
       origin,

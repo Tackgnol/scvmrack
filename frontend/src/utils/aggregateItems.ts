@@ -4,6 +4,25 @@ export type AggregatedItem<T extends { name?: string | null; comments?: string |
     quantity: number;
 };
 
+// Fields (beyond name) that make two same-named items genuinely different and so
+// must NOT be merged into one stack. `comments` and `uses` are per-instance state
+// and are deliberately excluded so identical copies still stack.
+const IDENTITY_FIELDS = ['source', 'category', 'value', 'maxTier', 'ammoType', 'dice', 'modifiers'] as const;
+
+function buildGroupKey<T extends { name?: string | null }>(item: T): string {
+    const record = item as Record<string, unknown>;
+    // A stable catalog/custom `key` fully identifies an item — prefer it. Custom
+    // items get unique keys, so they correctly remain individual lines.
+    if (typeof record.key === 'string' && record.key.length > 0) {
+        return `key:${record.key}`;
+    }
+    // No key: compose a signature from the name plus identity-defining fields so
+    // a d4 "Dagger" and a d6 "Dagger" don't collapse into one corrupted stack.
+    const namePart = (item.name || 'Unknown').toLowerCase();
+    const signature = IDENTITY_FIELDS.map((field) => JSON.stringify(record[field] ?? null)).join('|');
+    return `${namePart}|${signature}`;
+}
+
 export function aggregateItems<T extends { name?: string | null; comments?: string | null }>(
     items: Array<T | null | undefined>
 ): Array<AggregatedItem<T>> {
@@ -12,7 +31,7 @@ export function aggregateItems<T extends { name?: string | null; comments?: stri
     items.forEach((item, index) => {
         if (!item) return;
 
-        const groupKey = (item.name || 'Unknown').toLowerCase();
+        const groupKey = buildGroupKey(item);
         const existing = groups.get(groupKey);
 
         if (existing) {
