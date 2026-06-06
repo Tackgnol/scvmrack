@@ -16,23 +16,19 @@ import {
   ApiHttpError,
   apiError,
   badRequest,
-  normalizeKnownApiError,
   notFound,
   unauthorized,
 } from '../errors.js';
+import {
+  fail,
+  ok,
+  unexpected,
+  type ServiceLogger,
+  type ServiceResult,
+} from './result.js';
 
 /** Minimal session shape the service needs (decoupled from Fastify). */
 export type AppSession = { user?: { id?: string | null } | null } | null;
-
-/** Minimal logger shape (Fastify's `request.log` satisfies it). */
-export interface ServiceLogger {
-  error(obj: unknown, msg?: string): void;
-}
-
-/** Stable result type: domain failures are values, never exceptions. */
-export type ServiceResult<T> =
-  | { ok: true; value: T }
-  | { ok: false; error: ApiHttpError };
 
 export type CharacterListRow = {
   id: string;
@@ -44,12 +40,6 @@ export type CharacterListRow = {
   createdAt: Date;
   updatedAt: Date;
 };
-
-const ok = <T>(value: T): ServiceResult<T> => ({ ok: true, value });
-const fail = (error: ApiHttpError): ServiceResult<never> => ({
-  ok: false,
-  error,
-});
 
 function sessionUserId(session: AppSession): string | null {
   return session?.user?.id ?? null;
@@ -103,11 +93,6 @@ export function createCharacterService(log: ServiceLogger) {
     return null;
   }
 
-  function unexpected(error: unknown, code: string, message: string): ApiHttpError {
-    log.error(error);
-    return normalizeKnownApiError(error) ?? apiError(500, code, message);
-  }
-
   return {
     async generate(input: {
       session: AppSession;
@@ -142,7 +127,7 @@ export function createCharacterService(log: ServiceLogger) {
         return ok(character);
       } catch (err) {
         return fail(
-          unexpected(err, 'CHARACTER_GENERATION_FAILED', 'Failed to generate character')
+          unexpected(log, err,'CHARACTER_GENERATION_FAILED', 'Failed to generate character')
         );
       }
     },
@@ -152,7 +137,7 @@ export function createCharacterService(log: ServiceLogger) {
         return ok({ total: await characterRepository.count() });
       } catch (err) {
         return fail(
-          unexpected(err, 'CHARACTER_COUNT_FAILED', 'Failed to count characters')
+          unexpected(log, err,'CHARACTER_COUNT_FAILED', 'Failed to count characters')
         );
       }
     },
@@ -179,7 +164,7 @@ export function createCharacterService(log: ServiceLogger) {
         return ok(character);
       } catch (err) {
         return fail(
-          unexpected(err, 'CHARACTER_FETCH_FAILED', 'Failed to fetch character')
+          unexpected(log, err,'CHARACTER_FETCH_FAILED', 'Failed to fetch character')
         );
       }
     },
@@ -258,7 +243,7 @@ export function createCharacterService(log: ServiceLogger) {
           return fail(notFound('CHARACTER_NOT_FOUND', 'Character not found'));
         }
         return fail(
-          unexpected(err, 'CHARACTER_UPDATE_FAILED', 'Failed to update character')
+          unexpected(log, err,'CHARACTER_UPDATE_FAILED', 'Failed to update character')
         );
       }
     },
@@ -305,7 +290,7 @@ export function createCharacterService(log: ServiceLogger) {
         return ok(rows);
       } catch (err) {
         return fail(
-          unexpected(err, 'CHARACTER_LIST_FAILED', 'Failed to list characters')
+          unexpected(log, err,'CHARACTER_LIST_FAILED', 'Failed to list characters')
         );
       }
     },
@@ -337,7 +322,7 @@ export function createCharacterService(log: ServiceLogger) {
           return fail(notFound('CHARACTER_NOT_FOUND', 'Character not found'));
         }
         return fail(
-          unexpected(err, 'CHARACTER_DELETE_FAILED', 'Failed to delete character')
+          unexpected(log, err,'CHARACTER_DELETE_FAILED', 'Failed to delete character')
         );
       }
     },

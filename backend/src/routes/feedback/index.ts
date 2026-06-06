@@ -1,16 +1,9 @@
 import { FastifyPluginAsync } from 'fastify';
-import * as Sentry from '@sentry/node';
-import { recordFeedback, type FeedbackInput, type FeedbackSentry } from '../../feedback.js';
+import type { FeedbackInput } from '../../feedback.js';
 import { FeedbackBodySchema, FeedbackResponseSchema } from '../../schemas/feedback.js';
 import { ErrorSchema } from '../../schemas/equipment.js';
-
-// Adapter over the Sentry namespace so recordFeedback stays decoupled from the SDK.
-const sentryAdapter: FeedbackSentry = {
-  withScope: (callback) => Sentry.withScope((scope) => callback(scope)),
-  captureException: (error) => Sentry.captureException(error),
-  captureMessage: (message) => Sentry.captureMessage(message),
-  captureFeedback: (feedback, hint) => Sentry.captureFeedback(feedback, hint),
-};
+import { sendServiceError } from '../../errors.js';
+import { createFeedbackService } from '../../services/feedback-service.js';
 
 const feedback: FastifyPluginAsync = async (fastify) => {
   // POST /api/feedback - Forward a user feedback / unexpected-error report to GlitchTip
@@ -36,20 +29,25 @@ const feedback: FastifyPluginAsync = async (fastify) => {
         },
       },
     },
-    async (request) => {
-      if (!Sentry.isInitialized()) {
+    async (request, reply) => {
+      const result = createFeedbackService(request.log).submit(request.body);
+
+      if (!result.ok) {
+        return sendServiceError(reply, request, result.error);
+      }
+
+      const { eventId, forwarded } = result.value;
+      if (!forwarded) {
         request.log.info(
           { requestId: request.id, source: request.body.source },
           'Feedback received but Sentry is not configured; skipping forward'
         );
-        return { eventId: '' };
+      } else {
+        request.log.info(
+          { requestId: request.id, eventId, kind: request.body.kind },
+          'Feedback forwarded to GlitchTip'
+        );
       }
-
-      const { eventId } = recordFeedback(request.body, sentryAdapter);
-      request.log.info(
-        { requestId: request.id, eventId, kind: request.body.kind },
-        'Feedback forwarded to GlitchTip'
-      );
 
       return { eventId };
     }

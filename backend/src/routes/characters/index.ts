@@ -1,8 +1,4 @@
-import {
-    FastifyPluginAsync,
-    type FastifyReply,
-    type FastifyRequest,
-} from 'fastify';
+import { FastifyPluginAsync } from 'fastify';
 import {
     CharacterIdParamsSchema,
     CharacterSchema,
@@ -15,22 +11,8 @@ import type {
     CharacterUpdate,
     GenerateCharacterParams,
 } from '../../types/character.js';
-import { sendApiError, type ApiHttpError } from '../../errors.js';
+import { sendServiceError } from '../../errors.js';
 import { createCharacterService } from '../../services/character-service.js';
-
-// Controller convention: domain failures (4xx) are rendered with sendApiError;
-// server failures (5xx) are re-thrown so the central error handler renders them
-// and reports to Sentry. Keeps handlers a thin HTTP <-> service translation.
-function sendServiceError(
-    reply: FastifyReply,
-    request: FastifyRequest,
-    error: ApiHttpError
-): FastifyReply {
-    if (error.statusCode >= 500) {
-        throw error;
-    }
-    return sendApiError(reply, request, error);
-}
 
 const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
     // POST /api/characters/new - Generate new character (bound to session)

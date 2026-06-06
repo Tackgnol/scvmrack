@@ -52,13 +52,16 @@ Launch-readiness pass from the full-codebase audit
   `useCharacterActions`); public API unchanged.
 - Generator armor-catalog lookup is now O(1) via a `key` map instead of a
   per-item linear scan of the flattened catalog.
-- Restructured the characters API into Repository → Service → Controller:
-  `repositories/character-repository.ts` (all Prisma access),
-  `services/character-service.ts` (logic + a stable `ServiceResult` type and the
-  single ownership/error-mapping path), and a thin route controller. Behavior and
-  responses unchanged; 5xx still flow to the central handler/Sentry. Added 16
-  service unit tests covering the ownership matrix, validation, the `P2025`
-  not-found mapping, and the happy paths.
+- Restructured **all three** route groups (characters, equipment, feedback) into
+  Repository → Service → Controller behind a shared `services/result.ts`
+  (`ServiceResult` type + `ok`/`fail`/`unexpected`) and a shared
+  `sendServiceError` controller helper (4xx → client, 5xx → central
+  handler/Sentry). Repositories (`character-`, `equipment-`, `feedback-`) own all
+  Prisma/external access; services hold the logic; route files are thin
+  controllers. The equipment `GET /:itemType/:id` duplication (parallel id/key
+  if-else chains) collapses into single repository resolvers. Behavior and HTTP
+  responses unchanged. Added service unit tests (characters 16, equipment 7,
+  feedback 3); backend unit tests 40 → 66.
 
 ### Docs
 - Added the launch audit report (`docs/launch-audit-2026-06-06.md`).

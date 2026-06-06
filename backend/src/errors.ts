@@ -110,6 +110,22 @@ export function sendApiError(
   return reply.status(error.statusCode).send(toApiErrorPayload(error, request.id));
 }
 
+/**
+ * Controller convention for rendering a service-layer error: domain failures
+ * (4xx) are sent to the client; server failures (5xx) are re-thrown so the
+ * central error handler renders them and reports to Sentry.
+ */
+export function sendServiceError(
+  reply: FastifyReply,
+  request: FastifyRequest,
+  error: ApiHttpError
+): FastifyReply {
+  if (error.statusCode >= 500) {
+    throw error;
+  }
+  return sendApiError(reply, request, error);
+}
+
 function normalizeStatusCode(statusCode: unknown): number {
   if (typeof statusCode !== 'number' || !Number.isInteger(statusCode)) {
     return 500;

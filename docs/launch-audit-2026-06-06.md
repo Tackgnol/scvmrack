@@ -23,7 +23,7 @@ Work top-down by severity. Check items off as you address them. Each finding has
 | 13 | God hook + global singleton | ✅ **FIXED** — split into `useCharacterValidationIssues` / `useAutoCreateCharacter` / `useCharacterActions`; module-level `pendingAutoCreateController` replaced by a per-instance ref. Public API unchanged; 10 existing integration tests pass. |
 | 14 | Aggregation merges distinct items | ✅ **FIXED** — `aggregateItems` keys on stable `key`/identity signature; 3 tests added. |
 | 15 | Stacked-item edit quirk | ✅ **DOCUMENTED** — added "Known issues" FAQ entry (en + pl); deeper fix tracked with #16. |
-| 16 | Repository/Service/Controller | ✅ **FIXED** — characters API split into `repositories/character-repository.ts` (Prisma), `services/character-service.ts` (logic + stable `ServiceResult`, single ownership/error path), thin route controller. One error convention (4xx → `sendApiError`, 5xx → throw to central handler/Sentry). +16 service unit tests. |
+| 16 | Repository/Service/Controller | ✅ **FIXED** — **all three** route groups (characters, equipment, feedback) split into Repository → Service → Controller behind a shared `services/result.ts` + `sendServiceError`. Single error convention (4xx → client, 5xx → central handler/Sentry). Equipment id/key duplication collapsed into repo resolvers. +26 service unit tests (backend 40 → 66). |
 | 17 | Generation smells | ✅ **FIXED** — added an `armorByKey` map (O(1) lookup), `orderBy: { id }` on the weapon query (deterministic shared-roll selection), and key-aware granted-item resolution (legacy name map kept as fallback). |
 | 18 | 274 KB favicon | ✅ **FIXED** — dropped SVG icon; PNG/ICO remain. |
 | 19 | No sitemap | ✅ **FIXED** — added `sitemap.xml` + `Sitemap:` in robots.txt. |
