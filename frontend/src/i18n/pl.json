@@ -545,6 +545,18 @@
     "typeMinor": "Mała",
     "typePatch": "Poprawka",
     "moreUpdates": "Więcej aktualizacji wkrótce. Świat się kończy, ale my dalej dostarczamy.",
+    "v032": {
+      "editorSaves": "Karta postaci zapisuje się teraz niezawodnie przy szybkich, następujących po sobie zmianach — koniec z gubionymi lub cofanymi zmianami",
+      "inventory": "Naprawiono zdejmowanie zbroi i edycję przedmiotów; różne przedmioty o tej samej nazwie nie łączą się już w jeden stos",
+      "sharePreview": "Udostępniane linki pokazują teraz właściwą kartę podglądu, a serwis dostarcza mapę witryny dla wyszukiwarek",
+      "knownIssues": "Dodano sekcję \"Znane problemy\" do FAQ",
+      "internals": "Backend przebudowany na czytelne warstwy, a generowanie postaci wzmocnione (bez zmiany zachowania)"
+    },
+    "v030": {
+      "engine": "Generowanie postaci działa teraz w aplikacji przez losowanie z ziarnem zamiast losowości po stronie bazy danych",
+      "reads": "Pobieranie i zapisywanie postaci nie zależy już od procedur składowanych w bazie danych",
+      "alphaPrep": "Wewnętrzne porządki przed publiczną alfą"
+    },
     "v021": {
       "alpha": "Dodano oznaczenie Alpha przy tytule Scvmrack",
       "openSheet": "Wzmocniono Open Sheet, aby szybkie kliknięcia używały bezpiecznej ścieżki startowej",

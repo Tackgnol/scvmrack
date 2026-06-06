@@ -548,6 +548,18 @@
     "typeMinor": "Minor",
     "typePatch": "Patch",
     "moreUpdates": "More updates coming soon. The world is ending, but we keep shipping.",
+    "v032": {
+      "editorSaves": "The character sheet now saves reliably during fast, back-to-back edits — no more lost or reverted changes",
+      "inventory": "Fixed unequipping armor and item edits; different items that share a name no longer merge into one stack",
+      "sharePreview": "Shared links now show a proper preview card, and the site ships a sitemap for search engines",
+      "knownIssues": "Added a \"Known issues\" section to the FAQ",
+      "internals": "Backend restructured into clear layers and character generation hardened (no behavior change)"
+    },
+    "v030": {
+      "engine": "Character generation now runs in-app via a seedable roller instead of database randomness",
+      "reads": "Fetching and saving characters no longer depends on database stored procedures",
+      "alphaPrep": "Internal cleanups ahead of the public alpha"
+    },
     "v021": {
       "alpha": "Added an Alpha badge to the Scvmrack title",
       "openSheet": "Hardened Open Sheet so fast clicks use a safe bootstrap route",
