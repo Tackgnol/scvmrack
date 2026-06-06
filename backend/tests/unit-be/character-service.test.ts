@@ -15,6 +15,11 @@ const state = {
   listRows: [] as Array<Record<string, unknown>>,
   classNameMap: new Map<number, string>(),
   updateError: null as unknown,
+  generateError: null as unknown,
+  fullError: null as unknown,
+  countError: null as unknown,
+  listError: null as unknown,
+  deleteError: null as unknown,
   generatedId: 'generated-id',
   fullResult: { id: VALID_ID, name: 'Hero' } as Record<string, unknown> | null,
   updateCalls: [] as Array<{ id: string; data: unknown }>,
@@ -30,6 +35,11 @@ function resetState(): void {
   state.listRows = [];
   state.classNameMap = new Map();
   state.updateError = null;
+  state.generateError = null;
+  state.fullError = null;
+  state.countError = null;
+  state.listError = null;
+  state.deleteError = null;
   state.generatedId = 'generated-id';
   state.fullResult = { id: VALID_ID, name: 'Hero' };
   state.updateCalls = [];
@@ -47,9 +57,18 @@ mock.module('../../src/repositories/character-repository.js', {
         if (state.updateError) throw state.updateError;
         return {};
       },
-      deleteById: async () => state.deleteResult,
-      count: async () => state.countValue,
-      listSummariesByUser: async () => state.listRows,
+      deleteById: async () => {
+        if (state.deleteError) throw state.deleteError;
+        return state.deleteResult;
+      },
+      count: async () => {
+        if (state.countError) throw state.countError;
+        return state.countValue;
+      },
+      listSummariesByUser: async () => {
+        if (state.listError) throw state.listError;
+        return state.listRows;
+      },
       getClassNameMap: async () => state.classNameMap,
     },
   },
@@ -59,6 +78,7 @@ mock.module('../../src/lib/generate-character.js', {
   namedExports: {
     generateCharacter: async (classId: number | null, _roller: unknown, userId?: string) => {
       state.generateCalls.push({ classId, userId });
+      if (state.generateError) throw state.generateError;
       return state.generatedId;
     },
   },
@@ -66,7 +86,10 @@ mock.module('../../src/lib/generate-character.js', {
 
 mock.module('../../src/lib/get-character-full.js', {
   namedExports: {
-    getCharacterFull: async () => state.fullResult,
+    getCharacterFull: async () => {
+      if (state.fullError) throw state.fullError;
+      return state.fullResult;
+    },
   },
 });
 
@@ -225,4 +248,71 @@ test('count returns the total', async () => {
   const r = await service().count();
   assert.equal(r.ok, true);
   assert.deepEqual((r as any).value, { total: 42 });
+});
+
+// ---- unexpected (5xx) error mapping per method ----
+test('generate maps an unexpected failure to 5xx CHARACTER_GENERATION_FAILED', async () => {
+  state.generateError = new Error('boom');
+  const r = await service().generate({ session: session('user-1'), locale: 'en' });
+  assert.equal((r as any).error.statusCode, 500);
+  assert.equal((r as any).error.code, 'CHARACTER_GENERATION_FAILED');
+});
+
+test('getById maps an unexpected failure to 5xx CHARACTER_FETCH_FAILED', async () => {
+  state.fullError = new Error('boom');
+  const r = await service().getById({ id: VALID_ID, session: session('user-1'), locale: 'en' });
+  assert.equal((r as any).error.statusCode, 500);
+  assert.equal((r as any).error.code, 'CHARACTER_FETCH_FAILED');
+});
+
+test('update maps a non-P2025 failure to 5xx CHARACTER_UPDATE_FAILED', async () => {
+  state.updateError = new Error('boom');
+  const r = await service().update({
+    id: VALID_ID,
+    session: session('user-1'),
+    body: { name: 'Hero' },
+    rawLocale: 'en',
+  });
+  assert.equal((r as any).error.statusCode, 500);
+  assert.equal((r as any).error.code, 'CHARACTER_UPDATE_FAILED');
+});
+
+test('update returns 404 when the character vanishes before re-fetch', async () => {
+  state.fullResult = null;
+  const r = await service().update({
+    id: VALID_ID,
+    session: session('user-1'),
+    body: { name: 'Hero' },
+    rawLocale: 'en',
+  });
+  assert.equal((r as any).error.statusCode, 404);
+  assert.equal((r as any).error.code, 'CHARACTER_NOT_FOUND');
+});
+
+test('list maps an unexpected failure to 5xx CHARACTER_LIST_FAILED', async () => {
+  state.listError = new Error('boom');
+  const r = await service().list({ session: session('user-1'), acceptLanguage: 'en' });
+  assert.equal((r as any).error.statusCode, 500);
+  assert.equal((r as any).error.code, 'CHARACTER_LIST_FAILED');
+});
+
+test('remove maps a "Character not found" failure to a 404', async () => {
+  state.deleteError = new Error('Character not found during delete');
+  const r = await service().remove({ id: VALID_ID, session: session('user-1') });
+  assert.equal((r as any).error.statusCode, 404);
+  assert.equal((r as any).error.code, 'CHARACTER_NOT_FOUND');
+});
+
+test('remove maps an unexpected failure to 5xx CHARACTER_DELETE_FAILED', async () => {
+  state.deleteError = new Error('db down');
+  const r = await service().remove({ id: VALID_ID, session: session('user-1') });
+  assert.equal((r as any).error.statusCode, 500);
+  assert.equal((r as any).error.code, 'CHARACTER_DELETE_FAILED');
+});
+
+test('count maps an unexpected failure to 5xx CHARACTER_COUNT_FAILED', async () => {
+  state.countError = new Error('boom');
+  const r = await service().count();
+  assert.equal((r as any).error.statusCode, 500);
+  assert.equal((r as any).error.code, 'CHARACTER_COUNT_FAILED');
 });
