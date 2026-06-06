@@ -76,13 +76,16 @@ Do not read `.npmrc`; it is gitignored and contains registry credentials.
 ```text
 backend/
 ├── src/
-│   ├── routes/          # Fastify route handlers, autoloaded under /api
+│   ├── routes/          # Fastify route handlers, autoloaded under /api — THIN controllers only
+│   ├── services/        # Business logic; return a stable ServiceResult (see API Layering)
+│   ├── repositories/    # ALL Prisma / external data access lives here
 │   ├── plugins/         # Swagger and shared auth plugin
-│   ├── lib/             # Prisma client and integration helpers
+│   ├── lib/             # Prisma client, character generation/reads, integration helpers
 │   ├── schemas/         # JSON schema validation
 │   └── types/           # TypeScript types
 ├── prisma/              # Prisma schema and migrations
-├── init/                # PostgreSQL extensions, schema, functions, views, seed data
+├── init/                # PostgreSQL extensions, schema, LIVE functions, views, seed data
+│                        # (superseded PL/pgSQL is parked in init/_archive/, not re-applied)
 ├── scripts/             # DB/test/deploy helper scripts
 └── tests/               # Backend integration and unit projects
 ```
@@ -111,14 +114,25 @@ frontend/src/
 
 ## Key Patterns
 
+### API Layering (Repository → Service → Controller)
+
+All backend route groups (`characters`, `equipment`, `feedback`) follow one layering. **Keep new endpoints in this shape — never put Prisma calls or business logic in route files.**
+
+- **Repository** (`src/repositories/*-repository.ts`) — the ONLY place that touches Prisma / external systems; no business logic.
+- **Service** (`src/services/*-service.ts`) — all logic (ownership, validation, orchestration). Returns a stable `ServiceResult<T>` (`{ ok: true, value } | { ok: false, error: ApiHttpError }`) from `src/services/result.ts`; map unexpected errors with the shared `unexpected(log, ...)` helper.
+- **Controller** (`src/routes/**/index.ts`) — thin HTTP↔service translation using `sendServiceError(reply, request, error)`: domain failures (4xx) are sent to the client; server failures (5xx) are re-thrown to the central error handler (which reports to Sentry).
+- Services accept a `ServiceLogger` (`request.log` satisfies it). Unit-test services with mocked repositories/lib; repository tests are intentionally skipped (they'd only exercise Prisma).
+
 ### Character Editing
 
 The frontend uses optimistic updates with debouncing:
 
 1. Changes are queued as patches in `useCharacterEditor`.
 2. UI updates immediately through TanStack Query cache writes.
-3. Changes flush to the server after a short idle period.
-4. Failed updates retry and surface a user notification.
+3. Changes flush after a short idle period; flushes are serialized (one PATCH in flight).
+4. The PATCH response (already hydrated) is written back into the cache and still-pending patches are re-applied on top; transient failures auto-retry, then surface a manual retry. The queue is flushed on unmount.
+
+**Caution:** the cache is reconciled from the PATCH *response*. Do NOT re-add a per-PATCH `invalidateQueries`/refetch on the character detail query — it races the optimistic queue and silently drops edits.
 
 ### Authentication Flow
 
@@ -137,11 +151,11 @@ Characters are bound to users through `characters.user_id`.
 
 ### Database
 
-- `generate_character(class_id)` creates random characters.
-- `get_character_full(id, locale)` returns localized character data.
-- Equipment search uses PostgreSQL trigram indexes.
-- Prisma owns auth/claim tables and models the character relation.
-- Existing game schema/functions/seed data still come from `backend/init/`.
+- Character generation and full-character reads are **TypeScript** in `backend/src/lib/` (`generate-character.ts`, `get-character-full.ts`), driven by a seedable ChaCha20 roller (`@tackgnol/rpg-tools-roller`) — not Postgres `random()`. Generator parity with the old SQL is a non-goal.
+- Character updates go through Prisma directly (via the repository/service), not a stored procedure.
+- The legacy PL/pgSQL `generate_character` / `get_character_full` / `update_character` is **dead and archived** in `backend/init/_archive/`. Do not call, re-add, or "fix" it.
+- Still live in the DB: equipment fuzzy search (PostgreSQL trigram indexes), inventory helpers, and dice utils in `backend/init/03-functions/`.
+- Prisma owns auth/claim tables and models the character relation. Remaining game schema/seed data come from `backend/init/`.
 
 ## Security Architecture
 
