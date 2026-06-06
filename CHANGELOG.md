@@ -26,6 +26,14 @@ Launch-readiness pass from the full-codebase audit
   failed insert.
 - **Social share card.** Added the missing `preview.png` referenced by the OG/
   Twitter meta tags (links previewed blank before).
+- **Auto-create race.** First-run character auto-create no longer uses a
+  module-level abort controller shared across hook instances/tabs/StrictMode
+  double-invokes, which could abort each other and duplicate or orphan creates;
+  the controller is now per-instance.
+- **Generation determinism.** Starting-weapon selection is now deterministic
+  when several weapons share a roll slot, and granted class items/pets resolve
+  by stable catalog key (with the legacy display-name map as fallback) so an
+  item rename/translation no longer silently breaks granting.
 
 ### Added
 - `sitemap.xml` and a `Sitemap:` directive in `robots.txt`.
@@ -37,6 +45,13 @@ Launch-readiness pass from the full-codebase audit
 - Archived the superseded PL/pgSQL functions (`generate_character`,
   `get_character_full`, `update_character`) to `backend/init/_archive/` so they
   are no longer re-applied on every deploy.
+
+### Internal
+- Split the 466-line `useCurrentCharacter` god-hook into focused hooks
+  (`useCharacterValidationIssues`, `useAutoCreateCharacter`,
+  `useCharacterActions`); public API unchanged.
+- Generator armor-catalog lookup is now O(1) via a `key` map instead of a
+  per-item linear scan of the flattened catalog.
 
 ### Docs
 - Added the launch audit report (`docs/launch-audit-2026-06-06.md`).

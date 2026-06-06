@@ -102,6 +102,7 @@ interface PetRow {
 interface CatalogCache {
   weaponMap: Map<string, WeaponRow>;
   weaponsByRoll: Map<number, WeaponRow>;
+  armorMap: Map<string, ArmorRow>;
   armorsByMaxTier: Map<number, ArmorRow[]>;
   equipMap: Map<string, EquipRow>;
   petMap: Map<string, PetRow>;
@@ -115,9 +116,12 @@ function buildCatalogCache(
 ): CatalogCache {
   const weaponMap = new Map(weapons.map(w => [w.key, w]));
   const weaponsByRoll = new Map<number, WeaponRow>();
+  // `weapons` is queried with a stable `orderBy: { id: 'asc' }`, so when two
+  // weapons share a roll value the lowest-id one wins deterministically.
   for (const w of weapons) {
     if (w.roll !== null && !weaponsByRoll.has(w.roll)) weaponsByRoll.set(w.roll, w);
   }
+  const armorMap = new Map(armors.map(a => [a.key, a]));
   const armorsByMaxTier = new Map<number, ArmorRow[]>();
   for (const a of armors) {
     if (a.maxTier !== null) {
@@ -127,7 +131,7 @@ function buildCatalogCache(
   }
   const equipMap = new Map(equips.map(e => [e.key, e]));
   const petMap = new Map(pets.map(p => [p.key, p]));
-  return { weaponMap, weaponsByRoll, armorsByMaxTier, equipMap, petMap };
+  return { weaponMap, weaponsByRoll, armorMap, armorsByMaxTier, equipMap, petMap };
 }
 
 // ── build_pool_item ────────────────────────────────────────────────────────────
@@ -138,7 +142,7 @@ function buildPoolItem(
   extra: Partial<PoolItem> = {},
 ): PoolItem {
   const w = catalog.weaponMap.get(key);
-  const a = [...(catalog.armorsByMaxTier.values())].flat().find(x => x.key === key);
+  const a = catalog.armorMap.get(key);
   const e = catalog.equipMap.get(key);
   const p = catalog.petMap.get(key);
   const tags = w?.tags ?? a?.tags ?? e?.tags ?? p?.tags ?? [];
@@ -147,33 +151,50 @@ function buildPoolItem(
 
 // ── Granted items from random abilities ───────────────────────────────────────
 
-function buildGrantedClassItem(name: string | undefined, catalog: CatalogCache): PoolItem | null {
-  if (!name) return null;
-  const lookup: Record<string, [string, Partial<PoolItem>?]> = {
-    'Crumpled Monster Mask':          ['equipment.crumpled-monster-mask'],
-    'Wizard Teeth':                   ['equipment.wizard-teeth', { uses: [false, false, false, false] }],
-    'Lockpicks':                      ['equipment.lockpicks'],
-    'The Brown Scimitar of Galgenbeck': ['weapons.brown-scimitar'],
-    "Old Sigürd's Sling":             ['weapons.sigurd-sling'],
-    "The Shoe of Death's Horse":      ['weapons.shoe-of-death'],
-    'The Blade of your Ancestors':    ['weapons.blade-of-ancestors'],
-    'The Snake-Skin Gift':            ['weapons.snake-skin-gift'],
-    "Sacred Shepherd's Crook": ['weapons.sacred-shepherds-crook'],
-  };
-  const entry = lookup[name];
-  if (!entry) return null;
-  return buildPoolItem(entry[0], catalog, entry[1]);
+// Per-item extras (e.g. tracked uses) keyed by catalog key.
+const GRANTED_ITEM_EXTRAS: Record<string, Partial<PoolItem>> = {
+  'equipment.wizard-teeth': { uses: [false, false, false, false] },
+};
+
+// Legacy display-name → catalog-key map. New seed entries should put the catalog
+// key directly in `gainItem`/`gainPet` (resolved by the key-passthrough above) so
+// granting no longer breaks silently when an item is renamed/translated.
+const GRANTED_ITEM_KEYS_BY_NAME: Record<string, string> = {
+  'Crumpled Monster Mask': 'equipment.crumpled-monster-mask',
+  'Wizard Teeth': 'equipment.wizard-teeth',
+  'Lockpicks': 'equipment.lockpicks',
+  'The Brown Scimitar of Galgenbeck': 'weapons.brown-scimitar',
+  "Old Sigürd's Sling": 'weapons.sigurd-sling',
+  "The Shoe of Death's Horse": 'weapons.shoe-of-death',
+  'The Blade of your Ancestors': 'weapons.blade-of-ancestors',
+  'The Snake-Skin Gift': 'weapons.snake-skin-gift',
+  "Sacred Shepherd's Crook": 'weapons.sacred-shepherds-crook',
+};
+
+const GRANTED_PET_KEYS_BY_NAME: Record<string, string> = {
+  'Hawk': 'pets.hawk',
+  'Ancient Gore-Hound': 'pets.gore-hound',
+  'Hamfund the Squire': 'pets.hamfund',
+  'Barbarister the Incredible Horse': 'pets.barbarister',
+};
+
+function buildGrantedClassItem(value: string | undefined, catalog: CatalogCache): PoolItem | null {
+  if (!value) return null;
+  // Prefer a stable catalog key if the seed already provides one.
+  if (catalog.weaponMap.has(value) || catalog.equipMap.has(value) || catalog.armorMap.has(value)) {
+    return buildPoolItem(value, catalog, GRANTED_ITEM_EXTRAS[value]);
+  }
+  const key = GRANTED_ITEM_KEYS_BY_NAME[value];
+  if (!key) return null;
+  return buildPoolItem(key, catalog, GRANTED_ITEM_EXTRAS[key]);
 }
 
-function buildGrantedClassPet(name: string | undefined, catalog: CatalogCache): PoolItem | null {
-  if (!name) return null;
-  const lookup: Record<string, string> = {
-    'Hawk':                    'pets.hawk',
-    'Ancient Gore-Hound':      'pets.gore-hound',
-    'Hamfund the Squire':      'pets.hamfund',
-    'Barbarister the Incredible Horse': 'pets.barbarister',
-  };
-  const key = lookup[name];
+function buildGrantedClassPet(value: string | undefined, catalog: CatalogCache): PoolItem | null {
+  if (!value) return null;
+  if (catalog.petMap.has(value)) {
+    return buildPoolItem(value, catalog);
+  }
+  const key = GRANTED_PET_KEYS_BY_NAME[value];
   if (!key) return null;
   return buildPoolItem(key, catalog);
 }
@@ -525,7 +546,7 @@ export async function generateCharacter(
   const [names, origins, weapons, armors, equips, pets] = await Promise.all([
     prisma.name.findMany({ select: { name: true } }),
     prisma.origin.findMany({ where: { classId: resolvedClassId }, select: { key: true } }),
-    prisma.weapon.findMany(),
+    prisma.weapon.findMany({ orderBy: { id: 'asc' } }),
     prisma.armor.findMany(),
     prisma.equipment.findMany(),
     prisma.pet.findMany({ select: { key: true, tags: true } }),
