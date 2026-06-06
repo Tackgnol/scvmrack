@@ -1,31 +1,7 @@
 import { FastifyPluginAsync } from 'fastify';
-import prisma from '../../lib/prisma.js';
 import { ErrorSchema } from '../../schemas/equipment.js';
-import { searchItems } from '../../lib/item-search-service.js';
-import { isSupportedItemType, type SupportedItemType } from '../../lib/item-search.js';
-import {
-  apiError,
-  badRequest,
-  normalizeKnownApiError,
-  notFound,
-  sendApiError,
-  type ApiHttpError,
-} from '../../errors.js';
-
-function knownOrUnexpected(
-  error: unknown,
-  code: string,
-  message: string
-): ApiHttpError {
-  return normalizeKnownApiError(error) ?? apiError(500, code, message);
-}
-
-async function getItemFullByKey(itemType: SupportedItemType, key: string): Promise<Record<string, unknown> | null> {
-  if (itemType === 'weapon') return prisma.weapon.findFirst({ where: { key } }) as Promise<Record<string, unknown> | null>;
-  if (itemType === 'armor') return prisma.armor.findFirst({ where: { key } }) as Promise<Record<string, unknown> | null>;
-  if (itemType === 'equipment') return prisma.equipment.findFirst({ where: { key } }) as Promise<Record<string, unknown> | null>;
-  return prisma.pet.findFirst({ where: { key } }) as Promise<Record<string, unknown> | null>;
-}
+import { sendServiceError } from '../../errors.js';
+import { createEquipmentService } from '../../services/equipment-service.js';
 
 const equipment: FastifyPluginAsync = async (fastify) => {
   fastify.get<{
@@ -73,22 +49,21 @@ const equipment: FastifyPluginAsync = async (fastify) => {
     async (request, reply) => {
       const { q, locale, limit = 20 } = request.query;
 
-      if (!q || q.trim().length === 0) {
-        return sendApiError(
-          reply,
-          request,
-          badRequest('EMPTY_SEARCH_QUERY', 'Search query is required')
-        );
+      const result = await createEquipmentService(request.log).search({
+        q,
+        locale,
+        limit,
+      });
+
+      if (!result.ok) {
+        return sendServiceError(reply, request, result.error);
       }
 
-      try {
-        const mapped = await searchItems(q, locale, limit);
-        void reply.header('Cache-Control', 'public, max-age=300, stale-while-revalidate=60');
-        return mapped;
-      } catch (err) {
-        request.log.error(err, 'Search failed');
-        throw knownOrUnexpected(err, 'EQUIPMENT_SEARCH_FAILED', 'Search failed');
-      }
+      void reply.header(
+        'Cache-Control',
+        'public, max-age=300, stale-while-revalidate=60'
+      );
+      return result.value;
     }
   );
 
@@ -134,32 +109,16 @@ const equipment: FastifyPluginAsync = async (fastify) => {
       const { itemType, id } = request.params;
       const { key } = request.query;
 
-      try {
-        let item: Record<string, unknown> | null = null;
-        if (itemType === 'weapon') {
-          item = await prisma.weapon.findFirst({ where: { id } }) as Record<string, unknown> | null;
-        } else if (itemType === 'armor') {
-          item = await prisma.armor.findFirst({ where: { id } }) as Record<string, unknown> | null;
-        } else if (itemType === 'equipment') {
-          item = await prisma.equipment.findFirst({ where: { id } }) as Record<string, unknown> | null;
-        } else if (itemType === 'pet') {
-          item = await prisma.pet.findFirst({ where: { id } }) as Record<string, unknown> | null;
-        }
+      const result = await createEquipmentService(request.log).getItem({
+        itemType,
+        id,
+        key,
+      });
 
-        // Fallback for stale search IDs: if the same hit key still exists, resolve by key.
-        if (!item && key && isSupportedItemType(itemType)) {
-          item = await getItemFullByKey(itemType, key);
-        }
-
-        if (!item) {
-          return sendApiError(reply, request, notFound('ITEM_NOT_FOUND', 'Item not found'));
-        }
-
-        return item;
-      } catch (err) {
-        request.log.error(err, 'Item fetch failed');
-        throw knownOrUnexpected(err, 'ITEM_FETCH_FAILED', 'Failed to fetch item');
+      if (!result.ok) {
+        return sendServiceError(reply, request, result.error);
       }
+      return result.value;
     }
   );
 };
