@@ -71,10 +71,18 @@ test('authenticated characters list keeps the row and reports delete failures', 
 
   await page.route(`**/api/characters/${target.id}`, async (route) => {
     if (route.request().method() === 'DELETE') {
+      // Mirror the real backend error payload shape (includes statusCode) so the
+      // client classifies it as a 5xx and surfaces the delete-failure message.
       await route.fulfill({
         status: 500,
         contentType: 'application/json',
-        body: JSON.stringify({ error: 'delete_failed' }),
+        body: JSON.stringify({
+          error: 'Unexpected error occurred.',
+          message: 'Unexpected error occurred.',
+          code: 'INTERNAL_ERROR',
+          statusCode: 500,
+          requestId: 'e2e-delete-failure',
+        }),
       });
       return;
     }
