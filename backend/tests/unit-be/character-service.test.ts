@@ -1,0 +1,228 @@
+import assert from 'node:assert/strict';
+import { beforeEach, mock, test } from 'node:test';
+import { Prisma } from '@prisma/client';
+
+const VALID_ID = '11111111-1111-4111-8111-111111111111';
+
+// ---- Mutable mock state ----
+type OwnerRow = { userId: string | null } | null;
+
+const state = {
+  ownerRow: null as OwnerRow,
+  presenceRow: null as { presence: number } | null,
+  deleteResult: { count: 1 },
+  countValue: 0,
+  listRows: [] as Array<Record<string, unknown>>,
+  classNameMap: new Map<number, string>(),
+  updateError: null as unknown,
+  generatedId: 'generated-id',
+  fullResult: { id: VALID_ID, name: 'Hero' } as Record<string, unknown> | null,
+  updateCalls: [] as Array<{ id: string; data: unknown }>,
+  generateCalls: [] as Array<{ classId: number | null; userId?: string }>,
+  hydrateCalls: 0,
+};
+
+function resetState(): void {
+  state.ownerRow = { userId: 'user-1' };
+  state.presenceRow = { presence: 10 };
+  state.deleteResult = { count: 1 };
+  state.countValue = 0;
+  state.listRows = [];
+  state.classNameMap = new Map();
+  state.updateError = null;
+  state.generatedId = 'generated-id';
+  state.fullResult = { id: VALID_ID, name: 'Hero' };
+  state.updateCalls = [];
+  state.generateCalls = [];
+  state.hydrateCalls = 0;
+}
+
+mock.module('../../src/repositories/character-repository.js', {
+  namedExports: {
+    characterRepository: {
+      getOwnerId: async () => state.ownerRow,
+      getPresence: async () => state.presenceRow,
+      update: async (id: string, data: unknown) => {
+        state.updateCalls.push({ id, data });
+        if (state.updateError) throw state.updateError;
+        return {};
+      },
+      deleteById: async () => state.deleteResult,
+      count: async () => state.countValue,
+      listSummariesByUser: async () => state.listRows,
+      getClassNameMap: async () => state.classNameMap,
+    },
+  },
+});
+
+mock.module('../../src/lib/generate-character.js', {
+  namedExports: {
+    generateCharacter: async (classId: number | null, _roller: unknown, userId?: string) => {
+      state.generateCalls.push({ classId, userId });
+      return state.generatedId;
+    },
+  },
+});
+
+mock.module('../../src/lib/get-character-full.js', {
+  namedExports: {
+    getCharacterFull: async () => state.fullResult,
+  },
+});
+
+mock.module('../../src/lib/inventory.js', {
+  namedExports: {
+    hydrateInventoryUses: async (items: unknown[]) => {
+      state.hydrateCalls++;
+      return items;
+    },
+  },
+});
+
+const { createCharacterService } = await import('../../src/services/character-service.js');
+
+const noopLog = { error: () => {} };
+const service = () => createCharacterService(noopLog);
+const session = (id: string | null) => (id ? { user: { id } } : null);
+
+beforeEach(() => {
+  resetState();
+});
+
+// ---- generate ----
+test('generate requires a session', async () => {
+  const r = await service().generate({ session: null, locale: 'en' });
+  assert.equal(r.ok, false);
+  assert.equal((r as { error: { statusCode: number; code: string } }).error.statusCode, 401);
+  assert.equal(state.generateCalls.length, 0);
+});
+
+test('generate binds ownership at creation and returns the full character', async () => {
+  const r = await service().generate({ session: session('user-1'), classId: 2, locale: 'pl' });
+  assert.equal(r.ok, true);
+  assert.deepEqual(state.generateCalls, [{ classId: 2, userId: 'user-1' }]);
+  assert.deepEqual((r as { value: unknown }).value, state.fullResult);
+});
+
+test('generate fails 500 when the generated character cannot be fetched', async () => {
+  state.fullResult = null;
+  const r = await service().generate({ session: session('user-1'), locale: 'en' });
+  assert.equal(r.ok, false);
+  assert.equal((r as any).error.statusCode, 500);
+  assert.equal((r as any).error.code, 'CHARACTER_GENERATION_FETCH_FAILED');
+});
+
+// ---- ownership matrix (via getById) ----
+test('getById rejects an invalid UUID with 400', async () => {
+  const r = await service().getById({ id: 'not-a-uuid', session: session('user-1'), locale: 'en' });
+  assert.equal(r.ok, false);
+  assert.equal((r as any).error.code, 'INVALID_CHARACTER_ID');
+});
+
+test('getById requires a session', async () => {
+  const r = await service().getById({ id: VALID_ID, session: null, locale: 'en' });
+  assert.equal((r as any).error.statusCode, 401);
+});
+
+test('getById returns 404 when the character does not exist', async () => {
+  state.ownerRow = null;
+  const r = await service().getById({ id: VALID_ID, session: session('user-1'), locale: 'en' });
+  assert.equal((r as any).error.statusCode, 404);
+  assert.equal((r as any).error.code, 'CHARACTER_NOT_FOUND');
+});
+
+test('getById returns 403 when the session does not own the character', async () => {
+  state.ownerRow = { userId: 'someone-else' };
+  const r = await service().getById({ id: VALID_ID, session: session('user-1'), locale: 'en' });
+  assert.equal((r as any).error.statusCode, 403);
+  assert.equal((r as any).error.code, 'CHARACTER_ACCESS_DENIED');
+});
+
+test('getById returns the character for its owner', async () => {
+  const r = await service().getById({ id: VALID_ID, session: session('user-1'), locale: 'en' });
+  assert.equal(r.ok, true);
+  assert.deepEqual((r as any).value, state.fullResult);
+});
+
+// ---- update ----
+test('update rejects an empty patch with 400', async () => {
+  const r = await service().update({
+    id: VALID_ID,
+    session: session('user-1'),
+    body: { unknownField: 1 },
+    rawLocale: 'en',
+  });
+  assert.equal((r as any).error.code, 'EMPTY_CHARACTER_UPDATE');
+  assert.equal(state.updateCalls.length, 0);
+});
+
+test('update hydrates inventory uses and persists', async () => {
+  const r = await service().update({
+    id: VALID_ID,
+    session: session('user-1'),
+    body: { equipment: [{ key: 'weapons.sword', name: 'Sword' }] },
+    rawLocale: 'en',
+  });
+  assert.equal(r.ok, true);
+  assert.equal(state.hydrateCalls, 1);
+  assert.equal(state.updateCalls.length, 1);
+});
+
+test('update maps a Prisma P2025 to a 404 not-found', async () => {
+  state.updateError = new Prisma.PrismaClientKnownRequestError('not found', {
+    code: 'P2025',
+    clientVersion: '6.19.3',
+  });
+  const r = await service().update({
+    id: VALID_ID,
+    session: session('user-1'),
+    body: { name: 'Hero' },
+    rawLocale: 'en',
+  });
+  assert.equal((r as any).error.statusCode, 404);
+  assert.equal((r as any).error.code, 'CHARACTER_NOT_FOUND');
+});
+
+// ---- list ----
+test('list requires a session', async () => {
+  const r = await service().list({ session: null, acceptLanguage: 'en' });
+  assert.equal((r as any).error.statusCode, 401);
+});
+
+test('list merges localized class names', async () => {
+  state.listRows = [
+    {
+      id: VALID_ID,
+      name: 'Hero',
+      classId: 2,
+      currentHp: 5,
+      maxHp: 8,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+  ];
+  state.classNameMap = new Map([[2, 'Occult Herbmaster']]);
+  const r = await service().list({ session: session('user-1'), acceptLanguage: 'pl' });
+  assert.equal(r.ok, true);
+  assert.equal((r as any).value[0].className, 'Occult Herbmaster');
+});
+
+// ---- remove ----
+test('remove returns 404 when nothing was deleted', async () => {
+  state.deleteResult = { count: 0 };
+  const r = await service().remove({ id: VALID_ID, session: session('user-1') });
+  assert.equal((r as any).error.statusCode, 404);
+});
+
+test('remove succeeds for the owner', async () => {
+  const r = await service().remove({ id: VALID_ID, session: session('user-1') });
+  assert.equal(r.ok, true);
+});
+
+// ---- count ----
+test('count returns the total', async () => {
+  state.countValue = 42;
+  const r = await service().count();
+  assert.equal(r.ok, true);
+  assert.deepEqual((r as any).value, { total: 42 });
+});

@@ -1,4 +1,8 @@
-import {FastifyPluginAsync, type FastifyRequest} from 'fastify';
+import {
+    FastifyPluginAsync,
+    type FastifyReply,
+    type FastifyRequest,
+} from 'fastify';
 import {
     CharacterIdParamsSchema,
     CharacterSchema,
@@ -7,118 +11,26 @@ import {
     LocaleQuerySchema,
     UpdateBodySchema,
 } from '../../schemas/character.js';
-import prisma from '../../lib/prisma.js';
-import { Prisma } from '@prisma/client';
-import type {CharacterUpdate, GenerateCharacterParams,} from '../../types/character.js';
-import {isValidLocale, isValidUUID, rollToModifier, sanitizeCharacterUpdate,} from '../../utils.js';
-import { getCharacterFull } from '../../lib/get-character-full.js';
-import { generateCharacter } from '../../lib/generate-character.js';
-import { hydrateInventoryUses } from '../../lib/inventory.js';
-import {
-    apiError,
-    badRequest,
-    normalizeKnownApiError,
-    notFound,
-    sendApiError,
-    unauthorized,
-    type ApiHttpError,
-} from '../../errors.js';
-import { Roller, OSRandomEngine  } from '@tackgnol/rpg-tools-roller';
+import type {
+    CharacterUpdate,
+    GenerateCharacterParams,
+} from '../../types/character.js';
+import { sendApiError, type ApiHttpError } from '../../errors.js';
+import { createCharacterService } from '../../services/character-service.js';
 
-// ============================================
-// Route-local types
-// ============================================
-
-// ============================================
-// Helper: Check character access
-// ============================================
-type AuthSession = FastifyRequest['appSession'];
-type CharacterRow = Record<string, unknown>;
-type CharacterListRow = {
-    id: string;
-    name: string;
-    classId: number | null;
-    className: string | null;
-    currentHp: number;
-    maxHp: number;
-    createdAt: Date;
-    updatedAt: Date;
-};
-
-function sessionUserId(session: AuthSession): string | null {
-    return session?.user?.id ?? null;
+// Controller convention: domain failures (4xx) are rendered with sendApiError;
+// server failures (5xx) are re-thrown so the central error handler renders them
+// and reports to Sentry. Keeps handlers a thin HTTP <-> service translation.
+function sendServiceError(
+    reply: FastifyReply,
+    request: FastifyRequest,
+    error: ApiHttpError
+): FastifyReply {
+    if (error.statusCode >= 500) {
+        throw error;
+    }
+    return sendApiError(reply, request, error);
 }
-
-async function checkCharacterAccess(
-    characterId: string,
-    session: AuthSession
-): Promise<{ allowed: true } | { allowed: false; error: ApiHttpError }> {
-    const userId = sessionUserId(session);
-    if (!userId) {
-        return {allowed: false, error: unauthorized()};
-    }
-
-    const character = await prisma.character.findUnique({
-        where: {id: characterId},
-        select: {userId: true},
-    });
-
-    if (!character) {
-        return {allowed: false, error: notFound('CHARACTER_NOT_FOUND', 'Character not found')};
-    }
-
-    if (character.userId !== userId) {
-        return {
-            allowed: false,
-            error: apiError(
-                403,
-                'CHARACTER_ACCESS_DENIED',
-                "You don't have access to this scvm"
-            ),
-        };
-    }
-
-    return {allowed: true};
-}
-
-function knownOrUnexpected(
-    error: unknown,
-    code: string,
-    message: string
-): ApiHttpError {
-    return normalizeKnownApiError(error) ?? apiError(500, code, message);
-}
-
-function characterNotFoundOrUnexpected(
-    error: unknown,
-    code: string,
-    message: string
-): ApiHttpError {
-    if (error instanceof Error && error.message.includes('Character not found')) {
-        return notFound('CHARACTER_NOT_FOUND', 'Character not found');
-    }
-
-    return knownOrUnexpected(error, code, message);
-}
-
-function resolveListLocale(acceptLanguage: unknown): 'en' | 'pl' {
-    if (typeof acceptLanguage !== 'string' || acceptLanguage.length === 0) {
-        return 'en';
-    }
-
-    const primaryTag = acceptLanguage.split(',')[0]?.trim().toLowerCase();
-    if (!primaryTag) {
-        return 'en';
-    }
-
-    if (primaryTag === 'pl' || primaryTag.startsWith('pl-')) {
-        return 'pl';
-    }
-
-    return 'en';
-}
-
-// Phase 4+5: both getCharacterFull and generateCharacter are pure TypeScript — no raw SQL.
 
 const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
     // POST /api/characters/new - Generate new character (bound to session)
@@ -149,40 +61,16 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
             },
         },
         async (request, reply) => {
-            const session = request.appSession;
+            const result = await createCharacterService(request.log).generate({
+                session: request.appSession,
+                classId: request.body?.classId,
+                locale: request.query.locale ?? 'en',
+            });
 
-            const userId = sessionUserId(session);
-            if (!userId) {
-                return sendApiError(reply, request, unauthorized());
+            if (!result.ok) {
+                return sendServiceError(reply, request, result.error);
             }
-
-            const classId = request.body?.classId;
-            const locale = request.query.locale ?? 'en';
-
-            try {
-                const roller = new Roller({ engine: new OSRandomEngine() });
-                // Bind ownership at creation so a failure can never leave an
-                // orphaned, unowned (and thus unreachable) character row.
-                const characterId = await generateCharacter(classId ?? null, roller, userId);
-
-                const character = await getCharacterFull(characterId, locale);
-                if (!character) {
-                    throw apiError(
-                        500,
-                        'CHARACTER_GENERATION_FETCH_FAILED',
-                        'Failed to fetch generated character'
-                    );
-                }
-
-                return reply.status(201).send(character);
-            } catch (err) {
-                request.log.error(err);
-                throw knownOrUnexpected(
-                    err,
-                    'CHARACTER_GENERATION_FAILED',
-                    'Failed to generate character'
-                );
-            }
+            return reply.status(201).send(result.value);
         }
     );
 
@@ -196,9 +84,7 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
                 response: {
                     200: {
                         type: 'object',
-                        properties: {
-                            total: { type: 'number' },
-                        },
+                        properties: { total: { type: 'number' } },
                         required: ['total'],
                     },
                     500: ErrorSchema,
@@ -206,17 +92,11 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
             },
         },
         async (request, reply) => {
-            try {
-                const total = await prisma.character.count();
-                return { total };
-            } catch (err) {
-                request.log.error(err);
-                throw knownOrUnexpected(
-                    err,
-                    'CHARACTER_COUNT_FAILED',
-                    'Failed to count characters'
-                );
+            const result = await createCharacterService(request.log).count();
+            if (!result.ok) {
+                return sendServiceError(reply, request, result.error);
             }
+            return result.value;
         }
     );
 
@@ -243,43 +123,16 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
             },
         },
         async (request, reply) => {
-            const {id} = request.params;
-            const locale = request.query.locale ?? 'en';
-            const session = request.appSession;
+            const result = await createCharacterService(request.log).getById({
+                id: request.params.id,
+                session: request.appSession,
+                locale: request.query.locale ?? 'en',
+            });
 
-            if (!isValidUUID(id)) {
-                return sendApiError(
-                    reply,
-                    request,
-                    badRequest('INVALID_CHARACTER_ID', 'Invalid character ID')
-                );
+            if (!result.ok) {
+                return sendServiceError(reply, request, result.error);
             }
-
-            // Check access
-            const access = await checkCharacterAccess(id, session);
-            if (!access.allowed) {
-                return sendApiError(reply, request, access.error);
-            }
-
-            try {
-                const character = await getCharacterFull(id, locale);
-                if (!character) {
-                    return sendApiError(
-                        reply,
-                        request,
-                        notFound('CHARACTER_NOT_FOUND', 'Character not found')
-                    );
-                }
-
-                return character;
-            } catch (err) {
-                request.log.error(err);
-                throw knownOrUnexpected(
-                    err,
-                    'CHARACTER_FETCH_FAILED',
-                    'Failed to fetch character'
-                );
-            }
+            return result.value;
         }
     );
 
@@ -315,100 +168,17 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
             },
         },
         async (request, reply) => {
-            const {id} = request.params;
-            const session = request.appSession;
+            const result = await createCharacterService(request.log).update({
+                id: request.params.id,
+                session: request.appSession,
+                body: request.body as Record<string, unknown>,
+                rawLocale: request.query.locale,
+            });
 
-            // Validate UUID
-            if (!isValidUUID(id)) {
-                return sendApiError(
-                    reply,
-                    request,
-                    badRequest('INVALID_CHARACTER_ID', 'Invalid character ID')
-                );
+            if (!result.ok) {
+                return sendServiceError(reply, request, result.error);
             }
-
-            // Check access
-            const access = await checkCharacterAccess(id, session);
-            if (!access.allowed) {
-                return sendApiError(reply, request, access.error);
-            }
-
-            // Validate and default locale
-            const locale = isValidLocale(request.query.locale)
-                ? request.query.locale
-                : 'en';
-
-            // Sanitize all inputs
-            const updates = sanitizeCharacterUpdate(
-                request.body as Record<string, unknown>
-            );
-
-            if (Object.keys(updates).length === 0) {
-                return sendApiError(
-                    reply,
-                    request,
-                    badRequest('EMPTY_CHARACTER_UPDATE', 'No valid fields to update')
-                );
-            }
-
-            try {
-                // Hydrate inventory uses for equipment and storage if present
-                if (Array.isArray(updates['equipment']) || Array.isArray(updates['storage'])) {
-                    const roller = new Roller({ engine: new OSRandomEngine() });
-
-                    // Determine presence: use patch value if present, otherwise fetch from DB
-                    let presence: number;
-                    if (typeof updates['presence'] === 'number') {
-                        presence = updates['presence'];
-                    } else {
-                        const char = await prisma.character.findUnique({
-                            where: { id },
-                            select: { presence: true },
-                        });
-                        presence = char?.presence ?? 10;
-                    }
-
-                    if (Array.isArray(updates['equipment'])) {
-                        updates['equipment'] = await hydrateInventoryUses(
-                            updates['equipment'] as unknown[],
-                            presence,
-                            true,
-                            roller
-                        );
-                    }
-
-                    if (Array.isArray(updates['storage'])) {
-                        updates['storage'] = await hydrateInventoryUses(
-                            updates['storage'] as unknown[],
-                            presence,
-                            false,
-                            roller
-                        );
-                    }
-                }
-
-                await prisma.character.update({
-                    where: { id },
-                    data: updates as Prisma.CharacterUpdateInput,
-                });
-
-                const character = await getCharacterFull(id, locale);
-                if (!character) {
-                    return sendApiError(
-                        reply,
-                        request,
-                        notFound('CHARACTER_NOT_FOUND', 'Character not found')
-                    );
-                }
-
-                return character;
-            } catch (err: unknown) {
-                request.log.error(err, 'Failed to update character');
-                if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {
-                    return sendApiError(reply, request, notFound('CHARACTER_NOT_FOUND', 'Character not found'));
-                }
-                throw knownOrUnexpected(err, 'CHARACTER_UPDATE_FAILED', 'Failed to update character');
-            }
+            return result.value;
         }
     );
 
@@ -420,86 +190,22 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
                 description: 'List characters for current user',
                 tags: ['characters'],
                 response: {
-                    200: {type: 'array', items: CharacterSchema},
+                    200: { type: 'array', items: CharacterSchema },
                     401: ErrorSchema,
                     500: ErrorSchema,
                 },
             },
         },
         async (request, reply) => {
-            const session = request.appSession;
-            const locale = resolveListLocale(request.headers['accept-language']);
+            const result = await createCharacterService(request.log).list({
+                session: request.appSession,
+                acceptLanguage: request.headers['accept-language'],
+            });
 
-            const userId = sessionUserId(session);
-            if (!userId) {
-                return sendApiError(reply, request, unauthorized());
+            if (!result.ok) {
+                return sendServiceError(reply, request, result.error);
             }
-
-            try {
-                // 1. Fetch characters for this user
-                const characters = await prisma.character.findMany({
-                    where: { userId },
-                    orderBy: { updatedAt: 'desc' },
-                    select: {
-                        id: true,
-                        name: true,
-                        classId: true,
-                        currentHp: true,
-                        maxHp: true,
-                        createdAt: true,
-                        updatedAt: true,
-                    },
-                });
-
-                // 2. Look up localized class names for classes present in this result set
-                const classIds = [...new Set(
-                    characters.map(c => c.classId).filter((id): id is number => id !== null)
-                )];
-
-                let classNameMap = new Map<number, string>();
-                if (classIds.length > 0) {
-                    const classes = await prisma.class.findMany({
-                        where: { id: { in: classIds } },
-                        select: { id: true, name: true, nameKey: true },
-                    });
-
-                    const nameKeys = classes.map(c => c.nameKey).filter((k): k is string => k !== null);
-                    const translations = nameKeys.length > 0
-                        ? await prisma.translation.findMany({
-                            where: { locale, key: { in: nameKeys } },
-                            select: { key: true, value: true },
-                          })
-                        : [];
-
-                    const translationMap = new Map(translations.map(t => [t.key, t.value]));
-                    for (const cls of classes) {
-                        classNameMap.set(
-                            cls.id,
-                            (cls.nameKey ? translationMap.get(cls.nameKey) : null) ?? cls.name
-                        );
-                    }
-                }
-
-                // 3. Merge
-                const rows: CharacterListRow[] = characters.map(c => ({
-                    id: c.id,
-                    name: c.name,
-                    classId: c.classId,
-                    className: c.classId !== null ? (classNameMap.get(c.classId) ?? null) : null,
-                    currentHp: c.currentHp,
-                    maxHp: c.maxHp,
-                    createdAt: c.createdAt,
-                    updatedAt: c.updatedAt,
-                }));
-                return rows;
-            } catch (err) {
-                request.log.error(err);
-                throw knownOrUnexpected(
-                    err,
-                    'CHARACTER_LIST_FAILED',
-                    'Failed to list characters'
-                );
-            }
+            return result.value;
         }
     );
 
@@ -514,7 +220,7 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
                 tags: ['characters'],
                 params: CharacterIdParamsSchema,
                 response: {
-                    204: {type: 'null', description: 'Character deleted'},
+                    204: { type: 'null', description: 'Character deleted' },
                     400: ErrorSchema,
                     401: ErrorSchema,
                     403: ErrorSchema,
@@ -524,45 +230,15 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
             },
         },
         async (request, reply) => {
-            const {id} = request.params;
-            const session = request.appSession;
+            const result = await createCharacterService(request.log).remove({
+                id: request.params.id,
+                session: request.appSession,
+            });
 
-            if (!isValidUUID(id)) {
-                return sendApiError(
-                    reply,
-                    request,
-                    badRequest('INVALID_CHARACTER_ID', 'Invalid character ID')
-                );
+            if (!result.ok) {
+                return sendServiceError(reply, request, result.error);
             }
-
-            // Check access
-            const access = await checkCharacterAccess(id, session);
-            if (!access.allowed) {
-                return sendApiError(reply, request, access.error);
-            }
-
-            try {
-                const result = await prisma.character.deleteMany({
-                    where: {id},
-                });
-
-                if (result.count === 0) {
-                    return sendApiError(
-                        reply,
-                        request,
-                        notFound('CHARACTER_NOT_FOUND', 'Character not found')
-                    );
-                }
-
-                return reply.status(204).send();
-            } catch (err) {
-                request.log.error(err);
-                throw characterNotFoundOrUnexpected(
-                    err,
-                    'CHARACTER_DELETE_FAILED',
-                    'Failed to delete character'
-                );
-            }
+            return reply.status(204).send();
         }
     );
 };
