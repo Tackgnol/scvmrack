@@ -156,6 +156,20 @@ The project includes scripts to reapply database schema:
 - Optional frontend build: `VITE_SITE_URL`, `VITE_GLITCHTIP_DSN`, `VITE_ALLOWED_HOSTS`, `VITE_GA_MEASUREMENT_ID` (public GA4 ID; baked into the bundle at build time — GA stays dormant if unset)
 - Production uses separate GlitchTip DSNs: `GLITCHTIP_DSN` for backend and `VITE_GLITCHTIP_DSN` for frontend.
 
+## Release Notes
+
+User-facing release notes are the single source of truth — **do not create or reintroduce a root `CHANGELOG.md`** (the `release/` + `changelog/` folders replace it).
+
+- `changelog/` — per-area "what the product does today" summaries (`backend.md`, `frontend.md`).
+- `release/` — versioned, user-facing notes: one `release/<version>.md` per version plus the index table in `release/README.md`, derived from `changelog/`.
+- `frontend/src/pages/ReleasePage.tsx` — the in-app **Updates** page (`/release`) that mirrors `release/` using `release.*` i18n keys.
+
+When cutting a release (any version bump), update **all** of these in the same change:
+1. Bump `version` in both `backend/package.json` and `frontend/package.json`.
+2. Add `release/<version>.md` and a newest-first row in `release/README.md`.
+3. Add a card to `ReleasePage.tsx` with `release.v<xyz>.*` keys, and add those keys to **both** `frontend/src/i18n/en.json` and `pl.json` (keep en/pl in sync).
+4. Tag the release commit `v<version>`.
+
 ## Recommended Skills
 
 When working on this codebase, use these skills for best results:
