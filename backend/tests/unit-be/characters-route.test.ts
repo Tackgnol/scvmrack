@@ -45,7 +45,7 @@ const fullCharacter = {
   updatedAt: '2026-03-01T10:00:00.000Z',
 };
 
-const generateCalls: Array<{ classId: number | null; roller: unknown }> = [];
+const generateCalls: Array<{ classId: number | null; roller: unknown; userId?: string }> = [];
 const updateCalls: unknown[] = [];
 const getFullCalls: Array<{ id: string; locale: string }> = [];
 let currentSession: Session = null;
@@ -84,8 +84,8 @@ mock.module('../../src/lib/prisma.js', {
 
 mock.module('../../src/lib/generate-character.js', {
   namedExports: {
-    generateCharacter: async (classId: number | null, roller: unknown) => {
-      generateCalls.push({ classId, roller });
+    generateCharacter: async (classId: number | null, roller: unknown, userId?: string) => {
+      generateCalls.push({ classId, roller, userId });
       return generatedCharacterId;
     },
   },
@@ -140,12 +140,10 @@ test('POST /new generates, binds, and returns a session-owned character', async 
   assert.equal(generateCalls.length, 1);
   assert.equal(generateCalls[0].classId, 2);
   assert.equal(typeof (generateCalls[0].roller as { roll?: unknown }).roll, 'function');
-  assert.deepEqual(updateCalls, [
-    {
-      where: { id: generatedCharacterId },
-      data: { userId: 'user-1' },
-    },
-  ]);
+  // Ownership is now bound atomically inside generateCharacter (no orphan
+  // window), so there must be NO separate character.update bind call.
+  assert.equal(generateCalls[0].userId, 'user-1');
+  assert.deepEqual(updateCalls, []);
   assert.deepEqual(getFullCalls, [
     { id: generatedCharacterId, locale: 'pl' },
   ]);

@@ -161,13 +161,9 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
 
             try {
                 const roller = new Roller({ engine: new OSRandomEngine() });
-                const characterId = await generateCharacter(classId ?? null, roller);
-
-                // Bind character to user
-                await prisma.character.update({
-                    where: {id: characterId},
-                    data: {userId},
-                });
+                // Bind ownership at creation so a failure can never leave an
+                // orphaned, unowned (and thus unreachable) character row.
+                const characterId = await generateCharacter(classId ?? null, roller, userId);
 
                 const character = await getCharacterFull(characterId, locale);
                 if (!character) {

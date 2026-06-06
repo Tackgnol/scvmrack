@@ -1,7 +1,7 @@
 import { $api, characterKeys, client } from "@/api";
 import { PathsApiCharactersIdGetParametersQueryLocale } from "@/api/schema.ts";
 
-import { CharacterResponse, UpdateMutationContext } from "@/hooks/models.ts";
+import { CharacterResponse } from "@/hooks/models.ts";
 import { getApiLocale, getCharacterKey } from "@/hooks/utils.ts";
 import { getApiErrorStatus, toApiClientError } from '@/utils/errorUtils';
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -79,25 +79,22 @@ export function useCharacterRepository(
         }
     });
 
-    // ---- Update Character (with rollback support) ----
+    // ---- Update Character ----
+    // The character-detail cache is reconciled by useCharacterEditor straight
+    // from the PATCH response (which is fully hydrated), so we deliberately do
+    // NOT refetch it on every save — that refetch used to race the optimistic
+    // queue and drop edits. We only keep the character LIST (names/HP) fresh.
+    // Note: keys use `trimmedLocale` so they match the query/editor cache key
+    // even when the i18n locale carries a region (e.g. `en-US`).
     const updateCharacter = $api.useMutation('patch', '/api/characters/{id}', {
         onMutate: async (vars) => {
-            const key = getCharacterKey(vars.params.path.id, locale);
+            const key = getCharacterKey(vars.params.path.id, trimmedLocale);
             await queryClient.cancelQueries({ queryKey: key });
 
             const previous = queryClient.getQueryData<CharacterResponse>(key);
             return { previousCharacter: previous, queryKey: [...key] };
         },
-        onError: (_e, _v, context) => {
-            const ctx = context as UpdateMutationContext;
-            if (ctx?.previousCharacter) {
-                queryClient.setQueryData(ctx.queryKey, ctx.previousCharacter);
-            }
-        },
-        onSettled: (_d, _e, vars) => {
-            queryClient.invalidateQueries({
-                queryKey: getCharacterKey(vars.params.path.id, locale)
-            });
+        onSettled: () => {
             queryClient.invalidateQueries({
                 queryKey: characterKeys.list()
             });

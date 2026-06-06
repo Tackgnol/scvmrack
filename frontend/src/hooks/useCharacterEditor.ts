@@ -16,10 +16,11 @@ import {
 import { useErrorFeedback } from '@/components/molecules/feedback/ErrorFeedbackProvider';
 import { useSnackbar } from '@/SnackbarContext/SnackbarProvider.tsx';
 import { useQueryClient } from '@tanstack/react-query';
-import { useInsertionEffect, useRef, useState } from 'react';
+import { useEffect, useInsertionEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useDebouncedCallback } from 'use-debounce';
 import {
+  getApiErrorStatus,
   getUserFacingApiErrorMessage,
   isApiRateLimited,
   isUnexpectedApiError,
@@ -40,32 +41,46 @@ export function useCharacterEditor(
   validationIssues?: ValidationIssueHandlers
 ) {
   const queryClient = useQueryClient();
-  const [pending, setPending] = useState<OptimisticPatch[]>([]);
   const { showError } = useSnackbar();
   const { showUnexpectedError } = useErrorFeedback();
   const { t } = useTranslation();
   const shownFieldValidationMessagesRef = useRef<Record<string, string>>({});
 
+  // Pending patch queue. The ref is the source of truth so async mutation
+  // callbacks never read a stale closure; the count drives `isSaving` renders.
+  const pendingRef = useRef<OptimisticPatch[]>([]);
+  const [pendingCount, setPendingCount] = useState(0);
+  const setPending = (
+    updater: (prev: OptimisticPatch[]) => OptimisticPatch[]
+  ) => {
+    pendingRef.current = updater(pendingRef.current);
+    setPendingCount(pendingRef.current.length);
+  };
+
   // Retry tracking
   const retryCountRef = useRef(0);
   const flushRef = useRef<() => void>(() => {});
+  // Serializes flushes (one PATCH in flight at a time) and halts auto-reflush
+  // once we've given up / hit a client error, so we never busy-loop the server.
+  const flushingRef = useRef(false);
+  const haltRef = useRef(false);
   const maxRetries = 3;
 
   const flush = () => {
-    if (!characterId || pending.length === 0) return;
+    if (!characterId) return;
+    // One PATCH in flight at a time; onSettled re-flushes whatever remains.
+    if (flushingRef.current || updateCharacter.isPending) return;
 
-    const currentCharacter = queryClient.getQueryData<CharacterResponse>(
-      getCharacterKey(characterId, locale)
-    );
+    const batch = [...pendingRef.current];
+    if (batch.length === 0) return;
 
+    const key = getCharacterKey(characterId, locale);
+    const currentCharacter = queryClient.getQueryData<CharacterResponse>(key);
     if (!currentCharacter) return;
 
-    // Build request body from patches + current state
-    const body = buildRequestFromPatches(pending, currentCharacter);
-
-    // Capture the batch now — setPending([]) below clears state
-    // asynchronously, but we need the snapshot for analytics.
-    const flushedPatches = [...pending];
+    // Build request body from the queued patches + the current optimistic state.
+    const body = buildRequestFromPatches(batch, currentCharacter);
+    flushingRef.current = true;
 
     updateCharacter.mutate(
       {
@@ -73,39 +88,62 @@ export function useCharacterEditor(
         body: body as any,
       },
       {
-        onSuccess: () => {
+        onSuccess: (serverCharacter: unknown) => {
           retryCountRef.current = 0;
-          trackCharacterEdited(flushedPatches, locale ?? 'en');
-          // Refetch so server-hydrated fields (e.g. consumable `uses` derived
-          // from default_amount + presence) replace the optimistic stand-in.
-          if (flushedPatches.some((p) => p.kind === 'equipment-add')) {
-            queryClient.invalidateQueries({
-              queryKey: getCharacterKey(characterId, locale),
-            });
+          haltRef.current = false;
+          trackCharacterEdited(batch, locale ?? 'en');
+
+          // Drop exactly the patches we sent (a prefix of the queue); anything
+          // queued during the flight stays pending.
+          setPending((prev) => prev.slice(batch.length));
+
+          // The PATCH response is server-authoritative and already hydrated.
+          // Write it to cache, then re-apply patches that arrived mid-flight so
+          // their optimistic state survives.
+          const server = serverCharacter as CharacterResponse | undefined;
+          if (server) {
+            const remaining = pendingRef.current;
+            queryClient.setQueryData<CharacterResponse>(key, () =>
+              remaining.reduce(
+                (acc, patch) => applyOptimisticPatch(acc, patch),
+                server
+              )
+            );
           }
         },
-        onError: (error: any) => {
-          console.error('Failed to save:', error);
-          retryCountRef.current++;
-
+        onError: (error: any, _vars: unknown, context: any) => {
           if (isApiRateLimited(error)) {
+            // Keep the batch queued (don't lose the edit) but stop hammering the
+            // limiter — the next edit or unmount will flush it again.
+            haltRef.current = true;
             showError(
               t('auth.rateLimit', 'Too many requests. Please try again later.')
             );
             return;
           }
 
-          if (isUnexpectedApiError(error)) {
+          // Transient = server error (5xx) or a network failure (no status).
+          // Both are worth retrying; the queued batch is kept and onSettled
+          // re-flushes it until we run out of attempts.
+          const status = getApiErrorStatus(error);
+          const isTransient = status === undefined || status >= 500;
+          if (isTransient) {
+            retryCountRef.current++;
             if (retryCountRef.current < maxRetries) {
+              // Patches stay queued; onSettled re-flushes them (auto-retry).
               return;
             }
 
-            showUnexpectedError(error, {
-              source: 'character_save',
-              characterId,
-              operation: 'patch_character',
-              locale,
-            });
+            // Out of retries: stop auto-reflush, surface a manual retry.
+            haltRef.current = true;
+            if (isUnexpectedApiError(error)) {
+              showUnexpectedError(error, {
+                source: 'character_save',
+                characterId,
+                operation: 'patch_character',
+                locale,
+              });
+            }
             showError(
               getUserFacingApiErrorMessage(
                 error,
@@ -116,6 +154,7 @@ export function useCharacterEditor(
                 label: t('actions.retry', 'Retry'),
                 onClick: () => {
                   retryCountRef.current = 0;
+                  haltRef.current = false;
                   flushRef.current();
                 },
               }
@@ -123,27 +162,32 @@ export function useCharacterEditor(
             return;
           }
 
-          if (retryCountRef.current >= maxRetries) {
-            showError(
-              getUserFacingApiErrorMessage(
-                error,
-                t,
-                'Failed to save changes. Please try again.'
-              ),
-              {
-                label: t('actions.retry', 'Retry'),
-                onClick: () => {
-                  retryCountRef.current = 0;
-                  flushRef.current();
-                },
-              }
-            );
+          // Client error (e.g. 4xx validation): retrying can't help. Drop the
+          // bad batch, roll the cache back to the pre-patch snapshot, notify.
+          retryCountRef.current = 0;
+          haltRef.current = true;
+          setPending((prev) => prev.slice(batch.length));
+          if (context?.previousCharacter) {
+            queryClient.setQueryData(key, context.previousCharacter);
+          }
+          showError(
+            getUserFacingApiErrorMessage(
+              error,
+              t,
+              'Failed to save changes. Please try again.'
+            )
+          );
+        },
+        onSettled: () => {
+          flushingRef.current = false;
+          // Re-flush whatever is still queued (mid-flight edits, or a batch kept
+          // for auto-retry) unless we've explicitly halted.
+          if (!haltRef.current && pendingRef.current.length > 0) {
+            debouncedFlush();
           }
         },
       }
     );
-
-    setPending([]);
   };
 
   // useInsertionEffect fires synchronously before any DOM mutations, so
@@ -153,6 +197,15 @@ export function useCharacterEditor(
   });
 
   const debouncedFlush = useDebouncedCallback(flush, 1000);
+
+  // Flush any queued edit if we unmount mid-debounce (route change, logout) so
+  // the last edit isn't silently dropped.
+  useEffect(
+    () => () => {
+      debouncedFlush.flush();
+    },
+    [debouncedFlush]
+  );
 
   const applyLocalPatch = (patch: OptimisticPatch) => {
     if (!characterId) return;
@@ -167,6 +220,8 @@ export function useCharacterEditor(
   const queuePatch = (patch: OptimisticPatch) => {
     if (!characterId) return;
 
+    // A fresh edit resumes saving even if a prior batch had halted.
+    haltRef.current = false;
     setPending((prev) => [...prev, patch]);
     applyLocalPatch(patch);
 
@@ -352,7 +407,7 @@ export function useCharacterEditor(
     removeModifier,
     updateModifier,
 
-    // Original isSaving logic preserved
-    isSaving: pending.length > 0 || updateCharacter.isPending,
+    // Saving while patches are queued or a PATCH is in flight.
+    isSaving: pendingCount > 0 || updateCharacter.isPending,
   };
 }
