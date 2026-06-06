@@ -4,7 +4,7 @@ All notable changes to Scvm Rack are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project aims to
 follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.3.1] - 2026-06-06
+## [0.3.2] - 2026-06-06
 
 Launch-readiness pass from the full-codebase audit
 (`docs/launch-audit-2026-06-06.md`).
