@@ -36,6 +36,28 @@ export function ReleasePage() {
     // newest-first and in sync with that folder when cutting a release.
     const releases: ReleaseNote[] = [
         {
+            version: '0.3.2',
+            date: '2026-06-06',
+            type: 'patch',
+            changes: [
+                t('release.v032.editorSaves', 'The character sheet now saves reliably during fast, back-to-back edits — no more lost or reverted changes'),
+                t('release.v032.inventory', 'Fixed unequipping armor and item edits; different items that share a name no longer merge into one stack'),
+                t('release.v032.sharePreview', 'Shared links now show a proper preview card, and the site ships a sitemap for search engines'),
+                t('release.v032.knownIssues', 'Added a "Known issues" section to the FAQ'),
+                t('release.v032.internals', 'Backend restructured into clear layers and character generation hardened (no behavior change)'),
+            ],
+        },
+        {
+            version: '0.3.0',
+            date: '2026-06-05',
+            type: 'minor',
+            changes: [
+                t('release.v030.engine', 'Character generation now runs in-app via a seedable roller instead of database randomness'),
+                t('release.v030.reads', 'Fetching and saving characters no longer depends on database stored procedures'),
+                t('release.v030.alphaPrep', 'Internal cleanups ahead of the public alpha'),
+            ],
+        },
+        {
             version: '0.2.1',
             date: '2026-05-31',
             type: 'patch',
