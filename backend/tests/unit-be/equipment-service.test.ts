@@ -4,6 +4,7 @@ import { beforeEach, mock, test } from 'node:test';
 const state = {
   byId: null as Record<string, unknown> | null,
   byKey: null as Record<string, unknown> | null,
+  idError: null as unknown,
   searchResult: [] as unknown[],
   searchError: null as unknown,
   idCalls: [] as Array<{ itemType: string; id: number }>,
@@ -14,6 +15,7 @@ const state = {
 function resetState(): void {
   state.byId = null;
   state.byKey = null;
+  state.idError = null;
   state.searchResult = [{ itemType: 'weapon', id: 1, key: 'weapons.sword', name: 'Sword' }];
   state.searchError = null;
   state.idCalls = [];
@@ -26,6 +28,7 @@ mock.module('../../src/repositories/equipment-repository.js', {
     equipmentRepository: {
       findById: async (itemType: string, id: number) => {
         state.idCalls.push({ itemType, id });
+        if (state.idError) throw state.idError;
         return state.byId;
       },
       findByKey: async (itemType: string, key: string) => {
@@ -104,4 +107,11 @@ test('getItem returns 404 when id and key both miss', async () => {
   const r = await service().getItem({ itemType: 'weapon', id: 999, key: 'weapons.missing' });
   assert.equal((r as any).error.statusCode, 404);
   assert.equal((r as any).error.code, 'ITEM_NOT_FOUND');
+});
+
+test('getItem maps an unexpected failure to 5xx ITEM_FETCH_FAILED', async () => {
+  state.idError = new Error('db down');
+  const r = await service().getItem({ itemType: 'weapon', id: 1 });
+  assert.equal((r as any).error.statusCode, 500);
+  assert.equal((r as any).error.code, 'ITEM_FETCH_FAILED');
 });

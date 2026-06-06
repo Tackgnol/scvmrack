@@ -60,8 +60,9 @@ Launch-readiness pass from the full-codebase audit
   Prisma/external access; services hold the logic; route files are thin
   controllers. The equipment `GET /:itemType/:id` duplication (parallel id/key
   if-else chains) collapses into single repository resolvers. Behavior and HTTP
-  responses unchanged. Added service unit tests (characters 16, equipment 7,
-  feedback 3); backend unit tests 40 → 66.
+  responses unchanged. Added service unit tests covering happy paths, the
+  ownership/validation matrix, and every unexpected/5xx error mapping
+  (characters 24, equipment 8, feedback 3); backend unit tests 40 → 75.
 
 ### Docs
 - Added the launch audit report (`docs/launch-audit-2026-06-06.md`).
