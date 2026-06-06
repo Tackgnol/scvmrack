@@ -20,11 +20,11 @@ Work top-down by severity. Check items off as you address them. Each finding has
 | 8 | Wrong domain | ❌ **REFUTED** — real `index.html` already uses `rpgtools.co`; the agent read the stale `frontend/public/` artifact (now deleted). |
 | 9 | Dead SQL + dup limits | ✅ **PARTIAL** — dead PL/pgSQL archived to `backend/init/_archive/` (out of migrate scan path) with README; fixed `origin` 1000→255 DB-overflow. Cross-package limit/game-math unification deferred to #16. |
 | 10 | Branding split | ❌ **REFUTED** — stale artifact only; real files say "Scvm Rack". |
-| 13 | God hook + global singleton | ⏳ **TODO (approved)** — next focused chunk; smoke-test the editor first. |
+| 13 | God hook + global singleton | ✅ **FIXED** — split into `useCharacterValidationIssues` / `useAutoCreateCharacter` / `useCharacterActions`; module-level `pendingAutoCreateController` replaced by a per-instance ref. Public API unchanged; 10 existing integration tests pass. |
 | 14 | Aggregation merges distinct items | ✅ **FIXED** — `aggregateItems` keys on stable `key`/identity signature; 3 tests added. |
 | 15 | Stacked-item edit quirk | ✅ **DOCUMENTED** — added "Known issues" FAQ entry (en + pl); deeper fix tracked with #16. |
 | 16 | Repository/Service/Controller | ⏸️ **DEFERRED** by you (post-prod). |
-| 17 | Generation smells | ℹ️ explained below (see item). |
+| 17 | Generation smells | ✅ **FIXED** — added an `armorByKey` map (O(1) lookup), `orderBy: { id }` on the weapon query (deterministic shared-roll selection), and key-aware granted-item resolution (legacy name map kept as fallback). |
 | 18 | 274 KB favicon | ✅ **FIXED** — dropped SVG icon; PNG/ICO remain. |
 | 19 | No sitemap | ✅ **FIXED** — added `sitemap.xml` + `Sitemap:` in robots.txt. |
 | 20 | nginx security headers | ❌ **N/A** — handled by Caddy (`Caddyfile.example`); HAR confirms CSP/HSTS/X-Frame-Options. |
