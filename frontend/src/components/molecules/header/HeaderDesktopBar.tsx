@@ -1,5 +1,3 @@
-import { Flag } from '@components/atoms/Flag';
-import { FlagContainer } from '@components/atoms/FlagContainer';
 import BugReportIcon from '@mui/icons-material/BugReport';
 import LogoutIcon from '@mui/icons-material/Logout';
 import PersonIcon from '@mui/icons-material/Person';
@@ -69,10 +67,6 @@ export function HeaderDesktopBar({
         >
           {t('feedback.reportBugAction', 'Report bug')}
         </Button>
-        <FlagContainer>
-          <Flag locale="en" />
-          <Flag locale="pl" />
-        </FlagContainer>
         <IconButton
           data-testid="auth-button"
           component="a"

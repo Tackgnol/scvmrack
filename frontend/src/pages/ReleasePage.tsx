@@ -36,6 +36,17 @@ export function ReleasePage() {
     // newest-first and in sync with that folder when cutting a release.
     const releases: ReleaseNote[] = [
         {
+            version: '0.3.3',
+            date: '2026-06-07',
+            type: 'patch',
+            changes: [
+                t('release.v033.firstRun', 'First run no longer creates a character before you accept the storage notice — an animated loading skeleton shows while your sheet is prepared'),
+                t('release.v033.englishOnly', 'The language switcher is temporarily removed; the app is English-only for now while translations are reworked'),
+                t('release.v033.faqCredit', 'Fixed the FAQ copyright credit to match the rest of the site'),
+                t('release.v033.hardening', 'Hardening: utility URLs no longer return the app shell, plus a new production release checklist'),
+            ],
+        },
+        {
             version: '0.3.2',
             date: '2026-06-06',
             type: 'patch',

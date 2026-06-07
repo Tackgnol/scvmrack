@@ -7,6 +7,11 @@ i18n
     .use(LanguageDetector)
     .use(initReactI18next)
     .init({
+        // English-lock: the app ships English-only for now. `lng` overrides the
+        // detector (it stays wired below as dead code) so a returning visitor
+        // with a stale `i18nextLng=pl` still renders English. The pl bundle and
+        // language-switch machinery are intentionally kept for a future re-enable.
+        lng: 'en',
         fallbackLng: 'en',
         resources: { en: { translation: en } },
         interpolation: {

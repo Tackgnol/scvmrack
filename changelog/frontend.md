@@ -8,7 +8,7 @@
 - **Data:** TanStack Query + `openapi-fetch` / `openapi-react-query` (typed client)
 - **Routing:** TanStack Router
 - **Build/test:** Vite 8, Vitest 4 (JSDOM unit + Playwright browser), ESLint 9 (flat config)
-- **i18n:** `i18next` / `react-i18next` — English (en) and Polish (pl)
+- **i18n:** `i18next` / `react-i18next` — English-only (locked to `en`); the Polish bundle and language-switch machinery are retained but disabled for a future re-enable
 - **Observability:** Sentry / GlitchTip (`@sentry/react`), Google Analytics (consent-gated)
 
 ## Pages

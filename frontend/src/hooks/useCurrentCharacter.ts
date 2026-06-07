@@ -13,6 +13,7 @@ import {
   SESSION_EXPIRED_QUERY_PARAM,
 } from '@/router/navigation';
 import { getApiLocale } from '@/hooks/utils.ts';
+import { usePrivacyAcknowledged } from '@/privacy/privacyConsent';
 import { useSnackbar } from '@/SnackbarContext/SnackbarProvider.tsx';
 import { useErrorFeedback } from '@/components/molecules/feedback/ErrorFeedbackProvider';
 import { getUserFacingApiErrorMessage } from '@/utils/errorUtils';
@@ -82,6 +83,7 @@ export function useCurrentCharacter() {
   );
 
   const { isAuthenticated, isGuest, isLoading: authLoading } = useAuth();
+  const privacyAcknowledged = usePrivacyAcknowledged();
 
   const repo = useCharacterRepository(characterId, locale, {
     enabled: !isSessionExpired,
@@ -102,6 +104,7 @@ export function useCurrentCharacter() {
     useAutoCreateCharacter({
       pathname,
       authLoading,
+      privacyAcknowledged,
       characterId,
       isJustLoggedOut,
       isSessionExpired,

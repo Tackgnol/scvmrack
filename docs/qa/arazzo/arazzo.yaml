@@ -1,0 +1,315 @@
+arazzo: 1.1.0
+info:
+  title: Scvm Rack API QA Workflows
+  summary: API call sequences that exercise the critical character-management flows.
+  description: |
+    These workflows describe the API behavior expected by the character sheet.
+    Auth and CSRF bootstrap are modeled as inputs because the shared-auth routes
+    are owned by @tackgnol/rpgtools-shared-auth and are not currently part of the
+    app-generated OpenAPI document.
+  version: 0.1.0
+sourceDescriptions:
+  - name: scvmrackApi
+    type: openapi
+    url: http://localhost:3000/openapi.json
+workflows:
+  - workflowId: anonymousCharacterLifecycle
+    summary: Anonymous session can manage its own character.
+    description: Create a session-bound character, verify it appears in the list, edit it, and delete it.
+    inputs:
+      type: object
+      required:
+        - sessionCookie
+        - csrfToken
+      properties:
+        sessionCookie:
+          type: string
+          description: Full Cookie header for an anonymous app session.
+        csrfToken:
+          type: string
+          description: Token returned by GET /api/csrf-token for the same session.
+        locale:
+          type: string
+          enum:
+            - en
+            - pl
+          default: en
+        updatedName:
+          type: string
+          default: Grimdark Hero
+    steps:
+      - stepId: createCharacter
+        description: Generate a new character owned by the current anonymous session.
+        operationPath: "{$sourceDescriptions.scvmrackApi.url}#/paths/~1api~1characters~1new/post"
+        parameters:
+          - name: Cookie
+            in: header
+            value: $inputs.sessionCookie
+          - name: x-csrf-token
+            in: header
+            value: $inputs.csrfToken
+          - name: locale
+            in: query
+            value: $inputs.locale
+        requestBody:
+          contentType: application/json
+          payload: {}
+        successCriteria:
+          - condition: $statusCode == 201
+          - condition: $response.body#/id != null
+          - condition: $response.body#/name != null
+        outputs:
+          characterId: $response.body#/id
+      - stepId: listCharacters
+        description: The newly-created character is visible to the owner session.
+        operationPath: "{$sourceDescriptions.scvmrackApi.url}#/paths/~1api~1characters/get"
+        parameters:
+          - name: Cookie
+            in: header
+            value: $inputs.sessionCookie
+        successCriteria:
+          - condition: $statusCode == 200
+          - context: $response.body
+            condition: "$[?(@.id == '{$steps.createCharacter.outputs.characterId}')]"
+            type: jsonpath
+      - stepId: fetchCharacter
+        description: The owner session can fetch the full character by id.
+        operationPath: "{$sourceDescriptions.scvmrackApi.url}#/paths/~1api~1characters~1{id}/get"
+        parameters:
+          - name: Cookie
+            in: header
+            value: $inputs.sessionCookie
+          - name: id
+            in: path
+            value: $steps.createCharacter.outputs.characterId
+          - name: locale
+            in: query
+            value: $inputs.locale
+        successCriteria:
+          - condition: $statusCode == 200
+          - condition: $response.body#/id == $steps.createCharacter.outputs.characterId
+      - stepId: updateCharacterName
+        description: A valid patch returns the hydrated updated character.
+        operationPath: "{$sourceDescriptions.scvmrackApi.url}#/paths/~1api~1characters~1{id}/patch"
+        parameters:
+          - name: Cookie
+            in: header
+            value: $inputs.sessionCookie
+          - name: x-csrf-token
+            in: header
+            value: $inputs.csrfToken
+          - name: id
+            in: path
+            value: $steps.createCharacter.outputs.characterId
+          - name: locale
+            in: query
+            value: $inputs.locale
+        requestBody:
+          contentType: application/json
+          payload:
+            name: $inputs.updatedName
+        successCriteria:
+          - condition: $statusCode == 200
+          - condition: $response.body#/id == $steps.createCharacter.outputs.characterId
+          - condition: $response.body#/name == $inputs.updatedName
+      - stepId: deleteCharacter
+        description: The owner session can delete the character.
+        operationPath: "{$sourceDescriptions.scvmrackApi.url}#/paths/~1api~1characters~1{id}/delete"
+        parameters:
+          - name: Cookie
+            in: header
+            value: $inputs.sessionCookie
+          - name: x-csrf-token
+            in: header
+            value: $inputs.csrfToken
+          - name: id
+            in: path
+            value: $steps.createCharacter.outputs.characterId
+        successCriteria:
+          - condition: $statusCode == 204
+      - stepId: fetchDeletedCharacter
+        description: Deleted characters are no longer retrievable.
+        operationPath: "{$sourceDescriptions.scvmrackApi.url}#/paths/~1api~1characters~1{id}/get"
+        parameters:
+          - name: Cookie
+            in: header
+            value: $inputs.sessionCookie
+          - name: id
+            in: path
+            value: $steps.createCharacter.outputs.characterId
+        successCriteria:
+          - condition: $statusCode == 404
+          - condition: $response.body#/code == 'CHARACTER_NOT_FOUND'
+    outputs:
+      characterId: $steps.createCharacter.outputs.characterId
+
+  - workflowId: csrfRejectsMissingToken
+    summary: State-changing app routes require CSRF.
+    description: A session cookie alone is not enough to create a character.
+    inputs:
+      type: object
+      required:
+        - sessionCookie
+      properties:
+        sessionCookie:
+          type: string
+          description: Full Cookie header for an app session.
+    steps:
+      - stepId: createWithoutCsrf
+        operationPath: "{$sourceDescriptions.scvmrackApi.url}#/paths/~1api~1characters~1new/post"
+        parameters:
+          - name: Cookie
+            in: header
+            value: $inputs.sessionCookie
+        requestBody:
+          contentType: application/json
+          payload: {}
+        successCriteria:
+          - condition: $statusCode == 403
+
+  - workflowId: characterOwnershipIsolated
+    summary: Characters are private to their owner session.
+    description: A second session cannot read, patch, or delete another session's character.
+    inputs:
+      type: object
+      required:
+        - ownerSessionCookie
+        - ownerCsrfToken
+        - otherSessionCookie
+        - otherCsrfToken
+      properties:
+        ownerSessionCookie:
+          type: string
+        ownerCsrfToken:
+          type: string
+        otherSessionCookie:
+          type: string
+        otherCsrfToken:
+          type: string
+    steps:
+      - stepId: ownerCreatesCharacter
+        operationPath: "{$sourceDescriptions.scvmrackApi.url}#/paths/~1api~1characters~1new/post"
+        parameters:
+          - name: Cookie
+            in: header
+            value: $inputs.ownerSessionCookie
+          - name: x-csrf-token
+            in: header
+            value: $inputs.ownerCsrfToken
+        requestBody:
+          contentType: application/json
+          payload: {}
+        successCriteria:
+          - condition: $statusCode == 201
+        outputs:
+          characterId: $response.body#/id
+      - stepId: otherCannotFetch
+        operationPath: "{$sourceDescriptions.scvmrackApi.url}#/paths/~1api~1characters~1{id}/get"
+        parameters:
+          - name: Cookie
+            in: header
+            value: $inputs.otherSessionCookie
+          - name: id
+            in: path
+            value: $steps.ownerCreatesCharacter.outputs.characterId
+        successCriteria:
+          - condition: $statusCode == 403
+          - condition: $response.body#/code == 'CHARACTER_ACCESS_DENIED'
+      - stepId: otherCannotPatch
+        operationPath: "{$sourceDescriptions.scvmrackApi.url}#/paths/~1api~1characters~1{id}/patch"
+        parameters:
+          - name: Cookie
+            in: header
+            value: $inputs.otherSessionCookie
+          - name: x-csrf-token
+            in: header
+            value: $inputs.otherCsrfToken
+          - name: id
+            in: path
+            value: $steps.ownerCreatesCharacter.outputs.characterId
+        requestBody:
+          contentType: application/json
+          payload:
+            name: Stolen
+        successCriteria:
+          - condition: $statusCode == 403
+          - condition: $response.body#/code == 'CHARACTER_ACCESS_DENIED'
+      - stepId: otherCannotDelete
+        operationPath: "{$sourceDescriptions.scvmrackApi.url}#/paths/~1api~1characters~1{id}/delete"
+        parameters:
+          - name: Cookie
+            in: header
+            value: $inputs.otherSessionCookie
+          - name: x-csrf-token
+            in: header
+            value: $inputs.otherCsrfToken
+          - name: id
+            in: path
+            value: $steps.ownerCreatesCharacter.outputs.characterId
+        successCriteria:
+          - condition: $statusCode == 403
+          - condition: $response.body#/code == 'CHARACTER_ACCESS_DENIED'
+
+  - workflowId: equipmentLookup
+    summary: Search results can be expanded into full item records.
+    description: Fuzzy search returns typed ids that can be resolved through the item detail endpoint.
+    inputs:
+      type: object
+      properties:
+        query:
+          type: string
+          default: sword
+        locale:
+          type: string
+          enum:
+            - en
+            - pl
+          default: en
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 5
+    steps:
+      - stepId: searchEquipment
+        operationPath: "{$sourceDescriptions.scvmrackApi.url}#/paths/~1api~1equipment~1search/get"
+        parameters:
+          - name: q
+            in: query
+            value: $inputs.query
+          - name: locale
+            in: query
+            value: $inputs.locale
+          - name: limit
+            in: query
+            value: $inputs.limit
+        successCriteria:
+          - condition: $statusCode == 200
+          - context: $response.body
+            condition: "$[?(@.id != null && @.itemType != null && @.key != null)]"
+            type: jsonpath
+        outputs:
+          firstItemType: $response.body#/0/itemType
+          firstItemId: $response.body#/0/id
+          firstItemKey: $response.body#/0/key
+      - stepId: fetchFirstItem
+        operationPath: "{$sourceDescriptions.scvmrackApi.url}#/paths/~1api~1equipment~1{itemType}~1{id}/get"
+        parameters:
+          - name: itemType
+            in: path
+            value: $steps.searchEquipment.outputs.firstItemType
+          - name: id
+            in: path
+            value: $steps.searchEquipment.outputs.firstItemId
+          - name: key
+            in: query
+            value: $steps.searchEquipment.outputs.firstItemKey
+        successCriteria:
+          - condition: $statusCode == 200
+          - condition: $response.body#/id == $steps.searchEquipment.outputs.firstItemId
+          - condition: $response.body#/key == $steps.searchEquipment.outputs.firstItemKey
+    outputs:
+      itemType: $steps.searchEquipment.outputs.firstItemType
+      itemId: $steps.searchEquipment.outputs.firstItemId
+      itemKey: $steps.searchEquipment.outputs.firstItemKey
+

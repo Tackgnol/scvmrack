@@ -62,8 +62,18 @@ vi.mock('@/analytics/googleAnalytics', () => ({
   trackEvent: vi.fn(),
 }));
 
+// Privacy-consent gate for auto-create. Default acknowledged so the existing
+// auto-create tests exercise the create path; the gating test flips it off.
+const { privacyState } = vi.hoisted(() => ({
+  privacyState: { acknowledged: true },
+}));
+vi.mock('@/privacy/privacyConsent', () => ({
+  usePrivacyAcknowledged: () => privacyState.acknowledged,
+}));
+
 beforeEach(() => {
   vi.clearAllMocks();
+  privacyState.acknowledged = true;
   (hasCurrentSearchParam as any).mockReturnValue(false);
   appHistory.location.pathname = '/character';
   appHistory.location.search = '';
@@ -296,6 +306,33 @@ test('useCurrentCharacter handles auto-create effect', async () => {
   const createCallbacks = createMutate.mock.calls[0][1];
   createCallbacks.onSuccess({ id: 'auto-char' });
   expect(setCharacterId).toHaveBeenCalledWith('auto-char');
+});
+
+test('useCurrentCharacter does not auto-create until privacy is acknowledged', async () => {
+  privacyState.acknowledged = false;
+  const setCharacterId = vi.fn();
+  (useCharacterId as any).mockReturnValue({
+    characterId: null,
+    lastCharacterId: null,
+    setCharacterId,
+  });
+  (useAuth as any).mockReturnValue({
+    isAuthenticated: false,
+    isGuest: true,
+    isLoading: false,
+  });
+
+  const createMutate = vi.fn();
+  (useCharacterRepository as any).mockReturnValue({
+    createCharacter: { mutate: createMutate, data: null },
+  });
+  (useCharacterEditor as any).mockReturnValue({ flush: vi.fn() });
+  global.fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => [] });
+
+  renderHook(() => useCurrentCharacter());
+
+  expect(global.fetch).not.toHaveBeenCalled();
+  expect(createMutate).not.toHaveBeenCalled();
 });
 
 test('useCurrentCharacter pauses auto-create while session expired', async () => {

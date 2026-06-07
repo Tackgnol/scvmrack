@@ -2,24 +2,9 @@ import { morkBorgColors } from '@/theme/morkBorgTheme';
 import { Seo } from '@/seo/Seo';
 import { Box, Button, Stack, Typography } from '@mui/material';
 import { Link } from '@tanstack/react-router';
-import { useCharacterId } from '@/hooks/useCharacterId';
-import { useAuth } from '@/hooks/useAuth';
-import { useCharacterRepository } from '@/hooks/useCharacterRepository';
-import { getApiLocale } from '@/hooks/utils';
-import type { PathsApiCharactersNewPostParametersQueryLocale } from '@/api/schema';
 import { buildHomeCallbackUrl } from '@/router/navigation';
-import {
-  charactersListQueryKey,
-  fetchCharacterList,
-} from '@/hooks/charactersListQuery';
-import { getApiErrorStatus } from '@/utils/errorUtils';
-import { useEffect, useState } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
 import { Trans, useTranslation } from 'react-i18next';
-import { useDebounce } from 'use-debounce';
 import licenseHoriz from '@/assets/CompWith_MORKBORG_horiz.svg';
-
-const PREGEN_SESSION_FLAG = 'scvmrack:pregen-attempted';
 
 const s = {
   page: {
@@ -345,99 +330,12 @@ const noticeKeys = ['book', 'guest'] as const;
 const mockStatKeys = ['agi', 'pre', 'str', 'tou'] as const;
 const mockRowKeys = ['gear', 'omen', 'print'] as const;
 
-function canAttemptPregen(): boolean {
-  return !sessionStorage.getItem(PREGEN_SESSION_FLAG);
-}
-
 export function LandingPage() {
-  const { t, i18n } = useTranslation();
-  const { lastCharacterId, setCharacterId } = useCharacterId();
-  const { isLoading: authLoading } = useAuth();
-  const repo = useCharacterRepository(null, i18n.language);
-  const queryClient = useQueryClient();
-  const [preparedCharacterId, setPreparedCharacterId] = useState<string | null>(null);
-  const [pregenerating, setPregenerating] = useState(false);
-  const [debouncedPregenerating] = useDebounce(pregenerating, 200);
-  const showLoadingLabel = pregenerating && debouncedPregenerating;
-  const shouldAttemptPregen =
-    !authLoading && !pregenerating && canAttemptPregen();
+  const { t } = useTranslation();
 
-  if (shouldAttemptPregen && !pregenerating) {
-    setPregenerating(true);
-  }
-
-  // Validate or pregen a scvm in the background so OPEN SHEET only links to a
-  // known-good id. Until this finishes, the CTA falls back to /character where
-  // the shared sheet bootstrap flow can safely list/create.
-  useEffect(() => {
-    if (!pregenerating) return;
-    if (!canAttemptPregen()) return;
-
-    sessionStorage.setItem(PREGEN_SESSION_FLAG, '1');
-
-    const controller = new AbortController();
-    const trimmedLocale =
-      getApiLocale<PathsApiCharactersNewPostParametersQueryLocale>(i18n.language);
-
-    let cancelled = false;
-    (async () => {
-      let resolvedCharacterId: string | null = null;
-
-      // Don't clobber an existing scvm — the anonymous session may already own one.
-      // Routed through React Query so the list call is cached/deduped. Distinguish a
-      // server response (even non-2xx → safe to create a fresh scvm) from an
-      // unreachable server (don't create blindly; OPEN SHEET retries on /character).
-      const listResult = await queryClient
-        .fetchQuery({
-          queryKey: charactersListQueryKey,
-          queryFn: () => fetchCharacterList(controller.signal),
-        })
-        .then((data) => ({ reachable: true, data }))
-        .catch((listError: unknown) => ({
-          reachable: getApiErrorStatus(listError) !== undefined,
-          data: null,
-        }));
-
-      try {
-        if (!cancelled && listResult.data) {
-          const selectedId =
-            listResult.data.find(({ id }) => id === lastCharacterId)?.id ??
-            listResult.data[0]?.id;
-
-          if (selectedId) {
-            resolvedCharacterId = selectedId;
-            setPreparedCharacterId(selectedId);
-            await setCharacterId(selectedId);
-          }
-        }
-
-        if (!cancelled && !resolvedCharacterId && listResult.reachable) {
-          const created = await repo.createCharacter.mutateAsync({
-            body: {},
-            params: { query: { locale: trimmedLocale } },
-            signal: controller.signal,
-          });
-          if (!cancelled && created?.id) {
-            setPreparedCharacterId(created.id);
-            await setCharacterId(created.id);
-          }
-        }
-      } catch (error) {
-        if (!(error instanceof DOMException && error.name === 'AbortError')) {
-          // Silent failure — clicking OPEN SHEET will run the same flow on /character.
-        }
-      }
-
-      if (!cancelled) setPregenerating(false);
-    })();
-
-    return () => {
-      cancelled = true;
-      controller.abort();
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pregenerating, lastCharacterId, i18n.language]);
-
+  // No background pre-generation: the sheet bootstrap on /character lists/selects
+  // an existing scvm or creates one *after* the storage notice is acknowledged,
+  // so no guest character (a backend write) is created from the landing page.
   return (
     <>
       <Seo
@@ -476,13 +374,10 @@ export function LandingPage() {
             <Stack sx={s.ctaRow}>
               <Button
                 component={Link}
-                to={buildHomeCallbackUrl(preparedCharacterId)}
+                to={buildHomeCallbackUrl(null)}
                 sx={s.ctaPrimary}
-                aria-busy={pregenerating || undefined}
               >
-                {showLoadingLabel
-                  ? t('landing.openSheetRolling', 'Rolling a scvm…')
-                  : t('landing.openSheet', 'Open sheet')}
+                {t('landing.openSheet', 'Open sheet')}
               </Button>
               <Button
                 component="a"
