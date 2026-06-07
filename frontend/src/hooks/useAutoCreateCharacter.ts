@@ -24,6 +24,7 @@ type ReportUnexpectedError = (
 type Params = {
   pathname: string;
   authLoading: boolean;
+  privacyAcknowledged: boolean;
   characterId: string | null;
   isJustLoggedOut: boolean;
   isSessionExpired: boolean;
@@ -48,6 +49,7 @@ type Params = {
 export function useAutoCreateCharacter({
   pathname,
   authLoading,
+  privacyAcknowledged,
   characterId,
   isJustLoggedOut,
   isSessionExpired,
@@ -67,9 +69,13 @@ export function useAutoCreateCharacter({
     setAutoCreateFailed(false);
   }
 
+  // Gate on privacy acknowledgement: never create a guest character (a backend
+  // write) before the storage notice is accepted. Until then the sheet renders
+  // skeletons behind the notice drawer.
   const shouldAutoCreateCharacter =
     pathname === '/character' &&
     !authLoading &&
+    privacyAcknowledged &&
     !characterId &&
     !isJustLoggedOut &&
     !isSessionExpired &&
@@ -178,6 +184,7 @@ export function useAutoCreateCharacter({
   }, [
     pathname,
     authLoading,
+    privacyAcknowledged,
     characterId,
     isJustLoggedOut,
     isSessionExpired,

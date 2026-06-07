@@ -77,7 +77,9 @@ describe('static route pages', () => {
       .element(page.getByRole('heading', { name: /release notes/i }))
       .toBeVisible();
     await expect.element(page.getByText('v0.2.0')).toBeVisible();
-    await expect.element(page.getByText(/minor/i)).toBeVisible();
+    // Multiple releases now carry a "Minor" chip, so scope to the first match
+    // instead of a strict single-element assertion.
+    await expect.element(page.getByText(/minor/i).first()).toBeVisible();
   });
 
   it('renders router-mode not found page with a home link', async () => {

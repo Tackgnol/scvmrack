@@ -1,6 +1,6 @@
 {
   "name": "scvmgrinder_be",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "This project was bootstrapped with Fastify-CLI.",
   "main": "app.ts",
   "type": "module",
@@ -13,6 +13,7 @@
     "test:browser": "npm --prefix ../frontend run test:browser",
     "test:integration": "node --import tsx scripts/run-integration-be-docker.ts",
     "test:e2e": "node --import tsx scripts/run-e2e-docker.ts",
+    "test:prod-smoke": "npm --prefix tests/e2e run test:prod-smoke",
     "test:coverage:backend": "c8 --reporter=json --reporter=text --reporter=lcov --report-dir=coverage-backend npm --prefix tests/unit-be run test",
     "test:coverage:client": "npm --prefix ../frontend run test:coverage:unit && npm --prefix ../frontend run test:coverage:browser",
     "test:coverage:merge": "node --import tsx scripts/merge-all-coverage.ts",

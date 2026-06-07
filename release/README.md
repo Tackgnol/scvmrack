@@ -4,6 +4,7 @@ User-facing release notes for **Scvm Rack**, newest first.
 
 | Version | Date | Notes |
 |---|---|---|
+| [0.3.3](./0.3.3.md) | 2026-06-07 | First-run consent before character creation, animated loading skeleton, English-only (language switch removed), FAQ credit + utility-path 404 fixes |
 | [0.3.2](./0.3.2.md) | 2026-06-06 | Launch-readiness: reliable editor saves, inventory fixes, share preview card + sitemap, backend layering |
 | [0.3.0](./0.3.0.md) | 2026-06-05 | Character generation/reads moved off the database into a seedable in-app engine; alpha prep |
 | [0.2.1](./0.2.1.md) | 2026-05-31 | Alpha label, safer sheet bootstrap, linked production credit, deploy packaging fix |

@@ -6,7 +6,9 @@ import {
 } from '@/components/molecules/character/CharacterLoadErrorModals';
 import { DeathStampOverlay } from '@/components/molecules/character/DeathStampOverlay';
 import { KillConfirmModal } from '@/components/molecules/character/KillConfirmModal';
+import { CharacterSheetSkeleton } from '@/components/molecules/character/CharacterSheetSkeleton';
 import { CharacterSheet } from '@/components/organisms/CharacterSheet';
+import { useMinimumVisible } from '@/hooks/useMinimumVisible';
 import { useScvmDeathFlow } from '@/hooks/useScvmDeathFlow';
 import { Seo } from '@/seo/Seo';
 import {
@@ -39,7 +41,7 @@ const homeStructuredData = {
         {
             '@type': 'WebSite',
             name: 'Scvm Rack',
-            inLanguage: ['en', 'pl'],
+            inLanguage: ['en'],
             description: 'Free interactive Mork Borg character sheet and generator.',
             keywords: homeKeywords.join(', '),
         },
@@ -122,6 +124,13 @@ export function CharacterPage() {
                 ? 'load-error'
                 : null;
 
+    // First-run / loading: no character yet and no terminal load error. This is
+    // true while the storage notice is still unacknowledged (generation is gated)
+    // and while a character is being created or fetched. The timegate keeps the
+    // skeleton on screen briefly so a fast/cached load doesn't flash it.
+    const isBootstrapping = !character && !loadIssue && !isSessionExpired;
+    const showSkeleton = useMinimumVisible(isBootstrapping, 600);
+
     useEffect(() => {
         if (!shouldReportUnexpectedLoadError) return;
 
@@ -158,11 +167,15 @@ export function CharacterPage() {
                 />
             )}
 
-            <CharacterSheet
-                stamping={stampDate !== null}
-                onGenerateNew={handleNew}
-                onKillScvm={handleKillRequest}
-            />
+            {showSkeleton ? (
+                <CharacterSheetSkeleton />
+            ) : (
+                <CharacterSheet
+                    stamping={stampDate !== null}
+                    onGenerateNew={handleNew}
+                    onKillScvm={handleKillRequest}
+                />
+            )}
 
             <KillConfirmModal
                 open={killConfirmOpen}

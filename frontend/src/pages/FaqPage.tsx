@@ -199,7 +199,7 @@ export function FaqPage() {
                 {/* Footer */}
                 <Box sx={customStyles.faqPage.footer}>
                     <Typography sx={customStyles.faqPage.footerText}>
-                        {t('faq.morkBorgCredit', 'MÖRK BORG is © Free League Publishing. This is an independent fan project.')}
+                        {t('faq.morkBorgCredit', 'MÖRK BORG is copyright Ockult Örtmästare Games and Stockholm Kartell. This is an independent fan project.')}
                     </Typography>
                 </Box>
             </Box>

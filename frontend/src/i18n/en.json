@@ -521,7 +521,7 @@
       "q": "How can I help?",
       "a": "You can support the project on Buy Me a Coffee: https://ko-fi.com/tackgnols_rpgtools. Every contribution helps keeping the rack alive!"
     },
-    "morkBorgCredit": "MÖRK BORG is © Free League Publishing. This is an independent fan project."
+    "morkBorgCredit": "MÖRK BORG is copyright Ockult Örtmästare Games and Stockholm Kartell. This is an independent fan project."
   },
   "privacy": {
     "title": "BLOOD OATH",
@@ -548,6 +548,12 @@
     "typeMinor": "Minor",
     "typePatch": "Patch",
     "moreUpdates": "More updates coming soon. The world is ending, but we keep shipping.",
+    "v033": {
+      "firstRun": "First run no longer creates a character before you accept the storage notice — an animated loading skeleton shows while your sheet is prepared",
+      "englishOnly": "The language switcher is temporarily removed; the app is English-only for now while translations are reworked",
+      "faqCredit": "Fixed the FAQ copyright credit to match the rest of the site",
+      "hardening": "Hardening: utility URLs no longer return the app shell, plus a new production release checklist"
+    },
     "v032": {
       "editorSaves": "The character sheet now saves reliably during fast, back-to-back edits — no more lost or reverted changes",
       "inventory": "Fixed unequipping armor and item edits; different items that share a name no longer merge into one stack",

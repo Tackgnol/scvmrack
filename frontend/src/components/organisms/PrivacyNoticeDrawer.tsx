@@ -6,6 +6,7 @@ import {
     type PrivacySettings,
 } from '@/privacy/privacySettings';
 import { subscribeOpenPrivacyDrawer } from '@/privacy/privacyDrawerBus';
+import { notifyPrivacyConsentChanged } from '@/privacy/privacyConsent';
 import { morkBorgColors } from '@/theme/morkBorgTheme';
 import { Box, Button, Divider, Drawer, FormControlLabel, Switch, Typography } from '@mui/material';
 import { useEffect, useState } from 'react';
@@ -59,6 +60,9 @@ export function PrivacyNoticeDrawer({ openOnMount = false }: PrivacyNoticeDrawer
         savePrivacySettings(nextSettings);
         setSavedSettings(nextSettings);
         setAnalyticsEnabled(isAnalyticsAllowed(nextSettings));
+        // Let gated first-run flows (guest character creation) react to the
+        // acknowledgement immediately rather than on the next reload.
+        notifyPrivacyConsentChanged();
         setOpen(false);
     };
 
