@@ -165,12 +165,15 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
     );
 
     // GET / - List user's characters
-    fastify.get(
+    fastify.get<{
+        Querystring: { locale?: string };
+    }>(
         '/',
         {
             schema: {
                 description: 'List characters for current user',
                 tags: ['characters'],
+                querystring: LocaleQuerySchema,
                 response: {
                     200: { type: 'array', items: CharacterSchema },
                     401: ErrorSchema,
@@ -181,6 +184,7 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
         async (request, reply) => {
             const result = await createCharacterService(request.log).list({
                 session: request.appSession,
+                rawLocale: request.query.locale,
                 acceptLanguage: request.headers['accept-language'],
             });
 

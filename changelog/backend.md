@@ -16,7 +16,7 @@ All application routes are mounted under the `/api` prefix.
 
 ### Characters (`/api/characters`)
 - `POST /new` — generate a new random character (DB function `generate_character`)
-- `GET /` — list characters owned by the current session user
+- `GET /` — list characters owned by the current session user (optional `locale` query param; falls back to `Accept-Language`)
 - `GET /count` — total character count
 - `GET /:id` — fetch a localized character (`get_character_full(id, locale)`)
 - `PATCH /:id` — update a character (server-side sanitization + bounds clamping)

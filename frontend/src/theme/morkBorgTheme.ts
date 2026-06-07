@@ -1377,9 +1377,97 @@ export const customStyles = {
       flexWrap: 'wrap' as const,
       maxWidth: 560,
     },
-    authButton: {
-      color: morkBorgColors.white,
-      border: `1px solid ${morkBorgColors.white}`,
+    authButton: (isAuthenticated: boolean) => ({
+      minHeight: 30,
+      px: 1.2,
+      py: 0.35,
+      borderRadius: 0,
+      backgroundColor: isAuthenticated
+        ? morkBorgColors.yellow
+        : morkBorgColors.black,
+      border: `2px solid ${
+        isAuthenticated ? morkBorgColors.black : morkBorgColors.yellow
+      }`,
+      boxShadow: isAuthenticated
+        ? `3px 3px 0 ${morkBorgColors.pink}`
+        : `2px 2px 0 ${morkBorgColors.black}`,
+      color: isAuthenticated ? morkBorgColors.black : morkBorgColors.yellow,
+      fontFamily: "'Antonio', sans-serif",
+      fontSize: '0.6rem',
+      fontWeight: 800,
+      letterSpacing: '0.12em',
+      textTransform: 'uppercase' as const,
+      lineHeight: 1,
+      whiteSpace: 'nowrap' as const,
+      transform: isAuthenticated ? 'rotate(-0.6deg)' : 'rotate(0.4deg)',
+      transition:
+        'box-shadow 180ms cubic-bezier(0.22, 1, 0.36, 1), color 180ms cubic-bezier(0.22, 1, 0.36, 1), border-color 180ms cubic-bezier(0.22, 1, 0.36, 1), background-color 180ms cubic-bezier(0.22, 1, 0.36, 1), transform 180ms cubic-bezier(0.22, 1, 0.36, 1)',
+      '& .MuiButton-startIcon': {
+        mr: 0.45,
+        ml: 0,
+      },
+      '&:hover': {
+        backgroundColor: isAuthenticated
+          ? morkBorgColors.white
+          : morkBorgColors.yellow,
+        color: morkBorgColors.black,
+        borderColor: morkBorgColors.black,
+        boxShadow: `4px 4px 0 ${morkBorgColors.pink}`,
+        transform: 'translate(-2px, -2px) rotate(-0.6deg)',
+      },
+      '&:active': {
+        boxShadow: `1px 1px 0 ${morkBorgColors.black}`,
+        transform: isAuthenticated ? 'rotate(-0.6deg)' : 'rotate(0.4deg)',
+      },
+      '&:focus-visible': {
+        outline: `2px solid ${morkBorgColors.yellow}`,
+        outlineOffset: 2,
+      },
+      '@media (prefers-reduced-motion: reduce)': {
+        transition: 'none',
+      },
+    }),
+    logoutButton: {
+      minHeight: 30,
+      px: 1.2,
+      py: 0.35,
+      borderRadius: 0,
+      backgroundColor: morkBorgColors.black,
+      border: `2px solid ${morkBorgColors.pink}`,
+      boxShadow: `2px 2px 0 ${morkBorgColors.black}`,
+      color: morkBorgColors.yellow,
+      fontFamily: "'Antonio', sans-serif",
+      fontSize: '0.6rem',
+      fontWeight: 800,
+      letterSpacing: '0.12em',
+      textTransform: 'uppercase' as const,
+      lineHeight: 1,
+      whiteSpace: 'nowrap' as const,
+      transform: 'rotate(0.4deg)',
+      transition:
+        'box-shadow 180ms cubic-bezier(0.22, 1, 0.36, 1), color 180ms cubic-bezier(0.22, 1, 0.36, 1), border-color 180ms cubic-bezier(0.22, 1, 0.36, 1), background-color 180ms cubic-bezier(0.22, 1, 0.36, 1), transform 180ms cubic-bezier(0.22, 1, 0.36, 1)',
+      '& .MuiButton-startIcon': {
+        mr: 0.45,
+        ml: 0,
+      },
+      '&:hover': {
+        backgroundColor: morkBorgColors.pink,
+        color: morkBorgColors.black,
+        borderColor: morkBorgColors.black,
+        boxShadow: `4px 4px 0 ${morkBorgColors.yellow}`,
+        transform: 'translate(-2px, -2px) rotate(0.4deg)',
+      },
+      '&:active': {
+        boxShadow: `1px 1px 0 ${morkBorgColors.black}`,
+        transform: 'rotate(0.4deg)',
+      },
+      '&:focus-visible': {
+        outline: `2px solid ${morkBorgColors.yellow}`,
+        outlineOffset: 2,
+      },
+      '@media (prefers-reduced-motion: reduce)': {
+        transition: 'none',
+      },
     },
     drawerPaper: {
       width: '85%',
@@ -1450,14 +1538,68 @@ export const customStyles = {
     },
     drawerAuthBox: {
       display: 'flex',
-      justifyContent: 'space-around',
-      alignItems: 'center',
+      flexDirection: 'column' as const,
+      justifyContent: 'center',
+      alignItems: 'stretch',
+      gap: 1.25,
+      px: 2,
     },
-    drawerAuthButton: {
+    drawerAuthButton: (isAuthenticated: boolean) => ({
+      minHeight: 46,
+      justifyContent: 'flex-start',
+      px: 1.5,
+      borderRadius: 0,
+      backgroundColor: isAuthenticated
+        ? morkBorgColors.yellow
+        : morkBorgColors.black,
+      border: `2px solid ${
+        isAuthenticated ? morkBorgColors.black : morkBorgColors.yellow
+      }`,
+      boxShadow: isAuthenticated
+        ? `4px 4px 0 ${morkBorgColors.pink}`
+        : `3px 3px 0 ${morkBorgColors.black}`,
+      color: isAuthenticated ? morkBorgColors.black : morkBorgColors.yellow,
+      fontFamily: "'Antonio', sans-serif",
+      fontSize: '0.78rem',
+      fontWeight: 800,
+      letterSpacing: '0.1em',
+      textTransform: 'uppercase' as const,
+      lineHeight: 1,
+      '& .MuiButton-startIcon': {
+        mr: 0.7,
+        ml: 0,
+      },
+      '&:hover': {
+        backgroundColor: isAuthenticated
+          ? morkBorgColors.white
+          : morkBorgColors.yellow,
+        color: morkBorgColors.black,
+        borderColor: morkBorgColors.black,
+      },
+    }),
+    drawerLogoutButton: {
+      minHeight: 46,
+      justifyContent: 'flex-start',
+      px: 1.5,
+      borderRadius: 0,
+      backgroundColor: morkBorgColors.black,
+      border: `2px solid ${morkBorgColors.pink}`,
       color: morkBorgColors.yellow,
-      border: `2px solid ${morkBorgColors.yellow}`,
-      width: 50,
-      height: 50,
+      fontFamily: "'Antonio', sans-serif",
+      fontSize: '0.78rem',
+      fontWeight: 800,
+      letterSpacing: '0.1em',
+      textTransform: 'uppercase' as const,
+      lineHeight: 1,
+      '& .MuiButton-startIcon': {
+        mr: 0.7,
+        ml: 0,
+      },
+      '&:hover': {
+        backgroundColor: morkBorgColors.pink,
+        color: morkBorgColors.black,
+        borderColor: morkBorgColors.black,
+      },
     },
     syncIcon: {
       animation: 'spin 1s linear infinite',

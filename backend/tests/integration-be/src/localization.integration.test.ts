@@ -132,9 +132,34 @@ test('GET /api/characters returns localized className via Accept-Language header
   assert.ok(enCharacter !== undefined, 'created character should appear in en list');
   assert.ok(enCharacter.className.length > 0, 'en className should be non-empty');
 
+  const queryLocaleResponse = await request('/api/characters?locale=en', {
+    headers: { 'accept-language': 'pl' },
+    jar,
+  });
+  assert.equal(
+    queryLocaleResponse.status,
+    200,
+    'list with locale query should succeed'
+  );
+  const queryLocaleList = (await queryLocaleResponse.json()) as Array<{
+    id: string;
+    classId: number;
+    className: string;
+  }>;
+  const queryLocaleCharacter = queryLocaleList.find((c) => c.id === id);
+  assert.ok(
+    queryLocaleCharacter !== undefined,
+    'created character should appear in query-locale list'
+  );
+
   assert.notEqual(
     plCharacter.className,
     enCharacter.className,
     'Polish className from list should differ from English className for the same character'
+  );
+  assert.equal(
+    queryLocaleCharacter.className,
+    enCharacter.className,
+    'locale query should override Accept-Language for list className'
   );
 });

@@ -343,6 +343,7 @@
   "auth": {
     "logout": "Log Out",
     "profile": "Profile",
+    "loggedIn": "Logged In",
     "loginSignup": "Log In / Sign Up",
     "rateLimit": "Too many requests. Please try again later."
   },
@@ -548,6 +549,10 @@
     "typeMinor": "Minor",
     "typePatch": "Patch",
     "moreUpdates": "More updates coming soon. The world is ending, but we keep shipping.",
+    "v034": {
+      "authButtons": "Account controls in the header are now clearly labeled buttons (Logged In / Log Out / Log In) instead of bare icons",
+      "listLocale": "The character list and its dates now display consistently in English, matching the English-only app"
+    },
     "v033": {
       "firstRun": "First run no longer creates a character before you accept the storage notice — an animated loading skeleton shows while your sheet is prepared",
       "englishOnly": "The language switcher is temporarily removed; the app is English-only for now while translations are reworked",

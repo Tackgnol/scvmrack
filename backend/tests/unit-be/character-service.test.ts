@@ -14,6 +14,7 @@ const state = {
   countValue: 0,
   listRows: [] as Array<Record<string, unknown>>,
   classNameMap: new Map<number, string>(),
+  classNameMapCalls: [] as Array<{ classIds: number[]; locale: string }>,
   updateError: null as unknown,
   generateError: null as unknown,
   fullError: null as unknown,
@@ -34,6 +35,7 @@ function resetState(): void {
   state.countValue = 0;
   state.listRows = [];
   state.classNameMap = new Map();
+  state.classNameMapCalls = [];
   state.updateError = null;
   state.generateError = null;
   state.fullError = null;
@@ -69,7 +71,10 @@ mock.module('../../src/repositories/character-repository.js', {
         if (state.listError) throw state.listError;
         return state.listRows;
       },
-      getClassNameMap: async () => state.classNameMap,
+      getClassNameMap: async (classIds: number[], locale: string) => {
+        state.classNameMapCalls.push({ classIds, locale });
+        return state.classNameMap;
+      },
     },
   },
 });
@@ -228,6 +233,30 @@ test('list merges localized class names', async () => {
   const r = await service().list({ session: session('user-1'), acceptLanguage: 'pl' });
   assert.equal(r.ok, true);
   assert.equal((r as any).value[0].className, 'Occult Herbmaster');
+  assert.equal(state.classNameMapCalls[0]?.locale, 'pl');
+});
+
+test('list query locale overrides Accept-Language', async () => {
+  state.listRows = [
+    {
+      id: VALID_ID,
+      name: 'Hero',
+      classId: 2,
+      currentHp: 5,
+      maxHp: 8,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+  ];
+
+  const r = await service().list({
+    session: session('user-1'),
+    rawLocale: 'en',
+    acceptLanguage: 'pl',
+  });
+
+  assert.equal(r.ok, true);
+  assert.equal(state.classNameMapCalls[0]?.locale, 'en');
 });
 
 // ---- remove ----

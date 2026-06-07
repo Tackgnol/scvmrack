@@ -3,7 +3,7 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import PersonIcon from '@mui/icons-material/Person';
 import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
 import PrintIcon from '@mui/icons-material/Print';
-import { Box, Button, IconButton } from '@mui/material';
+import { Box, Button } from '@mui/material';
 import { customStyles } from '@theme/morkBorgTheme';
 import { useTranslation } from 'react-i18next';
 import { NavLink } from './NavLink';
@@ -67,31 +67,41 @@ export function HeaderDesktopBar({
         >
           {t('feedback.reportBugAction', 'Report bug')}
         </Button>
-        <IconButton
+        <Button
           data-testid="auth-button"
           component="a"
           href={authButtonHref}
           target={isAuthenticated ? '_blank' : undefined}
           rel={isAuthenticated ? 'noopener noreferrer' : undefined}
           onClick={onAuthButtonClick}
-          sx={customStyles.header.authButton}
+          startIcon={
+            isAuthenticated ? (
+              <PersonIcon sx={{ fontSize: 16 }} />
+            ) : (
+              <PersonOutlineIcon sx={{ fontSize: 16 }} />
+            )
+          }
+          sx={customStyles.header.authButton(isAuthenticated)}
           aria-label={
             isAuthenticated
-              ? t('auth.profile', 'Profile')
+              ? `${t('auth.loggedIn', 'Logged In')}: ${t('auth.profile', 'Profile')}`
               : t('auth.loginSignup', 'Log In / Sign Up')
           }
         >
-          {isAuthenticated ? <PersonIcon /> : <PersonOutlineIcon />}
-        </IconButton>
+          {isAuthenticated
+            ? t('auth.loggedIn', 'Logged In')
+            : t('auth.loginSignup', 'Log In / Sign Up')}
+        </Button>
         {isAuthenticated && (
-          <IconButton
+          <Button
             data-testid="logout-button"
             onClick={onLogout}
-            sx={customStyles.header.authButton}
+            startIcon={<LogoutIcon sx={{ fontSize: 16 }} />}
+            sx={customStyles.header.logoutButton}
             aria-label={t('auth.logout', 'Log Out')}
           >
-            <LogoutIcon />
-          </IconButton>
+            {t('auth.logout', 'Log Out')}
+          </Button>
         )}
       </Box>
       {scvmCount !== undefined && (

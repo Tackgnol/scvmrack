@@ -3,6 +3,7 @@ import { useCharacter } from '@/CharacterContext/CharacterContext';
 import { type CharacterListItem } from '@/hooks/models.ts';
 import { getCharacterKey } from '@/hooks/utils.ts';
 import { useAuth } from '@/hooks/useAuth';
+import { PathsApiCharactersGetParametersQueryLocale } from '@/api/schema.ts';
 import { useErrorFeedback } from '@/components/molecules/feedback/ErrorFeedbackProvider';
 import { appHistory } from '@/router/history';
 import { buildHomeCallbackUrl } from '@/router/navigation';
@@ -30,7 +31,11 @@ export function useCharactersList() {
   const charactersQuery = $api.useQuery(
     'get',
     '/api/characters',
-    {},
+    {
+      params: {
+        query: { locale: PathsApiCharactersGetParametersQueryLocale.en },
+      },
+    },
     { enabled: isAuthenticated, refetchOnMount: 'always' }
   );
   const deleteCharacterMutation = $api.useMutation('delete', '/api/characters/{id}');

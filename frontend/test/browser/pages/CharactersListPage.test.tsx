@@ -155,6 +155,12 @@ describe('CharactersListPage', () => {
   });
 
   it('renders saved characters and opens one through app history', async () => {
+    const dateFormatter = vi
+      .spyOn(Date.prototype, 'toLocaleDateString')
+      .mockImplementation((locale) =>
+        locale === 'en' ? 'Jun 7, 2026, 4:51 PM' : '7 cze 2026, 16:51'
+      );
+
     await renderCharactersList({
       query: {
         data: [
@@ -172,6 +178,19 @@ describe('CharactersListPage', () => {
 
     await expect.element(page.getByText('Rot-Prone Sigrid')).toBeVisible();
     await expect.element(page.getByText('Gutterborn Scvm')).toBeVisible();
+    await expect.element(page.getByText('Jun 7, 2026, 4:51 PM')).toBeVisible();
+    expect(dateFormatter).toHaveBeenCalledWith(
+      'en',
+      expect.objectContaining({
+        month: 'short',
+      })
+    );
+    expect($api.useQuery).toHaveBeenCalledWith(
+      'get',
+      '/api/characters',
+      { params: { query: { locale: 'en' } } },
+      expect.objectContaining({ enabled: true })
+    );
 
     await userEvent.click(page.getByRole('button', { name: /open/i }));
 
