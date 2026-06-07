@@ -2,6 +2,10 @@ import { createRouter, createRootRoute, createRoute, lazyRouteComponent } from '
 import { appHistory } from '@/router/history';
 import { RootLayout } from '@/router/layout';
 
+const NotFoundComponent = lazyRouteComponent(() =>
+    import('@/pages/NotFoundPage').then(m => ({ default: m.NotFoundPage }))
+);
+
 // Root route with layout
 const rootRoute = createRootRoute({
     component: RootLayout,
@@ -17,6 +21,12 @@ const characterRoute = createRoute({
     getParentRoute: () => rootRoute,
     path: '/character',
     component: lazyRouteComponent(() => import('@/pages/CharacterPage').then(m => ({ default: m.CharacterPage }))),
+});
+
+const characterTrailingSlashRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: '/character/',
+    component: NotFoundComponent,
 });
 
 const characterIdRoute = createRoute({
@@ -53,16 +63,13 @@ const releaseRoute = createRoute({
 const routeTree = rootRoute.addChildren([
     indexRoute,
     characterRoute,
+    characterTrailingSlashRoute,
     characterIdRoute,
     charactersRoute,
     printRoute,
     faqRoute,
     releaseRoute,
 ]);
-
-const NotFoundComponent = lazyRouteComponent(() =>
-    import('@/pages/NotFoundPage').then(m => ({ default: m.NotFoundPage }))
-);
 
 export const router = createRouter({
     routeTree,

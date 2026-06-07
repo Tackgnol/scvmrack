@@ -196,6 +196,21 @@ test('update hydrates inventory uses and persists', async () => {
   assert.equal(state.updateCalls.length, 1);
 });
 
+test('update preserves plain punctuation instead of html-encoding saved text', async () => {
+  const r = await service().update({
+    id: VALID_ID,
+    session: session('user-1'),
+    body: { notes: "It's quite obnoxious really" },
+    rawLocale: 'en',
+  });
+
+  assert.equal(r.ok, true);
+  assert.deepEqual(state.updateCalls[0], {
+    id: VALID_ID,
+    data: { notes: "It's quite obnoxious really" },
+  });
+});
+
 test('update maps a Prisma P2025 to a 404 not-found', async () => {
   state.updateError = new Prisma.PrismaClientKnownRequestError('not found', {
     code: 'P2025',

@@ -65,18 +65,41 @@ describe('navigation router utils', () => {
             appHistory.location.search = `?${CHARACTER_ID_QUERY_PARAM}=123`;
             expect(getCurrentCharacterIdParam()).toBe('123');
         });
+
+        it('should return character ID from the canonical path', () => {
+            appHistory.location.pathname = '/character/path-id';
+            expect(getCurrentCharacterIdParam()).toBe('path-id');
+        });
     });
 
     describe('setCurrentCharacterIdParam', () => {
-        it('should set character ID in search', async () => {
+        it('should set character ID in search outside the sheet route', async () => {
             await setCurrentCharacterIdParam('456');
             expect(appHistory.replace).toHaveBeenCalledWith(`/?${CHARACTER_ID_QUERY_PARAM}=456`);
         });
 
-        it('should remove character ID if null', async () => {
+        it('should replace sheet routes with the canonical character path', async () => {
+            appHistory.location.pathname = '/character/old-id';
+            appHistory.location.search = `?${CHARACTER_ID_QUERY_PARAM}=stale-id`;
+
+            await setCurrentCharacterIdParam('new-id');
+
+            expect(appHistory.replace).toHaveBeenCalledWith('/character/new-id');
+        });
+
+        it('should remove character ID if null outside the sheet route', async () => {
             appHistory.location.search = `?${CHARACTER_ID_QUERY_PARAM}=123`;
             await setCurrentCharacterIdParam(null);
             expect(appHistory.replace).toHaveBeenCalledWith('/');
+        });
+
+        it('should replace sheet routes with the canonical sheet root when cleared', async () => {
+            appHistory.location.pathname = '/character/old-id';
+            appHistory.location.search = `?${CHARACTER_ID_QUERY_PARAM}=old-id`;
+
+            await setCurrentCharacterIdParam(null);
+
+            expect(appHistory.replace).toHaveBeenCalledWith('/character');
         });
     });
 

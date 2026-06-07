@@ -15,11 +15,13 @@
 
 - **Landing** — entry / call to action
 - **Characters list** — all characters for the current user
-- **Character sheet** — the core editor (stats, equipment, abilities, powers, pets, notes)
+- **Character sheet** — the core editor (stats, equipment, abilities, powers, pets, notes);
+  sheet navigation uses canonical `/character/<id>` URLs without stale `character`
+  query parameters
 - **Print** — printer-friendly character layout
 - **FAQ** — help content
 - **Release notes** — in-app changelog at `/release`
-- **404 / Not found**
+- **404 / Not found** — includes malformed sheet paths such as `/character/`
 
 ## Character editing
 

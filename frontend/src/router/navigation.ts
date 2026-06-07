@@ -8,6 +8,14 @@ export const CLAIM_CHARACTER_QUERY_PARAM = 'claim-character';
 const HOME_PATH = '/character';
 const PRINT_PATH = '/print';
 
+const isCharacterPath = (pathname: string): boolean => {
+    return pathname === HOME_PATH || pathname.startsWith(`${HOME_PATH}/`);
+};
+
+const buildCharacterPath = (characterId: string | null): string => {
+    return characterId ? `${HOME_PATH}/${encodeURIComponent(characterId)}` : HOME_PATH;
+};
+
 const normalizeHash = (hash: string): string => {
     if (!hash) {
         return '';
@@ -80,6 +88,17 @@ export const getCurrentPendingClaimCharacterId = (): string | null => {
 };
 
 export const setCurrentCharacterIdParam = async (characterId: string | null): Promise<void> => {
+    if (isCharacterPath(appHistory.location.pathname)) {
+        const searchParams = getCurrentSearchParams();
+        searchParams.delete(CHARACTER_ID_QUERY_PARAM);
+        await appHistory.replace(buildPath(
+            buildCharacterPath(characterId),
+            searchParams,
+            appHistory.location.hash
+        ));
+        return;
+    }
+
     await replaceCurrentWithSearchParams((searchParams) => {
         if (characterId) {
             searchParams.set(CHARACTER_ID_QUERY_PARAM, characterId);
