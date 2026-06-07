@@ -36,6 +36,16 @@ export function ReleasePage() {
     // newest-first and in sync with that folder when cutting a release.
     const releases: ReleaseNote[] = [
         {
+            version: '0.3.5',
+            date: '2026-06-07',
+            type: 'patch',
+            changes: [
+                t('release.v035.characterUrls', 'Generating or selecting a scvm now lands on the clean /character/<id> URL without stale character query parameters'),
+                t('release.v035.trailingSlash404', 'Opening /character/ now shows the 404 page instead of an empty app state'),
+                t('release.v035.plainTextSaves', 'Character text saves now keep apostrophes and punctuation as typed instead of returning HTML entities'),
+            ],
+        },
+        {
             version: '0.3.4',
             date: '2026-06-07',
             type: 'patch',
@@ -166,8 +176,8 @@ export function ReleasePage() {
 
                                 {/* Changes list */}
                                 <Box component="ul" sx={customStyles.releasePage.changesList}>
-                                    {release.changes.map((change, index) => (
-                                        <Box component="li" key={index} sx={customStyles.releasePage.changeItem}>
+                                    {release.changes.map((change) => (
+                                        <Box component="li" key={`${release.version}-${change}`} sx={customStyles.releasePage.changeItem}>
                                             {change}
                                         </Box>
                                     ))}

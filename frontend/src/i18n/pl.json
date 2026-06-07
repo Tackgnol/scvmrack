@@ -546,6 +546,11 @@
     "typeMinor": "Mała",
     "typePatch": "Poprawka",
     "moreUpdates": "Więcej aktualizacji wkrótce. Świat się kończy, ale my dalej dostarczamy.",
+    "v035": {
+      "characterUrls": "Generowanie lub wybór scvma trafia teraz na czysty adres /character/<id> bez przestarzałych parametrów query",
+      "trailingSlash404": "Otwarcie /character/ pokazuje teraz stronę 404 zamiast pustego stanu aplikacji",
+      "plainTextSaves": "Zapisywanie tekstu postaci zachowuje apostrofy i interpunkcję tak, jak wpisano, zamiast zwracać encje HTML"
+    },
     "v034": {
       "authButtons": "Elementy konta w nagłówku są teraz wyraźnie opisanymi przyciskami (Zalogowano / Wyloguj / Zaloguj) zamiast samych ikon",
       "listLocale": "Lista postaci i jej daty wyświetlają się teraz spójnie po angielsku, zgodnie z aplikacją tylko w języku angielskim"

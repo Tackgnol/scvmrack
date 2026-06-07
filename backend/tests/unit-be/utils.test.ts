@@ -10,9 +10,9 @@ import {
   sanitizeString,
 } from '../../src/utils.ts';
 
-test('sanitizeString trims, escapes html, and enforces max length', () => {
-  const value = sanitizeString('  <script>alert(1)</script>  ', 20);
-  assert.equal(value, '&lt;script&gt;alert(');
+test('sanitizeString trims plain text without html-encoding user content', () => {
+  const value = sanitizeString("  It's quite <obnoxious> really  ", 20);
+  assert.equal(value, "It's quite <obnoxiou");
 });
 
 test('sanitizeJsonb recursively sanitizes and drops dangerous keys', () => {
@@ -25,7 +25,7 @@ test('sanitizeJsonb recursively sanitizes and drops dangerous keys', () => {
     list: ['<i>1</i>', { constructor: 'skip', ok: 'ok' }],
   }) as Record<string, unknown>;
 
-  assert.equal(sanitized.safe, '&lt;b&gt;x&lt;&#x2F;b&gt;');
+  assert.equal(sanitized.safe, '<b>x</b>');
   assert.deepEqual(sanitized.nested, { valid: 'yes' });
   assert.deepEqual(sanitized.list, ['<i>1</i>', { ok: 'ok' }]);
 });
@@ -40,10 +40,10 @@ test('sanitizeCharacterUpdate keeps known fields and clamps numeric bounds', () 
   });
 
   assert.deepEqual(sanitized, {
-    name: '&lt;b&gt;Hero&lt;&#x2F;b&gt;',
+    name: '<b>Hero</b>',
     maxHp: 1000,
     currentHp: -100,
-    equipment: [{ name: '&lt;axe&gt;' }],
+    equipment: [{ name: '<axe>' }],
   });
 });
 

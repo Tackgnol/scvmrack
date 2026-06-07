@@ -19,7 +19,7 @@ All application routes are mounted under the `/api` prefix.
 - `GET /` — list characters owned by the current session user (optional `locale` query param; falls back to `Accept-Language`)
 - `GET /count` — total character count
 - `GET /:id` — fetch a localized character (`get_character_full(id, locale)`)
-- `PATCH /:id` — update a character (server-side sanitization + bounds clamping)
+- `PATCH /:id` — update a character (plain-text sanitization, length limits, bounds clamping)
 - `DELETE /:id` — delete a character (ownership-enforced)
 
 ### Equipment (`/api/equipment`)
@@ -57,7 +57,8 @@ Centralized, structured error pipeline (`src/errors.ts` + `plugins/error-handler
 - HMAC double-submit CSRF on all state-changing routes outside `/api/auth/*`
 - Rate limiting: 10 req/min on auth, 30 req/min on character/equipment, 20/min on feedback
 - SQL injection guarded by Prisma parameterization / tagged `$queryRaw`
-- Input sanitization helpers (`sanitizeString`, `sanitizeJsonb`, `sanitizeCharacterUpdate`)
+- Input sanitization helpers (`sanitizeString`, `sanitizeJsonb`, `sanitizeCharacterUpdate`);
+  text remains plain API data and HTML escaping is left to render boundaries
 - Swagger/OpenAPI disabled in production; container runs as non-root `node`
 - Pentested with Shannon AI (2026-03-23); findings remediated or accepted
 

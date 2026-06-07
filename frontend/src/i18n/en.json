@@ -549,6 +549,11 @@
     "typeMinor": "Minor",
     "typePatch": "Patch",
     "moreUpdates": "More updates coming soon. The world is ending, but we keep shipping.",
+    "v035": {
+      "characterUrls": "Generating or selecting a scvm now lands on the clean /character/<id> URL without stale character query parameters",
+      "trailingSlash404": "Opening /character/ now shows the 404 page instead of an empty app state",
+      "plainTextSaves": "Character text saves now keep apostrophes and punctuation as typed instead of returning HTML entities"
+    },
     "v034": {
       "authButtons": "Account controls in the header are now clearly labeled buttons (Logged In / Log Out / Log In) instead of bare icons",
       "listLocale": "The character list and its dates now display consistently in English, matching the English-only app"

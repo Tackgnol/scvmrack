@@ -20,6 +20,7 @@ vi.mock('@/router/history', () => ({
 vi.mock('@/pages/CharacterPage', () => ({ CharacterPage: () => null }));
 vi.mock('@/pages/CharactersListPage', () => ({ CharactersListPage: () => null }));
 vi.mock('@/pages/FaqPage', () => ({ FaqPage: () => null }));
+vi.mock('@/pages/NotFoundPage', () => ({ NotFoundPage: () => null }));
 vi.mock('@/pages/PrintPage', () => ({ PrintPage: () => null }));
 vi.mock('@/pages/ReleasePage', () => ({ ReleasePage: () => null }));
 vi.mock('@/router/layout', () => ({ RootLayout: () => null }));
@@ -31,9 +32,17 @@ describe('router/index — route registration', () => {
 
     expect(registeredPaths).toContain('/');
     expect(registeredPaths).toContain('/characters');
+    expect(registeredPaths).toContain('/character/');
     expect(registeredPaths).toContain('/print');
     expect(registeredPaths).toContain('/faq');
     expect(registeredPaths).toContain('/release');
     expect(registeredPaths).not.toContain('/reset-password');
+  });
+
+  it('treats /character/ as not found instead of an empty sheet shell', async () => {
+    const { router } = await import('@/router/index');
+    const matches = router.matchRoutes('/character/');
+
+    expect(matches.at(-1)?.routeId).toBe('/character/');
   });
 });

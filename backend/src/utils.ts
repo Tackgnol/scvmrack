@@ -40,20 +40,25 @@ export function transformKeys(obj: unknown, keyFn: (key: string) => string, dept
 }
 
 /**
- * Sanitize a string input - escape HTML, trim, limit length
+ * Sanitize a string input as plain text data: trim and limit length.
+ * HTML escaping belongs at render boundaries, not in persisted API values.
  */
 export function sanitizeString(input: unknown, maxLength = 10000): string {
   if (typeof input !== 'string') return '';
 
-  return validator.escape(validator.trim(input)).slice(0, maxLength);
+  return input.trim().slice(0, maxLength);
 }
 
 /**
- * Sanitize JSONB objects recursively
+ * Sanitize JSONB objects recursively while preserving user text as plain text.
  */
 export function sanitizeJsonb(obj: unknown): unknown {
   if (obj === null || obj === undefined) {
     return obj;
+  }
+
+  if (typeof obj === 'string') {
+    return sanitizeString(obj);
   }
 
   if (Array.isArray(obj)) {
@@ -63,26 +68,24 @@ export function sanitizeJsonb(obj: unknown): unknown {
   if (typeof obj === 'object') {
     const result: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(obj)) {
-      // Sanitize the key too (prevent prototype pollution)
-      const safeKey = validator.escape(key);
       if (
-        safeKey === '__proto__' ||
-        safeKey === 'constructor' ||
-        safeKey === 'prototype'
+        key === '__proto__' ||
+        key === 'constructor' ||
+        key === 'prototype'
       ) {
         continue; // Skip dangerous keys
       }
 
       if (typeof value === 'string') {
-        result[safeKey] = sanitizeString(value);
+        result[key] = sanitizeString(value);
       } else if (typeof value === 'boolean') {
-        result[safeKey] = value;
+        result[key] = value;
       } else if (typeof value === 'number' && Number.isFinite(value)) {
-        result[safeKey] = value;
+        result[key] = value;
       } else if (value === null) {
-        result[safeKey] = null;
+        result[key] = null;
       } else if (Array.isArray(value) || typeof value === 'object') {
-        result[safeKey] = sanitizeJsonb(value);
+        result[key] = sanitizeJsonb(value);
       }
       // Skip functions and undefined
     }
