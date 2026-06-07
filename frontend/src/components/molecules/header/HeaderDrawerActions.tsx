@@ -3,7 +3,7 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import PersonIcon from '@mui/icons-material/Person';
 import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
 import PrintIcon from '@mui/icons-material/Print';
-import { Box, Button, IconButton } from '@mui/material';
+import { Box, Button } from '@mui/material';
 import { customStyles } from '@theme/morkBorgTheme';
 import { useTranslation } from 'react-i18next';
 import { HeaderStatusChip } from './HeaderStatusChip';
@@ -69,35 +69,41 @@ export function HeaderDrawerActions({
         </Button>
       </Box>
       <Box sx={customStyles.header.drawerAuthBox}>
-        <IconButton
+        <Button
           component="a"
           href={authButtonHref}
           target={isAuthenticated ? '_blank' : undefined}
           rel={isAuthenticated ? 'noopener noreferrer' : undefined}
-          sx={customStyles.header.drawerAuthButton}
+          startIcon={
+            isAuthenticated ? (
+              <PersonIcon fontSize="small" />
+            ) : (
+              <PersonOutlineIcon fontSize="small" />
+            )
+          }
+          sx={customStyles.header.drawerAuthButton(isAuthenticated)}
           aria-label={
             isAuthenticated
-              ? t('auth.profile', 'Profile')
+              ? `${t('auth.loggedIn', 'Logged In')}: ${t('auth.profile', 'Profile')}`
               : t('auth.loginSignup', 'Log In / Sign Up')
           }
         >
-          {isAuthenticated ? (
-            <PersonIcon fontSize="large" />
-          ) : (
-            <PersonOutlineIcon fontSize="large" />
-          )}
-        </IconButton>
+          {isAuthenticated
+            ? t('auth.loggedIn', 'Logged In')
+            : t('auth.loginSignup', 'Log In / Sign Up')}
+        </Button>
         {isAuthenticated && (
-          <IconButton
+          <Button
             onClick={() => {
               onClose();
               onLogout();
             }}
-            sx={customStyles.header.drawerAuthButton}
+            startIcon={<LogoutIcon fontSize="small" />}
+            sx={customStyles.header.drawerLogoutButton}
             aria-label={t('auth.logout', 'Log Out')}
           >
-            <LogoutIcon fontSize="large" />
-          </IconButton>
+            {t('auth.logout', 'Log Out')}
+          </Button>
         )}
       </Box>
     </Box>

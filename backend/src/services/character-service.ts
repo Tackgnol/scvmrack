@@ -45,7 +45,11 @@ function sessionUserId(session: AppSession): string | null {
   return session?.user?.id ?? null;
 }
 
-function resolveListLocale(acceptLanguage: unknown): 'en' | 'pl' {
+function resolveListLocale(rawLocale: unknown, acceptLanguage: unknown): 'en' | 'pl' {
+  if (isValidLocale(rawLocale)) {
+    return rawLocale;
+  }
+
   if (typeof acceptLanguage !== 'string' || acceptLanguage.length === 0) {
     return 'en';
   }
@@ -250,6 +254,7 @@ export function createCharacterService(log: ServiceLogger) {
 
     async list(input: {
       session: AppSession;
+      rawLocale?: unknown;
       acceptLanguage: unknown;
     }): Promise<ServiceResult<CharacterListRow[]>> {
       const userId = sessionUserId(input.session);
@@ -257,7 +262,7 @@ export function createCharacterService(log: ServiceLogger) {
         return fail(unauthorized());
       }
 
-      const locale = resolveListLocale(input.acceptLanguage);
+      const locale = resolveListLocale(input.rawLocale, input.acceptLanguage);
 
       try {
         const characters = await characterRepository.listSummariesByUser(userId);

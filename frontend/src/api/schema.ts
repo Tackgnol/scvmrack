@@ -793,7 +793,9 @@ export interface paths {
     };
     "/api/characters": {
         parameters: {
-            query?: never;
+            query?: {
+                locale?: PathsApiCharactersGetParametersQueryLocale;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -801,7 +803,9 @@ export interface paths {
         /** @description List characters for current user */
         get: {
             parameters: {
-                query?: never;
+                query?: {
+                    locale?: PathsApiCharactersGetParametersQueryLocale;
+                };
                 header?: never;
                 path?: never;
                 cookie?: never;
@@ -1148,6 +1152,10 @@ export enum PathsApiCharactersIdPatchResponses200ContentApplicationJsonComputedM
     weapon = "weapon",
     pet = "pet",
     system = "system"
+}
+export enum PathsApiCharactersGetParametersQueryLocale {
+    en = "en",
+    pl = "pl"
 }
 export enum PathsApiCharactersGetResponses200ContentApplicationJsonModifiersStatistic {
     agility = "agility",

@@ -36,6 +36,15 @@ export function ReleasePage() {
     // newest-first and in sync with that folder when cutting a release.
     const releases: ReleaseNote[] = [
         {
+            version: '0.3.4',
+            date: '2026-06-07',
+            type: 'patch',
+            changes: [
+                t('release.v034.authButtons', 'Account controls in the header are now clearly labeled buttons (Logged In / Log Out / Log In) instead of bare icons'),
+                t('release.v034.listLocale', 'The character list and its dates now display consistently in English, matching the English-only app'),
+            ],
+        },
+        {
             version: '0.3.3',
             date: '2026-06-07',
             type: 'patch',

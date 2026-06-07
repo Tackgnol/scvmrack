@@ -340,6 +340,7 @@
   "auth": {
     "logout": "Wyloguj",
     "profile": "Profil",
+    "loggedIn": "Zalogowano",
     "loginSignup": "Zaloguj / Zarejestruj",
     "rateLimit": "Zbyt wiele zapytań. Spróbuj ponownie później."
   },
@@ -545,6 +546,10 @@
     "typeMinor": "Mała",
     "typePatch": "Poprawka",
     "moreUpdates": "Więcej aktualizacji wkrótce. Świat się kończy, ale my dalej dostarczamy.",
+    "v034": {
+      "authButtons": "Elementy konta w nagłówku są teraz wyraźnie opisanymi przyciskami (Zalogowano / Wyloguj / Zaloguj) zamiast samych ikon",
+      "listLocale": "Lista postaci i jej daty wyświetlają się teraz spójnie po angielsku, zgodnie z aplikacją tylko w języku angielskim"
+    },
     "v033": {
       "firstRun": "Przy pierwszym uruchomieniu postać nie jest już tworzona przed akceptacją informacji o przechowywaniu danych — podczas przygotowywania karty wyświetla się animowany szkielet ładowania",
       "englishOnly": "Przełącznik języka został tymczasowo usunięty; aplikacja jest na razie tylko po angielsku, dopóki tłumaczenia nie zostaną przerobione",

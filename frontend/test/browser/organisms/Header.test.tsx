@@ -192,6 +192,8 @@ describe('Header Component', () => {
     await renderHeader();
 
     const authBtn = page.getByTestId('auth-button');
+    await expect.element(authBtn).toBeVisible();
+    await expect.element(authBtn).toHaveTextContent(/Log In \/ Sign Up/i);
     await expect
       .element(authBtn)
       .toHaveAttribute('href', '/api/auth/oauth2/login/logto');
@@ -215,13 +217,19 @@ describe('Header Component', () => {
     });
 
     const authBtn = page.getByTestId('auth-button');
+    await expect.element(authBtn).toBeVisible();
+    await expect.element(authBtn).toHaveTextContent(/Logged In/i);
     await expect
       .element(authBtn)
       .toHaveAttribute('href', 'https://auth.example.test/profile');
     await expect.element(authBtn).toHaveAttribute('target', '_blank');
     expect(AuthLinks.profileUrl).toHaveBeenCalled();
 
-    await userEvent.click(page.getByTestId('logout-button'));
+    const logoutBtn = page.getByTestId('logout-button');
+    await expect.element(logoutBtn).toBeVisible();
+    await expect.element(logoutBtn).toHaveTextContent(/Log Out/i);
+
+    await userEvent.click(logoutBtn);
     await expect.poll(() => signOut.mutateAsync).toHaveBeenCalled();
   });
 });
