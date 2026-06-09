@@ -39,8 +39,9 @@ type Params = {
 };
 
 /**
- * Owns the first-run flow: on the `/character` route with no active character,
- * select an existing one if the session owns any, otherwise create a new one.
+ * Owns the first-run flow: on the sheet bootstrap routes with no active
+ * character, select an existing one if the session owns any, otherwise create a
+ * new one.
  *
  * The in-flight controller is a per-instance ref (passed in) — never a
  * module-level singleton — so two mounts / tabs / StrictMode double-invokes
@@ -73,7 +74,7 @@ export function useAutoCreateCharacter({
   // write) before the storage notice is accepted. Until then the sheet renders
   // skeletons behind the notice drawer.
   const shouldAutoCreateCharacter =
-    pathname === '/character' &&
+    (pathname === '/character' || pathname === '/character/new') &&
     !authLoading &&
     privacyAcknowledged &&
     !characterId &&

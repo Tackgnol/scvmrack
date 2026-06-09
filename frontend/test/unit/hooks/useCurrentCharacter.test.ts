@@ -308,6 +308,39 @@ test('useCurrentCharacter handles auto-create effect', async () => {
   expect(setCharacterId).toHaveBeenCalledWith('auto-char');
 });
 
+test('useCurrentCharacter handles auto-create effect on the new-character route', async () => {
+  appHistory.location.pathname = '/character/new';
+  const setCharacterId = vi.fn();
+  (useCharacterId as any).mockReturnValue({
+    characterId: null,
+    lastCharacterId: null,
+    setCharacterId,
+  });
+  (useAuth as any).mockReturnValue({
+    isAuthenticated: false,
+    isGuest: true,
+    isLoading: false,
+  });
+
+  const createMutate = vi.fn();
+  (useCharacterRepository as any).mockReturnValue({
+    createCharacter: { mutate: createMutate, data: null },
+  });
+  (useCharacterEditor as any).mockReturnValue({ flush: vi.fn() });
+  global.fetch = vi.fn().mockResolvedValue({
+    ok: true,
+    json: async () => [],
+  });
+
+  await act(async () => {
+    renderHook(() => useCurrentCharacter());
+  });
+
+  await vi.waitFor(() => {
+    expect(createMutate).toHaveBeenCalled();
+  });
+});
+
 test('useCurrentCharacter does not auto-create until privacy is acknowledged', async () => {
   privacyState.acknowledged = false;
   const setCharacterId = vi.fn();

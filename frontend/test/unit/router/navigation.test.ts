@@ -70,6 +70,11 @@ describe('navigation router utils', () => {
             appHistory.location.pathname = '/character/path-id';
             expect(getCurrentCharacterIdParam()).toBe('path-id');
         });
+
+        it('should not treat the new-character bootstrap route as a character ID', () => {
+            appHistory.location.pathname = '/character/new';
+            expect(getCurrentCharacterIdParam()).toBeNull();
+        });
     });
 
     describe('setCurrentCharacterIdParam', () => {
@@ -93,13 +98,13 @@ describe('navigation router utils', () => {
             expect(appHistory.replace).toHaveBeenCalledWith('/');
         });
 
-        it('should replace sheet routes with the canonical sheet root when cleared', async () => {
+        it('should replace sheet routes with the new-character bootstrap when cleared', async () => {
             appHistory.location.pathname = '/character/old-id';
             appHistory.location.search = `?${CHARACTER_ID_QUERY_PARAM}=old-id`;
 
             await setCurrentCharacterIdParam(null);
 
-            expect(appHistory.replace).toHaveBeenCalledWith('/character');
+            expect(appHistory.replace).toHaveBeenCalledWith('/character/new');
         });
     });
 
@@ -116,9 +121,9 @@ describe('navigation router utils', () => {
             expect(url).toBe('/character/char1');
         });
 
-        it('should build character home URL without params when no character is active', () => {
+        it('should build the new-character bootstrap URL when no character is active', () => {
             const url = buildHomeCallbackUrl(null);
-            expect(url).toBe('/character');
+            expect(url).toBe('/character/new');
         });
     });
 

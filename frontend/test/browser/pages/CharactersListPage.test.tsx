@@ -66,7 +66,7 @@ vi.mock('@/router/history', () => ({
 
 vi.mock('@/router/navigation', () => ({
   buildHomeCallbackUrl: vi.fn((characterId: string | null) =>
-    characterId ? `/character/${characterId}` : '/character'
+    characterId ? `/character/${characterId}` : '/character/new'
   ),
   navigateToSessionExpired: vi.fn(),
 }));
@@ -151,7 +151,7 @@ describe('CharactersListPage', () => {
     await expect.element(page.getByText(/no characters yet/i)).toBeVisible();
     await expect
       .element(page.getByRole('link', { name: /create character/i }))
-      .toHaveAttribute('href', '/character');
+      .toHaveAttribute('href', '/character/new');
   });
 
   it('renders saved characters and opens one through app history', async () => {

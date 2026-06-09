@@ -33,6 +33,7 @@ describe('router/index — route registration', () => {
     expect(registeredPaths).toContain('/');
     expect(registeredPaths).toContain('/characters');
     expect(registeredPaths).toContain('/character/');
+    expect(registeredPaths).toContain('/character/new');
     expect(registeredPaths).toContain('/print');
     expect(registeredPaths).toContain('/faq');
     expect(registeredPaths).toContain('/release');
@@ -44,5 +45,12 @@ describe('router/index — route registration', () => {
     const matches = router.matchRoutes('/character/');
 
     expect(matches.at(-1)?.routeId).toBe('/character/');
+  });
+
+  it('routes /character/new to the sheet bootstrap page', async () => {
+    const { router } = await import('@/router/index');
+    const matches = router.matchRoutes('/character/new');
+
+    expect(matches.at(-1)?.routeId).toBe('/character/new');
   });
 });

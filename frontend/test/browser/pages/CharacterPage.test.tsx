@@ -212,6 +212,25 @@ describe('CharacterPage', () => {
     expect(document.body.textContent).not.toMatch(/scvm not found/i);
   });
 
+  it('renders a visible sheet skeleton while bootstrapping', async () => {
+    await renderCharacterPage({
+      character: undefined,
+      characterId: null,
+      isLoading: true,
+    });
+
+    const skeleton = page.getByTestId('character-sheet-skeleton');
+    await expect.element(skeleton).toBeVisible();
+
+    const skeletonElement = document.querySelector(
+      '[data-testid="character-sheet-skeleton"]'
+    );
+    expect(skeletonElement).not.toBeNull();
+    expect(getComputedStyle(skeletonElement!).backgroundColor).toBe(
+      'rgb(10, 10, 10)'
+    );
+  });
+
   it('keeps unexpected load errors visible when the feedback provider is unavailable', async () => {
     errorFeedbackMocks.canReportUnexpectedError = false;
 

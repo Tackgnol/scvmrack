@@ -1,5 +1,6 @@
 import { AnalyticsPageTracker } from '@/analytics/AnalyticsPageTracker';
 import { NetworkActivityIndicator } from '@/components/atoms/NetworkActivityIndicator';
+import { CharacterSheetSkeleton } from '@/components/molecules/character/CharacterSheetSkeleton';
 import Header from '@/components/organisms/Header';
 import { SessionExpiredGate } from '@components/molecules/session/SessionExpiredGate';
 import { Outlet, useRouterState } from '@tanstack/react-router';
@@ -52,6 +53,8 @@ export function RootLayout() {
         select: (state) => state.location.pathname,
     });
     const isPrintRoute = pathname === '/print';
+    const isSheetRoute =
+        pathname === '/character' || pathname.startsWith('/character/');
 
     return (
         <ThemeProvider theme={morkBorgTheme}>
@@ -83,7 +86,9 @@ export function RootLayout() {
                             },
                         }}
                     >
-                        <Outlet />
+                        <Suspense fallback={isSheetRoute ? <CharacterSheetSkeleton /> : null}>
+                            <Outlet />
+                        </Suspense>
                     </Box>
                 </Container>
                 {!isPrintRoute && (

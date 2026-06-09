@@ -144,6 +144,14 @@ describe('Header Component', () => {
     await expect.element(printBtn).toBeVisible();
   });
 
+  it('renders the Sheet nav link with the computed home URL', async () => {
+    await renderHeader();
+
+    await expect
+      .element(page.getByTestId('nav-link-character'))
+      .toHaveAttribute('href', '/home');
+  });
+
   it('displays the saving chip when isSaving is true', async () => {
     await renderHeader({ character: { isSaving: true } });
 
