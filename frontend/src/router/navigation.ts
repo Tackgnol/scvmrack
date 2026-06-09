@@ -6,14 +6,16 @@ export const CHARACTER_ID_QUERY_PARAM = 'character';
 export const CLAIM_CHARACTER_QUERY_PARAM = 'claim-character';
 
 const HOME_PATH = '/character';
+const NEW_CHARACTER_PATH = '/character/new';
 const PRINT_PATH = '/print';
+const RESERVED_CHARACTER_PATH_SEGMENTS = new Set(['new']);
 
 const isCharacterPath = (pathname: string): boolean => {
     return pathname === HOME_PATH || pathname.startsWith(`${HOME_PATH}/`);
 };
 
 const buildCharacterPath = (characterId: string | null): string => {
-    return characterId ? `${HOME_PATH}/${encodeURIComponent(characterId)}` : HOME_PATH;
+    return characterId ? `${HOME_PATH}/${encodeURIComponent(characterId)}` : NEW_CHARACTER_PATH;
 };
 
 const normalizeHash = (hash: string): string => {
@@ -80,7 +82,12 @@ export const getCurrentCharacterIdParam = (): string | null => {
 
     const pathname = appHistory.location.pathname;
     const match = pathname.match(/^\/character\/([^/]+)/);
-    return match ? match[1] : null;
+    if (!match) {
+        return null;
+    }
+
+    const candidate = match[1];
+    return RESERVED_CHARACTER_PATH_SEGMENTS.has(candidate) ? null : candidate;
 };
 
 export const getCurrentPendingClaimCharacterId = (): string | null => {
@@ -135,7 +142,7 @@ export const buildHomeCallbackUrl = (
         return `${HOME_PATH}/${characterId}`;
     }
 
-    return HOME_PATH;
+    return NEW_CHARACTER_PATH;
 };
 
 export const buildPrintCallbackUrl = (characterId: string | null): string => {

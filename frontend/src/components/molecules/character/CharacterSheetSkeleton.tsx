@@ -4,8 +4,12 @@ import { morkBorgColors } from '@/theme/morkBorgTheme';
 // On-theme shimmer: light blocks over the dark sheet so the skeleton reads as
 // "the sheet is assembling" rather than a generic grey placeholder.
 const blockSx = {
-    bgcolor: 'rgba(245, 245, 245, 0.08)',
+    bgcolor: 'rgba(245, 245, 245, 0.14)',
+    border: `1px solid ${morkBorgColors.grey}`,
     borderRadius: 0,
+    '&::after': {
+        background: `linear-gradient(90deg, transparent, ${morkBorgColors.yellow}22, transparent)`,
+    },
 } as const;
 
 type BlockProps = {
@@ -43,7 +47,18 @@ export function CharacterSheetSkeleton() {
             aria-busy="true"
             aria-live="polite"
             aria-label="Loading character sheet"
-            sx={{ display: 'flex', flexDirection: 'column', gap: 2, py: 1 }}
+            sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 2,
+                bgcolor: morkBorgColors.black,
+                color: morkBorgColors.white,
+                border: `3px solid ${morkBorgColors.black}`,
+                boxShadow: `7px 7px 0 ${morkBorgColors.pink}`,
+                p: { xs: 2, sm: 2.5 },
+                mt: 1,
+                mb: 3,
+            }}
         >
             {/* Summary bar */}
             <Block height={64} animation={animation} />

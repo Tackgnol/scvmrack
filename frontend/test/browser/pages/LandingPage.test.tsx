@@ -27,7 +27,7 @@ vi.mock('@tanstack/react-router', () => ({
 
 vi.mock('@/router/navigation', () => ({
   buildHomeCallbackUrl: vi.fn((characterId: string | null) =>
-    characterId ? `/character/${characterId}` : '/character'
+    characterId ? `/character/${characterId}` : '/character/new'
   ),
 }));
 
@@ -50,12 +50,37 @@ describe('LandingPage', () => {
     vi.unstubAllGlobals();
   });
 
-  it('links the Open sheet CTA to the sheet bootstrap route', async () => {
+  it('links the Open sheet CTA to the new-character bootstrap route when none exists', async () => {
     await renderLanding();
 
     await expect
       .element(page.getByRole('link', { name: /open sheet/i }))
-      .toHaveAttribute('href', '/character');
+      .toHaveAttribute('href', '/character/new');
+    expect(buildHomeCallbackUrl).toHaveBeenCalledWith(null);
+  });
+
+  it('links the Open sheet CTA to an existing character when one is found', async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => [{ id: 'existing-char' }],
+    });
+
+    await renderLanding();
+
+    await expect
+      .element(page.getByRole('link', { name: /open sheet/i }))
+      .toHaveAttribute('href', '/character/existing-char');
+    expect(buildHomeCallbackUrl).toHaveBeenCalledWith('existing-char');
+  });
+
+  it('keeps the Open sheet CTA on the bootstrap route when the list check fails', async () => {
+    mockFetch.mockRejectedValueOnce(new Error('network down'));
+
+    await renderLanding();
+
+    await expect
+      .element(page.getByRole('link', { name: /open sheet/i }))
+      .toHaveAttribute('href', '/character/new');
     expect(buildHomeCallbackUrl).toHaveBeenCalledWith(null);
   });
 
@@ -63,8 +88,13 @@ describe('LandingPage', () => {
     await renderLanding();
 
     await expect.element(page.getByRole('link', { name: /open sheet/i })).toBeVisible();
-    // Pre-generation was removed; the landing makes no character/list API calls.
-    expect(mockFetch).not.toHaveBeenCalled();
+    // The landing only performs the read-side list check; creation remains on
+    // /character/new after the storage notice is acknowledged.
+    expect(
+      mockFetch.mock.calls.some(([url]) =>
+        String(url).includes('/api/characters/new')
+      )
+    ).toBe(false);
   });
 
   it('links the production credit to the author site', async () => {

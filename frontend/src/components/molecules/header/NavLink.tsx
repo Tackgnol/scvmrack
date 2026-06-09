@@ -14,6 +14,7 @@ type NavLinkProps = {
 export function NavLink({ to, href, text, onClick, fullWidth }: NavLinkProps) {
   const routerState = useRouterState();
   const pathname = routerState.location.pathname;
+  const destination = href ?? to;
   const isActive =
     to === '/character'
       ? pathname === '/character' || pathname.startsWith('/character/')
@@ -29,7 +30,7 @@ export function NavLink({ to, href, text, onClick, fullWidth }: NavLinkProps) {
 
   return (
     <StyledNavLink
-      to={to}
+      to={destination}
       onClick={handleClick}
       isActive={isActive}
       fullWidth={fullWidth}

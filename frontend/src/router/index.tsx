@@ -29,6 +29,12 @@ const characterTrailingSlashRoute = createRoute({
     component: NotFoundComponent,
 });
 
+const characterNewRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: '/character/new',
+    component: lazyRouteComponent(() => import('@/pages/CharacterPage').then(m => ({ default: m.CharacterPage }))),
+});
+
 const characterIdRoute = createRoute({
     getParentRoute: () => rootRoute,
     path: '/character/$characterId',
@@ -64,6 +70,7 @@ const routeTree = rootRoute.addChildren([
     indexRoute,
     characterRoute,
     characterTrailingSlashRoute,
+    characterNewRoute,
     characterIdRoute,
     charactersRoute,
     printRoute,

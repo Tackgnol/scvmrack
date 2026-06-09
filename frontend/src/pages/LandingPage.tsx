@@ -3,7 +3,9 @@ import { Seo } from '@/seo/Seo';
 import { Box, Button, Stack, Typography } from '@mui/material';
 import { Link } from '@tanstack/react-router';
 import { buildHomeCallbackUrl } from '@/router/navigation';
+import { fetchCharacterList } from '@/hooks/charactersListQuery';
 import { Trans, useTranslation } from 'react-i18next';
+import { useEffect, useState } from 'react';
 import licenseHoriz from '@/assets/CompWith_MORKBORG_horiz.svg';
 
 const s = {
@@ -330,12 +332,44 @@ const noticeKeys = ['book', 'guest'] as const;
 const mockStatKeys = ['agi', 'pre', 'str', 'tou'] as const;
 const mockRowKeys = ['gear', 'omen', 'print'] as const;
 
+function useSheetEntryUrl() {
+  const [sheetUrl, setSheetUrl] = useState(() => buildHomeCallbackUrl(null));
+
+  useEffect(() => {
+    let cancelled = false;
+    const controller = new AbortController();
+
+    (async () => {
+      try {
+        const characters = await fetchCharacterList(controller.signal);
+        if (!cancelled) {
+          setSheetUrl(buildHomeCallbackUrl(characters[0]?.id ?? null));
+        }
+      } catch (error) {
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          return;
+        }
+        if (!cancelled) {
+          setSheetUrl(buildHomeCallbackUrl(null));
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
+  }, []);
+
+  return sheetUrl;
+}
+
 export function LandingPage() {
   const { t } = useTranslation();
+  const sheetUrl = useSheetEntryUrl();
 
-  // No background pre-generation: the sheet bootstrap on /character lists/selects
-  // an existing scvm or creates one *after* the storage notice is acknowledged,
-  // so no guest character (a backend write) is created from the landing page.
+  // No background pre-generation: the CTA only checks for an existing scvm.
+  // Character creation stays behind the storage notice on /character/new.
   return (
     <>
       <Seo
@@ -374,7 +408,7 @@ export function LandingPage() {
             <Stack sx={s.ctaRow}>
               <Button
                 component={Link}
-                to={buildHomeCallbackUrl(null)}
+                to={sheetUrl}
                 sx={s.ctaPrimary}
               >
                 {t('landing.openSheet', 'Open sheet')}
