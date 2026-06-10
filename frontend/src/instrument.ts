@@ -1,5 +1,6 @@
 import * as Sentry from '@sentry/react';
 import { makeFetchTransport } from '@sentry/browser';
+import { embeddedSessionHeaders } from '@/utils/embed';
 
 const dsn = import.meta.env.VITE_GLITCHTIP_DSN;
 const backendUrl = import.meta.env.VITE_BACKEND_URL || '';
@@ -13,6 +14,7 @@ let csrfToken: string | null = null;
 async function fetchCsrfToken(): Promise<string> {
   const res = await fetch(`${backendUrl}/api/csrf-token`, {
     credentials: 'include',
+    headers: embeddedSessionHeaders(),
   });
   if (!res.ok) throw new Error('Failed to fetch CSRF token');
   const data = (await res.json()) as { token: string };

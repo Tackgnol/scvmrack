@@ -2,7 +2,6 @@ import fp from 'fastify-plugin';
 import type { FastifyInstance } from 'fastify';
 import { prismaAdapter, rpgtoolsSharedAuth } from '@tackgnol/rpgtools-shared-auth';
 import prisma from '../lib/prisma.js';
-import { apiError, sendApiError } from '../errors.js';
 
 const defaultTrustedOrigins = [
   'http://localhost:5173',
@@ -16,9 +15,11 @@ function envOrDefault(name: string, fallback: string): string {
 
 export default fp(async function rpgtoolsAuthPlugin(fastify: FastifyInstance) {
   const authBaseUrl = envOrDefault('AUTH_BASE_URL', 'http://localhost:3000/api/auth');
-  const appBaseUrl = envOrDefault('APP_BASE_URL', process.env.CLIENT_ORIGIN || 'http://localhost:5173');
   await fastify.register(rpgtoolsSharedAuth, {
     baseURL: authBaseUrl,
+    // itch.io embed support: requests marked with x-embedded-session get
+    // SameSite=None; Partitioned cookies so the iframe can hold a session.
+    embeddedSessions: true,
     database: prismaAdapter(prisma, { provider: 'postgresql' }),
     trustedOrigins: Array.from(
       new Set(
@@ -64,63 +65,8 @@ export default fp(async function rpgtoolsAuthPlugin(fastify: FastifyInstance) {
     },
   });
 
-  fastify.get('/api/auth/oauth2/login/logto', async (request, reply) => {
-    const query = request.query as { callbackURL?: string } | undefined;
-    const callbackURL = query?.callbackURL || appBaseUrl;
-    const headers = new Headers();
-
-    for (const [key, value] of Object.entries(request.headers)) {
-      if (Array.isArray(value)) {
-        headers.set(key, value.join(', '));
-      } else if (value) {
-        headers.set(key, String(value));
-      }
-    }
-
-    headers.set('content-type', 'application/json');
-
-    const response = await fastify.auth.handler(
-      new Request(`${authBaseUrl}/sign-in/oauth2`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          providerId: 'logto',
-          callbackURL,
-        }),
-      })
-    );
-
-    const setCookies = response.headers.getSetCookie ? response.headers.getSetCookie() : [];
-    if (setCookies.length > 0) {
-      reply.header('set-cookie', setCookies);
-    }
-
-    const contentType = response.headers.get('content-type');
-    const text = await response.text();
-
-    if (!response.ok) {
-      return reply.status(response.status).send(text);
-    }
-
-    if (!contentType?.includes('application/json')) {
-      return reply.status(response.status).send(text);
-    }
-
-    const payload = JSON.parse(text) as { url?: string };
-    if (!payload.url) {
-      return sendApiError(
-        reply,
-        request,
-        apiError(
-          502,
-          'OAUTH_REDIRECT_MISSING',
-          'OAuth provider did not return a redirect URL'
-        )
-      );
-    }
-
-    return reply.redirect(payload.url);
-  });
-
+  // /api/auth/oauth2/login/logto is provided by the shared-auth plugin since
+  // 1.3.0 (it takes a same-origin `returnTo` query param instead of the old
+  // local route's `callbackURL`).
   fastify.log.info('rpgtools-shared-auth registered');
 });

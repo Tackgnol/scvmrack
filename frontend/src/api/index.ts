@@ -1,6 +1,7 @@
 import createClient, { type Middleware } from "openapi-fetch";
 import createQueryClient from "openapi-react-query";
 import { navigateToSessionExpired } from '@/router/navigation';
+import { embeddedSessionHeaders } from '@/utils/embed';
 import type { paths } from "./schema.ts";
 // ============================================
 // Auth Query Keys
@@ -48,7 +49,7 @@ let csrfToken: string | null = null;
 async function fetchCsrfToken(): Promise<string> {
     const res = await fetch(
         `${import.meta.env.VITE_BACKEND_URL || ""}/api/csrf-token`,
-        { credentials: "include" }
+        { credentials: "include", headers: embeddedSessionHeaders() }
     );
     if (!res.ok) {
         throw new Error("Failed to fetch CSRF token");

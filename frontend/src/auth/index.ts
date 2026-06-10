@@ -1,3 +1,5 @@
+import { embeddedSessionHeaders } from '@/utils/embed';
+
 export interface AuthSessionUser {
   id: string;
   name?: string | null;
@@ -19,6 +21,7 @@ const apiBaseUrl = () => import.meta.env.VITE_BACKEND_URL || '';
 export async function fetchSession(): Promise<AuthSession | null> {
   const res = await fetch(`${apiBaseUrl()}/api/auth/get-session`, {
     credentials: 'include',
+    headers: embeddedSessionHeaders(),
   });
 
   if (res.status === 401 || res.status === 204) {
@@ -37,6 +40,7 @@ export async function signInAnonymous(): Promise<void> {
   const res = await fetch(`${apiBaseUrl()}/api/auth/sign-in/anonymous`, {
     method: 'POST',
     credentials: 'include',
+    headers: embeddedSessionHeaders(),
   });
 
   if (!res.ok) {
@@ -48,6 +52,7 @@ export async function signOut(): Promise<void> {
   const res = await fetch(`${apiBaseUrl()}/api/auth/sign-out`, {
     method: 'POST',
     credentials: 'include',
+    headers: embeddedSessionHeaders(),
   });
 
   if (!res.ok) {

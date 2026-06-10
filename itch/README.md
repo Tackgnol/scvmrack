@@ -26,11 +26,20 @@ load the app.
 3. Under **Embed options**, pick "Click to launch in fullscreen" or a large
    viewport (the app is responsive); enable **Mobile friendly**.
 
-## Known limitation: sessions inside the embed
+## Sessions inside the embed
 
-Session cookies are `SameSite=Lax`. Inside the itch iframe the top-level site
-is itch.io/itch.zone, so the browser treats requests to the API as cross-site
-and won't send those cookies — anonymous sessions and login may not work in
-the embed. The fallback/description link to scvmrack.rpgtools.co is the
-escape hatch; full in-frame auth would need `SameSite=None; Partitioned`
-(CHIPS) cookies in the shared-auth config.
+The frontend detects it is framed (`window.self !== window.top`) and adds an
+`x-embedded-session: 1` header to cookie-issuing requests (`/api/csrf-token`,
+`/api/auth/*`). The backend (shared-auth >= 1.4.0 with `embeddedSessions:
+true`) then issues session/CSRF cookies with `SameSite=None; Secure;
+Partitioned` so anonymous play works inside the iframe. Direct visits keep
+the default `SameSite=Lax` cookies.
+
+Remaining caveats:
+
+- `Partitioned` (CHIPS) means the embed session is separate from a
+  direct-visit session; characters made on itch can be moved over with the
+  claim-code flow.
+- Safari blocks third-party cookies entirely — the embed stays session-less
+  there; the fallback link is the escape hatch.
+- Logto login inside the iframe is not supported (top-level redirect flow).

@@ -108,7 +108,7 @@ describe('instrument', () => {
     expect(mockFetch).toHaveBeenNthCalledWith(
       1,
       'https://api.example.test/api/csrf-token',
-      { credentials: 'include' }
+      { credentials: 'include', headers: {} }
     );
     expect(mockFetch).toHaveBeenNthCalledWith(
       2,
