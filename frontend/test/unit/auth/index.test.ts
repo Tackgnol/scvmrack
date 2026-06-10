@@ -54,7 +54,7 @@ describe('auth api helpers', () => {
     await expect(fetchSession()).resolves.toEqual(session);
     expect(mockFetch).toHaveBeenCalledWith(
       'https://api.example.test/api/auth/get-session',
-      { credentials: 'include' }
+      { credentials: 'include', headers: {} }
     );
   });
 
@@ -70,7 +70,7 @@ describe('auth api helpers', () => {
     await expect(signInAnonymous()).resolves.toBeUndefined();
     expect(mockFetch).toHaveBeenCalledWith(
       'https://api.example.test/api/auth/sign-in/anonymous',
-      { method: 'POST', credentials: 'include' }
+      { method: 'POST', credentials: 'include', headers: {} }
     );
   });
 
@@ -88,7 +88,7 @@ describe('auth api helpers', () => {
     await expect(signOut()).resolves.toBeUndefined();
     expect(mockFetch).toHaveBeenCalledWith(
       'https://api.example.test/api/auth/sign-out',
-      { method: 'POST', credentials: 'include' }
+      { method: 'POST', credentials: 'include', headers: {} }
     );
   });
 
