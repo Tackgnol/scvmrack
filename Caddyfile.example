@@ -5,10 +5,13 @@
 (frontend_security_headers) {
   header {
     Strict-Transport-Security "max-age=31536000; includeSubDomains"
-    X-Frame-Options "SAMEORIGIN"
+    # No X-Frame-Options: it can't express an allowlist, and any value would
+    # fight the CSP frame-ancestors directive below on older browsers.
+    # frame-ancestors allows itch.io embeds (itch serves uploaded HTML from
+    # *.itch.zone, with itch.io as the top-level page) — see itch/README.md.
     X-Content-Type-Options "nosniff"
     Referrer-Policy "no-referrer"
-    Content-Security-Policy "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; img-src 'self' data: https://www.google-analytics.com; font-src 'self' https://fonts.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com; connect-src 'self' https://www.google-analytics.com https://region1.google-analytics.com; upgrade-insecure-requests"
+    Content-Security-Policy "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'self' https://itch.io https://*.itch.io https://*.itch.zone; form-action 'self'; img-src 'self' data: https://www.google-analytics.com; font-src 'self' https://fonts.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com; connect-src 'self' https://www.google-analytics.com https://region1.google-analytics.com; upgrade-insecure-requests"
   }
 }
 
