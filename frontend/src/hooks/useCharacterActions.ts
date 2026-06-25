@@ -12,6 +12,7 @@ export type GenerateNewOptions = {
   onSuccess?: (newCharacterId: string) => void;
   onError?: (error: unknown) => void;
   select?: boolean;
+  replace?: boolean;
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- matches the $api mutation surface
@@ -85,7 +86,7 @@ export function useCharacterActions({
 
     createCharacter.mutate(
       {
-        body: { classId: id },
+        body: { classId: id, ...(options?.replace ? { replace: true } : {}) },
         params: { query: { locale: trimmedLocale } },
       },
       {
@@ -153,6 +154,7 @@ export function useCharacterActions({
     // the old character's cache entry no longer refetches a deleted record.
     generateNew(undefined, {
       ...options,
+      replace: true,
       select: partyId ? false : options?.select,
       onSuccess: (newCharacterId) => {
         const deleteOldCharacter = () => {
