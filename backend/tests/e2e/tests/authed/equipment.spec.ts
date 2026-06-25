@@ -6,19 +6,20 @@ test('equipment can be searched, equipped, and unequipped', async ({ page, seede
   await page.goto(`/character/${seededCharacter.id}`);
   await expect(page.getByTestId('generate-new-button')).toBeVisible({ timeout: 30000 });
 
-  const syncBadge = page.getByText('Synced', { exact: true });
-
   // Add scroll
-  await selectSearchResult(page, 'palms', /^Palms Open the Southern Gate\b/i);
-  await expect(syncBadge).toBeVisible({ timeout: 20000 });
+  await waitForCharacterSave(page, async () => {
+    await selectSearchResult(page, 'palms', /^Palms Open the Southern Gate\b/i);
+  }, 30000);
 
   // Add armor
-  await selectSearchResult(page, 'leather', /^Leather Armor\b/i);
-  await expect(syncBadge).toBeVisible({ timeout: 20000 });
+  await waitForCharacterSave(page, async () => {
+    await selectSearchResult(page, 'leather', /^Leather Armor\b/i);
+  }, 30000);
 
   // Add weapon
-  await selectSearchResult(page, 'sword', /^Sword\b/i);
-  await expect(syncBadge).toBeVisible({ timeout: 20000 });
+  await waitForCharacterSave(page, async () => {
+    await selectSearchResult(page, 'sword', /^Sword\b/i);
+  }, 30000);
 
   // Equip weapon
   const weaponSlot = page.getByTestId('equipped-weapon-slot-0');
