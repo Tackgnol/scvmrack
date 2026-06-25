@@ -1,6 +1,8 @@
 # Runs on master before production deploy. This is the full candidate gate:
 # unit tests, browser component tests, backend integration, and Docker E2E.
 
+name: prod-tests
+
 when:
   - event: push
     branch: master
