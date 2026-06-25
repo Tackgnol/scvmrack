@@ -9,6 +9,8 @@ export const morkBorgColors: MorkBorgColors = {
   white: '#f5f5f5',
   grey: '#1a1a1a',
   darkGrey: '#2a2a2a',
+  // Dark blood red — HP, the kill action, delete/danger surfaces.
+  blood: '#8b0000',
 };
 
 // Stat chip colors
@@ -245,31 +247,6 @@ export const customStyles = {
       backgroundColor: '#1a1a1a',
       borderColor: morkBorgColors.pink,
       boxShadow: `0 0 12px rgba(255, 62, 181, 0.3), inset 0 0 12px rgba(255, 62, 181, 0.05)`,
-    },
-  },
-
-  // Flag button
-  flagButton: {
-    base: {
-      width: 48,
-      height: 36,
-      cursor: 'pointer',
-      transition: 'all 0.2s',
-      position: 'relative' as const,
-      overflow: 'hidden' as const,
-      padding: 0,
-      backgroundSize: 'cover',
-      backgroundPosition: 'center',
-    },
-    active: {
-      border: `3px solid ${morkBorgColors.yellow}`,
-      boxShadow: `4px 4px 0 ${morkBorgColors.pink}`,
-      filter: 'contrast(1.2) saturate(1.3)',
-    },
-    inactive: {
-      border: `3px solid ${morkBorgColors.grey}`,
-      boxShadow: `2px 2px 0 ${morkBorgColors.black}`,
-      filter: 'contrast(0.9) saturate(0.8) brightness(0.85)',
     },
   },
 
@@ -785,13 +762,70 @@ export const customStyles = {
 
   // ItemAutocomplete styles
   itemAutocomplete: {
+    root: {
+      minWidth: 0,
+      '& .MuiOutlinedInput-root': {
+        minHeight: 44,
+        borderRadius: 0,
+        transition:
+          'background-color 160ms cubic-bezier(0.22, 1, 0.36, 1), border-color 160ms cubic-bezier(0.22, 1, 0.36, 1)',
+      },
+      '& .MuiAutocomplete-endAdornment': {
+        top: 'calc(50% - 12px)',
+      },
+    },
+    paper: {
+      mt: 0.5,
+      bgcolor: morkBorgColors.black,
+      color: morkBorgColors.white,
+      border: `2px solid ${morkBorgColors.yellow}`,
+      borderRadius: 0,
+      boxShadow: `4px 4px 0 ${morkBorgColors.pink}`,
+    },
+    listbox: {
+      py: 0.5,
+      maxHeight: 260,
+    },
+    popper: {
+      zIndex: 1400,
+    },
+    option: {
+      minHeight: 42,
+      display: 'flex',
+      alignItems: 'center',
+      gap: 0.75,
+      borderRadius: 0,
+      '&.Mui-focused': {
+        bgcolor: `${morkBorgColors.grey} !important`,
+      },
+      '&[aria-selected="true"]': {
+        bgcolor: `${morkBorgColors.darkGrey} !important`,
+      },
+    },
     itemName: {
       color: morkBorgColors.yellow,
       fontWeight: 'bold',
+      lineHeight: 1.15,
     },
     itemType: {
       fontSize: '0.65rem',
-      color: '#888',
+      color: morkBorgColors.white,
+      opacity: 0.58,
+      fontFamily: "'Antonio', sans-serif",
+      letterSpacing: '0.12em',
+      lineHeight: 1,
+    },
+    helperText: {
+      minHeight: 16,
+      mx: 0,
+      mt: 0.5,
+      color: `${morkBorgColors.yellow} !important`,
+      opacity: 0.72,
+      fontFamily: "'Antonio', sans-serif",
+      fontSize: '0.62rem',
+      lineHeight: 1.15,
+      letterSpacing: '0.12em',
+      textTransform: 'uppercase' as const,
     },
   },
 
@@ -806,13 +840,6 @@ export const customStyles = {
   // SummaryStat label
   summaryStatLabel: {
     mb: 0.5,
-  },
-
-  // FlagContainer styles
-  flagContainer: {
-    display: 'flex',
-    gap: 1,
-    alignItems: 'center',
   },
 
   // Layout styles
@@ -2619,7 +2646,8 @@ export const customStyles = {
     },
     // Open variant: style autocomplete for dark background
     openAddItem: {
-      mt: 2,
+      mt: 1.5,
+      minHeight: { xs: 88, sm: 64 },
       '& .MuiAutocomplete-root': {
         '& .MuiOutlinedInput-root': {
           bgcolor: 'rgba(255, 255, 255, 0.05)',
@@ -2654,6 +2682,20 @@ export const customStyles = {
           opacity: 0.4,
         },
       },
+    },
+    openAddItemRow: {
+      display: 'grid',
+      gridTemplateColumns: {
+        xs: '1fr',
+        sm: 'minmax(0, 1fr) auto',
+      },
+      gap: { xs: 0.75, sm: 1 },
+      alignItems: 'start',
+    },
+    openAddItemButton: {
+      minHeight: 44,
+      whiteSpace: 'nowrap' as const,
+      alignSelf: 'start',
     },
   },
 

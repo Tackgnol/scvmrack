@@ -58,6 +58,21 @@ export default function Footer({
         <Trans
           i18nKey="footer.legalNotice"
           components={{
+            rpgtoolsLink: (
+              <Box
+                component="a"
+                href="https://rpgtools.co"
+                target="_blank"
+                rel="noopener noreferrer"
+                sx={{
+                  color: 'rgba(10, 10, 10, 0.5)',
+                  textDecoration: 'underline',
+                  '&:hover': {
+                    color: 'rgba(10, 10, 10, 0.8)',
+                  },
+                }}
+              />
+            ),
             privacyLink: (
               <Box
                 component="button"

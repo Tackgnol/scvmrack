@@ -50,7 +50,7 @@ export function useModifiersPanel() {
   const [modifierShiftLabel, setModifierShiftLabel] = useState<string | null>(
     null
   );
-  const computedSignatureRef = useRef<string | null>(null);
+  const computedFingerprintRef = useRef<string | null>(null);
   const shiftTimeoutRef = useRef<number | null>(null);
   const removeTimeoutsRef = useRef<number[]>([]);
 
@@ -107,7 +107,7 @@ export function useModifiersPanel() {
   const quickValue = sanitizeModifierValue(valueStr);
   const modalValue = sanitizeModifierValue(modalValueStr);
 
-  const computedSignature = computedModifiers
+  const computedFingerprint = computedModifiers
     .map(
       (modifier) =>
         `${modifier.originKey ?? modifier.originName ?? 'origin'}:${modifier.statistic ?? 'stat'}:${modifier.value ?? 0}:${(modifier.exclude ?? []).join('.')}`
@@ -120,13 +120,13 @@ export function useModifiersPanel() {
   );
 
   useEffect(() => {
-    if (computedSignatureRef.current === null) {
-      computedSignatureRef.current = computedSignature;
+    if (computedFingerprintRef.current === null) {
+      computedFingerprintRef.current = computedFingerprint;
       return;
     }
 
-    if (computedSignatureRef.current === computedSignature) return;
-    computedSignatureRef.current = computedSignature;
+    if (computedFingerprintRef.current === computedFingerprint) return;
+    computedFingerprintRef.current = computedFingerprint;
 
     const label =
       computedTotal < 0
@@ -143,7 +143,7 @@ export function useModifiersPanel() {
       () => setModifierShiftLabel(null),
       SHIFT_BADGE_TIMEOUT_MS
     );
-  }, [computedSignature, computedTotal, t]);
+  }, [computedFingerprint, computedTotal, t]);
 
   useEffect(
     () => () => {

@@ -5,7 +5,7 @@ import { patchToRequest, buildRequestFromPatches } from '../../src/hooks/patchTo
 
 test('patchToRequest handles simple patches', () => {
   expect(patchToRequest({ kind: 'simple', field: 'name', value: 'New Name' })).toEqual({ name: 'New Name' });
-  expect(patchToRequest({ kind: 'simple', field: 'hp', value: 10 })).toEqual({ hp: 10 });
+  expect(patchToRequest({ kind: 'simple', field: 'currentHp', value: 10 })).toEqual({ currentHp: 10 });
 });
 
 test('patchToRequest handles armor field patches', () => {
@@ -176,7 +176,7 @@ test('buildRequestFromPatches handles weapon equipment/unequipment', () => {
     } as any;
 
     const result = buildRequestFromPatches(
-        [{ kind: 'equip-weapon', equipmentIndex: 0, weaponSlot: 1 }],
+        [{ kind: 'equip-weapon', equipmentIndex: 0, slotIndex: 1 }],
         currentCharacter
     );
 

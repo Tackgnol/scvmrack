@@ -1,5 +1,5 @@
 import { render } from 'vitest-browser-react';
-import { expect, describe, it, vi } from 'vitest';
+import { expect, describe, it } from 'vitest';
 import { page } from 'vitest/browser';
 import UseSectionLabel from '@/components/molecules/uses/UseSectionLabel';
 import BrowserTestProvider from '../../BrowserTestProvider';

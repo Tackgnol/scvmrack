@@ -121,3 +121,4 @@ frontend/stats.html
 
 # Golden corpus snapshots (may contain user/character data from live backend)
 backend/tests/fixtures/golden-corpus.json
+.superpowers/

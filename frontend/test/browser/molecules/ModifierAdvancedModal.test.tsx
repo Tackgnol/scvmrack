@@ -1,5 +1,5 @@
 import { render } from 'vitest-browser-react';
-import { page, userEvent } from 'vitest/browser';
+import { page } from 'vitest/browser';
 import { describe, expect, it, vi } from 'vitest';
 import ModifierAdvancedModal from '../../../src/components/molecules/modifiers/ModifierAdvancedModal';
 import BrowserTestProvider from '../BrowserTestProvider';

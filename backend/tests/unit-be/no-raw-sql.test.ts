@@ -13,7 +13,12 @@ const RAW_SQL_PATTERN = /\$queryRaw|\$executeRaw/;
 // Files permitted to contain raw Prisma SQL.
 // Add an entry here (and document why) when introducing a new sanctioned exception.
 // Remove the entry when the raw SQL is replaced with a typed Prisma query.
-const ALLOWLIST = new Set<string>();
+const ALLOWLIST = new Set<string>([
+  // party-repository: a single `pg_advisory_xact_lock` in joinInTransaction
+  // serializes concurrent joins to one party so the member cap can't overflow.
+  // Not expressible via the typed Prisma client; all other access stays typed.
+  'repositories/party-repository.ts',
+]);
 
 function walkTs(dir: string): string[] {
   const results: string[] = [];

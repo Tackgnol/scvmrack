@@ -1,4 +1,4 @@
-import prisma from './prisma.js';
+import { catalogRepository } from '../repositories/catalog-repository.js';
 import {
   buildItemSearchDocuments,
   createItemSearchIndex,
@@ -19,12 +19,7 @@ let cachedSearch: ItemSearchCache | null = null;
 let pendingSearchBuild: Promise<ItemSearchCache> | null = null;
 
 async function loadItemSearchDocuments(): Promise<ItemSearchDocument[]> {
-  const [weapons, armors, equipment, pets] = await Promise.all([
-    prisma.weapon.findMany({ select: { id: true, key: true, tags: true } }),
-    prisma.armor.findMany({ select: { id: true, key: true, tags: true } }),
-    prisma.equipment.findMany({ select: { id: true, key: true, tags: true } }),
-    prisma.pet.findMany({ select: { id: true, key: true, tags: true } }),
-  ]);
+  const { weapons, armors, equipment, pets } = await catalogRepository.findAllItemsForSearch();
 
   const catalogRows: ItemSearchCatalogRow[] = [
     ...weapons.map((item) => ({ itemType: 'weapon' as const, ...item })),
@@ -34,19 +29,7 @@ async function loadItemSearchDocuments(): Promise<ItemSearchDocument[]> {
   ];
 
   const keys = catalogRows.map((item) => item.key);
-  const translations = keys.length > 0
-    ? await prisma.translation.findMany({
-      where: {
-        key: { in: keys },
-        locale: { in: ['en', 'pl'] },
-      },
-      select: {
-        locale: true,
-        key: true,
-        value: true,
-      },
-    })
-    : [];
+  const translations = await catalogRepository.findTranslationsMultiLocale(keys, ['en', 'pl']);
 
   return buildItemSearchDocuments(catalogRows, translations);
 }

@@ -25,7 +25,7 @@ describe('PowersSection Component', () => {
             markPipPending: mockMarkPipPending,
         } as any);
 
-        const { container } = await render(
+        await render(
             <BrowserTestProvider>
                 <PowersSection />
             </BrowserTestProvider>

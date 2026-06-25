@@ -13,6 +13,14 @@ const errorFeedbackMocks = vi.hoisted(() => ({
   canReportUnexpectedError: true,
 }));
 
+function hookError(error: {
+  statusCode: number;
+  code?: string;
+  message: string;
+}): ReturnType<typeof useCharacter>['error'] {
+  return error as unknown as ReturnType<typeof useCharacter>['error'];
+}
+
 vi.mock('@mui/material', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@mui/material')>();
   return {
@@ -159,7 +167,7 @@ describe('CharacterPage', () => {
   it('offers a replacement when a requested character is not found', async () => {
     await renderCharacterPage({
       isAuthenticated: true,
-      error: { statusCode: 404, message: 'Character not found' },
+      error: hookError({ statusCode: 404, message: 'Character not found' }),
       character: undefined,
       characterId: 'missing-char',
     });
@@ -175,11 +183,11 @@ describe('CharacterPage', () => {
   it('shows access denied separately from missing characters', async () => {
     await renderCharacterPage({
       isAuthenticated: true,
-      error: {
+      error: hookError({
         statusCode: 403,
         code: 'CHARACTER_ACCESS_DENIED',
         message: "You don't have access to this scvm",
-      },
+      }),
       character: undefined,
       characterId: 'forbidden-char',
     });
@@ -196,7 +204,7 @@ describe('CharacterPage', () => {
   it('reports unexpected load errors without showing the not-found dialog', async () => {
     await renderCharacterPage({
       isAuthenticated: true,
-      error: { statusCode: 500, code: 'INTERNAL_ERROR', message: 'Unexpected error occurred.' },
+      error: hookError({ statusCode: 500, code: 'INTERNAL_ERROR', message: 'Unexpected error occurred.' }),
       character: undefined,
       characterId: 'char-500',
     });
@@ -236,7 +244,7 @@ describe('CharacterPage', () => {
 
     await renderCharacterPage({
       isAuthenticated: true,
-      error: { statusCode: 500, code: 'INTERNAL_ERROR', message: 'Unexpected error occurred.' },
+      error: hookError({ statusCode: 500, code: 'INTERNAL_ERROR', message: 'Unexpected error occurred.' }),
       character: undefined,
       characterId: 'char-500',
     });
@@ -259,7 +267,7 @@ describe('CharacterPage', () => {
           { kind: 'consumable', name: 'Torch' },
         ],
         storage: [{ name: 'Rope' }],
-      } as ReturnType<typeof useCharacter>['character'],
+      } as unknown as ReturnType<typeof useCharacter>['character'],
     });
 
     await expect.element(page.getByText('Summary Bar')).toBeVisible();

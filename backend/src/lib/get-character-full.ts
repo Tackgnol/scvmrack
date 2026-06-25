@@ -13,7 +13,8 @@
  *
  * Output is camelCase — callers must NOT apply camelCaseJsonbFields.
  */
-import prisma from './prisma.js';
+import { catalogRepository } from '../repositories/catalog-repository.js';
+import { characterRepository } from '../repositories/character-repository.js';
 import { snakeToCamel, rollToModifier } from '../utils.js';
 
 // ── Internal types ─────────────────────────────────────────────────────────────
@@ -86,6 +87,22 @@ function asItem(json: unknown): Item | null {
 
 function translate(translations: TranslationMap, key: string | null | undefined): string | null {
   return key ? (translations.get(key) ?? null) : null;
+}
+
+// Computed-modifier effect sources are inline English in the catalog
+// (`modifiers` JSONB / class_ability_modifiers.source). They're translated via a
+// `modifier.source.<slug>` key; this slug MUST match the one used to generate the
+// translation rows (see init/05-seed/011_modifier_source_translations.sql).
+function modifierSourceSlug(source: string): string {
+  return source
+    .toLowerCase()
+    .replace(/['’]/g, '')
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '');
+}
+
+function modifierSourceTranslationKey(source: string): string {
+  return `modifier.source.${modifierSourceSlug(source)}`;
 }
 
 function safeInt(val: unknown): number | null {
@@ -330,41 +347,64 @@ function resolveAbilities(abilities: Item[], translations: TranslationMap): Reco
   });
 }
 
-// ── Encumbrance (mirrors calculate_character_encumbrance) ────────────────────
+// ── Encumbrance ──────────────────────────────────────────────────────────────
+// Single source of truth for the encumbrance count, ported from the frontend's
+// `isEncumbranceExemptItem` (useEquipmentSections.ts) so the over-capacity
+// modifier and the displayed "X / Y" agree. The old tag-only exemption missed
+// ammo-typed and arrows/bolts/pet items the UI already filtered out, which made
+// the modifier appear (e.g. torches) when the sheet showed under capacity.
+// Runs on the *resolved* items so catalog tags + ammoType are already merged in.
+
+const AMMO_ITEM_KEYS = new Set(['equipment.arrows', 'equipment.bolts']);
+
+function resolvedTags(item: Record<string, unknown>): string[] {
+  return Array.isArray(item.tags) ? (item.tags as string[]) : [];
+}
+
+function resolvedKey(item: Record<string, unknown>): string {
+  return typeof item.key === 'string' ? item.key : '';
+}
+
+function isCarriedResolvedItem(item: Record<string, unknown> | null): boolean {
+  if (!item) return false;
+  const name = typeof item.name === 'string' ? item.name : '';
+  return Boolean(resolvedKey(item) || name);
+}
+
+function isAmmoResolvedItem(item: Record<string, unknown>): boolean {
+  const tags = resolvedTags(item);
+  const key = resolvedKey(item);
+  return tags.includes('ammo') || Boolean(item.ammoType) || AMMO_ITEM_KEYS.has(key);
+}
+
+function isEncumbranceExemptResolvedItem(item: Record<string, unknown>): boolean {
+  const tags = resolvedTags(item);
+  const key = resolvedKey(item);
+  return (
+    isAmmoResolvedItem(item) ||
+    tags.includes('carry') ||
+    tags.includes('pet') ||
+    key.startsWith('pet.') ||
+    key.startsWith('pets.')
+  );
+}
 
 function calculateEncumbrance(
-  equipment: Item[],
-  equippedWeapons: Item[],
-  equippedArmor: Item | null,
-  equipMap: Map<string, EquipCatalog>,
-  petMap: Map<string, PetCatalog>,
+  equipment: Record<string, unknown>[],
+  equippedWeapons: Record<string, unknown>[],
+  equippedArmor: Record<string, unknown> | null,
 ): number {
-  const EXEMPT = new Set(['ammo', 'carry', 'pet']);
-
-  function isExempt(item: Item): boolean {
-    const storedTags = Array.isArray(item.tags) ? (item.tags as string[]) : [];
-    if (storedTags.some(t => EXEMPT.has(t))) return true;
-
-    const key = typeof item.key === 'string' ? item.key : '';
-    if (equipMap.get(key)?.tags.some(t => EXEMPT.has(t))) return true;
-    if (petMap.get(key)?.tags.some(t => EXEMPT.has(t))) return true;
-    return false;
-  }
-
   let count = 0;
 
   for (const item of equipment) {
-    const key = typeof item.key === 'string' ? item.key : '';
-    if (key && !isExempt(item)) count++;
+    if (isCarriedResolvedItem(item) && !isEncumbranceExemptResolvedItem(item)) count++;
   }
 
   for (const weapon of equippedWeapons) {
-    if (typeof weapon.key === 'string' && weapon.key) count++;
+    if (isCarriedResolvedItem(weapon)) count++;
   }
 
-  if (equippedArmor !== null && typeof equippedArmor.key === 'string' && equippedArmor.key) {
-    count++;
-  }
+  if (isCarriedResolvedItem(equippedArmor)) count++;
 
   return count;
 }
@@ -471,9 +511,7 @@ async function resolveComputedModifiers(
       .filter((k): k is string => k !== null);
 
     if (abilityKeys.length > 0) {
-      const cams = await prisma.classAbilityModifier.findMany({
-        where: { classId, abilityKey: { in: abilityKeys } },
-      });
+      const cams = await catalogRepository.findClassAbilityModifiers(classId, abilityKeys);
       for (const cam of cams) {
         result.push({
           value: cam.value,
@@ -520,6 +558,34 @@ async function resolveComputedModifiers(
     });
   }
 
+  // Localize the effect source label (and the origin name where it mirrors it, e.g.
+  // class-ability modifiers). Encumbrance sources are already locale-branched above,
+  // so their slugs won't match a key and they pass through unchanged.
+  const sourceKeys = [
+    ...new Set(
+      result
+        .map((m) => (m.source ? modifierSourceTranslationKey(m.source) : null))
+        .filter((key): key is string => key !== null),
+    ),
+  ];
+  const missingSourceKeys = sourceKeys.filter((key) => !translations.has(key));
+  const sourceTranslations = await catalogRepository.findTranslations(locale, missingSourceKeys);
+  const modifierTranslations: TranslationMap =
+    sourceTranslations.length > 0
+      ? new Map([
+          ...translations,
+          ...sourceTranslations.map((row) => [row.key, row.value] as const),
+        ])
+      : translations;
+
+  for (const m of result) {
+    if (!m.source) continue;
+    const translated = translate(modifierTranslations, modifierSourceTranslationKey(m.source));
+    if (!translated) continue;
+    if (m.originName === m.source) m.originName = translated;
+    m.source = translated;
+  }
+
   // Strip malformed entries (mirrors SQL final filter: must be object with 'origin' key)
   return result.filter(m => m !== null && typeof m === 'object' && 'origin' in m);
 }
@@ -547,6 +613,42 @@ function calculateDR(
 // ── Main export ───────────────────────────────────────────────────────────────
 
 /**
+ * Structural shape of a character row for hydration. A real Prisma row
+ * satisfies it; so does an in-memory draft preview (id: null, fresh dates).
+ */
+export interface CharacterRowLike {
+  id: string | null;
+  name: string;
+  classId: number | null;
+  origin: string | null;
+  strength: number;
+  agility: number;
+  presence: number;
+  toughness: number;
+  maxHp: number;
+  currentHp: number;
+  omens: number;
+  maxOmens: number;
+  silver: number;
+  habit: string | null;
+  tale: string | null;
+  bodyDescription: string | null;
+  trait1: string | null;
+  trait2: string | null;
+  notes?: string | null;
+  abilities: unknown;
+  equipment: unknown;
+  storage?: unknown;
+  equippedWeapons: unknown;
+  equippedArmor: unknown;
+  modifiers?: unknown;
+  partyId?: string | null;
+  joinedAt?: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+/**
  * Returns the full character with all resolved items and computed fields,
  * or null if the character does not exist.
  * Output is already in camelCase — do NOT apply camelCaseJsonbFields.
@@ -556,9 +658,20 @@ export async function getCharacterFull(
   locale: string,
 ): Promise<Record<string, unknown> | null> {
   // 1. Fetch character row
-  const row = await prisma.character.findUnique({ where: { id } });
+  const row = await characterRepository.findFullRow(id);
   if (!row) return null;
+  return hydrateCharacterRow(row as unknown as CharacterRowLike, locale);
+}
 
+/**
+ * Resolve catalog/translation data and computed fields for a row-shaped
+ * character. Pure with respect to the `characters` table — only reads
+ * catalog/translation tables. Used for both real reads and draft previews.
+ */
+export async function hydrateCharacterRow(
+  row: CharacterRowLike,
+  locale: string,
+): Promise<Record<string, unknown>> {
   // 2. Normalize stored JSONB (handles both SQL snake_case and PATCH camelCase)
   const equipment      = asItems(row.equipment);
   const storage        = asItems(row.storage);
@@ -584,20 +697,12 @@ export async function getCharacterFull(
 
   // 4. Bulk fetch catalog entries + class in parallel
   const [weapons, armors, equips, pets, cls] = await Promise.all([
-    allItemKeys.length > 0
-      ? prisma.weapon.findMany({ where: { key: { in: allItemKeys } } })
-      : Promise.resolve([]),
-    allItemKeys.length > 0
-      ? prisma.armor.findMany({ where: { key: { in: allItemKeys } } })
-      : Promise.resolve([]),
-    allItemKeys.length > 0
-      ? prisma.equipment.findMany({ where: { key: { in: allItemKeys } } })
-      : Promise.resolve([]),
-    allItemKeys.length > 0
-      ? prisma.pet.findMany({ where: { key: { in: allItemKeys } } })
-      : Promise.resolve([]),
+    catalogRepository.findWeaponsByKeys(allItemKeys),
+    catalogRepository.findArmorsByKeys(allItemKeys),
+    catalogRepository.findEquipmentByKeys(allItemKeys),
+    catalogRepository.findPetsByKeys(allItemKeys),
     row.classId !== null
-      ? prisma.class.findUnique({ where: { id: row.classId } })
+      ? catalogRepository.findClassById(row.classId)
       : Promise.resolve(null),
   ]);
 
@@ -627,12 +732,7 @@ export async function getCharacterFull(
   }
 
   const transKeys = [...transKeySet];
-  const translationRows = transKeys.length > 0
-    ? await prisma.translation.findMany({
-        where: { locale, key: { in: transKeys } },
-        select: { key: true, value: true },
-      })
-    : [];
+  const translationRows = await catalogRepository.findTranslations(locale, transKeys);
   const translations: TranslationMap = new Map(translationRows.map(t => [t.key, t.value]));
 
   // 6. Resolve each inventory section
@@ -651,8 +751,13 @@ export async function getCharacterFull(
   const resolvedArmor = resolveEquippedArmor(equippedArmor ?? {}, armorMap, translations);
   const resolvedAbilities = resolveAbilities(abilities, translations);
 
-  // 7. Encumbrance and derived values (pass raw equippedArmor — encumbrance counts by key)
-  const encumbrance    = calculateEncumbrance(equipment, equippedWeapons, equippedArmor, equipMap, petMap);
+  // 7. Encumbrance and derived values — counted from the resolved items so the
+  // catalog-merged tags + ammoType drive the same exemptions the UI uses.
+  const encumbrance    = calculateEncumbrance(
+    resolvedEquipment,
+    resolvedWeapons,
+    isCarriedResolvedItem(resolvedArmor) ? resolvedArmor : null,
+  );
   const strengthMod    = rollToModifier(row.strength);
   const maxEncumbrance = Math.max(0, 8 + strengthMod);
 
@@ -719,6 +824,8 @@ export async function getCharacterFull(
     drToDodge,
     drToMelee,
     drToRanged,
+    partyId:          row.partyId ?? null,
+    joinedAt:         row.joinedAt?.toISOString() ?? null,
     createdAt:        row.createdAt.toISOString(),
     updatedAt:        row.updatedAt.toISOString(),
   };

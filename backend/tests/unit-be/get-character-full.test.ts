@@ -118,6 +118,9 @@ function baseFixture(): Fixture {
           { key: 'custom.bundle.two', name: 'Bundle two' },
           { key: 'custom.bundle.three', name: 'Bundle three' },
           { key: 'custom.bundle.four', name: 'Bundle four' },
+          // Keeps the warband over capacity now that the inventory bow is exempt
+          // (ammoType 'Arrow'); see the encumbrance assertion below.
+          { key: 'custom.bundle.five', name: 'Bundle five' },
         ],
         storage: [{ key: 'equipment.rope' }],
         equippedWeapons: [
@@ -262,51 +265,32 @@ function filterByKey<T extends { key: string }>(
   return keys ? rows.filter((row) => keys.includes(row.key)) : rows;
 }
 
-const prismaMock = {
-  character: {
-    findUnique: async ({ where }: { where: { id: string } }) =>
-      fixture.characters.find((row) => row.id === where.id) ?? null,
-  },
-  weapon: {
-    findMany: async (args: { where?: { key?: { in?: string[] } } } = {}) =>
-      filterByKey(fixture.weapons, args),
-  },
-  armor: {
-    findMany: async (args: { where?: { key?: { in?: string[] } } } = {}) =>
-      filterByKey(fixture.armors, args),
-  },
-  equipment: {
-    findMany: async (args: { where?: { key?: { in?: string[] } } } = {}) =>
-      filterByKey(fixture.equipment, args),
-  },
-  pet: {
-    findMany: async (args: { where?: { key?: { in?: string[] } } } = {}) =>
-      filterByKey(fixture.pets, args),
-  },
-  class: {
-    findUnique: async ({ where }: { where: { id: number } }) =>
-      fixture.classes.find((row) => row.id === where.id) ?? null,
-  },
-  translation: {
-    findMany: async ({ where }: { where: { locale: string; key: { in: string[] } } }) =>
-      fixture.translations.filter((row) =>
-        row.locale === where.locale && where.key.in.includes(row.key)
-      ),
-  },
-  classAbilityModifier: {
-    findMany: async ({
-      where,
-    }: {
-      where: { classId: number; abilityKey: { in: string[] } };
-    }) =>
-      fixture.classAbilityModifiers.filter((row) =>
-        row.classId === where.classId && where.abilityKey.in.includes(row.abilityKey)
-      ),
-  },
+const characterRepositoryMock = {
+  findFullRow: async (id: string) =>
+    fixture.characters.find((row) => row.id === id) ?? null,
 };
 
-mock.module('../../src/lib/prisma.js', {
-  defaultExport: prismaMock,
+const catalogRepositoryMock = {
+  findWeaponsByKeys: async (keys: string[]) => filterByKey(fixture.weapons, { where: { key: { in: keys } } }),
+  findArmorsByKeys: async (keys: string[]) => filterByKey(fixture.armors, { where: { key: { in: keys } } }),
+  findEquipmentByKeys: async (keys: string[]) => filterByKey(fixture.equipment, { where: { key: { in: keys } } }),
+  findPetsByKeys: async (keys: string[]) => filterByKey(fixture.pets, { where: { key: { in: keys } } }),
+  findClassById: async (id: number) =>
+    fixture.classes.find((row) => row.id === id) ?? null,
+  findTranslations: async (locale: string, keys: string[]) =>
+    fixture.translations.filter((row) => row.locale === locale && keys.includes(row.key)),
+  findClassAbilityModifiers: async (classId: number, abilityKeys: string[]) =>
+    fixture.classAbilityModifiers.filter(
+      (row) => row.classId === classId && abilityKeys.includes(row.abilityKey)
+    ),
+};
+
+mock.module('../../src/repositories/character-repository.js', {
+  namedExports: { characterRepository: characterRepositoryMock },
+});
+
+mock.module('../../src/repositories/catalog-repository.js', {
+  namedExports: { catalogRepository: catalogRepositoryMock },
 });
 
 const { getCharacterFull } = await import('../../src/lib/get-character-full.js');
@@ -438,6 +422,12 @@ test('getCharacterFull resolves catalog data, translations, modifiers, and deriv
     { custom: 'loose-note' },
   ]);
 
+  // Encumbrance mirrors the frontend's isEncumbranceExemptItem: ammo-typed items
+  // are excluded. The inventory `weapons.shortbow` resolves with ammoType 'Arrow'
+  // from the weapon catalog, so it no longer counts. A plain `custom.bundle.five`
+  // was added to the fixture to keep the warband one over capacity (9 > 8) and
+  // retain over-capacity-modifier coverage; without the bow exemption this would
+  // be 10.
   assert.equal(result.encumbrance, 9);
   assert.equal(result.maxEncumbrance, 8);
   assert.equal(result.drToDodge, 15);
@@ -500,4 +490,31 @@ test('getCharacterFull resolves catalog data, translations, modifiers, and deriv
       originName: 'Encumbrance',
     },
   ]);
+});
+
+test('getCharacterFull localizes computed modifier source labels', async () => {
+  const fixtureWithPolishModifierSources = baseFixture();
+  fixtureWithPolishModifierSources.translations.push(
+    { locale: 'pl', key: 'armor.mail', value: 'Kolczuga' },
+    { locale: 'pl', key: 'weapons.shortbow', value: 'Krotki luk' },
+    { locale: 'pl', key: 'pets.hawk', value: 'Jastrzab' },
+    { locale: 'pl', key: 'modifier.source.heavy_mail', value: 'Ciezka kolczuga' },
+    { locale: 'pl', key: 'modifier.source.sighted_bow', value: 'Wycelowany luk' },
+    { locale: 'pl', key: 'modifier.source.hawk_eyes', value: 'Sokoli wzrok' },
+    { locale: 'pl', key: 'modifier.source.fixed_ability', value: 'Stala zdolnosc' },
+  );
+  resetFixture(fixtureWithPolishModifierSources);
+
+  const result = await getCharacterFull('character-1', 'pl');
+
+  assert.ok(result);
+  const computedModifiers = result.computedModifiers as Array<Record<string, unknown>>;
+  assert.equal(computedModifiers[0].source, 'Ciezka kolczuga');
+  assert.equal(computedModifiers[0].originName, 'Kolczuga');
+  assert.equal(computedModifiers[1].source, 'Wycelowany luk');
+  assert.equal(computedModifiers[1].originName, 'Krotki luk');
+  assert.equal(computedModifiers[3].source, 'Sokoli wzrok');
+  assert.equal(computedModifiers[3].originName, 'Jastrzab');
+  assert.equal(computedModifiers[4].source, 'Stala zdolnosc');
+  assert.equal(computedModifiers[4].originName, 'Stala zdolnosc');
 });

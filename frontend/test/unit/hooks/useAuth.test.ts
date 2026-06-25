@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth.ts';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { hasCurrentSearchParam } from '@/router/navigation';
 import { fetchSession, signInAnonymous, signOut } from '@/auth';
+import { appHistory } from '@/router/history';
 
 vi.mock('@tanstack/react-query', () => ({
   useQuery: vi.fn(),
@@ -34,6 +35,7 @@ vi.mock('@/router/navigation', () => ({
 vi.mock('@/router/history', () => ({
   appHistory: {
     subscribe: vi.fn(() => vi.fn()),
+    location: { pathname: '/' },
   },
 }));
 
@@ -58,6 +60,8 @@ function installMutationMocks() {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  window.history.pushState({}, '', '/');
+  (appHistory as any).location = { pathname: '/' };
   (hasCurrentSearchParam as any).mockReturnValue(false);
   installMutationMocks();
 });
@@ -138,6 +142,97 @@ test('useAuth bootstraps anonymous sessions when no session exists', async () =>
   expect(queryClient.invalidateQueries).toHaveBeenCalledWith({
     queryKey: ['auth', 'session'],
   });
+});
+
+test('useAuth reports loading while an anonymous bootstrap is pending but not yet fetching', () => {
+  // SPA nav into a sheet route: the session query is already cached as null
+  // (not loading) and the bootstrap query is enabled but hasn't flipped to
+  // fetching yet. Without covering this window, first-run flows (auto-create,
+  // party join) fire against a session that does not exist yet.
+  (useQueryClient as any).mockReturnValue({
+    invalidateQueries: vi.fn(),
+    setQueryData: vi.fn(),
+  });
+  (useQuery as any).mockImplementation((options: any) => {
+    const { queryKey } = options;
+    if (queryKey.includes('session')) {
+      return { data: null, isLoading: false };
+    }
+    if (queryKey.includes('anonymous-bootstrap')) {
+      return { isFetching: false, isError: false, data: undefined };
+    }
+    return { isLoading: false, data: null };
+  });
+
+  const { result } = renderHook(() => useAuth());
+
+  expect(result.current.isLoading).toBe(true);
+});
+
+test('useAuth can skip anonymous bootstrap when no session exists', () => {
+  const queryClient = { invalidateQueries: vi.fn(), setQueryData: vi.fn() };
+  (useQueryClient as any).mockReturnValue(queryClient);
+
+  (useQuery as any).mockImplementation((options: any) => {
+    const { queryKey } = options;
+    if (queryKey.includes('session')) {
+      return { data: null, isLoading: false };
+    }
+    if (queryKey.includes('anonymous-bootstrap')) {
+      expect(options.enabled).toBe(false);
+      return { isFetching: false };
+    }
+    return { isLoading: false, data: null };
+  });
+
+  renderHook(() => useAuth({ bootstrapAnonymous: false }));
+
+  expect(signInAnonymous).not.toHaveBeenCalled();
+});
+
+test('useAuth skips anonymous bootstrap on invite routes by default', () => {
+  const queryClient = { invalidateQueries: vi.fn(), setQueryData: vi.fn() };
+  (useQueryClient as any).mockReturnValue(queryClient);
+  (appHistory as any).location = { pathname: '/join/tok123' };
+
+  (useQuery as any).mockImplementation((options: any) => {
+    const { queryKey } = options;
+    if (queryKey.includes('session')) {
+      return { data: null, isLoading: false };
+    }
+    if (queryKey.includes('anonymous-bootstrap')) {
+      expect(options.enabled).toBe(false);
+      return { isFetching: false };
+    }
+    return { isLoading: false, data: null };
+  });
+
+  renderHook(() => useAuth());
+
+  expect(signInAnonymous).not.toHaveBeenCalled();
+});
+
+test('useAuth can skip session fetch entirely', () => {
+  const queryClient = { invalidateQueries: vi.fn(), setQueryData: vi.fn() };
+  (useQueryClient as any).mockReturnValue(queryClient);
+
+  (useQuery as any).mockImplementation((options: any) => {
+    const { queryKey } = options;
+    if (queryKey.includes('session')) {
+      expect(options.enabled).toBe(false);
+      return { data: undefined, isLoading: false };
+    }
+    if (queryKey.includes('anonymous-bootstrap')) {
+      expect(options.enabled).toBe(false);
+      return { isFetching: false };
+    }
+    return { isLoading: false, data: null };
+  });
+
+  renderHook(() => useAuth({ fetchSession: false }));
+
+  expect(fetchSession).not.toHaveBeenCalled();
+  expect(signInAnonymous).not.toHaveBeenCalled();
 });
 
 test('useAuth handles signOut', async () => {

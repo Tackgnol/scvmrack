@@ -21,8 +21,24 @@ model User {
   sessions   Session[]
   accounts   Account[]
   characters Character[]
+  parties    Party[]
 
   @@map("user")
+}
+
+model Party {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String   @default("Untitled Warband") @db.VarChar(120)
+  ownerUserId String   @map("owner_user_id")
+  inviteToken String   @unique @map("invite_token")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  owner   User        @relation(fields: [ownerUserId], references: [id], onDelete: Cascade)
+  members Character[]
+
+  @@index([ownerUserId])
+  @@map("parties")
 }
 
 model Session {
@@ -118,12 +134,16 @@ model Character {
   sessionId       String?  @map("session_id")
   userId          String?  @map("user_id")
   modifiers       Json     @default("[]") @map("modifiers")
+  partyId         String?  @map("party_id") @db.Uuid
+  joinedAt        DateTime? @map("joined_at")
   user            User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  party           Party?   @relation(fields: [partyId], references: [id], onDelete: SetNull)
 
   @@index([classId], map: "idx_characters_class")
   @@index([createdAt], map: "idx_characters_created")
   @@index([sessionId], map: "idx_characters_session_id")
   @@index([userId], map: "idx_characters_user_id")
+  @@index([partyId], map: "idx_characters_party_id")
   @@map("characters")
 }
 

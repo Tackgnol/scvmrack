@@ -124,8 +124,12 @@ export function useSummaryMetrics(
     { key: 'weapons', label: 'equipment.equippedWeapons', items: carriedWeapons },
     { key: 'armor', label: 'equipment.equippedArmor', items: carriedArmor },
   ].filter((group) => group.items.length > 0) as EncumbranceGroup[];
-  const encumbrance = encumbranceItems.length;
-  const maxEncumbrance = Math.max(0, 8 + strengthModifier);
+  // Encumbrance is computed authoritatively on the backend (get-character-full),
+  // so the displayed count and the over-capacity modifier always agree. Fall back
+  // to the local count only when the field is absent (older cached payloads).
+  const encumbrance = character?.encumbrance ?? encumbranceItems.length;
+  const maxEncumbrance =
+    character?.maxEncumbrance ?? Math.max(0, 8 + strengthModifier);
 
   return {
     characterKey: character?.id ?? 'unknown',

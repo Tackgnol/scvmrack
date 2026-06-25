@@ -12,8 +12,23 @@ export type CharacterSummaryRow = {
   classId: number | null;
   currentHp: number;
   maxHp: number;
+  partyId: string | null;
+  joinedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
+};
+
+export type CharacterPartyAccessRow = {
+  userId: string | null;
+  sessionId: string | null;
+  partyId: string | null;
+  party: {
+    ownerUserId: string;
+    members: Array<{
+      userId: string | null;
+      sessionId: string | null;
+    }>;
+  } | null;
 };
 
 export const characterRepository = {
@@ -32,6 +47,35 @@ export const characterRepository = {
     });
   },
 
+  getPartyId(id: string): Promise<{ partyId: string | null } | null> {
+    return prisma.character.findUnique({
+      where: { id },
+      select: { partyId: true },
+    });
+  },
+
+  getPartyAccessContext(id: string): Promise<CharacterPartyAccessRow | null> {
+    return prisma.character.findUnique({
+      where: { id },
+      select: {
+        userId: true,
+        sessionId: true,
+        partyId: true,
+        party: {
+          select: {
+            ownerUserId: true,
+            members: {
+              select: {
+                userId: true,
+                sessionId: true,
+              },
+            },
+          },
+        },
+      },
+    });
+  },
+
   update(id: string, data: Prisma.CharacterUpdateInput): Promise<unknown> {
     return prisma.character.update({ where: { id }, data });
   },
@@ -40,8 +84,71 @@ export const characterRepository = {
     return prisma.character.deleteMany({ where: { id } });
   },
 
+  /** True if the user already owns at least one character. */
+  async userHasCharacters(userId: string): Promise<boolean> {
+    const row = await prisma.character.findFirst({
+      where: { userId },
+      select: { id: true },
+    });
+    return row !== null;
+  },
+
+  /**
+   * Delete every character owned by `userId` except `keepId`. Enforces the
+   * one-scvm-per-guest invariant when an anonymous session opts into replacing
+   * its existing scvm (see character-service generate).
+   */
+  deleteOthersForUser(userId: string, keepId: string): Promise<{ count: number }> {
+    return prisma.character.deleteMany({
+      where: { userId, id: { not: keepId } },
+    });
+  },
+
+  findFullRow(id: string) {
+    return prisma.character.findUnique({ where: { id } });
+  },
+
   count(): Promise<number> {
     return prisma.character.count();
+  },
+
+  async classExists(id: number): Promise<boolean> {
+    const row = await prisma.class.findUnique({
+      where: { id },
+      select: { id: true },
+    });
+    return row !== null;
+  },
+
+  /**
+   * Classes for the creation gate: id + localized name/description.
+   * Mirrors getClassNameMap's translation lookup.
+   */
+  async listClasses(
+    locale: string
+  ): Promise<Array<{ id: number; name: string | null; description: string | null }>> {
+    const classes = await prisma.class.findMany({
+      select: { id: true, nameKey: true, descriptionKey: true },
+      orderBy: { id: 'asc' },
+    });
+
+    const keys = classes.flatMap((c) =>
+      [c.nameKey, c.descriptionKey].filter((k): k is string => k !== null)
+    );
+    const translations =
+      keys.length > 0
+        ? await prisma.translation.findMany({
+            where: { locale, key: { in: keys } },
+            select: { key: true, value: true },
+          })
+        : [];
+    const map = new Map(translations.map((t) => [t.key, t.value]));
+
+    return classes.map((c) => ({
+      id: c.id,
+      name: c.nameKey ? (map.get(c.nameKey) ?? null) : null,
+      description: c.descriptionKey ? (map.get(c.descriptionKey) ?? null) : null,
+    }));
   },
 
   listSummariesByUser(userId: string): Promise<CharacterSummaryRow[]> {
@@ -54,6 +161,8 @@ export const characterRepository = {
         classId: true,
         currentHp: true,
         maxHp: true,
+        partyId: true,
+        joinedAt: true,
         createdAt: true,
         updatedAt: true,
       },

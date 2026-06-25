@@ -45,7 +45,7 @@ describe('OnHandSection Component', () => {
         } as any);
     });
 
-    it('renders slots, titles and loading slots', async () => {
+    it('renders slots, title, and the stable add controls', async () => {
         await render(
             <BrowserTestProvider>
                 <OnHandSection />
@@ -54,7 +54,7 @@ describe('OnHandSection Component', () => {
 
         await expect.element(page.getByText('ON HAND', { exact: false })).toBeVisible();
         await expect.element(page.getByText('Torch')).toBeVisible();
-        await expect.element(page.getByText('LoadingThing')).toBeVisible();
+        await expect.element(page.getByTestId('mock-autocomplete')).toBeVisible();
     });
 
     it('triggers autocomplete add item', async () => {

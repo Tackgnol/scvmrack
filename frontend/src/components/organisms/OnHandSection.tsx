@@ -5,7 +5,6 @@ import { customStyles } from '@/theme/morkBorgTheme';
 import {
   ItemAutocomplete,
   InventoryItemSlot,
-  InventoryLoadingItemSlot,
   InventoryItemEditorModal,
 } from '@components/index';
 import { buildAggregateKey } from '@components/inventory/buildAggregateKey';
@@ -22,7 +21,6 @@ export function OnHandSection({
     character,
     aggregated,
     ammoTypes,
-    loadingItems,
     editingGroup,
     setEditingGroup,
     handleAddItem,
@@ -53,12 +51,6 @@ export function OnHandSection({
             onOpenEditor={setEditingGroup}
           />
         ))}
-        {loadingItems.map((hit) => (
-          <InventoryLoadingItemSlot
-            key={`loading-${hit.itemType}-${hit.id}`}
-            name={hit.name}
-          />
-        ))}
       </Box>
 
       <InventoryItemEditorModal
@@ -76,17 +68,7 @@ export function OnHandSection({
         sx={customStyles.inventorySection.openAddItem}
         className="print-hidden"
       >
-        <Box
-          sx={{
-            display: 'grid',
-            gridTemplateColumns: {
-              xs: '1fr',
-              sm: 'minmax(0, 1fr) auto',
-            },
-            gap: 1,
-            alignItems: 'stretch',
-          }}
-        >
+        <Box sx={customStyles.inventorySection.openAddItemRow}>
           <ItemAutocomplete
             onSelect={handleAddItem}
             placeholder={t('equipment.searchPlaceholder')}
@@ -96,8 +78,7 @@ export function OnHandSection({
             onClick={() => setCustomItemOpen(true)}
             sx={{
               ...customStyles.buttons.action,
-              minHeight: 40,
-              whiteSpace: 'nowrap',
+              ...customStyles.inventorySection.openAddItemButton,
             }}
             aria-label={t(
               'equipment.customItem.buttonAria',

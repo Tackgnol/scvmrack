@@ -47,7 +47,7 @@ export const CharacterNameAndClass = () => {
       <CharacterClassSummary
         label={classLabel}
         className={character.className || fallbackClassName}
-        classDescription={character.classDescription}
+        classDescription={character.classDescription ?? undefined}
       />
     </Box>
   );

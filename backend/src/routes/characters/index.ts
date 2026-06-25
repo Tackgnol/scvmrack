@@ -5,13 +5,28 @@ import {
     ErrorSchema,
     GenerateBodySchema,
     LocaleQuerySchema,
+    LocaleQueryNoDefaultSchema,
     UpdateBodySchema,
 } from '../../schemas/character.js';
 import type {
     CharacterUpdate,
     GenerateCharacterParams,
 } from '../../types/character.js';
+import {
+    ClassListResponseSchema,
+    DraftBodySchema,
+    DraftResponseSchema,
+    RerollBodySchema,
+    RerollParamsSchema,
+} from '../../schemas/draft.js';
+import type {
+    AbilityStat,
+    CharacterDraft,
+    DraftSection,
+    SectionSeeds,
+} from '../../lib/draft-seeds.js';
 import { sendServiceError } from '../../errors.js';
+import { createCharacterDraftService } from '../../services/character-draft-service.js';
 import { createCharacterService } from '../../services/character-service.js';
 
 const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
@@ -24,7 +39,7 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
         {
             config: {
                 rateLimit: {
-                    max: process.env.NODE_ENV === 'test' ? 10000 : 5,
+                    max: process.env.NODE_ENV === 'test' ? 10000 : 20,
                     timeWindow: '1 minute',
                 },
             },
@@ -37,15 +52,21 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
                     201: CharacterSchema,
                     400: ErrorSchema,
                     401: ErrorSchema,
+                    409: ErrorSchema,
                     429: ErrorSchema,
                     500: ErrorSchema,
                 },
             },
         },
         async (request, reply) => {
-            const result = await createCharacterService(request.log).generate({
+            const result = await createCharacterService(
+                request.log,
+                request.server.partyBus
+            ).generate({
                 session: request.appSession,
                 classId: request.body?.classId,
+                draft: request.body?.draft ?? null,
+                replace: request.body?.replace ?? false,
                 locale: request.query.locale ?? 'en',
             });
 
@@ -53,6 +74,117 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
                 return sendServiceError(reply, request, result.error);
             }
             return reply.status(201).send(result.value);
+        }
+    );
+
+    // POST /draft - Start (or rehydrate) a creation-flow draft. No DB write.
+    fastify.post<{
+        Body: {
+            classId?: number | null;
+            classless?: boolean;
+            seeds?: SectionSeeds;
+            name?: string;
+            dropLowestAbilities?: AbilityStat[];
+        };
+        Querystring: { locale?: string };
+    }>(
+        '/draft',
+        {
+            schema: {
+                description: 'Generate a character draft preview (not persisted)',
+                tags: ['characters'],
+                querystring: LocaleQuerySchema,
+                body: DraftBodySchema,
+                response: {
+                    200: DraftResponseSchema,
+                    400: ErrorSchema,
+                    401: ErrorSchema,
+                    404: ErrorSchema,
+                    429: ErrorSchema,
+                    500: ErrorSchema,
+                },
+            },
+        },
+        async (request, reply) => {
+            const result = await createCharacterDraftService(request.log).createDraft({
+                session: request.appSession,
+                classId: request.body?.classId ?? null,
+                classless: request.body?.classless,
+                seeds: request.body?.seeds,
+                name: request.body?.name,
+                dropLowestAbilities: request.body?.dropLowestAbilities,
+                locale: request.query.locale ?? 'en',
+            });
+
+            if (!result.ok) {
+                return sendServiceError(reply, request, result.error);
+            }
+            return result.value;
+        }
+    );
+
+    // POST /draft/reroll/:section - Re-roll one section of a draft.
+    fastify.post<{
+        Params: { section: DraftSection };
+        Body: { draft: CharacterDraft };
+        Querystring: { locale?: string };
+    }>(
+        '/draft/reroll/:section',
+        {
+            schema: {
+                description: 'Re-roll a single section of a character draft',
+                tags: ['characters'],
+                params: RerollParamsSchema,
+                querystring: LocaleQuerySchema,
+                body: RerollBodySchema,
+                response: {
+                    200: DraftResponseSchema,
+                    400: ErrorSchema,
+                    401: ErrorSchema,
+                    404: ErrorSchema,
+                    429: ErrorSchema,
+                    500: ErrorSchema,
+                },
+            },
+        },
+        async (request, reply) => {
+            const result = await createCharacterDraftService(request.log).rerollSection({
+                session: request.appSession,
+                draft: request.body.draft,
+                section: request.params.section,
+                locale: request.query.locale ?? 'en',
+            });
+
+            if (!result.ok) {
+                return sendServiceError(reply, request, result.error);
+            }
+            return result.value;
+        }
+    );
+
+    // GET /classes - Localized class list for the creation gate.
+    fastify.get<{ Querystring: { locale?: string } }>(
+        '/classes',
+        {
+            schema: {
+                description: 'List character classes with localized names',
+                tags: ['characters'],
+                querystring: LocaleQuerySchema,
+                response: {
+                    200: ClassListResponseSchema,
+                    500: ErrorSchema,
+                },
+            },
+        },
+        async (request, reply) => {
+            const result = await createCharacterDraftService(request.log).listClasses({
+                locale: request.query.locale ?? 'en',
+            });
+
+            if (!result.ok) {
+                return sendServiceError(reply, request, result.error);
+            }
+            return result.value;
         }
     );
 
@@ -74,7 +206,10 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
             },
         },
         async (request, reply) => {
-            const result = await createCharacterService(request.log).count();
+            const result = await createCharacterService(
+                request.log,
+                request.server.partyBus
+            ).count();
             if (!result.ok) {
                 return sendServiceError(reply, request, result.error);
             }
@@ -105,7 +240,10 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
             },
         },
         async (request, reply) => {
-            const result = await createCharacterService(request.log).getById({
+            const result = await createCharacterService(
+                request.log,
+                request.server.partyBus
+            ).getById({
                 id: request.params.id,
                 session: request.appSession,
                 locale: request.query.locale ?? 'en',
@@ -150,7 +288,10 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
             },
         },
         async (request, reply) => {
-            const result = await createCharacterService(request.log).update({
+            const result = await createCharacterService(
+                request.log,
+                request.server.partyBus
+            ).update({
                 id: request.params.id,
                 session: request.appSession,
                 body: request.body as Record<string, unknown>,
@@ -173,7 +314,10 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
             schema: {
                 description: 'List characters for current user',
                 tags: ['characters'],
-                querystring: LocaleQuerySchema,
+                // No-default locale schema: the list localizes from the
+                // Accept-Language header when ?locale is absent. A default would
+                // force request.query.locale='en' and suppress that fallback.
+                querystring: LocaleQueryNoDefaultSchema,
                 response: {
                     200: { type: 'array', items: CharacterSchema },
                     401: ErrorSchema,
@@ -182,7 +326,10 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
             },
         },
         async (request, reply) => {
-            const result = await createCharacterService(request.log).list({
+            const result = await createCharacterService(
+                request.log,
+                request.server.partyBus
+            ).list({
                 session: request.appSession,
                 rawLocale: request.query.locale,
                 acceptLanguage: request.headers['accept-language'],
@@ -216,7 +363,10 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
             },
         },
         async (request, reply) => {
-            const result = await createCharacterService(request.log).remove({
+            const result = await createCharacterService(
+                request.log,
+                request.server.partyBus
+            ).remove({
                 id: request.params.id,
                 session: request.appSession,
             });

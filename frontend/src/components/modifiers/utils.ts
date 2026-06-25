@@ -16,8 +16,22 @@ export const resolveScopeFromIncludes = (
   scopeIncludeOptions.find((option) => hasSameValues(option.include, includes))
     ?.value ?? 'all';
 
-export const createModifierId = (): string =>
-  Math.random().toString(36).substring(2, 9) + Date.now().toString(36);
+let fallbackModifierIdSequence = 0;
+
+export const createModifierId = (): string => {
+  if (typeof globalThis.crypto?.randomUUID === 'function') {
+    return globalThis.crypto.randomUUID();
+  }
+
+  if (typeof globalThis.crypto?.getRandomValues === 'function') {
+    const bytes = new Uint8Array(16);
+    globalThis.crypto.getRandomValues(bytes);
+    return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
+  }
+
+  fallbackModifierIdSequence += 1;
+  return `modifier-${Date.now().toString(36)}-${fallbackModifierIdSequence.toString(36)}`;
+};
 
 type BentoSize = 'short' | 'medium' | 'full';
 

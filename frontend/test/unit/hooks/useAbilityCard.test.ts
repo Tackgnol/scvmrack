@@ -15,13 +15,13 @@ vi.mock('react-i18next', () => ({
 }));
 
 test('useAbilityCard returns ability metadata and updates values with clamping', () => {
-  const updateFieldCalls: Array<[string, number]> = [];
+  const updateFieldCalls: Array<[string, number | string]> = [];
   const wrapperState = createCharacterTestWrapper({
     character: {
       id: 'char-44',
       strength: 15,
     },
-    updateField: (field: string, value: number) => {
+    updateField: (field, value) => {
       updateFieldCalls.push([field, value]);
     },
   });
@@ -45,11 +45,15 @@ test('useAbilityCard returns ability metadata and updates values with clamping',
   act(() => {
     result.current.setAbilityFromInput('');
   });
+  act(() => {
+    result.current.setAbilityFromInput('0');
+  });
 
   expect(updateFieldCalls).toEqual([
     ['strength', 20],
     ['strength', 1],
     ['strength', 10],
+    ['strength', 1],
   ]);
 });
 

@@ -4,11 +4,11 @@ import { morkBorgColors } from '@/theme/morkBorgTheme';
 import { Box, Button, Typography } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 
-const formatDate = (dateString?: string) => {
+const formatDate = (dateString?: string, locale = 'en') => {
   if (!dateString) return '-';
   const date = new Date(dateString);
   if (Number.isNaN(date.getTime())) return '-';
-  return date.toLocaleDateString('en', {
+  return date.toLocaleDateString(locale, {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
@@ -120,7 +120,7 @@ export function CharacterRow({
   onOpen,
   onDelete,
 }: CharacterRowProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const id = character.id || null;
   const name = (character.name || '').trim() || t('characters.unnamed', 'Unnamed Scvm');
   const className =
@@ -168,7 +168,7 @@ export function CharacterRow({
         <Typography sx={rowStyles.mobileLabel}>
           {t('characters.columns.updated', 'Updated')}
         </Typography>
-        <Typography sx={rowStyles.dateText}>{formatDate(character.updatedAt)}</Typography>
+        <Typography sx={rowStyles.dateText}>{formatDate(character.updatedAt, i18n.language)}</Typography>
       </Box>
 
       <Box sx={rowStyles.actions}>

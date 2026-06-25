@@ -1,7 +1,9 @@
 import { AnalyticsPageTracker } from '@/analytics/AnalyticsPageTracker';
+import { AppFooter } from '@/components/molecules/AppFooter';
 import { NetworkActivityIndicator } from '@/components/atoms/NetworkActivityIndicator';
 import { CharacterSheetSkeleton } from '@/components/molecules/character/CharacterSheetSkeleton';
 import Header from '@/components/organisms/Header';
+import { PartyHost } from '@/components/organisms/party/PartyHost';
 import { SessionExpiredGate } from '@components/molecules/session/SessionExpiredGate';
 import { Outlet, useRouterState } from '@tanstack/react-router';
 import { Box, Container, CssBaseline, ThemeProvider } from '@mui/material';
@@ -10,6 +12,7 @@ import { keyframes } from '@mui/system';
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { getPrivacySettings } from '@/privacy/privacySettings';
 import { subscribeOpenPrivacyDrawer } from '@/privacy/privacyDrawerBus';
+import { isPartyCharacterRoutePath, isSheetRoutePath } from '@/router/routeClassification';
 
 const PrivacyNoticeDrawer = lazy(() =>
     import('@/components/organisms/PrivacyNoticeDrawer').then((m) => ({
@@ -53,8 +56,9 @@ export function RootLayout() {
         select: (state) => state.location.pathname,
     });
     const isPrintRoute = pathname === '/print';
-    const isSheetRoute =
-        pathname === '/character' || pathname.startsWith('/character/');
+    const isJoinRoute = pathname.startsWith('/join/');
+    const isPartyCharacterRoute = isPartyCharacterRoutePath(pathname);
+    const isSheetRoute = isSheetRoutePath(pathname);
 
     return (
         <ThemeProvider theme={morkBorgTheme}>
@@ -90,12 +94,14 @@ export function RootLayout() {
                             <Outlet />
                         </Suspense>
                     </Box>
+                    {!isPrintRoute && <AppFooter />}
                 </Container>
                 {!isPrintRoute && (
                     <Box className="print-hidden">
                         <NetworkActivityIndicator />
                     </Box>
                 )}
+                {!isPrintRoute && !isJoinRoute && !isPartyCharacterRoute && <PartyHost />}
             </Box>
         </ThemeProvider>
     );

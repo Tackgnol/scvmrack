@@ -31,6 +31,9 @@ when:
   - event: [push]
     branch: dev
 
+depends_on:
+  - dev-tests
+
 steps:
   deploy:
     image: docker:27-cli
@@ -78,6 +81,9 @@ steps:
         # the prod deploy (deploy.yaml). compose.prod.yaml reads these to pick
         # the image tag, published ports, and pgdata volume.
         STACK=scvmrack-dev
+        DB_SERVICE="$STACK"_db
+        DB_NETWORK="$STACK"_db
+        AUTH_BASELINE_MIGRATION=20260603000000_init_full
         export IMAGE_TAG=dev
         export FRONTEND_PORT=3050
         export BACKEND_PORT=3051
@@ -92,8 +98,14 @@ steps:
         cleanup
         trap cleanup EXIT
 
-        : "${NPMRC_CONTENT:?npmrc_content secret is required}"
-        : "${DATABASE_PASSWORD:?dev_database_password secret is required}"
+        if [ -z "$NPMRC_CONTENT" ]; then
+          echo "npmrc_content secret is required" >&2
+          exit 1
+        fi
+        if [ -z "$DATABASE_PASSWORD" ]; then
+          echo "dev_database_password secret is required" >&2
+          exit 1
+        fi
 
         printf '%s\n' "$NPMRC_CONTENT" > .npmrc
 
@@ -116,7 +128,7 @@ steps:
         deadline=$(( $(date +%s) + 180 ))
         health=""
         while [ "$(date +%s)" -lt "$deadline" ]; do
-          container_id="$(docker ps --filter label=com.docker.swarm.service.name=${STACK}_db --format '{{.ID}}' | head -n 1)"
+          container_id="$(docker ps --filter "label=com.docker.swarm.service.name=$DB_SERVICE" --format '{{.ID}}' | head -n 1)"
           if [ -n "$container_id" ]; then
             health="$(docker inspect "$container_id" --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' 2>/dev/null || true)"
             if [ "$health" = "healthy" ]; then
@@ -127,14 +139,14 @@ steps:
         done
 
         if [ "$health" != "healthy" ]; then
-          echo "Timed out waiting for ${STACK}_db to become healthy" >&2
+          echo "Timed out waiting for $DB_SERVICE to become healthy" >&2
           docker stack ps "$STACK" --no-trunc >&2 || true
           exit 1
         fi
 
-        db_container_id="$(docker ps --filter label=com.docker.swarm.service.name=${STACK}_db --format '{{.ID}}' | head -n 1)"
+        db_container_id="$(docker ps --filter "label=com.docker.swarm.service.name=$DB_SERVICE" --format '{{.ID}}' | head -n 1)"
         if [ -z "$db_container_id" ]; then
-          echo "Could not find running ${STACK}_db container" >&2
+          echo "Could not find running $DB_SERVICE container" >&2
           docker stack ps "$STACK" --no-trunc >&2 || true
           exit 1
         fi
@@ -169,23 +181,96 @@ steps:
             -c 'DROP TABLE IF EXISTS "claim_code", "verification", "session", "account", "user" CASCADE;'
         fi
 
-        # If auth tables are missing, apply the Prisma migration SQL files
-        # directly via psql. This bootstraps the auth schema without using
-        # `prisma db push` (which doesn't respect externalTables and would
-        # try to drop the init-managed game tables).
-        user_exists="$(docker exec "$db_container_id" psql -U p1002_scmgrinder -d p1002_scmgrinder -tAc "SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='user';")"
-        if [ "$user_exists" != "1" ]; then
-          echo "Auth tables missing — applying Prisma migration SQL files directly."
-          for migration in $(ls backend/prisma/migrations | sort); do
-            echo "  Applying $migration"
-            docker cp "backend/prisma/migrations/$migration/migration.sql" "$db_container_id:/tmp/$migration.sql"
-            docker exec "$db_container_id" psql \
-              -U p1002_scmgrinder \
-              -d p1002_scmgrinder \
-              -v ON_ERROR_STOP=1 \
-              -f "/tmp/$migration.sql"
-          done
-        fi
+        # Ensure auth tables exist without replaying the full Prisma baseline.
+        # Long-lived dev DBs already have init-managed game tables, so applying
+        # the entire baseline SQL directly would fail on tables like `classes`.
+        cat > /tmp/auth-bootstrap.sql <<'SQL'
+        CREATE TABLE IF NOT EXISTS "user" (
+            "id" TEXT NOT NULL,
+            "name" TEXT NOT NULL,
+            "email" TEXT NOT NULL,
+            "emailVerified" BOOLEAN NOT NULL DEFAULT false,
+            "image" TEXT,
+            "isAnonymous" BOOLEAN DEFAULT false,
+            "logto_sub" TEXT,
+            "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            "updatedAt" TIMESTAMP(3) NOT NULL,
+            CONSTRAINT "user_pkey" PRIMARY KEY ("id")
+        );
+
+        CREATE TABLE IF NOT EXISTS "session" (
+            "id" TEXT NOT NULL,
+            "expiresAt" TIMESTAMP(3) NOT NULL,
+            "token" TEXT NOT NULL,
+            "ipAddress" TEXT,
+            "userAgent" TEXT,
+            "userId" TEXT NOT NULL,
+            "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            "updatedAt" TIMESTAMP(3) NOT NULL,
+            CONSTRAINT "session_pkey" PRIMARY KEY ("id")
+        );
+
+        CREATE TABLE IF NOT EXISTS "account" (
+            "id" TEXT NOT NULL,
+            "accountId" TEXT NOT NULL,
+            "providerId" TEXT NOT NULL,
+            "userId" TEXT NOT NULL,
+            "accessToken" TEXT,
+            "refreshToken" TEXT,
+            "idToken" TEXT,
+            "accessTokenExpiresAt" TIMESTAMP(3),
+            "refreshTokenExpiresAt" TIMESTAMP(3),
+            "scope" TEXT,
+            "password" TEXT,
+            "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            "updatedAt" TIMESTAMP(3) NOT NULL,
+            CONSTRAINT "account_pkey" PRIMARY KEY ("id")
+        );
+
+        CREATE TABLE IF NOT EXISTS "verification" (
+            "id" TEXT NOT NULL,
+            "identifier" TEXT NOT NULL,
+            "value" TEXT NOT NULL,
+            "expiresAt" TIMESTAMP(3) NOT NULL,
+            "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            CONSTRAINT "verification_pkey" PRIMARY KEY ("id")
+        );
+
+        CREATE TABLE IF NOT EXISTS "claim_code" (
+            "code" TEXT NOT NULL,
+            "payload_user_id" TEXT NOT NULL,
+            "payload_source_user_id" TEXT NOT NULL,
+            "payload_character_id" TEXT NOT NULL,
+            "payload_signature" TEXT NOT NULL,
+            "payload_issued_at" TIMESTAMP(3) NOT NULL,
+            "expires_at" TIMESTAMP(3) NOT NULL,
+            CONSTRAINT "claim_code_pkey" PRIMARY KEY ("code")
+        );
+
+        CREATE UNIQUE INDEX IF NOT EXISTS "user_email_key" ON "user"("email");
+        CREATE UNIQUE INDEX IF NOT EXISTS "session_token_key" ON "session"("token");
+        CREATE INDEX IF NOT EXISTS "session_userId_idx" ON "session"("userId");
+        CREATE INDEX IF NOT EXISTS "account_userId_idx" ON "account"("userId");
+        CREATE INDEX IF NOT EXISTS "verification_identifier_idx" ON "verification"("identifier");
+
+        SELECT 'ALTER TABLE "session" ADD CONSTRAINT "session_userId_fkey" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE CASCADE'
+        WHERE NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'session_userId_fkey')\gexec
+
+        SELECT 'ALTER TABLE "account" ADD CONSTRAINT "account_userId_fkey" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE CASCADE'
+        WHERE NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'account_userId_fkey')\gexec
+
+        SELECT 'ALTER TABLE "characters" ADD CONSTRAINT "characters_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "user"("id") ON DELETE SET NULL ON UPDATE CASCADE NOT VALID'
+        WHERE to_regclass('public.characters') IS NOT NULL
+          AND NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'characters_user_id_fkey')\gexec
+        SQL
+        echo "Ensuring auth tables and ownership constraints exist..."
+        docker cp /tmp/auth-bootstrap.sql "$db_container_id:/tmp/auth-bootstrap.sql"
+        docker exec "$db_container_id" psql \
+          -U p1002_scmgrinder \
+          -d p1002_scmgrinder \
+          -v ON_ERROR_STOP=1 \
+          -f /tmp/auth-bootstrap.sql
 
         # Build DATABASE_URL inside Node so encodeURIComponent handles every
         # URL-reserved character correctly. `tr -d '\r\n'` strips the trailing
@@ -203,18 +288,14 @@ steps:
           | tr -d '\r\n')"
         export DATABASE_URL
 
-        # Baseline _prisma_migrations so `migrate deploy` knows which
-        # migrations have already been applied (the ones we just ran via
-        # psql, plus any from prior runs). `resolve --applied` is idempotent
-        # if already marked, so `|| true` covers re-runs.
-        for migration in $(ls backend/prisma/migrations | sort); do
-          docker run --rm --network ${STACK}_db \
-            -e DATABASE_URL="$DATABASE_URL" \
-            scvmrack-backend:$IMAGE_TAG npx prisma migrate resolve --applied "$migration" || true
-        done
+        # Baseline only the full-schema migration. Later migrations must remain
+        # pending so `migrate deploy` can apply real changes such as `parties`.
+        docker run --rm --network "$DB_NETWORK" \
+          -e DATABASE_URL="$DATABASE_URL" \
+          scvmrack-backend:$IMAGE_TAG npx prisma migrate resolve --applied "$AUTH_BASELINE_MIGRATION" || true
 
         # Apply any future migrations added to backend/prisma/migrations/
-        docker run --rm --network ${STACK}_db \
+        docker run --rm --network "$DB_NETWORK" \
           -e DATABASE_URL="$DATABASE_URL" \
           scvmrack-backend:$IMAGE_TAG npx prisma migrate deploy
 

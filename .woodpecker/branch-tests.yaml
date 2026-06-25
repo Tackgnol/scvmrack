@@ -115,6 +115,9 @@ steps:
         trap cleanup EXIT
 
         printf '%s\n' "$NPMRC_CONTENT" > .npmrc
-        docker compose -f compose.integration-be.yaml up \
-          --build --abort-on-container-exit --exit-code-from integration \
-          db migrate api integration
+        cp .npmrc backend/.npmrc  # integration service builds from ./backend context
+        docker compose -f compose.integration-be.yaml build
+        docker compose -f compose.integration-be.yaml up -d --wait --wait-timeout 300 db
+        docker compose -f compose.integration-be.yaml run --rm migrate
+        docker compose -f compose.integration-be.yaml up -d --wait --wait-timeout 300 --no-deps api
+        docker compose -f compose.integration-be.yaml run --rm --no-deps integration

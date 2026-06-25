@@ -132,58 +132,6 @@ export interface CharacterActions {
 export type CharacterStore = Character & CharacterActions;
 
 // ═══════════════════════════════════════════
-// COMPONENT PROPS
-// ═══════════════════════════════════════════
-
-export interface AbilityCardProps {
-  ability: AbilityName;
-  rotate?: number;
-}
-
-export interface ModifierTagProps {
-  modifier: Modifier;
-  onRemove: () => void;
-}
-
-export interface ModalButtonProps {
-  variant?: 'primary' | 'secondary' | 'danger';
-  children: React.ReactNode;
-  onClick?: () => void;
-}
-
-export interface MorkBorgModalProps {
-  open: boolean;
-  onClose: () => void;
-  title: string;
-  children: React.ReactNode;
-  actions?: React.ReactNode;
-  maxWidth?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
-}
-
-export interface GearSlotProps {
-  label: string;
-  name: string;
-  detail?: string;
-  onNameChange: (value: string) => void;
-  onDetailChange?: (value: string) => void;
-  detailPlaceholder?: string;
-}
-
-export interface ItemSlotProps {
-  number: number;
-  value: string;
-  onChange: (value: string) => void;
-  variant?: 'default' | 'onhand';
-}
-
-export interface PowerRowProps {
-  number: number;
-  power: Power;
-  onNameChange: (name: string) => void;
-  onToggleUse: (useIndex: number) => void;
-}
-
-// ═══════════════════════════════════════════
 // THEME TYPES
 // ═══════════════════════════════════════════
 
@@ -194,6 +142,7 @@ export interface MorkBorgColors {
   white: string;
   grey: string;
   darkGrey: string;
+  blood: string;
 }
 
 export type StatColorMap = Record<StatType, string>;

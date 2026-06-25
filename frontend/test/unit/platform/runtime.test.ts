@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, afterEach } from 'vitest';
 import { isBrowserRuntime, getRuntimeOrigin, getRuntimeDocumentTitle } from '../../../src/platform/runtime';
 
 describe('runtime platform utils', () => {

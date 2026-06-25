@@ -90,10 +90,10 @@ export type ComputedModifier = {
 export type Character = {
     id?: string;
     name?: string;
-    classId?: number;
-    className?: string;
-    classDescription?: string;
-    origin?: string;
+    classId?: number | null;
+    className?: string | null;
+    classDescription?: string | null;
+    origin?: string | null;
     strength?: number;
     agility?: number;
     presence?: number;
@@ -103,16 +103,16 @@ export type Character = {
     omens?: number;
     maxOmens?: number;
     silver?: number;
-    habit?: string;
-    tale?: string;
-    bodyDescription?: string;
-    trait1?: string;
-    trait2?: string;
+    habit?: string | null;
+    tale?: string | null;
+    bodyDescription?: string | null;
+    trait1?: string | null;
+    trait2?: string | null;
     notes?: string;
     abilities?: Ability[];
     equipment?: EquipmentItem[];
     storage?: EquipmentItem[];
-    equippedWeapons?: WeaponItem[];
+    equippedWeapons?: Array<WeaponItem | null>;
     equippedArmor?: ArmorItem;
     modifiers?: CustomModifier[];
     computedModifiers?: ComputedModifier[];
@@ -121,6 +121,9 @@ export type Character = {
     drToDodge?: number;
     drToMelee?: number;
     drToRanged?: number;
+    partyId?: string | null;
+    joinedAt?: string | null;
+    viewerAccess?: 'owner' | 'party';
     createdAt?: string;
     updatedAt?: string;
 };
@@ -148,7 +151,7 @@ export type CharacterUpdateRequest = Partial<{
     abilities: Ability[];
     equipment: EquipmentItem[];
     storage: EquipmentItem[];
-    equippedWeapons: WeaponItem[];
+    equippedWeapons: Array<WeaponItem | null>;
     equippedArmor: ArmorItem;
     modifiers: CustomModifier[];
 }>;
@@ -156,10 +159,12 @@ export type CharacterUpdateRequest = Partial<{
 export type CharacterListItem = {
     id?: string;
     name?: string;
-    classId?: number;
-    className?: string;
+    classId?: number | null;
+    className?: string | null;
     currentHp?: number;
     maxHp?: number;
+    partyId?: string | null;
+    joinedAt?: string | null;
     createdAt?: string;
     updatedAt?: string;
 };

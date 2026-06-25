@@ -130,7 +130,7 @@ export default function ModifierAdvancedModal({
       >
         {statOptions.map((option) => (
           <MenuItem key={option.value} value={option.value}>
-            {option.label}
+            {t(`attributes.${option.value}`, option.label)}
           </MenuItem>
         ))}
       </Select>

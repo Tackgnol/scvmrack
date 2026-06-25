@@ -12,13 +12,15 @@ import {
   LOGGED_OUT_QUERY_PARAM,
   SESSION_EXPIRED_QUERY_PARAM,
 } from '@/router/navigation';
-import { getApiLocale } from '@/hooks/utils.ts';
+import { getApiLocale, getCharacterKey } from '@/hooks/utils.ts';
+import { characterKeys } from '@/api';
+import type { CharacterResponse } from '@/hooks/models';
 import { usePrivacyAcknowledged } from '@/privacy/privacyConsent';
 import { useSnackbar } from '@/SnackbarContext/SnackbarProvider.tsx';
 import { useErrorFeedback } from '@/components/molecules/feedback/ErrorFeedbackProvider';
 import { getUserFacingApiErrorMessage } from '@/utils/errorUtils';
 
-import { useEffect, useRef, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useRef, useSyncExternalStore } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 
@@ -33,6 +35,25 @@ const getSessionExpiredSnapshot = (): boolean =>
   hasCurrentSearchParam(SESSION_EXPIRED_QUERY_PARAM);
 
 const getPathnameSnapshot = (): string => appHistory.location.pathname;
+
+// "Just created" intent in a module-level store, read via useSyncExternalStore
+// (the same pattern this hook already uses for history). Living outside React,
+// it survives the provider/tree recreation that can happen during the
+// create->sheet route transition — and it needs no context, so the context's
+// unit tests render without extra providers.
+let justCreatedStore: string | null = null;
+const justCreatedListeners = new Set<() => void>();
+const setJustCreated = (id: string | null): void => {
+  justCreatedStore = id;
+  justCreatedListeners.forEach((listener) => listener());
+};
+const subscribeJustCreated = (onStoreChange: () => void): (() => void) => {
+  justCreatedListeners.add(onStoreChange);
+  return () => {
+    justCreatedListeners.delete(onStoreChange);
+  };
+};
+const getJustCreatedSnapshot = (): string | null => justCreatedStore;
 
 export function useCurrentCharacter() {
   const { characterId, lastCharacterId, setCharacterId } = useCharacterId();
@@ -88,13 +109,17 @@ export function useCurrentCharacter() {
   const repo = useCharacterRepository(characterId, locale, {
     enabled: !isSessionExpired,
   });
+  const isReadOnly = repo.character?.viewerAccess === 'party';
   const editor = useCharacterEditor(
     characterId,
     repo.updateCharacter,
     repo.getCharacterKey,
     trimmedLocale,
-    validationIssueHandlers
+    validationIssueHandlers,
+    { readOnly: isReadOnly }
   );
+  const visibleCharacter =
+    editor.getVisibleCharacter?.(repo.character) ?? repo.character;
 
   // Per-instance in-flight controller, shared between the auto-create flow and
   // manual generation so they cancel each other — never a module-level singleton.
@@ -120,6 +145,7 @@ export function useCurrentCharacter() {
 
   const { generateNew, killAndReplace, changeLocale } = useCharacterActions({
     characterId,
+    partyId: repo.character?.partyId ?? null,
     isSessionExpired,
     trimmedLocale,
     isAuthenticated,
@@ -136,6 +162,37 @@ export function useCurrentCharacter() {
     changeLanguage,
   });
 
+  // ---- Freshly created character handoff ----
+  // The draft-creation flow hits the same POST /api/characters/new as
+  // generateNew, so its result enters through the same door: seed the detail
+  // cache, refresh the list, select it. The create intent is parked in the
+  // shared query cache so the sheet can acknowledge the new wretch exactly once
+  // — read identically from any useCharacter() consumer, no out-of-band signal.
+  const justCreatedId = useSyncExternalStore(
+    subscribeJustCreated,
+    getJustCreatedSnapshot,
+    getJustCreatedSnapshot
+  );
+
+  const adoptCreatedCharacter = useCallback(
+    (character: CharacterResponse) => {
+      if (!character?.id) return;
+      // Enter through the same door as generateNew: seed the detail cache and
+      // refresh the list (mirroring repo.createCharacter.onSuccess), record the
+      // create intent, then navigate. push+flush (not setCharacterId) avoids the
+      // mid-confirm in-provider state update that can trip the route error
+      // boundary during the create->sheet transition.
+      queryClient.setQueryData(getCharacterKey(character.id, locale), character);
+      queryClient.invalidateQueries({ queryKey: characterKeys.list() });
+      setJustCreated(character.id);
+      void appHistory.push(`/character/${character.id}`);
+      appHistory.flush();
+    },
+    [queryClient, locale]
+  );
+
+  const acknowledgeCreated = useCallback(() => setJustCreated(null), []);
+
   // ---- Handle logout side effects ----
   useEffect(() => {
     if (isJustLoggedOut && (characterId || lastCharacterId)) {
@@ -147,7 +204,8 @@ export function useCurrentCharacter() {
   return {
     characterId,
     lastCharacterId,
-    character: repo.character,
+    character: visibleCharacter,
+    isReadOnly,
     error: repo.error,
     isLoading:
       repo.isLoading ||
@@ -164,6 +222,9 @@ export function useCurrentCharacter() {
     changeLocale,
     generateNew,
     killAndReplace,
+    justCreatedId,
+    adoptCreatedCharacter,
+    acknowledgeCreated,
 
     // All editor methods exposed
     ...editor,

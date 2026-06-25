@@ -51,6 +51,20 @@ export const LocaleQuerySchema = {
   },
 };
 
+// Same as LocaleQuerySchema but WITHOUT a default. The character-list route
+// falls back to the Accept-Language header when no explicit ?locale is given;
+// a schema default would populate request.query.locale='en' and silently
+// suppress that fallback (the locale would never be "absent").
+export const LocaleQueryNoDefaultSchema = {
+  type: 'object',
+  properties: {
+    locale: {
+      type: 'string',
+      enum: ['en', 'pl'],
+    },
+  },
+};
+
 const EquipmentItemSchema = {
   type: 'object',
   additionalProperties: false,
@@ -297,10 +311,10 @@ export const CharacterSchema = {
   properties: {
     id: { type: 'string', format: 'uuid' },
     name: { type: 'string' },
-    classId: { type: 'integer' },
-    className: { type: 'string' },
-    classDescription: { type: 'string' },
-    origin: { type: 'string' },
+    classId: { type: ['integer', 'null'] },
+    className: { type: ['string', 'null'] },
+    classDescription: { type: ['string', 'null'] },
+    origin: { type: ['string', 'null'] },
     strength: { type: 'integer' },
     agility: { type: 'integer' },
     presence: { type: 'integer' },
@@ -310,11 +324,11 @@ export const CharacterSchema = {
     omens: { type: 'integer' },
     maxOmens: { type: 'integer' },
     silver: { type: 'integer' },
-    habit: { type: 'string' },
-    tale: { type: 'string' },
-    bodyDescription: { type: 'string' },
-    trait1: { type: 'string' },
-    trait2: { type: 'string' },
+    habit: { type: ['string', 'null'] },
+    tale: { type: ['string', 'null'] },
+    bodyDescription: { type: ['string', 'null'] },
+    trait1: { type: ['string', 'null'] },
+    trait2: { type: ['string', 'null'] },
     notes: { type: 'string' },
     abilities: { type: 'array', items: AbilitySchema },
     equipment: { type: 'array', items: EquipmentItemSchema },
@@ -328,6 +342,9 @@ export const CharacterSchema = {
     drToDodge: { type: 'integer' },
     drToMelee: { type: 'integer' },
     drToRanged: { type: 'integer' },
+    partyId: { type: ['string', 'null'], format: 'uuid' },
+    joinedAt: { type: ['string', 'null'], format: 'date-time' },
+    viewerAccess: { type: 'string', enum: ['owner', 'party'] },
     createdAt: { type: 'string', format: 'date-time' },
     updatedAt: { type: 'string', format: 'date-time' },
   },
@@ -361,5 +378,36 @@ export const GenerateBodySchema = {
   type: 'object',
   properties: {
     classId: { type: 'integer', minimum: 1, maximum: 6 },
+    // Opt-in for guests: replace the single scvm an anonymous session already
+    // owns. Without it, creating a second one is a 409 (see character-service).
+    replace: { type: 'boolean' },
+    draft: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['classId', 'classless', 'seeds'],
+      properties: {
+        classId: { type: ['integer', 'null'], minimum: 1, maximum: 100 },
+        classless: { type: 'boolean' },
+        name: { type: 'string', maxLength: 255 },
+        dropLowestAbilities: {
+          type: 'array',
+          items: {
+            type: 'string',
+            enum: ['strength', 'agility', 'presence', 'toughness'],
+          },
+          uniqueItems: true,
+          maxItems: 2,
+        },
+        seeds: {
+          type: 'object',
+          additionalProperties: false,
+          required: ['name', 'stats', 'omens', 'silver', 'origin', 'abilities', 'gear', 'personality'],
+          properties: Object.fromEntries(
+            ['name', 'stats', 'omens', 'silver', 'origin', 'abilities', 'gear', 'personality']
+              .map((section) => [section, { type: 'string', pattern: '^[0-9a-f]{64}$' }])
+          ),
+        },
+      },
+    },
   },
-} as const;
+};

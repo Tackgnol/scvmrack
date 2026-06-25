@@ -5,7 +5,7 @@ import { createCharacterTestWrapper } from '../helpers/characterHookWrapper.ts';
 
 test('useCharacterDescriptors updates ability comments and descriptor fields', () => {
   const updateAbilitiesCalls: unknown[] = [];
-  const updateFieldCalls: Array<[string, string]> = [];
+  const updateFieldCalls: Array<[string, number | string]> = [];
   const wrapperState = createCharacterTestWrapper({
     character: {
       classId: 6,
@@ -14,7 +14,7 @@ test('useCharacterDescriptors updates ability comments and descriptor fields', (
     updateAbilities: (abilities: unknown) => {
       updateAbilitiesCalls.push(abilities);
     },
-    updateField: (field: string, value: string) => {
+    updateField: (field, value) => {
       updateFieldCalls.push([field, value]);
     },
   });

@@ -116,6 +116,68 @@ async function createSeededCharacter(
   return (await charRes.json()) as { id: string };
 }
 
+/**
+ * Create an extra authenticated user via the test fixture route. Useful when a
+ * test needs a *second* actor (e.g. a party member joining the GM's party).
+ */
+export async function createTestUser(
+  name = 'E2E Player'
+): Promise<{ userId: string; sessionCookie: string }> {
+  const cookies: CookieJar = new Map();
+  const email = `e2e_player_${crypto.randomUUID()}@example.com`;
+  const response = await postTestRoute(
+    '/test/users',
+    { name, email, password: 'E2eTestPassword123!' },
+    cookies
+  );
+  if (!response.ok) {
+    throw new Error(`createTestUser failed: ${response.status} ${await response.text()}`);
+  }
+  const { userId, sessionCookie } = (await response.json()) as {
+    userId: string;
+    sessionCookie: string;
+  };
+  if (!sessionCookie) {
+    throw new Error('createTestUser returned no session cookie');
+  }
+  return { userId, sessionCookie };
+}
+
+export { createSeededCharacter };
+
+/**
+ * Apply a `/test/users` sessionCookie blob to a browser context and acknowledge
+ * the privacy notice, so a hand-built context behaves like the default authed
+ * fixture (which sets these via `cleanContext` + storageState).
+ */
+export async function prepareActorContext(
+  context: import('@playwright/test').BrowserContext,
+  sessionCookie: string
+): Promise<void> {
+  await context.addInitScript(() => {
+    localStorage.setItem(
+      'scvmgrinder-privacy-settings-v1',
+      JSON.stringify({ acknowledged: true, analyticsEnabled: false })
+    );
+  });
+  const url = new URL(baseURL);
+  for (const cookie of sessionCookie.split('; ').filter(Boolean)) {
+    const [nameValue] = cookie.split(';');
+    const eqIdx = nameValue.indexOf('=');
+    if (eqIdx <= 0) continue;
+    await context.addCookies([
+      {
+        name: nameValue.slice(0, eqIdx),
+        value: nameValue.slice(eqIdx + 1),
+        domain: url.hostname,
+        path: '/',
+        httpOnly: true,
+        secure: url.protocol === 'https:',
+      },
+    ]);
+  }
+}
+
 export const test = base.extend<Fixtures, WorkerFixtures>({
   workerAuthState: [
     async ({ browser }, use, workerInfo) => {

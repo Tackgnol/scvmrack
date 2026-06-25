@@ -45,7 +45,9 @@ interface BoneBarProps {
     isOpen: boolean;
 }
 
-export const BoneBar = styled(Box)<BoneBarProps>(({ index, isOpen }) => ({
+export const BoneBar = styled(Box, {
+    shouldForwardProp: (prop) => prop !== 'index' && prop !== 'isOpen',
+})<BoneBarProps>(({ index, isOpen }) => ({
     height: "6px",
     width: (index === 2 && !isOpen) ? "24px" : "32px",
     backgroundColor: morkBorgColors.white,

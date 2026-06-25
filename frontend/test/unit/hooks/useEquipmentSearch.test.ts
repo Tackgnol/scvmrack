@@ -91,6 +91,32 @@ test('useItemSearch trims input and returns query results', () => {
   expect(result.current.results).toEqual([]);
 });
 
+test('useItemSearch keeps one-character queries below the network threshold', () => {
+  queryMocks.useQuery.mockImplementation(
+    ({ enabled }: { enabled: boolean }) => ({
+      data: enabled
+        ? [{ id: 2, itemType: 'weapon', key: 'weapon.axe', name: 'Axe', tags: ['weapon'] }]
+        : [],
+      isLoading: false,
+      error: null,
+    }),
+  );
+
+  const { result } = renderHook(() => useItemSearch({ debounceMs: 0 }));
+
+  act(() => {
+    result.current.search('a');
+  });
+
+  expect(result.current.results).toEqual([]);
+  expect(queryMocks.useQuery).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      enabled: false,
+      queryKey: ['item-search', 'a', 'pl', 20],
+    }),
+  );
+});
+
 test('useItemSearch maps query errors to message text', () => {
   queryMocks.useQuery.mockImplementation(
     ({ enabled }: { enabled: boolean }) => ({

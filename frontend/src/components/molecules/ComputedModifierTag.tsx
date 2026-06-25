@@ -25,6 +25,11 @@ export default function ComputedModifierTag({
   const pulse = useValuePulse(value, reduceMotion);
   const originName =
     modifier.originName ?? t('modifiers.computed.unknownOrigin');
+  const statistic = modifier.statistic ?? 'agility';
+  const statisticLabel = t(
+    `attributes.${statistic}Short`,
+    statistic,
+  ).toUpperCase();
 
   return (
     <Box
@@ -87,7 +92,7 @@ export default function ComputedModifierTag({
         </Typography>
       </Box>
       <ModifierStatChip
-        label={(modifier.statistic ?? 'agility').toUpperCase()}
+        label={statisticLabel}
         density="compact"
       />
       <SignedModifierValue value={value} size="compact" pulse={pulse} />

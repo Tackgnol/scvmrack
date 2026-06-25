@@ -1,7 +1,5 @@
 // Atoms
 export { default as AnimatedNumber } from './atoms/AnimatedNumber';
-export { Flag } from './atoms/Flag';
-export { FlagContainer } from './atoms/FlagContainer';
 export { NetworkActivityIndicator } from './atoms/NetworkActivityIndicator';
 export { default as ItemQuantityBadge } from './atoms/ItemQuantityBadge';
 export { default as ModifierStatChip } from './atoms/ModifierStatChip';

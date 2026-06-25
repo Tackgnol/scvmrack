@@ -1,4 +1,4 @@
-import { Box, Typography } from '@mui/material';
+import { Box, ButtonBase, Typography } from '@mui/material';
 import { type AggregatedItem } from '@/utils/aggregateItems';
 import { customStyles } from '@/theme/morkBorgTheme';
 import { ItemQuantityBadge } from '@components/index';
@@ -30,14 +30,18 @@ export default function InventoryItemSlot<T extends InventoryItemBase>({
   const isOpenVariant = variant === 'open';
 
   return (
-    <Box
+    <ButtonBase
       onClick={() => onOpenEditor(aggregated)}
-      sx={
-        isOpenVariant
+      sx={{
+        ...(isOpenVariant
           ? customStyles.inventorySection.openItemSlot
-          : customStyles.inventorySection.itemSlot
-      }
+          : customStyles.inventorySection.itemSlot),
+        justifyContent: 'flex-start',
+        textAlign: 'left',
+        width: '100%',
+      }}
       data-testid="inventory-item-slot"
+      type="button"
     >
       <ItemQuantityBadge
         quantity={quantity}
@@ -69,6 +73,6 @@ export default function InventoryItemSlot<T extends InventoryItemBase>({
           </Typography>
         )}
       </Box>
-    </Box>
+    </ButtonBase>
   );
 }

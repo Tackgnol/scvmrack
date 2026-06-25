@@ -48,6 +48,73 @@ function itemName(item: EquipmentItem): string {
     return `${amount}${item.name ?? item.key ?? '-'}`;
 }
 
+function stableKeyPart(value: unknown): string {
+    if (Array.isArray(value)) {
+        return value.map(stableKeyPart).join(',');
+    }
+
+    if (value && typeof value === 'object') {
+        return JSON.stringify(value) ?? '';
+    }
+
+    return String(value ?? '');
+}
+
+function equipmentIdentityKey(item: EquipmentItem): string {
+    if (item.key?.trim()) {
+        return `key:${item.key.trim()}`;
+    }
+
+    return [
+        item.name?.trim() || 'item',
+        stableKeyPart(item.source),
+        stableKeyPart(item.category),
+        stableKeyPart(item.value),
+        stableKeyPart(item.maxTier),
+        stableKeyPart(item.ammoType),
+        stableKeyPart(item.dice),
+        stableKeyPart(item.modifiers),
+    ].join('|');
+}
+
+function usesIdentityKey(item: EquipmentItem): string {
+    return [
+        equipmentIdentityKey(item),
+        stableKeyPart(item.description),
+        stableKeyPart(item.comments),
+        stableKeyPart(item.tags),
+        stableKeyPart(item.uses),
+    ].join('|');
+}
+
+function getAbilityIdentityKey(
+    ability: NonNullable<Character['abilities']>[number],
+): string {
+    return [
+        ability.key?.trim() || ability.name?.trim() || 'ability',
+        stableKeyPart(ability.description),
+        stableKeyPart(ability.comment),
+    ].join('|');
+}
+
+function withOccurrenceKeys<T>(
+    items: T[],
+    getBaseKey: (item: T) => string,
+): Array<{ item: T; key: string }> {
+    const seen = new Map<string, number>();
+
+    return items.map((item) => {
+        const baseKey = getBaseKey(item);
+        const occurrence = seen.get(baseKey) ?? 0;
+        seen.set(baseKey, occurrence + 1);
+
+        return {
+            item,
+            key: occurrence === 0 ? baseKey : `${baseKey}#${occurrence + 1}`,
+        };
+    });
+}
+
 function PrintSection({
     title,
     children,
@@ -140,13 +207,16 @@ function EquipmentList({ items }: { items: EquipmentItem[] }) {
 
     return (
         <ul className="print-native-list">
-            {aggregated.map(({ item, quantity }, index) => {
+            {withOccurrenceKeys(
+                aggregated,
+                ({ item }) => equipmentIdentityKey(item),
+            ).map(({ item: { item, quantity }, key }) => {
                 const displayName =
                     quantity > 1
                         ? `${quantity}x ${item.name ?? item.key ?? '-'}`
                         : itemName(item);
                 return (
-                    <li key={`${item.key ?? item.name ?? 'item'}-${index}`}>
+                    <li key={key}>
                         <strong>{displayName}</strong>
                         {item.description && <span>{item.description}</span>}
                         {item.comments && <span>{item.comments}</span>}
@@ -164,8 +234,8 @@ function UsesList({ items }: { items: EquipmentItem[] }) {
 
     return (
         <ul className="print-native-list print-native-uses">
-            {items.map((item, index) => (
-                <li key={`${item.key ?? item.name ?? 'use'}-${index}`}>
+            {withOccurrenceKeys(items, usesIdentityKey).map(({ item, key }) => (
+                <li key={key}>
                     <div>
                         <strong>{itemName(item)}</strong>
                         {item.description && <span>{item.description}</span>}
@@ -193,12 +263,19 @@ function ModifierList({
     computed: ComputedModifier[];
     custom: CustomModifier[];
 }) {
+    const { t } = useTranslation();
     const rows = [
         ...computed.map((item) => ({
             name: item.originName ?? item.source ?? item.originKey ?? 'Modifier',
             value: item.value,
             statistic: item.statistic,
-            note: item.exclude?.length ? `Excludes: ${item.exclude.join(', ')}` : undefined,
+            note: item.exclude?.length
+                ? t('modifiers.excludes', 'Excludes: {{list}}', {
+                      list: item.exclude
+                          .map((ctx) => t(`modifiers.exclude.${ctx}`, ctx))
+                          .join(', '),
+                  })
+                : undefined,
         })),
         ...custom.map((item) => ({
             name: item.name ?? item.source ?? 'Modifier',
@@ -317,8 +394,11 @@ function PrintSheet({ character }: { character: Character }) {
 
                     <PrintSection title={t('character.classAbilities', 'Class Abilities')}>
                         <ol className="print-native-list print-native-numbered">
-                            {(character.abilities ?? []).map((ability, index) => (
-                                <li key={`${ability.key ?? ability.name ?? 'ability'}-${index}`}>
+                            {withOccurrenceKeys(
+                                character.abilities ?? [],
+                                getAbilityIdentityKey,
+                            ).map(({ item: ability, key }) => (
+                                <li key={key}>
                                     <strong>{ability.name ?? '-'}</strong>
                                     {ability.description && <span>{ability.description}</span>}
                                     {ability.comment && <span>{ability.comment}</span>}

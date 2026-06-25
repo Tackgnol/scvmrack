@@ -42,15 +42,15 @@ export const CharacterDescriptors = () => {
       />
 
       <TraitsSection
-        trait1={character.trait1}
-        trait2={character.trait2}
-        habit={character.habit}
-        bodyDescription={character.bodyDescription}
+        trait1={character.trait1 ?? undefined}
+        trait2={character.trait2 ?? undefined}
+        habit={character.habit ?? undefined}
+        bodyDescription={character.bodyDescription ?? undefined}
         onChangeField={updateDescriptorField}
       />
 
       <OriginSection
-        origin={character.origin}
+        origin={character.origin ?? undefined}
         onChangeOrigin={(value) => updateDescriptorField('origin', value)}
       />
     </>

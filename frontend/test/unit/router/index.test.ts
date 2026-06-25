@@ -18,6 +18,7 @@ vi.mock('@/router/history', () => ({
 // Route components are lazy-loaded — mock them so importing the router
 // doesn't pull in every page's dependency tree.
 vi.mock('@/pages/CharacterPage', () => ({ CharacterPage: () => null }));
+vi.mock('@/pages/CharacterCreatePage', () => ({ CharacterCreatePage: () => null }));
 vi.mock('@/pages/CharactersListPage', () => ({ CharactersListPage: () => null }));
 vi.mock('@/pages/FaqPage', () => ({ FaqPage: () => null }));
 vi.mock('@/pages/NotFoundPage', () => ({ NotFoundPage: () => null }));
@@ -33,24 +34,41 @@ describe('router/index — route registration', () => {
     expect(registeredPaths).toContain('/');
     expect(registeredPaths).toContain('/characters');
     expect(registeredPaths).toContain('/character/');
+    expect(registeredPaths).toContain('/character/create');
     expect(registeredPaths).toContain('/character/new');
     expect(registeredPaths).toContain('/print');
     expect(registeredPaths).toContain('/faq');
     expect(registeredPaths).toContain('/release');
+    expect(registeredPaths).toContain('/join/$token');
+    expect(registeredPaths).toContain('/join/$token/forge');
+    expect(registeredPaths).toContain('/join/$token/roll');
     expect(registeredPaths).not.toContain('/reset-password');
+  });
+
+  it('matches the dedicated join forge/roll routes ahead of the bare invite route', async () => {
+    const { router } = await import('@/router/index');
+
+    const forge = router.matchRoutes('/join/abc/forge');
+    expect(forge[forge.length - 1]?.routeId).toBe('/join/$token/forge');
+
+    const roll = router.matchRoutes('/join/abc/roll');
+    expect(roll[roll.length - 1]?.routeId).toBe('/join/$token/roll');
+
+    const invite = router.matchRoutes('/join/abc');
+    expect(invite[invite.length - 1]?.routeId).toBe('/join/$token');
   });
 
   it('treats /character/ as not found instead of an empty sheet shell', async () => {
     const { router } = await import('@/router/index');
     const matches = router.matchRoutes('/character/');
 
-    expect(matches.at(-1)?.routeId).toBe('/character/');
+    expect(matches[matches.length - 1]?.routeId).toBe('/character/');
   });
 
   it('routes /character/new to the sheet bootstrap page', async () => {
     const { router } = await import('@/router/index');
     const matches = router.matchRoutes('/character/new');
 
-    expect(matches.at(-1)?.routeId).toBe('/character/new');
+    expect(matches[matches.length - 1]?.routeId).toBe('/character/new');
   });
 });

@@ -1,4 +1,5 @@
 import { useCharactersList } from '@/hooks/useCharactersList';
+import { DeleteCharacterModal } from '@components/molecules/characters-list/DeleteCharacterModal';
 import { CharacterTable } from '@components/molecules/characters-list/CharacterTable';
 import { useAuth } from '@/hooks/useAuth';
 import { appHistory } from '@/router/history';
@@ -18,14 +19,9 @@ import { useTranslation } from 'react-i18next';
 
 const handleOpenCharacter = async (id?: string) => {
     if (!id) return;
-    const targetPath = buildHomeCallbackUrl(id);
-    const result = await appHistory.push(targetPath);
+    await appHistory.push(buildHomeCallbackUrl(id));
     // History writes are throttled internally; flush to avoid stale route/query reads.
     appHistory.flush();
-
-    if (result.type === 'BLOCKED') {
-        window.location.assign(targetPath);
-    }
 };
 
 const listStyles = {
@@ -96,10 +92,13 @@ export function CharactersListPage() {
         isLoading,
         loadError,
         deleteError,
+        deleteCandidate,
         isCreating,
         deletingId,
         createNew,
-        remove,
+        requestDelete,
+        cancelDelete,
+        confirmDelete,
     } = useCharactersList();
 
     if (isGuest) {
@@ -149,6 +148,14 @@ export function CharactersListPage() {
                                 : t('actions.generateNew', 'Generate New')}
                         </Button>
                         <Button
+                            component={Link}
+                            to="/character/create"
+                            variant="contained"
+                            sx={listStyles.newButton}
+                        >
+                            {t('create.entry', 'Forge a Scvm')}
+                        </Button>
+                        <Button
                             variant="outlined"
                             sx={listStyles.backButton}
                             onClick={() => appHistory.push(backUrl)}
@@ -188,6 +195,9 @@ export function CharactersListPage() {
                         <Button component={Link} to={buildHomeCallbackUrl(null)} variant="contained" sx={listStyles.createButton}>
                             {t('characters.createFirst', 'Create Character')}
                         </Button>
+                        <Button component={Link} to="/character/create" variant="outlined" sx={{ ...listStyles.backButton, ml: 1 }}>
+                            {t('create.entry', 'Forge a Scvm')}
+                        </Button>
                     </Box>
                 )}
 
@@ -197,9 +207,18 @@ export function CharactersListPage() {
                         activeId={activeId}
                         deletingId={deletingId}
                         onOpen={handleOpenCharacter}
-                        onDelete={remove}
+                        onDelete={requestDelete}
                     />
                 )}
+
+                <DeleteCharacterModal
+                    open={deleteCandidate !== null}
+                    character={deleteCandidate}
+                    isActive={!!deleteCandidate?.id && deleteCandidate.id === activeId}
+                    isDeleting={!!deleteCandidate?.id && deleteCandidate.id === deletingId}
+                    onCancel={cancelDelete}
+                    onConfirm={confirmDelete}
+                />
             </Box>
         </>
     );

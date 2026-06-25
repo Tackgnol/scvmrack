@@ -1,9 +1,10 @@
 import {Statistic} from "@/hooks/models.ts";
 import { render } from 'vitest-browser-react';
 import { page, userEvent } from 'vitest/browser';
-import { describe, it, expect, vi } from 'vitest';
+import { afterEach, describe, it, expect, vi } from 'vitest';
 import CustomModifierTag from '@/components/molecules/CustomModifierTag';
 import BrowserTestProvider from '../BrowserTestProvider';
+import i18n, { loadLanguage } from '@/i18n';
 
 describe('CustomModifierTag Browser', () => {
   const mockModifier = {
@@ -23,6 +24,10 @@ describe('CustomModifierTag Browser', () => {
     removeLabel: 'Remove modifier',
   };
 
+  afterEach(async () => {
+    await i18n.changeLanguage('en');
+  });
+
   it('renders name, statistic, and value', async () => {
     await render(
       <BrowserTestProvider>
@@ -31,9 +36,22 @@ describe('CustomModifierTag Browser', () => {
     );
 
     await expect.element(page.getByText('Custom Bonus')).toBeVisible();
-    await expect.element(page.getByText('AGILITY', { exact: true })).toBeVisible();
+    await expect.element(page.getByText('AGI', { exact: true })).toBeVisible();
     await expect.element(page.getByText('+1')).toBeVisible();
 
+  });
+
+  it('renders translated Polish statistic labels', async () => {
+    await loadLanguage('pl');
+    await i18n.changeLanguage('pl');
+
+    await render(
+      <BrowserTestProvider>
+        <CustomModifierTag {...defaultProps} />
+      </BrowserTestProvider>
+    );
+
+    await expect.element(page.getByText('ZWI', { exact: true })).toBeVisible();
   });
 
   it('triggers onEdit when clicked', async () => {

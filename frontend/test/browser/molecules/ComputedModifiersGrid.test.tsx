@@ -18,7 +18,7 @@ describe('ComputedModifiersGrid', () => {
     {
       originName: 'Shield',
       originKey: 'shield',
-      statistic: 'defence',
+      statistic: 'agility',
       value: 1,
       source: 'Shield bonus',
       exclude: [],

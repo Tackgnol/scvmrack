@@ -6,11 +6,11 @@ import {
 } from '@/validation/characterUpdate';
 import { useValidationAlert } from '@/hooks/useValidationAlert';
 import {Autocomplete, Box, TextField, Typography} from '@mui/material';
-import {SyntheticEvent, useState} from 'react';
+import {type SyntheticEvent, useState} from 'react';
 import {useTranslation} from 'react-i18next';
 
 interface ItemAutocompleteProps {
-    onSelect: (item: ItemSearchHit) => void;
+    onSelect: (item: ItemSearchHit) => void | Promise<void>;
     placeholder?: string;
     label?: string;
 }
@@ -23,6 +23,7 @@ export default function ItemAutocomplete({
     const {t} = useTranslation();
     const [inputValue, setInputValue] = useState('');
     const [selectedValue, setSelectedValue] = useState<ItemSearchHit | null>(null);
+    const [pendingItem, setPendingItem] = useState<ItemSearchHit | null>(null);
     const {results, isLoading, search, clearResults} = useItemSearch({limit: 15});
     const searchErrorMessage = getTextLimitMessage(
         t,
@@ -30,6 +31,20 @@ export default function ItemAutocomplete({
         inputValue
     );
     useValidationAlert(searchErrorMessage);
+    const isAdding = pendingItem !== null;
+    const statusText = searchErrorMessage
+        ?? (pendingItem
+            ? t('equipment.addingItem', {
+                item: pendingItem.name,
+                defaultValue: `Adding ${pendingItem.name}...`,
+            })
+            : ' ');
+    const loadingText = pendingItem
+        ? t('equipment.addingItem', {
+            item: pendingItem.name,
+            defaultValue: `Adding ${pendingItem.name}...`,
+        })
+        : t('equipment.searching', 'Searching...');
 
     const resetAutocomplete = () => {
         setSelectedValue(null);
@@ -38,6 +53,10 @@ export default function ItemAutocomplete({
     };
 
     const handleInputChange = (_: SyntheticEvent, value: string, reason: string) => {
+        if (isAdding) {
+            return;
+        }
+
         if (reason === 'reset') {
             return;
         }
@@ -53,23 +72,45 @@ export default function ItemAutocomplete({
             return;
         }
 
-        if (value.length >= 2) search(value);
+        const normalizedValue = value.trim();
+        if (normalizedValue.length >= 2) search(normalizedValue);
         else clearResults();
     };
 
-    const handleSelect = (_: SyntheticEvent, value: ItemSearchHit | null) => {
+    const handleSelect = async (_: SyntheticEvent, value: ItemSearchHit | null) => {
+        if (isAdding) {
+            return;
+        }
+
         if (!value) {
             resetAutocomplete();
             return;
         }
-        onSelect(value);
-        resetAutocomplete();
+
+        setSelectedValue(value);
+        setInputValue(value.name);
+        setPendingItem(value);
+        clearResults();
+
+        try {
+            await onSelect(value);
+        } finally {
+            setPendingItem(null);
+            resetAutocomplete();
+        }
     };
 
     return (
         <Autocomplete
+            sx={customStyles.itemAutocomplete.root}
             options={results}
-            loading={isLoading}
+            loading={isLoading || isAdding}
+            loadingText={loadingText}
+            noOptionsText={
+                inputValue.trim().length < 2
+                    ? t('equipment.typeToSearch', 'Type 2 characters to search')
+                    : t('equipment.noResults')
+            }
             value={selectedValue}
             inputValue={inputValue}
             onInputChange={handleInputChange}
@@ -79,6 +120,11 @@ export default function ItemAutocomplete({
                 !!a && !!b && a.id === b.id && a.itemType === b.itemType
             }
             filterOptions={(x) => x}
+            slotProps={{
+                paper: {sx: customStyles.itemAutocomplete.paper},
+                listbox: {sx: customStyles.itemAutocomplete.listbox},
+                popper: {sx: customStyles.itemAutocomplete.popper},
+            }}
             renderOption={(props, option) => {
                 const { key, ...optionProps } = props as typeof props & {
                     key?: unknown;
@@ -87,6 +133,7 @@ export default function ItemAutocomplete({
                     <Box
                         component="li"
                         key={`${option.itemType}-${option.id}-${String(key ?? '')}`}
+                        sx={customStyles.itemAutocomplete.option}
                         {...optionProps}
                     >
                         <Typography sx={customStyles.itemAutocomplete.itemName}>
@@ -104,10 +151,19 @@ export default function ItemAutocomplete({
                     label={label ?? t('equipment.addItem')}
                     placeholder={placeholder}
                     error={Boolean(searchErrorMessage)}
+                    helperText={statusText}
                     size="small"
                     slotProps={{
+                        inputLabel: {
+                            shrink: true,
+                        },
+                        formHelperText: {
+                            sx: customStyles.itemAutocomplete.helperText,
+                        },
                         htmlInput: {
                             ...params.inputProps,
+                            readOnly: isAdding,
+                            "aria-busy": isLoading || isAdding ? "true" : undefined,
                             "data-testid": "equipment-search-input"
                         }
                     }}

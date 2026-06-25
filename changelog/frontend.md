@@ -8,16 +8,26 @@
 - **Data:** TanStack Query + `openapi-fetch` / `openapi-react-query` (typed client)
 - **Routing:** TanStack Router
 - **Build/test:** Vite 8, Vitest 4 (JSDOM unit + Playwright browser), ESLint 9 (flat config)
-- **i18n:** `i18next` / `react-i18next` — English-only (locked to `en`); the Polish bundle and language-switch machinery are retained but disabled for a future re-enable
+- **i18n:** `i18next` / `react-i18next` — English + Polish, switched from a header language toggle; locale is detector-driven (localStorage → navigator), the Polish bundle loads lazily, and an optional `/{lang}/` URL prefix seeds the language
 - **Observability:** Sentry / GlitchTip (`@sentry/react`), Google Analytics (consent-gated)
 
 ## Pages
 
 - **Landing** — entry / call to action
 - **Characters list** — all characters for the current user
+- **Character creation** — opt-in `/character/create` flow for choosing a class,
+  previewing a fully rolled scvm, re-rolling individual sections, and confirming
+  the final character
 - **Character sheet** — the core editor (stats, equipment, abilities, powers, pets, notes);
   sheet navigation uses canonical `/character/<id>` URLs without stale `character`
   query parameters
+- **Party** — GM party control (`/party/<id>`) with invite link, live warband
+  vital strip, and member kick; player party view binds a scvm via an invite link
+  (`/join/<token>`, with `/forge` and `/roll` sub-routes) and shows a live,
+  read-only warband
+- **GM overview** — `/gm` dashboard to create and open parties; party creation
+  keeps the yellow name input legible with black text and validates names at 100
+  characters before submit
 - **Print** — printer-friendly character layout
 - **FAQ** — help content
 - **Release notes** — in-app changelog at `/release`
@@ -31,6 +41,8 @@
 - Stat tracking and modifiers (computed + custom), ability cards, scroll/power uses
 - Inventory with equipped bar, on-hand vs. storage sections, ammo tracking,
   consumables, pets, and custom-item creation
+- Equipment lookup/add-item flow keeps the add controls stable while search and
+  add calls are pending, reducing layout jumps when items enter the sheet
 - Kill & Replace flow (death modal at 0 HP)
 
 ## Feedback & error reporting

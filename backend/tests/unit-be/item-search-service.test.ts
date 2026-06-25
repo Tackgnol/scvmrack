@@ -47,42 +47,29 @@ function resetCalls(): void {
   calls.translation = 0;
 }
 
-function catalogFindMany(itemType: keyof typeof catalogs) {
-  return async () => {
-    calls[itemType]++;
-    return catalogs[itemType];
-  };
-}
-
-const prismaMock = {
-  weapon: {
-    findMany: catalogFindMany('weapon'),
+const catalogRepositoryMock = {
+  findAllItemsForSearch: async () => {
+    calls.weapon++;
+    calls.armor++;
+    calls.equipment++;
+    calls.pet++;
+    return {
+      weapons: catalogs.weapon,
+      armors: catalogs.armor,
+      equipment: catalogs.equipment,
+      pets: catalogs.pet,
+    };
   },
-  armor: {
-    findMany: catalogFindMany('armor'),
-  },
-  equipment: {
-    findMany: catalogFindMany('equipment'),
-  },
-  pet: {
-    findMany: catalogFindMany('pet'),
-  },
-  translation: {
-    findMany: async ({
-      where,
-    }: {
-      where: { key: { in: string[] }; locale: { in: string[] } };
-    }) => {
-      calls.translation++;
-      return translations.filter((row) =>
-        where.key.in.includes(row.key) && where.locale.in.includes(row.locale)
-      );
-    },
+  findTranslationsMultiLocale: async (keys: string[], locales: string[]) => {
+    calls.translation++;
+    return translations.filter(
+      (row) => keys.includes(row.key) && locales.includes(row.locale)
+    );
   },
 };
 
-mock.module('../../src/lib/prisma.js', {
-  defaultExport: prismaMock,
+mock.module('../../src/repositories/catalog-repository.js', {
+  namedExports: { catalogRepository: catalogRepositoryMock },
 });
 
 const { clearItemSearchCache, searchItems } = await import('../../src/lib/item-search-service.js');

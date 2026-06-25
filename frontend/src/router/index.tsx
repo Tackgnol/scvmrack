@@ -1,6 +1,7 @@
 import { createRouter, createRootRoute, createRoute, lazyRouteComponent } from '@tanstack/react-router';
 import { appHistory } from '@/router/history';
 import { RootLayout } from '@/router/layout';
+import { CharacterCreatePage } from '@/pages/CharacterCreatePage';
 
 const NotFoundComponent = lazyRouteComponent(() =>
     import('@/pages/NotFoundPage').then(m => ({ default: m.NotFoundPage }))
@@ -35,6 +36,12 @@ const characterNewRoute = createRoute({
     component: lazyRouteComponent(() => import('@/pages/CharacterPage').then(m => ({ default: m.CharacterPage }))),
 });
 
+const characterCreateRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: '/character/create',
+    component: CharacterCreatePage,
+});
+
 const characterIdRoute = createRoute({
     getParentRoute: () => rootRoute,
     path: '/character/$characterId',
@@ -45,6 +52,36 @@ const charactersRoute = createRoute({
     getParentRoute: () => rootRoute,
     path: '/characters',
     component: lazyRouteComponent(() => import('@/pages/CharactersListPage').then(m => ({ default: m.CharactersListPage }))),
+});
+
+const partyRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: '/party/$partyId',
+    component: lazyRouteComponent(() => import('@/pages/PartyPage').then(m => ({ default: m.PartyPage }))),
+});
+
+const partyCharacterRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: '/party/$partyId/character/$characterId',
+    component: lazyRouteComponent(() => import('@/pages/PartyCharacterPage').then(m => ({ default: m.PartyCharacterPage }))),
+});
+
+const joinRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: '/join/$token',
+    component: lazyRouteComponent(() => import('@/pages/JoinPartyPage').then(m => ({ default: m.JoinPartyPage }))),
+});
+
+const joinForgeRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: '/join/$token/forge',
+    component: lazyRouteComponent(() => import('@/pages/JoinForgePage').then(m => ({ default: m.JoinForgePage }))),
+});
+
+const joinRollRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: '/join/$token/roll',
+    component: lazyRouteComponent(() => import('@/pages/JoinRollPage').then(m => ({ default: m.JoinRollPage }))),
 });
 
 const printRoute = createRoute({
@@ -66,16 +103,29 @@ const releaseRoute = createRoute({
     component: lazyRouteComponent(() => import('@/pages/ReleasePage').then(m => ({ default: m.ReleasePage }))),
 });
 
+const gmRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: '/gm',
+    component: lazyRouteComponent(() => import('@/pages/GmOverviewPage').then(m => ({ default: m.GmOverviewPage }))),
+});
+
 const routeTree = rootRoute.addChildren([
     indexRoute,
     characterRoute,
     characterTrailingSlashRoute,
     characterNewRoute,
+    characterCreateRoute,
     characterIdRoute,
     charactersRoute,
+    partyRoute,
+    partyCharacterRoute,
+    joinRoute,
+    joinForgeRoute,
+    joinRollRoute,
     printRoute,
     faqRoute,
     releaseRoute,
+    gmRoute,
 ]);
 
 export const router = createRouter({

@@ -8,6 +8,14 @@ import { appHistory } from '@/router/history';
 
 const mockPrint = vi.fn();
 
+function hookError(error: {
+  statusCode: number;
+  code?: string;
+  message: string;
+}): ReturnType<typeof useCharacter>['error'] {
+  return error as unknown as ReturnType<typeof useCharacter>['error'];
+}
+
 vi.mock('@/seo/Seo', () => ({
   Seo: () => null,
 }));
@@ -175,11 +183,11 @@ describe('PrintPage', () => {
     await renderPrintPage({
       character: undefined,
       isLoading: false,
-      error: {
+      error: hookError({
         statusCode: 403,
         code: 'CHARACTER_ACCESS_DENIED',
         message: "You don't have access to this scvm",
-      },
+      }),
     });
 
     await expect

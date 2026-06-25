@@ -36,6 +36,50 @@ export function ReleasePage() {
     // newest-first and in sync with that folder when cutting a release.
     const releases: ReleaseNote[] = [
         {
+            version: '0.4.3',
+            date: '2026-06-24',
+            type: 'patch',
+            changes: [
+                t('release.v043.partyNameContrast', 'Party-name text on the GM overview now stays black on yellow so it remains readable while creating a party'),
+                t('release.v043.partyNameLimit', 'Party creation now checks party names in the browser and blocks submit above 100 characters'),
+                t('release.v043.localizedFeedback', 'The party-name validation message is localized in English and Polish'),
+            ],
+        },
+        {
+            version: '0.4.2',
+            date: '2026-06-24',
+            type: 'patch',
+            changes: [
+                t('release.v042.lanternConsumable', 'Lanterns and torches show up in the Consumables section with their use pips and count toward encumbrance again, instead of being treated as ammunition'),
+                t('release.v042.sourcebookLink', 'The "Get the sourcebook" button now points to the Polish edition at nerdsirens.pl on the Polish view'),
+                t('release.v042.translationCredit', 'Footer credits the official Polish translation by Nerd Sirens'),
+            ],
+        },
+        {
+            version: '0.4.1',
+            date: '2026-06-23',
+            type: 'patch',
+            changes: [
+                t('release.v041.itemSearch', 'Equipment search now returns Polish item names on the Polish view instead of English ones'),
+                t('release.v041.dates', 'The character list now formats dates in the active language'),
+                t('release.v041.partyEscape', 'A player whose only scvm is already in a party can now leave it — or roll a fresh scvm — straight from an invite link'),
+                t('release.v041.livePulse', 'The GM warband strip gives a quiet, motion-safe flash on a scvm when its values change live'),
+                t('release.v041.creationPolish', 'Creation flow: the re-roll button and stat names/abbreviations are localized, and re-rolling one section no longer flashes every button'),
+                t('release.v041.langUrl', 'Opening /pl/... or /en/... sets the language, then continues to the page'),
+            ],
+        },
+        {
+            version: '0.4.0',
+            date: '2026-06-23',
+            type: 'minor',
+            changes: [
+                t('release.v040.parties', 'Game masters can create a party, share an invite link, and have players bind a scvm to the table'),
+                t('release.v040.liveUpdates', 'The GM overview and player party view stream changes live — HP, stats, and who is connected — without refreshing'),
+                t('release.v040.creation', 'A guided character creation flow: pick a class, go classless, or roll random, preview the scvm, re-roll any section, then forge it'),
+                t('release.v040.polish', 'Polish is re-enabled with a redesigned header language toggle and broad localization across the app'),
+            ],
+        },
+        {
             version: '0.3.5',
             date: '2026-06-07',
             type: 'patch',

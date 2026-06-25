@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict';
 import { mock, test } from 'node:test';
 
+import { Prisma } from '@prisma/client';
 import type { Roller } from '@tackgnol/rpg-tools-roller';
+import { randomSectionSeeds, seededRollerFor } from '../../src/lib/draft-seeds.js';
 
 type RollExpectation = {
   notation: string;
@@ -262,7 +264,7 @@ mock.module('../../src/lib/inventory.js', {
   },
 });
 
-const { generateCharacter } = await import('../../src/lib/generate-character.js');
+const { generateCharacter, buildCharacterData } = await import('../../src/lib/generate-character.js');
 
 test('generateCharacter stores the payload produced by a scripted roller', async () => {
   resetFixture();
@@ -536,4 +538,204 @@ test('generateCharacter fails clearly when random class generation has no classe
   );
   assert.deepEqual(roller.calls, []);
   assert.deepEqual(fixture.createdCharacters, []);
+});
+
+test('buildCharacterData is deterministic for identical seeds', async () => {
+  resetFixture();
+  const seeds = randomSectionSeeds();
+
+  const first = await buildCharacterData(1, seededRollerFor(seeds));
+  const second = await buildCharacterData(1, seededRollerFor({ ...seeds }));
+
+  assert.deepEqual(first, second);
+  assert.deepEqual(fixture.createdCharacters, []);
+});
+
+test('re-seeding only stats keeps gear identity but re-derives quantities', async () => {
+  resetFixture();
+  const seeds = randomSectionSeeds();
+
+  const base = await buildCharacterData(1, seededRollerFor(seeds));
+
+  let rerolled = base;
+  for (let i = 0; i < 50 && rerolled.presence === base.presence; i++) {
+    rerolled = await buildCharacterData(
+      1,
+      seededRollerFor({ ...seeds, stats: randomSectionSeeds().stats }),
+    );
+  }
+  assert.notEqual(rerolled.presence, base.presence, 'expected a different presence within 50 attempts');
+
+  const ammoKeys = new Set(['equipment.arrows', 'equipment.bolts']);
+  const keys = (character: { equipment: unknown[] }) =>
+    [...new Set(
+      character.equipment
+        .map((item) => (item as { key: string }).key)
+        .filter((key) => !ammoKeys.has(key))
+    )].sort();
+
+  assert.deepEqual(keys(rerolled), keys(base));
+  assert.deepEqual(rerolled.equippedWeapons, base.equippedWeapons);
+  assert.deepEqual(rerolled.equippedArmor, base.equippedArmor);
+
+  assert.equal(rerolled.name, base.name);
+  assert.equal(rerolled.silver, base.silver);
+  assert.equal(rerolled.omens, base.omens);
+  assert.deepEqual(rerolled.abilities, base.abilities);
+
+  assert.notDeepEqual(
+    [rerolled.strength, rerolled.agility, rerolled.presence, rerolled.toughness],
+    [base.strength, base.agility, base.presence, base.toughness],
+  );
+});
+
+test('buildCharacterData(null) produces a classless scvm with book defaults', async () => {
+  resetFixture();
+  const seeds = randomSectionSeeds();
+
+  const character = await buildCharacterData(null, seededRollerFor(seeds));
+
+  assert.equal(character.classId, null);
+  assert.equal(character.origin, null);
+  assert.deepEqual(character.abilities, []);
+  assert.equal(character.classlessStatOptions?.length, 4);
+  assert.ok(
+    character.silver >= 20 && character.silver <= 120,
+    `silver ${character.silver} out of 2d6x10 range`,
+  );
+  for (const stat of [character.strength, character.agility, character.presence, character.toughness]) {
+    assert.ok(stat >= 3 && stat <= 18, `stat ${stat} out of unmodified 3d6 range`);
+  }
+  assert.ok(character.maxHp >= 1);
+  assert.equal(character.currentHp, character.maxHp);
+});
+
+test('buildCharacterData(null) exposes classless min/max stats and applies two selected max rolls', async () => {
+  const next = baseFixture();
+  next.names = [{ name: 'Ash' }];
+  next.habits = [];
+  next.tales = [];
+  next.bodies = [];
+  next.traits = [];
+  resetFixture(next);
+
+  const statsRoller = new ScriptedRoller([
+    { notation: '1d6', total: 6 },
+    { notation: '1d6', total: 6 },
+    { notation: '1d6', total: 1 },
+    { notation: '1d6', total: 1 },
+    { notation: '1d6', total: 2 },
+    { notation: '1d6', total: 2 },
+    { notation: '1d6', total: 2 },
+    { notation: '1d6', total: 2 },
+    { notation: '1d6', total: 6 },
+    { notation: '1d6', total: 5 },
+    { notation: '1d6', total: 4 },
+    { notation: '1d6', total: 3 },
+    { notation: '1d6', total: 1 },
+    { notation: '1d6', total: 2 },
+    { notation: '1d6', total: 3 },
+    { notation: '1d6', total: 4 },
+    { notation: '1d8', total: 4 },
+  ]);
+  const omensRoller = new ScriptedRoller([{ notation: '1d2', total: 1 }]);
+  const silverRoller = new ScriptedRoller([
+    { notation: '1d6', total: 1 },
+    { notation: '1d6', total: 2 },
+  ]);
+  const nameRoller = new ScriptedRoller([{ notation: '1d1', total: 1 }]);
+  const gearRoller = new ScriptedRoller([
+    { notation: '1d6', total: 1 },
+    { notation: '1d12', total: 1 },
+    { notation: '1d12', total: 5 },
+    { notation: '1d10', total: 4 },
+    { notation: '1d4', total: 1 },
+  ]);
+  const emptyRoller = new ScriptedRoller([]);
+  const rollers = {
+    stats: statsRoller,
+    omens: omensRoller,
+    silver: silverRoller,
+    name: nameRoller,
+    origin: emptyRoller,
+    abilities: emptyRoller,
+    gear: gearRoller,
+    personality: emptyRoller,
+  };
+
+  const character = await buildCharacterData(
+    null,
+    (section) => rollers[section] as unknown as Roller,
+    { dropLowestAbilities: ['strength', 'presence'] },
+  );
+
+  assert.equal(character.strength, 13);
+  assert.equal(character.agility, 6);
+  assert.equal(character.presence, 15);
+  assert.equal(character.toughness, 6);
+  assert.deepEqual(character.classlessStatOptions, [
+    { ability: 'strength', dice: [6, 6, 1, 1], minTotal: 8, maxTotal: 13, selected: true },
+    { ability: 'agility', dice: [2, 2, 2, 2], minTotal: 6, maxTotal: 6, selected: false },
+    { ability: 'presence', dice: [6, 5, 4, 3], minTotal: 12, maxTotal: 15, selected: true },
+    { ability: 'toughness', dice: [1, 2, 3, 4], minTotal: 6, maxTotal: 9, selected: false },
+  ]);
+  statsRoller.assertComplete();
+  omensRoller.assertComplete();
+  silverRoller.assertComplete();
+  nameRoller.assertComplete();
+  gearRoller.assertComplete();
+});
+
+test('createCharacterFromDraft persists exactly what buildCharacterData produces', async () => {
+  resetFixture();
+  const seeds = randomSectionSeeds();
+  const draft = { classId: 1, classless: false, seeds };
+
+  const expected = await buildCharacterData(1, seededRollerFor(seeds));
+  fixture.createdCharacters.length = 0;
+
+  const { createCharacterFromDraft } = await import('../../src/lib/generate-character.js');
+  const id = await createCharacterFromDraft(draft, 'user-123');
+
+  assert.equal(id, 'generated-character-id');
+  const created = fixture.createdCharacters[0] as Record<string, unknown>;
+  assert.equal(created.userId, 'user-123');
+  const { userId: _userId, ...rest } = created;
+  assert.deepEqual(
+    {
+      ...rest,
+      equippedArmor: rest.equippedArmor === Prisma.DbNull ? null : rest.equippedArmor,
+    },
+    expected,
+  );
+});
+
+test('createCharacterFromDraft persists a sanitized draft name override', async () => {
+  resetFixture();
+  const seeds = randomSectionSeeds();
+  const draft = { classId: 1, classless: false, seeds, name: '  Rotmaw  ' };
+
+  const { createCharacterFromDraft } = await import('../../src/lib/generate-character.js');
+  await createCharacterFromDraft(draft, 'user-123');
+
+  const created = fixture.createdCharacters[0] as Record<string, unknown>;
+  assert.equal(created.name, 'Rotmaw');
+});
+
+test('createCharacterFromDraft with classless=true ignores classId', async () => {
+  resetFixture();
+  const seeds = randomSectionSeeds();
+  const { createCharacterFromDraft } = await import('../../src/lib/generate-character.js');
+
+  await createCharacterFromDraft({
+    classId: 1,
+    classless: true,
+    seeds,
+    dropLowestAbilities: ['strength', 'presence'],
+  }, 'user-123');
+
+  const created = fixture.createdCharacters[0] as Record<string, unknown>;
+  assert.equal(created.classId, null);
+  assert.deepEqual(created.abilities, []);
+  assert.equal(created.classlessStatOptions, undefined);
 });

@@ -1,6 +1,7 @@
+import type { CharacterListItem } from '@/hooks/models';
 import { toApiClientError } from '@/utils/errorUtils';
 
-export type CharacterListEntry = { id: string };
+export type CharacterListEntry = CharacterListItem & { id: string };
 
 // Shared React Query key for the "does this session already own characters?" list.
 // Both the sheet bootstrap (useCurrentCharacter) and the landing pregen read it, so

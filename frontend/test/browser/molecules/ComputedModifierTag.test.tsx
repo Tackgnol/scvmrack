@@ -1,16 +1,16 @@
 import { render } from 'vitest-browser-react';
 import { page, userEvent } from 'vitest/browser';
-import { describe, it, expect, vi } from 'vitest';
+import { afterEach, describe, it, expect, vi } from 'vitest';
 import ComputedModifierTag from '@/components/molecules/ComputedModifierTag';
 import BrowserTestProvider from '../BrowserTestProvider';
+import { type ComputedModifier } from '@/hooks/models';
+import i18n, { loadLanguage } from '@/i18n';
 
 describe('ComputedModifierTag Browser', () => {
-  const mockModifier = {
-    id: 'test-mod',
+  const mockModifier: ComputedModifier = {
     statistic: 'strength',
     value: 2,
     originName: 'Belt of Giant Strength',
-    type: 'computed' as const,
   };
 
   const defaultProps = {
@@ -18,6 +18,10 @@ describe('ComputedModifierTag Browser', () => {
     onOpen: vi.fn(),
     isFull: false,
   };
+
+  afterEach(async () => {
+    await i18n.changeLanguage('en');
+  });
 
   it('renders origin name, statistic, and value', async () => {
     await render(
@@ -27,9 +31,22 @@ describe('ComputedModifierTag Browser', () => {
     );
 
     await expect.element(page.getByText('Belt of Giant Strength')).toBeVisible();
-    await expect.element(page.getByText('STRENGTH', { exact: true })).toBeVisible();
+    await expect.element(page.getByText('STR', { exact: true })).toBeVisible();
     await expect.element(page.getByText('+2')).toBeVisible();
 
+  });
+
+  it('renders translated Polish statistic labels', async () => {
+    await loadLanguage('pl');
+    await i18n.changeLanguage('pl');
+
+    await render(
+      <BrowserTestProvider>
+        <ComputedModifierTag {...defaultProps} />
+      </BrowserTestProvider>
+    );
+
+    await expect.element(page.getByText('SIŁ', { exact: true })).toBeVisible();
   });
 
   it('triggers onOpen when clicked', async () => {

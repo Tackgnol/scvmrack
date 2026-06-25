@@ -4,6 +4,7 @@ import { page, userEvent } from 'vitest/browser';
 import { EquipmentSection } from '@/components/organisms/EquipmentSection';
 import BrowserTestProvider from '../BrowserTestProvider';
 import * as CharacterContextModule from '@/CharacterContext/CharacterContext';
+import i18n, { loadLanguage } from '@/i18n';
 
 vi.mock('@/CharacterContext/CharacterContext', () => ({
   useCharacter: vi.fn(),
@@ -11,15 +12,21 @@ vi.mock('@/CharacterContext/CharacterContext', () => ({
 
 // We mock ItemAutocomplete to just act as a button we can click on, avoiding external HTTP hook integrations cleanly.
 vi.mock('@/components/molecules/ItemAutocomplete', () => ({
-  default: (props: any) => <button onClick={() => props.onSelect({ name: 'AutoSword' })}>MockAutocomplete</button>
+  default: (props: any) => (
+    <>
+      <input aria-label="mock equipment search" placeholder={props.placeholder} />
+      <button onClick={() => props.onSelect({ name: 'AutoSword' })}>MockAutocomplete</button>
+    </>
+  ),
 }));
 
 describe('EquipmentSection Component', () => {
   const mockUpdateWeaponField = vi.fn();
   const mockUpdateArmorField = vi.fn();
 
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks();
+    await i18n.changeLanguage('en');
     vi.mocked(CharacterContextModule.useCharacter).mockReturnValue({
       character: {
         id: 'test-char',
@@ -45,7 +52,28 @@ describe('EquipmentSection Component', () => {
     await expect.element(page.getByText('Sharp')).toBeVisible();
     await expect.element(page.getByText('Leather')).toBeVisible();
     await expect.element(page.getByText('Tough')).toBeVisible();
-    await expect.element(page.getByText('Empty Slot')).toBeVisible(); // Offhand
+    await expect.element(page.getByText('Currently empty')).toBeVisible(); // Offhand
+  });
+
+  it('translates modal controls and search copy in Polish', async () => {
+    await loadLanguage('pl');
+    await i18n.changeLanguage('pl');
+    await render(
+      <BrowserTestProvider>
+        <EquipmentSection />
+      </BrowserTestProvider>
+    );
+
+    await expect.element(page.getByPlaceholder('Szukaj wyposażenia...')).toBeVisible();
+    await userEvent.click(page.getByRole('button', { name: /Sword/i }));
+
+    await expect.element(page.getByRole('dialog', { name: /edytuj: broń/i })).toBeVisible();
+    await expect.element(page.getByRole('textbox', { name: /nazwa przedmiotu/i })).toBeVisible();
+    await expect.element(page.getByRole('textbox', { name: /opis \/ obrażenia/i })).toBeVisible();
+    await expect.element(page.getByRole('textbox', { name: /komentarze \/ notatki/i })).toBeVisible();
+    await expect.element(page.getByPlaceholder('Dodaj własne notatki...')).toBeVisible();
+    await expect.element(page.getByRole('button', { name: /anuluj/i })).toBeVisible();
+    await expect.element(page.getByRole('button', { name: /zapisz/i })).toBeVisible();
   });
 
   it('opens modal and saves edits cleanly to a weapon slot', async () => {
@@ -55,9 +83,9 @@ describe('EquipmentSection Component', () => {
       </BrowserTestProvider>
     );
 
-    await userEvent.click(page.getByText('Sword'));
+    await userEvent.click(page.getByRole('button', { name: /Sword/i }));
 
-    const nameInput = page.getByRole('textbox', { name: 'Name' });
+    const nameInput = page.getByRole('textbox', { name: 'Item Name' });
     await userEvent.fill(nameInput, 'Greatsword');
 
     const saveBtn = page.getByRole('button', { name: 'Save' });
@@ -73,7 +101,7 @@ describe('EquipmentSection Component', () => {
       </BrowserTestProvider>
     );
 
-    await userEvent.click(page.getByText('Leather'));
+    await userEvent.click(page.getByRole('button', { name: /Leather/i }));
 
     const descInput = page.getByRole('textbox', { name: 'Description / Damage' });
     await userEvent.fill(descInput, 'Very Tough');

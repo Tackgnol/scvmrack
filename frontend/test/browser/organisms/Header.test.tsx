@@ -50,7 +50,18 @@ vi.mock('@/api', () => ({
   $api: {
     useQuery: vi.fn(),
   },
+  client: {},
   getCsrfToken: vi.fn().mockResolvedValue('test-csrf-token'),
+}));
+
+vi.mock('@/hooks/useParty', () => ({
+  useParty: () => ({
+    members: [],
+    count: 0,
+    isLoading: false,
+    isError: false,
+    refetch: vi.fn(),
+  }),
 }));
 
 vi.mock('@/router/navigation', () => ({
@@ -80,9 +91,12 @@ describe('Header Component', () => {
       pathname = '/character',
     } = overrides;
 
-    vi.mocked(useRouterState).mockImplementation((opts: unknown) => {
+    const mockedUseRouterState = vi.mocked(useRouterState) as unknown as {
+      mockImplementation: (impl: (opts?: RouterStateSelector) => unknown) => void;
+    };
+    mockedUseRouterState.mockImplementation((opts) => {
       const state = { location: { pathname } };
-      const selector = (opts as RouterStateSelector | undefined)?.select;
+      const selector = opts?.select;
       return selector ? selector(state) : state;
     });
 
@@ -142,6 +156,20 @@ describe('Header Component', () => {
 
     const printBtn = page.getByTestId('header-print-button');
     await expect.element(printBtn).toBeVisible();
+  });
+
+  it('hides sheet-only actions on the character creation route', async () => {
+    await renderHeader({ pathname: '/character/create' });
+
+    await expect
+      .element(page.getByTestId('header-print-button'))
+      .not.toBeInTheDocument();
+    await expect
+      .element(page.getByTestId('synced-chip'))
+      .not.toBeInTheDocument();
+    await expect
+      .element(page.getByTestId('header-report-bug-button'))
+      .toBeVisible();
   });
 
   it('renders the Sheet nav link with the computed home URL', async () => {
@@ -219,7 +247,10 @@ describe('Header Component', () => {
   });
 
   it('links authenticated users to Logto profile and signs out separately', async () => {
-    const signOut = { mutateAsync: vi.fn(), isPending: false };
+    const signOut = {
+      mutateAsync: vi.fn(),
+      isPending: false,
+    } as unknown as ReturnType<typeof AuthContextModule.useAuth>['signOut'];
     await renderHeader({
       auth: { isAuthenticated: true, signOut },
     });

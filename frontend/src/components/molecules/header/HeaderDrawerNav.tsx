@@ -25,8 +25,9 @@ export function HeaderDrawerNav({ isAuthenticated, homeUrl, onNavigate }: Header
       {isAuthenticated && (
         <NavLink to="/characters" text={t('nav.characters')} fullWidth onClick={onNavigate} />
       )}
-      <NavLink to="/faq" text={t('nav.faq')} fullWidth onClick={onNavigate} />
-      <NavLink to="/release" text={t('nav.release')} fullWidth onClick={onNavigate} />
+      {isAuthenticated && (
+        <NavLink to="/gm" text={t('nav.gm', 'GM')} fullWidth onClick={onNavigate} />
+      )}
     </Box>
   );
 }
