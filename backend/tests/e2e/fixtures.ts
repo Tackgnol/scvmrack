@@ -23,6 +23,44 @@ const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:5173';
 const apiBaseURL = process.env.API_BASE_URL ?? 'http://localhost:3000';
 type CookieJar = Map<string, string>;
 
+function shouldApplyBrowserAuthCookie(name: string): boolean {
+  const normalizedName = name.replace(/^__Secure-/, '');
+
+  if (!normalizedName.startsWith('better-auth.')) {
+    return false;
+  }
+
+  // /test/users creates a user by anonymous sign-in, then flips the DB row to
+  // isAnonymous=false. Better Auth's session-data cookie can still contain the
+  // anonymous user snapshot, so keep only the session token and let get-session
+  // read the fresh user from the DB.
+  return (
+    !normalizedName.includes('.session_data') &&
+    !normalizedName.includes('.account_data')
+  );
+}
+
+function parseBrowserAuthCookies(
+  sessionCookie: string
+): Array<{ name: string; value: string }> {
+  const cookies: Array<{ name: string; value: string }> = [];
+
+  for (const part of sessionCookie.split(/;\s*/).filter(Boolean)) {
+    const separatorIndex = part.indexOf('=');
+    if (separatorIndex <= 0) continue;
+
+    const name = part.slice(0, separatorIndex);
+    if (!shouldApplyBrowserAuthCookie(name)) continue;
+
+    cookies.push({
+      name,
+      value: part.slice(separatorIndex + 1),
+    });
+  }
+
+  return cookies;
+}
+
 function metadataPath(parallelIndex: number): string {
   return `${authDir}/user-${parallelIndex}-metadata.json`;
 }
@@ -161,14 +199,11 @@ export async function prepareActorContext(
     );
   });
   const url = new URL(baseURL);
-  for (const cookie of sessionCookie.split('; ').filter(Boolean)) {
-    const [nameValue] = cookie.split(';');
-    const eqIdx = nameValue.indexOf('=');
-    if (eqIdx <= 0) continue;
+  for (const cookie of parseBrowserAuthCookies(sessionCookie)) {
     await context.addCookies([
       {
-        name: nameValue.slice(0, eqIdx),
-        value: nameValue.slice(eqIdx + 1),
+        name: cookie.name,
+        value: cookie.value,
         domain: url.hostname,
         path: '/',
         httpOnly: true,
@@ -219,15 +254,11 @@ export const test = base.extend<Fixtures, WorkerFixtures>({
 
       const context = await browser.newContext();
       const url = new URL(baseURL);
-      for (const cookie of sessionCookie.split('; ').filter(Boolean)) {
-        const [nameValue] = cookie.split(';');
-        const eqIdx = nameValue.indexOf('=');
-        if (eqIdx <= 0) continue;
-
+      for (const cookie of parseBrowserAuthCookies(sessionCookie)) {
         await context.addCookies([
           {
-            name: nameValue.slice(0, eqIdx),
-            value: nameValue.slice(eqIdx + 1),
+            name: cookie.name,
+            value: cookie.value,
             domain: url.hostname,
             path: '/',
             httpOnly: true,
