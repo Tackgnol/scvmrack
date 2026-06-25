@@ -30,7 +30,7 @@ describe('ComputedModifiersGrid', () => {
       <BrowserTestProvider>
         <ComputedModifiersGrid
           modifiers={[]}
-          reduceMotion={false}
+          reduceMotion={true}
           onOpenModifier={vi.fn()}
         />
       </BrowserTestProvider>
@@ -46,7 +46,7 @@ describe('ComputedModifiersGrid', () => {
       <BrowserTestProvider>
         <ComputedModifiersGrid
           modifiers={mockModifiers}
-          reduceMotion={false}
+          reduceMotion={true}
           onOpenModifier={onOpenModifier}
         />
       </BrowserTestProvider>
@@ -57,7 +57,8 @@ describe('ComputedModifiersGrid', () => {
     await expect.element(page.getByText('Shield')).toBeInTheDocument();
 
     // Interaction check
-    const armorTag = page.getByText('Armor');
+    const armorTag = page.getByRole('button', { name: /Armor/i });
+    await expect.element(armorTag).toBeVisible();
     await userEvent.click(armorTag);
     await expect.poll(() => onOpenModifier).toHaveBeenCalledWith(mockModifiers[0]);
 
@@ -98,7 +99,7 @@ describe('ComputedModifiersGrid', () => {
       <BrowserTestProvider>
         <ComputedModifiersGrid
           modifiers={classModifiers}
-          reduceMotion={false}
+          reduceMotion={true}
           onOpenModifier={vi.fn()}
         />
       </BrowserTestProvider>
@@ -112,7 +113,7 @@ describe('ComputedModifiersGrid', () => {
       <BrowserTestProvider>
         <ComputedModifiersGrid
           modifiers={[weaponModifier, ...classModifiers]}
-          reduceMotion={false}
+          reduceMotion={true}
           onOpenModifier={vi.fn()}
         />
       </BrowserTestProvider>
@@ -127,7 +128,7 @@ describe('ComputedModifiersGrid', () => {
       <BrowserTestProvider>
         <ComputedModifiersGrid
           modifiers={classModifiers}
-          reduceMotion={false}
+          reduceMotion={true}
           onOpenModifier={vi.fn()}
         />
       </BrowserTestProvider>
