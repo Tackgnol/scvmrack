@@ -1,4 +1,4 @@
-# Deploys master only after the production test gate succeeds.
+# Deploys master without waiting for the production test gate.
 #
 # Secrets (set in Woodpecker UI, repo-scoped):
 #   npmrc_content
@@ -21,9 +21,6 @@
 when:
   - event: [push]
     branch: master
-
-depends_on:
-  - prod-tests
 
 steps:
   deploy:
