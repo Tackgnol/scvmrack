@@ -18,10 +18,10 @@ test('custom weapon preview can be forged, equipped from quick menu, and spend a
 
   await dialog.getByRole('radio', { name: /weapon/i }).click();
   await dialog.getByRole('textbox', { name: /item name/i }).fill('E2E Bone Bow');
-  await dialog.getByRole('combobox', { name: /ammo type/i }).fill('Arrow');
+  await dialog.getByRole('combobox', { name: /ammo type/i }).fill('E2E Bolt');
   await dialog.getByRole('spinbutton', { name: /add ammo/i }).fill('10');
   await expect(dialog.getByText('E2E Bone Bow')).toBeVisible();
-  await expect(dialog.getByText(/\+ 10.*Arrow/i)).toBeVisible();
+  await expect(dialog.getByText(/\+ 10.*E2E Bolt/i)).toBeVisible();
 
   await waitForCharacterSave(page, async () => {
     await dialog.getByRole('button', { name: /^forge$/i }).click();
