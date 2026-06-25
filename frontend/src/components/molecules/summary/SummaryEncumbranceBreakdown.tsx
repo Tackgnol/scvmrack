@@ -18,6 +18,54 @@ interface SummaryEncumbranceBreakdownProps {
 const getItemLabel = (item: EquipmentItem, unknownItemLabel: string): string =>
   item.name?.trim() || item.key || unknownItemLabel;
 
+const stableKeyPart = (value: unknown): string => {
+  if (Array.isArray(value)) {
+    return value.map(stableKeyPart).join(',');
+  }
+
+  if (value && typeof value === 'object') {
+    return JSON.stringify(value) ?? '';
+  }
+
+  return String(value ?? '');
+};
+
+const getEncumbranceItemBaseKey = (
+  groupKey: EncumbranceGroup['key'],
+  item: EquipmentItem,
+  unknownItemLabel: string
+): string =>
+  [
+    groupKey,
+    item.key?.trim() || item.name?.trim() || unknownItemLabel,
+    stableKeyPart(item.source),
+    stableKeyPart(item.category),
+    stableKeyPart(item.description),
+    stableKeyPart(item.comments),
+    stableKeyPart(item.tags),
+    stableKeyPart(item.dice),
+    stableKeyPart(item.modifiers),
+    stableKeyPart(item.amount),
+  ].join('|');
+
+const getKeyedItems = (
+  group: EncumbranceGroup,
+  unknownItemLabel: string
+): Array<{ item: EquipmentItem; key: string }> => {
+  const seen = new Map<string, number>();
+
+  return group.items.map((item) => {
+    const baseKey = getEncumbranceItemBaseKey(group.key, item, unknownItemLabel);
+    const occurrence = seen.get(baseKey) ?? 0;
+    seen.set(baseKey, occurrence + 1);
+
+    return {
+      item,
+      key: occurrence === 0 ? baseKey : `${baseKey}#${occurrence + 1}`,
+    };
+  });
+};
+
 export default function SummaryEncumbranceBreakdown({
   title,
   encumbrance,
@@ -97,9 +145,9 @@ export default function SummaryEncumbranceBreakdown({
                     : group.label}
                 </Typography>
               )}
-              {group.items.map((item, index) => (
+              {getKeyedItems(group, unknownItemLabel).map(({ item, key }) => (
                 <SummaryListItemRow
-                  key={`${group.key}-${item.key ?? 'enc-item'}-${index}`}
+                  key={key}
                   label={getItemLabel(item, unknownItemLabel)}
                 />
               ))}

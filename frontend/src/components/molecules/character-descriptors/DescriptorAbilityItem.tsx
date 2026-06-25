@@ -1,12 +1,12 @@
-import { useState } from 'react';
-import { Box, Button, Collapse, TextField, Typography } from '@mui/material';
-import { useTranslation } from 'react-i18next';
-import { customStyles } from '@/theme/morkBorgTheme';
-import { type Ability } from '@/hooks/models';
-import { DecoctionsModal } from '@components/index';
-import { ABILITY_ROTATIONS } from '@components/character-descriptors/abilityRotations';
-import { getTextLimitMessage } from '@/validation/characterUpdate';
-import { useValidationAlert } from '@/hooks/useValidationAlert';
+import { useState, type KeyboardEvent } from "react";
+import { Box, Button, Collapse, TextField, Typography } from "@mui/material";
+import { useTranslation } from "react-i18next";
+import { customStyles } from "@/theme/morkBorgTheme";
+import { type Ability } from "@/hooks/models";
+import { DecoctionsModal } from "@components/index";
+import { ABILITY_ROTATIONS } from "@components/character-descriptors/abilityRotations";
+import { getTextLimitMessage } from "@/validation/characterUpdate";
+import { useValidationAlert } from "@/hooks/useValidationAlert";
 
 interface DescriptorAbilityItemProps {
   ability: Ability;
@@ -14,6 +14,9 @@ interface DescriptorAbilityItemProps {
   onUpdateComment: (comment: string) => void;
   isOccultHerbmaster?: boolean;
 }
+
+const OCCULT_HERBMASTER_DECOCTIONS_KEY =
+  "abilities.occult_herbmaster.decoctions";
 
 export default function DescriptorAbilityItem({
   ability,
@@ -26,25 +29,38 @@ export default function DescriptorAbilityItem({
   const [showComment, setShowComment] = useState(hasComment);
   const [showDecoctions, setShowDecoctions] = useState(false);
   const [commentErrorMessage, setCommentErrorMessage] = useState<string | null>(
-    null
+    null,
   );
   useValidationAlert(commentErrorMessage);
   const rotate = ABILITY_ROTATIONS[index % ABILITY_ROTATIONS.length];
 
-  const isPortableLaboratory =
-    ability.name?.toLowerCase().includes('portable laboratory') ||
-    ability.name?.toLowerCase().includes('laboratorium przenośne');
+  const isPortableLaboratory = ability.key === OCCULT_HERBMASTER_DECOCTIONS_KEY;
+
+  const toggleComment = () => {
+    if (showComment && !ability.comment) {
+      setShowComment(false);
+    } else if (!showComment) {
+      setShowComment(true);
+    }
+  };
+
+  const handleKeyDown = (event: KeyboardEvent<HTMLElement>) => {
+    if (event.target !== event.currentTarget) return;
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      toggleComment();
+    }
+  };
 
   return (
     <Box
       sx={customStyles.characterDescriptors.abilityItem(rotate)}
-      onClick={() => {
-        if (showComment && !ability.comment) {
-          setShowComment(false);
-        } else if (!showComment) {
-          setShowComment(true);
-        }
-      }}
+      onClick={toggleComment}
+      onKeyDown={handleKeyDown}
+      role="button"
+      tabIndex={0}
+      aria-label={ability.name || t("abilities.ability", "Ability")}
+      aria-expanded={showComment}
     >
       <Typography sx={customStyles.characterDescriptors.abilityIndex}>
         {index + 1}
@@ -69,18 +85,21 @@ export default function DescriptorAbilityItem({
                 setShowDecoctions(true);
               }}
               sx={{
-                color: '#FF3EB5',
-                borderColor: 'rgba(255, 62, 181, 0.5)',
+                color: "#FF3EB5",
+                borderColor: "rgba(255, 62, 181, 0.5)",
                 fontFamily: "'Antonio', sans-serif",
-                fontSize: '0.7rem',
-                padding: '2px 8px',
-                '&:hover': {
-                  borderColor: '#FF3EB5',
-                  bgcolor: 'rgba(255, 62, 181, 0.1)',
+                fontSize: "0.7rem",
+                padding: "2px 8px",
+                "&:hover": {
+                  borderColor: "#FF3EB5",
+                  bgcolor: "rgba(255, 62, 181, 0.1)",
                 },
               }}
             >
-              {t('abilities.occult_herbmaster.view_decoctions', 'VIEW DECOCTIONS')}
+              {t(
+                "abilities.occult_herbmaster.view_decoctions",
+                "VIEW DECOCTIONS",
+              )}
             </Button>
             <DecoctionsModal
               open={showDecoctions}
@@ -94,23 +113,23 @@ export default function DescriptorAbilityItem({
             fullWidth
             multiline
             size="small"
-            value={ability.comment || ''}
+            value={ability.comment || ""}
             onChange={(event) => {
               const nextValue = event.target.value;
               const nextError = getTextLimitMessage(
                 t,
-                'abilityComment',
-                nextValue
+                "abilityComment",
+                nextValue,
               );
               setCommentErrorMessage(nextError);
               if (nextError) return;
               onUpdateComment(nextValue);
             }}
             error={Boolean(commentErrorMessage)}
-            placeholder={t('modifiers.commentPlaceholder')}
+            placeholder={t("modifiers.commentPlaceholder")}
             variant="standard"
             sx={customStyles.characterDescriptors.abilityComment}
-            inputProps={{ 'data-testid': `ability-comment-${index}-input` }}
+            inputProps={{ "data-testid": `ability-comment-${index}-input` }}
             onClick={(event) => event.stopPropagation()}
           />
         </Collapse>

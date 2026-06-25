@@ -29,6 +29,6 @@ export function unexpected(
   code: string,
   message: string
 ): ApiHttpError {
-  log.error(error);
+  log.error({ err: error }, message);
   return normalizeKnownApiError(error) ?? apiError(500, code, message);
 }

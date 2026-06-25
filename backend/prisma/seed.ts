@@ -17,6 +17,9 @@ const SEED_FILES = [
   '007_consumable_default_amounts.sql',
   '008_remove_ammo_consumable_tags.sql',
   '009_sync_class_ability_modifiers.sql',
+  '010_sync_polish_book_translations.sql',
+  '011_modifier_source_translations.sql',
+  '012_clear_lantern_torch_ammo_type.sql',
 ];
 
 const SEED_DIR = join(__dirname, '..', 'init', '05-seed');

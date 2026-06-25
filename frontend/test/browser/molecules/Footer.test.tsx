@@ -6,64 +6,85 @@ import BrowserTestProvider from '../BrowserTestProvider';
 import * as privacyBus from '@/privacy/privacyDrawerBus';
 
 vi.mock('@/privacy/privacyDrawerBus', () => ({
-    requestOpenPrivacyDrawer: vi.fn(),
+  requestOpenPrivacyDrawer: vi.fn(),
 }));
 
 describe('Footer Component', () => {
-    beforeEach(() => {
-        vi.clearAllMocks();
-    });
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
 
-    it('renders default Generate New button and handles click', async () => {
-        const mockOnGenerateNew = vi.fn();
-        await render(
-            <BrowserTestProvider>
-                <Footer onGenerateNew={mockOnGenerateNew} />
-            </BrowserTestProvider>
-        );
+  it('renders default Generate New button and handles click', async () => {
+    const mockOnGenerateNew = vi.fn();
+    await render(
+      <BrowserTestProvider>
+        <Footer onGenerateNew={mockOnGenerateNew} />
+      </BrowserTestProvider>,
+    );
 
-        const btn = page.getByTestId('generate-new-button');
-        await expect.element(btn).toBeVisible();
+    const btn = page.getByTestId('generate-new-button');
+    await expect.element(btn).toBeVisible();
 
-        await userEvent.click(btn);
-        await expect.poll(() => mockOnGenerateNew).toHaveBeenCalledOnce();
+    await userEvent.click(btn);
+    await expect.poll(() => mockOnGenerateNew).toHaveBeenCalledOnce();
 
-        // Kill scvm shouldn't be here
-        await expect.element(page.getByTestId('kill-scvm-button')).not.toBeInTheDocument();
-    });
+    // Kill scvm shouldn't be here
+    await expect
+      .element(page.getByTestId('kill-scvm-button'))
+      .not.toBeInTheDocument();
+  });
 
-    it('renders Kill Scvm button when provided and handles click', async () => {
-        const mockOnGenerateNew = vi.fn();
-        const mockOnKillScvm = vi.fn();
+  it('renders Kill Scvm button when provided and handles click', async () => {
+    const mockOnGenerateNew = vi.fn();
+    const mockOnKillScvm = vi.fn();
 
-        await render(
-            <BrowserTestProvider>
-                <Footer onGenerateNew={mockOnGenerateNew} onKillScvm={mockOnKillScvm} generateNewLabel="Custom Gen" />
-            </BrowserTestProvider>
-        );
+    await render(
+      <BrowserTestProvider>
+        <Footer
+          onGenerateNew={mockOnGenerateNew}
+          onKillScvm={mockOnKillScvm}
+          generateNewLabel="Custom Gen"
+        />
+      </BrowserTestProvider>,
+    );
 
-        const genBtn = page.getByTestId('generate-new-button');
-        await expect.element(genBtn).toBeVisible();
-        expect(genBtn.element()?.textContent).toContain('Custom Gen');
+    const genBtn = page.getByTestId('generate-new-button');
+    await expect.element(genBtn).toBeVisible();
+    expect(genBtn.element()?.textContent).toContain('Custom Gen');
 
-        const killBtn = page.getByTestId('kill-scvm-button');
-        await expect.element(killBtn).toBeVisible();
+    const killBtn = page.getByTestId('kill-scvm-button');
+    await expect.element(killBtn).toBeVisible();
 
-        await userEvent.click(killBtn);
-        await expect.poll(() => mockOnKillScvm).toHaveBeenCalledOnce();
-    });
+    await userEvent.click(killBtn);
+    await expect.poll(() => mockOnKillScvm).toHaveBeenCalledOnce();
+  });
 
-    it('opens privacy drawer when legal notice link is clicked', async () => {
-        const mockOnGenerateNew = vi.fn();
-        await render(
-            <BrowserTestProvider>
-                <Footer onGenerateNew={mockOnGenerateNew} />
-            </BrowserTestProvider>
-        );
+  it('opens privacy drawer when legal notice link is clicked', async () => {
+    const mockOnGenerateNew = vi.fn();
+    await render(
+      <BrowserTestProvider>
+        <Footer onGenerateNew={mockOnGenerateNew} />
+      </BrowserTestProvider>,
+    );
 
-        const privacyBtn = page.getByRole('button', { name: /privacy settings/i });
-        await userEvent.click(privacyBtn);
+    const privacyBtn = page.getByRole('button', { name: /privacy settings/i });
+    await userEvent.click(privacyBtn);
 
-        await expect.poll(() => privacyBus.requestOpenPrivacyDrawer).toHaveBeenCalledOnce();
-    });
+    await expect
+      .poll(() => privacyBus.requestOpenPrivacyDrawer)
+      .toHaveBeenCalledOnce();
+  });
+
+  it('links the legal notice to the rpgtools suite', async () => {
+    const mockOnGenerateNew = vi.fn();
+    await render(
+      <BrowserTestProvider>
+        <Footer onGenerateNew={mockOnGenerateNew} />
+      </BrowserTestProvider>,
+    );
+
+    await expect
+      .element(page.getByRole('link', { name: /rpgtools\.co/i }))
+      .toHaveAttribute('href', 'https://rpgtools.co');
+  });
 });

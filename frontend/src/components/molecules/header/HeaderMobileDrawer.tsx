@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { BoneIcon } from './BoneIcon';
 import { HeaderDrawerActions } from './HeaderDrawerActions';
 import { HeaderDrawerNav } from './HeaderDrawerNav';
+import { LanguageToggle } from './LanguageToggle';
 
 type HeaderMobileDrawerProps = {
   open: boolean;
@@ -77,6 +78,10 @@ export function HeaderMobileDrawer({
         onReportBug={onReportBug}
         onLogout={onLogout}
       />
+
+      <Box sx={{ mt: 'auto', px: 2, py: 2, display: 'flex', justifyContent: 'flex-end' }}>
+        <LanguageToggle />
+      </Box>
     </Drawer>
   );
 }

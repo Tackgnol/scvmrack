@@ -8,6 +8,7 @@ import {
   buildHomeCallbackUrl,
   buildPrintCallbackUrl,
 } from '@/router/navigation';
+import { isSheetRoutePath } from '@/router/routeClassification';
 import { BoneIcon } from '@components/molecules/header/BoneIcon';
 import { HeaderDesktopBar } from '@components/molecules/header/HeaderDesktopBar';
 import { HeaderMobileDrawer } from '@components/molecules/header/HeaderMobileDrawer';
@@ -27,7 +28,14 @@ import { $api } from '@/api';
 
 export default function Header() {
   const { t } = useTranslation();
-  const { isAuthenticated, signOut } = useAuth();
+  const pathname = useRouterState({
+    select: (state) => state.location.pathname,
+  });
+  const isJoinRoute = pathname.startsWith('/join/');
+  const { isAuthenticated, signOut } = useAuth({
+    bootstrapAnonymous: !isJoinRoute,
+    fetchSession: !isJoinRoute,
+  });
   const {
     isSaving,
     characterId,
@@ -35,18 +43,19 @@ export default function Header() {
     validationIssues = [],
   } = useCharacter();
   const { showBugReport } = useErrorFeedback();
-  const { data: countData } = $api.useQuery('get', '/api/characters/count');
+  const { data: countData } = $api.useQuery(
+    'get',
+    '/api/characters/count',
+    {},
+    { enabled: !isJoinRoute }
+  );
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const showSaving = useSavingIndicator(isSaving);
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const pathname = useRouterState({
-    select: (state) => state.location.pathname,
-  });
   const homeUrl = buildHomeCallbackUrl(characterId || lastCharacterId);
-  const isSheetRoute =
-    pathname === '/character' || pathname.startsWith('/character/');
+  const isSheetRoute = isSheetRoutePath(pathname);
   const activeCharacterId = characterId || lastCharacterId || undefined;
   const validationSummary = validationIssues
     .map(({ message }) => message)

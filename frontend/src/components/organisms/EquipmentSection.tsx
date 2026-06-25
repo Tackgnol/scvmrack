@@ -1,7 +1,14 @@
 import { useCharacter } from '@/CharacterContext/CharacterContext.tsx';
 import { ItemSearchHit } from '@/hooks/useEquipmentSearch';
 import ItemAutocomplete from '@components/molecules/ItemAutocomplete';
-import { Box, Button, Divider, TextField, Typography } from '@mui/material';
+import {
+  Box,
+  Button,
+  ButtonBase,
+  Divider,
+  TextField,
+  Typography,
+} from '@mui/material';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { customStyles } from '@theme/morkBorgTheme.ts';
@@ -11,16 +18,26 @@ import { useValidationAlert } from '@/hooks/useValidationAlert';
 
 interface GearSlotProps {
   label: string;
+  emptyLabel: string;
   name?: string;
   detail?: string;
   onClick: () => void;
 }
 
 // 1. Gear Slot is strictly display only (No TextFields)
-function GearSlot({ label, name, detail, onClick }: GearSlotProps) {
+function GearSlot({ label, emptyLabel, name, detail, onClick }: GearSlotProps) {
   const isEmpty = !name;
   return (
-    <Box onClick={onClick} sx={customStyles.gearSlot.base}>
+    <ButtonBase
+      onClick={onClick}
+      sx={{
+        ...customStyles.gearSlot.base,
+        display: 'block',
+        textAlign: 'left',
+        width: '100%',
+      }}
+      type="button"
+    >
       <Typography variant="subtitle2" sx={customStyles.gearSlot.label}>
         {label}
       </Typography>
@@ -33,7 +50,7 @@ function GearSlot({ label, name, detail, onClick }: GearSlotProps) {
             : customStyles.gearSlot.nameFilled
         }
       >
-        {isEmpty ? 'Empty Slot' : name}
+        {isEmpty ? emptyLabel : name}
       </Typography>
 
       {/* 2. Only show detail if it exists */}
@@ -42,7 +59,7 @@ function GearSlot({ label, name, detail, onClick }: GearSlotProps) {
           {detail}
         </Typography>
       )}
-    </Box>
+    </ButtonBase>
   );
 }
 
@@ -153,6 +170,7 @@ export function EquipmentSection() {
       <Box sx={customStyles.equipmentSection.gearGrid}>
         <GearSlot
           label={t('equipment.weapon').toUpperCase()}
+          emptyLabel={t('equipment.slotEmpty')}
           name={weapon0?.name}
           detail={weapon0?.description}
           onClick={() =>
@@ -161,6 +179,7 @@ export function EquipmentSection() {
         />
         <GearSlot
           label={t('equipment.offHand')}
+          emptyLabel={t('equipment.slotEmpty')}
           name={weapon1?.name}
           detail={weapon1?.description}
           onClick={() =>
@@ -169,6 +188,7 @@ export function EquipmentSection() {
         />
         <GearSlot
           label={t('equipment.armorLabel').toUpperCase()}
+          emptyLabel={t('equipment.slotEmpty')}
           name={armor?.name}
           detail={armor?.description}
           onClick={() =>
@@ -180,6 +200,7 @@ export function EquipmentSection() {
         {specialItems.length > 0 && (
           <GearSlot
             label={t('equipment.other')}
+            emptyLabel={t('equipment.slotEmpty')}
             name=""
             detail=""
             onClick={() => handleSlotClick('other', {}, t('equipment.other'))}
@@ -194,12 +215,12 @@ export function EquipmentSection() {
           variant="h5"
           sx={customStyles.equipmentSection.addItemsTitle}
         >
-          {t('equipment.addItems') || 'Add New Items'}
+          {t('equipment.addItems')}
         </Typography>
 
         <ItemAutocomplete
           onSelect={handleAutocompleteSelect}
-          placeholder="Search equipment database..."
+          placeholder={t('equipment.searchPlaceholder')}
         />
       </Box>
 
@@ -208,23 +229,27 @@ export function EquipmentSection() {
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         maxWidth="xs"
-        title={`Edit ${editingSlot.title}`}
+        title={t('equipment.editSlot', 'Edit {{slot}}', {
+          slot: editingSlot.title,
+        })}
         actions={
           <>
-            <Button onClick={() => setModalOpen(false)}>Cancel</Button>
+            <Button onClick={() => setModalOpen(false)}>
+              {t('actions.cancel')}
+            </Button>
             <Button
               onClick={handleSave}
               variant="contained"
               disabled={hasTextErrors}
             >
-              Save
+              {t('equipment.save')}
             </Button>
           </>
         }
       >
         <TextField
           autoFocus
-          label="Name"
+          label={t('equipment.itemName')}
           value={editingSlot.name}
           error={Boolean(nameErrorMessage)}
           onChange={(e) =>
@@ -235,7 +260,7 @@ export function EquipmentSection() {
           sx={customStyles.equipmentModalInput}
         />
         <TextField
-          label="Description / Damage"
+          label={t('equipment.descriptionDamage', 'Description / Damage')}
           value={editingSlot.description}
           error={Boolean(descriptionErrorMessage)}
           onChange={(e) =>
@@ -250,7 +275,7 @@ export function EquipmentSection() {
 
         {/* 7. Requested Comments Field */}
         <TextField
-          label="Comments / Notes"
+          label={t('equipment.comments')}
           value={editingSlot.comments}
           error={Boolean(commentsErrorMessage)}
           onChange={(e) =>
@@ -260,7 +285,10 @@ export function EquipmentSection() {
           fullWidth
           multiline
           rows={3}
-          placeholder="Add your custom notes here..."
+          placeholder={t(
+            'equipment.customNotesPlaceholder',
+            'Add your custom notes here...'
+          )}
           sx={customStyles.equipmentModalInput}
         />
       </MorkBorgModal>

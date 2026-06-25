@@ -114,6 +114,26 @@ test('useSummaryMetrics excludes ammo, pets, and carry items from encumbrance', 
   ]);
 });
 
+test('useSummaryMetrics prefers the backend-computed encumbrance over the local count', () => {
+  const { result } = renderHook(() =>
+    useSummaryMetrics({
+      // The backend is the source of truth: even though three items would be
+      // counted locally, the hydrated encumbrance/maxEncumbrance win so the
+      // displayed count agrees with the over-capacity modifier.
+      encumbrance: 1,
+      maxEncumbrance: 6,
+      equipment: [
+        { key: 'a', name: 'A' },
+        { key: 'b', name: 'B' },
+        { key: 'c', name: 'C' },
+      ],
+    }),
+  );
+
+  expect(result.current.encumbrance).toBe(1);
+  expect(result.current.maxEncumbrance).toBe(6);
+});
+
 test('useSummaryMetrics handles undefined character', () => {
   const { result } = renderHook(() => useSummaryMetrics(undefined));
 

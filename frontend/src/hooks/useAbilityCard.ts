@@ -23,7 +23,8 @@ export function useAbilityCard(ability: AbilityName) {
   };
 
   const setAbilityFromInput = (rawValue: string) => {
-    setAbilityValue(parseInt(rawValue, 10) || 10);
+    const parsed = parseInt(rawValue, 10);
+    setAbilityValue(Number.isNaN(parsed) ? 10 : parsed);
   };
 
   return {

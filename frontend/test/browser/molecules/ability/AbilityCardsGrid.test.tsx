@@ -1,5 +1,5 @@
 import { render } from 'vitest-browser-react';
-import { expect, describe, it, vi, beforeEach } from 'vitest';
+import { expect, describe, it, vi } from 'vitest';
 import { page } from 'vitest/browser';
 import AbilityCardsGrid from '@/components/molecules/ability/AbilityCardsGrid';
 import BrowserTestProvider from '../../BrowserTestProvider';

@@ -8,8 +8,12 @@ import { DeathStampOverlay } from '@/components/molecules/character/DeathStampOv
 import { KillConfirmModal } from '@/components/molecules/character/KillConfirmModal';
 import { CharacterSheetSkeleton } from '@/components/molecules/character/CharacterSheetSkeleton';
 import { CharacterSheet } from '@/components/organisms/CharacterSheet';
+import { PartySheetPill } from '@/components/organisms/party/PartySheetPill';
+import { ForgeBanner } from '@/components/molecules/character-create/ForgeBanner';
 import { useMinimumVisible } from '@/hooks/useMinimumVisible';
 import { useScvmDeathFlow } from '@/hooks/useScvmDeathFlow';
+import { appHistory } from '@/router/history';
+import { buildPartyCharacterPath } from '@/router/navigation';
 import { Seo } from '@/seo/Seo';
 import {
     isApiForbidden,
@@ -17,7 +21,7 @@ import {
     isUnexpectedApiError,
 } from '@/utils/errorUtils';
 import { useMediaQuery } from '@mui/material';
-import { useEffect } from 'react';
+import { useEffect, useSyncExternalStore } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const homeKeywords = [
@@ -67,6 +71,13 @@ const homeStructuredData = {
     ],
 };
 
+const subscribeToHistory = (onStoreChange: () => void): (() => void) =>
+    appHistory.subscribe(() => onStoreChange());
+
+// Snapshot primitive strings, not the mutable location object: useSyncExternalStore
+// needs a stable snapshot, and stable strings keep the effects below reactive.
+const getPathnameSnapshot = () => appHistory.location?.pathname ?? '/';
+
 export function CharacterPage() {
     const {
         generateNew,
@@ -77,6 +88,9 @@ export function CharacterPage() {
         characterId,
         isLoading,
         isSessionExpired,
+        justCreatedId,
+        acknowledgeCreated,
+        isReadOnly,
     } = useCharacter();
 
     const { t } = useTranslation();
@@ -85,6 +99,11 @@ export function CharacterPage() {
         canReportUnexpectedError = true,
     } = useErrorFeedback();
     const prefersReducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
+    const pathname = useSyncExternalStore(
+        subscribeToHistory,
+        getPathnameSnapshot,
+        getPathnameSnapshot
+    );
 
     const {
         killConfirmOpen,
@@ -141,7 +160,21 @@ export function CharacterPage() {
         });
     }, [characterId, error, shouldReportUnexpectedLoadError, showUnexpectedError]);
 
+    useEffect(() => {
+        if (!character?.id || !character.partyId) {
+            return;
+        }
+        if (!/^\/character\/[^/]+$/.test(pathname)) {
+            return;
+        }
+
+        void appHistory.replace(buildPartyCharacterPath(character.partyId, character.id));
+    }, [character?.id, character?.partyId, pathname]);
+
     const characterName = character?.name || t('character.unnamedWretch');
+    // The create intent lives in CharacterContext, set when the draft confirm is
+    // adopted. Acknowledge only the character we actually landed on.
+    const showForgeBanner = !!justCreatedId && justCreatedId === characterId && !!character;
 
     return (
         <>
@@ -170,11 +203,24 @@ export function CharacterPage() {
             {showSkeleton ? (
                 <CharacterSheetSkeleton />
             ) : (
-                <CharacterSheet
-                    stamping={stampDate !== null}
-                    onGenerateNew={handleNew}
-                    onKillScvm={handleKillRequest}
-                />
+                <>
+                    {character?.partyId && character?.id && (
+                        <PartySheetPill
+                            partyId={character.partyId}
+                            characterId={character.id}
+                        />
+                    )}
+                    <CharacterSheet
+                        stamping={stampDate !== null}
+                        onGenerateNew={handleNew}
+                        onKillScvm={handleKillRequest}
+                        readOnly={isReadOnly}
+                    />
+                </>
+            )}
+
+            {showForgeBanner && (
+                <ForgeBanner name={characterName} onClose={acknowledgeCreated} />
             )}
 
             <KillConfirmModal

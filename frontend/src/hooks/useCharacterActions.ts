@@ -1,5 +1,6 @@
 import { type MutableRefObject } from 'react';
 import { trackEvent } from '@/analytics/googleAnalytics';
+import { replacePartyMember } from '@/api/party';
 import {
   getUserFacingApiErrorMessage,
   isApiNotFound,
@@ -10,6 +11,7 @@ import {
 export type GenerateNewOptions = {
   onSuccess?: (newCharacterId: string) => void;
   onError?: (error: unknown) => void;
+  select?: boolean;
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- matches the $api mutation surface
@@ -29,13 +31,14 @@ type ReportUnexpectedError = (
 
 type Params = {
   characterId: string | null;
+  partyId?: string | null;
   isSessionExpired: boolean;
   trimmedLocale: string;
   isAuthenticated: boolean;
   isGuest: boolean;
   createCharacter: Mutation;
   deleteCharacter: Mutation;
-  setCharacterId: (id: string | null) => void;
+  setCharacterId: (id: string | null) => void | Promise<void>;
   flushEditor: () => void;
   setAutoCreateFailed: (failed: boolean) => void;
   controllerRef: MutableRefObject<AbortController | null>;
@@ -52,6 +55,7 @@ type Params = {
  */
 export function useCharacterActions({
   characterId,
+  partyId,
   isSessionExpired,
   trimmedLocale,
   isAuthenticated,
@@ -87,7 +91,9 @@ export function useCharacterActions({
       {
         onSuccess: (character: { id?: string } | undefined) => {
           if (character?.id) {
-            setCharacterId(character.id);
+            if (options?.select !== false) {
+              void setCharacterId(character.id);
+            }
             options?.onSuccess?.(character.id);
           }
           trackEvent('generate_character', {
@@ -147,37 +153,79 @@ export function useCharacterActions({
     // the old character's cache entry no longer refetches a deleted record.
     generateNew(undefined, {
       ...options,
+      select: partyId ? false : options?.select,
       onSuccess: (newCharacterId) => {
-        options?.onSuccess?.(newCharacterId);
+        const deleteOldCharacter = () => {
+          deleteCharacter.mutate(
+            { params: { path: { id: idToKill } } },
+            {
+              onSuccess: () => {
+                trackEvent('kill_character', {
+                  locale: trimmedLocale,
+                  is_authenticated: isAuthenticated,
+                  is_guest: isGuest,
+                });
+              },
+              onError: (error: unknown) => {
+                // The replacement is already active; a failure to delete the old
+                // record is non-blocking. 404 means it was already gone.
+                if (!isApiNotFound(error) && isUnexpectedApiError(error)) {
+                  reportUnexpectedError(
+                    error,
+                    {
+                      source: 'character_kill',
+                      operation: 'delete_character',
+                      characterId: idToKill,
+                      locale: trimmedLocale,
+                    },
+                    'Failed to delete the replaced character'
+                  );
+                }
+              },
+            }
+          );
+        };
 
-        deleteCharacter.mutate(
-          { params: { path: { id: idToKill } } },
-          {
-            onSuccess: () => {
-              trackEvent('kill_character', {
-                locale: trimmedLocale,
-                is_authenticated: isAuthenticated,
-                is_guest: isGuest,
-              });
-            },
-            onError: (error: unknown) => {
-              // The replacement is already active; a failure to delete the old
-              // record is non-blocking. 404 means it was already gone.
-              if (!isApiNotFound(error) && isUnexpectedApiError(error)) {
-                reportUnexpectedError(
+        if (!partyId) {
+          options?.onSuccess?.(newCharacterId);
+          deleteOldCharacter();
+          return;
+        }
+
+        void (async () => {
+          try {
+            await replacePartyMember({
+              partyId,
+              oldCharacterId: idToKill,
+              newCharacterId,
+            });
+            await setCharacterId(newCharacterId);
+            options?.onSuccess?.(newCharacterId);
+            deleteOldCharacter();
+          } catch (error) {
+            if (isUnexpectedApiError(error)) {
+              reportUnexpectedError(
+                error,
+                {
+                  source: 'character_kill',
+                  operation: 'replace_party_member',
+                  characterId: idToKill,
+                  locale: trimmedLocale,
+                },
+                'Failed to bind replacement to party'
+              );
+            } else {
+              showError(
+                getUserFacingApiErrorMessage(
                   error,
-                  {
-                    source: 'character_kill',
-                    operation: 'delete_character',
-                    characterId: idToKill,
-                    locale: trimmedLocale,
-                  },
-                  'Failed to delete the replaced character'
-                );
-              }
-            },
+                  t,
+                  'Failed to bind replacement to party'
+                )
+              );
+            }
+            options?.onError?.(error);
           }
-        );
+        })();
       },
     });
   };

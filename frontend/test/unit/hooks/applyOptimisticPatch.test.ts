@@ -28,7 +28,7 @@ test('applyOptimisticPatch handles armor field patches', () => {
 
 test('applyOptimisticPatch handles weapon field patches', () => {
   const result = applyOptimisticPatch(baseCharacter, { kind: 'weapon', index: 0, field: 'name', value: 'Silver Dagger' });
-  expect(result.equippedWeapons[0]?.name).toBe('Silver Dagger');
+  expect(result.equippedWeapons![0]?.name).toBe('Silver Dagger');
   
   expect(applyOptimisticPatch(baseCharacter, { kind: 'weapon', index: 1, field: 'name', value: 'X' })).toBe(baseCharacter);
 });
@@ -37,12 +37,12 @@ test('applyOptimisticPatch handles equipment management', () => {
   // item update
   const item = { key: 'rope', name: 'Rope' };
   const r1 = applyOptimisticPatch(baseCharacter, { kind: 'equipment-item', index: 0, item });
-  expect(r1.equipment[0]).toEqual(item);
+  expect(r1.equipment![0]).toEqual(item);
 
   // add
   const r2 = applyOptimisticPatch(baseCharacter, { kind: 'equipment-add', item });
   expect(r2.equipment).toHaveLength(2);
-  expect(r2.equipment[1]).toEqual(item);
+  expect(r2.equipment![1]).toEqual(item);
 
   // remove
   const r3 = applyOptimisticPatch(baseCharacter, { kind: 'equipment-remove', index: 0 });
@@ -50,7 +50,7 @@ test('applyOptimisticPatch handles equipment management', () => {
 
   // move
   const r4 = applyOptimisticPatch({ ...baseCharacter, equipment: [item, { key: 'a' }] as any }, { kind: 'equipment-move', from: 0, to: 1 });
-  expect(r4.equipment[1]).toEqual(item);
+  expect(r4.equipment![1]).toEqual(item);
 });
 
 test('applyOptimisticPatch ignores out-of-bounds equipment operations', () => {
@@ -74,7 +74,7 @@ test('applyOptimisticPatch ignores out-of-bounds equipment operations', () => {
 test('applyOptimisticPatch handles storage management', () => {
     const item = { key: 'gem', name: 'Gem' };
     const r1 = applyOptimisticPatch(baseCharacter, { kind: 'storage-item', index: 0, item });
-    expect(r1.storage[0]).toEqual(item);
+    expect(r1.storage![0]).toEqual(item);
 
     const r2 = applyOptimisticPatch(baseCharacter, { kind: 'storage-add', item });
     expect(r2.storage).toHaveLength(2);
@@ -102,18 +102,18 @@ test('applyOptimisticPatch handles move between equipment and storage', () => {
     const r1 = applyOptimisticPatch(baseCharacter, { kind: 'move-to-storage', equipmentIndex: 0 });
     expect(r1.equipment).toHaveLength(0);
     expect(r1.storage).toHaveLength(2);
-    expect(r1.storage[1].key).toBe('torch');
+    expect(r1.storage![1].key).toBe('torch');
 
     // to equipment
     const r2 = applyOptimisticPatch(baseCharacter, { kind: 'move-to-equipment', storageIndex: 0, equipmentPosition: 0 });
     expect(r2.storage).toHaveLength(0);
     expect(r2.equipment).toHaveLength(2);
-    expect(r2.equipment[0].key).toBe('gold');
+    expect(r2.equipment![0].key).toBe('gold');
     
     // swap
     const r3 = applyOptimisticPatch(baseCharacter, { kind: 'swap-equipment-storage', equipmentIndex: 0, storageIndex: 0 });
-    expect(r3.equipment[0].key).toBe('gold');
-    expect(r3.storage[0].key).toBe('torch');
+    expect(r3.equipment![0].key).toBe('gold');
+    expect(r3.storage![0].key).toBe('torch');
 });
 
 test('applyOptimisticPatch appends moved storage items when equipmentPosition is invalid and ignores bad source indices', () => {
@@ -122,7 +122,7 @@ test('applyOptimisticPatch appends moved storage items when equipmentPosition is
         storageIndex: 0,
         equipmentPosition: -1,
     });
-    expect(appended.equipment[appended.equipment.length - 1].key).toBe('gold');
+    expect(appended.equipment![appended.equipment!.length - 1].key).toBe('gold');
 
     const result = applyOptimisticPatch(baseCharacter, {
         kind: 'move-to-equipment',
@@ -136,13 +136,13 @@ test('applyOptimisticPatch handles weapon equip/unequip', () => {
     // equip
     const r1 = applyOptimisticPatch(baseCharacter, { kind: 'equip-weapon', equipmentIndex: 0, slotIndex: 1 });
     expect(r1.equipment).toHaveLength(0); // moved torch to weapons[1]
-    expect(r1.equippedWeapons[1].key).toBe('torch');
+    expect(r1.equippedWeapons![1]?.key).toBe('torch');
     
     // unequip
     const r2 = applyOptimisticPatch(baseCharacter, { kind: 'unequip-weapon', slotIndex: 0 });
     expect(r2.equippedWeapons).toHaveLength(0); // removed dagger
     expect(r2.equipment).toHaveLength(2); // dagger added to equipment
-    expect(r2.equipment[1].key).toBe('dagger');
+    expect(r2.equipment![1].key).toBe('dagger');
 });
 
 test('applyOptimisticPatch ignores invalid weapon slot targets', () => {
@@ -159,13 +159,13 @@ test('applyOptimisticPatch handles armor equip/unequip', () => {
     // equip
     const r1 = applyOptimisticPatch(baseCharacter, { kind: 'equip-armor', equipmentIndex: 0 });
     expect(r1.equippedArmor?.key).toBe('torch');
-    expect(r1.equipment[0].key).toBe('rags'); // old armor moved back
+    expect(r1.equipment![0].key).toBe('rags'); // old armor moved back
 
     // unequip
     const r2 = applyOptimisticPatch(baseCharacter, { kind: 'unequip-armor' });
     expect(r2.equippedArmor).toBeNull();
     expect(r2.equipment).toHaveLength(2);
-    expect(r2.equipment[1].key).toBe('rags');
+    expect(r2.equipment![1].key).toBe('rags');
 });
 
 test('applyOptimisticPatch handles modifiers', () => {
@@ -174,8 +174,8 @@ test('applyOptimisticPatch handles modifiers', () => {
     expect(r1.modifiers).toHaveLength(2);
 
     const r2 = applyOptimisticPatch(baseCharacter, { kind: 'modifier-update', modifierId: 'mod-1', modifier: { name: 'Updated' } as any });
-    expect(r1.modifiers[0].name).toBe('Bonus');
-    expect(r2.modifiers[0].name).toBe('Updated');
+    expect(r1.modifiers![0].name).toBe('Bonus');
+    expect(r2.modifiers![0].name).toBe('Updated');
 
     const r3 = applyOptimisticPatch(baseCharacter, { kind: 'modifier-remove', modifierId: 'mod-1' });
     expect(r3.modifiers).toHaveLength(0);
@@ -192,7 +192,7 @@ test('applyOptimisticPatch handles ammo-use', () => {
 
     const r1 = applyOptimisticPatch(charWithAmmo, { kind: 'ammo-use', equipmentIndex: 0 });
     expect(r1.equipment).toHaveLength(2);
-    expect(r1.equipment[0].amount).toBe(2);
+    expect(r1.equipment![0].amount).toBe(2);
 
     const r2 = applyOptimisticPatch(
         {
@@ -206,7 +206,7 @@ test('applyOptimisticPatch handles ammo-use', () => {
     );
 
     expect(r2.equipment).toHaveLength(1);
-    expect(r2.equipment[0].name).toBe('Rope');
+    expect(r2.equipment![0].name).toBe('Rope');
 });
 
 test('applyOptimisticPatch handles ammo-use for duplicate single-arrow items', () => {
@@ -220,7 +220,7 @@ test('applyOptimisticPatch handles ammo-use for duplicate single-arrow items', (
 
     const r1 = applyOptimisticPatch(charWithAmmo, { kind: 'ammo-use', equipmentIndex: 0 });
     expect(r1.equipment).toHaveLength(1);
-    expect(r1.equipment[0].name).toBe('Rope');
+    expect(r1.equipment![0].name).toBe('Rope');
 });
 
 test('applyOptimisticPatch handles scrolls', () => {
@@ -230,9 +230,9 @@ test('applyOptimisticPatch handles scrolls', () => {
     } as any;
     
     const r1 = applyOptimisticPatch(charWithScroll, { kind: 'toggle-scroll-use', equipmentIndex: 0, useIndex: 1 });
-    expect(r1.equipment[0].uses).toHaveLength(4);
-    expect(r1.equipment[0].uses[1]).toBe(true);
+    expect(r1.equipment![0].uses).toHaveLength(4);
+    expect(r1.equipment![0].uses![1]).toBe(true);
     
     const r2 = applyOptimisticPatch(r1, { kind: 'toggle-scroll-use', equipmentIndex: 0, useIndex: 1 });
-    expect(r2.equipment[0].uses[1]).toBe(false);
+    expect(r2.equipment![0].uses![1]).toBe(false);
 });

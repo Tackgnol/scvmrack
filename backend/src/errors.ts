@@ -80,6 +80,9 @@ export const forbidden = (message = 'You do not have access to this resource') =
 export const notFound = (code: string, message: string) =>
   apiError(404, code, message);
 
+export const conflict = (code: string, message: string) =>
+  apiError(409, code, message);
+
 export const preconditionFailed = (message: string) =>
   apiError(412, 'PRECONDITION_FAILED', message);
 

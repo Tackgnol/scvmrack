@@ -84,4 +84,41 @@ describe('ItemAutocomplete Component', () => {
         await expect.element(input).toHaveAttribute('aria-expanded', 'false');
         await expect.element(input).toHaveFocus();
     });
+
+    it('keeps the selected item in a busy input until async add finishes', async () => {
+        const mockItem = { id: 1, name: 'Sword', itemType: 'weapon' };
+        vi.mocked(itemSearch.useItemSearch).mockReturnValue({
+            results: [mockItem as any],
+            isLoading: false,
+            search: mockSearch,
+            clearResults: mockClearResults,
+        } as any);
+
+        let resolveSelect = () => {};
+        const mockOnSelect = vi.fn(
+            () => new Promise<void>((resolve) => {
+                resolveSelect = resolve;
+            }),
+        );
+
+        await render(
+            <BrowserTestProvider>
+                <ItemAutocomplete onSelect={mockOnSelect} />
+            </BrowserTestProvider>
+        );
+
+        const input = page.getByRole('combobox', { name: /add item/i });
+        await userEvent.fill(input, 'swo');
+        await userEvent.click(page.getByRole('option', { name: /sword/i }));
+
+        await expect.poll(() => mockOnSelect).toHaveBeenCalledWith(mockItem);
+        await expect.element(input).toHaveValue('Sword');
+        await expect.element(input).toHaveAttribute('aria-busy', 'true');
+        await expect.element(page.getByText(/adding sword/i)).toBeVisible();
+
+        resolveSelect();
+
+        await expect.element(input).toHaveValue('');
+        await expect.element(input).not.toHaveAttribute('aria-busy', 'true');
+    });
 });

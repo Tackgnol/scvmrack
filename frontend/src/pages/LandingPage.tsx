@@ -12,8 +12,8 @@ const s = {
   page: {
     display: 'flex',
     flexDirection: 'column' as const,
-    gap: { xs: 3, md: 4 },
-    pb: { xs: 5, md: 7 },
+    gap: { xs: 3, md: 3 },
+    pb: { xs: 4, md: 4 },
   },
   heroBand: {
     position: 'relative' as const,
@@ -27,22 +27,26 @@ const s = {
       xs: '1fr',
       md: 'minmax(0, 1.2fr) minmax(260px, 0.8fr)',
     },
-    gap: { xs: 4, md: 5 },
+    gap: { xs: 4.5, md: 6 },
     alignItems: 'stretch',
     bgcolor: morkBorgColors.black,
     color: morkBorgColors.white,
     border: `3px solid ${morkBorgColors.black}`,
     boxShadow: `7px 7px 0 ${morkBorgColors.pink}`,
-    px: { xs: 2.25, sm: 3.5, md: 4.5 },
-    py: { xs: 3.5, sm: 4.5, md: 5 },
+    px: { xs: 2.25, sm: 3.75, md: 5 },
+    py: { xs: 3.75, sm: 5, md: 5 },
     '&::before': {
       content: '""',
       position: 'absolute' as const,
-      inset: 0,
+      right: -3,
+      bottom: -3,
+      width: { xs: 'min(78vw, 300px)', md: 340 },
+      height: { xs: 58, sm: 72, md: 88 },
       pointerEvents: 'none',
-      opacity: 0.06,
-      backgroundImage:
-        'repeating-linear-gradient(0deg, transparent 0, transparent 10px, #f5f5f5 11px), repeating-linear-gradient(90deg, transparent 0, transparent 18px, #f5f5f5 19px)',
+      bgcolor: morkBorgColors.pink,
+      transform: 'rotate(-1.5deg)',
+      transformOrigin: 'right bottom',
+      zIndex: 0,
     },
   },
   heroCopy: {
@@ -52,7 +56,7 @@ const s = {
     flexDirection: 'column' as const,
     alignItems: 'flex-start',
     justifyContent: 'center',
-    minHeight: { xs: 360, md: 420 },
+    minHeight: { xs: 380, md: 400 },
   },
   stamp: {
     display: 'inline-flex',
@@ -64,22 +68,6 @@ const s = {
       filter: 'brightness(0) invert(1)', // Make it white to contrast with black hero band
     },
   },
-  headline: {
-    color: morkBorgColors.yellow,
-    fontFamily: '"Caveat Brush", cursive',
-    fontSize: { xs: '3.6rem', sm: '5rem', md: '6.4rem' },
-    fontWeight: 400,
-    lineHeight: 0.8,
-    textTransform: 'uppercase' as const,
-    maxWidth: 560,
-    mb: 2.5,
-    '& span': {
-      display: 'block',
-      color: morkBorgColors.pink,
-      transform: 'rotate(-1.4deg)',
-      transformOrigin: 'left center',
-    },
-  },
   lede: {
     color: morkBorgColors.white,
     fontFamily: '"Alegreya", Georgia, serif',
@@ -89,22 +77,24 @@ const s = {
     mb: 3.5,
   },
   ctaRow: {
-    flexDirection: { xs: 'column', sm: 'row' } as const,
-    alignItems: { xs: 'stretch', sm: 'center' },
-    gap: 1.5,
-    width: { xs: '100%', sm: 'auto' },
+    display: 'grid',
+    gridTemplateColumns: { xs: '1fr', sm: 'minmax(190px, 1.1fr) minmax(160px, 0.9fr)' },
+    alignItems: 'stretch',
+    gap: { xs: 1.25, sm: 1.5 },
+    width: { xs: '100%', sm: 'min(100%, 520px)' },
+    mt: 0.5,
   },
   ctaPrimary: {
-    minHeight: 48,
+    minHeight: 58,
     bgcolor: morkBorgColors.pink,
     color: morkBorgColors.black,
     borderRadius: 0,
     fontFamily: '"Bebas Neue", sans-serif',
-    fontSize: '1.15rem',
+    fontSize: { xs: '1.35rem', sm: '1.45rem' },
     letterSpacing: '0.05em',
     textTransform: 'uppercase' as const,
-    px: 3.25,
-    py: 1,
+    px: 3,
+    py: 1.25,
     border: `3px solid ${morkBorgColors.black}`,
     boxShadow: `4px 4px 0 ${morkBorgColors.yellow}`,
     transition:
@@ -120,15 +110,15 @@ const s = {
     },
   },
   ctaSecondary: {
-    minHeight: 48,
+    minHeight: 52,
     bgcolor: 'transparent',
     color: morkBorgColors.yellow,
     borderRadius: 0,
     fontFamily: '"Bebas Neue", sans-serif',
-    fontSize: '1.15rem',
+    fontSize: '1.05rem',
     letterSpacing: '0.05em',
     textTransform: 'uppercase' as const,
-    px: 3.25,
+    px: 2.5,
     py: 1,
     border: `3px solid ${morkBorgColors.yellow}`,
     transition:
@@ -140,6 +130,26 @@ const s = {
     },
     '&:active': {
       transform: 'translate(0, 0)',
+    },
+  },
+  ctaSourcebook: {
+    gridColumn: { xs: 'auto', sm: '1 / -1' },
+    justifySelf: { xs: 'stretch', sm: 'start' },
+    minHeight: 40,
+    bgcolor: 'transparent',
+    color: morkBorgColors.white,
+    borderRadius: 0,
+    fontFamily: '"Antonio", sans-serif',
+    fontSize: '0.72rem',
+    letterSpacing: '0.16em',
+    textTransform: 'uppercase' as const,
+    px: 0,
+    py: 0.75,
+    borderBottom: `2px solid ${morkBorgColors.pink}`,
+    '&:hover': {
+      bgcolor: 'transparent',
+      color: morkBorgColors.pink,
+      borderBottomColor: morkBorgColors.yellow,
     },
   },
   proofPanel: {
@@ -299,12 +309,12 @@ const s = {
     lineHeight: 1.55,
   },
   licenseSection: {
-    mt: { xs: 4, md: 5 },
-    pt: 4,
-    borderTop: `1px solid ${morkBorgColors.black}22`,
+    mt: { xs: 3, md: 2 },
+    pt: 3,
+    borderTop: `2px solid ${morkBorgColors.black}`,
     display: 'flex',
     flexDirection: 'column' as const,
-    gap: 2,
+    gap: 1.5,
     maxWidth: 800,
   },
   licenseText: {
@@ -408,17 +418,24 @@ export function LandingPage() {
             <Stack sx={s.ctaRow}>
               <Button
                 component={Link}
-                to={sheetUrl}
+                to="/character/create"
                 sx={s.ctaPrimary}
+              >
+                {t('create.entry', 'Forge a Scvm')}
+              </Button>
+              <Button
+                component={Link}
+                to={sheetUrl}
+                sx={s.ctaSecondary}
               >
                 {t('landing.openSheet', 'Open sheet')}
               </Button>
               <Button
                 component="a"
-                href="https://morkborg.com"
+                href={t('landing.sourcebookUrl', 'https://morkborg.com')}
                 target="_blank"
                 rel="noopener noreferrer"
-                sx={s.ctaSecondary}
+                sx={s.ctaSourcebook}
               >
                 {t('landing.sourcebook', 'Get the sourcebook')}
               </Button>
@@ -497,7 +514,7 @@ export function LandingPage() {
           })}
         </Box>
 
-        <Box component="footer" sx={s.licenseSection}>
+        <Box component="section" sx={s.licenseSection}>
           <Typography sx={s.licenseText}>
             {t('landing.license.copyright')}
           </Typography>
@@ -514,8 +531,20 @@ export function LandingPage() {
                     sx={s.licenseLink}
                   />
                 ),
+                rpgtoolsLink: (
+                  <Box
+                    component="a"
+                    href="https://rpgtools.co"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    sx={s.licenseLink}
+                  />
+                ),
               }}
             />
+          </Typography>
+          <Typography sx={s.licenseText}>
+            {t('footer.translationCredit')}
           </Typography>
         </Box>
       </Box>

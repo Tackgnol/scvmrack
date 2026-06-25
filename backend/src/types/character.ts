@@ -1,3 +1,5 @@
+import type { CharacterDraft } from '../lib/draft-seeds.js';
+
 export type Ability = {
   name?: string;
   description?: string;
@@ -193,4 +195,6 @@ export interface CharacterUpdate {
 
 export interface GenerateCharacterParams {
   classId?: number | null;
+  draft?: CharacterDraft | null;
+  replace?: boolean;
 }

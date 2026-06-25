@@ -1,7 +1,7 @@
 import { $api } from '@/api';
 import { useCharacter } from '@/CharacterContext/CharacterContext';
 import { type CharacterListItem } from '@/hooks/models.ts';
-import { getCharacterKey } from '@/hooks/utils.ts';
+import { getApiLocale, getCharacterKey } from '@/hooks/utils.ts';
 import { useAuth } from '@/hooks/useAuth';
 import { PathsApiCharactersGetParametersQueryLocale } from '@/api/schema.ts';
 import { useErrorFeedback } from '@/components/molecules/feedback/ErrorFeedbackProvider';
@@ -16,7 +16,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 // Owns the data + mutations for the saved-characters page: list query, create, and
-// delete (with confirm, cache eviction, active-character reset, and error surfacing).
+// delete (with modal state, cache eviction, active-character reset, and error surfacing).
 // The page stays presentational; this is independently testable.
 export function useCharactersList() {
   const { t, i18n } = useTranslation();
@@ -27,13 +27,17 @@ export function useCharactersList() {
   const [isCreating, setIsCreating] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [deleteCandidate, setDeleteCandidate] = useState<CharacterListItem | null>(null);
+  const locale = getApiLocale<PathsApiCharactersGetParametersQueryLocale>(
+    i18n.language
+  );
 
   const charactersQuery = $api.useQuery(
     'get',
     '/api/characters',
     {
       params: {
-        query: { locale: PathsApiCharactersGetParametersQueryLocale.en },
+        query: { locale },
       },
     },
     { enabled: isAuthenticated, refetchOnMount: 'always' }
@@ -82,15 +86,21 @@ export function useCharactersList() {
     });
   };
 
-  const remove = async (character: CharacterListItem) => {
-    if (!character.id) return;
+  const requestDelete = (character: CharacterListItem) => {
+    if (!character.id || deletingId) return;
 
-    const characterName =
-      (character.name || '').trim() || t('characters.unnamed', 'Unnamed Scvm');
-    const confirmed = window.confirm(
-      t('characters.deleteConfirm', 'Delete "{{name}}"?', { name: characterName })
-    );
-    if (!confirmed) return;
+    setDeleteError(null);
+    setDeleteCandidate(character);
+  };
+
+  const cancelDelete = () => {
+    if (deletingId) return;
+    setDeleteCandidate(null);
+  };
+
+  const confirmDelete = async () => {
+    const character = deleteCandidate;
+    if (!character?.id) return;
 
     setDeleteError(null);
     setDeletingId(character.id);
@@ -107,11 +117,12 @@ export function useCharactersList() {
           operation: 'delete_character',
           characterId: character.id,
         });
-        setDeleteError(t('characters.deleteFailed', 'Failed to delete character'));
+        setDeleteError(t('characters.deleteError', 'Failed to delete character'));
       } else {
         setDeleteError(getUserFacingApiErrorMessage(error, t, 'Failed to delete character'));
       }
       setDeletingId(null);
+      setDeleteCandidate(null);
       return;
     }
 
@@ -126,6 +137,7 @@ export function useCharactersList() {
     await charactersQuery.refetch().catch(() => {});
 
     setDeletingId(null);
+    setDeleteCandidate(null);
   };
 
   return {
@@ -136,9 +148,12 @@ export function useCharactersList() {
     isLoading: charactersQuery.isLoading,
     loadError: charactersQuery.error,
     deleteError,
+    deleteCandidate,
     isCreating,
     deletingId,
     createNew,
-    remove,
+    requestDelete,
+    cancelDelete,
+    confirmDelete,
   };
 }

@@ -6,6 +6,7 @@ import { morkBorgColors } from '@/theme/morkBorgTheme';
 import ModifierStatChip from '@components/atoms/ModifierStatChip';
 import SignedModifierValue from '@components/atoms/SignedModifierValue';
 import { useValuePulse } from '@/hooks/useValuePulse';
+import { useTranslation } from 'react-i18next';
 
 interface CustomModifierTagProps {
   modifier: CustomModifier;
@@ -24,8 +25,14 @@ export default function CustomModifierTag({
   removeLabel,
   reduceMotion,
 }: CustomModifierTagProps) {
+  const { t } = useTranslation();
   const value = modifier.value ?? 0;
   const pulse = useValuePulse(value, reduceMotion);
+  const statistic = modifier.statistic ?? 'agility';
+  const statisticLabel = t(
+    `attributes.${statistic}Short`,
+    statistic,
+  ).toUpperCase();
 
   return (
     <Box
@@ -92,7 +99,7 @@ export default function CustomModifierTag({
         </Tooltip>
       )}
 
-      <ModifierStatChip label={(modifier.statistic ?? 'agility').toUpperCase()} />
+      <ModifierStatChip label={statisticLabel} />
       <SignedModifierValue value={value} pulse={pulse} />
 
       <IconButton

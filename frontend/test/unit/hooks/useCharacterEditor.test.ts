@@ -226,6 +226,99 @@ test('REGRESSION: does not lose an edit queued while a save is in flight', () =>
   );
 });
 
+test('REGRESSION: language switches before flush keep queued equipment visible and saveable', () => {
+  const torch = { key: 'equipment.torch', name: 'Torch' };
+  const stalePolishCharacter = {
+    id: 'char-1',
+    equipment: [],
+    storage: [],
+    equippedWeapons: [],
+    equippedArmor: null,
+    modifiers: [],
+  };
+  const queryClient = makeQueryClient(stalePolishCharacter);
+  (useQueryClient as any).mockReturnValue(queryClient);
+  const mutation = noopMutation();
+
+  const { result, rerender } = renderHook(
+    ({ locale }) =>
+      useCharacterEditor(
+        'char-1',
+        mutation,
+        (id, activeLocale) => ['char', id, activeLocale],
+        locale
+      ),
+    { initialProps: { locale: 'en' } }
+  );
+
+  act(() => result.current.addEquipmentItem(torch as any));
+  rerender({ locale: 'pl' });
+
+  expect(
+    result.current.getVisibleCharacter(stalePolishCharacter)?.equipment
+  ).toEqual([torch]);
+
+  act(() => result.current.flush());
+
+  expect(mutation.mutate).toHaveBeenCalledWith(
+    expect.objectContaining({
+      params: expect.objectContaining({
+        query: { locale: 'pl' },
+      }),
+      body: expect.objectContaining({ equipment: [torch] }),
+    }),
+    expect.any(Object)
+  );
+});
+
+test('REGRESSION: stale localized refetches do not hide a newer saved character', () => {
+  const torch = { key: 'equipment.torch', name: 'Torch' };
+  const queryClient = makeQueryClient({
+    id: 'char-1',
+    equipment: [],
+    storage: [],
+    equippedWeapons: [],
+    equippedArmor: null,
+    modifiers: [],
+    updatedAt: '2026-06-24T10:00:00.000Z',
+  });
+  (useQueryClient as any).mockReturnValue(queryClient);
+  const mutation = noopMutation();
+
+  const { result } = renderHook(() =>
+    useCharacterEditor(
+      'char-1',
+      mutation,
+      (id, locale) => ['char', id, locale],
+      'en'
+    )
+  );
+
+  act(() => result.current.addEquipmentItem(torch as any));
+  act(() => result.current.flush());
+
+  const cb = (mutation.mutate as any).mock.calls[0][1];
+  const serverCopy = {
+    id: 'char-1',
+    equipment: [torch],
+    storage: [],
+    equippedWeapons: [],
+    equippedArmor: null,
+    modifiers: [],
+    updatedAt: '2026-06-24T10:00:05.000Z',
+  };
+
+  act(() => cb.onSuccess(serverCopy));
+
+  expect(
+    result.current.getVisibleCharacter({
+      id: 'char-1',
+      equipment: [],
+      updatedAt: '2026-06-24T10:00:01.000Z',
+    } as any)?.equipment
+  ).toEqual([torch]);
+});
+
 test('REGRESSION: auto-retries a transient 5xx instead of dropping the edit', () => {
   const queryClient = makeQueryClient({ id: 'char-1', name: 'A0' });
   (useQueryClient as any).mockReturnValue(queryClient);

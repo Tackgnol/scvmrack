@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { isAuthPath, authKeys, characterKeys } from '../../../src/api/index';
 
 // We don't necessarily need to test the full client integration here as it involves many mocks,

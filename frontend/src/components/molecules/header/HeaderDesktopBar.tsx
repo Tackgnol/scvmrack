@@ -6,6 +6,8 @@ import PrintIcon from '@mui/icons-material/Print';
 import { Box, Button } from '@mui/material';
 import { customStyles } from '@theme/morkBorgTheme';
 import { useTranslation } from 'react-i18next';
+import { PartyTriggerPill } from '@/components/molecules/party/PartyTriggerPill';
+import { LanguageToggle } from './LanguageToggle';
 import { NavLink } from './NavLink';
 import { HeaderStatusChip } from './HeaderStatusChip';
 import { HeaderValidationChip } from './HeaderValidationChip';
@@ -45,6 +47,7 @@ export function HeaderDesktopBar({
   return (
     <Box sx={customStyles.header.desktopNav}>
       <Box sx={customStyles.header.topBar}>
+        <PartyTriggerPill />
         {isSheetRoute && <HeaderStatusChip saving={showSaving} />}
         {isSheetRoute && (
           <HeaderValidationChip summary={validationSummary} label={validationLabel} />
@@ -103,6 +106,7 @@ export function HeaderDesktopBar({
             {t('auth.logout', 'Log Out')}
           </Button>
         )}
+        <LanguageToggle />
       </Box>
       {scvmCount !== undefined && (
         <Box
@@ -114,7 +118,9 @@ export function HeaderDesktopBar({
           }}
         >
           <ScvmCountBadge data-testid="scvm-count-badge">
-            {scvmCount} {t('header.scvmsCreated', 'SCVMS')}... AND COUNTING
+            {t('header.scvmCount', '{{count}} scvms... and counting', {
+              count: scvmCount,
+            })}
           </ScvmCountBadge>
         </Box>
       )}
@@ -122,8 +128,7 @@ export function HeaderDesktopBar({
         <NavLink to="/" text={t('nav.start', 'Start')} />
         <NavLink to="/character" href={homeUrl} text={t('nav.home')} />
         {isAuthenticated && <NavLink to="/characters" text={t('nav.characters')} />}
-        <NavLink to="/faq" text={t('nav.faq')} />
-        <NavLink to="/release" text={t('nav.release')} />
+        {isAuthenticated && <NavLink to="/gm" text={t('nav.gm', 'GM')} />}
       </Box>
     </Box>
   );

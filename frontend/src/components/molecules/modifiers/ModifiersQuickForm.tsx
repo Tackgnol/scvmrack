@@ -117,7 +117,7 @@ export default function ModifiersQuickForm({
       >
         {statOptions.map((option) => (
           <MenuItem key={option.value} value={option.value}>
-            {option.label}
+            {t(`attributes.${option.value}Short`, option.label)}
           </MenuItem>
         ))}
       </Select>

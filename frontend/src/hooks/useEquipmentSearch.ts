@@ -41,7 +41,8 @@ async function readErrorBody(response: Response): Promise<unknown> {
 async function fetchItemSearch(
     query: string,
     locale: string,
-    limit: number
+    limit: number,
+    signal?: AbortSignal
 ): Promise<ItemSearchHit[]> {
     const params = new URLSearchParams({
         q: query,
@@ -50,7 +51,8 @@ async function fetchItemSearch(
     });
 
     const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL || ''}/api/equipment/search?${params}`
+        `${import.meta.env.VITE_BACKEND_URL || ''}/api/equipment/search?${params}`,
+        { signal }
     );
 
     if (!response.ok) {
@@ -73,8 +75,8 @@ async function fetchItemSearch(
 }
 
 
-export function useItemSearch(options: { debounceMs?: number; limit?: number } = {}) {
-    const {debounceMs = 300, limit = 20} = options;
+export function useItemSearch(options: { debounceMs?: number; limit?: number; minLength?: number } = {}) {
+    const {debounceMs = 300, limit = 20, minLength = 2} = options;
     const {i18n} = useTranslation();
 
     const [query, setQuery] = useState('');
@@ -82,20 +84,26 @@ export function useItemSearch(options: { debounceMs?: number; limit?: number } =
     const [debouncedQuery] = useDebounce(query.trim(), debounceMs);
 
     const enabled =
-        debouncedQuery.length > 0 &&
+        debouncedQuery.length >= minLength &&
         debouncedQuery.length <= textFieldLimits.equipmentSearch;
 
-    const locale = (i18n.resolvedLanguage ?? i18n.language ?? 'en').split('-')[0];
+    // i18n.language is the *selected* locale; resolvedLanguage transiently
+    // reports the `en` fallback until the pl bundle finishes loading, which made
+    // search results come back in English on the Polish view.
+    const locale = (i18n.language ?? 'en').split('-')[0];
 
-    const {data, isLoading, error} = useQuery({
+    const {data, isFetching, isLoading, error} = useQuery({
         queryKey: ['item-search', debouncedQuery, locale, limit],
-        queryFn: () =>
+        queryFn: (context) =>
             fetchItemSearch(
                 debouncedQuery,
                 locale,
-                limit
+                limit,
+                context?.signal
             ),
         enabled,
+        placeholderData: (previousData) => previousData,
+        staleTime: 15_000,
     });
 
     const clearResults = () => {
@@ -105,10 +113,11 @@ export function useItemSearch(options: { debounceMs?: number; limit?: number } =
     return {
         results:
             trimmedQuery.length === 0 ||
+            trimmedQuery.length < minLength ||
             trimmedQuery.length > textFieldLimits.equipmentSearch
                 ? []
                 : (data ?? []),
-        isLoading,
+        isLoading: isFetching ?? isLoading,
         error: error instanceof Error ? error.message : null,
         search: setQuery,
         clearResults,

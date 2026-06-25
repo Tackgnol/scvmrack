@@ -48,6 +48,24 @@ export async function signInAnonymous(): Promise<void> {
   }
 }
 
+// Guarantee an active session before a state-changing flow runs (party join,
+// guest character creation). Returns the live session. Imperative on purpose:
+// callers await this instead of racing the background bootstrap query — the
+// whole point of the join flow's KISS rewrite.
+export async function ensureAnonymousSession(): Promise<AuthSession> {
+  const existing = await fetchSession();
+  if (existing?.user) {
+    return existing;
+  }
+
+  await signInAnonymous();
+  const created = await fetchSession();
+  if (!created?.user) {
+    throw new Error('Anonymous session did not start');
+  }
+  return created;
+}
+
 export async function signOut(): Promise<void> {
   const res = await fetch(`${apiBaseUrl()}/api/auth/sign-out`, {
     method: 'POST',

@@ -75,6 +75,11 @@ describe('navigation router utils', () => {
             appHistory.location.pathname = '/character/new';
             expect(getCurrentCharacterIdParam()).toBeNull();
         });
+
+        it('should not treat the character creation flow route as a character ID', () => {
+            appHistory.location.pathname = '/character/create';
+            expect(getCurrentCharacterIdParam()).toBeNull();
+        });
     });
 
     describe('setCurrentCharacterIdParam', () => {

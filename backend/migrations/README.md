@@ -1,5 +1,17 @@
 # Migrations
 
+> **DEPRECATED — the custom runner is retired.** This directory and its
+> runner (`scripts/migrate.js`) are **not applied by any environment**.
+> The project is now **Prisma-only**: production (`deploy.yaml`), canary
+> (`deploy-dev.yaml`), and dev (`compose.dev.yaml`) all run
+> `prisma migrate deploy`, and the full live schema (extensions, fuzzy-search
+> indexes, the `item_search` view, and the live functions) lives in
+> `prisma/migrations/20260603000000_init_full`. Add new schema changes as
+> **Prisma migrations** (`cd backend && npx prisma migrate dev --name <change>`),
+> not files here. The notes below are kept for historical reference only.
+
+---
+
 Versioned, append-only SQL migrations. Each file is applied **once** and recorded in the `schema_migrations` table with a checksum.
 
 ## How `init/` and `migrations/` relate

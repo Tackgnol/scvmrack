@@ -32,7 +32,8 @@ export default function ComputedModifierDetailsModal({
         ? t('modifiers.computed.none')
         : appliesToOptions.map((option) => t(option.labelKey)).join(', ');
   const value = modifier?.value ?? 0;
-  const statisticLabel = (modifier?.statistic ?? 'agility').toUpperCase();
+  const statistic = modifier?.statistic ?? 'agility';
+  const statisticLabel = t(`attributes.${statistic}`, statistic).toUpperCase();
   const effectText = modifier?.source ?? '';
 
   return (

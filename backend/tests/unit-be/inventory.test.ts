@@ -50,19 +50,13 @@ function filterByKeys<T extends { key: string }>(
   return keys ? rows.filter((row) => keys.includes(row.key)) : rows;
 }
 
-const prismaMock = {
-  pet: {
-    findMany: async (args: { where?: { key?: { in?: string[] } } }) =>
-      filterByKeys(petRows, args),
-  },
-  equipment: {
-    findMany: async (args: { where?: { key?: { in?: string[] } } }) =>
-      filterByKeys(equipmentRows, args),
-  },
+const catalogRepositoryMock = {
+  findPetsByKeys: async (keys: string[]) => filterByKeys(petRows, { where: { key: { in: keys } } }),
+  findEquipmentByKeys: async (keys: string[]) => filterByKeys(equipmentRows, { where: { key: { in: keys } } }),
 };
 
-mock.module('../../src/lib/prisma.js', {
-  defaultExport: prismaMock,
+mock.module('../../src/repositories/catalog-repository.js', {
+  namedExports: { catalogRepository: catalogRepositoryMock },
 });
 
 const { hydrateInventoryUses } = await import('../../src/lib/inventory.js');

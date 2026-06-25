@@ -4,6 +4,16 @@ import { page } from 'vitest/browser';
 import { RootLayout } from '@/router/layout';
 import BrowserTestProvider from '../BrowserTestProvider';
 
+type RouterStateStub = {
+  location: {
+    pathname: string;
+  };
+};
+
+type RouterStateSelector = {
+  select?: (state: RouterStateStub) => unknown;
+};
+
 // TanStack Router hooks — provide minimal state
 vi.mock('@tanstack/react-router', () => ({
   useRouterState: vi.fn().mockImplementation((opts) => {
@@ -30,6 +40,10 @@ vi.mock('@components/molecules/session/SessionExpiredGate', () => ({
 
 vi.mock('@/components/organisms/PrivacyNoticeDrawer', () => ({
   PrivacyNoticeDrawer: () => null,
+}));
+
+vi.mock('@/components/organisms/party/PartyHost', () => ({
+  PartyHost: () => null,
 }));
 
 vi.mock('@/components/index', () => ({
@@ -97,7 +111,10 @@ describe('RootLayout Browser', () => {
     );
 
     const { useRouterState } = await import('@tanstack/react-router');
-    vi.mocked(useRouterState).mockImplementation((opts) => {
+    const mockedUseRouterState = vi.mocked(useRouterState) as unknown as {
+      mockImplementation: (impl: (opts?: RouterStateSelector) => unknown) => void;
+    };
+    mockedUseRouterState.mockImplementation((opts) => {
       const state = { location: { pathname: '/characters' } };
       return opts?.select ? opts.select(state) : state;
     });

@@ -9,6 +9,7 @@ import {
   SimpleField,
 } from '@/hooks/models.ts';
 import { buildRequestFromPatches } from '@/hooks/patchToRequest.ts';
+import { getApiLocale } from '@/hooks/utils.ts';
 import {
   getSimpleFieldLimitMessage,
   sanitizeSimpleFieldValue,
@@ -38,12 +39,14 @@ export function useCharacterEditor(
   updateCharacter: ReturnType<typeof $api.useMutation>,
   getCharacterKey: (id: string, locale?: string) => readonly unknown[],
   locale?: string,
-  validationIssues?: ValidationIssueHandlers
+  validationIssues?: ValidationIssueHandlers,
+  options: { readOnly?: boolean } = {}
 ) {
   const queryClient = useQueryClient();
   const { showError } = useSnackbar();
   const { showUnexpectedError } = useErrorFeedback();
   const { t } = useTranslation();
+  const readOnly = options.readOnly === true;
   const shownFieldValidationMessagesRef = useRef<Record<string, string>>({});
 
   // Pending patch queue. The ref is the source of truth so async mutation
@@ -60,22 +63,47 @@ export function useCharacterEditor(
   // Retry tracking
   const retryCountRef = useRef(0);
   const flushRef = useRef<() => void>(() => {});
+  const optimisticCharacterRef = useRef<CharacterResponse | undefined>(
+    undefined
+  );
+  const lastSavedCharacterRef = useRef<CharacterResponse | undefined>(
+    undefined
+  );
   // Serializes flushes (one PATCH in flight at a time) and halts auto-reflush
   // once we've given up / hit a client error, so we never busy-loop the server.
   const flushingRef = useRef(false);
   const haltRef = useRef(false);
   const maxRetries = 3;
 
+  const getActiveKey = () =>
+    characterId ? getCharacterKey(characterId, locale) : undefined;
+
+  const getActiveCachedCharacter = () => {
+    const key = getActiveKey();
+    return key ? queryClient.getQueryData<CharacterResponse>(key) : undefined;
+  };
+
+  const getLatestOptimisticCharacter = () =>
+    optimisticCharacterRef.current ?? getActiveCachedCharacter();
+
+  const isNewerThan = (
+    candidate: CharacterResponse | undefined,
+    reference: CharacterResponse | undefined
+  ) => {
+    if (!candidate?.updatedAt || !reference?.updatedAt) return false;
+    return Date.parse(candidate.updatedAt) > Date.parse(reference.updatedAt);
+  };
+
   const flush = () => {
-    if (!characterId) return;
+    if (!characterId || readOnly) return;
     // One PATCH in flight at a time; onSettled re-flushes whatever remains.
     if (flushingRef.current || updateCharacter.isPending) return;
 
     const batch = [...pendingRef.current];
     if (batch.length === 0) return;
 
-    const key = getCharacterKey(characterId, locale);
-    const currentCharacter = queryClient.getQueryData<CharacterResponse>(key);
+    const key = getActiveKey();
+    const currentCharacter = getLatestOptimisticCharacter();
     if (!currentCharacter) return;
 
     // Build request body from the queued patches + the current optimistic state.
@@ -84,7 +112,11 @@ export function useCharacterEditor(
 
     updateCharacter.mutate(
       {
-        params: { path: { id: characterId } },
+        // Send the active locale so the hydrated PATCH response (computed
+        // modifiers, encumbrance sources, item names) comes back translated —
+        // without it the backend defaults to 'en' and recalculated modifiers
+        // reverted to English on the Polish view.
+        params: { path: { id: characterId }, query: { locale: getApiLocale(locale) } },
         body: body as any,
       },
       {
@@ -103,12 +135,15 @@ export function useCharacterEditor(
           const server = serverCharacter as CharacterResponse | undefined;
           if (server) {
             const remaining = pendingRef.current;
-            queryClient.setQueryData<CharacterResponse>(key, () =>
-              remaining.reduce(
-                (acc, patch) => applyOptimisticPatch(acc, patch),
-                server
-              )
+            const optimistic = remaining.reduce(
+              (acc, patch) => applyOptimisticPatch(acc, patch),
+              server
             );
+            lastSavedCharacterRef.current = server;
+            optimisticCharacterRef.current = optimistic;
+            if (key) {
+              queryClient.setQueryData<CharacterResponse>(key, optimistic);
+            }
           }
         },
         onError: (error: any, _vars: unknown, context: any) => {
@@ -168,7 +203,16 @@ export function useCharacterEditor(
           haltRef.current = true;
           setPending((prev) => prev.slice(batch.length));
           if (context?.previousCharacter) {
-            queryClient.setQueryData(key, context.previousCharacter);
+            const remaining = pendingRef.current;
+            const optimistic = remaining.reduce(
+              (acc: CharacterResponse, patch) =>
+                applyOptimisticPatch(acc, patch),
+              context.previousCharacter as CharacterResponse
+            );
+            optimisticCharacterRef.current = optimistic;
+            if (key) {
+              queryClient.setQueryData(key, optimistic);
+            }
           }
           showError(
             getUserFacingApiErrorMessage(
@@ -208,17 +252,24 @@ export function useCharacterEditor(
   );
 
   const applyLocalPatch = (patch: OptimisticPatch) => {
-    if (!characterId) return;
+    if (!characterId || readOnly) return;
+
+    const base = getLatestOptimisticCharacter();
+    const optimistic = base ? applyOptimisticPatch(base, patch) : undefined;
+    optimisticCharacterRef.current = optimistic;
+
+    const key = getActiveKey();
+    if (!key) return;
 
     queryClient.setQueryData(
-      getCharacterKey(characterId, locale),
+      key,
       (old: CharacterResponse | undefined) =>
-        old ? applyOptimisticPatch(old, patch) : old
+        old ? applyOptimisticPatch(old, patch) : optimistic
     );
   };
 
   const queuePatch = (patch: OptimisticPatch) => {
-    if (!characterId) return;
+    if (!characterId || readOnly) return;
 
     // A fresh edit resumes saving even if a prior batch had halted.
     haltRef.current = false;
@@ -409,5 +460,18 @@ export function useCharacterEditor(
 
     // Saving while patches are queued or a PATCH is in flight.
     isSaving: pendingCount > 0 || updateCharacter.isPending,
+
+    getVisibleCharacter: (character: CharacterResponse | undefined) => {
+      if (pendingRef.current.length > 0) {
+        return optimisticCharacterRef.current ?? character;
+      }
+
+      const lastSaved = lastSavedCharacterRef.current;
+      if (isNewerThan(lastSaved, character)) {
+        return lastSaved;
+      }
+
+      return character ?? lastSaved;
+    },
   };
 }

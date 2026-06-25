@@ -32,7 +32,9 @@ describe('SummaryStatButton Browser', () => {
     const onPinToggle = vi.fn();
     await render(
       <BrowserTestProvider>
-        <SummaryStatButton {...defaultProps} onPinToggle={onPinToggle} />
+        <SummaryStatButton {...defaultProps} onPinToggle={onPinToggle}>
+          <Typography variant="h6">18</Typography>
+        </SummaryStatButton>
       </BrowserTestProvider>
     );
 
@@ -46,7 +48,9 @@ describe('SummaryStatButton Browser', () => {
   it('sets aria-expanded="false" when isActive is false', async () => {
     await render(
       <BrowserTestProvider>
-        <SummaryStatButton {...defaultProps} isActive={false} />
+        <SummaryStatButton {...defaultProps} isActive={false}>
+          <Typography variant="h6">18</Typography>
+        </SummaryStatButton>
       </BrowserTestProvider>
     );
 
@@ -57,7 +61,9 @@ describe('SummaryStatButton Browser', () => {
   it('sets aria-expanded="true" when isActive is true', async () => {
     await render(
       <BrowserTestProvider>
-        <SummaryStatButton {...defaultProps} isActive={true} />
+        <SummaryStatButton {...defaultProps} isActive={true}>
+          <Typography variant="h6">18</Typography>
+        </SummaryStatButton>
       </BrowserTestProvider>
     );
 

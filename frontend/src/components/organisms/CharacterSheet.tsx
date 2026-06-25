@@ -51,9 +51,15 @@ type CharacterSheetProps = {
     stamping: boolean;
     onGenerateNew: () => void;
     onKillScvm: () => void;
+    readOnly?: boolean;
 };
 
-export function CharacterSheet({ stamping, onGenerateNew, onKillScvm }: CharacterSheetProps) {
+export function CharacterSheet({
+    stamping,
+    onGenerateNew,
+    onKillScvm,
+    readOnly = false,
+}: CharacterSheetProps) {
     const { t } = useTranslation();
     const { character, isAuthenticated } = useCharacter();
     const theme = useTheme();
@@ -137,11 +143,13 @@ export function CharacterSheet({ stamping, onGenerateNew, onKillScvm }: Characte
             <NoteSection />
 
             <Box className="print-hidden">
-                <Footer
-                    onGenerateNew={onGenerateNew}
-                    generateNewLabel={isAuthenticated ? undefined : t('actions.killScvm')}
-                    onKillScvm={isAuthenticated ? onKillScvm : undefined}
-                />
+                {!readOnly && (
+                    <Footer
+                        onGenerateNew={onGenerateNew}
+                        generateNewLabel={isAuthenticated ? undefined : t('actions.killScvm')}
+                        onKillScvm={isAuthenticated ? onKillScvm : undefined}
+                    />
+                )}
             </Box>
         </Box>
     );

@@ -43,17 +43,18 @@ test('authenticated user can list, create, open, and delete characters', async (
   await page.goto('/characters');
   await expect(page.getByTestId(`character-row-${createdId}`)).toBeVisible({ timeout: 30000 });
 
-  page.once('dialog', async (dialog) => {
-    expect(dialog.message()).toContain('E2E List Doomed');
-    await dialog.accept();
-  });
+  await page.getByTestId(`delete-character-${doomed.id}`).click();
+  const deleteModal = page.getByTestId('delete-character-modal');
+  await expect(deleteModal).toBeVisible();
+  await expect(deleteModal).toContainText('E2E List Doomed');
+
   const deleteResponsePromise = page.waitForResponse(
     (response) =>
       response.request().method() === 'DELETE' &&
       new URL(response.url()).pathname === `/api/characters/${doomed.id}`,
     { timeout: 30000 }
   );
-  await page.getByTestId(`delete-character-${doomed.id}`).click();
+  await page.getByTestId('confirm-delete-character').click();
   await expect
     .poll(async () => (await deleteResponsePromise).status(), { timeout: 30000 })
     .toBe(204);
@@ -90,10 +91,9 @@ test('authenticated characters list keeps the row and reports delete failures', 
     await route.continue();
   });
 
-  page.once('dialog', async (dialog) => {
-    await dialog.accept();
-  });
   await page.getByTestId(`delete-character-${target.id}`).click();
+  await expect(page.getByTestId('delete-character-modal')).toBeVisible();
+  await page.getByTestId('confirm-delete-character').click();
   await expect(page.getByText(/failed to delete character/i)).toBeVisible({ timeout: 30000 });
   await expect(page.getByTestId(`character-row-${target.id}`)).toBeVisible();
 });

@@ -1,8 +1,9 @@
 import { render } from 'vitest-browser-react';
-import { expect, describe, it, vi } from 'vitest';
+import { afterEach, expect, describe, it, vi } from 'vitest';
 import { page, userEvent } from 'vitest/browser';
 import ModifiersQuickForm from '@/components/molecules/modifiers/ModifiersQuickForm';
 import BrowserTestProvider from '../../BrowserTestProvider';
+import i18n, { loadLanguage } from '@/i18n';
 
 describe('ModifiersQuickForm Browser', () => {
   const defaultProps = {
@@ -17,6 +18,10 @@ describe('ModifiersQuickForm Browser', () => {
     onSubmit: vi.fn(),
     onOpenAdvanced: vi.fn(),
   };
+
+  afterEach(async () => {
+    await i18n.changeLanguage('en');
+  });
 
   it('renders correctly', async () => {
     await render(
@@ -33,6 +38,26 @@ describe('ModifiersQuickForm Browser', () => {
     const nameInput = page.getByPlaceholder(/name/i);
     await expect.element(nameInput).toBeVisible();
 
+  });
+
+  it('renders Polish labels after switching language', async () => {
+    await loadLanguage('pl');
+    await i18n.changeLanguage('pl');
+
+    await render(
+      <BrowserTestProvider>
+        <ModifiersQuickForm {...defaultProps} />
+      </BrowserTestProvider>
+    );
+
+    await expect
+      .element(page.getByPlaceholder('Nazwa modyfikatora...'))
+      .toBeVisible();
+    await expect.element(page.getByText('SIŁ', { exact: true })).toBeVisible();
+    await expect.element(page.getByText('Wszystkie testy')).toBeVisible();
+    await expect
+      .element(page.getByRole('button', { name: 'Dodaj modyfikator' }))
+      .toBeVisible();
   });
 
   it('triggers onAdd when button is clicked', async () => {

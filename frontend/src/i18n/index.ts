@@ -7,15 +7,17 @@ i18n
     .use(LanguageDetector)
     .use(initReactI18next)
     .init({
-        // English-lock: the app ships English-only for now. `lng` overrides the
-        // detector (it stays wired below as dead code) so a returning visitor
-        // with a stale `i18nextLng=pl` still renders English. The pl bundle and
-        // language-switch machinery are intentionally kept for a future re-enable.
-        lng: 'en',
+        // Language is detector-driven (localStorage → navigator → htmlTag) with the
+        // chosen locale cached in localStorage; English is the fallback when a key
+        // (or the whole pl bundle, loaded lazily) is missing. The header
+        // LanguageToggle drives changes via i18n.changeLanguage.
         fallbackLng: 'en',
         resources: { en: { translation: en } },
         interpolation: {
             escapeValue: false, // React already escapes
+        },
+        react: {
+            bindI18nStore: 'added',
         },
         detection: {
             order: ['localStorage', 'navigator', 'htmlTag'],
@@ -24,17 +26,19 @@ i18n
     });
 
 // Dynamic loaders for secondary languages (en is bundled as the fallback)
-const loaders: Record<string, () => Promise<any>> = {
-    pl: () => import('./pl.json'),
+const loaders: Record<string, () => Promise<{ default: Record<string, unknown> }>> = {
+    pl: () => import('./pl.json') as Promise<{ default: Record<string, unknown> }>,
 };
 
 const loadedLanguages = new Set<string>(['en']);
+
+const baseLanguage = (lng: string) => lng.split('-')[0];
 
 /**
  * Dynamically loads a language resource bundle if not already loaded.
  */
 export const loadLanguage = async (lng: string) => {
-    const baseLng = lng.split('-')[0];
+    const baseLng = baseLanguage(lng);
     if (loaders[baseLng] && !loadedLanguages.has(baseLng)) {
         try {
             const data = await loaders[baseLng]();
@@ -50,12 +54,15 @@ export const loadLanguage = async (lng: string) => {
 // crawlers see the right language (a11y + SEO).
 const syncHtmlLang = (lng: string) => {
     if (typeof document !== 'undefined') {
-        document.documentElement.lang = lng.split('-')[0];
+        document.documentElement.lang = baseLanguage(lng);
     }
 };
 
-// Initial load for the detected language
-const initialLng = i18n.resolvedLanguage || i18n.language || 'en';
+// Initial load for the detected language. Use i18n.language (what the detector
+// actually picked) rather than resolvedLanguage — before the bundle loads,
+// resolvedLanguage reports the en fallback, which would load 'en' and leave a
+// pl-detected visitor stuck on English while the toggle shows PL.
+const initialLng = i18n.language || i18n.resolvedLanguage || 'en';
 loadLanguage(initialLng);
 syncHtmlLang(initialLng);
 

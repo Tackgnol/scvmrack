@@ -7,6 +7,16 @@ vi.mock('@/router/navigation', () => ({
     navigateToSessionExpired: vi.fn(),
 }));
 
+function expectRequest(value: void | Request | Response | undefined): Request {
+    expect(value).toBeInstanceOf(Request);
+    return value as Request;
+}
+
+function expectResponse(value: void | Request | Response | undefined): Response {
+    expect(value).toBeInstanceOf(Response);
+    return value as Response;
+}
+
 describe("API Index", () => {
     beforeEach(() => {
         vi.clearAllMocks();
@@ -38,7 +48,7 @@ describe("API Index", () => {
     describe("csrfMiddleware", () => {
         it("should not add CSRF token to GET requests", async () => {
             const request = new Request("http://localhost/test", { method: "GET" });
-            const result = await csrfMiddleware.onRequest!({ request, schemaPath: "" } as any);
+            const result = expectRequest(await csrfMiddleware.onRequest!({ request, schemaPath: "" } as any));
             expect(result.headers.has("x-csrf-token")).toBe(false);
             expect(global.fetch).not.toHaveBeenCalled();
         });
@@ -50,7 +60,7 @@ describe("API Index", () => {
             });
 
             const request = new Request("http://localhost/test", { method: "POST" });
-            const result = await csrfMiddleware.onRequest!({ request, schemaPath: "" } as any);
+            const result = expectRequest(await csrfMiddleware.onRequest!({ request, schemaPath: "" } as any));
 
             expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining("/api/csrf-token"), expect.any(Object));
             expect(result.headers.get("x-csrf-token")).toBe("test-token");
@@ -67,7 +77,7 @@ describe("API Index", () => {
                 })
                 .mockResolvedValueOnce(new Response(null, { status: 200 }));
 
-            const result = await csrfMiddleware.onResponse!({ request, response, schemaPath: "" } as any);
+            const result = expectResponse(await csrfMiddleware.onResponse!({ request, response, schemaPath: "" } as any));
 
             expect(global.fetch).toHaveBeenCalledTimes(2);
             expect(result.status).toBe(200);
@@ -79,7 +89,7 @@ describe("API Index", () => {
 
             (global.fetch as any).mockResolvedValueOnce({ ok: false });
 
-            const result = await csrfMiddleware.onResponse!({ request, response, schemaPath: "" } as any);
+            const result = expectResponse(await csrfMiddleware.onResponse!({ request, response, schemaPath: "" } as any));
 
             expect(result.status).toBe(403);
         });
@@ -88,7 +98,7 @@ describe("API Index", () => {
     describe("authMiddleware", () => {
         it("should add credentials: include to all requests", async () => {
             const request = new Request("http://localhost/test");
-            const result = await authMiddleware.onRequest!({ request, schemaPath: "" } as any);
+            const result = expectRequest(await authMiddleware.onRequest!({ request, schemaPath: "" } as any));
             expect(result.credentials).toBe("include");
         });
 
@@ -102,7 +112,7 @@ describe("API Index", () => {
             
             await vi.runAllTimersAsync();
 
-            const result = await promise;
+            const result = expectResponse(await promise);
             expect(global.fetch).toHaveBeenCalledTimes(1);
             expect(result.status).toBe(200);
         });
@@ -116,7 +126,7 @@ describe("API Index", () => {
 
             const promise = authMiddleware.onResponse!({ request, response, schemaPath: "" } as any);
             await vi.runAllTimersAsync();
-            const result = await promise;
+            const result = expectResponse(await promise);
 
             expect(result.status).toBe(401);
 
@@ -130,7 +140,7 @@ describe("API Index", () => {
             const request = new Request("http://localhost/api/auth/login");
             const response = new Response(null, { status: 401 });
 
-            const result = await authMiddleware.onResponse!({ request, response, schemaPath: "" } as any);
+            const result = expectResponse(await authMiddleware.onResponse!({ request, response, schemaPath: "" } as any));
             
             expect(global.fetch).not.toHaveBeenCalled();
             expect(result.status).toBe(401);
@@ -145,12 +155,12 @@ describe("API Index", () => {
              
              // The first call is now in the middle of the 500ms timeout
              // Second call for same request while first is pending
-             const result2 = await authMiddleware.onResponse!({ request, response, schemaPath: "" } as any);
+             const result2 = expectResponse(await authMiddleware.onResponse!({ request, response, schemaPath: "" } as any));
              
              expect(result2.status).toBe(401);
              
              await vi.runAllTimersAsync();
-             const result1 = await promise1;
+             const result1 = expectResponse(await promise1);
              expect(result1.status).toBe(401);
              
              // redirectToSessionExpired uses 100ms timeout

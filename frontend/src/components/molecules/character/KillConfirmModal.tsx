@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 type KillConfirmModalProps = {
   open: boolean;
   characterName: string;
+  partyMember?: boolean;
   dontAskAgain: boolean;
   onDontAskAgainChange: (value: boolean) => void;
   onCancel: () => void;
@@ -14,6 +15,7 @@ type KillConfirmModalProps = {
 export function KillConfirmModal({
   open,
   characterName,
+  partyMember = false,
   dontAskAgain,
   onDontAskAgainChange,
   onCancel,
@@ -49,6 +51,14 @@ export function KillConfirmModal({
           { name: characterName }
         )}
       </Typography>
+      {partyMember && (
+        <Typography sx={{ mt: 1 }}>
+          {t(
+            'actions.killConfirmPartyDesc',
+            'The replacement will crawl back into this party before the old body is removed.'
+          )}
+        </Typography>
+      )}
       <FormControlLabel
         sx={{ mt: 1 }}
         control={

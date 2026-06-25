@@ -21,8 +21,19 @@
 import prisma from './prisma.js';
 import { Prisma } from '@prisma/client';
 import type { Roller } from '@tackgnol/rpg-tools-roller';
-import { rollToModifier } from '../utils.js';
+import { rollToModifier, sanitizeString } from '../utils.js';
 import { hydrateInventoryUses } from './inventory.js';
+import type {
+  AbilityStat,
+  CharacterDraft,
+  ClasslessStatOption,
+  RollerFor,
+} from './draft-seeds.js';
+import {
+  ABILITY_STATS,
+  normalizeDropLowestAbilities,
+  seededRollerFor,
+} from './draft-seeds.js';
 
 // ── Internal types ─────────────────────────────────────────────────────────────
 
@@ -44,6 +55,49 @@ interface EquipBundle {
   equippedArmor: { key: string } | null;
 }
 
+/** Everything prisma.character.create needs except userId. */
+export interface CharacterData {
+  name: string;
+  classId: number | null;
+  origin: string | null;
+  strength: number;
+  agility: number;
+  presence: number;
+  toughness: number;
+  maxHp: number;
+  currentHp: number;
+  omens: number;
+  maxOmens: number;
+  silver: number;
+  habit: string | null;
+  tale: string | null;
+  bodyDescription: string | null;
+  trait1: string | null;
+  trait2: string | null;
+  abilities: object[];
+  equipment: unknown[];
+  equippedWeapons: object[];
+  equippedArmor: object | null;
+  classlessStatOptions?: ClasslessStatOption[];
+}
+
+type BuildCharacterOptions = {
+  dropLowestAbilities?: AbilityStat[];
+};
+
+/**
+ * Classless scvm (MÖRK BORG core rules): no stat modifiers, d8 HP, 2d6×10
+ * silver, d10 weapon die, d4 armor die, no class abilities, no origin.
+ */
+const CLASSLESS_DEFAULTS = {
+  hpDie: 8,
+  silverDice: [6, 6],
+  silverModifier: 10,
+  weaponDie: 10,
+  armorDie: 4,
+  statModifiers: {} as Record<string, number>,
+};
+
 // ── Roller helpers ─────────────────────────────────────────────────────────────
 
 async function rollDie(faces: number, roller: Roller): Promise<number> {
@@ -52,6 +106,41 @@ async function rollDie(faces: number, roller: Roller): Promise<number> {
 
 async function roll3d6(roller: Roller): Promise<number> {
   return (await roller.roll('3d6')).total;
+}
+
+async function rollClasslessStatOptions(
+  roller: Roller,
+  dropLowestAbilities: AbilityStat[],
+): Promise<{
+  values: Record<AbilityStat, number>;
+  options: ClasslessStatOption[];
+}> {
+  const selected = new Set(normalizeDropLowestAbilities(dropLowestAbilities));
+  const values = {} as Record<AbilityStat, number>;
+  const options: ClasslessStatOption[] = [];
+
+  for (const ability of ABILITY_STATS) {
+    const dice = [
+      await rollDie(6, roller),
+      await rollDie(6, roller),
+      await rollDie(6, roller),
+      await rollDie(6, roller),
+    ];
+    const sorted = [...dice].sort((a, b) => a - b);
+    const minTotal = sorted.slice(0, 3).reduce((sum, die) => sum + die, 0);
+    const maxTotal = sorted.slice(1).reduce((sum, die) => sum + die, 0);
+    const isSelected = selected.has(ability);
+    values[ability] = isSelected ? maxTotal : minTotal;
+    options.push({
+      ability,
+      dice,
+      minTotal,
+      maxTotal,
+      selected: isSelected,
+    });
+  }
+
+  return { values, options };
 }
 
 async function pickRandom<T>(arr: T[], roller: Roller): Promise<T | null> {
@@ -529,7 +618,8 @@ export async function generateCharacter(
   roller: Roller,
   userId?: string,
 ): Promise<string> {
-  // 1. Resolve class (random if not supplied)
+  // 1. Resolve class (random if not supplied) — rolls on the caller's roller
+  //    BEFORE any section roll, preserving the legacy sequence.
   let resolvedClassId: number;
   if (classId !== null) {
     resolvedClassId = classId;
@@ -540,12 +630,87 @@ export async function generateCharacter(
     resolvedClassId = picked.id;
   }
 
-  const cls = await prisma.class.findUniqueOrThrow({ where: { id: resolvedClassId } });
+  // Shared roller for every section: identical roll sequence to the
+  // pre-refactor implementation.
+  const data = await buildCharacterData(resolvedClassId, () => roller);
+  const { classlessStatOptions: _classlessStatOptions, ...persistedData } = data;
 
-  // 2. Pre-load all catalog data in parallel
+  const character = await prisma.character.create({
+    data: {
+      ...(userId ? { userId } : {}),
+      ...persistedData,
+      abilities: persistedData.abilities as object[],
+      equipment: persistedData.equipment as object[],
+      equippedWeapons: persistedData.equippedWeapons as object[],
+      equippedArmor: (persistedData.equippedArmor as object | null) ?? Prisma.DbNull,
+    },
+    select: { id: true },
+  });
+
+  return character.id;
+}
+
+/**
+ * Deterministically rebuild a character from a confirmed draft and persist it.
+ * The client only ever supplies seeds, so the server is the sole roller.
+ */
+export async function createCharacterFromDraft(
+  draft: CharacterDraft,
+  userId: string,
+): Promise<string> {
+  const classId = draft.classless ? null : draft.classId;
+  const data = await buildCharacterData(
+    classId,
+    seededRollerFor(draft.seeds),
+    { dropLowestAbilities: draft.dropLowestAbilities },
+  );
+  const { classlessStatOptions: _classlessStatOptions, ...persistedData } = data;
+  const nameOverride = sanitizeString(draft.name, 255);
+  if (nameOverride.length > 0) {
+    persistedData.name = nameOverride;
+  }
+
+  const character = await prisma.character.create({
+    data: {
+      userId,
+      ...persistedData,
+      abilities: persistedData.abilities as object[],
+      equipment: persistedData.equipment as object[],
+      equippedWeapons: persistedData.equippedWeapons as object[],
+      equippedArmor: (persistedData.equippedArmor as object | null) ?? Prisma.DbNull,
+    },
+    select: { id: true },
+  });
+
+  return character.id;
+}
+
+/**
+ * Build a full character payload without persisting it.
+ *
+ * `classId === null` produces a classless scvm (book defaults, no class
+ * abilities, no origin). All randomness goes through `rollerFor(section)`;
+ * pass `() => roller` for legacy single-roller behavior or
+ * `seededRollerFor(seeds)` for deterministic per-section drafts.
+ *
+ * SECTION ORDER IS A DETERMINISM CONTRACT — do not reorder the section
+ * blocks below; reordering changes what existing seeds reproduce.
+ */
+export async function buildCharacterData(
+  classId: number | null,
+  rollerFor: RollerFor,
+  options: BuildCharacterOptions = {},
+): Promise<CharacterData> {
+  const cls = classId !== null
+    ? await prisma.class.findUniqueOrThrow({ where: { id: classId } })
+    : null;
+
+  // Pre-load all catalog data in parallel (origins only exist for classes).
   const [names, origins, weapons, armors, equips, pets] = await Promise.all([
     prisma.name.findMany({ select: { name: true } }),
-    prisma.origin.findMany({ where: { classId: resolvedClassId }, select: { key: true } }),
+    classId !== null
+      ? prisma.origin.findMany({ where: { classId }, select: { key: true } })
+      : Promise.resolve([] as Array<{ key: string }>),
     prisma.weapon.findMany({ orderBy: { id: 'asc' } }),
     prisma.armor.findMany(),
     prisma.equipment.findMany(),
@@ -554,87 +719,106 @@ export async function generateCharacter(
 
   const catalog = buildCatalogCache(weapons, armors, equips, pets);
 
-  // 3. Roll stats
-  const statModifiers = (cls.statModifiers ?? {}) as Record<string, number>;
-  const strength  = (await roll3d6(roller)) + (statModifiers.strength  ?? 0);
-  const agility   = (await roll3d6(roller)) + (statModifiers.agility   ?? 0);
-  const presence  = (await roll3d6(roller)) + (statModifiers.presence  ?? 0);
-  const toughness = (await roll3d6(roller)) + (statModifiers.toughness ?? 0);
+  const hpDie = cls?.hpDie ?? CLASSLESS_DEFAULTS.hpDie;
+  const silverDice = cls?.silverDice ?? CLASSLESS_DEFAULTS.silverDice;
+  const silverModifier = cls?.silverModifier ?? CLASSLESS_DEFAULTS.silverModifier;
+  const weaponDie = cls?.weaponDie ?? CLASSLESS_DEFAULTS.weaponDie;
+  const armorDie = cls?.armorDie ?? CLASSLESS_DEFAULTS.armorDie;
+  const statModifiers = (cls?.statModifiers ?? CLASSLESS_DEFAULTS.statModifiers) as Record<string, number>;
 
-  const hpDie = cls.hpDie ?? 8;
-  const hpRoll = await rollDie(hpDie, roller);
+  // ── Section: stats (4 stats + HP) ────────────────────────────────────────
+  const statsRoller = rollerFor('stats');
+  let classlessStatOptions: ClasslessStatOption[] | undefined;
+  let strength: number;
+  let agility: number;
+  let presence: number;
+  let toughness: number;
+
+  if (classId === null) {
+    const result = await rollClasslessStatOptions(
+      statsRoller,
+      options.dropLowestAbilities ?? [],
+    );
+    classlessStatOptions = result.options;
+    strength = result.values.strength;
+    agility = result.values.agility;
+    presence = result.values.presence;
+    toughness = result.values.toughness;
+  } else {
+    strength  = (await roll3d6(statsRoller)) + (statModifiers.strength  ?? 0);
+    agility   = (await roll3d6(statsRoller)) + (statModifiers.agility   ?? 0);
+    presence  = (await roll3d6(statsRoller)) + (statModifiers.presence  ?? 0);
+    toughness = (await roll3d6(statsRoller)) + (statModifiers.toughness ?? 0);
+  }
+  const hpRoll = await rollDie(hpDie, statsRoller);
   const maxHp = Math.max(1, hpRoll + rollToModifier(toughness));
 
-  // 4. Roll omens (d2)
-  const omens = await rollDie(2, roller);
+  // ── Section: omens ───────────────────────────────────────────────────────
+  const omens = await rollDie(2, rollerFor('omens'));
 
-  // 5. Silver
+  // ── Section: silver ──────────────────────────────────────────────────────
+  const silverRoller = rollerFor('silver');
   let silver = 0;
-  for (const die of cls.silverDice) {
-    silver += await rollDie(die, roller);
+  for (const die of silverDice) {
+    silver += await rollDie(die, silverRoller);
   }
-  silver *= (cls.silverModifier ?? 10);
+  silver *= silverModifier;
 
-  // 6. Name, origin
-  const name = (await pickRandom(names, roller))?.name ?? 'Unknown';
-  const origin = (await pickRandom(origins, roller))?.key ?? null;
+  // ── Section: name ────────────────────────────────────────────────────────
+  const name = (await pickRandom(names, rollerFor('name')))?.name ?? 'Unknown';
 
-  // 7. Abilities + granted items
-  const { abilities, grantedItems } = await buildAbilityBundle(resolvedClassId, roller, catalog);
+  // ── Section: origin (classless has none; empty list rolls nothing) ──────
+  const origin = (await pickRandom(origins, rollerFor('origin')))?.key ?? null;
 
-  // 8. Item pool
+  // ── Section: abilities + granted items ──────────────────────────────────
+  const { abilities, grantedItems } = classId !== null
+    ? await buildAbilityBundle(classId, rollerFor('abilities'), catalog)
+    : { abilities: [] as AbilityEntry[], grantedItems: [] as PoolItem[] };
+
+  // ── Section: gear (item pool, auto-equip, uses hydration) ───────────────
+  const gearRoller = rollerFor('gear');
   const pool = await buildItemPool(
-    cls.weaponDie ?? 10,
-    cls.armorDie  ?? 4,
+    weaponDie,
+    armorDie,
     presence,
-    roller,
+    gearRoller,
     catalog,
     equips,
     grantedItems,
   );
-
-  // 9. Auto-equip
   const bundle = autoEquipItems(pool, catalog);
-
-  // 10. Hydrate uses (scrolls, pets, consumables)
   const hydratedEquipment = await hydrateInventoryUses(
     bundle.equipment,
     presence,
     true,
-    roller,
+    gearRoller,
   ) as unknown[];
 
-  // 11. Personality
-  const personality = await pickPersonality(roller);
+  // ── Section: personality ─────────────────────────────────────────────────
+  const personality = await pickPersonality(rollerFor('personality'));
 
-  // 12. Insert and return id
-  const character = await prisma.character.create({
-    data: {
-      ...(userId ? { userId } : {}),
-      name,
-      classId: resolvedClassId,
-      origin,
-      strength,
-      agility,
-      presence,
-      toughness,
-      maxHp,
-      currentHp: maxHp,
-      omens,
-      maxOmens: omens,
-      silver,
-      habit:           personality.habit,
-      tale:            personality.tale,
-      bodyDescription: personality.bodyDescription,
-      trait1:          personality.trait1,
-      trait2:          personality.trait2,
-      abilities:       abilities as object[],
-      equipment:       hydratedEquipment as object[],
-      equippedWeapons: bundle.equippedWeapons as object[],
-      equippedArmor:   bundle.equippedArmor ?? Prisma.DbNull,
-    },
-    select: { id: true },
-  });
-
-  return character.id;
+  return {
+    name,
+    classId,
+    origin,
+    strength,
+    agility,
+    presence,
+    toughness,
+    maxHp,
+    currentHp: maxHp,
+    omens,
+    maxOmens: omens,
+    silver,
+    habit: personality.habit,
+    tale: personality.tale,
+    bodyDescription: personality.bodyDescription,
+    trait1: personality.trait1,
+    trait2: personality.trait2,
+    abilities: abilities as object[],
+    equipment: hydratedEquipment,
+    equippedWeapons: bundle.equippedWeapons as object[],
+    equippedArmor: bundle.equippedArmor,
+    ...(classlessStatOptions ? { classlessStatOptions } : {}),
+  };
 }

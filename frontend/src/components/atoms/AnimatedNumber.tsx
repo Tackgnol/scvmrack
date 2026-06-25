@@ -68,7 +68,10 @@ export default function AnimatedNumber({
         prefersReducedMotion || durationMs <= 0,
         Math.min(320, Math.max(180, durationMs)),
     );
-    const previousValueRef = useRef<number>(motionValue.get());
+    const previousValueRef = useRef<number | null>(null);
+    if (previousValueRef.current === null) {
+        previousValueRef.current = motionValue.get();
+    }
     const previousCacheKeyRef = useRef<string | undefined>(cacheKey);
 
     // Remember the latest value per cacheKey (no re-render) so a remounted instance
@@ -95,7 +98,7 @@ export default function AnimatedNumber({
 
     // Animate toward the latest value (or jump it when motion is off / unchanged).
     useEffect(() => {
-        const from = previousValueRef.current;
+        const from = previousValueRef.current ?? value;
         const to = value;
         previousValueRef.current = to;
 

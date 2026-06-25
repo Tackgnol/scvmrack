@@ -57,12 +57,28 @@ describe('InventoryItemSlot Browser', () => {
       </BrowserTestProvider>
     );
 
-    const slotLabel = page.getByText('TEST SWORD');
-    await expect.element(slotLabel).toBeVisible();
+    const slot = page.getByRole('button', { name: /TEST SWORD/i });
+    await expect.element(slot).toBeVisible();
 
-    await userEvent.click(slotLabel);
+    await userEvent.click(slot);
 
     expect(onOpenEditor).toHaveBeenCalledWith(defaultProps.aggregated);
+
+  });
+
+  it('triggers onOpenEditor from keyboard activation', async () => {
+    const onOpenEditor = vi.fn();
+    await render(
+      <BrowserTestProvider>
+        <InventoryItemSlot {...defaultProps} onOpenEditor={onOpenEditor} />
+      </BrowserTestProvider>
+    );
+
+    const slot = page.getByRole('button', { name: /TEST SWORD/i });
+    await userEvent.click(slot);
+    await userEvent.keyboard('{Enter}');
+
+    await expect.poll(() => onOpenEditor).toHaveBeenCalledWith(defaultProps.aggregated);
 
   });
 

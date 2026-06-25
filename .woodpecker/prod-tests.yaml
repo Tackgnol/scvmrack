@@ -1,0 +1,131 @@
+# Runs on master before production deploy. This is the full candidate gate:
+# unit tests, browser component tests, backend integration, and Docker E2E.
+
+when:
+  - event: push
+    branch: master
+
+steps:
+  unit-test:
+    image: mcr.microsoft.com/playwright:v1.58.2-jammy
+    environment:
+      NPMRC_CONTENT:
+        from_secret: npmrc_content
+    commands:
+      - |
+        set -e
+        cleanup() {
+          rm -f .npmrc backend/.npmrc
+          rm -rf backend/node_modules frontend/node_modules frontend/dist frontend/coverage frontend/coverage-unit frontend/coverage-browser reports
+          npm cache clean --force || true
+        }
+        cleanup
+        trap cleanup EXIT
+
+        printf '%s\n' "$NPMRC_CONTENT" > .npmrc
+        cp .npmrc backend/.npmrc
+        npm --prefix backend ci --no-audit --no-fund
+        rm -f .npmrc backend/.npmrc
+        npm --prefix backend/tests/unit-be run test
+
+        npm --prefix frontend ci --no-audit --no-fund
+        npm --prefix frontend run test:unit
+
+  browser-test-chromium:
+    image: mcr.microsoft.com/playwright:v1.58.2-jammy
+    depends_on:
+      - unit-test
+    environment:
+      VITEST_BROWSER_INSTANCES: chromium
+      CI: "true"
+    commands:
+      - |
+        set -e
+        npm --prefix frontend ci --no-audit --no-fund
+        npm --prefix frontend run test:browser
+
+  browser-test-firefox:
+    image: mcr.microsoft.com/playwright:v1.58.2-jammy
+    depends_on:
+      - browser-test-chromium
+    environment:
+      VITEST_BROWSER_INSTANCES: firefox
+      CI: "true"
+    commands:
+      - |
+        set -e
+        npm --prefix frontend ci --no-audit --no-fund
+        npm --prefix frontend run test:browser
+
+  browser-test-webkit:
+    image: mcr.microsoft.com/playwright:v1.58.2-jammy
+    depends_on:
+      - browser-test-firefox
+    environment:
+      VITEST_BROWSER_INSTANCES: webkit
+      CI: "true"
+    commands:
+      - |
+        set -e
+        npm --prefix frontend ci --no-audit --no-fund
+        npm --prefix frontend run test:browser
+
+  integration-test:
+    image: docker:27-cli
+    depends_on:
+      - browser-test-webkit
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      NPMRC_CONTENT:
+        from_secret: npmrc_content
+    commands:
+      - |
+        set -e
+        cleanup() {
+          rm -f .npmrc backend/.npmrc
+          docker compose -f compose.integration-be.yaml down --volumes --remove-orphans --rmi all || true
+          docker builder prune -af || true
+          docker image prune -af || true
+        }
+        cleanup
+        trap cleanup EXIT
+
+        printf '%s\n' "$NPMRC_CONTENT" > .npmrc
+        cp .npmrc backend/.npmrc
+        docker compose -f compose.integration-be.yaml build
+        docker compose -f compose.integration-be.yaml up -d --wait --wait-timeout 300 db
+        docker compose -f compose.integration-be.yaml run --rm migrate
+        docker compose -f compose.integration-be.yaml up -d --wait --wait-timeout 300 --no-deps api
+        docker compose -f compose.integration-be.yaml run --rm --no-deps integration
+
+  e2e-test:
+    image: docker:27-cli
+    depends_on:
+      - integration-test
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      NPMRC_CONTENT:
+        from_secret: npmrc_content
+    commands:
+      - |
+        set -e
+        cleanup() {
+          rm -f .npmrc backend/.npmrc
+          docker compose -f compose.e2e.yaml down --volumes --remove-orphans --rmi all || true
+          docker builder prune -af || true
+          docker image prune -af || true
+        }
+        cleanup
+        trap cleanup EXIT
+
+        printf '%s\n' "$NPMRC_CONTENT" > .npmrc
+        docker compose -f compose.e2e.yaml build
+
+        if ! docker compose -f compose.e2e.yaml up -d --wait --wait-timeout 300 db mailpit api web; then
+          docker compose -f compose.e2e.yaml logs --no-color --tail 80 || true
+          exit 1
+        fi
+
+        docker compose -f compose.e2e.yaml run --rm e2e

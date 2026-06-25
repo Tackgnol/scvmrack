@@ -5,7 +5,7 @@
  * Mirrors the PL/pgSQL hydrate_inventory_uses + resolve_item_default_uses
  * functions from inventory_management.sql.
  */
-import prisma from './prisma.js';
+import { catalogRepository } from '../repositories/catalog-repository.js';
 import { rollToModifier } from '../utils.js';
 import type { Roller } from '@tackgnol/rpg-tools-roller';
 
@@ -29,18 +29,8 @@ export async function hydrateInventoryUses(
   const uniqueKeys = [...new Set(keys)];
 
   const [petRows, equipmentRows] = await Promise.all([
-    uniqueKeys.length > 0
-      ? prisma.pet.findMany({
-          where: { key: { in: uniqueKeys } },
-          select: { key: true, hp: true },
-        })
-      : Promise.resolve([]),
-    uniqueKeys.length > 0
-      ? prisma.equipment.findMany({
-          where: { key: { in: uniqueKeys } },
-          select: { key: true, tags: true, defaultAmount: true },
-        })
-      : Promise.resolve([]),
+    catalogRepository.findPetsByKeys(uniqueKeys),
+    catalogRepository.findEquipmentByKeys(uniqueKeys),
   ]);
 
   const petMap = new Map(petRows.map((p) => [p.key, p]));

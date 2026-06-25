@@ -104,4 +104,12 @@ describe('LandingPage', () => {
       .element(page.getByRole('link', { name: /adam kościelniak/i }))
       .toHaveAttribute('href', 'https://adamkoscielniak.me');
   });
+
+  it('links the production credit to the rpgtools suite', async () => {
+    await renderLanding();
+
+    await expect
+      .element(page.getByRole('link', { name: /rpgtools\.co/i }))
+      .toHaveAttribute('href', 'https://rpgtools.co');
+  });
 });

@@ -9,6 +9,7 @@ import { useCharacter } from '@/CharacterContext/CharacterContext';
 import { appHistory } from '@/router/history';
 import { useQueryClient } from '@tanstack/react-query';
 import type { AnchorHTMLAttributes, ReactNode } from 'react';
+import i18n, { loadLanguage } from '@/i18n';
 
 type MockLinkProps = {
   children: ReactNode;
@@ -115,8 +116,9 @@ describe('CharactersListPage', () => {
     );
   };
 
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks();
+    await i18n.changeLanguage('en');
     refetch.mockResolvedValue(undefined);
     mutateAsync.mockResolvedValue(undefined);
     setCharacterId.mockResolvedValue(undefined);
@@ -200,6 +202,34 @@ describe('CharactersListPage', () => {
     expect(appHistory.flush).toHaveBeenCalled();
   });
 
+  it('requests saved characters in the selected Polish locale', async () => {
+    await loadLanguage('pl');
+    await i18n.changeLanguage('pl');
+
+    await renderCharactersList({
+      query: {
+        data: [
+          {
+            id: 'char-2',
+            name: 'Maloiz',
+            className: 'Rynsztokowa Łajza',
+            currentHp: 1,
+            maxHp: 1,
+            updatedAt: '2026-01-20T12:00:00.000Z',
+          },
+        ],
+      },
+    });
+
+    await expect.element(page.getByText('Rynsztokowa Łajza')).toBeVisible();
+    expect($api.useQuery).toHaveBeenCalledWith(
+      'get',
+      '/api/characters',
+      { params: { query: { locale: 'pl' } } },
+      expect.objectContaining({ enabled: true })
+    );
+  });
+
   it('navigates after create-new succeeds', async () => {
     generateNew.mockImplementation((_classId, options) => {
       options.onSuccess('created-char');
@@ -212,6 +242,14 @@ describe('CharactersListPage', () => {
     await expect.poll(() => appHistory.push).toHaveBeenCalledWith(
       '/character/created-char'
     );
+  });
+
+  it('offers the creation flow next to quick generate', async () => {
+    await renderCharactersList();
+
+    const forgeLink = page.getByRole('link', { name: /forge a scvm/i }).first();
+    await expect.element(forgeLink).toBeVisible();
+    await expect.element(forgeLink).toHaveAttribute('href', '/character/create');
   });
 
   it('shows a create error when create-new fails', async () => {
@@ -241,27 +279,31 @@ describe('CharactersListPage', () => {
   });
 
   it('does not delete when confirmation is cancelled', async () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(false);
-
     await renderCharactersList({
       query: {
         data: [{ id: 'char-2', name: 'Doomed', className: 'Fanged Deserter' }],
       },
     });
     await userEvent.click(page.getByRole('button', { name: /delete/i }));
+    await expect
+      .element(page.getByRole('dialog', { name: /delete this scvm/i }))
+      .toBeVisible();
+    await userEvent.click(page.getByRole('button', { name: /cancel/i }));
 
     expect(mutateAsync).not.toHaveBeenCalled();
   });
 
   it('deletes the active character, clears it, and refetches the list', async () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
-
     await renderCharactersList({
       query: {
         data: [{ id: 'char-1', name: 'Doomed', className: 'Fanged Deserter' }],
       },
     });
     await userEvent.click(page.getByRole('button', { name: /delete/i }));
+    await expect
+      .element(page.getByText(/this is the active sheet/i))
+      .toBeVisible();
+    await userEvent.click(page.getByRole('button', { name: /delete character/i }));
 
     await expect.poll(() => mutateAsync).toHaveBeenCalledWith({
       params: { path: { id: 'char-1' } },
@@ -272,7 +314,6 @@ describe('CharactersListPage', () => {
   });
 
   it('shows a delete error when deletion fails', async () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
     mutateAsync.mockRejectedValueOnce({
       statusCode: 403,
       message: 'You do not own this character',
@@ -284,12 +325,12 @@ describe('CharactersListPage', () => {
       },
     });
     await userEvent.click(page.getByRole('button', { name: /delete/i }));
+    await userEvent.click(page.getByRole('button', { name: /delete character/i }));
 
     await expect.element(page.getByText(/you do not own this character/i)).toBeVisible();
   });
 
   it('shows a fallback delete error when unexpected reporting is unavailable', async () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
     mutateAsync.mockRejectedValueOnce({
       statusCode: 500,
       code: 'INTERNAL_ERROR',
@@ -302,6 +343,7 @@ describe('CharactersListPage', () => {
       },
     });
     await userEvent.click(page.getByRole('button', { name: /delete/i }));
+    await userEvent.click(page.getByRole('button', { name: /delete character/i }));
 
     await expect.element(page.getByText(/failed to delete character/i)).toBeVisible();
   });

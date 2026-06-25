@@ -15,7 +15,12 @@
 All application routes are mounted under the `/api` prefix.
 
 ### Characters (`/api/characters`)
-- `POST /new` — generate a new random character (DB function `generate_character`)
+- `POST /new` — generate a new random character or confirm a seeded creation
+  draft (TypeScript generator)
+- `GET /classes` — localized class list for the creation gate
+- `POST /draft` — build or rehydrate a stateless draft preview without a DB write
+- `POST /draft/reroll/:section` — replace one draft section seed and rebuild the
+  preview
 - `GET /` — list characters owned by the current session user (optional `locale` query param; falls back to `Accept-Language`)
 - `GET /count` — total character count
 - `GET /:id` — fetch a localized character (`get_character_full(id, locale)`)
@@ -25,6 +30,15 @@ All application routes are mounted under the `/api` prefix.
 ### Equipment (`/api/equipment`)
 - `GET /search` — fuzzy, locale-aware item search (PostgreSQL trigram indexes)
 - `GET /:itemType/:id` — fetch a full item by type and id
+
+### Parties (`/api/parties`)
+- `POST /` — GM creates a party; `GET /` — list parties the GM owns
+- `GET /:id` — party detail (role, members); `PATCH /:id` — rename; `DELETE /:id` — disband
+- `POST /join` — bind a character to a party via an invite token
+- `POST /:id/regenerate-link` — rotate the invite token
+- `POST /:id/replace-member` / `/leave` (character owner) and `/kick` (GM)
+- `GET /:id/stream` — Server-Sent-Events feed of member/HP/presence changes,
+  served over the shared-auth credentialed fetch path
 
 ### Feedback (`/api/feedback`)
 - `POST /` — forward a user feedback **or** unexpected-error report to GlitchTip
@@ -61,6 +75,12 @@ Centralized, structured error pipeline (`src/errors.ts` + `plugins/error-handler
   text remains plain API data and HTML escaping is left to render boundaries
 - Swagger/OpenAPI disabled in production; container runs as non-root `node`
 - Pentested with Shannon AI (2026-03-23); findings remediated or accepted
+
+## Architecture
+
+- **Repository-only Prisma access.** All direct Prisma calls have been removed from `src/lib/`. A new `catalog-repository.ts` centralises catalog reads (weapons, armors, equipment, pets, classes, translations, class ability modifiers). Library files (`inventory.ts`, `get-character-full.ts`, `item-search-service.ts`) now call the repository layer, restoring the Repository → Service → Controller invariant.
+- **Structured error logging.** The `unexpected()` helper in `src/services/result.ts` logs unexpected errors via `{ err: error }` so Pino's error serializer captures the full stack trace.
+- **SSE half-open socket fix.** The party stream route (`GET /api/parties/:id/stream`) calls `reply.raw.end()` in its cleanup path to close the socket when a write error fires before the client disconnects.
 
 ## Testing
 

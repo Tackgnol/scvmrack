@@ -7,8 +7,10 @@ export const CLAIM_CHARACTER_QUERY_PARAM = 'claim-character';
 
 const HOME_PATH = '/character';
 const NEW_CHARACTER_PATH = '/character/new';
+const FORGE_PATH = '/character/create';
 const PRINT_PATH = '/print';
-const RESERVED_CHARACTER_PATH_SEGMENTS = new Set(['new']);
+const RESERVED_CHARACTER_PATH_SEGMENTS = new Set(['new', 'create']);
+const PARTY_CHARACTER_PATH_PATTERN = /^\/party\/([^/]+)\/character\/([^/]+)/;
 
 const isCharacterPath = (pathname: string): boolean => {
     return pathname === HOME_PATH || pathname.startsWith(`${HOME_PATH}/`);
@@ -17,6 +19,9 @@ const isCharacterPath = (pathname: string): boolean => {
 const buildCharacterPath = (characterId: string | null): string => {
     return characterId ? `${HOME_PATH}/${encodeURIComponent(characterId)}` : NEW_CHARACTER_PATH;
 };
+
+export const buildPartyCharacterPath = (partyId: string, characterId: string): string =>
+    `/party/${encodeURIComponent(partyId)}/character/${encodeURIComponent(characterId)}`;
 
 const normalizeHash = (hash: string): string => {
     if (!hash) {
@@ -81,6 +86,11 @@ export const getCurrentCharacterIdParam = (): string | null => {
     if (queryId) return queryId;
 
     const pathname = appHistory.location.pathname;
+    const partyMatch = pathname.match(PARTY_CHARACTER_PATH_PATTERN);
+    if (partyMatch?.[2]) {
+        return decodeURIComponent(partyMatch[2]);
+    }
+
     const match = pathname.match(/^\/character\/([^/]+)/);
     if (!match) {
         return null;
@@ -95,6 +105,28 @@ export const getCurrentPendingClaimCharacterId = (): string | null => {
 };
 
 export const setCurrentCharacterIdParam = async (characterId: string | null): Promise<void> => {
+    // The forge (`/character/create`) owns its own navigation and is not bound to
+    // an existing character. Syncing the current/last character id here would
+    // rewrite the URL to that character's sheet (isCharacterPath matches any
+    // `/character/...`), bouncing the user off the forge — so skip it entirely.
+    if (appHistory.location.pathname === FORGE_PATH) {
+        return;
+    }
+
+    const partyMatch = appHistory.location.pathname.match(PARTY_CHARACTER_PATH_PATTERN);
+    if (partyMatch?.[1]) {
+        const searchParams = getCurrentSearchParams();
+        searchParams.delete(CHARACTER_ID_QUERY_PARAM);
+        await appHistory.replace(buildPath(
+            characterId
+                ? buildPartyCharacterPath(decodeURIComponent(partyMatch[1]), characterId)
+                : HOME_PATH,
+            searchParams,
+            appHistory.location.hash
+        ));
+        return;
+    }
+
     if (isCharacterPath(appHistory.location.pathname)) {
         const searchParams = getCurrentSearchParams();
         searchParams.delete(CHARACTER_ID_QUERY_PARAM);
