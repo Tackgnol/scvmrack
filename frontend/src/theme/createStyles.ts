@@ -278,9 +278,6 @@ export const classGateStyles = {
   cardTitle: {
     color: morkBorgColors.yellow,
     fontFamily: fonts.medieval,
-    // Polish class names run long and uneven; uppercasing them and letting the
-    // headline fill the card turns the ragged lengths into a deliberate
-    // brutalist headline rather than awkward wrapping.
     fontSize: { xs: '1.45rem', sm: '1.45rem' },
     lineHeight: 0.95,
     letterSpacing: '0.01em',
