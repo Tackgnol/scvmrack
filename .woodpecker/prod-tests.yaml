@@ -3,7 +3,6 @@
 
 name: prod-tests
 
-
 when:
   - event: push
     branch: master

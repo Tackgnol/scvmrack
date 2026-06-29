@@ -6,26 +6,10 @@ import {
   JoinPartyBodySchema,
   MemberBodySchema,
   PartyIdParamsSchema,
-  PartyLimitsSchema,
-  PromotePartyBodySchema,
   RenamePartyBodySchema,
   ReplaceMemberBodySchema,
 } from '../../schemas/party.js';
-import {
-  EnemyBodySchema,
-  EnemyCardListSchema,
-  EnemyCardsQuerySchema,
-  EnemyFullSchema,
-  EnemyHealthBodySchema,
-  EnemyListSchema,
-  RoomEnemyParamsSchema,
-  RoomParamsSchema,
-} from '../../schemas/enemy.js';
 import { sendServiceError } from '../../errors.js';
-import {
-  createEnemyService,
-  type EnemyInput,
-} from '../../services/enemy-service.js';
 import { createPartyService } from '../../services/party-service.js';
 import type { PartyEvent } from '../../plugins/party-bus.js';
 
@@ -37,30 +21,6 @@ const parties: FastifyPluginAsync = async (fastify): Promise<void> => {
   const partyService = (request: {
     log: Parameters<typeof createPartyService>[0];
   }) => createPartyService(request.log, fastify.partyBus);
-  const enemyService = (request: {
-    log: Parameters<typeof createEnemyService>[0];
-  }) => createEnemyService(request.log);
-
-  // GET /api/parties/limits - public party config (configured max warband size).
-  // No auth: a single non-sensitive constant the OBR roster (which has no
-  // server-side party in-room) shows as its denominator. Single source of truth
-  // is the backend PARTY_MAX_MEMBERS env, surfaced via the service.
-  fastify.get(
-    '/limits',
-    {
-      schema: {
-        description: 'Party limits (configured max members)',
-        tags: ['parties'],
-        response: {
-          200: PartyLimitsSchema,
-          500: ErrorSchema,
-        },
-      },
-    },
-    async (request) => {
-      return { maxMembers: partyService(request).maxMembers };
-    }
-  );
 
   // POST /api/parties - GM creates a party
   fastify.post<{ Body: { name?: string } }>(
@@ -87,44 +47,6 @@ const parties: FastifyPluginAsync = async (fastify): Promise<void> => {
         return sendServiceError(reply, request, result.error);
       }
       return reply.status(201).send(result.value);
-    }
-  );
-
-  // POST /api/parties/promote - promote an OBR room into a durable party
-  fastify.post<{ Body: { obrRoomId: string; name?: string } }>(
-    '/promote',
-    {
-      config: {
-        rateLimit: {
-          max: process.env.NODE_ENV === 'test' ? 10000 : 10,
-          timeWindow: '1 minute',
-        },
-      },
-      schema: {
-        description: 'Promote an Owlbear room into a party (GM only)',
-        tags: ['parties'],
-        body: PromotePartyBodySchema,
-        response: {
-          200: { type: 'object', additionalProperties: true },
-          400: ErrorSchema,
-          401: ErrorSchema,
-          409: ErrorSchema,
-          429: ErrorSchema,
-          500: ErrorSchema,
-        },
-      },
-    },
-    async (request, reply) => {
-      const result = await partyService(request).promoteRoom({
-        session: request.appSession,
-        obrRoomId: request.body.obrRoomId,
-        name: request.body.name,
-      });
-
-      if (!result.ok) {
-        return sendServiceError(reply, request, result.error);
-      }
-      return result.value;
     }
   );
 
@@ -540,210 +462,6 @@ const parties: FastifyPluginAsync = async (fastify): Promise<void> => {
         session: request.appSession,
         id: request.params.id,
         characterId: request.body.characterId,
-      });
-
-      if (!result.ok) {
-        return sendServiceError(reply, request, result.error);
-      }
-      return reply.status(204).send();
-    }
-  );
-
-  // GET /by-room/:roomId/enemies - full stat blocks for the room party owner.
-  fastify.get<{ Params: { roomId: string } }>(
-    '/by-room/:roomId/enemies',
-    {
-      schema: {
-        description: 'List full enemies for the room party owner (GM)',
-        tags: ['enemies'],
-        params: RoomParamsSchema,
-        response: {
-          200: EnemyListSchema,
-          400: ErrorSchema,
-          401: ErrorSchema,
-          404: ErrorSchema,
-          500: ErrorSchema,
-        },
-      },
-    },
-    async (request, reply) => {
-      const result = await enemyService(request).listForOwner({
-        session: request.appSession,
-        roomId: request.params.roomId,
-      });
-
-      if (!result.ok) {
-        return sendServiceError(reply, request, result.error);
-      }
-      return result.value;
-    }
-  );
-
-  // GET /by-room/:roomId/enemies/cards?characterId= - safe player projection.
-  fastify.get<{
-    Params: { roomId: string };
-    Querystring: { characterId: string };
-  }>(
-    '/by-room/:roomId/enemies/cards',
-    {
-      config: {
-        rateLimit: {
-          max: process.env.NODE_ENV === 'test' ? 10000 : 30,
-          timeWindow: '1 minute',
-        },
-      },
-      schema: {
-        description: 'Safe enemy cards for a player bound to the room',
-        tags: ['enemies'],
-        params: RoomParamsSchema,
-        querystring: EnemyCardsQuerySchema,
-        response: {
-          200: EnemyCardListSchema,
-          400: ErrorSchema,
-          429: ErrorSchema,
-          500: ErrorSchema,
-        },
-      },
-    },
-    async (request, reply) => {
-      const result = await enemyService(request).listCardsForPlayer({
-        roomId: request.params.roomId,
-        characterId: request.query.characterId,
-      });
-
-      if (!result.ok) {
-        return sendServiceError(reply, request, result.error);
-      }
-      return result.value;
-    }
-  );
-
-  // POST /by-room/:roomId/enemies - create an enemy (GM only).
-  fastify.post<{ Params: { roomId: string }; Body: EnemyInput }>(
-    '/by-room/:roomId/enemies',
-    {
-      schema: {
-        description: 'Create an enemy (GM)',
-        tags: ['enemies'],
-        params: RoomParamsSchema,
-        body: EnemyBodySchema,
-        response: {
-          201: EnemyFullSchema,
-          400: ErrorSchema,
-          401: ErrorSchema,
-          404: ErrorSchema,
-          500: ErrorSchema,
-        },
-      },
-    },
-    async (request, reply) => {
-      const result = await enemyService(request).create({
-        session: request.appSession,
-        roomId: request.params.roomId,
-        body: request.body,
-      });
-
-      if (!result.ok) {
-        return sendServiceError(reply, request, result.error);
-      }
-      return reply.status(201).send(result.value);
-    }
-  );
-
-  // PATCH /by-room/:roomId/enemies/:enemyId - full update (GM only).
-  fastify.patch<{
-    Params: { roomId: string; enemyId: string };
-    Body: EnemyInput;
-  }>(
-    '/by-room/:roomId/enemies/:enemyId',
-    {
-      schema: {
-        description: 'Update an enemy (GM)',
-        tags: ['enemies'],
-        params: RoomEnemyParamsSchema,
-        body: EnemyBodySchema,
-        response: {
-          200: EnemyFullSchema,
-          400: ErrorSchema,
-          401: ErrorSchema,
-          404: ErrorSchema,
-          500: ErrorSchema,
-        },
-      },
-    },
-    async (request, reply) => {
-      const result = await enemyService(request).update({
-        session: request.appSession,
-        roomId: request.params.roomId,
-        enemyId: request.params.enemyId,
-        body: request.body,
-      });
-
-      if (!result.ok) {
-        return sendServiceError(reply, request, result.error);
-      }
-      return result.value;
-    }
-  );
-
-  // PATCH /by-room/:roomId/enemies/:enemyId/health - atomic health set.
-  fastify.patch<{
-    Params: { roomId: string; enemyId: string };
-    Body: { currentHealth: number };
-  }>(
-    '/by-room/:roomId/enemies/:enemyId/health',
-    {
-      schema: {
-        description: 'Set an enemy current health (GM)',
-        tags: ['enemies'],
-        params: RoomEnemyParamsSchema,
-        body: EnemyHealthBodySchema,
-        response: {
-          200: EnemyFullSchema,
-          400: ErrorSchema,
-          401: ErrorSchema,
-          404: ErrorSchema,
-          500: ErrorSchema,
-        },
-      },
-    },
-    async (request, reply) => {
-      const result = await enemyService(request).setHealth({
-        session: request.appSession,
-        roomId: request.params.roomId,
-        enemyId: request.params.enemyId,
-        currentHealth: request.body.currentHealth,
-      });
-
-      if (!result.ok) {
-        return sendServiceError(reply, request, result.error);
-      }
-      return result.value;
-    }
-  );
-
-  // DELETE /by-room/:roomId/enemies/:enemyId - delete an enemy (GM only).
-  fastify.delete<{ Params: { roomId: string; enemyId: string } }>(
-    '/by-room/:roomId/enemies/:enemyId',
-    {
-      schema: {
-        description: 'Delete an enemy (GM)',
-        tags: ['enemies'],
-        params: RoomEnemyParamsSchema,
-        response: {
-          204: { type: 'null' },
-          400: ErrorSchema,
-          401: ErrorSchema,
-          404: ErrorSchema,
-          500: ErrorSchema,
-        },
-      },
-    },
-    async (request, reply) => {
-      const result = await enemyService(request).remove({
-        session: request.appSession,
-        roomId: request.params.roomId,
-        enemyId: request.params.enemyId,
       });
 
       if (!result.ok) {

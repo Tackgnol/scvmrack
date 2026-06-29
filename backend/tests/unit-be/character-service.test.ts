@@ -33,16 +33,6 @@ const state = {
   userHasCharactersResult: false,
   generatedId: 'generated-id',
   fullResult: { id: VALID_ID, name: 'Hero' } as Record<string, unknown> | null,
-  // When set, getCharacterFull resolves per-id from this map (missing key → null);
-  // otherwise it falls back to fullResult. Powers the getCards batch-read tests.
-  fullById: null as Record<string, Record<string, unknown> | null> | null,
-  fullCalls: [] as Array<{ id: string; locale: string }>,
-  // When set, filterIdsInRoom returns only these ids; otherwise it passes ids
-  // through (all bound to the room). Powers the (roomId, id) gate tests.
-  inRoomIds: null as string[] | null,
-  filterRoomCalls: [] as Array<{ ids: string[]; roomId: string }>,
-  setObrRoomCalls: [] as Array<{ id: string; roomId: string }>,
-  setObrRoomError: null as unknown,
   updateCalls: [] as Array<{ id: string; data: unknown }>,
   generateCalls: [] as Array<{ classId: number | null; userId?: string }>,
   createFromDraftCalls: [] as Array<{ draft: unknown; userId: string }>,
@@ -73,12 +63,6 @@ function resetState(): void {
   state.userHasCharactersResult = false;
   state.generatedId = 'generated-id';
   state.fullResult = { id: VALID_ID, name: 'Hero' };
-  state.fullById = null;
-  state.fullCalls = [];
-  state.inRoomIds = null;
-  state.filterRoomCalls = [];
-  state.setObrRoomCalls = [];
-  state.setObrRoomError = null;
   state.updateCalls = [];
   state.generateCalls = [];
   state.createFromDraftCalls = [];
@@ -105,15 +89,6 @@ mock.module('../../src/repositories/character-repository.js', {
       },
       getPresence: async () => state.presenceRow,
       getPartyId: async () => state.partyIdRow,
-      filterIdsInRoom: async (ids: string[], roomId: string) => {
-        state.filterRoomCalls.push({ ids, roomId });
-        return state.inRoomIds ?? ids;
-      },
-      setObrRoom: async (id: string, roomId: string) => {
-        state.setObrRoomCalls.push({ id, roomId });
-        if (state.setObrRoomError) throw state.setObrRoomError;
-        return {};
-      },
       update: async (id: string, data: unknown) => {
         state.updateCalls.push({ id, data });
         if (state.updateError) throw state.updateError;
@@ -163,12 +138,8 @@ mock.module('../../src/lib/generate-character.js', {
 
 mock.module('../../src/lib/get-character-full.js', {
   namedExports: {
-    getCharacterFull: async (id: string, locale: string) => {
-      state.fullCalls.push({ id, locale });
+    getCharacterFull: async () => {
       if (state.fullError) throw state.fullError;
-      if (state.fullById) {
-        return state.fullById[id] ?? null;
-      }
       return state.fullResult;
     },
   },
@@ -428,165 +399,6 @@ test('getById returns a read-only party view for another party member', async ()
 
   assert.equal(r.ok, true);
   assert.equal((r as any).value.viewerAccess, 'party');
-});
-
-// ---- getCards (compact batch read) ----
-const VALID_ID_2 = '22222222-2222-4222-8222-222222222222';
-
-test('getCards returns a card per valid id in input order, sans private fields', async () => {
-  state.fullById = {
-    [VALID_ID]: { id: VALID_ID, name: 'Alpha', currentHp: 5, notes: 'secret-a' },
-    [VALID_ID_2]: { id: VALID_ID_2, name: 'Beta', currentHp: 3, notes: 'secret-b' },
-  };
-
-  const r = await service().getCards({ ids: [VALID_ID, VALID_ID_2], roomId: 'room-1', locale: 'en' });
-
-  assert.equal(r.ok, true);
-  const cards = (r as any).value as Array<Record<string, unknown>>;
-  assert.equal(cards.length, 2);
-  // Input order is preserved.
-  assert.equal(cards[0].id, VALID_ID);
-  assert.equal(cards[0].name, 'Alpha');
-  assert.equal(cards[1].id, VALID_ID_2);
-  assert.equal(cards[1].name, 'Beta');
-  // Compact projection shape: private fields are dropped.
-  assert.equal('notes' in cards[0], false);
-  assert.equal('notes' in cards[1], false);
-  // Allowlisted card fields are present.
-  assert.equal(cards[0].currentHp, 5);
-  assert.ok('equippedWeapons' in cards[0]);
-});
-
-test('getCards silently drops a non-UUID id and only fetches valid ones', async () => {
-  state.fullById = {
-    [VALID_ID]: { id: VALID_ID, name: 'Alpha' },
-  };
-
-  const r = await service().getCards({ ids: ['not-a-uuid', VALID_ID], roomId: 'room-1', locale: 'en' });
-
-  assert.equal(r.ok, true);
-  const cards = (r as any).value as Array<Record<string, unknown>>;
-  assert.equal(cards.length, 1);
-  assert.equal(cards[0].id, VALID_ID);
-  // Only the valid id reached getCharacterFull.
-  assert.deepEqual(state.fullCalls, [{ id: VALID_ID, locale: 'en' }]);
-});
-
-test('getCards drops ids whose character no longer exists (null full)', async () => {
-  state.fullById = {
-    [VALID_ID]: null,
-    [VALID_ID_2]: { id: VALID_ID_2, name: 'Beta' },
-  };
-
-  const r = await service().getCards({ ids: [VALID_ID, VALID_ID_2], roomId: 'room-1', locale: 'en' });
-
-  assert.equal(r.ok, true);
-  const cards = (r as any).value as Array<Record<string, unknown>>;
-  assert.equal(cards.length, 1);
-  assert.equal(cards[0].id, VALID_ID_2);
-});
-
-test('getCards returns ok([]) for empty/all-invalid ids without fetching', async () => {
-  const empty = await service().getCards({ ids: [], roomId: 'room-1', locale: 'en' });
-  assert.equal(empty.ok, true);
-  assert.deepEqual((empty as any).value, []);
-
-  const allInvalid = await service().getCards({ ids: ['x', 'not-a-uuid'], roomId: 'room-1', locale: 'en' });
-  assert.equal(allInvalid.ok, true);
-  assert.deepEqual((allInvalid as any).value, []);
-
-  assert.deepEqual(state.fullCalls, []);
-});
-
-test('getCards caps the batch at the first 50 ids in input order', async () => {
-  const ids = Array.from(
-    { length: 61 },
-    (_, i) => `${i.toString(16).padStart(8, '0')}-1111-4111-8111-111111111111`
-  );
-
-  const r = await service().getCards({ ids, roomId: 'room-1', locale: 'en' });
-
-  assert.equal(r.ok, true);
-  assert.equal(state.fullCalls.length, 50);
-  assert.deepEqual(
-    state.fullCalls.map((c) => c.id),
-    ids.slice(0, 50)
-  );
-});
-
-test('getCards maps an unexpected failure to 5xx CHARACTER_CARDS_FAILED', async () => {
-  state.fullError = new Error('boom');
-  const r = await service().getCards({ ids: [VALID_ID], roomId: 'room-1', locale: 'en' });
-  assert.equal((r as any).error.statusCode, 500);
-  assert.equal((r as any).error.code, 'CHARACTER_CARDS_FAILED');
-});
-
-test('getCards drops ids not bound to the room and only fetches the survivors', async () => {
-  state.inRoomIds = [VALID_ID_2]; // VALID_ID is bound to a different room
-  state.fullById = {
-    [VALID_ID]: { id: VALID_ID, name: 'Alpha' },
-    [VALID_ID_2]: { id: VALID_ID_2, name: 'Beta' },
-  };
-
-  const r = await service().getCards({
-    ids: [VALID_ID, VALID_ID_2],
-    roomId: 'room-1',
-    locale: 'en',
-  });
-
-  assert.equal(r.ok, true);
-  const cards = (r as any).value as Array<Record<string, unknown>>;
-  assert.equal(cards.length, 1);
-  assert.equal(cards[0].id, VALID_ID_2);
-  assert.deepEqual(state.filterRoomCalls, [
-    { ids: [VALID_ID, VALID_ID_2], roomId: 'room-1' },
-  ]);
-  assert.deepEqual(state.fullCalls, [{ id: VALID_ID_2, locale: 'en' }]);
-});
-
-test('getCards returns ok([]) without a roomId and never hits the repo', async () => {
-  const r = await service().getCards({ ids: [VALID_ID], roomId: '', locale: 'en' });
-  assert.equal(r.ok, true);
-  assert.deepEqual((r as any).value, []);
-  assert.deepEqual(state.filterRoomCalls, []);
-  assert.deepEqual(state.fullCalls, []);
-});
-
-// ---- bindObrRoom (capability-gate write half) ----
-test('bindObrRoom stamps the room for the owner', async () => {
-  state.ownerRow = { userId: 'user-1' };
-  const r = await service().bindObrRoom({
-    id: VALID_ID,
-    session: session('user-1'),
-    roomId: '  room-1  ',
-  });
-  assert.equal(r.ok, true);
-  assert.deepEqual(state.setObrRoomCalls, [{ id: VALID_ID, roomId: 'room-1' }]);
-});
-
-test('bindObrRoom rejects a non-owner with 403 and writes nothing', async () => {
-  state.ownerRow = { userId: 'someone-else' };
-  const r = await service().bindObrRoom({
-    id: VALID_ID,
-    session: session('user-1'),
-    roomId: 'room-1',
-  });
-  assert.equal(r.ok, false);
-  assert.equal((r as any).error.statusCode, 403);
-  assert.deepEqual(state.setObrRoomCalls, []);
-});
-
-test('bindObrRoom rejects an empty room id with 400', async () => {
-  state.ownerRow = { userId: 'user-1' };
-  const r = await service().bindObrRoom({
-    id: VALID_ID,
-    session: session('user-1'),
-    roomId: '   ',
-  });
-  assert.equal(r.ok, false);
-  assert.equal((r as any).error.statusCode, 400);
-  assert.equal((r as any).error.code, 'INVALID_OBR_ROOM_ID');
-  assert.deepEqual(state.setObrRoomCalls, []);
 });
 
 // ---- update ----

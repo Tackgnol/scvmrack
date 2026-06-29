@@ -15,38 +15,24 @@
 All application routes are mounted under the `/api` prefix.
 
 ### Characters (`/api/characters`)
-
 - `POST /new` — generate a new random character or confirm a seeded creation
   draft (TypeScript generator)
 - `GET /classes` — localized class list for the creation gate
 - `POST /draft` — build or rehydrate a stateless draft preview without a DB write
 - `POST /draft/reroll/:section` — replace one draft section seed and rebuild the
   preview
-- `GET /cards` — compact, table-visible character cards for the Owlbear Rodeo
-  roster and card peek; includes combat targets, armor DR data, equipped weapons,
-  narrowed carried equipment, traits, and computed modifiers, while private
-  notes, storage, and full inventory are not returned. Session-less but gated by
-  the `(roomId, id)` pair: a card is only returned when the requested `roomId`
-  matches the binding its owner recorded, so a leaked character UUID alone can't
-  read it
 - `GET /` — list characters owned by the current session user (optional `locale` query param; falls back to `Accept-Language`)
 - `GET /count` — total character count
 - `GET /:id` — fetch a localized character (`get_character_full(id, locale)`)
 - `PATCH /:id` — update a character (plain-text sanitization, length limits, bounds clamping)
-- `POST /:id/obr-room` — owner-only; record which Owlbear room a scvm is bound to
-  (the write half of the `/cards` capability gate)
 - `DELETE /:id` — delete a character (ownership-enforced)
 
 ### Equipment (`/api/equipment`)
-
 - `GET /search` — fuzzy, locale-aware item search (PostgreSQL trigram indexes)
 - `GET /:itemType/:id` — fetch a full item by type and id
 
 ### Parties (`/api/parties`)
-
 - `POST /` — GM creates a party; `GET /` — list parties the GM owns
-- `POST /promote` — logged-in GM promotes an Owlbear Rodeo room into a durable
-  scvmrack party, idempotently keyed by `obrRoomId`
 - `GET /:id` — party detail (role, members); `PATCH /:id` — rename; `DELETE /:id` — disband
 - `POST /join` — bind a character to a party via an invite token
 - `POST /:id/regenerate-link` — rotate the invite token
@@ -55,14 +41,12 @@ All application routes are mounted under the `/api` prefix.
   served over the shared-auth credentialed fetch path
 
 ### Feedback (`/api/feedback`)
-
 - `POST /` — forward a user feedback **or** unexpected-error report to GlitchTip
   server-side. Error reports capture the exception first and associate it with the
   feedback event. Rate-limited (20/min), CSRF-protected, schema-validated with
   length caps; degrades gracefully to a no-op when no Sentry DSN is configured.
 
 ### Platform
-
 - `GET /health` — liveness probe (`{ status, timestamp }`)
 - OAuth redirect tunnel route
 - Shared-auth endpoints: `/api/auth/*`, `/api/csrf-token`, `/api/claim/*`
@@ -71,7 +55,6 @@ All application routes are mounted under the `/api` prefix.
 ## Error handling
 
 Centralized, structured error pipeline (`src/errors.ts` + `plugins/error-handler.ts`):
-
 - Single `ApiHttpError` type and `ApiErrorPayload` shape:
   `{ error, message, code, statusCode, requestId, details? }`
 - Fastify validation errors → `400 VALIDATION_ERROR` with per-field `details`

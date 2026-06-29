@@ -4,8 +4,6 @@ User-facing release notes for **Scvm Rack**, newest first.
 
 | Version | Date | Notes |
 |---|---|---|
-| [0.5.1](./0.5.1.md) | 2026-06-28 | Owlbear Rodeo manifest install fix with app-served CORS headers and 0.5.1 manifest version |
-| [0.5.0](./0.5.0.md) | 2026-06-28 | Owlbear Rodeo extension with token binding, GM roster/card peek, room-gated cards, armor DR display, and room promotion |
 | [0.4.4](./0.4.4.md) | 2026-06-25 | Structured error logging, SSE connection cleanup, and catalog-repository seam |
 | [0.4.3](./0.4.3.md) | 2026-06-24 | GM party-name input contrast fix, 100-character browser validation, and localized form feedback |
 | [0.4.2](./0.4.2.md) | 2026-06-24 | Lantern and torches are classified as consumables again, localized sourcebook link (nerdsirens.pl) on the Polish view, and a Nerd Sirens translation credit in the footer |
