@@ -109,14 +109,6 @@ const gmRoute = createRoute({
     component: lazyRouteComponent(() => import('@/pages/GmOverviewPage').then(m => ({ default: m.GmOverviewPage }))),
 });
 
-// Popup callback for Owlbear Rodeo sign-in. Hands a one-time obr-exchange token
-// back to the OBR iframe, then closes. See ObrAuthDonePage / useObrSession.
-const obrAuthDoneRoute = createRoute({
-    getParentRoute: () => rootRoute,
-    path: '/obr-auth-done',
-    component: lazyRouteComponent(() => import('@/pages/ObrAuthDonePage').then(m => ({ default: m.ObrAuthDonePage }))),
-});
-
 const routeTree = rootRoute.addChildren([
     indexRoute,
     characterRoute,
@@ -134,7 +126,6 @@ const routeTree = rootRoute.addChildren([
     faqRoute,
     releaseRoute,
     gmRoute,
-    obrAuthDoneRoute,
 ]);
 
 export const router = createRouter({

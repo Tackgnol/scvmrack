@@ -1,8 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  toWarbandMember,
-  toWarbandMemberFromCard,
-} from '@/components/organisms/party/warbandMember';
+import { toWarbandMember } from '@/components/organisms/party/warbandMember';
 import type { Character } from '@/hooks/models';
 
 const baseCharacter: Character = {
@@ -154,43 +151,6 @@ describe('toWarbandMember', () => {
     expect(m.meleeC.some((r) => r.label === 'Gutter Instinct')).toBe(false);
   });
 
-  it('uses the shared combat filtering for contribution rows', () => {
-    const m = toWarbandMember({
-      ...baseCharacter,
-      computedModifiers: [
-        {
-          statistic: 'agility',
-          value: -2,
-          originName: 'Leather armor',
-          exclude: ['defence'],
-        },
-        {
-          statistic: 'agility',
-          value: 1,
-          originName: 'Nimble curse',
-        },
-        {
-          statistic: 'agility',
-          value: 0,
-          originName: 'Silent zero',
-        },
-      ],
-      modifiers: [
-        {
-          name: 'Dodge charm',
-          statistic: 'agility',
-          value: 1,
-          exclude: ['melee'],
-        },
-      ],
-    });
-
-    expect(m.dodgeC).toContainEqual({ label: 'Nimble curse', val: '+1' });
-    expect(m.dodgeC).toContainEqual({ label: 'Dodge charm', val: '+1' });
-    expect(m.dodgeC.some((row) => row.label === 'Leather armor')).toBe(false);
-    expect(m.dodgeC.some((row) => row.label === 'Silent zero')).toBe(false);
-  });
-
   it('marks a 0-hp scvm dead without inventing afflictions', () => {
     const m = toWarbandMember({ ...baseCharacter, currentHp: 0 });
     expect(m.dead).toBe(true);
@@ -257,49 +217,5 @@ describe('toWarbandMember', () => {
         desc: 'Frayed but useful.',
       },
     ]);
-  });
-});
-
-describe('toWarbandMemberFromCard', () => {
-  it('derives OBR armor damage reduction from compact armor dice', () => {
-    const m = toWarbandMemberFromCard({
-      ...baseCharacter,
-      equippedArmor: {
-        name: 'Leather armor',
-        dice: [2],
-      },
-    });
-
-    expect(m.armor).toBe('Leather armor (−d2)');
-    expect(m.dr).toBe(2);
-  });
-
-  it('falls back to armor tier for older compact OBR cards', () => {
-    const m = toWarbandMemberFromCard({
-      ...baseCharacter,
-      equippedArmor: {
-        name: 'Mail armor',
-        currentTier: 2,
-      },
-    });
-
-    expect(m.armor).toBe('Mail armor (−d4)');
-    expect(m.dr).toBe(4);
-  });
-
-  it('uses the shared combat filtering for compact OBR card rows', () => {
-    const m = toWarbandMemberFromCard({
-      ...baseCharacter,
-      computedModifiers: [
-        {
-          statistic: 'agility',
-          value: -2,
-          originName: 'Leather armor',
-          exclude: ['defence'],
-        },
-      ],
-    });
-
-    expect(m.dodgeC.some((row) => row.label === 'Leather armor')).toBe(false);
   });
 });

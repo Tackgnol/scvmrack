@@ -80,27 +80,6 @@ export const characterRepository = {
     return prisma.character.update({ where: { id }, data });
   },
 
-  /** Stamp the Owlbear room a character is bound to (capability gate for cards). */
-  setObrRoom(id: string, obrRoomId: string): Promise<unknown> {
-    return prisma.character.update({ where: { id }, data: { obrRoomId } });
-  },
-
-  /**
-   * The subset of `ids` whose stored Owlbear room matches `obrRoomId`. The PK
-   * index serves the `id IN (...)` lookup; `obr_room_id` is a residual filter on
-   * the (≤50) matched rows, so no extra index is needed.
-   */
-  async filterIdsInRoom(ids: string[], obrRoomId: string): Promise<string[]> {
-    if (ids.length === 0) {
-      return [];
-    }
-    const rows = await prisma.character.findMany({
-      where: { id: { in: ids }, obrRoomId },
-      select: { id: true },
-    });
-    return rows.map((row) => row.id);
-  },
-
   deleteById(id: string): Promise<{ count: number }> {
     return prisma.character.deleteMany({ where: { id } });
   },

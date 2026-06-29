@@ -7,7 +7,6 @@ import {
 } from '../repositories/character-repository.js';
 import { createCharacterFromDraft, generateCharacter } from '../lib/generate-character.js';
 import { getCharacterFull } from '../lib/get-character-full.js';
-import { toCharacterCard } from '../lib/character-card.js';
 import { hydrateInventoryUses } from '../lib/inventory.js';
 import type { CharacterDraft } from '../lib/draft-seeds.js';
 import { normalizeDropLowestAbilities } from '../lib/draft-seeds.js';
@@ -51,11 +50,6 @@ export type CharacterListRow = {
   createdAt: Date;
   updatedAt: Date;
 };
-
-// Request fan-out cap for the session-less OBR card batch. The room gate decides
-// which cards are readable; this bound keeps one request from hydrating an
-// unbounded number of valid ids.
-const MAX_CARD_IDS = 50;
 
 function sessionUserId(session: AppSession): string | null {
   return session?.user?.id ?? null;
@@ -325,86 +319,6 @@ export function createCharacterService(
       } catch (err) {
         return fail(
           unexpected(log, err,'CHARACTER_FETCH_FAILED', 'Failed to fetch character')
-        );
-      }
-    },
-
-    // Capability-by-pair read of compact, table-visible card fields only
-    // (toCharacterCard allowlist) — powers the OBR room roster/peek where viewers
-    // share no server-side party, so there is NO ownership/session check here (by
-    // design; contrast getById which gates access). The gate instead is the
-    // (roomId, id) pair: a card is returned only when the caller presents BOTH the
-    // character id AND the Owlbear room its owner bound it to (via bindObrRoom).
-    // The unguessable UUID was the only barrier before; pairing it with the room
-    // id means a leaked UUID alone no longer reads the card. Not a hard lock
-    // (anyone in the room can read), just enough friction that scraping this
-    // table-visible data isn't worth it.
-    async getCards(input: {
-      ids: string[];
-      roomId: string;
-      locale: string;
-    }): Promise<ServiceResult<unknown>> {
-      const ids = [
-        ...new Set(
-          (Array.isArray(input.ids) ? input.ids : []).filter((id) => isValidUUID(id))
-        ),
-      ].slice(0, MAX_CARD_IDS);
-      const roomId = typeof input.roomId === 'string' ? input.roomId.trim() : '';
-      if (ids.length === 0 || roomId.length === 0) {
-        return ok([]);
-      }
-      try {
-        const allowedIds = await characterRepository.filterIdsInRoom(ids, roomId);
-        if (allowedIds.length === 0) {
-          return ok([]);
-        }
-        const fulls = await Promise.all(
-          allowedIds.map((id) => getCharacterFull(id, input.locale))
-        );
-        const cards = fulls
-          .filter((f): f is Record<string, unknown> => f !== null)
-          .map(toCharacterCard);
-        return ok(cards);
-      } catch (err) {
-        return fail(
-          unexpected(log, err, 'CHARACTER_CARDS_FAILED', 'Failed to fetch character cards')
-        );
-      }
-    },
-
-    // Stamp the Owlbear room a character is bound to. Owner-gated: only the
-    // character's owner may record it, so an attacker can't make a scvm they
-    // don't own readable in their own room. This is the write half of the
-    // (roomId, id) capability gate enforced by getCards.
-    async bindObrRoom(input: {
-      id: string;
-      session: AppSession;
-      roomId: string;
-    }): Promise<ServiceResult<void>> {
-      if (!isValidUUID(input.id)) {
-        return fail(badRequest('INVALID_CHARACTER_ID', 'Invalid character ID'));
-      }
-      const denied = await ensureOwnership(input.id, input.session);
-      if (denied) {
-        return fail(denied);
-      }
-      const roomId = typeof input.roomId === 'string' ? input.roomId.trim() : '';
-      if (roomId.length === 0) {
-        return fail(
-          badRequest('INVALID_OBR_ROOM_ID', 'Owlbear room ID is required')
-        );
-      }
-      try {
-        await characterRepository.setObrRoom(input.id, roomId);
-        return ok(undefined);
-      } catch (err) {
-        return fail(
-          unexpected(
-            log,
-            err,
-            'CHARACTER_OBR_BIND_FAILED',
-            'Failed to bind character to room'
-          )
         );
       }
     },

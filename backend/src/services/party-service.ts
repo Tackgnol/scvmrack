@@ -10,7 +10,6 @@ import {
   ApiHttpError,
   apiError,
   badRequest,
-  conflict,
   notFound,
   unauthorized,
 } from '../errors.js';
@@ -253,75 +252,6 @@ export function createPartyService(
       } catch (err) {
         return fail(
           unexpected(log, err, 'PARTY_CREATE_FAILED', 'Failed to create party')
-        );
-      }
-    },
-
-    async promoteRoom(input: {
-      session: AppSession;
-      obrRoomId: string;
-      name?: string | null;
-    }): Promise<ServiceResult<unknown>> {
-      if (!isGm(input.session)) {
-        return fail(unauthorized());
-      }
-
-      const obrRoomId =
-        typeof input.obrRoomId === 'string' ? input.obrRoomId.trim() : '';
-      if (obrRoomId.length === 0) {
-        return fail(
-          badRequest('INVALID_OBR_ROOM_ID', 'Owlbear room ID is required')
-        );
-      }
-
-      const ownerUserId = sessionUserId(input.session) as string;
-      const name =
-        typeof input.name === 'string' && input.name.trim().length > 0
-          ? input.name.trim()
-          : 'Untitled Warband';
-
-      try {
-        const existing = await partyRepository.getPartyByObrRoomId(obrRoomId);
-        if (existing) {
-          if (existing.ownerUserId !== ownerUserId) {
-            return fail(
-              conflict(
-                'ROOM_ALREADY_PROMOTED',
-                'This Owlbear room has already been promoted'
-              )
-            );
-          }
-
-          return ok(manageView(existing, input.session));
-        }
-
-        const party = await partyRepository.createParty({
-          ownerUserId,
-          name,
-          inviteToken: newInviteToken(),
-          obrRoomId,
-        });
-
-        return ok({
-          id: party.id,
-          name: party.name,
-          role: 'gm' as const,
-          inviteToken: party.inviteToken,
-          invitePath: invitePathFor(party.inviteToken),
-          memberCount: 0,
-          maxMembers: PARTY_MAX_MEMBERS,
-          members: [],
-          createdAt: party.createdAt,
-          updatedAt: party.updatedAt,
-        });
-      } catch (err) {
-        return fail(
-          unexpected(
-            log,
-            err,
-            'PARTY_PROMOTE_FAILED',
-            'Failed to promote Owlbear room'
-          )
         );
       }
     },

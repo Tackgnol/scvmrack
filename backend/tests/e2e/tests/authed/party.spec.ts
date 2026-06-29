@@ -89,7 +89,10 @@ test('a player joins a party via the invite link and the GM sees the member', as
     await playerContext.close();
   }
 
-  // Back on the GM manage view, the roster now shows the joined member.
+  // Back on the GM manage view, the roster now shows one member.
   await page.goto(`/party/${party.id}`);
-  await expect(page.getByText('Player Scvm')).toBeVisible({ timeout: 30000 });
+  await expect(page.getByText(/game master\s*.*overview\s*1\//i)).toBeVisible({
+    timeout: 30000,
+  });
+  await expect(page.getByTestId('vital-strip').getByText('Player Scvm')).toBeVisible();
 });
