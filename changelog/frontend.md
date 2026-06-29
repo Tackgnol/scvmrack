@@ -25,6 +25,15 @@
   vital strip, and member kick; player party view binds a scvm via an invite link
   (`/join/<token>`, with `/forge` and `/roll` sub-routes) and shows a live,
   read-only warband
+- **Owlbear Rodeo extension** — `/obr.html` embeds the in-room scvmrack
+  experience: players see their own editable sheet, GMs see a live roster built
+  from bound scene tokens, bound tokens expose a compact read-only card peek from
+  the context menu, selected tokens can be bound/re-bound with the scvm name
+  shown in the token indicator, the top OBR controls stay reachable while the
+  embedded sheet scrolls, and logged-in GMs can move the room into a durable
+  scvmrack party with invite/manage links. The OBR manifest and extension assets
+  are CORS-enabled for Owlbear installs. OBR and the main party view share the
+  same warband projection for combat modifier filtering and armor DR display.
 - **GM overview** — `/gm` dashboard to create and open parties; party creation
   keeps the yellow name input legible with black text and validates names at 100
   characters before submit

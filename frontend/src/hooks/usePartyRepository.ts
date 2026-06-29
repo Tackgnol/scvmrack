@@ -3,16 +3,30 @@ import {
   disbandParty,
   getParty,
   getPartyInvite,
+  getPartyLimits,
   joinParty,
   kickPartyMember,
   leaveParty,
   listParties,
   partyKeys,
+  promoteObrRoom,
   regeneratePartyLink,
   renameParty,
   type PartyDetail,
+  type PromoteObrRoomInput,
 } from '@/api/party';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+
+// Configured max warband size (PARTY_MAX_MEMBERS) from the backend — a single
+// constant, so cache it indefinitely.
+export function usePartyLimits() {
+  return useQuery({
+    queryKey: partyKeys.limits(),
+    queryFn: getPartyLimits,
+    staleTime: Infinity,
+    gcTime: Infinity,
+  });
+}
 
 export function usePartyList(enabled = true) {
   return useQuery({
@@ -43,6 +57,17 @@ export function useCreateParty() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: createParty,
+    onSuccess: (party) => {
+      queryClient.setQueryData(partyKeys.detail(party.id), party);
+      void queryClient.invalidateQueries({ queryKey: partyKeys.list() });
+    },
+  });
+}
+
+export function usePromoteObrRoom() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: PromoteObrRoomInput) => promoteObrRoom(input),
     onSuccess: (party) => {
       queryClient.setQueryData(partyKeys.detail(party.id), party);
       void queryClient.invalidateQueries({ queryKey: partyKeys.list() });

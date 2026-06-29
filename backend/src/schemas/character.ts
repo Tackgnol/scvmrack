@@ -65,6 +65,30 @@ export const LocaleQueryNoDefaultSchema = {
   },
 };
 
+export const CardsQuerySchema = {
+  type: 'object',
+  required: ['ids', 'roomId'],
+  properties: {
+    ids: { type: 'string' },
+    // The Owlbear room the cards must be bound to — half of the (roomId, id)
+    // capability gate (see character-service.getCards).
+    roomId: { type: 'string', minLength: 1, maxLength: 200 },
+    locale: {
+      type: 'string',
+      enum: ['en', 'pl'],
+    },
+  },
+};
+
+export const ObrRoomBodySchema = {
+  type: 'object',
+  required: ['roomId'],
+  additionalProperties: false,
+  properties: {
+    roomId: { type: 'string', minLength: 1, maxLength: 200 },
+  },
+};
+
 const EquipmentItemSchema = {
   type: 'object',
   additionalProperties: false,
@@ -347,6 +371,78 @@ export const CharacterSchema = {
     viewerAccess: { type: 'string', enum: ['owner', 'party'] },
     createdAt: { type: 'string', format: 'date-time' },
     updatedAt: { type: 'string', format: 'date-time' },
+  },
+};
+
+export const CharacterCardSchema = {
+  type: 'object',
+  additionalProperties: false,
+  properties: {
+    id: { type: ['string', 'null'], format: 'uuid' },
+    name: { type: 'string' },
+    className: { type: ['string', 'null'] },
+    currentHp: { type: 'integer' },
+    maxHp: { type: 'integer' },
+    strength: { type: 'integer' },
+    agility: { type: 'integer' },
+    presence: { type: 'integer' },
+    toughness: { type: 'integer' },
+    drToDodge: { type: 'integer' },
+    drToMelee: { type: 'integer' },
+    drToRanged: { type: 'integer' },
+    omens: { type: 'integer' },
+    maxOmens: { type: 'integer' },
+    silver: { type: 'integer' },
+    equippedWeapons: {
+      type: 'array',
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        properties: {
+          name: { type: ['string', 'null'] },
+          dice: {
+            type: 'array',
+            items: { type: 'integer' },
+          },
+        },
+      },
+    },
+    equippedArmor: {
+      type: 'object',
+      additionalProperties: false,
+      properties: {
+        name: { type: ['string', 'null'] },
+        dice: {
+          type: 'array',
+          items: { type: 'integer' },
+        },
+        maxTier: { type: 'integer' },
+        currentTier: { type: 'integer' },
+      },
+    },
+    equipment: {
+      type: 'array',
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        properties: {
+          name: { type: 'string' },
+          description: { type: 'string' },
+        },
+      },
+    },
+    computedModifiers: {
+      type: 'array',
+      items: {
+        type: 'object',
+        additionalProperties: true,
+      },
+    },
+    bodyDescription: { type: ['string', 'null'] },
+    habit: { type: ['string', 'null'] },
+    origin: { type: ['string', 'null'] },
+    trait1: { type: ['string', 'null'] },
+    trait2: { type: ['string', 'null'] },
   },
 };
 

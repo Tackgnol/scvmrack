@@ -1,4 +1,5 @@
 import { Link } from '@tanstack/react-router';
+import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import {
     Box,
@@ -29,12 +30,42 @@ const getTypeColor = (type: ReleaseNote['type']) => {
     }
 };
 
-export function ReleasePage() {
-    const { t } = useTranslation();
-
+const buildReleaseNotes = (t: TFunction): ReleaseNote[] => {
     // Source of truth: the /release/*.md files at the repo root. Keep entries
     // newest-first and in sync with that folder when cutting a release.
-    const releases: ReleaseNote[] = [
+    return [
+        {
+            version: '0.5.1',
+            date: '2026-06-28',
+            type: 'patch',
+            changes: [
+                t('release.v051.obrManifestCors', 'Owlbear Rodeo can install the Scvmrack manifest because the public extension files now send CORS headers'),
+                t('release.v051.obrManifestVersion', 'The OBR manifest now reports version 0.5.1'),
+            ],
+        },
+        {
+            version: '0.5.0',
+            date: '2026-06-28',
+            type: 'minor',
+            changes: [
+                t('release.v050.obrExtension', 'Scvmrack now runs inside Owlbear Rodeo with an embedded player sheet and GM roster'),
+                t('release.v050.tokenBinding', 'Players can bind or re-bind selected tokens, and bound selections show the scvm name'),
+                t('release.v050.cardPeek', 'Bound tokens expose a compact View scvm card with HP, Omens, silver, combat targets, armor DR, gear, traits, and modifiers'),
+                t('release.v050.roomPromotion', 'Signed-in GMs can move an Owlbear room into a durable scvmrack party with invite and manage links'),
+                t('release.v050.drFiltering', 'Party and Owlbear warband rows now show armor DR and use the same modifier filtering as the main sheet'),
+                t('release.v050.roomGate', 'OBR card reads are gated by the Owlbear room binding, so a leaked character id alone cannot fetch a card'),
+            ],
+        },
+        {
+            version: '0.4.4',
+            date: '2026-06-25',
+            type: 'patch',
+            changes: [
+                t('release.v044.structuredLogging', 'Unexpected backend errors now log full stack traces through the shared service error helper'),
+                t('release.v044.sseCleanup', 'Party live-update streams now close half-open sockets when a write fails before the client disconnects'),
+                t('release.v044.repositoryLayering', 'Catalog reads now go through repositories instead of direct database calls from library code'),
+            ],
+        },
         {
             version: '0.4.3',
             date: '2026-06-24',
@@ -155,6 +186,11 @@ export function ReleasePage() {
             ],
         },
     ];
+};
+
+export function ReleasePage() {
+    const { t } = useTranslation();
+    const releases = buildReleaseNotes(t);
 
     const getTypeLabel = (type: ReleaseNote['type']) => {
         switch (type) {

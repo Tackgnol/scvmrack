@@ -3,11 +3,16 @@ import type {
   ComputedModifier,
   CustomModifier,
   EquipmentItem,
-  WeaponItem,
+  Statistic,
 } from '@/hooks/models';
 import { partyColors } from '@/theme/partyTokens';
-import { rollToModifier } from '@/inventory/customItems';
 import { aggregateItems } from '@/utils/aggregateItems';
+import {
+  buildCombatBreakdown,
+  decorateModifiers,
+  type DecoratedModifier,
+} from '@/utils/combatBreakdown';
+import { statToModifier } from '@/utils/stats';
 
 // Read-only view-model for a single scvm shown in the party "warband" takeover.
 // Mirrors the shape the Party Trigger design renders per card. Built from the
@@ -82,11 +87,67 @@ export type WarbandMember = {
   equipCount: number;
 };
 
+export type CompactWarbandCard = {
+  id?: string | null;
+  name?: string | null;
+  className?: string | null;
+  currentHp?: number | null;
+  maxHp?: number | null;
+  strength?: number | null;
+  agility?: number | null;
+  presence?: number | null;
+  toughness?: number | null;
+  drToDodge?: number | null;
+  drToMelee?: number | null;
+  drToRanged?: number | null;
+  omens?: number | null;
+  maxOmens?: number | null;
+  silver?: number | null;
+  equippedWeapons?: Array<{
+    name?: string | null;
+    dice?: number[] | null;
+  } | null> | null;
+  equippedArmor?: {
+    name?: string | null;
+    dice?: number[] | null;
+    currentTier?: number | null;
+    maxTier?: number | null;
+  } | null;
+  computedModifiers?: unknown[] | null;
+  equipment?: Array<{ name?: string | null; description?: string | null } | null> | null;
+  bodyDescription?: string | null;
+  habit?: string | null;
+  origin?: string | null;
+  trait1?: string | null;
+  trait2?: string | null;
+};
+
 const BUFF_EDGE = partyColors.buff;
 const DEBUFF_EDGE = partyColors.debuff;
 
 const DASH = '—'; // em dash
 const MINUS = '−'; // proper minus sign
+
+type WeaponLabelSource = {
+  name?: string | null;
+  dice?: number[] | null;
+};
+
+type ArmorLabelSource = {
+  name?: string | null;
+  dice?: number[] | null;
+  currentTier?: number | null;
+  maxTier?: number | null;
+};
+
+type CompactWeaponCardInput = NonNullable<
+  CompactWarbandCard['equippedWeapons']
+>[number];
+type CompactWeaponCard = NonNullable<CompactWeaponCardInput>;
+
+const isCompactWeaponCard = (
+  weapon: CompactWeaponCardInput,
+): weapon is CompactWeaponCard => Boolean(weapon);
 
 const signed = (value: number | undefined): string => {
   const n = value ?? 0;
@@ -161,42 +222,59 @@ const originDescription = (
   }
 };
 
-const weaponLabel = (weapon: WeaponItem | null | undefined): string => {
-  if (!weapon?.name) return `Unarmed (d2)`;
+const weaponLabel = (
+  weapon: WeaponLabelSource | null | undefined,
+  unarmedLabel = 'Unarmed',
+): string => {
+  if (!weapon?.name) return `${unarmedLabel} (d2)`;
   const die = weapon.dice?.find((d) => typeof d === 'number' && d > 0);
   return die ? `${weapon.name} (d${die})` : weapon.name;
 };
 
-const armorLabel = (armor: EquipmentItem | null | undefined): string => {
-  if (!armor?.name) return 'None';
-  const tier = armor.currentTier ?? armor.maxTier;
-  return tier ? `${armor.name} (${MINUS}d${tier * 2})` : armor.name;
+const armorLabel = (
+  armor: ArmorLabelSource | null | undefined,
+  noneLabel = 'None',
+): string => {
+  if (!armor?.name) return noneLabel;
+  const die = armorDie(armor);
+  return die ? `${armor.name} (${MINUS}d${die})` : armor.name;
 };
 
 // Damage reduction the armor soaks — the X in −dX. A quick GM-glance number, 0 bare.
-const armorDr = (armor: EquipmentItem | null | undefined): number => {
+const armorDie = (armor: ArmorLabelSource | null | undefined): number => {
+  const die = armor?.dice?.find((value) => typeof value === 'number' && value > 0);
+  if (die) return die;
+
   const tier = armor?.currentTier ?? armor?.maxTier;
   return tier ? tier * 2 : 0;
+};
+
+const armorDr = armorDie;
+
+const modifierLabel = (modifier: DecoratedModifier): string => {
+  const customName = 'name' in modifier ? modifier.name?.trim() : '';
+  const computedName =
+    'originName' in modifier ? modifier.originName?.trim() : '';
+  const source = 'source' in modifier ? modifier.source?.trim() : '';
+  return customName || computedName || source || 'Modifier';
 };
 
 const contrib = (
   govName: string,
   govValue: number | undefined,
-  statistic: string,
-  computed: ComputedModifier[],
+  statistic: Statistic,
+  applicableModifiers: DecoratedModifier[],
 ): WarbandContribRow[] => {
   const rows: WarbandContribRow[] = [
     { label: 'Base test', labelKey: 'gm.baseTest', val: 'DR12' },
     { label: govName, labelKey: `attributes.${statistic}`, val: signed(govValue) },
   ];
-  computed
-    .filter((m) => m.statistic === statistic && (m.value ?? 0) !== 0)
-    .forEach((m) => {
-      rows.push({
-        label: m.originName ?? m.source ?? 'Modifier',
-        val: signed(m.value),
-      });
+  applicableModifiers.forEach((modifier) => {
+    rows.push({
+      label: modifierLabel(modifier),
+      val: signed(modifier.value),
     });
+  });
   return rows;
 };
 
@@ -243,25 +321,110 @@ const toComputedModifierView = (
 const equipmentLabel = (name: string, quantity: number): string =>
   quantity > 1 ? `${name} x${quantity}` : name;
 
-export function toWarbandMember(character: Character): WarbandMember {
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
+const isStatistic = (value: unknown): value is ComputedModifier['statistic'] =>
+  value === 'agility' ||
+  value === 'strength' ||
+  value === 'presence' ||
+  value === 'toughness';
+
+const isModifierOrigin = (
+  value: unknown,
+): value is NonNullable<ComputedModifier['origin']> =>
+  value === 'armor' ||
+  value === 'weapon' ||
+  value === 'pet' ||
+  value === 'system';
+
+const recordString = (
+  record: Record<string, unknown>,
+  key: string,
+): string | undefined => {
+  const value = record[key];
+  return typeof value === 'string' ? value : undefined;
+};
+
+const recordNumber = (
+  record: Record<string, unknown>,
+  key: string,
+): number | undefined => {
+  const value = record[key];
+  return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
+};
+
+const recordStringArray = (
+  record: Record<string, unknown>,
+  key: string,
+): string[] | undefined => {
+  const value = record[key];
+  return Array.isArray(value) && value.every((item) => typeof item === 'string')
+    ? value
+    : undefined;
+};
+
+const toCompactComputedModifier = (
+  value: unknown,
+): ComputedModifier | null => {
+  if (!isRecord(value)) return null;
+
+  const statistic = recordString(value, 'statistic');
+  const origin = recordString(value, 'origin');
+
+  return {
+    value: recordNumber(value, 'value'),
+    source: recordString(value, 'source'),
+    statistic: isStatistic(statistic) ? statistic : undefined,
+    exclude: recordStringArray(value, 'exclude'),
+    origin: isModifierOrigin(origin) ? origin : undefined,
+    originKey: recordString(value, 'originKey'),
+    originName: recordString(value, 'originName'),
+  };
+};
+
+const toCompactComputedModifiers = (
+  modifiers: unknown[] | null | undefined,
+): ComputedModifier[] =>
+  (modifiers ?? [])
+    .map(toCompactComputedModifier)
+    .filter((modifier): modifier is ComputedModifier => modifier !== null);
+
+export function toWarbandMember(
+  character: Character,
+  labels?: WarbandCardLabels,
+): WarbandMember {
   const hp = character.currentHp ?? 0;
   const hpMax = Math.max(1, character.maxHp ?? 1);
   const dead = hp <= 0;
   const computed = character.computedModifiers ?? [];
+  const custom = character.modifiers ?? [];
+  const allModifiers = decorateModifiers(computed, custom);
+  const dodgeBreakdown = buildCombatBreakdown(
+    allModifiers,
+    'agility',
+    'defence',
+  );
+  const meleeBreakdown = buildCombatBreakdown(allModifiers, 'strength', 'melee');
+  const rangedBreakdown = buildCombatBreakdown(
+    allModifiers,
+    'presence',
+    'ranged',
+  );
 
   // Abilities arrive as raw scores (e.g. 12), not MÖRK BORG modifiers. The card shows
   // the modifier (e.g. +0/+2), matching the sheet and the DR breakdown — so convert
   // here rather than printing the score. This also feeds the combat tooltip's
   // governing-ability row, which is the modifier the DR math actually uses.
-  const agiMod = rollToModifier(character.agility);
-  const preMod = rollToModifier(character.presence);
-  const strMod = rollToModifier(character.strength);
-  const touMod = rollToModifier(character.toughness);
+  const agiMod = statToModifier(character.agility ?? 10);
+  const preMod = statToModifier(character.presence ?? 10);
+  const strMod = statToModifier(character.strength ?? 10);
+  const touMod = statToModifier(character.toughness ?? 10);
 
   const computedModifierViews = computed
     .filter((m) => m.originName?.trim() || m.source?.trim())
     .map(toComputedModifierView);
-  const customModifierViews = (character.modifiers ?? [])
+  const customModifierViews = custom
     .filter((m) => m.name)
     .map(toModifierView);
   const modifiers = [...computedModifierViews, ...customModifierViews];
@@ -278,8 +441,8 @@ export function toWarbandMember(character: Character): WarbandMember {
 
   return {
     id: character.id ?? '',
-    name: character.name?.trim() || 'Unnamed scvm',
-    cls: character.className?.trim() || 'Classless',
+    name: character.name?.trim() || labels?.unnamedScvm || 'Unnamed scvm',
+    cls: character.className?.trim() || labels?.classless || 'Classless',
     dead,
 
     hpText: `${hp}/${character.maxHp ?? 0}`,
@@ -294,12 +457,17 @@ export function toWarbandMember(character: Character): WarbandMember {
     melee: character.drToMelee ?? 12,
     ranged: character.drToRanged ?? 12,
     dr: armorDr(character.equippedArmor),
-    dodgeC: contrib('Agility', agiMod, 'agility', computed),
-    meleeC: contrib('Strength', strMod, 'strength', computed),
-    rangedC: contrib('Presence', preMod, 'presence', computed),
+    dodgeC: contrib('Agility', agiMod, 'agility', dodgeBreakdown.applicable),
+    meleeC: contrib('Strength', strMod, 'strength', meleeBreakdown.applicable),
+    rangedC: contrib(
+      'Presence',
+      preMod,
+      'presence',
+      rangedBreakdown.applicable,
+    ),
 
-    weapon: weaponLabel(character.equippedWeapons?.[0]),
-    armor: armorLabel(character.equippedArmor),
+    weapon: weaponLabel(character.equippedWeapons?.[0], labels?.unarmed),
+    armor: armorLabel(character.equippedArmor, labels?.armorNone),
     omenText: `${character.omens ?? 0}/${character.maxOmens ?? 0}`,
     silver: character.silver ?? 0,
 
@@ -316,4 +484,72 @@ export function toWarbandMember(character: Character): WarbandMember {
     equipment,
     equipCount: carriedEquipment.length,
   };
+}
+
+// Localized fallbacks for projections used outside the main app shell. The OBR
+// view re-enables the language switcher, so its callers pass these in to keep
+// "no armor"/"unarmed" from leaking English into a Polish roster/peek.
+export type WarbandCardLabels = {
+  armorNone?: string;
+  unarmed?: string;
+  unnamedScvm?: string;
+  classless?: string;
+};
+
+export function toWarbandMemberFromCard(
+  card: CompactWarbandCard,
+  labels?: WarbandCardLabels,
+): WarbandMember {
+  const equippedWeapons = (card.equippedWeapons ?? [])
+    .filter(isCompactWeaponCard)
+    .map((weapon) => ({
+      name: weapon.name ?? undefined,
+      dice: weapon.dice ?? undefined,
+    }));
+  const equippedArmor = card.equippedArmor
+    ? {
+        name: card.equippedArmor.name ?? undefined,
+        dice: card.equippedArmor.dice ?? undefined,
+        currentTier: card.equippedArmor.currentTier ?? undefined,
+        maxTier: card.equippedArmor.maxTier ?? undefined,
+      }
+    : null;
+  const equipment = (card.equipment ?? [])
+    .filter(
+      (item): item is { name: string; description?: string | null } =>
+        Boolean(item && item.name),
+    )
+    .map((item) => ({
+      name: item.name,
+      description: item.description ?? '',
+    }));
+  const character: Character = {
+    id: card.id ?? '',
+    name: card.name ?? undefined,
+    className: card.className ?? null,
+    currentHp: card.currentHp ?? undefined,
+    maxHp: card.maxHp ?? undefined,
+    strength: card.strength ?? undefined,
+    agility: card.agility ?? undefined,
+    presence: card.presence ?? undefined,
+    toughness: card.toughness ?? undefined,
+    drToDodge: card.drToDodge ?? undefined,
+    drToMelee: card.drToMelee ?? undefined,
+    drToRanged: card.drToRanged ?? undefined,
+    omens: card.omens ?? undefined,
+    maxOmens: card.maxOmens ?? undefined,
+    silver: card.silver ?? 0,
+    equippedWeapons,
+    equippedArmor,
+    computedModifiers: toCompactComputedModifiers(card.computedModifiers),
+    modifiers: [],
+    equipment,
+    bodyDescription: card.bodyDescription ?? null,
+    habit: card.habit ?? null,
+    origin: card.origin ?? null,
+    trait1: card.trait1 ?? null,
+    trait2: card.trait2 ?? null,
+  };
+
+  return toWarbandMember(character, labels);
 }

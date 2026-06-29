@@ -31,11 +31,13 @@ model Party {
   name        String   @default("Untitled Warband") @db.VarChar(120)
   ownerUserId String   @map("owner_user_id")
   inviteToken String   @unique @map("invite_token")
+  obrRoomId   String?  @unique @map("obr_room_id")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   owner   User        @relation(fields: [ownerUserId], references: [id], onDelete: Cascade)
   members Character[]
+  enemies Enemy[]
 
   @@index([ownerUserId])
   @@map("parties")
@@ -136,6 +138,7 @@ model Character {
   modifiers       Json     @default("[]") @map("modifiers")
   partyId         String?  @map("party_id") @db.Uuid
   joinedAt        DateTime? @map("joined_at")
+  obrRoomId       String?  @map("obr_room_id")
   user            User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
   party           Party?   @relation(fields: [partyId], references: [id], onDelete: SetNull)
 
@@ -145,6 +148,32 @@ model Character {
   @@index([userId], map: "idx_characters_user_id")
   @@index([partyId], map: "idx_characters_party_id")
   @@map("characters")
+}
+
+model Enemy {
+  id               String   @id @default(uuid()) @db.Uuid
+  partyId          String   @map("party_id") @db.Uuid
+  name             String   @db.VarChar(80)
+  type             String   @default("") @db.VarChar(80)
+  habitat          String   @default("") @db.VarChar(120)
+  description      String   @default("") @db.VarChar(500)
+  playerDescription String  @default("") @map("player_description") @db.VarChar(500)
+  currentHealth    Int      @default(1) @map("current_health")
+  maxHealth        Int      @default(1) @map("max_health")
+  morale           Int      @default(0)
+  armorDie         String   @default("") @map("armor_die") @db.VarChar(24)
+  armorDescription String   @default("") @map("armor_description") @db.VarChar(120)
+  attacks          Json     @default("[]")
+  specials         Json     @default("[]")
+  loot             Json     @default("[]")
+  statuses         Json     @default("[]")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  party Party @relation(fields: [partyId], references: [id], onDelete: Cascade)
+
+  @@index([partyId])
+  @@map("enemies")
 }
 
 model Class {

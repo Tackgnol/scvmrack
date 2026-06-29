@@ -41,6 +41,12 @@ export default defineConfig({
     outDir: './dist',
     emptyOutDir: true,
     rolldownOptions: {
+      // Two HTML entries: the main SPA and the Owlbear Rodeo panel. The OBR
+      // bundle is the only place @owlbear-rodeo/sdk is reachable.
+      input: {
+        main: path.resolve(__dirname, 'index.html'),
+        obr: path.resolve(__dirname, 'obr.html'),
+      },
       output: {
         codeSplitting: {
           groups: [
@@ -68,6 +74,12 @@ export default defineConfig({
   },
   server: {
     allowedHosts,
+    // Dev-only: Owlbear Rodeo fetches the extension
+    // manifest + icon cross-origin from this http://localhost dev server. Vite 8
+    // blocks cross-origin dev requests by default. Keep this scoped to
+    // Owlbear origins rather than using an open `origin: true`.
+    // Affects `vite dev` only, never the build.
+    cors: { origin: [/^https:\/\/([a-z0-9-]+\.)?owlbear\.(?:app|rodeo)$/] },
     ...(process.env.API_PROXY_TARGET && {
       proxy: {
         '/api': apiProxy(process.env.API_PROXY_TARGET),
