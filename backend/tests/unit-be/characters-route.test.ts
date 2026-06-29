@@ -157,6 +157,9 @@ mock.module('../../src/repositories/character-repository.js', {
   namedExports: {
     characterRepository: {
       classExists: async () => true,
+      // Pass-through: every requested id is treated as bound to the room, so the
+      // cards route exercises the full projection path.
+      filterIdsInRoom: async (ids: string[]) => ids,
     },
   },
 });
@@ -387,6 +390,50 @@ test('GET /classes returns the localized class list', async () => {
   assert.equal(response.statusCode, 200);
   assert.deepEqual(response.json(), [{ id: 1, name: 'Gutterborn Scvm', description: null }]);
   assert.deepEqual(listClassCalls, [{ locale: 'en' }]);
+
+  await app.close();
+});
+
+test('GET /cards returns compact table-visible cards without a session', async () => {
+  resetState();
+  getFullResult = {
+    ...fullCharacter,
+    equippedArmor: {
+      name: 'Skóra',
+      dice: [2],
+      currentTier: 1,
+      maxTier: 1,
+      key: 'armor.leather',
+      tags: ['armor', 'light-armor'],
+      modifiers: [],
+    },
+  };
+  const app = await buildApp();
+
+  const response = await app.inject({
+    method: 'GET',
+    url: `/cards?ids=not-a-uuid,${generatedCharacterId}&roomId=room-1&locale=pl`,
+  });
+
+  assert.equal(response.statusCode, 200);
+  const body = response.json();
+  assert.equal(body.length, 1);
+  assert.equal(body[0].id, generatedCharacterId);
+  assert.equal(body[0].name, fullCharacter.name);
+  assert.equal(body[0].currentHp, fullCharacter.currentHp);
+  assert.deepEqual(getFullCalls, [
+    { id: generatedCharacterId, locale: 'pl' },
+  ]);
+  assert.ok(!('notes' in body[0]));
+  assert.ok(!('storage' in body[0]));
+  assert.deepEqual(body[0].equippedArmor, {
+    name: 'Skóra',
+    dice: [2],
+    currentTier: 1,
+    maxTier: 1,
+  });
+  // Equipment is now exposed but narrowed to name + description by the schema.
+  assert.ok(Array.isArray(body[0].equipment));
 
   await app.close();
 });

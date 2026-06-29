@@ -11,6 +11,7 @@ export type PartyRow = {
   name: string;
   ownerUserId: string;
   inviteToken: string;
+  obrRoomId: string | null;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -60,18 +61,21 @@ export const partyRepository = {
     ownerUserId: string;
     name: string;
     inviteToken: string;
+    obrRoomId?: string | null;
   }): Promise<PartyRow> {
     return prisma.party.create({
       data: {
         ownerUserId: input.ownerUserId,
         name: input.name,
         inviteToken: input.inviteToken,
+        obrRoomId: input.obrRoomId ?? undefined,
       },
       select: {
         id: true,
         name: true,
         ownerUserId: true,
         inviteToken: true,
+        obrRoomId: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -90,6 +94,7 @@ export const partyRepository = {
         name: true,
         ownerUserId: true,
         inviteToken: true,
+        obrRoomId: true,
         createdAt: true,
         updatedAt: true,
         _count: { select: { members: true } },
@@ -111,6 +116,7 @@ export const partyRepository = {
         name: true,
         ownerUserId: true,
         inviteToken: true,
+        obrRoomId: true,
         createdAt: true,
         updatedAt: true,
         members: {
@@ -129,8 +135,28 @@ export const partyRepository = {
         name: true,
         ownerUserId: true,
         inviteToken: true,
+        obrRoomId: true,
         createdAt: true,
         updatedAt: true,
+      },
+    });
+  },
+
+  getPartyByObrRoomId(obrRoomId: string): Promise<PartyWithMembers | null> {
+    return prisma.party.findUnique({
+      where: { obrRoomId },
+      select: {
+        id: true,
+        name: true,
+        ownerUserId: true,
+        inviteToken: true,
+        obrRoomId: true,
+        createdAt: true,
+        updatedAt: true,
+        members: {
+          orderBy: { joinedAt: 'asc' },
+          select: MEMBER_SELECT,
+        },
       },
     });
   },

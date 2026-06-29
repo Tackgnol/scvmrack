@@ -48,6 +48,41 @@ export async function signInAnonymous(): Promise<void> {
   }
 }
 
+// Owlbear Rodeo popup sign-in bridge. The popup (first-party, authenticated)
+// mints a one-time token; the iframe redeems it to adopt that identity into its
+// partition. Like the calls above, these are /api/auth/* endpoints and so
+// bypass the OpenAPI client.
+export async function issueObrExchangeToken(): Promise<string> {
+  const res = await fetch(`${apiBaseUrl()}/api/auth/obr-exchange/issue`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: embeddedSessionHeaders(),
+  });
+
+  if (!res.ok) {
+    throw new Error('Failed to issue OBR exchange token');
+  }
+
+  const { token } = (await res.json()) as { token?: string };
+  if (!token) {
+    throw new Error('OBR exchange issue returned no token');
+  }
+  return token;
+}
+
+export async function redeemObrExchangeToken(token: string): Promise<void> {
+  const res = await fetch(`${apiBaseUrl()}/api/auth/obr-exchange/redeem`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json', ...embeddedSessionHeaders() },
+    body: JSON.stringify({ token }),
+  });
+
+  if (!res.ok) {
+    throw new Error('Failed to redeem OBR exchange token');
+  }
+}
+
 // Guarantee an active session before a state-changing flow runs (party join,
 // guest character creation). Returns the live session. Imperative on purpose:
 // callers await this instead of racing the background bootstrap query — the

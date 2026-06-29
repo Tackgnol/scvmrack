@@ -19,10 +19,28 @@ export const InviteTokenParamsSchema = {
   },
 } as const;
 
+export const PartyLimitsSchema = {
+  type: 'object',
+  additionalProperties: false,
+  properties: {
+    maxMembers: { type: 'integer' },
+  },
+} as const;
+
 export const CreatePartyBodySchema = {
   type: 'object',
   additionalProperties: false,
   properties: {
+    name: { type: 'string', minLength: 1, maxLength: 120 },
+  },
+} as const;
+
+export const PromotePartyBodySchema = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['obrRoomId'],
+  properties: {
+    obrRoomId: { type: 'string', minLength: 1, maxLength: 256 },
     name: { type: 'string', minLength: 1, maxLength: 120 },
   },
 } as const;

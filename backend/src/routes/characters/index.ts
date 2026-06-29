@@ -1,11 +1,14 @@
 import { FastifyPluginAsync } from 'fastify';
 import {
+    CardsQuerySchema,
     CharacterIdParamsSchema,
+    CharacterCardSchema,
     CharacterSchema,
     ErrorSchema,
     GenerateBodySchema,
     LocaleQuerySchema,
     LocaleQueryNoDefaultSchema,
+    ObrRoomBodySchema,
     UpdateBodySchema,
 } from '../../schemas/character.js';
 import type {
@@ -214,6 +217,103 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
                 return sendServiceError(reply, request, result.error);
             }
             return result.value;
+        }
+    );
+
+    // GET /cards?ids=a,b,c&roomId=R - Compact, table-visible cards for OBR
+    // roster/peek. Capability-by-pair read: no session check, but a card is only
+    // returned when the (roomId, id) pair matches a recorded binding (see
+    // character-service.getCards). Compact allowlisted fields only.
+    fastify.get<{
+        Querystring: { ids?: string; roomId?: string; locale?: string };
+    }>(
+        '/cards',
+        {
+            config: {
+                rateLimit: {
+                    max: process.env.NODE_ENV === 'test' ? 10000 : 30,
+                    timeWindow: '1 minute',
+                },
+            },
+            schema: {
+                description: 'Compact table-visible character cards by id list',
+                tags: ['characters'],
+                querystring: CardsQuerySchema,
+                response: {
+                    200: { type: 'array', items: CharacterCardSchema },
+                    400: ErrorSchema,
+                    429: ErrorSchema,
+                    500: ErrorSchema,
+                },
+            },
+        },
+        async (request, reply) => {
+            const ids = (request.query.ids ?? '')
+                .split(',')
+                .map((id) => id.trim())
+                .filter(Boolean);
+
+            const result = await createCharacterService(
+                request.log,
+                request.server.partyBus
+            ).getCards({
+                ids,
+                roomId: request.query.roomId ?? '',
+                locale: request.query.locale ?? 'en',
+            });
+
+            if (!result.ok) {
+                return sendServiceError(reply, request, result.error);
+            }
+            return result.value;
+        }
+    );
+
+    // POST /:id/obr-room - Record which Owlbear room a scvm is bound to. Owner-
+    // gated; the write half of the (roomId, id) capability gate that protects
+    // GET /cards. Called by the player iframe when binding a scvm to a token.
+    fastify.post<{
+        Params: { id: string };
+        Body: { roomId: string };
+    }>(
+        '/:id/obr-room',
+        {
+            config: {
+                rateLimit: {
+                    max: process.env.NODE_ENV === 'test' ? 10000 : 60,
+                    timeWindow: '1 minute',
+                },
+            },
+            schema: {
+                description: 'Bind a character to an Owlbear room',
+                tags: ['characters'],
+                params: CharacterIdParamsSchema,
+                body: ObrRoomBodySchema,
+                response: {
+                    204: { type: 'null', description: 'Character bound to room' },
+                    400: ErrorSchema,
+                    401: ErrorSchema,
+                    403: ErrorSchema,
+                    404: ErrorSchema,
+                    429: ErrorSchema,
+                    500: ErrorSchema,
+                },
+            },
+        },
+        async (request, reply) => {
+            const result = await createCharacterService(
+                request.log,
+                request.server.partyBus
+            ).bindObrRoom({
+                id: request.params.id,
+                session: request.appSession,
+                roomId: request.body.roomId,
+            });
+
+            if (!result.ok) {
+                return sendServiceError(reply, request, result.error);
+            }
+            return reply.status(204).send();
         }
     );
 

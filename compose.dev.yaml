@@ -98,6 +98,9 @@ services:
         - action: sync
           path: ./frontend/index.html
           target: /app/index.html
+        - action: sync
+          path: ./frontend/obr.html
+          target: /app/obr.html
         - action: rebuild
           path: ./frontend/package.json
         - action: rebuild

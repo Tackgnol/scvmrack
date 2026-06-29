@@ -108,6 +108,7 @@ test('rpgtools auth plugin keeps local and configured origins trusted', async ()
         'http://localhost:3000',
         'http://127.0.0.1:3000',
         'https://scvmrack.rpgtools.co',
+        'https://www.owlbear.rodeo',
         'https://client.example.test',
         'https://gateway.example.test',
       ],

@@ -150,6 +150,7 @@ Pentested with Shannon AI (2026-03-23). All findings remediated or accepted.
 | Claim signatures | Shared-auth HMAC claim flow | Verified |
 | Swagger/OpenAPI | Disabled in production (`NODE_ENV=production`) | Verified |
 | Dockerfile | Runs as `node` user, not root | Verified |
+| OBR card reads | `GET /api/characters/cards` is session-less by design (OBR viewers share no server-side party) but gated by the **(roomId, id) pair**: only the owner can record the binding via `POST /api/characters/:id/obr-room`, so a leaked character UUID alone no longer reads even the table-visible card. Accepted residual: anyone in the room can read those cards. | Accepted |
 
 ### Security Considerations When Modifying
 - **Never commit secrets** to version control (`.env` files are in `.gitignore`)
