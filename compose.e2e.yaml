@@ -1,4 +1,4 @@
-name: scvmrack-e2e
+name: ${E2E_COMPOSE_PROJECT:-scvmrack-e2e}
 
 services:
   mailpit:
@@ -22,7 +22,7 @@ services:
       retries: 20
 
   migrate:
-    image: scvmgrinder_be:e2e
+    image: ${E2E_API_IMAGE:-scvmgrinder_be:e2e}
     pull_policy: never
     build:
       context: .
@@ -40,7 +40,7 @@ services:
         condition: service_healthy
 
   api:
-    image: scvmgrinder_be:e2e
+    image: ${E2E_API_IMAGE:-scvmgrinder_be:e2e}
     pull_policy: never
     build:
       context: .
@@ -89,7 +89,7 @@ services:
       start_period: 10s
 
   web:
-    image: scvmgrinder_fe:e2e
+    image: ${E2E_WEB_IMAGE:-scvmgrinder_fe:e2e}
     pull_policy: never
     build:
       context: ./frontend
@@ -120,7 +120,7 @@ services:
       start_period: 10s
 
   e2e:
-    image: scvmgrinder_e2e:latest
+    image: ${E2E_RUNNER_IMAGE:-scvmgrinder_e2e:latest}
     build:
       context: ./backend/tests/e2e
       dockerfile: Dockerfile
