@@ -94,7 +94,7 @@ if (upExitCode === 0) {
   // Run the Playwright container's default command synchronously. `run` returns
   // the test runner's OWN exit code directly — no abort-on-exit ambiguity
   // between the short-lived test container and the long-lived services.
-  testExitCode = runDocker([...composeBaseArgs, 'run', '--rm', 'e2e']);
+  testExitCode = runDocker([...composeBaseArgs, 'run', '--rm', '--no-deps', 'e2e']);
 } else {
   console.error(
     `\ne2e stack failed to become healthy (exit ${upExitCode}); skipping tests.`
