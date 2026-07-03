@@ -13,25 +13,32 @@ function slug(input: string): string {
 }
 
 function ciRunId(): string | null {
-  return (
-    process.env.CI_PIPELINE_NUMBER ??
-    process.env.CI_BUILD_NUMBER ??
-    process.env.CI_COMMIT_SHA?.slice(0, 12) ??
-    null
+  return firstNonEmpty(
+    process.env.CI_PIPELINE_NUMBER,
+    process.env.CI_BUILD_NUMBER,
+    process.env.CI_COMMIT_SHA?.slice(0, 12)
   );
 }
 
+function firstNonEmpty(...values: Array<string | undefined>): string | null {
+  return values.find((value) => value && value.trim().length > 0) ?? null;
+}
+
 const projectName =
-  process.env.E2E_COMPOSE_PROJECT ??
+  firstNonEmpty(process.env.E2E_COMPOSE_PROJECT) ??
   (process.env.CI === 'true' && ciRunId()
     ? `scvmrack-e2e-${slug(ciRunId() as string)}`
     : 'scvmrack-e2e');
 const imageSuffix = slug(projectName.replace(/^scvmrack-e2e-?/, '')) || 'local';
 
 process.env.E2E_COMPOSE_PROJECT = projectName;
-process.env.E2E_API_IMAGE ??= `scvmgrinder_be:e2e-${imageSuffix}`;
-process.env.E2E_WEB_IMAGE ??= `scvmgrinder_fe:e2e-${imageSuffix}`;
-process.env.E2E_RUNNER_IMAGE ??= `scvmgrinder_e2e:e2e-${imageSuffix}`;
+process.env.E2E_API_IMAGE =
+  firstNonEmpty(process.env.E2E_API_IMAGE) ?? `scvmgrinder_be:e2e-${imageSuffix}`;
+process.env.E2E_WEB_IMAGE =
+  firstNonEmpty(process.env.E2E_WEB_IMAGE) ?? `scvmgrinder_fe:e2e-${imageSuffix}`;
+process.env.E2E_RUNNER_IMAGE =
+  firstNonEmpty(process.env.E2E_RUNNER_IMAGE) ??
+  `scvmgrinder_e2e:e2e-${imageSuffix}`;
 
 const composeBaseArgs = ['compose', '-p', projectName, '-f', '../compose.e2e.yaml'];
 const cleanupArgs = [...composeBaseArgs, 'down', '--volumes', '--remove-orphans'];
