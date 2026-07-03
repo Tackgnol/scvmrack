@@ -1,21 +1,20 @@
 import { test as base } from '@playwright/test';
-import { readFileSync } from 'node:fs';
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
 export interface Fixtures {
   cleanContext: void;
+  testAuthUser: {
+    authStatePath: string;
+    email: string;
+    userId: string;
+  } | undefined;
   seedCharacter: (options?: { name?: string }) => Promise<{
     id: string;
   }>;
   seededCharacter: {
     id: string;
   };
-}
-
-interface WorkerFixtures {
-  workerAuthState: string | undefined;
-  workerUserId: string | undefined;
 }
 
 const authDir = resolve('tests/e2e/.auth');
@@ -59,20 +58,6 @@ function parseBrowserAuthCookies(
   }
 
   return cookies;
-}
-
-function metadataPath(parallelIndex: number): string {
-  return `${authDir}/user-${parallelIndex}-metadata.json`;
-}
-
-function statePath(parallelIndex: number): string {
-  return `${authDir}/user-${parallelIndex}.json`;
-}
-
-function readAuthMetadata(parallelIndex: number): { userId: string } {
-  return JSON.parse(readFileSync(metadataPath(parallelIndex), 'utf-8')) as {
-    userId: string;
-  };
 }
 
 function collectSetCookieHeaders(headers: Headers): string[] {
@@ -213,100 +198,81 @@ export async function prepareActorContext(
   }
 }
 
-export const test = base.extend<Fixtures, WorkerFixtures>({
-  workerAuthState: [
-    async ({ browser }, use, workerInfo) => {
-      if (workerInfo.project.name !== 'authed') {
-        await use(undefined);
-        return;
-      }
+export const test = base.extend<Fixtures>({
+  testAuthUser: async ({ browser }, use, testInfo) => {
+    if (testInfo.project.name !== 'authed') {
+      await use(undefined);
+      return;
+    }
 
-      await mkdir(authDir, { recursive: true });
+    await mkdir(authDir, { recursive: true });
 
-      const uniqueEmail = `e2e_${workerInfo.parallelIndex}_${crypto.randomUUID()}@example.com`;
-      const password = 'E2eTestPassword123!';
-      const testRouteCookies: CookieJar = new Map();
-      const createUserResponse = await postTestRoute(
-        '/test/users',
+    const uniqueEmail = `e2e_${testInfo.workerIndex}_${crypto.randomUUID()}@example.com`;
+    const password = 'E2eTestPassword123!';
+    const testRouteCookies: CookieJar = new Map();
+    const createUserResponse = await postTestRoute(
+      '/test/users',
+      {
+        name: `E2E Test ${testInfo.workerIndex}`,
+        email: uniqueEmail,
+        password,
+      },
+      testRouteCookies
+    );
+
+    if (!createUserResponse.ok) {
+      throw new Error(
+        `Failed to create test user for ${testInfo.title}: ` +
+          `${createUserResponse.status} ${await createUserResponse.text()}`
+      );
+    }
+
+    const { userId, sessionCookie } = (await createUserResponse.json()) as {
+      userId: string;
+      sessionCookie: string;
+    };
+
+    if (!sessionCookie) {
+      throw new Error(`Test user for ${testInfo.title} has no session cookie`);
+    }
+
+    const context = await browser.newContext();
+    const url = new URL(baseURL);
+    for (const cookie of parseBrowserAuthCookies(sessionCookie)) {
+      await context.addCookies([
         {
-          name: `E2E Worker ${workerInfo.parallelIndex}`,
-          email: uniqueEmail,
-          password,
+          name: cookie.name,
+          value: cookie.value,
+          domain: url.hostname,
+          path: '/',
+          httpOnly: true,
+          secure: url.protocol === 'https:',
         },
-        testRouteCookies
-      );
+      ]);
+    }
 
-      if (!createUserResponse.ok) {
-        throw new Error(
-          `Failed to create test user for worker ${workerInfo.parallelIndex}: ` +
-            `${createUserResponse.status} ${await createUserResponse.text()}`
+    const page = await context.newPage();
+    await page.goto(baseURL);
+    await page.evaluate(
+      ({ email }) => {
+        localStorage.setItem(
+          'scvmgrinder-privacy-settings-v1',
+          JSON.stringify({ acknowledged: true, analyticsEnabled: false })
         );
-      }
+        localStorage.setItem('scvmrack-e2e-user-email', email);
+      },
+      { email: uniqueEmail }
+    );
 
-      const { userId, sessionCookie } = (await createUserResponse.json()) as {
-        userId: string;
-        sessionCookie: string;
-      };
+    const authStatePath = `${authDir}/user-${testInfo.workerIndex}-${crypto.randomUUID()}.json`;
+    await context.storageState({ path: authStatePath });
+    await context.close();
 
-      if (!sessionCookie) {
-        throw new Error(`Test user for worker ${workerInfo.parallelIndex} has no session cookie`);
-      }
+    await use({ authStatePath, email: uniqueEmail, userId });
+  },
 
-      const context = await browser.newContext();
-      const url = new URL(baseURL);
-      for (const cookie of parseBrowserAuthCookies(sessionCookie)) {
-        await context.addCookies([
-          {
-            name: cookie.name,
-            value: cookie.value,
-            domain: url.hostname,
-            path: '/',
-            httpOnly: true,
-            secure: url.protocol === 'https:',
-          },
-        ]);
-      }
-
-      const page = await context.newPage();
-      await page.goto(baseURL);
-      await page.evaluate(
-        ({ email }) => {
-          localStorage.setItem(
-            'scvmgrinder-privacy-settings-v1',
-            JSON.stringify({ acknowledged: true, analyticsEnabled: false })
-          );
-          localStorage.setItem('scvmrack-e2e-user-email', email);
-        },
-        { email: uniqueEmail }
-      );
-
-      const authStatePath = statePath(workerInfo.parallelIndex);
-      await context.storageState({ path: authStatePath });
-      await context.close();
-      await writeFile(
-        metadataPath(workerInfo.parallelIndex),
-        JSON.stringify({ userId, email: uniqueEmail }, null, 2)
-      );
-
-      await use(authStatePath);
-    },
-    { scope: 'worker' },
-  ],
-
-  workerUserId: [
-    async ({ workerAuthState }, use, workerInfo) => {
-      if (workerInfo.project.name !== 'authed' || !workerAuthState) {
-        await use(undefined);
-        return;
-      }
-
-      await use(readAuthMetadata(workerInfo.parallelIndex).userId);
-    },
-    { scope: 'worker' },
-  ],
-
-  storageState: async ({ workerAuthState }, use, testInfo) => {
-    await use(testInfo.project.name === 'authed' ? workerAuthState : undefined);
+  storageState: async ({ testAuthUser }, use, testInfo) => {
+    await use(testInfo.project.name === 'authed' ? testAuthUser?.authStatePath : undefined);
   },
 
   cleanContext: [
@@ -322,12 +288,12 @@ export const test = base.extend<Fixtures, WorkerFixtures>({
     { auto: true },
   ],
 
-  seedCharacter: async ({ workerUserId }, use) => {
-    if (!workerUserId) {
+  seedCharacter: async ({ testAuthUser }, use) => {
+    if (!testAuthUser) {
       throw new Error('seedCharacter is only available in the authed Playwright project');
     }
 
-    await use((options) => createSeededCharacter(workerUserId, options));
+    await use((options) => createSeededCharacter(testAuthUser.userId, options));
   },
 
   seededCharacter: async ({ seedCharacter }, use) => {

@@ -13,6 +13,7 @@ export E2E_COMPOSE_PROJECT="scvmrack-e2e-${e2e_slug}"
 export E2E_API_IMAGE="scvmgrinder_be:e2e-${e2e_slug}"
 export E2E_WEB_IMAGE="scvmgrinder_fe:e2e-${e2e_slug}"
 export E2E_RUNNER_IMAGE="scvmgrinder_e2e:e2e-${e2e_slug}"
+export CI=true
 
 compose_e2e() {
   docker compose -p "$E2E_COMPOSE_PROJECT" -f compose.e2e.yaml "$@"
@@ -36,4 +37,4 @@ if ! compose_e2e up -d --wait --wait-timeout 300 db mailpit api web; then
   exit 1
 fi
 
-compose_e2e run --rm e2e
+compose_e2e run --rm --no-deps e2e
