@@ -75,7 +75,7 @@ export const textFieldLimits = {
   modifierComment: 500,
   abilityComment: 1000,
   itemName: 255,
-  itemDescription: 250,
+  itemDescription: 1000,
   itemComments: 1000,
   equipmentSearch: 100,
 } as const;
@@ -238,7 +238,7 @@ const useCountRuleSchema = z.object({
 const equipmentItemSchema = z.object({
   key: limitedString(100).optional(),
   name: limitedString(255).optional(),
-  description: limitedString(250).optional(),
+  description: limitedString(textFieldLimits.itemDescription).optional(),
   comments: limitedString(1000).optional(),
   source: limitedString(50).optional(),
   category: limitedString(50).optional(),
