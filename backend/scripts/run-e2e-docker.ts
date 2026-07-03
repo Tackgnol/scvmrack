@@ -4,7 +4,36 @@ if (process.argv.includes('--debug')) {
   process.env.PLAYWRIGHT_DEBUG = '1';
 }
 
-const composeBaseArgs = ['compose', '-f', '../compose.e2e.yaml'];
+function slug(input: string): string {
+  return input
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 48);
+}
+
+function ciRunId(): string | null {
+  return (
+    process.env.CI_PIPELINE_NUMBER ??
+    process.env.CI_BUILD_NUMBER ??
+    process.env.CI_COMMIT_SHA?.slice(0, 12) ??
+    null
+  );
+}
+
+const projectName =
+  process.env.E2E_COMPOSE_PROJECT ??
+  (process.env.CI === 'true' && ciRunId()
+    ? `scvmrack-e2e-${slug(ciRunId() as string)}`
+    : 'scvmrack-e2e');
+const imageSuffix = slug(projectName.replace(/^scvmrack-e2e-?/, '')) || 'local';
+
+process.env.E2E_COMPOSE_PROJECT = projectName;
+process.env.E2E_API_IMAGE ??= `scvmgrinder_be:e2e-${imageSuffix}`;
+process.env.E2E_WEB_IMAGE ??= `scvmgrinder_fe:e2e-${imageSuffix}`;
+process.env.E2E_RUNNER_IMAGE ??= `scvmgrinder_e2e:e2e-${imageSuffix}`;
+
+const composeBaseArgs = ['compose', '-p', projectName, '-f', '../compose.e2e.yaml'];
 const cleanupArgs = [...composeBaseArgs, 'down', '--volumes', '--remove-orphans'];
 
 function runDocker(args: string[]): number {
