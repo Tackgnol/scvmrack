@@ -96,7 +96,9 @@ test('buildRequestFromPatches rejects outgoing shortened text limits', () => {
             { name: 'Old' } as any,
         )
     ).toThrow();
+});
 
+test('buildRequestFromPatches accepts hydrated catalog item descriptions', () => {
     expect(() =>
         buildRequestFromPatches(
             [{ kind: 'equipment-item', index: 0, item: {} } as any],
@@ -106,6 +108,27 @@ test('buildRequestFromPatches rejects outgoing shortened text limits', () => {
                         key: 'item',
                         name: 'Item',
                         description: 'D'.repeat(251),
+                    },
+                ],
+                storage: [],
+                equippedWeapons: [],
+                equippedArmor: null,
+                modifiers: [],
+            } as any,
+        )
+    ).not.toThrow();
+});
+
+test('buildRequestFromPatches rejects item descriptions beyond backend limits', () => {
+    expect(() =>
+        buildRequestFromPatches(
+            [{ kind: 'equipment-item', index: 0, item: {} } as any],
+            {
+                equipment: [
+                    {
+                        key: 'item',
+                        name: 'Item',
+                        description: 'D'.repeat(1001),
                     },
                 ],
                 storage: [],

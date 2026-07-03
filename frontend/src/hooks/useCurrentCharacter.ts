@@ -152,6 +152,7 @@ export function useCurrentCharacter() {
     isGuest,
     createCharacter: repo.createCharacter,
     deleteCharacter: repo.deleteCharacter,
+    queryClient,
     setCharacterId,
     flushEditor: editor.flush,
     setAutoCreateFailed,

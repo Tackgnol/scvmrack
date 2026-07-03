@@ -77,6 +77,9 @@ export function PartyCharacterPage() {
     (candidate) => candidate.characterId === params.characterId
   );
   if (!member) {
+    if (partyQuery.isFetching) {
+      return <CharacterSheetSkeleton />;
+    }
     return <NotFoundPage seoNoIndex />;
   }
 

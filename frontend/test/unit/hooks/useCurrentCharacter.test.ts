@@ -7,6 +7,16 @@ import { useCharacterRepository } from '@/hooks/useCharacterRepository.ts';
 import { useCharacterEditor } from '@/hooks/useCharacterEditor.ts';
 import { hasCurrentSearchParam } from '@/router/navigation';
 import { appHistory } from '@/router/history';
+import { replacePartyMember } from '@/api/party';
+
+const { privacyState, queryClientMocks } = vi.hoisted(() => ({
+  privacyState: { acknowledged: true },
+  queryClientMocks: {
+    fetchQuery: vi.fn(({ queryFn }: { queryFn: () => unknown }) => queryFn()),
+    invalidateQueries: vi.fn().mockResolvedValue(undefined),
+    setQueryData: vi.fn(),
+  },
+}));
 
 vi.mock('../../../src/hooks/useCharacterId.ts', () => ({
   useCharacterId: vi.fn(),
@@ -29,9 +39,16 @@ vi.mock('../../../src/hooks/useCharacterEditor.ts', () => ({
 // runs its queryFn (which calls the mocked global.fetch under test).
 vi.mock('@tanstack/react-query', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@tanstack/react-query')>()),
-  useQueryClient: () => ({
-    fetchQuery: ({ queryFn }: { queryFn: () => unknown }) => queryFn(),
-  }),
+  useQueryClient: () => queryClientMocks,
+}));
+
+vi.mock('@/api/party', () => ({
+  partyKeys: {
+    detail: (partyId: string) =>
+      ['get', '/api/parties/{id}', { params: { path: { id: partyId } } }] as const,
+    roster: () => ['get', '/api/characters'] as const,
+  },
+  replacePartyMember: vi.fn(),
 }));
 
 vi.mock('react-i18next', () => ({
@@ -62,17 +79,20 @@ vi.mock('@/analytics/googleAnalytics', () => ({
   trackEvent: vi.fn(),
 }));
 
-// Privacy-consent gate for auto-create. Default acknowledged so the existing
-// auto-create tests exercise the create path; the gating test flips it off.
-const { privacyState } = vi.hoisted(() => ({
-  privacyState: { acknowledged: true },
-}));
 vi.mock('@/privacy/privacyConsent', () => ({
   usePrivacyAcknowledged: () => privacyState.acknowledged,
 }));
 
 beforeEach(() => {
   vi.clearAllMocks();
+  queryClientMocks.fetchQuery.mockImplementation(
+    ({ queryFn }: { queryFn: () => unknown }) => queryFn()
+  );
+  queryClientMocks.invalidateQueries.mockResolvedValue(undefined);
+  vi.mocked(replacePartyMember).mockResolvedValue({
+    partyId: 'party-1',
+    redirect: '/party/party-1/character/char-2',
+  });
   privacyState.acknowledged = true;
   (hasCurrentSearchParam as any).mockReturnValue(false);
   appHistory.location.pathname = '/character';
@@ -240,6 +260,79 @@ test('useCurrentCharacter handles killAndReplace', () => {
   expect(deleteMutate.mock.calls[0][0]).toMatchObject({
     params: { path: { id: 'char-1' } },
   });
+});
+
+test('useCurrentCharacter refreshes party membership before selecting a replacement', async () => {
+  const setCharacterId = vi.fn().mockResolvedValue(undefined);
+  (useCharacterId as any).mockReturnValue({
+    characterId: 'char-1',
+    setCharacterId,
+  });
+  (useAuth as any).mockReturnValue({
+    isAuthenticated: true,
+    isGuest: false,
+    isLoading: false,
+  });
+
+  const deleteMutate = vi.fn();
+  const createMutate = vi.fn();
+  const repo = {
+    character: { id: 'char-1', name: 'Old scvm', partyId: 'party-1' },
+    isLoading: false,
+    error: null,
+    updateCharacter: {},
+    getCharacterKey: vi.fn(),
+    deleteCharacter: { mutate: deleteMutate },
+    createCharacter: { mutate: createMutate, data: null },
+  };
+  (useCharacterRepository as any).mockReturnValue(repo);
+  (useCharacterEditor as any).mockReturnValue({ flush: vi.fn() });
+
+  const { result } = renderHook(() => useCurrentCharacter());
+
+  act(() => {
+    result.current.killAndReplace();
+  });
+
+  expect(createMutate).toHaveBeenCalledWith(
+    expect.objectContaining({ body: expect.objectContaining({ replace: true }) }),
+    expect.any(Object)
+  );
+
+  const createCallbacks = createMutate.mock.calls[0][1];
+  act(() => {
+    createCallbacks.onSuccess({ id: 'char-2' });
+  });
+
+  await vi.waitFor(() => {
+    expect(replacePartyMember).toHaveBeenCalledWith({
+      partyId: 'party-1',
+      oldCharacterId: 'char-1',
+      newCharacterId: 'char-2',
+    });
+    expect(setCharacterId).toHaveBeenCalledWith('char-2');
+  });
+
+  expect(queryClientMocks.invalidateQueries).toHaveBeenCalledWith({
+    queryKey: ['get', '/api/parties/{id}', { params: { path: { id: 'party-1' } } }],
+  });
+  expect(queryClientMocks.invalidateQueries).toHaveBeenCalledWith({
+    queryKey: ['get', '/api/characters'],
+  });
+  expect(deleteMutate).toHaveBeenCalledWith(
+    { params: { path: { id: 'char-1' } } },
+    expect.any(Object)
+  );
+
+  const detailRefreshIndex = queryClientMocks.invalidateQueries.mock.calls.findIndex(
+    ([input]) =>
+      (input as { queryKey?: readonly unknown[] }).queryKey?.[1] ===
+      '/api/parties/{id}'
+  );
+  expect(detailRefreshIndex).toBeGreaterThanOrEqual(0);
+  expect(
+    queryClientMocks.invalidateQueries.mock.invocationCallOrder[detailRefreshIndex]
+  ).toBeLessThan(setCharacterId.mock.invocationCallOrder[0]);
 });
 
 test('useCurrentCharacter handles changeLocale', async () => {

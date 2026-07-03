@@ -1,12 +1,13 @@
 import { type MutableRefObject } from 'react';
 import { trackEvent } from '@/analytics/googleAnalytics';
-import { replacePartyMember } from '@/api/party';
+import { partyKeys, replacePartyMember } from '@/api/party';
 import {
   getUserFacingApiErrorMessage,
   isApiNotFound,
   isApiRateLimited,
   isUnexpectedApiError,
 } from '@/utils/errorUtils';
+import type { QueryClient } from '@tanstack/react-query';
 
 export type GenerateNewOptions = {
   onSuccess?: (newCharacterId: string) => void;
@@ -39,6 +40,7 @@ type Params = {
   isGuest: boolean;
   createCharacter: Mutation;
   deleteCharacter: Mutation;
+  queryClient: QueryClient;
   setCharacterId: (id: string | null) => void | Promise<void>;
   flushEditor: () => void;
   setAutoCreateFailed: (failed: boolean) => void;
@@ -63,6 +65,7 @@ export function useCharacterActions({
   isGuest,
   createCharacter,
   deleteCharacter,
+  queryClient,
   setCharacterId,
   flushEditor,
   setAutoCreateFailed,
@@ -167,6 +170,14 @@ export function useCharacterActions({
                   is_authenticated: isAuthenticated,
                   is_guest: isGuest,
                 });
+                if (partyId) {
+                  void queryClient.invalidateQueries({
+                    queryKey: partyKeys.detail(partyId),
+                  });
+                  void queryClient.invalidateQueries({
+                    queryKey: partyKeys.roster(),
+                  });
+                }
               },
               onError: (error: unknown) => {
                 // The replacement is already active; a failure to delete the old
@@ -200,6 +211,12 @@ export function useCharacterActions({
               partyId,
               oldCharacterId: idToKill,
               newCharacterId,
+            });
+            await queryClient.invalidateQueries({
+              queryKey: partyKeys.detail(partyId),
+            });
+            void queryClient.invalidateQueries({
+              queryKey: partyKeys.roster(),
             });
             await setCharacterId(newCharacterId);
             options?.onSuccess?.(newCharacterId);
