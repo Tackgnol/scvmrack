@@ -1,33 +1,7 @@
 // Stricter schema definitions with validation limits
 // Use these in your route schemas
 
-import type { Prisma } from '@prisma/client';
-
-type Json = Prisma.InputJsonValue;
-
-export type CharacterPatch = {
-  name?: string;
-  current_hp?: number;
-  omens?: number;
-  silver?: number;
-  agility?: number;
-  strength?: number;
-  presence?: number;
-  toughness?: number;
-  habit?: string;
-  body_description?: string;
-  origin?: string;
-  notes?: string;
-  trait1?: string;
-  trait2?: string;
-
-  abilities?: Json;
-  equipment?: Json;
-  storage?: Json;
-  equipped_weapons?: Json;
-  equipped_armor?: Json;
-  modifiers?: Json;
-};
+import { MISERY_MAX, MISERY_MIN } from '../lib/character-limits.js';
 
 export const CharacterIdParamsSchema = {
   type: 'object',
@@ -38,7 +12,7 @@ export const CharacterIdParamsSchema = {
       format: 'uuid',
     },
   },
-};
+} as const;
 
 export const LocaleQuerySchema = {
   type: 'object',
@@ -49,7 +23,7 @@ export const LocaleQuerySchema = {
       default: 'en',
     },
   },
-};
+} as const;
 
 // Same as LocaleQuerySchema but WITHOUT a default. The character-list route
 // falls back to the Accept-Language header when no explicit ?locale is given;
@@ -63,7 +37,7 @@ export const LocaleQueryNoDefaultSchema = {
       enum: ['en', 'pl'],
     },
   },
-};
+} as const;
 
 const EquipmentItemSchema = {
   type: 'object',
@@ -136,7 +110,7 @@ const EquipmentItemSchema = {
       },
     },
   },
-};
+} as const;
 
 const AbilitySchema = {
   type: 'object',
@@ -147,7 +121,7 @@ const AbilitySchema = {
     description: { type: 'string', maxLength: 2000 },
     comment: { type: 'string', maxLength: 1000 },
   },
-};
+} as const;
 
 const WeaponSchema = {
   type: 'object',
@@ -173,7 +147,7 @@ const WeaponSchema = {
     ammoType: { type: 'string', maxLength: 50 },
     modifiers: EquipmentItemSchema.properties.modifiers,
   },
-};
+} as const;
 
 const ArmorSchema = {
   type: 'object',
@@ -200,7 +174,7 @@ const ArmorSchema = {
     },
     modifiers: EquipmentItemSchema.properties.modifiers,
   },
-};
+} as const;
 
 // Custom modifier schema (player-created)
 const ModifierSchemaDefs = {
@@ -226,7 +200,7 @@ const ModifierSchemaDefs = {
     },
     comment: { type: 'string', maxLength: 500 },
   },
-};
+} as const;
 
 // Computed modifier schema (from equipped items)
 const ComputedModifierSchemaDefs = {
@@ -248,7 +222,7 @@ const ComputedModifierSchemaDefs = {
     originKey: { type: 'string', maxLength: 255 },
     originName: { type: 'string', maxLength: 255 },
   },
-};
+} as const;
 
 // Aliases for backwards compatibility
 const ModifierSchema = ModifierSchemaDefs;
@@ -256,7 +230,7 @@ const ComputedModifierSchema = ComputedModifierSchemaDefs;
 
 export const UpdateBodySchema = {
   type: 'object',
-  additionalProperties: false, // Reject unknown fields
+  additionalProperties: false, // Fastify's default Ajv strips unknown fields
   properties: {
     name: { type: 'string', maxLength: 255 },
     currentHp: { type: 'integer', minimum: -100, maximum: 1000 },
@@ -275,6 +249,11 @@ export const UpdateBodySchema = {
     bodyDescription: { type: 'string', maxLength: 1000 },
     origin: { type: 'string', maxLength: 1000 },
     notes: { type: 'string', maxLength: 10000 },
+    miseryCount: {
+      type: 'integer',
+      minimum: MISERY_MIN,
+      maximum: MISERY_MAX,
+    },
     abilities: {
       type: 'array',
       items: AbilitySchema,
@@ -304,7 +283,7 @@ export const UpdateBodySchema = {
       maxItems: 30,
     },
   },
-};
+} as const;
 
 export const CharacterSchema = {
   type: 'object',
@@ -330,6 +309,7 @@ export const CharacterSchema = {
     trait1: { type: ['string', 'null'] },
     trait2: { type: ['string', 'null'] },
     notes: { type: 'string' },
+    miseryCount: { type: 'integer' },
     abilities: { type: 'array', items: AbilitySchema },
     equipment: { type: 'array', items: EquipmentItemSchema },
     storage: { type: 'array', items: EquipmentItemSchema },
@@ -348,7 +328,7 @@ export const CharacterSchema = {
     createdAt: { type: 'string', format: 'date-time' },
     updatedAt: { type: 'string', format: 'date-time' },
   },
-};
+} as const;
 
 export const ErrorSchema = {
   type: 'object',
@@ -372,7 +352,7 @@ export const ErrorSchema = {
     },
   },
   required: ['error', 'message', 'code', 'statusCode', 'requestId'],
-};
+} as const;
 
 export const GenerateBodySchema = {
   type: 'object',
@@ -402,12 +382,18 @@ export const GenerateBodySchema = {
           type: 'object',
           additionalProperties: false,
           required: ['name', 'stats', 'omens', 'silver', 'origin', 'abilities', 'gear', 'personality'],
-          properties: Object.fromEntries(
-            ['name', 'stats', 'omens', 'silver', 'origin', 'abilities', 'gear', 'personality']
-              .map((section) => [section, { type: 'string', pattern: '^[0-9a-f]{64}$' }])
-          ),
+          properties: {
+            name: { type: 'string', pattern: '^[0-9a-f]{64}$' },
+            stats: { type: 'string', pattern: '^[0-9a-f]{64}$' },
+            omens: { type: 'string', pattern: '^[0-9a-f]{64}$' },
+            silver: { type: 'string', pattern: '^[0-9a-f]{64}$' },
+            origin: { type: 'string', pattern: '^[0-9a-f]{64}$' },
+            abilities: { type: 'string', pattern: '^[0-9a-f]{64}$' },
+            gear: { type: 'string', pattern: '^[0-9a-f]{64}$' },
+            personality: { type: 'string', pattern: '^[0-9a-f]{64}$' },
+          },
         },
       },
     },
   },
-};
+} as const;

@@ -7,6 +7,7 @@ import {
   isApiNotFound,
   isApiRateLimited,
   isUnexpectedApiError,
+  shouldCaptureClientError,
   toApiClientError,
 } from '../../src/utils/errorUtils';
 
@@ -38,6 +39,14 @@ describe('errorUtils', () => {
     expect(isApiNotFound({ statusCode: 404 })).toBe(true);
     expect(isApiRateLimited({ statusCode: 429 })).toBe(true);
     expect(isUnexpectedApiError({ statusCode: 500 })).toBe(true);
+  });
+
+  it('captures unexpected failures but ignores expected client and abort errors', () => {
+    expect(shouldCaptureClientError({ statusCode: 404 })).toBe(false);
+    expect(shouldCaptureClientError({ statusCode: 403 })).toBe(false);
+    expect(shouldCaptureClientError(new DOMException('aborted', 'AbortError'))).toBe(false);
+    expect(shouldCaptureClientError({ statusCode: 500 })).toBe(true);
+    expect(shouldCaptureClientError(new TypeError('Failed to fetch'))).toBe(true);
   });
 
   it('uses meaningful copy without exposing server crash messages', () => {

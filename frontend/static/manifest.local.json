@@ -1,0 +1,13 @@
+{
+  "name": "Scvmrack Local",
+  "version": "0.5.7",
+  "icon": "/Scvmrack_logo.png?v=20260628",
+  "manifest_version": 1,
+  "action": {
+    "title": "Scvmrack",
+    "icon": "/obr-icon.svg?v=20260627",
+    "popover": "/obr.html?v=20260706-057",
+    "width": 420,
+    "height": 600
+  }
+}

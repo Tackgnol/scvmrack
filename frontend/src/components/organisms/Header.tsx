@@ -12,6 +12,7 @@ import { isSheetRoutePath } from '@/router/routeClassification';
 import { BoneIcon } from '@components/molecules/header/BoneIcon';
 import { HeaderDesktopBar } from '@components/molecules/header/HeaderDesktopBar';
 import { HeaderMobileDrawer } from '@components/molecules/header/HeaderMobileDrawer';
+import MiseryHeaderLink from '@/components/molecules/character/MiseryHeaderLink';
 import {
   Box,
   IconButton,
@@ -38,6 +39,7 @@ export default function Header() {
   });
   const {
     isSaving,
+    character,
     characterId,
     lastCharacterId,
     validationIssues = [],
@@ -116,6 +118,9 @@ export default function Header() {
               >
                 {t('app.alphaBadge', 'Alpha')}
               </Box>
+              {isSheetRoute && character && (
+                <MiseryHeaderLink count={character.miseryCount} />
+              )}
             </Box>
             <Typography
               variant="subtitle1"

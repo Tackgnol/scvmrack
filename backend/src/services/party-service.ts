@@ -21,19 +21,18 @@ import {
   type ServiceResult,
 } from './result.js';
 import type { PartyEventBus } from '../plugins/party-bus.js';
+import {
+  isGm,
+  ownsCharacter,
+  sessionUserId,
+  type AppSession,
+} from './session.js';
 
-/**
- * Raw shared-auth session shape the party flows reason about. A GM is an
- * authenticated, non-anonymous account; a character owner is matched on the
- * account id (`user.id`) OR the anonymous session id (`session.id`). Decoupled
- * from Fastify so the service can be unit-tested with a plain object.
- */
-export type AppSession = {
-  session?: { id?: string | null } | null;
-  user?: { id?: string | null; isAnonymous?: boolean | null } | null;
-} | null;
+export type { AppSession } from './session.js';
 
 const DEFAULT_PARTY_MAX_MEMBERS = 10;
+const OBR_ROOM_SYSTEM_OWNER_ID = 'system:obr-room';
+const OBR_ROOM_SYSTEM_OWNER_EMAIL = 'obr-room@system.scvmrack.local';
 
 /** Read the cap once at module load; clamp to a sane positive integer. */
 const PARTY_MAX_MEMBERS = (() => {
@@ -54,39 +53,6 @@ function newInviteToken(): string {
 
 function invitePathFor(token: string): string {
   return `/join/${token}`;
-}
-
-function sessionUserId(session: AppSession): string | null {
-  return session?.user?.id ?? null;
-}
-
-function sessionId(session: AppSession): string | null {
-  return session?.session?.id ?? null;
-}
-
-/** A GM is a present, non-anonymous account. */
-function isGm(session: AppSession): boolean {
-  return Boolean(sessionUserId(session)) && session?.user?.isAnonymous !== true;
-}
-
-/**
- * A caller owns a character when the account id matches `userId` (account) OR
- * the anonymous session id matches `sessionId` (guest). Mirrors the app's
- * ownership-by-binding model.
- */
-function ownsCharacter(
-  session: AppSession,
-  character: { userId: string | null; sessionId: string | null }
-): boolean {
-  const userId = sessionUserId(session);
-  if (userId && character.userId === userId) {
-    return true;
-  }
-  const sid = sessionId(session);
-  if (sid && character.sessionId === sid) {
-    return true;
-  }
-  return false;
 }
 
 export type PartyMemberPayload = {
@@ -220,7 +186,7 @@ export function createPartyService(
     async createParty(input: {
       session: AppSession;
       name?: string | null;
-    }): Promise<ServiceResult<unknown>> {
+    }): Promise<ServiceResult<PartyManageViewPayload>> {
       if (!isGm(input.session)) {
         return fail(unauthorized());
       }
@@ -256,9 +222,160 @@ export function createPartyService(
       }
     },
 
+    async promoteRoom(input: {
+      session: AppSession;
+      obrRoomId: string;
+      name?: string | null;
+    }): Promise<ServiceResult<PartyDetailPayload>> {
+      const obrRoomId =
+        typeof input.obrRoomId === 'string' ? input.obrRoomId.trim() : '';
+      if (obrRoomId.length === 0) {
+        return fail(
+          badRequest('INVALID_OBR_ROOM_ID', 'Owlbear room ID is required')
+        );
+      }
+
+      const ownerUserId = isGm(input.session)
+        ? (sessionUserId(input.session) as string)
+        : OBR_ROOM_SYSTEM_OWNER_ID;
+      const name =
+        typeof input.name === 'string' && input.name.trim().length > 0
+          ? input.name.trim()
+          : 'Untitled Warband';
+
+      try {
+        const existing = await partyRepository.getPartyByObrRoomId(obrRoomId);
+        if (existing) {
+          const userId = sessionUserId(input.session);
+          if (userId && existing.ownerUserId === userId) {
+            return ok(manageView(existing, input.session));
+          }
+          // A signed-in GM adopts a party that was auto-created for the room
+          // (system owner) so anonymous auto-setup has an upgrade path.
+          if (isGm(input.session) && existing.ownerUserId === OBR_ROOM_SYSTEM_OWNER_ID) {
+            await partyRepository.setPartyOwner(existing.id, userId as string);
+            return ok(
+              manageView({ ...existing, ownerUserId: userId as string }, input.session)
+            );
+          }
+          // Room-trust callers can use the board but never see the invite token.
+          return ok(readView(existing, input.session));
+        }
+
+        if (ownerUserId === OBR_ROOM_SYSTEM_OWNER_ID) {
+          await partyRepository.ensureSystemUser({
+            id: OBR_ROOM_SYSTEM_OWNER_ID,
+            name: 'Owlbear Room',
+            email: OBR_ROOM_SYSTEM_OWNER_EMAIL,
+          });
+        }
+
+        const party = await partyRepository.createParty({
+          ownerUserId,
+          name,
+          inviteToken: newInviteToken(),
+          obrRoomId,
+        });
+
+        // System-owned auto-setup: whichever OBR client races to /promote
+        // first (not necessarily the GM) never sees the invite token. A
+        // signed-in GM claims it via the `existing` branch above.
+        if (ownerUserId === OBR_ROOM_SYSTEM_OWNER_ID) {
+          return ok({
+            id: party.id,
+            name: party.name,
+            role: 'member' as const,
+            memberCount: 0,
+            maxMembers: PARTY_MAX_MEMBERS,
+            members: [],
+            createdAt: party.createdAt,
+            updatedAt: party.updatedAt,
+          });
+        }
+
+        return ok({
+          id: party.id,
+          name: party.name,
+          role: 'gm' as const,
+          inviteToken: party.inviteToken,
+          invitePath: invitePathFor(party.inviteToken),
+          memberCount: 0,
+          maxMembers: PARTY_MAX_MEMBERS,
+          members: [],
+          createdAt: party.createdAt,
+          updatedAt: party.updatedAt,
+        });
+      } catch (err) {
+        return fail(
+          unexpected(
+            log,
+            err,
+            'PARTY_PROMOTE_FAILED',
+            'Failed to promote Owlbear room'
+          )
+        );
+      }
+    },
+
+    async attachRoom(input: {
+      session: AppSession;
+      id: string;
+      obrRoomId: string;
+    }): Promise<ServiceResult<{ id: string; obrRoomId: string }>> {
+      const denied = await ensureOwner(input.session, input.id);
+      if (denied) {
+        return fail(denied);
+      }
+      const obrRoomId =
+        typeof input.obrRoomId === 'string' ? input.obrRoomId.trim() : '';
+      if (obrRoomId.length === 0) {
+        return fail(badRequest('INVALID_OBR_ROOM_ID', 'Owlbear room ID is required'));
+      }
+
+      try {
+        const existing = await partyRepository.getPartyByObrRoomId(obrRoomId);
+        if (existing && existing.id !== input.id) {
+          return fail(
+            apiError(
+              409,
+              'ROOM_ALREADY_PROMOTED',
+              'This Owlbear room is already linked to another party'
+            )
+          );
+        }
+        if (!existing) {
+          // Unique index on obrRoomId backstops concurrent attaches (P2002 → 409).
+          await partyRepository.setPartyObrRoom(input.id, obrRoomId);
+        }
+        return ok({ id: input.id, obrRoomId });
+      } catch (err) {
+        return fail(
+          unexpected(log, err, 'PARTY_ATTACH_FAILED', 'Failed to attach Owlbear room')
+        );
+      }
+    },
+
+    async detachRoom(input: {
+      session: AppSession;
+      id: string;
+    }): Promise<ServiceResult<{ id: string; obrRoomId: null }>> {
+      const denied = await ensureOwner(input.session, input.id);
+      if (denied) {
+        return fail(denied);
+      }
+      try {
+        await partyRepository.setPartyObrRoom(input.id, null);
+        return ok({ id: input.id, obrRoomId: null });
+      } catch (err) {
+        return fail(
+          unexpected(log, err, 'PARTY_DETACH_FAILED', 'Failed to detach Owlbear room')
+        );
+      }
+    },
+
     async listParties(input: {
       session: AppSession;
-    }): Promise<ServiceResult<unknown>> {
+    }): Promise<ServiceResult<Record<string, unknown>[]>> {
       if (!isGm(input.session)) {
         return fail(unauthorized());
       }
@@ -367,7 +484,7 @@ export function createPartyService(
       session: AppSession;
       id: string;
       name: string;
-    }): Promise<ServiceResult<unknown>> {
+    }): Promise<ServiceResult<Record<string, unknown>>> {
       const denied = await ensureOwner(input.session, input.id);
       if (denied) {
         return fail(denied);
@@ -388,10 +505,60 @@ export function createPartyService(
       }
     },
 
+    async setMiseries(input: {
+      session: AppSession;
+      id: string;
+      miseryCount: number;
+    }): Promise<ServiceResult<{ miseryCount: number; updatedCharacters: number }>> {
+      const denied = await ensureOwner(input.session, input.id);
+      if (denied) {
+        return fail(denied);
+      }
+      if (
+        !Number.isInteger(input.miseryCount) ||
+        input.miseryCount < 0 ||
+        input.miseryCount > 7
+      ) {
+        return fail(
+          badRequest(
+            'INVALID_MISERY_COUNT',
+            'Misery count must be between 0 and 7'
+          )
+        );
+      }
+
+      try {
+        const characterIds = await partyRepository.setPartyMiseryCount(
+          input.id,
+          input.miseryCount
+        );
+        characterIds.forEach((characterId) => {
+          partyBus?.publish(input.id, {
+            type: 'character.updated',
+            characterId,
+            fields: ['miseryCount'],
+          });
+        });
+        return ok({
+          miseryCount: input.miseryCount,
+          updatedCharacters: characterIds.length,
+        });
+      } catch (err) {
+        return fail(
+          unexpected(
+            log,
+            err,
+            'PARTY_MISERIES_UPDATE_FAILED',
+            'Failed to update party Miseries'
+          )
+        );
+      }
+    },
+
     async regenerateLink(input: {
       session: AppSession;
       id: string;
-    }): Promise<ServiceResult<unknown>> {
+    }): Promise<ServiceResult<Record<string, unknown>>> {
       const denied = await ensureOwner(input.session, input.id);
       if (denied) {
         return fail(denied);
@@ -447,7 +614,7 @@ export function createPartyService(
       session: AppSession;
       token: string;
       characterId: string;
-    }): Promise<ServiceResult<unknown>> {
+    }): Promise<ServiceResult<Record<string, unknown>>> {
       if (!isValidUUID(input.characterId)) {
         return fail(badRequest('INVALID_CHARACTER_ID', 'Invalid character ID'));
       }
@@ -551,7 +718,7 @@ export function createPartyService(
       id: string;
       oldCharacterId: string;
       newCharacterId: string;
-    }): Promise<ServiceResult<unknown>> {
+    }): Promise<ServiceResult<Record<string, unknown>>> {
       if (!isValidUUID(input.id)) {
         return fail(badRequest('INVALID_PARTY_ID', 'Invalid party ID'));
       }

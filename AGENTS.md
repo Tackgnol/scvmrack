@@ -96,6 +96,7 @@ backend/
 frontend/src/
 ├── components/     # React components
 ├── hooks/          # Character editing, auth, search, and UI hooks
+├── obr/            # Owlbear Rodeo extension adapter: SDK glue, room/token bindings, OBR hooks
 ├── api/            # OpenAPI-generated client
 ├── pages/          # Route pages
 ├── router/         # TanStack Router config

@@ -90,6 +90,7 @@ export function CharacterPage() {
         isSessionExpired,
         justCreatedId,
         acknowledgeCreated,
+        recoverInvalidCharacter,
         isReadOnly,
     } = useCharacter();
 
@@ -181,7 +182,11 @@ export function CharacterPage() {
             <CharacterLoadErrorModals
                 issue={loadIssue}
                 error={error}
-                onGenerateNew={handleNew}
+                onGenerateNew={
+                    isNotFound || isAccessDenied
+                        ? () => void recoverInvalidCharacter()
+                        : handleNew
+                }
             />
 
             <Seo

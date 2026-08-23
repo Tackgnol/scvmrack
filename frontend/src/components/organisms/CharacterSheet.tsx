@@ -3,6 +3,7 @@ import { Abilities } from '@/components/organisms/Abilities';
 import { BackpackSection } from '@/components/organisms/StorageSection';
 import { CharacterDescriptors } from '@/components/molecules/character-descriptors/CharacterDescriptors';
 import { CharacterNameAndClass } from '@/components/molecules/character/CharacterNameAndClass';
+import MiseryTrack from '@/components/molecules/character/MiseryTrack';
 import { OnHandSection } from '@/components/organisms/OnHandSection';
 import {
     ConsumableSection,
@@ -140,6 +141,7 @@ export function CharacterSheet({
                 <Typography sx={customStyles.zoneDividerIcon}>✠</Typography>
             </Box>
 
+            <MiseryTrack readOnly={readOnly} />
             <NoteSection />
 
             <Box className="print-hidden">

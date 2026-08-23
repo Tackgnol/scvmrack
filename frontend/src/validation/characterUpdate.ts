@@ -49,6 +49,7 @@ const simpleNumberLimits: Partial<
   agility: { min: 1, max: 30 },
   presence: { min: 1, max: 30 },
   toughness: { min: 1, max: 30 },
+  miseryCount: { min: 0, max: 7 },
 };
 
 const simpleStringLimits: Partial<Record<SimpleField, number>> = {
@@ -92,6 +93,7 @@ const simpleFieldLabels: Partial<Record<SimpleField, ValidationField>> = {
   agility: { key: 'validation.fields.agility', fallback: 'Agility' },
   presence: { key: 'validation.fields.presence', fallback: 'Presence' },
   toughness: { key: 'validation.fields.toughness', fallback: 'Toughness' },
+  miseryCount: { key: 'validation.fields.miseryCount', fallback: 'Miseries' },
   trait1: { key: 'validation.fields.trait1', fallback: 'Trait 1' },
   trait2: { key: 'validation.fields.trait2', fallback: 'Trait 2' },
   habit: { key: 'validation.fields.habit', fallback: 'Habit' },
@@ -316,6 +318,7 @@ export const characterUpdateSchema = z.object({
   bodyDescription: limitedString(200).optional(),
   origin: limitedString(200).optional(),
   notes: limitedString(10000).optional(),
+  miseryCount: boundedInteger(0, 7, 0).optional(),
   abilities: limitedObjectArray(abilitySchema, 20).optional(),
   equipment: limitedObjectArray(equipmentItemSchema, 50).optional(),
   storage: limitedObjectArray(equipmentItemSchema, 100).optional(),
@@ -341,6 +344,7 @@ const simpleFieldSchemas: Partial<Record<SimpleField, z.ZodType<unknown>>> = {
   bodyDescription: characterUpdateSchema.shape.bodyDescription,
   origin: characterUpdateSchema.shape.origin,
   notes: characterUpdateSchema.shape.notes,
+  miseryCount: characterUpdateSchema.shape.miseryCount,
 };
 
 export function sanitizeCharacterUpdateRequest(

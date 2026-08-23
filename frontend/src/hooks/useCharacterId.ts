@@ -1,67 +1,46 @@
 import {appHistory} from '@/router/history';
 import {getCurrentCharacterIdParam, setCurrentCharacterIdParam} from '@/router/navigation';
-import {useEffect, useState} from 'react';
-
-const LAST_CHARACTER_ID_STORAGE_KEY = 'last-character-id';
-
-const readLastCharacterId = (): string | null => {
-    if (typeof window === 'undefined') {
-        return null;
-    }
-
-    try {
-        const stored = window.localStorage.getItem(LAST_CHARACTER_ID_STORAGE_KEY);
-        if (!stored) return null;
-        const trimmed = stored.trim();
-        return trimmed.length > 0 ? trimmed : null;
-    } catch {
-        return null;
-    }
-};
-
-const writeLastCharacterId = (id: string | null): void => {
-    if (typeof window === 'undefined') {
-        return;
-    }
-
-    try {
-        if (id) {
-            window.localStorage.setItem(LAST_CHARACTER_ID_STORAGE_KEY, id);
-        } else {
-            window.localStorage.removeItem(LAST_CHARACTER_ID_STORAGE_KEY);
-        }
-    } catch {
-        // Ignore storage errors.
-    }
-};
+import {
+    readRememberedCharacterId,
+    writeRememberedCharacterId,
+} from '@/preferences/lastCharacter';
+import {useCallback, useEffect, useRef, useState} from 'react';
 
 export function useCharacterId() {
     const [characterId, setInternalCharacterId] = useState<string | null>(() => getCurrentCharacterIdParam());
     const [lastCharacterId, setLastCharacterId] = useState<string | null>(() => {
         const current = getCurrentCharacterIdParam();
-        return current || readLastCharacterId();
+        return current || readRememberedCharacterId();
     });
+    const characterIdRef = useRef(characterId);
 
     useEffect(() => {
         return appHistory.subscribe(() => {
             const nextId = getCurrentCharacterIdParam();
-            setInternalCharacterId(nextId);
+            if (characterIdRef.current !== nextId) {
+                characterIdRef.current = nextId;
+                setInternalCharacterId(nextId);
+            }
             if (nextId) {
-                setLastCharacterId(nextId);
-                writeLastCharacterId(nextId);
+                setLastCharacterId((previousId) => {
+                    if (previousId === nextId) return previousId;
+                    writeRememberedCharacterId(nextId);
+                    return nextId;
+                });
             }
         });
     }, []);
 
-    const setCharacterId = async (id: string | null) => {
-        if (id === characterId) {
+    const setCharacterId = useCallback(async (id: string | null) => {
+        if (id === characterIdRef.current) {
             return;
         }
+        characterIdRef.current = id;
         setInternalCharacterId(id);
         setLastCharacterId(id);
-        writeLastCharacterId(id);
+        writeRememberedCharacterId(id);
         await setCurrentCharacterIdParam(id);
-    };
+    }, []);
 
     return {
         characterId,

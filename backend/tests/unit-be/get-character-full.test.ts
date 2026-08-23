@@ -98,6 +98,7 @@ function baseFixture(): Fixture {
         trait1: 'trait.one',
         trait2: 'trait.two',
         notes: 'still breathing',
+        miseryCount: 3,
         abilities: [
           { key: 'abilities.fixed', comment: 'once per day' },
           { custom: 'loose-note' },
@@ -319,6 +320,7 @@ test('getCharacterFull resolves catalog data, translations, modifiers, and deriv
   assert.equal(result.bodyDescription, 'Blady');
   assert.equal(result.trait1, 'Ponury');
   assert.equal(result.trait2, 'Glodny');
+  assert.equal(result.miseryCount, 3);
   assert.equal(result.createdAt, '2026-03-01T10:00:00.000Z');
   assert.equal(result.updatedAt, '2026-03-02T11:00:00.000Z');
 

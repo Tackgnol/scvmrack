@@ -22,7 +22,7 @@ export const FeedbackBodySchema = {
       },
     },
   },
-};
+} as const;
 
 export const FeedbackResponseSchema = {
   type: 'object',
@@ -30,4 +30,4 @@ export const FeedbackResponseSchema = {
   properties: {
     eventId: { type: 'string' },
   },
-};
+} as const;

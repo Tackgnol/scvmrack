@@ -122,3 +122,15 @@ frontend/stats.html
 # Golden corpus snapshots (may contain user/character data from live backend)
 backend/tests/fixtures/golden-corpus.json
 .superpowers/
+
+# local design/reference artifacts that should not be committed
+.impeccable/
+.woodpecker/setup-canary-secrets.local.sh
+Scvmrack party view/
+books/
+docs/owlbear-sdk-tutorials/
+frontend/.agents/
+frontend/.claude/
+frontend/.github/
+frontend/.junie/
+frontend/static/scvmrack_logo.svg

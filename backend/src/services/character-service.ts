@@ -8,6 +8,10 @@ import {
 import { createCharacterFromDraft, generateCharacter } from '../lib/generate-character.js';
 import { getCharacterFull } from '../lib/get-character-full.js';
 import { hydrateInventoryUses } from '../lib/inventory.js';
+import {
+  hasObrPlayerCharacterAccess,
+  type ObrCharacterAccessContext,
+} from '../lib/obr-character-access.js';
 import type { CharacterDraft } from '../lib/draft-seeds.js';
 import { normalizeDropLowestAbilities } from '../lib/draft-seeds.js';
 import {
@@ -31,12 +35,14 @@ import {
   type ServiceResult,
 } from './result.js';
 import type { PartyEventBus } from '../plugins/party-bus.js';
+import {
+  ownsCharacter,
+  sessionId,
+  sessionUserId,
+  type AppSession,
+} from './session.js';
 
-/** Minimal session shape the service needs (decoupled from Fastify). */
-export type AppSession = {
-  session?: { id?: string | null } | null;
-  user?: { id?: string | null; isAnonymous?: boolean | null } | null;
-} | null;
+export type { AppSession } from './session.js';
 
 export type CharacterListRow = {
   id: string;
@@ -51,33 +57,8 @@ export type CharacterListRow = {
   updatedAt: Date;
 };
 
-function sessionUserId(session: AppSession): string | null {
-  return session?.user?.id ?? null;
-}
-
-function sessionId(session: AppSession): string | null {
-  return session?.session?.id ?? null;
-}
-
 function sessionIsAnonymous(session: AppSession): boolean {
   return session?.user?.isAnonymous === true;
-}
-
-function ownsCharacter(
-  session: AppSession,
-  character: { userId: string | null; sessionId: string | null }
-): boolean {
-  const userId = sessionUserId(session);
-  if (userId && character.userId === userId) {
-    return true;
-  }
-
-  const sid = sessionId(session);
-  if (sid && character.sessionId === sid) {
-    return true;
-  }
-
-  return false;
 }
 
 function resolveListLocale(rawLocale: unknown, acceptLanguage: unknown): 'en' | 'pl' {
@@ -114,7 +95,8 @@ export function createCharacterService(
 ) {
   async function resolveReadAccess(
     id: string,
-    session: AppSession
+    session: AppSession,
+    obrAccess?: ObrCharacterAccessContext | null
   ): Promise<
     | { ok: true; viewerAccess: 'owner' | 'party'; row: CharacterPartyAccessRow }
     | { ok: false; error: ApiHttpError }
@@ -132,6 +114,10 @@ export function createCharacterService(
     }
 
     if (ownsCharacter(session, row)) {
+      return { ok: true, viewerAccess: 'owner', row };
+    }
+
+    if (await hasObrPlayerCharacterAccess(id, obrAccess)) {
       return { ok: true, viewerAccess: 'owner', row };
     }
 
@@ -161,25 +147,32 @@ export function createCharacterService(
 
   async function ensureOwnership(
     id: string,
-    session: AppSession
+    session: AppSession,
+    obrAccess?: ObrCharacterAccessContext | null
   ): Promise<ApiHttpError | null> {
     const userId = sessionUserId(session);
-    if (!userId) {
+    if (!userId && !sessionId(session)) {
       return unauthorized();
     }
 
-    const row = await characterRepository.getOwnerId(id);
+    const row = await characterRepository.getPartyAccessContext(id);
     if (!row) {
       return notFound('CHARACTER_NOT_FOUND', 'Character not found');
     }
-    if (row.userId !== userId) {
-      return apiError(
-        403,
-        'CHARACTER_ACCESS_DENIED',
-        "You don't have access to this scvm"
-      );
+
+    if (ownsCharacter(session, row)) {
+      return null;
     }
-    return null;
+
+    if (await hasObrPlayerCharacterAccess(id, obrAccess)) {
+      return null;
+    }
+
+    return apiError(
+      403,
+      'CHARACTER_ACCESS_DENIED',
+      "You don't have access to this scvm"
+    );
   }
 
   return {
@@ -189,7 +182,7 @@ export function createCharacterService(
       draft?: CharacterDraft | null;
       replace?: boolean;
       locale: string;
-    }): Promise<ServiceResult<unknown>> {
+    }): Promise<ServiceResult<Record<string, unknown>>> {
       const userId = sessionUserId(input.session);
       if (!userId) {
         return fail(unauthorized());
@@ -290,14 +283,19 @@ export function createCharacterService(
       id: string;
       session: AppSession;
       locale: string;
-    }): Promise<ServiceResult<unknown>> {
+      obrAccess?: ObrCharacterAccessContext | null;
+    }): Promise<ServiceResult<Record<string, unknown>>> {
       if (!isValidUUID(input.id)) {
         return fail(badRequest('INVALID_CHARACTER_ID', 'Invalid character ID'));
       }
 
       let access: Awaited<ReturnType<typeof resolveReadAccess>>;
       try {
-        access = await resolveReadAccess(input.id, input.session);
+        access = await resolveReadAccess(
+          input.id,
+          input.session,
+          input.obrAccess
+        );
       } catch (err) {
         return fail(
           unexpected(log, err,'CHARACTER_ACCESS_CHECK_FAILED', 'Failed to check character access')
@@ -328,12 +326,17 @@ export function createCharacterService(
       session: AppSession;
       body: Record<string, unknown>;
       rawLocale: unknown;
-    }): Promise<ServiceResult<unknown>> {
+      obrAccess?: ObrCharacterAccessContext | null;
+    }): Promise<ServiceResult<Record<string, unknown>>> {
       if (!isValidUUID(input.id)) {
         return fail(badRequest('INVALID_CHARACTER_ID', 'Invalid character ID'));
       }
 
-      const denied = await ensureOwnership(input.id, input.session);
+      const denied = await ensureOwnership(
+        input.id,
+        input.session,
+        input.obrAccess
+      );
       if (denied) {
         return fail(denied);
       }

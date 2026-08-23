@@ -20,7 +20,7 @@ import {
   type ServiceLogger,
   type ServiceResult,
 } from './result.js';
-import type { AppSession } from './character-service.js';
+import { sessionUserId, type AppSession } from './session.js';
 import { sanitizeString } from '../utils.js';
 
 export type DraftResult = {
@@ -34,10 +34,6 @@ type ClassSummary = {
   name: string | null;
   description: string | null;
 };
-
-function sessionUserId(session: AppSession): string | null {
-  return session?.user?.id ?? null;
-}
 
 function normalizedDraftName(raw: unknown): string | undefined {
   const name = sanitizeString(raw, 255);

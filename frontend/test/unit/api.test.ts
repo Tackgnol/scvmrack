@@ -1,5 +1,16 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { authKeys, characterKeys, csrfMiddleware, authMiddleware, resetRedirectControl } from "@/api/index";
+import {
+    authKeys,
+    characterKeys,
+    csrfMiddleware,
+    authMiddleware,
+    obrCharacterAccessMiddleware,
+    resetRedirectControl,
+} from "@/api/index";
+import {
+    clearObrCharacterAccessContext,
+    setObrCharacterAccessContext,
+} from "@/obr/obrCharacterAccess";
 import { navigateToSessionExpired } from '@/router/navigation';
 
 // Mock navigation
@@ -28,6 +39,7 @@ describe("API Index", () => {
 
     afterEach(() => {
         vi.useRealTimers();
+        clearObrCharacterAccessContext();
     });
 
     describe("Query Keys", () => {
@@ -83,6 +95,49 @@ describe("API Index", () => {
             expect(result.status).toBe(200);
         });
 
+        it("should retry a consumed POST body with a fresh CSRF token", async () => {
+            (global.fetch as any)
+                .mockResolvedValueOnce({
+                    ok: true,
+                    json: () => Promise.resolve({ token: "old-token" }),
+                })
+                .mockResolvedValueOnce({
+                    ok: true,
+                    json: () => Promise.resolve({ token: "new-token" }),
+                })
+                .mockResolvedValueOnce(new Response(null, { status: 200 }));
+
+            const request = new Request("http://localhost/test", {
+                body: JSON.stringify({ name: "Goblin" }),
+                method: "POST",
+            });
+            const nextRequest = expectRequest(
+                await csrfMiddleware.onRequest!({
+                    request,
+                    schemaPath: "",
+                    id: "csrf-body-retry",
+                } as any),
+            );
+            await nextRequest.text();
+
+            const result = expectResponse(
+                await csrfMiddleware.onResponse!({
+                    request: nextRequest,
+                    response: new Response(null, { status: 403 }),
+                    schemaPath: "",
+                    id: "csrf-body-retry",
+                } as any),
+            );
+
+            const retryRequest = (global.fetch as any).mock.calls.at(-1)?.[0] as Request;
+            expect(result.status).toBe(200);
+            expect(retryRequest.headers.get("x-csrf-token")).toBe("new-token");
+            expect(retryRequest.credentials).toBe("include");
+            await expect(retryRequest.clone().json()).resolves.toEqual({
+                name: "Goblin",
+            });
+        });
+
         it("should return original response if CSRF token fetch fails on 403 retry", async () => {
             const request = new Request("http://localhost/test", { method: "POST" });
             const response = new Response(null, { status: 403 });
@@ -115,6 +170,41 @@ describe("API Index", () => {
             const result = expectResponse(await promise);
             expect(global.fetch).toHaveBeenCalledTimes(1);
             expect(result.status).toBe(200);
+        });
+
+        it("should retry a consumed POST body once for non-auth paths", async () => {
+            const request = new Request("http://localhost/test", {
+                body: JSON.stringify({ currentHealth: 3 }),
+                method: "POST",
+            });
+            const authedRequest = expectRequest(
+                await authMiddleware.onRequest!({
+                    request,
+                    schemaPath: "",
+                    id: "auth-body-retry",
+                } as any),
+            );
+            await authedRequest.text();
+            const response = new Response(null, { status: 401 });
+
+            (global.fetch as any).mockResolvedValueOnce(new Response(null, { status: 200 }));
+
+            const promise = authMiddleware.onResponse!({
+                request: authedRequest,
+                response,
+                schemaPath: "",
+                id: "auth-body-retry",
+            } as any);
+
+            await vi.runAllTimersAsync();
+
+            const result = expectResponse(await promise);
+            const retryRequest = (global.fetch as any).mock.calls[0][0] as Request;
+            expect(result.status).toBe(200);
+            expect(retryRequest.credentials).toBe("include");
+            await expect(retryRequest.clone().json()).resolves.toEqual({
+                currentHealth: 3,
+            });
         });
 
         it("should redirect to session expired on second 401", async () => {
@@ -166,6 +256,51 @@ describe("API Index", () => {
              // redirectToSessionExpired uses 100ms timeout
              await vi.runAllTimersAsync();
              expect(navigateToSessionExpired).toHaveBeenCalled();
+        });
+    });
+
+    describe("obrCharacterAccessMiddleware", () => {
+        it("adds OBR room and player headers to character detail reads", async () => {
+            setObrCharacterAccessContext({
+                roomId: "room-1",
+                playerId: "player-1",
+                connectionId: "conn-1",
+            });
+
+            const request = new Request(
+                "http://localhost/api/characters/11111111-1111-4111-8111-111111111111?locale=en",
+                { method: "GET" },
+            );
+            const result = expectRequest(
+                await obrCharacterAccessMiddleware.onRequest!({
+                    request,
+                    schemaPath: "",
+                } as any),
+            );
+
+            expect(result.headers.get("x-obr-room-id")).toBe("room-1");
+            expect(result.headers.get("x-obr-player-id")).toBe("player-1");
+            expect(result.headers.get("x-obr-connection-id")).toBe("conn-1");
+        });
+
+        it("does not add OBR headers to character creates", async () => {
+            setObrCharacterAccessContext({
+                roomId: "room-1",
+                playerId: "player-1",
+            });
+
+            const request = new Request("http://localhost/api/characters/new", {
+                method: "POST",
+            });
+            const result = expectRequest(
+                await obrCharacterAccessMiddleware.onRequest!({
+                    request,
+                    schemaPath: "",
+                } as any),
+            );
+
+            expect(result.headers.has("x-obr-room-id")).toBe(false);
+            expect(result.headers.has("x-obr-player-id")).toBe(false);
         });
     });
 });

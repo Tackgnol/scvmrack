@@ -1,7 +1,7 @@
-import { client } from '@/api';
-import { toApiClientError } from '@/utils/errorUtils';
+import { client } from "@/api";
+import { unwrapApiResult, type UntypedApiClient } from "@/api/clientResult";
 
-export type PartyRole = 'gm' | 'member';
+export type PartyRole = "gm" | "member";
 
 export type PartyMemberSummary = {
   characterId: string;
@@ -24,14 +24,25 @@ export type OwnedPartySummary = {
   updatedAt: string;
 };
 
-export type PartyDetail = OwnedPartySummary & {
+export type PartyDetail = Omit<
+  OwnedPartySummary,
+  "inviteToken" | "invitePath"
+> & {
   role: PartyRole;
   members: PartyMemberSummary[];
+  // Owner-only: absent when the backend returns the token-less room view.
+  inviteToken?: string;
+  invitePath?: string;
 };
 
 export type PartyJoinResult = {
   partyId: string;
   redirect: string;
+};
+
+export type PromoteObrRoomInput = {
+  obrRoomId: string;
+  name?: string;
 };
 
 export type PartyInviteSummary = {
@@ -40,77 +51,104 @@ export type PartyInviteSummary = {
   maxMembers: number;
 };
 
-type ApiResult<T> = {
-  data?: T;
-  error?: unknown;
-  response?: Response;
+export type PartyLimits = {
+  maxMembers: number;
 };
 
-type UntypedClient = {
-  GET: <T>(path: string, init?: Record<string, unknown>) => Promise<ApiResult<T>>;
-  POST: <T>(path: string, init?: Record<string, unknown>) => Promise<ApiResult<T>>;
-  PATCH: <T>(path: string, init?: Record<string, unknown>) => Promise<ApiResult<T>>;
-  DELETE: <T>(path: string, init?: Record<string, unknown>) => Promise<ApiResult<T>>;
+export type PartyMiseriesResult = {
+  miseryCount: number;
+  updatedCharacters: number;
 };
 
-const partyClient = client as unknown as UntypedClient;
+const partyClient = client as unknown as UntypedApiClient;
 
 export const partyKeys = {
-  list: () => ['get', '/api/parties'] as const,
+  limits: () => ["get", "/api/parties/limits"] as const,
+  list: () => ["get", "/api/parties"] as const,
   detail: (partyId: string) =>
-    ['get', '/api/parties/{id}', { params: { path: { id: partyId } } }] as const,
+    [
+      "get",
+      "/api/parties/{id}",
+      { params: { path: { id: partyId } } },
+    ] as const,
+  obrRoom: (roomId: string) => ["party", "obr-room", roomId] as const,
   invite: (token: string) =>
-    ['get', '/api/parties/invite/{token}', { params: { path: { token } } }] as const,
-  roster: () => ['get', '/api/characters'] as const,
+    [
+      "get",
+      "/api/parties/invite/{token}",
+      { params: { path: { token } } },
+    ] as const,
+  roster: () => ["get", "/api/characters"] as const,
   character: (characterId: string) =>
     [
-      'get',
-      '/api/characters/{id}',
+      "get",
+      "/api/characters/{id}",
       { params: { path: { id: characterId } } },
     ] as const,
 };
 
-async function unwrap<T>(
-  result: ApiResult<T>,
-  fallbackMessage: string
-): Promise<T> {
-  const responseOk = result.response?.ok ?? !result.error;
-  if (result.error || !responseOk) {
-    throw toApiClientError(result.error, result.response, fallbackMessage);
-  }
-
-  return result.data as T;
+export async function getPartyLimits(): Promise<PartyLimits> {
+  return unwrapApiResult(
+    await partyClient.GET<PartyLimits>("/api/parties/limits"),
+    "Failed to load party limits",
+  );
 }
 
 export async function listParties(): Promise<OwnedPartySummary[]> {
-  return unwrap(
-    await partyClient.GET<OwnedPartySummary[]>('/api/parties'),
-    'Failed to load parties'
+  return unwrapApiResult(
+    await partyClient.GET<OwnedPartySummary[]>("/api/parties"),
+    "Failed to load parties",
   );
 }
 
 export async function createParty(name: string): Promise<PartyDetail> {
-  return unwrap(
-    await partyClient.POST<PartyDetail>('/api/parties', {
+  return unwrapApiResult(
+    await partyClient.POST<PartyDetail>("/api/parties", {
       body: { name },
     }),
-    'Failed to create party'
+    "Failed to create party",
+  );
+}
+
+export async function promoteObrRoom(
+  input: PromoteObrRoomInput,
+): Promise<PartyDetail> {
+  return unwrapApiResult(
+    await partyClient.POST<PartyDetail>("/api/parties/promote", {
+      body: input,
+    }),
+    "Failed to save Owlbear room party",
+  );
+}
+
+export async function attachPartyRoom(
+  partyId: string,
+  obrRoomId: string,
+): Promise<{ id: string; obrRoomId: string }> {
+  return unwrapApiResult(
+    await partyClient.POST<{ id: string; obrRoomId: string }>(
+      `/api/parties/${partyId}/attach-room`,
+      { body: { obrRoomId } },
+    ),
+    "Failed to attach this Owlbear room",
   );
 }
 
 export async function getParty(partyId: string): Promise<PartyDetail> {
-  return unwrap(
+  return unwrapApiResult(
     await partyClient.GET<PartyDetail>(`/api/parties/${partyId}`),
-    'Failed to load party'
+    "Failed to load party",
   );
 }
 
-export async function getPartyInvite(token: string): Promise<PartyInviteSummary> {
-  return unwrap(
+export async function getPartyInvite(
+  token: string,
+): Promise<PartyInviteSummary> {
+  return unwrapApiResult(
     await partyClient.GET<PartyInviteSummary>(
-      `/api/parties/invite/${encodeURIComponent(token)}`
+      `/api/parties/invite/${encodeURIComponent(token)}`,
     ),
-    'Failed to load party invite'
+    "Failed to load party invite",
   );
 }
 
@@ -118,30 +156,43 @@ export async function renameParty(input: {
   partyId: string;
   name: string;
 }): Promise<{ id: string; name: string }> {
-  return unwrap(
+  return unwrapApiResult(
     await partyClient.PATCH<{ id: string; name: string }>(
       `/api/parties/${input.partyId}`,
-      { body: { name: input.name } }
+      { body: { name: input.name } },
     ),
-    'Failed to rename party'
+    "Failed to rename party",
+  );
+}
+
+export async function setPartyMiseries(input: {
+  partyId: string;
+  miseryCount: number;
+}): Promise<PartyMiseriesResult> {
+  return unwrapApiResult(
+    await partyClient.PUT<PartyMiseriesResult>(
+      `/api/parties/${input.partyId}/miseries`,
+      { body: { miseryCount: input.miseryCount } },
+    ),
+    "Failed to update party Miseries",
   );
 }
 
 export async function regeneratePartyLink(
-  partyId: string
-): Promise<Pick<OwnedPartySummary, 'id' | 'invitePath' | 'inviteToken'>> {
-  return unwrap(
-    await partyClient.POST<Pick<OwnedPartySummary, 'id' | 'invitePath' | 'inviteToken'>>(
-      `/api/parties/${partyId}/regenerate-link`
-    ),
-    'Failed to regenerate invite link'
+  partyId: string,
+): Promise<Pick<OwnedPartySummary, "id" | "invitePath" | "inviteToken">> {
+  return unwrapApiResult(
+    await partyClient.POST<
+      Pick<OwnedPartySummary, "id" | "invitePath" | "inviteToken">
+    >(`/api/parties/${partyId}/regenerate-link`),
+    "Failed to regenerate invite link",
   );
 }
 
 export async function disbandParty(partyId: string): Promise<void> {
-  await unwrap<unknown>(
+  await unwrapApiResult<unknown>(
     await partyClient.DELETE<unknown>(`/api/parties/${partyId}`),
-    'Failed to disband party'
+    "Failed to disband party",
   );
 }
 
@@ -149,11 +200,11 @@ export async function kickPartyMember(input: {
   partyId: string;
   characterId: string;
 }): Promise<void> {
-  await unwrap<unknown>(
+  await unwrapApiResult<unknown>(
     await partyClient.POST<unknown>(`/api/parties/${input.partyId}/kick`, {
       body: { characterId: input.characterId },
     }),
-    'Failed to remove party member'
+    "Failed to remove party member",
   );
 }
 
@@ -161,11 +212,11 @@ export async function leaveParty(input: {
   partyId: string;
   characterId: string;
 }): Promise<void> {
-  await unwrap<unknown>(
+  await unwrapApiResult<unknown>(
     await partyClient.POST<unknown>(`/api/parties/${input.partyId}/leave`, {
       body: { characterId: input.characterId },
     }),
-    'Failed to leave party'
+    "Failed to leave party",
   );
 }
 
@@ -173,11 +224,11 @@ export async function joinParty(input: {
   token: string;
   characterId: string;
 }): Promise<PartyJoinResult> {
-  return unwrap(
-    await partyClient.POST<PartyJoinResult>('/api/parties/join', {
+  return unwrapApiResult(
+    await partyClient.POST<PartyJoinResult>("/api/parties/join", {
       body: input,
     }),
-    'Failed to join party'
+    "Failed to join party",
   );
 }
 
@@ -186,7 +237,7 @@ export async function replacePartyMember(input: {
   oldCharacterId: string;
   newCharacterId: string;
 }): Promise<PartyJoinResult> {
-  return unwrap(
+  return unwrapApiResult(
     await partyClient.POST<PartyJoinResult>(
       `/api/parties/${input.partyId}/replace-member`,
       {
@@ -194,8 +245,8 @@ export async function replacePartyMember(input: {
           oldCharacterId: input.oldCharacterId,
           newCharacterId: input.newCharacterId,
         },
-      }
+      },
     ),
-    'Failed to bind replacement to party'
+    "Failed to bind replacement to party",
   );
 }

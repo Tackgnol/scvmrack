@@ -28,6 +28,27 @@ export async function fillAndSave(
   }, timeout);
 }
 
+export async function markMiseryAndSave(page: Page, misery: number) {
+  await waitForCharacterSave(page, async () => {
+    await page.getByTestId(`misery-button-${misery}`).click();
+  });
+}
+
+export async function expectMiseryCount(page: Page, count: number) {
+  await expect(page.getByTestId('misery-count')).toHaveText(`${count} / 7`);
+  await expect(page.getByTestId('header-misery-mirror')).toHaveAttribute(
+    'aria-label',
+    new RegExp(`Miseries: ${count} of 7`, 'i')
+  );
+
+  for (let misery = 1; misery <= 7; misery += 1) {
+    await expect(page.getByTestId(`misery-button-${misery}`)).toHaveAttribute(
+      'aria-pressed',
+      String(misery <= count)
+    );
+  }
+}
+
 async function stableInputValue(page: Page, testId: string, timeout = 10000): Promise<string> {
   const input = page.getByTestId(testId);
   let previousValue: string | undefined;

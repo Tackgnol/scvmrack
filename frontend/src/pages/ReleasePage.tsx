@@ -1,4 +1,5 @@
 import { Link } from '@tanstack/react-router';
+import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import {
     Box,
@@ -29,12 +30,99 @@ const getTypeColor = (type: ReleaseNote['type']) => {
     }
 };
 
-export function ReleasePage() {
-    const { t } = useTranslation();
-
+const buildReleaseNotes = (t: TFunction): ReleaseNote[] => {
     // Source of truth: the /release/*.md files at the repo root. Keep entries
     // newest-first and in sync with that folder when cutting a release.
-    const releases: ReleaseNote[] = [
+    return [
+        {
+            version: '0.5.7',
+            date: '2026-07-06',
+            type: 'patch',
+            changes: [
+                t('release.v057.obrVisibility', 'Owlbear room character visibility is now consistent across roster, enemy cards, and room APIs'),
+                t('release.v057.obrTransport', 'The Owlbear panel now uses the app OpenAPI transport for consistent CSRF and session handling'),
+                t('release.v057.obrManifestVersion', 'The OBR manifest now reports version 0.5.7'),
+            ],
+        },
+        {
+            version: '0.5.6',
+            date: '2026-07-05',
+            type: 'patch',
+            changes: [
+                t('release.v056.sharedOwlbearPackage', 'The Owlbear panel now runs on a shared, reusable package used across RPGTools apps — no behavior change for players'),
+            ],
+        },
+        {
+            version: '0.5.5',
+            date: '2026-07-04',
+            type: 'patch',
+            changes: [
+                t('release.v055.sharedAuthHandoff', 'The Owlbear Rodeo popup sign-in now runs on the shared RPGTools auth stack, the same audited flow used across all RPGTools apps'),
+                t('release.v055.internalCleanup', 'Removed a leftover internal table that is no longer needed'),
+            ],
+        },
+        {
+            version: '0.5.4',
+            date: '2026-06-30',
+            type: 'patch',
+            changes: [
+                t('release.v054.obrEnemyTokenPopover', 'Player enemy cards now open from bound enemy token popovers instead of the character sheet'),
+                t('release.v054.obrEnemySafeProjection', 'Player enemy popovers use the safe enemy-card projection while GM popovers keep the full editable form'),
+                t('release.v054.obrManifestVersion', 'The OBR manifest now reports version 0.5.4'),
+            ],
+        },
+        {
+            version: '0.5.3',
+            date: '2026-06-30',
+            type: 'patch',
+            changes: [
+                t('release.v053.obrEnemyAutoSetup', 'The Owlbear Rodeo GM enemy tab now prepares its room enemy board automatically'),
+                t('release.v053.obrEnemyNoLoginGate', 'GMs can add enemies from Owlbear without a scvmrack login or manual party promotion step'),
+                t('release.v053.obrManifestVersion', 'The OBR manifest now reports version 0.5.3'),
+            ],
+        },
+        {
+            version: '0.5.2',
+            date: '2026-06-30',
+            type: 'patch',
+            changes: [
+                t('release.v052.obrManifestVersion', 'The OBR manifest now reports version 0.5.2'),
+                t('release.v052.obrPopoverCacheBust', 'Owlbear Rodeo reloads the current extension entrypoint for player names, Forge/Login actions, and room enemy management'),
+                t('release.v052.obrNoStore', 'The public OBR manifest and popover shell now send no-store cache headers'),
+            ],
+        },
+        {
+            version: '0.5.1',
+            date: '2026-06-28',
+            type: 'patch',
+            changes: [
+                t('release.v051.obrManifestCors', 'Owlbear Rodeo can install the Scvmrack manifest because the public extension files now send CORS headers'),
+                t('release.v051.obrManifestVersion', 'The OBR manifest now reports version 0.5.1'),
+            ],
+        },
+        {
+            version: '0.5.0',
+            date: '2026-06-28',
+            type: 'minor',
+            changes: [
+                t('release.v050.obrExtension', 'Scvmrack now runs inside Owlbear Rodeo with an embedded player sheet and GM roster'),
+                t('release.v050.tokenBinding', 'Players can bind or re-bind selected tokens, and bound selections show the scvm name'),
+                t('release.v050.cardPeek', 'Bound tokens expose a compact View scvm card with HP, Omens, silver, combat targets, armor DR, gear, traits, and modifiers'),
+                t('release.v050.roomPromotion', 'Signed-in GMs can move an Owlbear room into a durable scvmrack party with invite and manage links'),
+                t('release.v050.drFiltering', 'Party and Owlbear warband rows now show armor DR and use the same modifier filtering as the main sheet'),
+                t('release.v050.roomGate', 'OBR card reads are gated by the Owlbear room binding, so a leaked character id alone cannot fetch a card'),
+            ],
+        },
+        {
+            version: '0.4.4',
+            date: '2026-06-25',
+            type: 'patch',
+            changes: [
+                t('release.v044.structuredLogging', 'Unexpected backend errors now log full stack traces through the shared service error helper'),
+                t('release.v044.sseCleanup', 'Party live-update streams now close half-open sockets when a write fails before the client disconnects'),
+                t('release.v044.repositoryLayering', 'Catalog reads now go through repositories instead of direct database calls from library code'),
+            ],
+        },
         {
             version: '0.4.3',
             date: '2026-06-24',
@@ -155,6 +243,11 @@ export function ReleasePage() {
             ],
         },
     ];
+};
+
+export function ReleasePage() {
+    const { t } = useTranslation();
+    const releases = buildReleaseNotes(t);
 
     const getTypeLabel = (type: ReleaseNote['type']) => {
         switch (type) {

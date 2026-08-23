@@ -30,6 +30,11 @@ const state = {
   deleteOthersError: null as unknown,
   deleteOthersResult: { count: 0 },
   deleteOthersCalls: [] as Array<{ userId: string; keepId: string }>,
+  obrAccessAllowed: false,
+  obrAccessCalls: [] as Array<{
+    characterId: string;
+    context: unknown;
+  }>,
   userHasCharactersResult: false,
   generatedId: 'generated-id',
   fullResult: { id: VALID_ID, name: 'Hero' } as Record<string, unknown> | null,
@@ -60,6 +65,8 @@ function resetState(): void {
   state.deleteOthersError = null;
   state.deleteOthersResult = { count: 0 };
   state.deleteOthersCalls = [];
+  state.obrAccessAllowed = false;
+  state.obrAccessCalls = [];
   state.userHasCharactersResult = false;
   state.generatedId = 'generated-id';
   state.fullResult = { id: VALID_ID, name: 'Hero' };
@@ -150,6 +157,18 @@ mock.module('../../src/lib/inventory.js', {
     hydrateInventoryUses: async (items: unknown[]) => {
       state.hydrateCalls++;
       return items;
+    },
+  },
+});
+
+mock.module('../../src/lib/obr-character-access.js', {
+  namedExports: {
+    hasObrPlayerCharacterAccess: async (
+      characterId: string,
+      context: unknown
+    ) => {
+      state.obrAccessCalls.push({ characterId, context });
+      return state.obrAccessAllowed;
     },
   },
 });
@@ -356,6 +375,25 @@ test('getById returns the character for its owner', async () => {
   });
 });
 
+test('getById returns an owner-capable view for an OBR-assigned player', async () => {
+  state.ownerRow = { userId: 'gm-1' };
+  state.obrAccessAllowed = true;
+  const obrAccess = { roomId: 'room-1', playerId: 'player-1' };
+
+  const r = await service().getById({
+    id: VALID_ID,
+    session: guestSession('guest-1'),
+    locale: 'en',
+    obrAccess,
+  });
+
+  assert.equal(r.ok, true);
+  assert.equal((r as any).value.viewerAccess, 'owner');
+  assert.deepEqual(state.obrAccessCalls, [
+    { characterId: VALID_ID, context: obrAccess },
+  ]);
+});
+
 test('getById returns a read-only party view for the party GM', async () => {
   state.accessRow = {
     userId: 'player-1',
@@ -459,6 +497,26 @@ test('update publishes changed fields when the character belongs to a party', as
         fields: ['name', 'currentHp'],
       },
     },
+  ]);
+});
+
+test('update allows an OBR-assigned player to edit the bound character', async () => {
+  state.ownerRow = { userId: 'gm-1' };
+  state.obrAccessAllowed = true;
+  const obrAccess = { roomId: 'room-1', playerId: 'player-1' };
+
+  const r = await service().update({
+    id: VALID_ID,
+    session: guestSession('guest-1'),
+    body: { name: 'Assigned Hero' },
+    rawLocale: 'en',
+    obrAccess,
+  });
+
+  assert.equal(r.ok, true);
+  assert.equal(state.updateCalls.length, 1);
+  assert.deepEqual(state.obrAccessCalls, [
+    { characterId: VALID_ID, context: obrAccess },
   ]);
 });
 

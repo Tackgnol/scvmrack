@@ -15,6 +15,7 @@
 All application routes are mounted under the `/api` prefix.
 
 ### Characters (`/api/characters`)
+
 - `POST /new` — generate a new random character or confirm a seeded creation
   draft (TypeScript generator)
 - `GET /classes` — localized class list for the creation gate
@@ -28,25 +29,66 @@ All application routes are mounted under the `/api` prefix.
 - `DELETE /:id` — delete a character (ownership-enforced)
 
 ### Equipment (`/api/equipment`)
+
 - `GET /search` — fuzzy, locale-aware item search (PostgreSQL trigram indexes)
 - `GET /:itemType/:id` — fetch a full item by type and id
 
+### OBR (`/api/obr`)
+
+Room-scoped Owlbear Rodeo bindings, backed by the `ObrPlayerCharacterBinding`/
+`ObrTokenCharacterBinding` tables — the durable replacement for the old
+`Character.obrRoomId` pointer.
+
+- `GET /rooms/:roomId/cards` — compact, table-visible character cards for the
+  roster and card peek; includes combat targets, armor DR data, equipped
+  weapons, narrowed carried equipment, traits, and computed modifiers, while
+  private notes, storage, and full inventory are not returned. Pair-gated: a
+  card is only returned when the requested `roomId` has a durable binding to
+  that character id
+- `GET /rooms/:roomId/bindings` — list a room's player and token character
+  bindings. Room-trust: the unguessable room id is the capability, no session
+  required
+- `PUT`/`DELETE /rooms/:roomId/players/:playerId/character` — bind/clear an
+  Owlbear player's active scvm; session required, caller must own the
+  character or the character must already be bound in this room. Deletes are
+  idempotent (clearing an already-cleared binding succeeds)
+- `PUT`/`DELETE /rooms/:roomId/tokens/:tokenId/character` — bind/clear a scene
+  token's scvm under the same session + owner-or-in-room gate, idempotent
+  deletes
+- Binding writes are rate-limited
+
 ### Parties (`/api/parties`)
+
 - `POST /` — GM creates a party; `GET /` — list parties the GM owns
+- `POST /promote` — promotes an Owlbear Rodeo room into a durable scvmrack
+  party, idempotently keyed by `obrRoomId`, with hybrid trust semantics: the
+  owning GM gets the manage view (invite token included), any other caller
+  gets a token-less read view, and a signed-in GM can claim a room party that
+  was auto-created under the system owner (`system:obr-room`) by an earlier
+  anonymous session
+- `POST /:id/attach-room` — re-point an owned party at a new Owlbear room
+  (owner-only, 409 if the room is already linked to another party)
+- `POST /:id/detach-room` — clear an owned party's Owlbear room pointer (owner-only)
 - `GET /:id` — party detail (role, members); `PATCH /:id` — rename; `DELETE /:id` — disband
 - `POST /join` — bind a character to a party via an invite token
 - `POST /:id/regenerate-link` — rotate the invite token
 - `POST /:id/replace-member` / `/leave` (character owner) and `/kick` (GM)
 - `GET /:id/stream` — Server-Sent-Events feed of member/HP/presence changes,
   served over the shared-auth credentialed fetch path
+- `/by-room/:roomId/enemies*` — the room-trust enemy board (list/create/update/
+  health-step/delete plus a safe player-card projection). Gated purely by the
+  OBR room id resolving to a promoted party — no session required, so
+  anonymous OBR GMs can run enemies
 
 ### Feedback (`/api/feedback`)
+
 - `POST /` — forward a user feedback **or** unexpected-error report to GlitchTip
   server-side. Error reports capture the exception first and associate it with the
   feedback event. Rate-limited (20/min), CSRF-protected, schema-validated with
   length caps; degrades gracefully to a no-op when no Sentry DSN is configured.
 
 ### Platform
+
 - `GET /health` — liveness probe (`{ status, timestamp }`)
 - OAuth redirect tunnel route
 - Shared-auth endpoints: `/api/auth/*`, `/api/csrf-token`, `/api/claim/*`
@@ -55,6 +97,7 @@ All application routes are mounted under the `/api` prefix.
 ## Error handling
 
 Centralized, structured error pipeline (`src/errors.ts` + `plugins/error-handler.ts`):
+
 - Single `ApiHttpError` type and `ApiErrorPayload` shape:
   `{ error, message, code, statusCode, requestId, details? }`
 - Fastify validation errors → `400 VALIDATION_ERROR` with per-field `details`

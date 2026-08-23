@@ -18,6 +18,10 @@ vi.mock('@/auth', () => ({
   signOut: vi.fn(),
 }));
 
+vi.mock('@/auth/ownershipScope', () => ({
+  synchronizeOwnershipScope: vi.fn(),
+}));
+
 vi.mock('@/api', () => ({
   authKeys: {
     all: ['auth'],
@@ -120,6 +124,11 @@ test('useAuth treats expired session flag as logged out and skips anonymous boot
 test('useAuth bootstraps anonymous sessions when no session exists', async () => {
   const queryClient = { invalidateQueries: vi.fn(), setQueryData: vi.fn() };
   (useQueryClient as any).mockReturnValue(queryClient);
+  const createdSession = {
+    session: { id: 'anonymous-session' },
+    user: { id: 'anonymous-user', isAnonymous: true },
+  };
+  vi.mocked(fetchSession).mockResolvedValue(createdSession);
 
   let capturedQueryFn: (() => Promise<unknown>) | undefined;
   (useQuery as any).mockImplementation((options: any) => {
@@ -139,9 +148,34 @@ test('useAuth bootstraps anonymous sessions when no session exists', async () =>
   await capturedQueryFn?.();
 
   expect(signInAnonymous).toHaveBeenCalled();
-  expect(queryClient.invalidateQueries).toHaveBeenCalledWith({
-    queryKey: ['auth', 'session'],
+  expect(fetchSession).toHaveBeenCalled();
+  expect(queryClient.setQueryData).toHaveBeenCalledWith(
+    ['auth', 'session'],
+    createdSession
+  );
+});
+
+test('useAuth rejects an anonymous bootstrap that does not produce a readable session', async () => {
+  const queryClient = { invalidateQueries: vi.fn(), setQueryData: vi.fn() };
+  (useQueryClient as any).mockReturnValue(queryClient);
+  vi.mocked(fetchSession).mockResolvedValue(null);
+
+  let capturedQueryFn: (() => Promise<unknown>) | undefined;
+  (useQuery as any).mockImplementation((options: any) => {
+    if (options.queryKey.includes('session')) {
+      return { data: null, isLoading: false };
+    }
+    if (options.queryKey.includes('anonymous-bootstrap')) {
+      capturedQueryFn = options.queryFn;
+      return { isFetching: false };
+    }
+    return { isLoading: false, data: null };
   });
+
+  renderHook(() => useAuth());
+
+  await expect(capturedQueryFn?.()).rejects.toThrow('Anonymous session did not start');
+  expect(queryClient.setQueryData).not.toHaveBeenCalled();
 });
 
 test('useAuth reports loading while an anonymous bootstrap is pending but not yet fetching', () => {

@@ -64,11 +64,6 @@ export function useAutoCreateCharacter({
   t,
 }: Params) {
   const [autoCreateFailed, setAutoCreateFailed] = useState(false);
-  const [checkingExisting, setCheckingExisting] = useState(false);
-
-  if (isJustLoggedOut && autoCreateFailed) {
-    setAutoCreateFailed(false);
-  }
 
   // Gate on privacy acknowledgement: never create a guest character (a backend
   // write) before the storage notice is accepted. Until then the sheet renders
@@ -82,9 +77,7 @@ export function useAutoCreateCharacter({
     !isSessionExpired &&
     !autoCreateFailed;
 
-  if (shouldAutoCreateCharacter && !checkingExisting) {
-    setCheckingExisting(true);
-  }
+  const checkingExisting = shouldAutoCreateCharacter;
 
   // ---- Check for existing characters, then auto-create if none found ----
   useEffect(() => {
@@ -107,14 +100,13 @@ export function useAutoCreateCharacter({
         });
         if (!cancelled && chars.length > 0) {
           setCharacterId(chars[0].id);
-          setCheckingExisting(false);
           return;
         }
       } catch (e) {
         if (e instanceof DOMException && e.name === 'AbortError') return;
+        if (cancelled) return;
         if (isUnexpectedApiError(e)) {
           setAutoCreateFailed(true);
-          setCheckingExisting(false);
           reportUnexpectedError(
             e,
             {
@@ -130,7 +122,6 @@ export function useAutoCreateCharacter({
       }
 
       if (cancelled) return;
-      setCheckingExisting(false);
 
       // Step 2: No existing characters — create a new one
       createCharacter.mutate(
@@ -179,7 +170,6 @@ export function useAutoCreateCharacter({
       cancelled = true;
       controller.abort();
       controllerRef.current = null;
-      setCheckingExisting(false);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [

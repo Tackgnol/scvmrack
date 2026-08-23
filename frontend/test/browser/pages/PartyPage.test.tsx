@@ -8,6 +8,7 @@ import {
   useKickPartyMember,
   useRegeneratePartyLink,
   useRenameParty,
+  useSetPartyMiseries,
 } from "@/hooks/usePartyRepository";
 import { usePartyStream } from "@/hooks/usePartyStream";
 import { appHistory } from "@/router/history";
@@ -59,12 +60,14 @@ vi.mock("@/hooks/usePartyRepository", () => ({
   useKickPartyMember: vi.fn(),
   useRegeneratePartyLink: vi.fn(),
   useRenameParty: vi.fn(),
+  useSetPartyMiseries: vi.fn(),
 }));
 
 const mockedDetail = vi.mocked(usePartyDetail);
 const mockedKick = vi.mocked(useKickPartyMember);
 const mockedRegen = vi.mocked(useRegeneratePartyLink);
 const mockedRename = vi.mocked(useRenameParty);
+const mockedSetMiseries = vi.mocked(useSetPartyMiseries);
 const mockedStream = vi.mocked(usePartyStream);
 const mockedNotFound = vi.mocked(isApiNotFound);
 
@@ -131,6 +134,12 @@ describe("PartyPage", () => {
       mutateAsync: vi.fn(),
       isPending: false,
       error: null,
+    } as never);
+    mockedSetMiseries.mockReturnValue({
+      mutate: vi.fn(),
+      isPending: false,
+      error: null,
+      data: undefined,
     } as never);
     detail({ data: gmParty() });
   });
@@ -200,6 +209,25 @@ describe("PartyPage", () => {
     await renderPage();
     await userEvent.click(page.getByRole("button", { name: /kick/i }));
     await vi.waitFor(() => expect(mutateAsync).toHaveBeenCalledWith("c1"));
+  });
+
+  it("sets the selected Misery count for every party member", async () => {
+    const mutate = vi.fn();
+    mockedSetMiseries.mockReturnValue({
+      mutate,
+      isPending: false,
+      error: null,
+      data: undefined,
+    } as never);
+    await renderPage();
+
+    const control = page.getByTestId("gm-misery-control");
+    await userEvent.click(control.getByRole("button", { name: /misery iv/i }));
+    await userEvent.click(
+      control.getByRole("button", { name: /set 4 \/ 7 for all scvms/i }),
+    );
+
+    await expect.poll(() => mutate).toHaveBeenCalledWith(4);
   });
 
   it("redirects a member to their own party-character URL", async () => {

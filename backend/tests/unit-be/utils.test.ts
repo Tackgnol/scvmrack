@@ -35,6 +35,7 @@ test('sanitizeCharacterUpdate keeps known fields and clamps numeric bounds', () 
     name: '  <b>Hero</b>  ',
     maxHp: 9999,
     currentHp: -999,
+    miseryCount: 99,
     equipment: [{ name: '<axe>' }],
     unknown: 'drop-me',
   });
@@ -43,6 +44,7 @@ test('sanitizeCharacterUpdate keeps known fields and clamps numeric bounds', () 
     name: '<b>Hero</b>',
     maxHp: 1000,
     currentHp: -100,
+    miseryCount: 7,
     equipment: [{ name: '<axe>' }],
   });
 });

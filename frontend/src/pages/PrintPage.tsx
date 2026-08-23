@@ -1,4 +1,8 @@
 import { useCharacter } from '@/CharacterContext/CharacterContext';
+import {
+    MISERY_MARKS,
+    normalizeMiseryCount,
+} from '@/components/molecules/character/miseryTrackUtils';
 import { type Character, type ComputedModifier, type CustomModifier, type EquipmentItem, type Statistic } from '@/hooks/models';
 import {
     isConsumableUseItem,
@@ -336,6 +340,7 @@ function AbilityScore({
 
 function PrintSheet({ character }: { character: Character }) {
     const { t } = useTranslation();
+    const miseryCount = normalizeMiseryCount(character.miseryCount);
     const equipment = character.equipment ?? [];
     const storage = character.storage ?? [];
     const scrolls = equipment.filter(isScrollItem);
@@ -456,6 +461,24 @@ function PrintSheet({ character }: { character: Character }) {
                 </div>
             </main>
 
+            <PrintSection title={t('miseries.title')}>
+                <div className="print-native-miseries">
+                    <div className="print-native-misery-marks" aria-label={t('miseries.title')}>
+                        {MISERY_MARKS.map((roman, index) => (
+                            <span
+                                key={roman}
+                                className={index < miseryCount ? 'is-struck' : ''}
+                            >
+                                {roman}
+                            </span>
+                        ))}
+                    </div>
+                    <strong>
+                        {miseryCount} / {MISERY_MARKS.length}
+                    </strong>
+                </div>
+            </PrintSection>
+
             <PrintSection title={t('notes.title')} className="print-native-notes">
                 <p>{character.notes || ''}</p>
             </PrintSection>
@@ -464,7 +487,14 @@ function PrintSheet({ character }: { character: Character }) {
 }
 
 export function PrintPage() {
-    const { character, characterId, lastCharacterId, isLoading, error } = useCharacter();
+    const {
+        character,
+        characterId,
+        lastCharacterId,
+        isLoading,
+        error,
+        recoverInvalidCharacter,
+    } = useCharacter();
     const { t } = useTranslation();
     const { showUnexpectedError } = useErrorFeedback();
 
@@ -496,6 +526,10 @@ export function PrintPage() {
     }, [character, effectiveId, error, isLoading, showUnexpectedError]);
 
     const handleBack = () => {
+        if (!character && error && (isApiNotFound(error) || isApiForbidden(error))) {
+            void recoverInvalidCharacter();
+            return;
+        }
         void appHistory.push(buildHomeCallbackUrl(effectiveId));
     };
 

@@ -1,4 +1,5 @@
-import { FastifyPluginAsync } from 'fastify';
+import type { FastifyPluginAsync } from 'fastify';
+import type { JsonSchemaToTsProvider } from '@fastify/type-provider-json-schema-to-ts';
 import {
     CharacterIdParamsSchema,
     CharacterSchema,
@@ -8,10 +9,6 @@ import {
     LocaleQueryNoDefaultSchema,
     UpdateBodySchema,
 } from '../../schemas/character.js';
-import type {
-    CharacterUpdate,
-    GenerateCharacterParams,
-} from '../../types/character.js';
 import {
     ClassListResponseSchema,
     DraftBodySchema,
@@ -19,22 +16,27 @@ import {
     RerollBodySchema,
     RerollParamsSchema,
 } from '../../schemas/draft.js';
-import type {
-    AbilityStat,
-    CharacterDraft,
-    DraftSection,
-    SectionSeeds,
-} from '../../lib/draft-seeds.js';
 import { sendServiceError } from '../../errors.js';
+import { readObrCharacterAccessHeaders } from '../../lib/obr-character-access.js';
 import { createCharacterDraftService } from '../../services/character-draft-service.js';
 import { createCharacterService } from '../../services/character-service.js';
 
+type CharacterTypeProvider = JsonSchemaToTsProvider<{
+    SerializerSchemaOptions: {
+        deserialize: [
+            {
+                pattern: { type: 'string'; format: 'date-time' };
+                output: Date;
+            },
+        ];
+    };
+}>;
+
 const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
+    const app = fastify.withTypeProvider<CharacterTypeProvider>();
+
     // POST /api/characters/new - Generate new character (bound to session)
-    fastify.post<{
-        Body: GenerateCharacterParams;
-        Querystring: { locale?: string };
-    }>(
+    app.post(
         '/new',
         {
             config: {
@@ -78,16 +80,7 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
     );
 
     // POST /draft - Start (or rehydrate) a creation-flow draft. No DB write.
-    fastify.post<{
-        Body: {
-            classId?: number | null;
-            classless?: boolean;
-            seeds?: SectionSeeds;
-            name?: string;
-            dropLowestAbilities?: AbilityStat[];
-        };
-        Querystring: { locale?: string };
-    }>(
+    app.post(
         '/draft',
         {
             schema: {
@@ -124,11 +117,7 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
     );
 
     // POST /draft/reroll/:section - Re-roll one section of a draft.
-    fastify.post<{
-        Params: { section: DraftSection };
-        Body: { draft: CharacterDraft };
-        Querystring: { locale?: string };
-    }>(
+    app.post(
         '/draft/reroll/:section',
         {
             schema: {
@@ -163,7 +152,7 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
     );
 
     // GET /classes - Localized class list for the creation gate.
-    fastify.get<{ Querystring: { locale?: string } }>(
+    app.get(
         '/classes',
         {
             schema: {
@@ -189,7 +178,7 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
     );
 
     // GET /count - Get total number of characters
-    fastify.get(
+    app.get(
         '/count',
         {
             schema: {
@@ -218,10 +207,7 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
     );
 
     // GET /:id - Get character (with access control)
-    fastify.get<{
-        Params: { id: string };
-        Querystring: { locale?: string };
-    }>(
+    app.get(
         '/:id',
         {
             schema: {
@@ -247,6 +233,7 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
                 id: request.params.id,
                 session: request.appSession,
                 locale: request.query.locale ?? 'en',
+                obrAccess: readObrCharacterAccessHeaders(request.headers),
             });
 
             if (!result.ok) {
@@ -257,11 +244,7 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
     );
 
     // PATCH /:id - Update character (with access control)
-    fastify.patch<{
-        Params: { id: string };
-        Body: CharacterUpdate;
-        Querystring: { locale?: string };
-    }>(
+    app.patch(
         '/:id',
         {
             config: {
@@ -294,8 +277,9 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
             ).update({
                 id: request.params.id,
                 session: request.appSession,
-                body: request.body as Record<string, unknown>,
+                body: request.body,
                 rawLocale: request.query.locale,
+                obrAccess: readObrCharacterAccessHeaders(request.headers),
             });
 
             if (!result.ok) {
@@ -306,9 +290,7 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
     );
 
     // GET / - List user's characters
-    fastify.get<{
-        Querystring: { locale?: string };
-    }>(
+    app.get(
         '/',
         {
             schema: {
@@ -343,9 +325,7 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
     );
 
     // DELETE /:id - Delete character (with access control)
-    fastify.delete<{
-        Params: { id: string };
-    }>(
+    app.delete(
         '/:id',
         {
             schema: {
@@ -374,7 +354,7 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
             if (!result.ok) {
                 return sendServiceError(reply, request, result.error);
             }
-            return reply.status(204).send();
+            return reply.status(204).send(null);
         }
     );
 };

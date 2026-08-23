@@ -1,5 +1,6 @@
 import validator from 'validator';
 import { isSupportedLocale, type SupportedLocale } from './config/locales.js';
+import { MISERY_MAX, MISERY_MIN } from './lib/character-limits.js';
 
 /**
  * Convert a camelCase string to snake_case
@@ -128,6 +129,7 @@ export function sanitizeCharacterUpdate(
     agility: { min: 1, max: 30 },
     presence: { min: 1, max: 30 },
     toughness: { min: 1, max: 30 },
+    miseryCount: { min: MISERY_MIN, max: MISERY_MAX },
   };
 
   // JSONB fields

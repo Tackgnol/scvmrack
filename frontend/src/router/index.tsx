@@ -2,6 +2,8 @@ import { createRouter, createRootRoute, createRoute, lazyRouteComponent } from '
 import { appHistory } from '@/router/history';
 import { RootLayout } from '@/router/layout';
 import { CharacterCreatePage } from '@/pages/CharacterCreatePage';
+import { OBR_AUTH_DONE_PATH } from '@tackgnol/rpgtools-shared-auth/client';
+import { getViewTransitionTypes } from '@/router/routeClassification';
 
 const NotFoundComponent = lazyRouteComponent(() =>
     import('@/pages/NotFoundPage').then(m => ({ default: m.NotFoundPage }))
@@ -103,10 +105,24 @@ const releaseRoute = createRoute({
     component: lazyRouteComponent(() => import('@/pages/ReleasePage').then(m => ({ default: m.ReleasePage }))),
 });
 
+const owlbearRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: '/owlbear',
+    component: lazyRouteComponent(() => import('@/pages/OwlbearGuidePage').then(m => ({ default: m.OwlbearGuidePage }))),
+});
+
 const gmRoute = createRoute({
     getParentRoute: () => rootRoute,
     path: '/gm',
     component: lazyRouteComponent(() => import('@/pages/GmOverviewPage').then(m => ({ default: m.GmOverviewPage }))),
+});
+
+// Popup callback for Owlbear Rodeo sign-in. Hands a one-time obr-exchange token
+// back to the OBR iframe, then closes. See ObrAuthDonePage / useObrSession.
+const obrAuthDoneRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: OBR_AUTH_DONE_PATH,
+    component: lazyRouteComponent(() => import('@/pages/ObrAuthDonePage').then(m => ({ default: m.ObrAuthDonePage }))),
 });
 
 const routeTree = rootRoute.addChildren([
@@ -125,7 +141,9 @@ const routeTree = rootRoute.addChildren([
     printRoute,
     faqRoute,
     releaseRoute,
+    owlbearRoute,
     gmRoute,
+    obrAuthDoneRoute,
 ]);
 
 export const router = createRouter({
@@ -135,6 +153,10 @@ export const router = createRouter({
     // ready by click time. Without this, navigating to an unvisited route leaves
     // the content area blank while the chunk downloads, which reads as a flash.
     defaultPreload: 'intent',
+    defaultViewTransition: {
+        types: ({ fromLocation, toLocation }) =>
+            getViewTransitionTypes(fromLocation?.pathname, toLocation.pathname),
+    },
     defaultNotFoundComponent: () => <NotFoundComponent />,
 });
 

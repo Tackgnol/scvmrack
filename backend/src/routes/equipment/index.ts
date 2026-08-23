@@ -1,12 +1,13 @@
-import { FastifyPluginAsync } from 'fastify';
+import type { FastifyPluginAsync } from 'fastify';
+import type { JsonSchemaToTsProvider } from '@fastify/type-provider-json-schema-to-ts';
 import { ErrorSchema } from '../../schemas/equipment.js';
 import { sendServiceError } from '../../errors.js';
 import { createEquipmentService } from '../../services/equipment-service.js';
 
 const equipment: FastifyPluginAsync = async (fastify) => {
-  fastify.get<{
-    Querystring: { q: string; locale?: string; limit?: number };
-  }>(
+  const app = fastify.withTypeProvider<JsonSchemaToTsProvider>();
+
+  app.get(
     '/search',
     {
       config: {

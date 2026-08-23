@@ -3,6 +3,7 @@ import { AnimatedNumber } from '@components/index';
 import { morkBorgColors } from '@/theme/morkBorgTheme';
 import { Box, Button, Typography } from '@mui/material';
 import { useTranslation } from 'react-i18next';
+import { getCharacterViewTransitionName } from '@/router/routeClassification';
 
 const formatDate = (dateString?: string, locale = 'en') => {
   if (!dateString) return '-';
@@ -128,7 +129,10 @@ export function CharacterRow({
 
   return (
     <Box
-      sx={rowStyles.row(isActive)}
+      sx={{
+        ...rowStyles.row(isActive),
+        viewTransitionName: getCharacterViewTransitionName(id),
+      }}
       data-testid={id ? `character-row-${id}` : undefined}
     >
       <Box sx={rowStyles.cell}>

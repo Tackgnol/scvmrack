@@ -45,6 +45,29 @@ Feature: Character sheet
     Then the sheet reports that it is synced
     And a reload shows the new hit points and silver
 
+  # Automation anchor: backend/tests/e2e/tests/guest/miseries.spec.ts
+  Scenario: Guest advances and rewinds the misery track
+    Given I have accepted the storage notice
+    And I have a guest character
+    When I mark misery IV
+    Then miseries I through IV are struck on the sheet
+    And the header misery mirror shows four marked miseries
+    And the sheet reports that it is synced
+    When I mark misery IV again
+    Then only miseries I through III are struck on the sheet
+    And the sheet reports that it is synced
+    And a reload still shows three of seven miseries
+
+  # Automation anchor: backend/tests/e2e/tests/authed/miseries.spec.ts
+  Scenario: Signed-in player persists the misery track
+    Given I am signed in
+    And I have a seeded character
+    When I mark misery IV
+    Then miseries I through IV are struck on the sheet
+    And the header misery mirror shows four marked miseries
+    And the sheet reports that it is synced
+    And a reload still shows four of seven miseries
+
   # Automation anchor: backend/tests/e2e/tests/authed/descriptors.spec.ts
   Scenario: Character descriptors are editable
     Given I am signed in
