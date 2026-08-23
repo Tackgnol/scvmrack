@@ -94,6 +94,8 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile.dev
+      secrets:
+        - npmrc
     environment:
       VITE_BACKEND_URL: ""
       VITE_SITE_URL: http://web:5173
@@ -140,3 +142,7 @@ services:
 volumes:
   e2e-playwright-report:
   e2e-test-results:
+
+secrets:
+  npmrc:
+    file: .npmrc
