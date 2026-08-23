@@ -4,6 +4,230 @@
     "alphaBadge": "Alpha",
     "subtitle": "Interactive Mörk Borg character sheet"
   },
+  "obr": {
+    "layout": {
+      "expand": "⤢ Expand",
+      "collapse": "⊠ Collapse"
+    },
+    "common": {
+      "unnamedScvm": "Unnamed scvm",
+      "classless": "Classless"
+    },
+    "stats": {
+      "agilityShort": "AGI",
+      "presenceShort": "PRE",
+      "strengthShort": "STR",
+      "toughnessShort": "TOU",
+      "defenseShort": "DEF",
+      "meleeShort": "MELEE",
+      "rangedShort": "RANGED"
+    },
+    "route": {
+      "checkingRole": "Checking Owlbear role",
+      "openFromOwlbear": "Open Scvmrack from Owlbear Rodeo to read the room role."
+    },
+    "player": {
+      "emptyHint": "Roll a wretch to play right now, or sign in to load your warband.",
+      "rollScvm": "Roll a scvm",
+      "rollNew": "Roll new",
+      "forgeScvm": "Forge scvm",
+      "signIn": "Login",
+      "popupBlocked": "Allow the sign-in popup, then try again.",
+      "signInFailed": "Sign-in did not complete.",
+      "selectTokenFirst": "Select a token on the map first",
+      "boundNotification": "Bound",
+      "reboundNotification": "Re-bound",
+      "bindSuccessOne": "{{action}} {{name}} to 1 token",
+      "bindSuccessMany": "{{action}} {{name}} to {{count}} tokens",
+      "bindFailed": "Could not bind. Open a scene first.",
+      "oneTokenSelected": "1 token selected",
+      "manyTokensSelected": "{{count}} tokens selected",
+      "noTokenSelected": "No token selected",
+      "boundTokenSelected": "Bound token selected",
+      "bindSelectedToken": "Bind to selected token",
+      "rebindSelectedToken": "Re-bind selected token",
+      "selectTokenToBind": "Select token to bind",
+      "binding": "Binding"
+    },
+    "gm": {
+      "region": "GM view",
+      "tabsLabel": "GM view",
+      "partyTab": "Party",
+      "enemiesTab": "Enemies",
+      "bindings": "Room bindings",
+      "playerBinding": "Player {{id}}",
+      "tokenBinding": "Token",
+      "stale": "STALE — not in room",
+      "staleToken": "STALE — not in scene",
+      "clearBinding": "Clear",
+      "unbindToken": "Unbind",
+      "assignTo": "Assign to player"
+    },
+    "roster": {
+      "title": "GM · OVERVIEW {{count}}/{{max}}",
+      "empty": "No bound scvm yet. Players must bind a scvm to a token.",
+      "inviteLink": "Invite {{path}}",
+      "copyInviteLink": "Copy invite link {{path}}",
+      "inviteCopied": "Invite link copied",
+      "copyInviteFailed": "Could not copy invite link",
+      "manageLink": "Manage in scvmrack",
+      "moveParty": "Move party to scvmrack",
+      "moving": "Moving",
+      "promotedPartyName": "Owlbear room party",
+      "promoteError": "Could not save this Owlbear room party",
+      "roomBoardActive": "Room board active",
+      "signInForInvite": "Sign in as the owner to manage invites",
+      "attachSelect": "Use an existing warband",
+      "useThisRoom": "Use this room",
+      "attaching": "Attaching",
+      "attachError": "Could not attach this room",
+      "refresh": "Refresh",
+      "refreshed": "Roster refreshed",
+      "abilitySectionLabel": "{{name}} ability modifiers",
+      "combatSectionLabel": "{{name}} combat targets",
+      "abilities": "Abilities",
+      "combat": "Combat",
+      "omens": "Omens",
+      "mods": "Mods",
+      "showMods": "Show mods {{count}}",
+      "hideMods": "Hide mods {{count}}",
+      "noActiveModifiers": "No active modifiers."
+    },
+    "card": {
+      "missingId": "Missing scvm id",
+      "loadFailed": "Could not load scvm",
+      "notFound": "Scvm not found",
+      "loading": "Loading scvm",
+      "unbindToken": "Unbind token",
+      "unbindingToken": "Unbinding",
+      "unboundToken": "Token unbound",
+      "unbindFailed": "Could not unbind token",
+      "eyebrow": "View scvm",
+      "resourcesLabel": "{{name}} resources",
+      "hp": "HP",
+      "omens": "Omens",
+      "silver": "Silver",
+      "abilitySectionLabel": "{{name}} ability modifiers",
+      "combatSectionLabel": "{{name}} combat targets",
+      "equipmentSectionLabel": "{{name}} equipment",
+      "modifiersSectionLabel": "{{name}} modifiers",
+      "abilities": "Abilities",
+      "combat": "Combat",
+      "equipment": "Gear",
+      "weapons": "Weapons",
+      "armor": "Armor",
+      "body": "Body",
+      "traits": "Traits",
+      "mods": "Mods",
+      "bareHands": "bare hands",
+      "weaponFallback": "weapon",
+      "noArmor": "no armor",
+      "none": "none",
+      "noActiveModifiers": "No active modifiers."
+    },
+    "enemies": {
+      "playerRegion": "Enemy view",
+      "gmRegion": "GM enemies",
+      "playerTitle": "Enemies {{count}}",
+      "gmTitle": "GM enemies {{count}}",
+      "playerSubhead": "Known threats",
+      "gmSubhead": "Table threats",
+      "checkingSession": "Checking session",
+      "checkingSessionBody": "Enemy sheets need a scvmrack GM session.",
+      "signInGateTitle": "Sign in to save enemies",
+      "signInGateBody": "Enemy sheets are saved to the scvmrack party for this Owlbear room.",
+      "signInRequired": "Sign in to save enemies for this Owlbear room.",
+      "partyGateTitle": "Move room before enemies",
+      "partyGateBody": "Enemy sheets need a saved room party before the table can see them.",
+      "roomSetupTitle": "Setting up enemy board",
+      "roomSetupFailedTitle": "Enemy board setup failed",
+      "roomSetupBody": "Scvmrack is preparing this Owlbear room for enemy sheets. No login is needed.",
+      "roomSetupPending": "Setting up",
+      "roomSetupRetry": "Retry setup",
+      "partyRequired": "Move this room to scvmrack before saving enemies.",
+      "roomAlreadyPromoted": "This Owlbear room is already owned by another scvmrack GM.",
+      "newEnemy": "New enemy",
+      "editTitle": "Edit enemy",
+      "createTitle": "Add enemy",
+      "nameLabel": "Name",
+      "nameRequired": "Name is required",
+      "typeLabel": "Type",
+      "habitatLabel": "Habitat",
+      "healthLabel": "Health %",
+      "healthInvalid": "Use 0 to 100",
+      "currentHealthLabel": "Current HP",
+      "currentHealthInvalid": "Use 0 to 999",
+      "maxHealthLabel": "HP",
+      "maxHealthInvalid": "Use 1 to 999",
+      "moraleLabel": "Morale",
+      "moraleInvalid": "Use 0 to 99",
+      "armorDieLabel": "Armor die",
+      "armorDescriptionLabel": "Armor description",
+      "descriptionLabel": "Player description",
+      "gmDescriptionLabel": "GM description",
+      "playerDescriptionLabel": "Player description",
+      "descriptionInvalid": "Keep it to 500 characters",
+      "attacksTitle": "Attacks",
+      "attackNameLabel": "Attack",
+      "attackDieLabel": "Die",
+      "removeAttack": "Remove attack",
+      "addAttack": "Add attack",
+      "specialsTitle": "Special skills",
+      "specialNameLabel": "Skill",
+      "specialDescriptionLabel": "Description",
+      "removeSpecial": "Remove special skill",
+      "addSpecial": "Add special",
+      "lootTitle": "Loot & bounty",
+      "lootLabelLabel": "Label",
+      "lootValueLabel": "Value",
+      "removeLoot": "Remove loot",
+      "addLoot": "Add loot",
+      "statusBandsTitle": "Status bands",
+      "statusPercentLabel": "At %",
+      "statusLabelLabel": "Label",
+      "removeStatus": "Remove status",
+      "customStatus": "Custom",
+      "addStatus": "Add status",
+      "saving": "Saving",
+      "saveEnemy": "Save enemy",
+      "saveSuccess": "Enemy saved",
+      "saveFailed": "Could not save enemy",
+      "deleteFailed": "Could not delete enemy",
+      "selectTokenFirst": "Select a token on the map first",
+      "bindSuccessOne": "Bound {{name}} to 1 token",
+      "bindSuccessMany": "Bound {{name}} to {{count}} tokens",
+      "bindFailed": "Could not bind enemy",
+      "healthFailed": "Could not update health",
+      "loading": "Loading enemies",
+      "loadFailed": "Could not load enemies",
+      "emptyGm": "No enemies yet. Add one for the table.",
+      "missingId": "Missing enemy id",
+      "notFound": "Enemy not found",
+      "playerCharacterRequired": "Load your scvm before viewing enemy cards.",
+      "damage": "Damage 1 HP",
+      "heal": "Heal 1 HP",
+      "bindToken": "Bind token",
+      "selectToken": "Select token",
+      "clone": "Clone",
+      "cloneFailed": "Could not clone enemy",
+      "edit": "Edit",
+      "delete": "Delete",
+      "healthProgress": "{{name}} health",
+      "healthMeta": "{{value}}% health",
+      "hpMeta": "{{current}}/{{max}} HP",
+      "armorLabel": "Armor",
+      "attacksLabel": "{{name}} attacks",
+      "specialsLabel": "{{name}} special skills",
+      "lootLabel": "{{name}} loot",
+      "enemyTag": "Enemy",
+      "status": {
+        "healthy": "Healthy",
+        "wounded": "Wounded",
+        "severelyWounded": "Severely wounded",
+        "deathsDoor": "At death's door"
+      }
+    }
+  },
   "landing": {
     "seo": {
       "title": "Free Mork Borg Character Sheet",
@@ -414,6 +638,14 @@
     "placeholderAlt1": "Scratches, oaths, debts.",
     "placeholderAlt2": "Scrawls from the abyss."
   },
+  "miseries": {
+    "title": "The Calendar of Nechrubel",
+    "headerLabel": "Miseries",
+    "headerAria": "Miseries: {{count}} of 7. Jump to the misery track",
+    "markLabel": "Misery {{roman}}",
+    "calendar": "No Misery befalls the world twice",
+    "worldEnding": "7:7 · The world finally dies"
+  },
   "footer": {
     "worldEnding": "The World Is Ending",
     "legalNotice": "MÖRK BORG is copyright Ockult Örtmästare Games and Stockholm Kartell. Scvmrack is an independent production by Adam Kościelniak, built as part of the <rpgtoolsLink>rpgtools.co</rpgtoolsLink> suite, and is not affiliated with Ockult Örtmästare Games or Stockholm Kartell. It is published under the MÖRK BORG Third Party License. <privacyLink>Review your privacy settings</privacyLink>",
@@ -489,6 +721,7 @@
       "bodyDescription": "Body",
       "origin": "Origin",
       "notes": "Notes",
+      "miseryCount": "Miseries",
       "modifierValue": "Modifier value",
       "modifierName": "Modifier name",
       "modifierComment": "Modifier comment",
@@ -551,6 +784,7 @@
     "characters": "Scvms",
     "faq": "FAQ",
     "release": "Updates",
+    "owlbear": "Owlbear",
     "gm": "GM"
   },
   "characters": {
@@ -663,6 +897,50 @@
     "typeMinor": "Minor",
     "typePatch": "Patch",
     "moreUpdates": "More updates coming soon. The world is ending, but we keep shipping.",
+    "v057": {
+      "obrVisibility": "Owlbear room character visibility is now consistent across roster, enemy cards, and room APIs",
+      "obrTransport": "The Owlbear panel now uses the app OpenAPI transport for consistent CSRF and session handling",
+      "obrManifestVersion": "The OBR manifest now reports version 0.5.7"
+    },
+    "v056": {
+      "sharedOwlbearPackage": "The Owlbear panel now runs on a shared, reusable package used across RPGTools apps — no behavior change for players"
+    },
+    "v055": {
+      "sharedAuthHandoff": "The Owlbear Rodeo popup sign-in now runs on the shared RPGTools auth stack, the same audited flow used across all RPGTools apps",
+      "internalCleanup": "Removed a leftover internal table that is no longer needed"
+    },
+    "v054": {
+      "obrEnemyTokenPopover": "Player enemy cards now open from bound enemy token popovers instead of the character sheet",
+      "obrEnemySafeProjection": "Player enemy popovers use the safe enemy-card projection while GM popovers keep the full editable form",
+      "obrManifestVersion": "The OBR manifest now reports version 0.5.4"
+    },
+    "v053": {
+      "obrEnemyAutoSetup": "The Owlbear Rodeo GM enemy tab now prepares its room enemy board automatically",
+      "obrEnemyNoLoginGate": "GMs can add enemies from Owlbear without a scvmrack login or manual party promotion step",
+      "obrManifestVersion": "The OBR manifest now reports version 0.5.3"
+    },
+    "v052": {
+      "obrManifestVersion": "The OBR manifest now reports version 0.5.2",
+      "obrPopoverCacheBust": "Owlbear Rodeo reloads the current extension entrypoint for player names, Forge/Login actions, and room enemy management",
+      "obrNoStore": "The public OBR manifest and popover shell now send no-store cache headers"
+    },
+    "v051": {
+      "obrManifestCors": "Owlbear Rodeo can install the Scvmrack manifest because the public extension files now send CORS headers",
+      "obrManifestVersion": "The OBR manifest now reports version 0.5.1"
+    },
+    "v050": {
+      "obrExtension": "Scvmrack now runs inside Owlbear Rodeo with an embedded player sheet and GM roster",
+      "tokenBinding": "Players can bind or re-bind selected tokens, and bound selections show the scvm name",
+      "cardPeek": "Bound tokens expose a compact View scvm card with HP, Omens, silver, combat targets, armor DR, gear, traits, and modifiers",
+      "roomPromotion": "Signed-in GMs can move an Owlbear room into a durable scvmrack party with invite and manage links",
+      "drFiltering": "Party and Owlbear warband rows now show armor DR and use the same modifier filtering as the main sheet",
+      "roomGate": "OBR card reads are gated by the Owlbear room binding, so a leaked character id alone cannot fetch a card"
+    },
+    "v044": {
+      "structuredLogging": "Unexpected backend errors now log full stack traces through the shared service error helper",
+      "sseCleanup": "Party live-update streams now close half-open sockets when a write fails before the client disconnects",
+      "repositoryLayering": "Catalog reads now go through repositories instead of direct database calls from library code"
+    },
     "v043": {
       "partyNameContrast": "Party-name text on the GM overview now stays black on yellow so it remains readable while creating a party",
       "partyNameLimit": "Party creation now checks party names in the browser and blocks submit above 100 characters",
@@ -755,6 +1033,12 @@
     "renameLabel": "Warband name",
     "rename": "Rename",
     "noMembers": "No scvms have joined this party yet.",
+    "miseryControlHelp": "Set the same seal for every scvm. Open sheets update live.",
+    "miseryControlApply": "Set {{count}} / {{total}} for all scvms",
+    "miseryControlPending": "Setting Miseries...",
+    "miseryControlSuccess": "Every scvm now carries {{count}} / {{total}} Miseries.",
+    "miseryControlEmpty": "A scvm must join before the calendar can be imposed.",
+    "miseryControlError": "Failed to update party Miseries",
     "kick": "Kick",
     "empty": "No scvms in the rack yet. Roll one up and it joins the warband.",
     "cardError": "This scvm's sheet wouldn't load.",
@@ -769,6 +1053,54 @@
     "goToSheet": "Go to sheet",
     "leaveParty": "Leave party",
     "leaving": "Leaving..."
+  },
+  "owlbear": {
+    "title": "Owlbear Rodeo",
+    "intro": "Scvmrack runs inside Owlbear Rodeo as a room extension. Players keep their sheet open next to the map. Game masters get a live roster of every scvm at the table, without a second browser tab.",
+    "install": {
+      "heading": "Install",
+      "step1": "Open your Owlbear Rodeo room and go to Settings → Manage Extensions.",
+      "step2": "Paste this manifest URL and confirm:",
+      "step3": "Scvmrack appears in the room's action bar. Click it to open the sheet.",
+      "screenshot": "Owlbear Rodeo's 'Add a custom extension' dialog with the Scvmrack manifest URL pasted into the Install Link field"
+    },
+    "player": {
+      "heading": "For players",
+      "sheet": {
+        "title": "Your sheet, in the room",
+        "text": "Open the Scvmrack action to see your scvm exactly as it is on the main site: stats, inventory, HP, Omens. Edit it without leaving Owlbear.",
+        "screenshot": "The Scvmrack popover open in an Owlbear Rodeo room, showing a player's editable character sheet next to the map"
+      },
+      "bind": {
+        "title": "Bind your token",
+        "text": "Select your token on the map and bind it to your scvm. The token's name label updates to show who it is, and you can re-bind it any time you switch scvms or tokens.",
+        "screenshot": "The Scvmrack panel after selecting a token on the map, with the 'Bind to selected token' button ready"
+      },
+      "peek": {
+        "title": "Peek any bound token",
+        "text": "Right-click a bound token for a compact card: HP, Omens, silver, combat targets, armor, gear, traits, and active modifiers. No need to open the full sheet.",
+        "screenshot": "A token's right-click menu with 'View scvm' selected, opening its compact card"
+      }
+    },
+    "gm": {
+      "heading": "For game masters",
+      "roster": {
+        "title": "The room roster, live",
+        "text": "Every bound token shows up in your roster tab. HP, stats, and who is connected update as players play, with no refresh needed.",
+        "screenshot": "The GM roster listing bound characters with live HP and ability scores"
+      },
+      "promote": {
+        "title": "Promote the room to a party",
+        "text": "Sign in and turn the room into a durable Scvmrack party. You get a manage link for yourself and an invite link for new players, and both keep working after the Owlbear session ends.",
+        "screenshot": "The GM roster with its generated invite link, after promoting the room to a Scvmrack party"
+      },
+      "enemies": {
+        "title": "Run the enemy board",
+        "text": "Add enemies from inside Owlbear and drop them onto tokens on the map. Players who click a bound enemy token see a read-only card; you keep the full editable version.",
+        "screenshot": "The GM Enemies tab with a table threat, showing HP, morale, armor, and loot notes"
+      }
+    },
+    "morkBorgCredit": "MÖRK BORG is copyright Ockult Örtmästare Games and Stockholm Kartell. This is an independent fan project."
   },
   "gm": {
     "stamp": "Game Master · Overview",
@@ -814,6 +1146,8 @@
     "gear": "Gear & resources",
     "weapon": "Weapon",
     "armor": "Armor",
+    "armorNone": "None",
+    "unarmed": "Unarmed",
     "omens": "Omens",
     "silver": "Silver"
   }

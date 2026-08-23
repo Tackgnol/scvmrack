@@ -5,10 +5,16 @@ import BrowserTestProvider from '../BrowserTestProvider';
 import { ClassGate } from '@/components/organisms/character-create/ClassGate';
 import { fetchClasses } from '@/api/draft';
 
+const sentryMocks = vi.hoisted(() => ({
+  captureException: vi.fn(),
+}));
+
 vi.mock('@/api/draft', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/api/draft')>()),
   fetchClasses: vi.fn(),
 }));
+
+vi.mock('@sentry/react', () => sentryMocks);
 
 const classes = [
   { id: 1, name: 'Esoteric Hermit', description: 'A lonely mystic.' },
@@ -62,5 +68,33 @@ describe('ClassGate', () => {
     );
 
     await expect.element(page.getByTestId('class-gate-random')).toBeDisabled();
+  });
+
+  it('reports a failed class load and recovers when retry succeeds', async () => {
+    vi.mocked(fetchClasses)
+      .mockRejectedValueOnce(new TypeError('Failed to fetch'))
+      .mockResolvedValueOnce(classes);
+
+    render(
+      <BrowserTestProvider>
+        <ClassGate onPick={onPick} busy={false} />
+      </BrowserTestProvider>
+    );
+
+    await expect.element(page.getByText(/failed to load classes/i)).toBeVisible();
+    expect(sentryMocks.captureException).toHaveBeenCalledWith(
+      expect.any(TypeError),
+      expect.objectContaining({
+        tags: {
+          source: 'class_gate',
+          operation: 'load_classes',
+        },
+      })
+    );
+
+    await userEvent.click(page.getByRole('button', { name: /retry/i }));
+
+    await expect.element(page.getByText('Esoteric Hermit')).toBeVisible();
+    expect(fetchClasses).toHaveBeenCalledTimes(2);
   });
 });

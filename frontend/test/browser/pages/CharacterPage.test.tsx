@@ -8,6 +8,7 @@ import type { ReactNode } from 'react';
 
 const generateNew = vi.fn();
 const killAndReplace = vi.fn();
+const recoverInvalidCharacter = vi.fn();
 const errorFeedbackMocks = vi.hoisted(() => ({
   showUnexpectedError: vi.fn(() => true),
   canReportUnexpectedError: true,
@@ -136,6 +137,7 @@ describe('CharacterPage', () => {
     vi.mocked(useCharacter).mockReturnValue({
       generateNew,
       killAndReplace,
+      recoverInvalidCharacter,
       isAuthenticated: false,
       error: null,
       character: {
@@ -177,7 +179,9 @@ describe('CharacterPage', () => {
       .toBeVisible();
     await userEvent.click(page.getByRole('button', { name: /generate new scvm/i }));
 
-    expect(generateNew).toHaveBeenCalled();
+    expect(recoverInvalidCharacter).toHaveBeenCalled();
+    expect(generateNew).not.toHaveBeenCalled();
+    expect(killAndReplace).not.toHaveBeenCalled();
   });
 
   it('shows access denied separately from missing characters', async () => {

@@ -1,13 +1,15 @@
-import { FastifyPluginAsync } from 'fastify';
-import type { FeedbackInput } from '../../feedback.js';
+import type { FastifyPluginAsync } from 'fastify';
+import type { JsonSchemaToTsProvider } from '@fastify/type-provider-json-schema-to-ts';
 import { FeedbackBodySchema, FeedbackResponseSchema } from '../../schemas/feedback.js';
 import { ErrorSchema } from '../../schemas/equipment.js';
 import { sendServiceError } from '../../errors.js';
 import { createFeedbackService } from '../../services/feedback-service.js';
 
 const feedback: FastifyPluginAsync = async (fastify) => {
+  const app = fastify.withTypeProvider<JsonSchemaToTsProvider>();
+
   // POST /api/feedback - Forward a user feedback / unexpected-error report to GlitchTip
-  fastify.post<{ Body: FeedbackInput }>(
+  app.post(
     '/',
     {
       config: {

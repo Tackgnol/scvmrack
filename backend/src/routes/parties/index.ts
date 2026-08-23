@@ -1,29 +1,66 @@
-import { FastifyPluginAsync } from 'fastify';
+import type { FastifyPluginAsync } from 'fastify';
+import type { JsonSchemaToTsProvider } from '@fastify/type-provider-json-schema-to-ts';
 import {
+  AttachRoomBodySchema,
   CreatePartyBodySchema,
   ErrorSchema,
   InviteTokenParamsSchema,
   JoinPartyBodySchema,
   MemberBodySchema,
   PartyIdParamsSchema,
+  PartyLimitsSchema,
+  PartyMiseriesResultSchema,
+  PromotePartyBodySchema,
   RenamePartyBodySchema,
   ReplaceMemberBodySchema,
+  SetPartyMiseriesBodySchema,
 } from '../../schemas/party.js';
 import { sendServiceError } from '../../errors.js';
 import { createPartyService } from '../../services/party-service.js';
 import type { PartyEvent } from '../../plugins/party-bus.js';
+import partyEnemies from './enemies.js';
 
 function encodeSse(event: PartyEvent): string {
   return `event: ${event.type}\ndata: ${JSON.stringify(event)}\n\n`;
 }
 
 const parties: FastifyPluginAsync = async (fastify): Promise<void> => {
+  // @fastify/autoload only loads one plugin per directory when an `index`
+  // file is present (siblings are ignored), so the room enemy routes can't
+  // be autoloaded from enemies.ts directly. Register them explicitly here
+  // instead; the child plugin inherits this file's /api/parties prefix, so
+  // the enemy route paths are unchanged.
+  await fastify.register(partyEnemies);
+
+  const app = fastify.withTypeProvider<JsonSchemaToTsProvider>();
+
   const partyService = (request: {
     log: Parameters<typeof createPartyService>[0];
   }) => createPartyService(request.log, fastify.partyBus);
 
+  // GET /api/parties/limits - public party config (configured max warband size).
+  // No auth: a single non-sensitive constant the OBR roster (which has no
+  // server-side party in-room) shows as its denominator. Single source of truth
+  // is the backend PARTY_MAX_MEMBERS env, surfaced via the service.
+  app.get(
+    '/limits',
+    {
+      schema: {
+        description: 'Party limits (configured max members)',
+        tags: ['parties'],
+        response: {
+          200: PartyLimitsSchema,
+          500: ErrorSchema,
+        },
+      },
+    },
+    async (request) => {
+      return { maxMembers: partyService(request).maxMembers };
+    }
+  );
+
   // POST /api/parties - GM creates a party
-  fastify.post<{ Body: { name?: string } }>(
+  app.post(
     '/',
     {
       schema: {
@@ -50,8 +87,101 @@ const parties: FastifyPluginAsync = async (fastify): Promise<void> => {
     }
   );
 
+  // POST /api/parties/promote - promote an OBR room into a durable party
+  app.post(
+    '/promote',
+    {
+      config: {
+        rateLimit: {
+          max: process.env.NODE_ENV === 'test' ? 10000 : 10,
+          timeWindow: '1 minute',
+        },
+      },
+      schema: {
+        description: 'Promote an Owlbear room into a party (GM only)',
+        tags: ['parties'],
+        body: PromotePartyBodySchema,
+        response: {
+          200: { type: 'object', additionalProperties: true },
+          400: ErrorSchema,
+          401: ErrorSchema,
+          409: ErrorSchema,
+          429: ErrorSchema,
+          500: ErrorSchema,
+        },
+      },
+    },
+    async (request, reply) => {
+      const result = await partyService(request).promoteRoom({
+        session: request.appSession,
+        obrRoomId: request.body.obrRoomId,
+        name: request.body.name,
+      });
+
+      if (!result.ok) {
+        return sendServiceError(reply, request, result.error);
+      }
+      return result.value;
+    }
+  );
+
+  // POST /api/parties/:id/attach-room - re-point the party to a new OBR room (GM only)
+  app.post(
+    '/:id/attach-room',
+    {
+      schema: {
+        description: 'Attach this party to an Owlbear room (GM only)',
+        tags: ['parties'],
+        params: PartyIdParamsSchema,
+        body: AttachRoomBodySchema,
+        response: {
+          200: { type: 'object', additionalProperties: true },
+          400: ErrorSchema, 401: ErrorSchema, 404: ErrorSchema,
+          409: ErrorSchema, 500: ErrorSchema,
+        },
+      },
+    },
+    async (request, reply) => {
+      const result = await partyService(request).attachRoom({
+        session: request.appSession,
+        id: request.params.id,
+        obrRoomId: request.body.obrRoomId,
+      });
+      if (!result.ok) {
+        return sendServiceError(reply, request, result.error);
+      }
+      return result.value;
+    }
+  );
+
+  // POST /api/parties/:id/detach-room - clear the party's OBR room pointer (GM only)
+  app.post(
+    '/:id/detach-room',
+    {
+      schema: {
+        description: 'Detach this party from its Owlbear room (GM only)',
+        tags: ['parties'],
+        params: PartyIdParamsSchema,
+        response: {
+          200: { type: 'object', additionalProperties: true },
+          400: ErrorSchema, 401: ErrorSchema, 404: ErrorSchema, 500: ErrorSchema,
+        },
+      },
+    },
+    async (request, reply) => {
+      const result = await partyService(request).detachRoom({
+        session: request.appSession,
+        id: request.params.id,
+      });
+      if (!result.ok) {
+        return sendServiceError(reply, request, result.error);
+      }
+      return result.value;
+    }
+  );
+
   // GET /api/parties - list parties the GM owns
-  fastify.get(
+  app.get(
     '/',
     {
       schema: {
@@ -80,7 +210,7 @@ const parties: FastifyPluginAsync = async (fastify): Promise<void> => {
   );
 
   // POST /api/parties/join - bind a character to a party via invite token
-  fastify.post<{ Body: { token: string; characterId: string } }>(
+  app.post(
     '/join',
     {
       config: {
@@ -120,7 +250,7 @@ const parties: FastifyPluginAsync = async (fastify): Promise<void> => {
   );
 
   // GET /api/parties/invite/:token - public invite metadata for the join page
-  fastify.get<{ Params: { token: string } }>(
+  app.get(
     '/invite/:token',
     {
       config: {
@@ -154,7 +284,7 @@ const parties: FastifyPluginAsync = async (fastify): Promise<void> => {
   );
 
   // GET /api/parties/:id - party + roster (GM manage view, or member read view)
-  fastify.get<{ Params: { id: string } }>(
+  app.get(
     '/:id',
     {
       schema: {
@@ -183,7 +313,7 @@ const parties: FastifyPluginAsync = async (fastify): Promise<void> => {
   );
 
   // GET /api/parties/:id/stream - live party invalidation stream
-  fastify.get<{ Params: { id: string } }>(
+  app.get(
     '/:id/stream',
     {
       schema: {
@@ -278,7 +408,7 @@ const parties: FastifyPluginAsync = async (fastify): Promise<void> => {
   );
 
   // PATCH /api/parties/:id - rename (GM only)
-  fastify.patch<{ Params: { id: string }; Body: { name: string } }>(
+  app.patch(
     '/:id',
     {
       schema: {
@@ -309,8 +439,47 @@ const parties: FastifyPluginAsync = async (fastify): Promise<void> => {
     }
   );
 
+  // PUT /api/parties/:id/miseries - set every member's Misery count (GM only)
+  fastify.put<{ Params: { id: string }; Body: { miseryCount: number } }>(
+    '/:id/miseries',
+    {
+      config: {
+        rateLimit: {
+          max: process.env.NODE_ENV === 'test' ? 10000 : 30,
+          timeWindow: '1 minute',
+        },
+      },
+      schema: {
+        description: "Set every party member's Misery count (GM only)",
+        tags: ['parties'],
+        params: PartyIdParamsSchema,
+        body: SetPartyMiseriesBodySchema,
+        response: {
+          200: PartyMiseriesResultSchema,
+          400: ErrorSchema,
+          401: ErrorSchema,
+          404: ErrorSchema,
+          429: ErrorSchema,
+          500: ErrorSchema,
+        },
+      },
+    },
+    async (request, reply) => {
+      const result = await partyService(request).setMiseries({
+        session: request.appSession,
+        id: request.params.id,
+        miseryCount: request.body.miseryCount,
+      });
+
+      if (!result.ok) {
+        return sendServiceError(reply, request, result.error);
+      }
+      return result.value;
+    }
+  );
+
   // DELETE /api/parties/:id - disband (GM only)
-  fastify.delete<{ Params: { id: string } }>(
+  app.delete(
     '/:id',
     {
       schema: {
@@ -335,12 +504,12 @@ const parties: FastifyPluginAsync = async (fastify): Promise<void> => {
       if (!result.ok) {
         return sendServiceError(reply, request, result.error);
       }
-      return reply.status(204).send();
+      return reply.status(204).send(null);
     }
   );
 
   // POST /api/parties/:id/regenerate-link - rotate invite token (GM only)
-  fastify.post<{ Params: { id: string } }>(
+  app.post(
     '/:id/regenerate-link',
     {
       schema: {
@@ -370,10 +539,7 @@ const parties: FastifyPluginAsync = async (fastify): Promise<void> => {
   );
 
   // POST /api/parties/:id/replace-member - bind a replacement character (character owner)
-  fastify.post<{
-    Params: { id: string };
-    Body: { oldCharacterId: string; newCharacterId: string };
-  }>(
+  app.post(
     '/:id/replace-member',
     {
       schema: {
@@ -408,7 +574,7 @@ const parties: FastifyPluginAsync = async (fastify): Promise<void> => {
   );
 
   // POST /api/parties/:id/leave - unbind own character (character owner)
-  fastify.post<{ Params: { id: string }; Body: { characterId: string } }>(
+  app.post(
     '/:id/leave',
     {
       schema: {
@@ -435,12 +601,12 @@ const parties: FastifyPluginAsync = async (fastify): Promise<void> => {
       if (!result.ok) {
         return sendServiceError(reply, request, result.error);
       }
-      return reply.status(204).send();
+      return reply.status(204).send(null);
     }
   );
 
   // POST /api/parties/:id/kick - unbind a member (GM only)
-  fastify.post<{ Params: { id: string }; Body: { characterId: string } }>(
+  app.post(
     '/:id/kick',
     {
       schema: {
@@ -467,7 +633,7 @@ const parties: FastifyPluginAsync = async (fastify): Promise<void> => {
       if (!result.ok) {
         return sendServiceError(reply, request, result.error);
       }
-      return reply.status(204).send();
+      return reply.status(204).send(null);
     }
   );
 };

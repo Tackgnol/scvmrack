@@ -88,6 +88,34 @@ test('setCharacterId is a no-op when the value does not change', async () => {
   expect(navigationMocks.setCurrentCharacterIdParam).not.toHaveBeenCalled();
 });
 
+test('setCharacterId coalesces rapid writes before React rerenders', async () => {
+  const { result } = renderHook(() => useCharacterId());
+
+  await act(async () => {
+    await Promise.all([
+      result.current.setCharacterId('next-id'),
+      result.current.setCharacterId('next-id'),
+    ]);
+  });
+
+  expect(navigationMocks.setCurrentCharacterIdParam).toHaveBeenCalledTimes(1);
+  expect(navigationMocks.setCurrentCharacterIdParam).toHaveBeenCalledWith('next-id');
+});
+
+test('history subscription ignores duplicate character notifications', () => {
+  navigationMocks.currentCharacterId = 'same-id';
+  const setItem = vi.spyOn(Storage.prototype, 'setItem');
+  renderHook(() => useCharacterId());
+
+  act(() => {
+    historyMocks.listener?.();
+    historyMocks.listener?.();
+  });
+
+  expect(setItem).not.toHaveBeenCalled();
+  setItem.mockRestore();
+});
+
 test('history subscription refreshes state from query param and persists last id', () => {
   const { result } = renderHook(() => useCharacterId());
   expect(historyMocks.subscribe).toHaveBeenCalledTimes(1);

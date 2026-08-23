@@ -117,4 +117,29 @@ describe('SummaryBar Browser', () => {
     await userEvent.click(dodgeButton);
     await expect.element(dodgeButton).not.toHaveAttribute('aria-expanded', 'true');
   });
+
+  it('marks only a changed combat target as reacting', async () => {
+    const { rerender } = await render(
+      <BrowserTestProvider>
+        <SummaryBar />
+      </BrowserTestProvider>
+    );
+
+    vi.mocked(CharacterContextModule.useCharacter).mockReturnValue({
+      character: { ...baseCharacter, drToDodge: 8 },
+    } as any);
+
+    await rerender(
+      <BrowserTestProvider>
+        <SummaryBar />
+      </BrowserTestProvider>
+    );
+
+    await expect
+      .element(page.getByRole('button', { name: /dodge/i }))
+      .toHaveAttribute('data-reacting', 'true');
+    await expect
+      .element(page.getByRole('button', { name: /melee/i }))
+      .not.toHaveAttribute('data-reacting');
+  });
 });

@@ -14,6 +14,7 @@ import {
     SESSION_EXPIRED_QUERY_PARAM,
 } from '@/router/navigation';
 import { clearLastAuthKind, setLastAuthKind } from '@/preferences/lastAuthKind';
+import { synchronizeOwnershipScope } from '@/auth/ownershipScope';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useSyncExternalStore } from 'react';
 
@@ -84,6 +85,10 @@ export function useAuth(options: UseAuthOptions = {}) {
     const effectiveSessionUser = isSessionExpired ? undefined : sessionUser;
     const isAnonymousUser = Boolean(sessionUser?.isAnonymous);
 
+    useEffect(() => {
+        synchronizeOwnershipScope(queryClient, sessionUser?.id ?? null);
+    }, [queryClient, sessionUser?.id]);
+
     // Record the kind of the live session so the session-expired recovery can
     // tell a real account (prompt to sign in) apart from a guest (silently
     // re-bootstrap) after the session — and thus this signal — is gone.
@@ -112,8 +117,12 @@ export function useAuth(options: UseAuthOptions = {}) {
         refetchOnWindowFocus: false,
         queryFn: async () => {
             await signInAnonymous();
-            await queryClient.invalidateQueries({ queryKey: authKeys.session() });
-            return true;
+            const createdSession = await fetchSession();
+            if (!createdSession?.user) {
+                throw new Error('Anonymous session did not start');
+            }
+            queryClient.setQueryData(authKeys.session(), createdSession);
+            return createdSession;
         },
     });
 

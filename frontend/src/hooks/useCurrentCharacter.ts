@@ -194,13 +194,32 @@ export function useCurrentCharacter() {
 
   const acknowledgeCreated = useCallback(() => setJustCreated(null), []);
 
+  const recoverInvalidCharacter = useCallback(async () => {
+    const invalidCharacterId = characterId;
+    if (!invalidCharacterId) return;
+
+    await setCharacterId(null);
+    queryClient.removeQueries({
+      queryKey: getCharacterKey(invalidCharacterId, trimmedLocale),
+    });
+  }, [characterId, queryClient, setCharacterId, trimmedLocale]);
+
   // ---- Handle logout side effects ----
   useEffect(() => {
-    if (isJustLoggedOut && (characterId || lastCharacterId)) {
+    if (!isJustLoggedOut) return;
+
+    setAutoCreateFailed(false);
+    if (characterId || lastCharacterId) {
       // Force clear current and remembered character ID when user logs out.
       setCharacterId(null);
     }
-  }, [isJustLoggedOut, characterId, lastCharacterId, setCharacterId]);
+  }, [
+    isJustLoggedOut,
+    characterId,
+    lastCharacterId,
+    setAutoCreateFailed,
+    setCharacterId,
+  ]);
 
   return {
     characterId,
@@ -226,6 +245,7 @@ export function useCurrentCharacter() {
     justCreatedId,
     adoptCreatedCharacter,
     acknowledgeCreated,
+    recoverInvalidCharacter,
 
     // All editor methods exposed
     ...editor,

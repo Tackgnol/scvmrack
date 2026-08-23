@@ -1,21 +1,22 @@
-import { client } from '@/api';
-import type { CharacterResponse } from '@/hooks/models';
-import { toApiClientError } from '@/utils/errorUtils';
+import { client } from "@/api";
+import type { ApiResult } from "@/api/clientResult";
+import type { CharacterResponse } from "@/hooks/models";
+import { toApiClientError } from "@/utils/errorUtils";
 
 export const DRAFT_SECTIONS = [
-  'name',
-  'stats',
-  'omens',
-  'silver',
-  'origin',
-  'abilities',
-  'gear',
-  'personality',
+  "name",
+  "stats",
+  "omens",
+  "silver",
+  "origin",
+  "abilities",
+  "gear",
+  "personality",
 ] as const;
 
 export type DraftSection = (typeof DRAFT_SECTIONS)[number];
 export type SectionSeeds = Record<DraftSection, string>;
-export type AbilityStat = 'strength' | 'agility' | 'presence' | 'toughness';
+export type AbilityStat = "strength" | "agility" | "presence" | "toughness";
 
 export type ClasslessStatOption = {
   ability: AbilityStat;
@@ -46,22 +47,17 @@ export type ClassSummary = {
 };
 
 type LooseClient = {
-  POST: (path: string, init: { body?: unknown; signal?: AbortSignal }) => Promise<{
-    data?: unknown;
-    error?: unknown;
-    response?: Response;
-  }>;
-  GET: (path: string, init?: { signal?: AbortSignal }) => Promise<{
-    data?: unknown;
-    error?: unknown;
-    response?: Response;
-  }>;
+  POST: (
+    path: string,
+    init: { body?: unknown; signal?: AbortSignal },
+  ) => Promise<ApiResult>;
+  GET: (path: string, init?: { signal?: AbortSignal }) => Promise<ApiResult>;
 };
 
 const loose = client as unknown as LooseClient;
 
 async function unwrap<T>(
-  call: Promise<{ data?: unknown; error?: unknown; response?: Response }>,
+  call: Promise<ApiResult>,
   fallbackMessage: string,
   signal?: AbortSignal,
 ): Promise<T> {
@@ -69,7 +65,7 @@ async function unwrap<T>(
   const responseOk = response?.ok ?? !error;
   if (error || !responseOk) {
     if (signal?.aborted) {
-      throw new DOMException('The operation was aborted.', 'AbortError');
+      throw new DOMException("The operation was aborted.", "AbortError");
     }
     throw toApiClientError(error, response, fallbackMessage);
   }
@@ -95,7 +91,7 @@ export function createDraft(
       body: input,
       signal,
     }),
-    'Failed to roll a draft',
+    "Failed to roll a draft",
     signal,
   );
 }
@@ -108,10 +104,12 @@ export function rerollDraftSection(
 ): Promise<DraftResponse> {
   return unwrap<DraftResponse>(
     loose.POST(
-      `/api/characters/draft/reroll/${section}?locale=${encodeURIComponent(locale)}`,
+      `/api/characters/draft/reroll/${section}?locale=${encodeURIComponent(
+        locale,
+      )}`,
       { body: { draft }, signal },
     ),
-    'Failed to re-roll',
+    "Failed to re-roll",
     signal,
   );
 }
@@ -127,7 +125,7 @@ export function confirmDraft(
       body: replace ? { draft, replace: true } : { draft },
       signal,
     }),
-    'Failed to create character',
+    "Failed to create character",
     signal,
   );
 }
@@ -143,7 +141,7 @@ export function createRandomCharacter(
       body: {},
       signal,
     }),
-    'Failed to roll a character',
+    "Failed to roll a character",
     signal,
   );
 }
@@ -153,8 +151,10 @@ export function fetchClasses(
   signal?: AbortSignal,
 ): Promise<ClassSummary[]> {
   return unwrap<ClassSummary[]>(
-    loose.GET(`/api/characters/classes?locale=${encodeURIComponent(locale)}`, { signal }),
-    'Failed to load classes',
+    loose.GET(`/api/characters/classes?locale=${encodeURIComponent(locale)}`, {
+      signal,
+    }),
+    "Failed to load classes",
     signal,
   );
 }

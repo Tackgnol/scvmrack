@@ -158,6 +158,21 @@ describe('Header Component', () => {
     await expect.element(printBtn).toBeVisible();
   });
 
+  it('shows a read-only misery mirror on character routes', async () => {
+    await renderHeader({
+      pathname: '/character/char-123',
+      character: { character: { miseryCount: 4 } },
+    });
+
+    const mirror = page.getByTestId('header-misery-mirror');
+    await expect.element(mirror).toBeVisible();
+    await expect.element(mirror).toHaveAttribute('href', '#miseries');
+    await expect
+      .element(mirror)
+      .toHaveAttribute('aria-label', 'Miseries: 4 of 7. Jump to the misery track');
+    await expect.element(mirror.getByRole('button')).not.toBeInTheDocument();
+  });
+
   it('hides sheet-only actions on the character creation route', async () => {
     await renderHeader({ pathname: '/character/create' });
 

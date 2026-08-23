@@ -7,7 +7,7 @@ export const EquipmentItemSchema = {
     tags: { type: 'array', items: { type: 'string' } },
     relevance: { type: 'number' },
   },
-};
+} as const;
 export const SearchQuerySchema = {
   type: 'object',
   properties: {
@@ -25,7 +25,7 @@ export const SearchQuerySchema = {
       description: 'Filter by tags (e.g. weapon, armor, scroll)',
     },
   },
-};
+} as const;
 export const ListQuerySchema = {
   type: 'object',
   properties: {
@@ -38,7 +38,7 @@ export const ListQuerySchema = {
       description: 'Filter by tags',
     },
   },
-};
+} as const;
 
 export const ErrorSchema = {
   type: 'object',
@@ -62,4 +62,4 @@ export const ErrorSchema = {
     },
   },
   required: ['error', 'message', 'code', 'statusCode', 'requestId'],
-};
+} as const;

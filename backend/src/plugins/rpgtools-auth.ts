@@ -9,6 +9,9 @@ const defaultTrustedOrigins = [
   'http://localhost:3000',
   'http://127.0.0.1:3000',
   'https://scvmrack.rpgtools.co',
+  // Owlbear Rodeo embeds the app in a cross-origin iframe (same class as the
+  // itch.io embed); its requests originate from www.owlbear.rodeo.
+  'https://www.owlbear.rodeo',
 ];
 
 function envOrDefault(name: string, fallback: string): string {

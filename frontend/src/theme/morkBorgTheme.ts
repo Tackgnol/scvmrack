@@ -2022,6 +2022,118 @@ export const customStyles = {
     },
   },
 
+  // Owlbear Rodeo guide page styles
+  owlbearPage: {
+    container: {
+      py: 2,
+    },
+    header: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      flexWrap: 'wrap' as const,
+      gap: 1.5,
+      mb: 3,
+    },
+    title: {
+      fontFamily: '"MedievalSharp", serif',
+      color: morkBorgColors.black,
+      textTransform: 'uppercase' as const,
+    },
+    backButton: {
+      borderColor: morkBorgColors.black,
+      color: morkBorgColors.black,
+      '&:hover': {
+        bgcolor: morkBorgColors.black,
+        color: morkBorgColors.yellow,
+      },
+    },
+    intro: {
+      color: morkBorgColors.black,
+      maxWidth: '68ch',
+      mb: 4,
+    },
+    section: {
+      mb: 5,
+      '&:last-of-type': { mb: 0 },
+    },
+    sectionHeading: (rotation: string) => ({
+      ...sectionStamp,
+      mb: 2,
+      transform: `rotate(${rotation})`,
+    }),
+    card: {
+      bgcolor: morkBorgColors.black,
+      border: `1px solid ${morkBorgColors.grey}`,
+      p: { xs: 2, sm: 3 },
+    },
+    stepList: {
+      m: 0,
+      pl: 2.5,
+      display: 'flex',
+      flexDirection: 'column' as const,
+      gap: 1.5,
+    },
+    stepItem: {
+      color: morkBorgColors.white,
+      '&::marker': {
+        color: morkBorgColors.yellow,
+        fontFamily: '"Bebas Neue", sans-serif',
+      },
+    },
+    manifestUrl: {
+      display: 'inline-block',
+      mt: 1,
+      px: 1.5,
+      py: 0.75,
+      bgcolor: morkBorgColors.grey,
+      border: `1px solid ${morkBorgColors.darkGrey}`,
+      color: morkBorgColors.yellow,
+      fontFamily: 'monospace',
+      fontSize: '0.82rem',
+      wordBreak: 'break-all' as const,
+    },
+    featureList: {
+      display: 'flex',
+      flexDirection: 'column' as const,
+      gap: 3,
+    },
+    feature: {
+      display: 'flex',
+      flexDirection: 'column' as const,
+      gap: 1,
+    },
+    featureTitle: {
+      color: morkBorgColors.yellow,
+    },
+    featureText: {
+      color: morkBorgColors.white,
+    },
+    featureDivider: {
+      borderColor: morkBorgColors.grey,
+    },
+    screenshot: {
+      display: 'block',
+      mt: 1,
+      lineHeight: 0,
+      border: `1px solid ${morkBorgColors.grey}`,
+    },
+    screenshotImg: {
+      display: 'block',
+      width: '100%',
+      height: 'auto',
+    },
+    footer: {
+      mt: 4,
+      textAlign: 'center' as const,
+    },
+    footerText: {
+      color: morkBorgColors.black,
+      opacity: 0.7,
+      fontSize: '0.85rem',
+    },
+  },
+
   // Characters list page styles
   charactersListPage: {
     container: {

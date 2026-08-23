@@ -1,18 +1,34 @@
 import {
+  attachPartyRoom,
   createParty,
   disbandParty,
   getParty,
   getPartyInvite,
+  getPartyLimits,
   joinParty,
   kickPartyMember,
   leaveParty,
   listParties,
   partyKeys,
+  promoteObrRoom,
   regeneratePartyLink,
   renameParty,
+  setPartyMiseries,
   type PartyDetail,
+  type PromoteObrRoomInput,
 } from '@/api/party';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+
+// Configured max warband size (PARTY_MAX_MEMBERS) from the backend — a single
+// constant, so cache it indefinitely.
+export function usePartyLimits() {
+  return useQuery({
+    queryKey: partyKeys.limits(),
+    queryFn: getPartyLimits,
+    staleTime: Infinity,
+    gcTime: Infinity,
+  });
+}
 
 export function usePartyList(enabled = true) {
   return useQuery({
@@ -27,6 +43,29 @@ export function usePartyDetail(partyId: string | null | undefined, enabled = tru
     queryKey: partyId ? partyKeys.detail(partyId) : ['get', '/api/parties/{id}', 'none'],
     queryFn: () => getParty(partyId as string),
     enabled: enabled && !!partyId,
+  });
+}
+
+export function useObrRoomParty(roomId: string | null | undefined) {
+  const queryClient = useQueryClient();
+
+  return useQuery<PartyDetail | null>({
+    queryKey: roomId
+      ? partyKeys.obrRoom(roomId)
+      : ['party', 'obr-room', 'none'],
+    queryFn: () =>
+      Promise.resolve(
+        roomId
+          ? queryClient.getQueryData<PartyDetail>(partyKeys.obrRoom(roomId)) ??
+              null
+          : null,
+      ),
+    enabled: false,
+    initialData: () =>
+      roomId
+        ? queryClient.getQueryData<PartyDetail>(partyKeys.obrRoom(roomId)) ??
+          null
+        : null,
   });
 }
 
@@ -50,6 +89,33 @@ export function useCreateParty() {
   });
 }
 
+export function usePromoteObrRoom() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: PromoteObrRoomInput) => promoteObrRoom(input),
+    onSuccess: (party, variables) => {
+      queryClient.setQueryData(partyKeys.detail(party.id), party);
+      queryClient.setQueryData(partyKeys.obrRoom(variables.obrRoomId), party);
+      void queryClient.invalidateQueries({ queryKey: partyKeys.list() });
+    },
+  });
+}
+
+export function useAttachObrRoom() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { partyId: string; obrRoomId: string }) => {
+      await attachPartyRoom(input.partyId, input.obrRoomId);
+      return getParty(input.partyId);
+    },
+    onSuccess: (party, variables) => {
+      queryClient.setQueryData(partyKeys.detail(party.id), party);
+      queryClient.setQueryData(partyKeys.obrRoom(variables.obrRoomId), party);
+      void queryClient.invalidateQueries({ queryKey: partyKeys.list() });
+    },
+  });
+}
+
 export function useRenameParty(partyId: string) {
   const queryClient = useQueryClient();
   return useMutation({
@@ -61,6 +127,15 @@ export function useRenameParty(partyId: string) {
       );
       void queryClient.invalidateQueries({ queryKey: partyKeys.list() });
     },
+  });
+}
+
+export function useSetPartyMiseries(partyId: string) {
+  return useMutation({
+    mutationFn: (miseryCount: number) =>
+      setPartyMiseries({ partyId, miseryCount }),
+    // The backend publishes character.updated after persistence; usePartyStream
+    // invalidates each open sheet without racing its optimistic edit queue.
   });
 }
 

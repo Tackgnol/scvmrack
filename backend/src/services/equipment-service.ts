@@ -21,7 +21,7 @@ export function createEquipmentService(log: ServiceLogger) {
       q: string;
       locale?: string;
       limit: number;
-    }): Promise<ServiceResult<unknown>> {
+    }): Promise<ServiceResult<Awaited<ReturnType<typeof searchItems>>>> {
       if (!input.q || input.q.trim().length === 0) {
         return fail(badRequest('EMPTY_SEARCH_QUERY', 'Search query is required'));
       }

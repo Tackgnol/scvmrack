@@ -636,6 +636,7 @@ export interface CharacterRowLike {
   trait1: string | null;
   trait2: string | null;
   notes?: string | null;
+  miseryCount?: number | null;
   abilities: unknown;
   equipment: unknown;
   storage?: unknown;
@@ -812,6 +813,7 @@ export async function hydrateCharacterRow(
     trait1:           translate(translations, row.trait1)           ?? row.trait1          ?? null,
     trait2:           translate(translations, row.trait2)           ?? row.trait2          ?? null,
     notes:            row.notes ?? '',
+    miseryCount:      row.miseryCount ?? 0,
     abilities:        resolvedAbilities,
     equipment:        resolvedEquipment,
     storage:          resolvedStorage,

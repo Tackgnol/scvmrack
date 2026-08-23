@@ -40,7 +40,11 @@ export async function signInAnonymous(): Promise<void> {
   const res = await fetch(`${apiBaseUrl()}/api/auth/sign-in/anonymous`, {
     method: 'POST',
     credentials: 'include',
-    headers: embeddedSessionHeaders(),
+    headers: {
+      'content-type': 'application/json',
+      ...embeddedSessionHeaders(),
+    },
+    body: '{}',
   });
 
   if (!res.ok) {

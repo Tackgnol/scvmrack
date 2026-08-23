@@ -1,21 +1,39 @@
 import { useEffect, useState } from 'react';
-import { Alert, Box, ButtonBase, CircularProgress, Typography } from '@mui/material';
+import { Alert, Box, Button, ButtonBase, CircularProgress, Typography } from '@mui/material';
 import { useTranslation } from 'react-i18next';
+import * as Sentry from '@sentry/react';
 import { fetchClasses, type ClassSummary } from '@/api/draft';
 import type { StartChoice } from '@/hooks/useCharacterDraft';
 import { classGateStyles as styles } from '@/theme/createStyles';
 import d20Icon from '@/assets/D20.svg';
+import {
+  getApiErrorCode,
+  getApiErrorStatus,
+  getApiRequestId,
+  shouldCaptureClientError,
+} from '@/utils/errorUtils';
+
+const CLASS_LOAD_TIMEOUT_MS = 10_000;
 
 type ClassGateProps = {
   onPick: (choice: StartChoice) => void;
   busy: boolean;
 };
 
+type ClassLoadState =
+  | { key: string; status: 'loaded'; classes: ClassSummary[] }
+  | { key: string; status: 'failed' };
+
 export function ClassGate({ onPick, busy }: ClassGateProps) {
   const { t, i18n } = useTranslation();
   const locale = (i18n.language ?? 'en').split('-')[0];
-  const [classes, setClasses] = useState<ClassSummary[] | null>(null);
-  const [loadFailed, setLoadFailed] = useState(false);
+  const [loadAttempt, setLoadAttempt] = useState(0);
+  const [loadState, setLoadState] = useState<ClassLoadState | null>(null);
+  const requestKey = `${locale}:${loadAttempt}`;
+  const classes = loadState?.key === requestKey && loadState.status === 'loaded'
+    ? loadState.classes
+    : null;
+  const loadFailed = loadState?.key === requestKey && loadState.status === 'failed';
 
   // Keyed on `locale` only — NOT `t`. The `t` from useTranslation changes identity
   // while i18n is still warming up on a cold first load; including it here re-ran the
@@ -24,15 +42,45 @@ export function ClassGate({ onPick, busy }: ClassGateProps) {
   // render time instead, so the effect never depends on `t`.
   useEffect(() => {
     const controller = new AbortController();
-    setLoadFailed(false);
+    let timedOut = false;
+    const timeout = window.setTimeout(() => {
+      timedOut = true;
+      controller.abort();
+    }, CLASS_LOAD_TIMEOUT_MS);
+
     fetchClasses(locale, controller.signal)
-      .then(setClasses)
+      .then((result) => {
+        setLoadState({ key: requestKey, status: 'loaded', classes: result });
+      })
       .catch((e) => {
-        if (e instanceof DOMException && e.name === 'AbortError') return;
-        setLoadFailed(true);
+        if (e instanceof DOMException && e.name === 'AbortError' && !timedOut) return;
+
+        const error = timedOut ? new Error('Class catalog request timed out') : e;
+        setLoadState({ key: requestKey, status: 'failed' });
+        if (shouldCaptureClientError(error)) {
+          Sentry.captureException(error, {
+            tags: {
+              source: 'class_gate',
+              operation: 'load_classes',
+            },
+            extra: {
+              locale,
+              status: getApiErrorStatus(e),
+              code: getApiErrorCode(e),
+              requestId: getApiRequestId(e),
+              timedOut,
+            },
+          });
+        }
+      })
+      .finally(() => {
+        window.clearTimeout(timeout);
       });
-    return () => controller.abort();
-  }, [locale]);
+    return () => {
+      window.clearTimeout(timeout);
+      controller.abort();
+    };
+  }, [locale, requestKey]);
 
   return (
     <Box sx={styles.root}>
@@ -51,6 +99,14 @@ export function ClassGate({ onPick, busy }: ClassGateProps) {
       {loadFailed && (
         <Alert severity="error" sx={{ mt: 2 }}>
           {t('create.classLoadError', 'Failed to load classes')}
+          <Button
+            color="inherit"
+            size="small"
+            onClick={() => setLoadAttempt((attempt) => attempt + 1)}
+            sx={{ ml: 1 }}
+          >
+            {t('common.retry', 'Retry')}
+          </Button>
         </Alert>
       )}
       {!classes && !loadFailed && (

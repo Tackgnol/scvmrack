@@ -224,6 +224,15 @@ export function isUnexpectedApiError(error: unknown): boolean {
   return typeof status === 'number' && status >= 500;
 }
 
+export function shouldCaptureClientError(error: unknown): boolean {
+  if (error instanceof DOMException && error.name === 'AbortError') {
+    return false;
+  }
+
+  const status = getApiErrorStatus(error);
+  return status === undefined || status >= 500;
+}
+
 export function getUserFacingApiErrorMessage(
   error: unknown,
   t: Translate,

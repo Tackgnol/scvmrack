@@ -1,9 +1,13 @@
-import * as Sentry from '@sentry/react';
-import { makeFetchTransport } from '@sentry/browser';
-import { embeddedSessionHeaders } from '@/utils/embed';
+import * as Sentry from "@sentry/react";
+import { makeFetchTransport } from "@sentry/browser";
+import { embeddedSessionHeaders } from "@/utils/embed";
+import { prepareFrontendEvent } from "@/monitoring";
 
 const dsn = import.meta.env.VITE_GLITCHTIP_DSN;
-const backendUrl = import.meta.env.VITE_BACKEND_URL || '';
+const backendUrl = import.meta.env.VITE_BACKEND_URL || "";
+const release = import.meta.env.VITE_SENTRY_RELEASE;
+const environment =
+  import.meta.env.VITE_SENTRY_ENVIRONMENT || import.meta.env.MODE;
 
 // CSRF token fetch is intentionally duplicated from src/api/index.ts so this
 // module stays import-light — Sentry instrumentation needs to load before the
@@ -13,10 +17,10 @@ let csrfToken: string | null = null;
 
 async function fetchCsrfToken(): Promise<string> {
   const res = await fetch(`${backendUrl}/api/csrf-token`, {
-    credentials: 'include',
+    credentials: "include",
     headers: embeddedSessionHeaders(),
   });
-  if (!res.ok) throw new Error('Failed to fetch CSRF token');
+  if (!res.ok) throw new Error("Failed to fetch CSRF token");
   const data = (await res.json()) as { token: string };
   csrfToken = data.token;
   return data.token;
@@ -26,15 +30,18 @@ if (dsn && !import.meta.env.DEV) {
   Sentry.init({
     dsn,
     tunnel: `${backendUrl}/api/tunnel`,
-    initialScope: { tags: { source: 'frontend' } },
+    release,
+    environment,
+    initialScope: { tags: { source: "frontend" } },
+    beforeSend: prepareFrontendEvent,
     transport: (options) =>
       makeFetchTransport(options, async (url, init) => {
         const token = csrfToken ?? (await fetchCsrfToken());
         const send = (csrf: string): Promise<Response> =>
           fetch(url, {
             ...init,
-            credentials: 'include',
-            headers: { ...init?.headers, 'x-csrf-token': csrf },
+            credentials: "include",
+            headers: { ...init?.headers, "x-csrf-token": csrf },
           });
         let response = await send(token);
         if (response.status === 403) {
@@ -43,14 +50,13 @@ if (dsn && !import.meta.env.DEV) {
         }
         return response;
       }),
-    environment: import.meta.env.MODE,
     tracesSampleRate: 0.2,
     integrations: (defaultIntegrations) => [
       ...defaultIntegrations.filter(
-        (integration) => integration.name !== 'BrowserSession'
+        (integration) => integration.name !== "BrowserSession",
       ),
       Sentry.browserTracingIntegration(),
-      Sentry.captureConsoleIntegration({ levels: ['error'] }),
+      Sentry.captureConsoleIntegration({ levels: ["error"] }),
     ],
   });
 }

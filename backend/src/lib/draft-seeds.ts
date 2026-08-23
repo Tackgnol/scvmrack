@@ -12,6 +12,7 @@ import { Roller } from '@tackgnol/rpg-tools-roller';
 // its deterministic seedable engine, which this feature is built on.
 import { ChaCha20Engine } from '@tackgnol/rpg-tools-roller/test-utils';
 
+// These const assertions preserve the literal enums used by schemas/draft.ts.
 export const DRAFT_SECTIONS = [
   'name',
   'stats',

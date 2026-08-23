@@ -16,6 +16,7 @@ export type SimpleField =
     | 'bodyDescription'
     | 'origin'
     | 'notes'
+    | 'miseryCount'
     | 'modifiers'
 
 export type Statistic = 'agility' | 'strength' | 'presence' | 'toughness';
@@ -109,6 +110,7 @@ export type Character = {
     trait1?: string | null;
     trait2?: string | null;
     notes?: string;
+    miseryCount?: number;
     abilities?: Ability[];
     equipment?: EquipmentItem[];
     storage?: EquipmentItem[];
@@ -148,6 +150,7 @@ export type CharacterUpdateRequest = Partial<{
     bodyDescription: string;
     origin: string;
     notes: string;
+    miseryCount: number;
     abilities: Ability[];
     equipment: EquipmentItem[];
     storage: EquipmentItem[];

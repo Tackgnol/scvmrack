@@ -15,6 +15,7 @@ const { privacyState, queryClientMocks } = vi.hoisted(() => ({
     fetchQuery: vi.fn(({ queryFn }: { queryFn: () => unknown }) => queryFn()),
     invalidateQueries: vi.fn().mockResolvedValue(undefined),
     setQueryData: vi.fn(),
+    removeQueries: vi.fn(),
   },
 }));
 
@@ -135,6 +136,45 @@ test('useCurrentCharacter aggregates repository, editor and auth state', () => {
   expect(result.current.character?.name).toBe('Test');
   expect(result.current.isAuthenticated).toBe(true);
   expect(result.current.updateField).toBe(editor.updateField);
+});
+
+test('useCurrentCharacter recovers from an invalid character without deleting it', async () => {
+  const setCharacterId = vi.fn().mockResolvedValue(undefined);
+  (useCharacterId as any).mockReturnValue({
+    characterId: 'missing-char',
+    lastCharacterId: 'missing-char',
+    setCharacterId,
+  });
+  (useAuth as any).mockReturnValue({
+    isAuthenticated: false,
+    isGuest: true,
+    isLoading: false,
+  });
+  (useCharacterRepository as any).mockReturnValue({
+    character: undefined,
+    isLoading: false,
+    error: { statusCode: 404, code: 'CHARACTER_NOT_FOUND' },
+    updateCharacter: {},
+    getCharacterKey: vi.fn(),
+    createCharacter: { mutate: vi.fn() },
+    deleteCharacter: { mutate: vi.fn() },
+  });
+  (useCharacterEditor as any).mockReturnValue({ flush: vi.fn() });
+
+  const { result } = renderHook(() => useCurrentCharacter());
+
+  await act(async () => {
+    await result.current.recoverInvalidCharacter();
+  });
+
+  expect(setCharacterId).toHaveBeenCalledWith(null);
+  expect(queryClientMocks.removeQueries).toHaveBeenCalledWith({
+    queryKey: [
+      'get',
+      '/api/characters/{id}',
+      { params: { path: { id: 'missing-char' }, query: { locale: 'en' } } },
+    ],
+  });
 });
 
 test('useCurrentCharacter handles generateNew', () => {

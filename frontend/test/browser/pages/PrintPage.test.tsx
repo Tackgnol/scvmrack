@@ -7,6 +7,7 @@ import { useCharacter } from '@/CharacterContext/CharacterContext';
 import { appHistory } from '@/router/history';
 
 const mockPrint = vi.fn();
+const recoverInvalidCharacter = vi.fn();
 
 function hookError(error: {
   statusCode: number;
@@ -90,6 +91,7 @@ const printableCharacter = {
     },
   ],
   notes: 'Owes silver to everyone.',
+  miseryCount: 4,
 };
 
 describe('PrintPage', () => {
@@ -101,6 +103,7 @@ describe('PrintPage', () => {
       characterId: 'char-1',
       lastCharacterId: null,
       isLoading: false,
+      recoverInvalidCharacter,
       ...overrides,
     } as ReturnType<typeof useCharacter>);
 
@@ -130,6 +133,15 @@ describe('PrintPage', () => {
     await expect.element(page.getByText('Rot Scroll')).toBeVisible();
     await expect.element(page.getByText('Mule')).toBeVisible();
     await expect.element(page.getByText('Ration')).toBeVisible();
+    await expect
+      .element(
+        page.getByRole('heading', {
+          name: 'The Calendar of Nechrubel',
+          exact: true,
+        }),
+      )
+      .toBeVisible();
+    await expect.element(page.getByText('4 / 7')).toBeVisible();
     await expect.element(page.getByText(/owes silver/i)).toBeVisible();
   });
 
@@ -194,5 +206,22 @@ describe('PrintPage', () => {
       .element(page.getByText(/belongs to another session or account/i))
       .toBeVisible();
     expect(document.body.textContent).not.toMatch(/scvm not found/i);
+  });
+
+  it('recovers from an invalid print target instead of navigating back to it', async () => {
+    await renderPrintPage({
+      character: undefined,
+      isLoading: false,
+      error: hookError({
+        statusCode: 404,
+        code: 'CHARACTER_NOT_FOUND',
+        message: 'Character not found',
+      }),
+    });
+
+    await userEvent.click(page.getByRole('button', { name: /^sheet$/i }));
+
+    expect(recoverInvalidCharacter).toHaveBeenCalled();
+    expect(appHistory.push).not.toHaveBeenCalled();
   });
 });

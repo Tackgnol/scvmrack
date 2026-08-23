@@ -8,7 +8,6 @@ import { SessionExpiredGate } from '@components/molecules/session/SessionExpired
 import { Outlet, useRouterState } from '@tanstack/react-router';
 import { Box, Container, CssBaseline, ThemeProvider } from '@mui/material';
 import { customStyles, morkBorgTheme } from '@/theme/morkBorgTheme';
-import { keyframes } from '@mui/system';
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { getPrivacySettings } from '@/privacy/privacySettings';
 import { subscribeOpenPrivacyDrawer } from '@/privacy/privacyDrawerBus';
@@ -39,17 +38,6 @@ function PrivacyNoticeHost() {
         </Suspense>
     );
 }
-
-const routeFadeIn = keyframes`
-    from {
-        opacity: 0.6;
-        transform: translateY(4px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-`;
 
 export function RootLayout() {
     const pathname = useRouterState({
@@ -84,10 +72,7 @@ export function RootLayout() {
                             // Reserve vertical space so the layout doesn't collapse
                             // (and snap back) during the brief empty frame on route swap.
                             minHeight: isPrintRoute ? undefined : '70vh',
-                            animation: `${routeFadeIn} 200ms cubic-bezier(0.22, 1, 0.36, 1)`,
-                            '@media (prefers-reduced-motion: reduce)': {
-                                animation: 'none',
-                            },
+                            viewTransitionName: isPrintRoute ? 'none' : 'scvm-main',
                         }}
                     >
                         <Suspense fallback={isSheetRoute ? <CharacterSheetSkeleton /> : null}>

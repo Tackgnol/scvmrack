@@ -2,6 +2,7 @@ import { Box, CircularProgress, Paper, Typography } from '@mui/material';
 import { customStyles } from '@/theme/morkBorgTheme';
 import { CharacterNameSummary, CharacterClassSummary } from '@components/index';
 import { useCharacterNameAndClass } from '@/hooks/useCharacterNameAndClass';
+import { getCharacterViewTransitionName } from '@/router/routeClassification';
 
 export const CharacterNameAndClass = () => {
   const {
@@ -35,7 +36,12 @@ export const CharacterNameAndClass = () => {
   }
 
   return (
-    <Box sx={customStyles.characterNameClassGrid}>
+    <Box
+      sx={{
+        ...customStyles.characterNameClassGrid,
+        viewTransitionName: getCharacterViewTransitionName(character.id),
+      }}
+    >
       <CharacterNameSummary
         label={nameLabel}
         name={character.name || fallbackName}

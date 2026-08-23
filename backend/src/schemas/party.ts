@@ -19,11 +19,38 @@ export const InviteTokenParamsSchema = {
   },
 } as const;
 
+export const PartyLimitsSchema = {
+  type: 'object',
+  additionalProperties: false,
+  properties: {
+    maxMembers: { type: 'integer' },
+  },
+} as const;
+
 export const CreatePartyBodySchema = {
   type: 'object',
   additionalProperties: false,
   properties: {
     name: { type: 'string', minLength: 1, maxLength: 120 },
+  },
+} as const;
+
+export const PromotePartyBodySchema = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['obrRoomId'],
+  properties: {
+    obrRoomId: { type: 'string', minLength: 1, maxLength: 256 },
+    name: { type: 'string', minLength: 1, maxLength: 120 },
+  },
+} as const;
+
+export const AttachRoomBodySchema = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['obrRoomId'],
+  properties: {
+    obrRoomId: { type: 'string', minLength: 1, maxLength: 256 },
   },
 } as const;
 
@@ -33,6 +60,25 @@ export const RenamePartyBodySchema = {
   required: ['name'],
   properties: {
     name: { type: 'string', minLength: 1, maxLength: 120 },
+  },
+} as const;
+
+export const SetPartyMiseriesBodySchema = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['miseryCount'],
+  properties: {
+    miseryCount: { type: 'integer', minimum: 0, maximum: 7 },
+  },
+} as const;
+
+export const PartyMiseriesResultSchema = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['miseryCount', 'updatedCharacters'],
+  properties: {
+    miseryCount: { type: 'integer', minimum: 0, maximum: 7 },
+    updatedCharacters: { type: 'integer', minimum: 0 },
   },
 } as const;
 

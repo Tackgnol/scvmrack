@@ -14,6 +14,104 @@ body::before {
   z-index: 10000;
 }
 
+/* Views change like physical artifacts; the app shell stays put. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+}
+
+::view-transition-group(scvm-main) {
+  animation-duration: 280ms;
+  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+::view-transition-old(scvm-main) {
+  animation: scvm-sheet-lift-out 160ms ease-in both;
+}
+
+::view-transition-new(scvm-main) {
+  animation: scvm-sheet-stamp-in 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes scvm-sheet-lift-out {
+  to {
+    clip-path: inset(0 0 100% 0);
+    transform: translateY(-8px) rotate(-0.15deg);
+  }
+}
+
+@keyframes scvm-sheet-stamp-in {
+  from {
+    clip-path: inset(100% 0 0 0);
+    transform: translateY(12px) rotate(0.2deg);
+  }
+}
+
+@keyframes scvm-sheet-swap-out {
+  to {
+    clip-path: inset(0 100% 0 0);
+    transform: translateX(-12px) rotate(-0.15deg);
+  }
+}
+
+@keyframes scvm-sheet-swap-in {
+  from {
+    clip-path: inset(0 0 0 100%);
+    transform: translateX(12px) rotate(0.15deg);
+  }
+}
+
+@keyframes scvm-print-out {
+  to {
+    filter: grayscale(1) contrast(1.08);
+    clip-path: inset(0 0 100% 0);
+  }
+}
+
+@keyframes scvm-print-in {
+  from {
+    filter: grayscale(1) contrast(1.08);
+    clip-path: inset(100% 0 0 0);
+  }
+}
+
+html:active-view-transition-type(from-sheet)::view-transition-old(scvm-main),
+html:active-view-transition-type(sheet-swap)::view-transition-old(scvm-main) {
+  animation-name: scvm-sheet-swap-out;
+}
+
+html:active-view-transition-type(from-sheet)::view-transition-new(scvm-main),
+html:active-view-transition-type(sheet-swap)::view-transition-new(scvm-main) {
+  animation-name: scvm-sheet-swap-in;
+}
+
+html:active-view-transition-type(sheet-to-print)::view-transition-old(root) {
+  animation: scvm-print-out 240ms ease-in both;
+}
+
+html:active-view-transition-type(sheet-to-print)::view-transition-new(root) {
+  animation: scvm-print-in 320ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+html:active-view-transition-type(print-to-sheet)::view-transition-old(root) {
+  animation: scvm-print-out 200ms ease-in both reverse;
+}
+
+html:active-view-transition-type(print-to-sheet)::view-transition-new(root) {
+  animation: scvm-print-in 300ms cubic-bezier(0.16, 1, 0.3, 1) both reverse;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(root),
+  ::view-transition-group(scvm-main),
+  ::view-transition-old(root),
+  ::view-transition-new(root),
+  ::view-transition-old(scvm-main),
+  ::view-transition-new(scvm-main) {
+    animation-duration: 0.01ms !important;
+  }
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 10px;
@@ -552,6 +650,37 @@ input[type='number'] {
 
 .print-native-notes {
   margin-top: 4mm;
+}
+
+.print-native-miseries {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 5mm;
+}
+
+.print-native-misery-marks {
+  display: flex;
+  align-items: center;
+  gap: 5mm;
+  font-family: "Arial Black", Arial, sans-serif;
+  font-size: 13pt;
+  line-height: 1;
+}
+
+.print-native-misery-marks span {
+  position: relative;
+}
+
+.print-native-misery-marks span.is-struck::after {
+  content: "";
+  position: absolute;
+  left: -1mm;
+  right: -1mm;
+  top: 50%;
+  height: 1px;
+  background: #111;
+  transform: rotate(-4deg);
 }
 
 .print-native-notes p {

@@ -176,6 +176,7 @@ CREATE TABLE characters (
     updated_at TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW(),
     storage JSONB DEFAULT '[]'::JSONB,
     notes TEXT DEFAULT '',
+    misery_count INTEGER NOT NULL DEFAULT 0 CHECK (misery_count BETWEEN 0 AND 7),
     session_id TEXT,
     user_id TEXT
 );

@@ -38,7 +38,7 @@ steps:
       - |
         set -e
         cleanup() {
-          rm -f .npmrc backend/.npmrc
+          rm -f .npmrc backend/.npmrc frontend/.npmrc
           rm -rf backend/node_modules frontend/node_modules frontend/dist frontend/coverage frontend/coverage-unit frontend/coverage-browser reports
           npm cache clean --force || true
         }
@@ -47,8 +47,8 @@ steps:
 
         printf '%s\n' "$NPMRC_CONTENT" > .npmrc
         cp .npmrc backend/.npmrc
+        cp .npmrc frontend/.npmrc
         npm --prefix backend ci --no-audit --no-fund
-        rm -f .npmrc backend/.npmrc
         npm --prefix backend/tests/unit-be run test
 
         npm --prefix frontend ci --no-audit --no-fund
@@ -59,11 +59,22 @@ steps:
     depends_on:
       - unit-test
     environment:
+      NPMRC_CONTENT:
+        from_secret: npmrc_content
       VITEST_BROWSER_INSTANCES: chromium
       CI: "true"
     commands:
       - |
         set -e
+        cleanup() {
+          rm -f .npmrc frontend/.npmrc
+          npm cache clean --force || true
+        }
+        cleanup
+        trap cleanup EXIT
+
+        printf '%s\n' "$NPMRC_CONTENT" > .npmrc
+        cp .npmrc frontend/.npmrc
         npm --prefix frontend ci --no-audit --no-fund
         npm --prefix frontend run test:browser
 
@@ -72,11 +83,22 @@ steps:
     depends_on:
       - browser-test-chromium
     environment:
+      NPMRC_CONTENT:
+        from_secret: npmrc_content
       VITEST_BROWSER_INSTANCES: firefox
       CI: "true"
     commands:
       - |
         set -e
+        cleanup() {
+          rm -f .npmrc frontend/.npmrc
+          npm cache clean --force || true
+        }
+        cleanup
+        trap cleanup EXIT
+
+        printf '%s\n' "$NPMRC_CONTENT" > .npmrc
+        cp .npmrc frontend/.npmrc
         npm --prefix frontend ci --no-audit --no-fund
         npm --prefix frontend run test:browser
 
@@ -85,11 +107,22 @@ steps:
     depends_on:
       - browser-test-firefox
     environment:
+      NPMRC_CONTENT:
+        from_secret: npmrc_content
       VITEST_BROWSER_INSTANCES: webkit
       CI: "true"
     commands:
       - |
         set -e
+        cleanup() {
+          rm -f .npmrc frontend/.npmrc
+          npm cache clean --force || true
+        }
+        cleanup
+        trap cleanup EXIT
+
+        printf '%s\n' "$NPMRC_CONTENT" > .npmrc
+        cp .npmrc frontend/.npmrc
         npm --prefix frontend ci --no-audit --no-fund
         npm --prefix frontend run test:browser
 
@@ -106,7 +139,7 @@ steps:
       - |
         set -e
         cleanup() {
-          rm -f .npmrc backend/.npmrc
+          rm -f .npmrc backend/.npmrc frontend/.npmrc
           docker compose -f compose.integration-be.yaml down --volumes --remove-orphans --rmi all || true
           docker builder prune -af || true
           docker image prune -af || true

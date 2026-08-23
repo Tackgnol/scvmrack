@@ -11,6 +11,7 @@ export type PartyRow = {
   name: string;
   ownerUserId: string;
   inviteToken: string;
+  obrRoomId: string | null;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -56,22 +57,43 @@ const MEMBER_SELECT = {
 } as const;
 
 export const partyRepository = {
+  async ensureSystemUser(input: {
+    id: string;
+    name: string;
+    email: string;
+  }): Promise<void> {
+    await prisma.user.upsert({
+      where: { id: input.id },
+      create: {
+        id: input.id,
+        name: input.name,
+        email: input.email,
+        emailVerified: true,
+        isAnonymous: true,
+      },
+      update: {},
+    });
+  },
+
   createParty(input: {
     ownerUserId: string;
     name: string;
     inviteToken: string;
+    obrRoomId?: string | null;
   }): Promise<PartyRow> {
     return prisma.party.create({
       data: {
         ownerUserId: input.ownerUserId,
         name: input.name,
         inviteToken: input.inviteToken,
+        obrRoomId: input.obrRoomId ?? undefined,
       },
       select: {
         id: true,
         name: true,
         ownerUserId: true,
         inviteToken: true,
+        obrRoomId: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -90,6 +112,7 @@ export const partyRepository = {
         name: true,
         ownerUserId: true,
         inviteToken: true,
+        obrRoomId: true,
         createdAt: true,
         updatedAt: true,
         _count: { select: { members: true } },
@@ -111,6 +134,7 @@ export const partyRepository = {
         name: true,
         ownerUserId: true,
         inviteToken: true,
+        obrRoomId: true,
         createdAt: true,
         updatedAt: true,
         members: {
@@ -129,8 +153,28 @@ export const partyRepository = {
         name: true,
         ownerUserId: true,
         inviteToken: true,
+        obrRoomId: true,
         createdAt: true,
         updatedAt: true,
+      },
+    });
+  },
+
+  getPartyByObrRoomId(obrRoomId: string): Promise<PartyWithMembers | null> {
+    return prisma.party.findUnique({
+      where: { obrRoomId },
+      select: {
+        id: true,
+        name: true,
+        ownerUserId: true,
+        inviteToken: true,
+        obrRoomId: true,
+        createdAt: true,
+        updatedAt: true,
+        members: {
+          orderBy: { joinedAt: 'asc' },
+          select: MEMBER_SELECT,
+        },
       },
     });
   },
@@ -203,8 +247,30 @@ export const partyRepository = {
     });
   },
 
+  /** Transfer party ownership (used when a signed-in GM claims a system-owned room party). */
+  async setPartyOwner(id: string, ownerUserId: string): Promise<void> {
+    await prisma.party.update({ where: { id }, data: { ownerUserId } });
+  },
+
+  /** Re-point (or clear) the party's Owlbear room pointer (D2: 1:1, re-pointable). */
+  async setPartyObrRoom(id: string, obrRoomId: string | null): Promise<void> {
+    await prisma.party.update({ where: { id }, data: { obrRoomId } });
+  },
+
   async renameParty(id: string, name: string): Promise<void> {
     await prisma.party.update({ where: { id }, data: { name } });
+  },
+
+  async setPartyMiseryCount(
+    partyId: string,
+    miseryCount: number
+  ): Promise<string[]> {
+    const characters = await prisma.character.updateManyAndReturn({
+      where: { partyId },
+      data: { miseryCount },
+      select: { id: true },
+    });
+    return characters.map(({ id }) => id);
   },
 
   async deleteParty(id: string): Promise<void> {

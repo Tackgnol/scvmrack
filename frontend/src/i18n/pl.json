@@ -4,6 +4,230 @@
     "alphaBadge": "Alpha",
     "subtitle": "Interaktywna karta postaci Mörk Borg"
   },
+  "obr": {
+    "layout": {
+      "expand": "⤢ Rozszerz",
+      "collapse": "⊠ Zwiń"
+    },
+    "common": {
+      "unnamedScvm": "Scvm bez imienia",
+      "classless": "Bez klasy"
+    },
+    "stats": {
+      "agilityShort": "ZWI",
+      "presenceShort": "OPA",
+      "strengthShort": "SIŁ",
+      "toughnessShort": "WYT",
+      "defenseShort": "OBR",
+      "meleeShort": "WRĘCZ",
+      "rangedShort": "DYST"
+    },
+    "route": {
+      "checkingRole": "Sprawdzanie roli Owlbear",
+      "openFromOwlbear": "Otwórz Scvmrack z Owlbear Rodeo, aby odczytać rolę w pokoju."
+    },
+    "player": {
+      "emptyHint": "Wylosuj nędznika do gry albo zaloguj się, by wczytać swoją katownię.",
+      "rollScvm": "Losuj scvma",
+      "rollNew": "Losuj nowego",
+      "forgeScvm": "Stwórz scvma",
+      "signIn": "Zaloguj",
+      "popupBlocked": "Zezwól na okno logowania i spróbuj ponownie.",
+      "signInFailed": "Logowanie nie zostało ukończone.",
+      "selectTokenFirst": "Najpierw wybierz token na mapie",
+      "boundNotification": "Przypisano",
+      "reboundNotification": "Przypisano ponownie",
+      "bindSuccessOne": "{{action}} {{name}} do 1 tokena",
+      "bindSuccessMany": "{{action}} {{name}} do tokenów: {{count}}",
+      "bindFailed": "Nie udało się przypisać. Najpierw otwórz scenę.",
+      "oneTokenSelected": "Wybrano 1 token",
+      "manyTokensSelected": "Wybrano tokeny: {{count}}",
+      "noTokenSelected": "Nie wybrano tokena",
+      "boundTokenSelected": "Wybrany token jest już przypisany",
+      "bindSelectedToken": "Przypisz do tokena",
+      "rebindSelectedToken": "Przypisz ponownie",
+      "selectTokenToBind": "Wybierz token",
+      "binding": "Przypisywanie"
+    },
+    "gm": {
+      "region": "Widok MG",
+      "tabsLabel": "Widok MG",
+      "partyTab": "Drużyna",
+      "enemiesTab": "Wrogowie",
+      "bindings": "Powiązania pokoju",
+      "playerBinding": "Gracz {{id}}",
+      "tokenBinding": "Token",
+      "stale": "NIEAKTUALNE — brak w pokoju",
+      "staleToken": "NIEAKTUALNE — brak w scenie",
+      "clearBinding": "Wyczyść",
+      "unbindToken": "Odepnij",
+      "assignTo": "Przypisz graczowi"
+    },
+    "roster": {
+      "title": "MISTRZ GRY · PRZEGLĄD {{count}}/{{max}}",
+      "empty": "Brak związanych scvm. Gracze muszą przypisać scvma do tokena.",
+      "inviteLink": "Zaproszenie {{path}}",
+      "copyInviteLink": "Kopiuj link zaproszenia {{path}}",
+      "inviteCopied": "Skopiowano link zaproszenia",
+      "copyInviteFailed": "Nie udało się skopiować linku zaproszenia",
+      "manageLink": "Zarządzaj w scvmrack",
+      "moveParty": "Przenieś drużynę do scvmrack",
+      "moving": "Przenoszenie",
+      "promotedPartyName": "Drużyna z pokoju Owlbear",
+      "promoteError": "Nie udało się zapisać tej drużyny Owlbear",
+      "roomBoardActive": "Tablica pokoju aktywna",
+      "signInForInvite": "Zaloguj się jako właściciel, aby zarządzać zaproszeniami",
+      "attachSelect": "Użyj istniejącej bandy",
+      "useThisRoom": "Użyj tego pokoju",
+      "attaching": "Podpinanie",
+      "attachError": "Nie udało się podpiąć pokoju",
+      "refresh": "Odśwież",
+      "refreshed": "Odświeżono listę",
+      "abilitySectionLabel": "Modyfikatory zdolności: {{name}}",
+      "combatSectionLabel": "Cele walki: {{name}}",
+      "abilities": "Zdolności",
+      "combat": "Walka",
+      "omens": "Omeny",
+      "mods": "Mody",
+      "showMods": "Pokaż mody {{count}}",
+      "hideMods": "Ukryj mody {{count}}",
+      "noActiveModifiers": "Brak aktywnych."
+    },
+    "card": {
+      "missingId": "Brak ID scvma",
+      "loadFailed": "Nie udało się wczytać scvma",
+      "notFound": "Nie znaleziono scvma",
+      "loading": "Wczytywanie scvma",
+      "unbindToken": "Odłącz token",
+      "unbindingToken": "Odłączanie",
+      "unboundToken": "Odłączono token",
+      "unbindFailed": "Nie udało się odłączyć tokena",
+      "eyebrow": "Podgląd scvma",
+      "resourcesLabel": "Zasoby: {{name}}",
+      "hp": "PŻ",
+      "omens": "Omeny",
+      "silver": "Srebro",
+      "abilitySectionLabel": "Modyfikatory zdolności: {{name}}",
+      "combatSectionLabel": "Cele walki: {{name}}",
+      "equipmentSectionLabel": "Rynsztunek: {{name}}",
+      "modifiersSectionLabel": "Modyfikatory: {{name}}",
+      "abilities": "Zdolności",
+      "combat": "Walka",
+      "equipment": "Rynsztunek",
+      "weapons": "Broń",
+      "armor": "Pancerz",
+      "body": "Ciało",
+      "traits": "Cechy",
+      "mods": "Mody",
+      "bareHands": "gołe ręce",
+      "weaponFallback": "broń",
+      "noArmor": "bez pancerza",
+      "none": "brak",
+      "noActiveModifiers": "Brak aktywnych."
+    },
+    "enemies": {
+      "playerRegion": "Widok wrogów",
+      "gmRegion": "Wrogowie MG",
+      "playerTitle": "Wrogowie {{count}}",
+      "gmTitle": "Wrogowie MG {{count}}",
+      "playerSubhead": "Znane zagrożenia",
+      "gmSubhead": "Zagrożenia stołu",
+      "checkingSession": "Sprawdzanie sesji",
+      "checkingSessionBody": "Karty wrogów wymagają sesji MG w scvmrack.",
+      "signInGateTitle": "Zaloguj, by zapisać wrogów",
+      "signInGateBody": "Karty wrogów zapisują się w drużynie scvmrack dla tego pokoju Owlbear.",
+      "signInRequired": "Zaloguj się, aby zapisać wrogów dla tego pokoju Owlbear.",
+      "partyGateTitle": "Przenieś pokój przed wrogami",
+      "partyGateBody": "Karty wrogów wymagają zapisanej drużyny pokoju, zanim zobaczy je stół.",
+      "roomSetupTitle": "Przygotowywanie planszy wrogów",
+      "roomSetupFailedTitle": "Nie udało się przygotować wrogów",
+      "roomSetupBody": "Scvmrack przygotowuje ten pokój Owlbear na karty wrogów. Logowanie nie jest potrzebne.",
+      "roomSetupPending": "Przygotowywanie",
+      "roomSetupRetry": "Spróbuj ponownie",
+      "partyRequired": "Przenieś ten pokój do scvmrack przed zapisaniem wrogów.",
+      "roomAlreadyPromoted": "Ten pokój Owlbear należy już do innego MG w scvmrack.",
+      "newEnemy": "Nowy wróg",
+      "editTitle": "Edytuj wroga",
+      "createTitle": "Dodaj wroga",
+      "nameLabel": "Nazwa",
+      "nameRequired": "Nazwa jest wymagana",
+      "typeLabel": "Typ",
+      "habitatLabel": "Siedlisko",
+      "healthLabel": "Zdrowie %",
+      "healthInvalid": "Użyj 0 do 100",
+      "currentHealthLabel": "Aktualne HP",
+      "currentHealthInvalid": "Użyj 0 do 999",
+      "maxHealthLabel": "HP",
+      "maxHealthInvalid": "Użyj 1 do 999",
+      "moraleLabel": "Morale",
+      "moraleInvalid": "Użyj 0 do 99",
+      "armorDieLabel": "Kość pancerza",
+      "armorDescriptionLabel": "Opis pancerza",
+      "descriptionLabel": "Opis dla graczy",
+      "gmDescriptionLabel": "Opis MG",
+      "playerDescriptionLabel": "Opis dla graczy",
+      "descriptionInvalid": "Maksymalnie 500 znaków",
+      "attacksTitle": "Ataki",
+      "attackNameLabel": "Atak",
+      "attackDieLabel": "Kość",
+      "removeAttack": "Usuń atak",
+      "addAttack": "Dodaj atak",
+      "specialsTitle": "Zdolności specjalne",
+      "specialNameLabel": "Zdolność",
+      "specialDescriptionLabel": "Opis",
+      "removeSpecial": "Usuń zdolność",
+      "addSpecial": "Dodaj zdolność",
+      "lootTitle": "Łup i nagroda",
+      "lootLabelLabel": "Etykieta",
+      "lootValueLabel": "Wartość",
+      "removeLoot": "Usuń łup",
+      "addLoot": "Dodaj łup",
+      "statusBandsTitle": "Progi statusu",
+      "statusPercentLabel": "Przy %",
+      "statusLabelLabel": "Etykieta",
+      "removeStatus": "Usuń status",
+      "customStatus": "Własny",
+      "addStatus": "Dodaj status",
+      "saving": "Zapisywanie",
+      "saveEnemy": "Zapisz wroga",
+      "saveSuccess": "Wróg zapisany",
+      "saveFailed": "Nie udało się zapisać wroga",
+      "deleteFailed": "Nie udało się usunąć wroga",
+      "selectTokenFirst": "Najpierw wybierz token na mapie",
+      "bindSuccessOne": "Przypisano {{name}} do 1 tokena",
+      "bindSuccessMany": "Przypisano {{name}} do tokenów: {{count}}",
+      "bindFailed": "Nie udało się przypisać wroga",
+      "healthFailed": "Nie udało się zmienić zdrowia",
+      "loading": "Wczytywanie wrogów",
+      "loadFailed": "Nie udało się wczytać wrogów",
+      "emptyGm": "Brak wrogów. Dodaj jednego dla stołu.",
+      "missingId": "Brak ID wroga",
+      "notFound": "Nie znaleziono wroga",
+      "playerCharacterRequired": "Wczytaj swojego scvma, zanim podejrzysz karty wrogów.",
+      "damage": "Rana 1 HP",
+      "heal": "Leczenie 1 HP",
+      "bindToken": "Przypisz token",
+      "selectToken": "Zaznacz token",
+      "clone": "Klonuj",
+      "cloneFailed": "Nie udało się sklonować wroga",
+      "edit": "Edytuj",
+      "delete": "Usuń",
+      "healthProgress": "Zdrowie: {{name}}",
+      "healthMeta": "{{value}}% zdrowia",
+      "hpMeta": "{{current}}/{{max}} HP",
+      "armorLabel": "Pancerz",
+      "attacksLabel": "Ataki: {{name}}",
+      "specialsLabel": "Zdolności specjalne: {{name}}",
+      "lootLabel": "Łup: {{name}}",
+      "enemyTag": "Wróg",
+      "status": {
+        "healthy": "Zdrowy",
+        "wounded": "Ranny",
+        "severelyWounded": "Ciężko ranny",
+        "deathsDoor": "Na progu śmierci"
+      }
+    }
+  },
   "landing": {
     "seo": {
       "title": "Darmowa karta postaci Mork Borg",
@@ -411,6 +635,14 @@
     "placeholderAlt1": "Skreślenia, przysięgi, długi.",
     "placeholderAlt2": "Bazgroły z otchłani."
   },
+  "miseries": {
+    "title": "Latopis Nechrubelski",
+    "headerLabel": "Męki",
+    "headerAria": "Męki: {{count}} z 7. Przejdź do toru Męk",
+    "markLabel": "Męka {{roman}}",
+    "calendar": "Ta sama Męka nie spadnie na świat dwa razy",
+    "worldEnding": "7:7 · Świat w końcu umrze"
+  },
   "footer": {
     "worldEnding": "Świat Się Kończy",
     "legalNotice": "MÖRK BORG jest chroniony prawem autorskim Ockult Örtmästare Games oraz Stockholm Kartell. Scvmrack to niezależna produkcja Adama Kościelniaka, rozwijana jako część pakietu <rpgtoolsLink>rpgtools.co</rpgtoolsLink>; nie jest ona powiązana z Ockult Örtmästare Games ani Stockholm Kartell. Została opublikowana na mocy licencji MÖRK BORG Third Party License. <privacyLink>Sprawdź ustawienia prywatności</privacyLink>",
@@ -486,6 +718,7 @@
       "bodyDescription": "Ciało",
       "origin": "Pochodzenie",
       "notes": "Notatki",
+      "miseryCount": "Nieszczęścia",
       "modifierValue": "Wartość modyfikatora",
       "modifierName": "Nazwa modyfikatora",
       "modifierComment": "Komentarz modyfikatora",
@@ -548,6 +781,7 @@
     "characters": "Scvmy",
     "faq": "FAQ",
     "release": "Zmiany",
+    "owlbear": "Owlbear",
     "gm": "MG"
   },
   "characters": {
@@ -660,6 +894,50 @@
     "typeMinor": "Mała",
     "typePatch": "Poprawka",
     "moreUpdates": "Więcej aktualizacji wkrótce. Świat się kończy, ale my dalej dostarczamy.",
+    "v057": {
+      "obrVisibility": "Widoczność postaci w pokoju Owlbear jest teraz spójna w składzie, kartach wrogów i API pokoju",
+      "obrTransport": "Panel Owlbear używa teraz transportu OpenAPI aplikacji, więc CSRF i sesja działają spójnie",
+      "obrManifestVersion": "Manifest OBR zgłasza teraz wersję 0.5.7"
+    },
+    "v056": {
+      "sharedOwlbearPackage": "Panel Owlbear działa teraz na współdzielonym, wielokrotnego użytku pakiecie używanym we wszystkich aplikacjach RPGTools — bez zmian w działaniu dla graczy"
+    },
+    "v055": {
+      "sharedAuthHandoff": "Logowanie w wyskakującym oknie Owlbear Rodeo działa teraz na współdzielonym module uwierzytelniania RPGTools, tym samym audytowanym mechanizmie używanym we wszystkich aplikacjach RPGTools",
+      "internalCleanup": "Usunięto zbędną wewnętrzną tabelę, która nie jest już potrzebna"
+    },
+    "v054": {
+      "obrEnemyTokenPopover": "Karty wrogów gracza otwierają się teraz z popoverów przypisanych tokenów, a nie z karty postaci",
+      "obrEnemySafeProjection": "Popover wroga dla gracza używa bezpiecznego widoku karty, a popover MG zachowuje pełny formularz edycji",
+      "obrManifestVersion": "Manifest OBR zgłasza teraz wersję 0.5.4"
+    },
+    "v053": {
+      "obrEnemyAutoSetup": "Zakładka wrogów MG w Owlbear Rodeo sama przygotowuje planszę wrogów pokoju",
+      "obrEnemyNoLoginGate": "MG może dodawać wrogów z Owlbear bez logowania do scvmrack i bez ręcznego przenoszenia drużyny",
+      "obrManifestVersion": "Manifest OBR zgłasza teraz wersję 0.5.3"
+    },
+    "v052": {
+      "obrManifestVersion": "Manifest OBR zgłasza teraz wersję 0.5.2",
+      "obrPopoverCacheBust": "Owlbear Rodeo wczytuje aktualny punkt wejścia rozszerzenia dla nazw graczy, akcji Stwórz/Zaloguj i zarządzania wrogami pokoju",
+      "obrNoStore": "Publiczny manifest OBR i powłoka popovera wysyłają teraz nagłówki no-store"
+    },
+    "v051": {
+      "obrManifestCors": "Owlbear Rodeo może zainstalować manifest Scvmrack, bo publiczne pliki rozszerzenia wysyłają teraz nagłówki CORS",
+      "obrManifestVersion": "Manifest OBR zgłasza teraz wersję 0.5.1"
+    },
+    "v050": {
+      "obrExtension": "Scvmrack działa teraz w Owlbear Rodeo z osadzoną kartą gracza i przeglądem MG",
+      "tokenBinding": "Gracze mogą przypisać albo ponownie przypisać wybrane tokeny, a wybrane przypisane tokeny pokazują imię scvma",
+      "cardPeek": "Przypisane tokeny mają kompaktowy podgląd scvma z PŻ, Omenami, srebrem, celami walki, redukcją pancerza, sprzętem, cechami i modyfikatorami",
+      "roomPromotion": "Zalogowani MG mogą przenieść pokój Owlbear do trwałej drużyny scvmrack z linkiem zaproszenia i zarządzania",
+      "drFiltering": "Rzędy kompanii w drużynie i Owlbear pokazują redukcję pancerza i używają tego samego filtrowania modyfikatorów co główna karta",
+      "roomGate": "Odczyty kart OBR są ograniczone przypisaniem do pokoju Owlbear, więc samo ujawnione ID postaci nie wystarczy do pobrania karty"
+    },
+    "v044": {
+      "structuredLogging": "Nieoczekiwane błędy backendu zapisują teraz pełne stosy wywołań przez wspólny helper błędów usług",
+      "sseCleanup": "Strumienie zmian drużyny zamykają teraz półotwarte gniazda, gdy zapis zawiedzie przed rozłączeniem klienta",
+      "repositoryLayering": "Odczyty katalogu przechodzą teraz przez repozytoria zamiast bezpośrednich wywołań bazy danych z kodu bibliotecznego"
+    },
     "v043": {
       "partyNameContrast": "Tekst nazwy kompanii w przeglądzie MG jest teraz czarny na żółtym tle, więc pozostaje czytelny podczas tworzenia kompanii",
       "partyNameLimit": "Tworzenie kompanii sprawdza teraz nazwę w przeglądarce i blokuje wysłanie powyżej 100 znaków",
@@ -752,6 +1030,12 @@
     "renameLabel": "Nazwa kompanii",
     "rename": "Zmień nazwę",
     "noMembers": "Żaden scvm nie dołączył jeszcze do tej drużyny.",
+    "miseryControlHelp": "Ustaw tę samą pieczęć każdemu scvmowi. Otwarte karty zaktualizują się na żywo.",
+    "miseryControlApply": "Ustaw {{count}} / {{total}} wszystkim scvmom",
+    "miseryControlPending": "Ustawianie Męk...",
+    "miseryControlSuccess": "Każdy scvm ma teraz {{count}} / {{total}} Męk.",
+    "miseryControlEmpty": "Scvm musi dołączyć, zanim narzucisz mu Latopis.",
+    "miseryControlError": "Nie udało się zaktualizować Męk drużyny",
     "kick": "Wyrzuć",
     "empty": "Brak scvmów w katowni. Stwórz jednego, a dołączy do kompanii.",
     "cardError": "Nie udało się wczytać karty tego scvma.",
@@ -766,6 +1050,54 @@
     "goToSheet": "Przejdź do karty",
     "leaveParty": "Opuść drużynę",
     "leaving": "Opuszczanie..."
+  },
+  "owlbear": {
+    "title": "Owlbear Rodeo",
+    "intro": "Scvmrack działa wewnątrz Owlbear Rodeo jako rozszerzenie pokoju. Gracze mają swoją kartę otwartą tuż obok mapy. Mistrzowie Gry widzą na żywo listę wszystkich scvmów przy stole, bez drugiej karty przeglądarki.",
+    "install": {
+      "heading": "Instalacja",
+      "step1": "Otwórz swój pokój Owlbear Rodeo i przejdź do Ustawienia → Zarządzaj rozszerzeniami.",
+      "step2": "Wklej ten adres manifestu i potwierdź:",
+      "step3": "Scvmrack pojawi się na pasku akcji pokoju. Kliknij, aby otworzyć kartę.",
+      "screenshot": "Okno 'Dodaj własne rozszerzenie' w Owlbear Rodeo z wklejonym adresem manifestu Scvmrack w polu Install Link"
+    },
+    "player": {
+      "heading": "Dla graczy",
+      "sheet": {
+        "title": "Twoja karta, w pokoju",
+        "text": "Otwórz akcję Scvmrack, aby zobaczyć swojego scvma dokładnie takiego, jak na głównej stronie: statystyki, ekwipunek, PŻ, Omeny. Edytuj go bez opuszczania Owlbear.",
+        "screenshot": "Okno Scvmrack otwarte w pokoju Owlbear Rodeo, pokazujące edytowalną kartę postaci gracza obok mapy"
+      },
+      "bind": {
+        "title": "Przypisz swój token",
+        "text": "Wybierz swój token na mapie i przypisz go do swojego scvma. Etykieta tokena zmieni się, pokazując kto to jest — możesz przypisać go ponownie w dowolnym momencie, gdy zmienisz scvma lub token.",
+        "screenshot": "Panel Scvmrack po wybraniu tokena na mapie, z gotowym przyciskiem 'Przypisz do tokena'"
+      },
+      "peek": {
+        "title": "Podejrzyj dowolny przypisany token",
+        "text": "Kliknij prawym przyciskiem na przypisany token, aby zobaczyć kompaktową kartę: PŻ, Omeny, srebro, cele walki, pancerz, ekwipunek, cechy i aktywne modyfikatory. Bez otwierania pełnej karty.",
+        "screenshot": "Menu kontekstowe tokena z zaznaczoną opcją 'View scvm', otwierające jego kompaktową kartę"
+      }
+    },
+    "gm": {
+      "heading": "Dla Mistrzów Gry",
+      "roster": {
+        "title": "Lista przy stole, na żywo",
+        "text": "Każdy przypisany token pojawia się na Twojej liście. PŻ, statystyki i to, kto jest połączony, aktualizują się w trakcie gry — bez odświeżania.",
+        "screenshot": "Lista MG z przypisanymi postaciami, pokazująca PŻ i statystyki na żywo"
+      },
+      "promote": {
+        "title": "Przenieś pokój do drużyny",
+        "text": "Zaloguj się i przenieś ten pokój do trwałej drużyny scvmrack. Otrzymasz link do zarządzania dla siebie i link zaproszenia dla nowych graczy — oba działają dalej po zakończeniu sesji w Owlbear.",
+        "screenshot": "Lista MG z wygenerowanym linkiem zaproszenia, po przeniesieniu pokoju do drużyny scvmrack"
+      },
+      "enemies": {
+        "title": "Prowadź tablicę wrogów",
+        "text": "Dodawaj wrogów z poziomu Owlbear i umieszczaj ich na tokenach na mapie. Gracze, którzy klikną przypisany token wroga, zobaczą kartę tylko do odczytu — Ty zachowujesz pełną, edytowalną wersję.",
+        "screenshot": "Zakładka Wrogowie MG z zagrożeniem stołu, pokazująca PŻ, morale, pancerz i notatki o łupach"
+      }
+    },
+    "morkBorgCredit": "MÖRK BORG jest chroniony prawem autorskim Ockult Örtmästare Games oraz Stockholm Kartell. To jest niezależny projekt fanowski."
   },
   "gm": {
     "stamp": "Mistrz Gry · Przegląd",
@@ -811,6 +1143,8 @@
     "gear": "Ekwipunek i zasoby",
     "weapon": "Broń",
     "armor": "Pancerz",
+    "armorNone": "Brak",
+    "unarmed": "Bez broni",
     "omens": "Omeny",
     "silver": "Srebro"
   }

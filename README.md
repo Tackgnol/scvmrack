@@ -84,10 +84,14 @@ For local backend work, copy `backend/.env.example` to `backend/.env` and fill i
 | `VITE_LOGTO_ENDPOINT` | yes for frontend build | Logto tenant URL exposed to the SPA for profile links |
 | `GLITCHTIP_DSN` | optional | Backend error monitoring |
 | `VITE_GLITCHTIP_DSN` | optional | Frontend error monitoring |
+| `SENTRY_RELEASE` | optional | Exact deployed release, defaults to `scvmrack@<package version>` |
+| `SENTRY_ENVIRONMENT` | optional | Shared frontend/backend environment name |
+| `SENTRY_AUTH_TOKEN` | required when frontend monitoring is enabled | Build-only source-map upload token |
+| `SENTRY_ORG` / `SENTRY_FRONTEND_PROJECT` | required when frontend monitoring is enabled | GlitchTip source-map upload target |
 
 ## Error Monitoring (GlitchTip)
 
-Set `GLITCHTIP_DSN` for backend and `VITE_GLITCHTIP_DSN` for frontend reporting to separate GlitchTip projects. Transaction sample rate is `0.01`.
+Set `GLITCHTIP_DSN` for backend and `VITE_GLITCHTIP_DSN` for frontend reporting to separate GlitchTip projects. See [the monitoring deployment guide](docs/monitoring.md) for releases, source maps, and the production artifact check.
 
 ## Learn More
 

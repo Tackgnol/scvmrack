@@ -1,21 +1,26 @@
 import { ABILITY_STATS, DRAFT_SECTIONS } from '../lib/draft-seeds.js';
 import { CharacterSchema } from './character.js';
 
-const SeedSchema = { type: 'string', pattern: '^[0-9a-f]{64}$' };
-const AbilityStatSchema = { type: 'string', enum: [...ABILITY_STATS] };
+const SeedSchema = { type: 'string', pattern: '^[0-9a-f]{64}$' } as const;
+const AbilityStatSchema = {
+  type: 'string',
+  enum: [...ABILITY_STATS],
+} as const;
 const DropLowestAbilitiesSchema = {
   type: 'array',
   items: AbilityStatSchema,
   uniqueItems: true,
   maxItems: 2,
-};
+} as const;
 
 export const SectionSeedsSchema = {
   type: 'object',
   additionalProperties: false,
   required: [...DRAFT_SECTIONS],
-  properties: Object.fromEntries(DRAFT_SECTIONS.map((section) => [section, SeedSchema])),
-};
+  properties: Object.fromEntries(
+    DRAFT_SECTIONS.map((section) => [section, SeedSchema])
+  ) as Record<(typeof DRAFT_SECTIONS)[number], typeof SeedSchema>,
+} as const;
 
 export const DraftSchema = {
   type: 'object',
@@ -28,7 +33,7 @@ export const DraftSchema = {
     dropLowestAbilities: DropLowestAbilitiesSchema,
     seeds: SectionSeedsSchema,
   },
-};
+} as const;
 
 export const DraftBodySchema = {
   type: 'object',
@@ -40,7 +45,7 @@ export const DraftBodySchema = {
     dropLowestAbilities: DropLowestAbilitiesSchema,
     seeds: SectionSeedsSchema,
   },
-};
+} as const;
 
 export const RerollBodySchema = {
   type: 'object',
@@ -49,7 +54,7 @@ export const RerollBodySchema = {
   properties: {
     draft: DraftSchema,
   },
-};
+} as const;
 
 export const RerollParamsSchema = {
   type: 'object',
@@ -57,7 +62,7 @@ export const RerollParamsSchema = {
   properties: {
     section: { type: 'string', enum: [...DRAFT_SECTIONS] },
   },
-};
+} as const;
 
 const DraftPreviewSchema = {
   ...CharacterSchema,
@@ -65,7 +70,7 @@ const DraftPreviewSchema = {
     ...CharacterSchema.properties,
     id: { type: ['string', 'null'], format: 'uuid' },
   },
-};
+} as const;
 
 const ClasslessStatOptionSchema = {
   type: 'object',
@@ -83,7 +88,7 @@ const ClasslessStatOptionSchema = {
     selected: { type: 'boolean' },
   },
   required: ['ability', 'dice', 'minTotal', 'maxTotal', 'selected'],
-};
+} as const;
 
 export const DraftResponseSchema = {
   type: 'object',
@@ -98,7 +103,7 @@ export const DraftResponseSchema = {
     },
   },
   required: ['draft', 'preview'],
-};
+} as const;
 
 export const ClassListResponseSchema = {
   type: 'array',
@@ -111,4 +116,4 @@ export const ClassListResponseSchema = {
     },
     required: ['id'],
   },
-};
+} as const;

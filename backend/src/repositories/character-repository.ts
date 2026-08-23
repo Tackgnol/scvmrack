@@ -54,6 +54,13 @@ export const characterRepository = {
     });
   },
 
+  transferOwnership(id: string, userId: string): Promise<unknown> {
+    return prisma.character.update({
+      where: { id },
+      data: { userId, sessionId: null },
+    });
+  },
+
   getPartyAccessContext(id: string): Promise<CharacterPartyAccessRow | null> {
     return prisma.character.findUnique({
       where: { id },
@@ -74,6 +81,18 @@ export const characterRepository = {
         },
       },
     });
+  },
+
+  /** Ids from `ids` whose character belongs to the party attached to this OBR room. */
+  async filterCharacterIdsInRoomParty(
+    ids: string[],
+    roomId: string
+  ): Promise<string[]> {
+    const rows = await prisma.character.findMany({
+      where: { id: { in: ids }, party: { obrRoomId: roomId } },
+      select: { id: true },
+    });
+    return rows.map((row) => row.id);
   },
 
   update(id: string, data: Prisma.CharacterUpdateInput): Promise<unknown> {

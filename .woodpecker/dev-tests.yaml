@@ -14,7 +14,7 @@ steps:
       - |
         set -e
         cleanup() {
-          rm -f .npmrc backend/.npmrc
+          rm -f .npmrc backend/.npmrc frontend/.npmrc
           rm -rf backend/node_modules frontend/node_modules frontend/dist frontend/coverage frontend/coverage-unit frontend/coverage-browser reports
           npm cache clean --force || true
         }
@@ -23,8 +23,8 @@ steps:
 
         printf '%s\n' "$NPMRC_CONTENT" > .npmrc
         cp .npmrc backend/.npmrc
+        cp .npmrc frontend/.npmrc
         npm --prefix backend ci --no-audit --no-fund
-        rm -f .npmrc backend/.npmrc
         npm --prefix backend/tests/unit-be run test
 
         npm --prefix frontend ci --no-audit --no-fund
@@ -43,7 +43,7 @@ steps:
       - |
         set -e
         cleanup() {
-          rm -f .npmrc backend/.npmrc
+          rm -f .npmrc backend/.npmrc frontend/.npmrc
           docker compose -f compose.integration-be.yaml down --volumes --remove-orphans || true
           docker builder prune -af || true
           docker image prune -f || true

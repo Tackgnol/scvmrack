@@ -6,6 +6,7 @@ import {
 } from "@/hooks/usePartyRepository";
 import { usePartyStream } from "@/hooks/usePartyStream";
 import { WarbandVitalStrip } from "@/components/organisms/party/WarbandVitalStrip";
+import GmMiseryControl from "@/components/molecules/party/GmMiseryControl";
 import { appHistory } from "@/router/history";
 import { buildPartyCharacterPath } from "@/router/navigation";
 import { Seo } from "@/seo/Seo";
@@ -95,14 +96,15 @@ const Title = styled(Typography)(({ theme }) => ({
   overflowWrap: "anywhere",
 })) as typeof Typography;
 
-// Stagger wrapper: each child sets `style={{ '--i': n }}` for a small cascade.
-const Reveal = styled(Box)({
+const Reveal = styled(Box, {
+  shouldForwardProp: (prop) => prop !== "step",
+})<{ step: number }>(({ step }) => ({
   animation: `${rise} 320ms cubic-bezier(0.22, 1, 0.36, 1) both`,
-  animationDelay: "calc(var(--i, 0) * 70ms)",
+  animationDelay: `${step * 70}ms`,
   "@media (prefers-reduced-motion: reduce)": {
     animation: "none",
   },
-});
+}));
 
 const TitleRow = styled(Box)({
   display: "flex",
@@ -447,7 +449,7 @@ export function PartyPage() {
 
         {party?.role === "gm" && (
           <>
-            <Reveal sx={{ "--i": 0 }}>
+            <Reveal step={0}>
               <Stamp>{t("party.manageStamp", "GM party control")}</Stamp>
               {renaming ? (
                 <NameInput
@@ -487,7 +489,7 @@ export function PartyPage() {
               )}
             </Reveal>
 
-            <Reveal sx={{ "--i": 1 }}>
+            <Reveal step={1}>
               <DarkPanel>
                 <PanelHeader>
                   <Label>{t("party.inviteLinkLabel", "Invite link")}</Label>
@@ -563,7 +565,14 @@ export function PartyPage() {
               </DarkPanel>
             </Reveal>
 
-            <Reveal sx={{ "--i": 2 }}>
+            <Reveal step={2}>
+              <GmMiseryControl
+                partyId={party.id}
+                memberCount={party.memberCount}
+              />
+            </Reveal>
+
+            <Reveal step={3}>
               <MembersLabel>
                 {t("gm.stamp", "Game Master · Overview")}{" "}
                 {t("party.membersCount", "{{count}}/{{max}}", {
@@ -600,7 +609,7 @@ export function PartyPage() {
               )}
             </Reveal>
 
-            <Reveal sx={{ "--i": 3 }}>
+            <Reveal step={4}>
               <DarkPanel>
                 <Label>{t("party.guildTitle", "Guild")}</Label>
                 <GuildRow>

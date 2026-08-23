@@ -77,6 +77,7 @@ src/
 frontend/src/
 ├── components/     # React components (UI)
 ├── hooks/          # Custom hooks (character editing, auth, search)
+├── obr/            # Owlbear Rodeo extension adapter: SDK glue, room/token bindings, OBR hooks
 ├── api/            # OpenAPI-generated client
 ├── pages/          # Route pages
 ├── router/         # TanStack Router config
@@ -150,6 +151,7 @@ Pentested with Shannon AI (2026-03-23). All findings remediated or accepted.
 | Claim signatures | Shared-auth HMAC claim flow | Verified |
 | Swagger/OpenAPI | Disabled in production (`NODE_ENV=production`) | Verified |
 | Dockerfile | Runs as `node` user, not root | Verified |
+| OBR room access | Room-scoped reads are gated by the **(roomId, characterId) binding tables** (`ObrPlayerCharacterBinding`/`ObrTokenCharacterBinding`): `GET /api/obr/rooms/:roomId/cards` returns table-visible cards only for bound ids; binding writes require a session and owner-or-already-in-room. **Accepted room-trust residual (2026-07-01):** the unguessable OBR room id is a capability — anyone holding it can list bindings/bound cards, manage that room's enemy board (`/api/parties/by-room/:roomId/*`), and read the room party roster via `POST /api/parties/promote`. The party **invite token stays owner-only** (non-owners get a token-less view); a signed-in GM can claim a system-owned (`system:obr-room`) room party; party attach/detach is owner-only. | Accepted |
 
 ### Security Considerations When Modifying
 - **Never commit secrets** to version control (`.env` files are in `.gitignore`)

@@ -86,6 +86,8 @@ services:
       GLITCHTIP_DSN: ${GLITCHTIP_DSN:-}
       VITE_GLITCHTIP_DSN: ${VITE_GLITCHTIP_DSN:-}
       GLITCHTIP_UPSTREAM: ${GLITCHTIP_UPSTREAM:-https://glitchtip.rpgtools.co}
+      SENTRY_RELEASE: ${SENTRY_RELEASE:-}
+      SENTRY_ENVIRONMENT: ${SENTRY_ENVIRONMENT:-production}
     ports:
       - target: 3000
         published: ${BACKEND_PORT:-3041}
@@ -118,6 +120,12 @@ services:
         VITE_LOGTO_ENDPOINT: ${VITE_LOGTO_ENDPOINT:?VITE_LOGTO_ENDPOINT is required}
         VITE_SITE_URL: ${VITE_SITE_URL:-}
         VITE_GLITCHTIP_DSN: ${VITE_GLITCHTIP_DSN:-}
+        VITE_SENTRY_ENVIRONMENT: ${SENTRY_ENVIRONMENT:-production}
+        SENTRY_RELEASE: ${SENTRY_RELEASE:-}
+        SENTRY_URL: ${SENTRY_URL:-https://glitchtip.rpgtools.co}
+        SENTRY_ORG: ${SENTRY_ORG:-}
+        # Source maps must target the frontend GlitchTip project, never scvmrack_be.
+        SENTRY_PROJECT: ${SENTRY_FRONTEND_PROJECT:-}
         # Public GA4 measurement ID (shipped in the client bundle, not a secret).
         # Override via the runner env; defaults to the project's GA property.
         # No colon in the default so an explicitly-empty value (dev) disables GA

@@ -70,7 +70,12 @@ describe('auth api helpers', () => {
     await expect(signInAnonymous()).resolves.toBeUndefined();
     expect(mockFetch).toHaveBeenCalledWith(
       'https://api.example.test/api/auth/sign-in/anonymous',
-      { method: 'POST', credentials: 'include', headers: {} }
+      {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'content-type': 'application/json' },
+        body: '{}',
+      }
     );
   });
 

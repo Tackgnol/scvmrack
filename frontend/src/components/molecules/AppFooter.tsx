@@ -41,6 +41,7 @@ export function AppFooter() {
     <Bar className="print-hidden">
       <FooterLink to="/faq">{t('nav.faq')}</FooterLink>
       <FooterLink to="/release">{t('nav.release')}</FooterLink>
+      <FooterLink to="/owlbear">{t('nav.owlbear')}</FooterLink>
     </Bar>
   );
 }
