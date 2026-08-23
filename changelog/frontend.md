@@ -87,6 +87,7 @@
 
 ## Cross-cutting
 
+- The header identifies Scvmrack as Beta
 - Localized (en/pl) throughout, including release notes and feedback copy
 - SEO metadata per page; privacy-notice drawer gates analytics consent
 - Custom Mörk Borg theme tokens and styles
