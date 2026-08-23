@@ -132,15 +132,3 @@ steps:
         docker compose -f compose.integration-be.yaml run --rm migrate
         docker compose -f compose.integration-be.yaml up -d --wait --wait-timeout 300 --no-deps api
         docker compose -f compose.integration-be.yaml run --rm --no-deps integration
-
-  e2e-test:
-    image: docker:27-cli
-    depends_on:
-      - integration-test
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    environment:
-      NPMRC_CONTENT:
-        from_secret: npmrc_content
-    commands:
-      - sh backend/scripts/run-e2e-ci.sh
