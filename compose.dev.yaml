@@ -76,6 +76,8 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile.dev
+      secrets:
+        - npmrc
     ports:
       - "5173:5173"
     environment:
@@ -108,3 +110,7 @@ services:
 
 volumes:
   pgdata-dev:
+
+secrets:
+  npmrc:
+    file: .npmrc
