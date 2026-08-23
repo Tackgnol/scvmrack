@@ -1,7 +1,7 @@
 {
   "app": {
     "title": "Scvmrack",
-    "alphaBadge": "Alpha",
+    "betaBadge": "Beta",
     "subtitle": "Interactive Mörk Borg character sheet"
   },
   "obr": {
@@ -897,6 +897,13 @@
     "typeMinor": "Minor",
     "typePatch": "Patch",
     "moreUpdates": "More updates coming soon. The world is ending, but we keep shipping.",
+    "v060": {
+      "beta": "Scvmrack has entered Beta",
+      "miseries": "Character sheets now include the seven-step Misery track, with controls for players and GMs",
+      "recovery": "Missing, forbidden, and session-transition routes now recover cleanly without deleting character data or getting stuck",
+      "monitoring": "GlitchTip now filters expected browser and API noise while preserving actionable release and source-map diagnostics",
+      "owlbear": "Owlbear room visibility, enemy cards, token binding, and session handling are more reliable"
+    },
     "v057": {
       "obrVisibility": "Owlbear room character visibility is now consistent across roster, enemy cards, and room APIs",
       "obrTransport": "The Owlbear panel now uses the app OpenAPI transport for consistent CSRF and session handling",

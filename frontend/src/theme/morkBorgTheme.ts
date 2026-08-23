@@ -1296,7 +1296,7 @@ export const customStyles = {
       lineHeight: 0.85,
       '& span': { color: morkBorgColors.pink },
     }),
-    alphaBadge: (isMobile: boolean) => ({
+    betaBadge: (isMobile: boolean) => ({
       display: 'inline-flex',
       alignItems: 'center',
       justifyContent: 'center',

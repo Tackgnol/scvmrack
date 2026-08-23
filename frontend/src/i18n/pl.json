@@ -1,7 +1,7 @@
 {
   "app": {
     "title": "Scvmrack",
-    "alphaBadge": "Alpha",
+    "betaBadge": "Beta",
     "subtitle": "Interaktywna karta postaci Mörk Borg"
   },
   "obr": {
@@ -894,6 +894,13 @@
     "typeMinor": "Mała",
     "typePatch": "Poprawka",
     "moreUpdates": "Więcej aktualizacji wkrótce. Świat się kończy, ale my dalej dostarczamy.",
+    "v060": {
+      "beta": "Scvmrack wszedł w fazę Beta",
+      "miseries": "Karty postaci zawierają teraz siedmiostopniowy tor Nieszczęść z kontrolkami dla graczy i MG",
+      "recovery": "Brakujące i niedostępne trasy oraz przejścia sesji wracają teraz do poprawnego stanu bez usuwania danych postaci ani zapętlenia",
+      "monitoring": "GlitchTip odfiltrowuje oczekiwany szum przeglądarki i API, zachowując przydatne dane wersji i map źródeł",
+      "owlbear": "Widoczność pokoju, karty wrogów, przypisywanie tokenów i obsługa sesji w Owlbear działają pewniej"
+    },
     "v057": {
       "obrVisibility": "Widoczność postaci w pokoju Owlbear jest teraz spójna w składzie, kartach wrogów i API pokoju",
       "obrTransport": "Panel Owlbear używa teraz transportu OpenAPI aplikacji, więc CSRF i sesja działają spójnie",

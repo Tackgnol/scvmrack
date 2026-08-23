@@ -139,6 +139,9 @@ describe('Header Component', () => {
 
     const title = page.getByTestId('app-title');
     await expect.element(title).toBeInTheDocument();
+    await expect
+      .element(page.getByRole('heading', { name: 'Scvmrack Beta' }))
+      .toBeVisible();
 
     const printBtn = page.getByTestId('header-print-button');
     await expect.element(printBtn).toBeVisible();

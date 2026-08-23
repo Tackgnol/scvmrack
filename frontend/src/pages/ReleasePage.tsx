@@ -35,6 +35,18 @@ const buildReleaseNotes = (t: TFunction): ReleaseNote[] => {
     // newest-first and in sync with that folder when cutting a release.
     return [
         {
+            version: '0.6.0',
+            date: '2026-08-24',
+            type: 'minor',
+            changes: [
+                t('release.v060.beta', 'Scvmrack has entered Beta'),
+                t('release.v060.miseries', 'Character sheets now include the seven-step Misery track, with controls for players and GMs'),
+                t('release.v060.recovery', 'Missing, forbidden, and session-transition routes now recover cleanly without deleting character data or getting stuck'),
+                t('release.v060.monitoring', 'GlitchTip now filters expected browser and API noise while preserving actionable release and source-map diagnostics'),
+                t('release.v060.owlbear', 'Owlbear room visibility, enemy cards, token binding, and session handling are more reliable'),
+            ],
+        },
+        {
             version: '0.5.7',
             date: '2026-07-06',
             type: 'patch',

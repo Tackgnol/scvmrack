@@ -106,7 +106,7 @@ export default function Header() {
             <Box sx={customStyles.header.titleRow(isMobile)}>
               <Typography
                 variant="h1"
-                aria-label={`${t('app.title', 'Scvmrack')} ${t('app.alphaBadge', 'Alpha')}`}
+                aria-label={`${t('app.title', 'Scvmrack')} ${t('app.betaBadge', 'Beta')}`}
                 sx={customStyles.header.title(isMobile)}
               >
                 SC<span>V</span>MRACK
@@ -114,9 +114,9 @@ export default function Header() {
               <Box
                 component="span"
                 aria-hidden="true"
-                sx={customStyles.header.alphaBadge(isMobile)}
+                sx={customStyles.header.betaBadge(isMobile)}
               >
-                {t('app.alphaBadge', 'Alpha')}
+                {t('app.betaBadge', 'Beta')}
               </Box>
               {isSheetRoute && character && (
                 <MiseryHeaderLink count={character.miseryCount} />
