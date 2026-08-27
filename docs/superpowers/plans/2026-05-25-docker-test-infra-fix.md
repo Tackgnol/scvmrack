@@ -485,7 +485,7 @@ Include: commits added (4 expected: Task 1, 2, 3, 4), integration smoke verdict,
 
 - [ ] **Step 2: Update memory**
 
-If anything notable surfaced (e.g., `MAIL_*` actually wasn't used either and the keep-list was over-cautious; or `backend/.npmrc` was empty on the host and had to be recreated), save a short feedback memory under `C:/Users/<user>/.claude/projects/C--Users-Adam-WebstormProjects-scvmrack/memory/` per the auto-memory rules. If nothing notable: skip.
+If anything notable surfaced (e.g., `MAIL_*` actually wasn't used either and the keep-list was over-cautious; or `backend/.npmrc` was empty on the host and had to be recreated), save a short feedback memory under `C:/Users/<user>/.claude/projects/C--Users-<user>-WebstormProjects-scvmrack/memory/` per the auto-memory rules. If nothing notable: skip.
 
 ---
 

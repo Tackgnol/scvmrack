@@ -2,6 +2,15 @@
 
 A full-stack TTRPG character management application with a neo-brutalist punk aesthetic.
 
+Live at **[scvmrack.rpgtools.co](https://scvmrack.rpgtools.co)** and available as an
+[Owlbear Rodeo](https://www.owlbear.rodeo/) extension.
+
+## Bugs and feature requests
+
+Please open a [GitHub issue](https://github.com/Tackgnol/scvmrack/issues). If you are
+reporting an Owlbear Rodeo problem, include your browser, whether you are the GM or a
+player, and what the extension panel showed.
+
 ## Architecture
 
 This is a two-app monorepo:
@@ -96,3 +105,21 @@ Set `GLITCHTIP_DSN` for backend and `VITE_GLITCHTIP_DSN` for frontend reporting 
 ## Learn More
 
 To learn Fastify, check out the [Fastify documentation](https://fastify.dev/docs/latest/).
+
+## License
+
+The **source code** is MIT licensed - see [LICENSE](LICENSE).
+
+The **MÖRK BORG game content** reproduced in this repository (classes, abilities,
+origins, equipment and their descriptive text, largely under `backend/init/05-seed/`)
+is *not* covered by the MIT grant. It is used under the
+[MÖRK BORG Third Party License](https://morkborg.com/license/) and is not the author's
+to relicense. Read [LICENSE](LICENSE) in full before forking.
+
+> Scvmrack is an independent production by Adam Kościelniak and is not affiliated with
+> Ockult Örtmästare Games or Stockholm Kartell. It is published under the MÖRK BORG
+> Third Party License.
+>
+> MÖRK BORG is copyright Ockult Örtmästare Games and Stockholm Kartell.
+
+Scvmrack is not affiliated with Owlbear Rodeo.

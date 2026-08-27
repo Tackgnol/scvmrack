@@ -2,6 +2,8 @@
   "name": "mork-borg-character-sheet",
   "private": true,
   "version": "0.6.0",
+  "author": "Adam Kościelniak",
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "dev": "vite",

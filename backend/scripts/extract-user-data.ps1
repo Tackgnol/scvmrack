@@ -1,6 +1,7 @@
 param(
-    [string]$InputFile = "C:\Users\<user>\Downloads\scvmrack-20260603T031502Z.sql",
-    [string]$OutputFile = "C:\Users\<user>\Downloads\scvmrack-user-data.sql"
+    [Parameter(Mandatory = $true)]
+    [string]$InputFile,
+    [string]$OutputFile = "scvmrack-user-data.sql"
 )
 
 if (-not (Test-Path $InputFile)) {

@@ -1,0 +1,60 @@
+# License
+
+Scvmrack is made of two things with two different licenses. Please read both.
+
+## 1. The source code — MIT
+
+MIT License
+
+Copyright (c) 2026 Adam Kościelniak
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+## 2. The MÖRK BORG game content — NOT MIT
+
+The MIT license above covers **only** the application source code: the Fastify
+backend, the React frontend, build tooling, tests, infrastructure, and schema
+definitions.
+
+It does **not** cover the MÖRK BORG game content that this project reproduces
+in order to function — including but not limited to the class definitions,
+abilities, origins, habits, weapons, armour, equipment, and descriptive text
+found in `backend/init/05-seed/` and `backend/migrations/`.
+
+That content is copyright its original authors and is reproduced here under the
+MÖRK BORG Third Party License. It is **not** granted to you under the MIT
+license, and it is not the project author's to relicense. If you fork this
+repository, the game content remains subject to the MÖRK BORG Third Party
+License and you are responsible for your own compliance with it.
+
+### Required notice
+
+> Scvmrack is an independent production by Adam Kościelniak and is not
+> affiliated with Ockult Örtmästare Games or Stockholm Kartell. It is published
+> under the MÖRK BORG Third Party License.
+>
+> MÖRK BORG is copyright Ockult Örtmästare Games and Stockholm Kartell.
+
+MÖRK BORG Third Party License: https://morkborg.com/license/
+
+## 3. Third-party dependencies
+
+Runtime and build dependencies are licensed by their respective authors under
+their own terms; see each package's entry in `backend/package.json` and
+`frontend/package.json`.

@@ -1,6 +1,6 @@
 ---
 title: Scvmrack
-description: M™RK BORG character sheets, a live party roster, and enemy management inside Owlbear Rodeo.
+description: MÃ–RK BORG character sheets, a live party roster, and enemy management inside Owlbear Rodeo.
 author: Tackgnol
 image: https://scvmrack.rpgtools.co/owlbear/ForGameMasters1.png
 icon: https://scvmrack.rpgtools.co/obr-icon.svg
@@ -13,13 +13,13 @@ learn-more: https://scvmrack.rpgtools.co/owlbear
 
 # Scvmrack for Owlbear Rodeo
 
-Scvmrack puts a complete M™RK BORG character sheet beside your map. Players can manage their scvm without leaving the room, while game masters get a live party roster and an enemy board.
+Scvmrack puts a complete MÃ–RK BORG character sheet beside your map. Players can manage their scvm without leaving the room, while game masters get a live party roster and an enemy board.
 
 ![The live Scvmrack party roster inside Owlbear Rodeo](https://scvmrack.rpgtools.co/owlbear/ForGameMasters1.png)
 
 ## Install
 
-1. Open your Owlbear Rodeo room and go to **Settings  Manage Extensions**.
+1. Open your Owlbear Rodeo room and go to **Settings â†’ Manage Extensions**.
 2. Add a custom extension using `https://scvmrack.rpgtools.co/manifest.json`.
 3. Enable Scvmrack for the room, then open it from the action bar.
 
@@ -47,4 +47,4 @@ Scvmrack puts a complete M™RK BORG character sheet beside your map. Players can 
 
 Report problems or request features through [Scvmrack's GitHub issues](https://github.com/Tackgnol/scvmrack/issues).
 
-M™RK BORG is copyright Ockult ™rtm„stare Games and Stockholm Kartell. Scvmrack is an independent fan project and is not affiliated with Owlbear Rodeo.
+MÃ–RK BORG is copyright Ockult Ã–rtmÃ¤stare Games and Stockholm Kartell. Scvmrack is an independent fan project and is not affiliated with Owlbear Rodeo.
