@@ -17,7 +17,11 @@ test('statToModifier maps full threshold table', () => {
     [15, 2],
     [16, 2],
     [17, 3],
-    [99, 3],
+    [18, 3],
+    [19, 4],
+    [20, 5],
+    [21, 6],
+    [99, 6],
   ];
 
   for (const [input, expected] of cases) {

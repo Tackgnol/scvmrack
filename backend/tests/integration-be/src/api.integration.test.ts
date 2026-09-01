@@ -97,6 +97,84 @@ type ApiErrorPayload = {
   details?: Array<{ field?: string; message?: string; code?: string }>;
 };
 
+type AbilityStat = 'strength' | 'agility' | 'presence' | 'toughness';
+
+type RollValue = {
+  source: 'server' | 'table';
+  dice?: number[];
+  total: number;
+};
+
+type ImprovementAbilityRoll = {
+  roll: RollValue;
+  fromScore: number;
+  fromModifier: number;
+  toModifier: number;
+  toScore: number;
+  outcome: 'increase' | 'decrease' | 'same';
+};
+
+type ImprovementDraft = {
+  sequence: number;
+  snapshot: {
+    characterUpdatedAt: string;
+    maxHp: number;
+    silver: number;
+    abilities: Record<AbilityStat, number>;
+    abilityKeys: string[];
+    equipmentFingerprint: string;
+    snapshotHash: string;
+  };
+  hp: {
+    check: RollValue;
+    fromMaxHp: number;
+    succeeds: boolean;
+    increase: RollValue | null;
+    toMaxHp: number;
+  };
+  debris:
+    | { roll: RollValue; kind: 'nothing' }
+    | { roll: RollValue; kind: 'silver'; silver: RollValue; amount: number }
+    | { roll: RollValue; kind: 'uncleanScroll'; scroll: RollValue; itemKey: string }
+    | { roll: RollValue; kind: 'sacredScroll'; scroll: RollValue; itemKey: string };
+  abilities: Record<AbilityStat, ImprovementAbilityRoll>;
+  scumSpecialties:
+    | { kind: 'notScum' }
+    | {
+        kind: 'firstImprovement';
+        existing: { key: string; rollValue: number };
+        added: { key: string; rollValue: number; roll: RollValue };
+      }
+    | {
+        kind: 'laterImprovement';
+        primary: { key: string; rollValue: number };
+        secondary: { key: string; rollValue: number };
+        rerollMode: 'none' | 'primary' | 'secondary' | 'both';
+      };
+};
+
+type ImprovementPreview = {
+  id: string;
+  characterId: string;
+  sequence: number;
+  rolledDraft: ImprovementDraft;
+  snapshotHash: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+type CharacterPayload = {
+  id: string;
+  maxHp: number;
+  silver: number;
+  strength: number;
+  agility: number;
+  presence: number;
+  toughness: number;
+};
+
+const abilityStats: AbilityStat[] = ['strength', 'agility', 'presence', 'toughness'];
+
 async function expectApiError(
   response: Response,
   expectedStatus: number,
@@ -295,6 +373,124 @@ async function createCharacter(jar: CookieJar): Promise<string> {
   return id;
 }
 
+async function createCharacterWithBody(
+  jar: CookieJar,
+  body: Record<string, unknown>
+): Promise<string> {
+  const csrf = await fetchCsrfToken(jar);
+  const response = await request('/api/characters/new', {
+    method: 'POST',
+    json: body,
+    headers: { 'x-csrf-token': csrf },
+    jar,
+  });
+  assert.equal(response.status, 201, 'character creation should succeed');
+  const { id } = (await response.json()) as { id: string };
+  assert.equal(typeof id, 'string');
+  return id;
+}
+
+function tableRoll(total: number): RollValue {
+  return { source: 'table', total };
+}
+
+function scoreToModifier(score: number): number {
+  if (score <= 4) return -3;
+  if (score <= 6) return -2;
+  if (score <= 8) return -1;
+  if (score <= 12) return 0;
+  if (score <= 14) return 1;
+  if (score <= 16) return 2;
+  if (score <= 18) return 3;
+  if (score === 19) return 4;
+  if (score === 20) return 5;
+  return 6;
+}
+
+function modifierToCanonicalScore(modifier: number): number {
+  switch (modifier) {
+    case -3:
+      return 4;
+    case -2:
+      return 5;
+    case -1:
+      return 7;
+    case 0:
+      return 9;
+    case 1:
+      return 13;
+    case 2:
+      return 15;
+    case 3:
+      return 17;
+    case 4:
+      return 19;
+    case 5:
+      return 20;
+    default:
+      return 21;
+  }
+}
+
+function tableAbilityImprovement(fromScore: number): ImprovementAbilityRoll {
+  const roll = tableRoll(6);
+  const fromModifier = scoreToModifier(fromScore);
+  const toModifier = Math.min(6, fromModifier + 1);
+  const toScore = modifierToCanonicalScore(toModifier);
+
+  return {
+    roll,
+    fromScore,
+    fromModifier,
+    toModifier,
+    toScore,
+    outcome: toModifier > fromModifier ? 'increase' : 'same',
+  };
+}
+
+function buildTableEditedImprovement(preview: ImprovementPreview): {
+  draft: ImprovementDraft;
+  expected: {
+    maxHp: number;
+    silver: number;
+    abilities: Record<AbilityStat, number>;
+  };
+} {
+  const snapshot = preview.rolledDraft.snapshot;
+  const abilities = Object.fromEntries(
+    abilityStats.map((stat) => [stat, tableAbilityImprovement(snapshot.abilities[stat])])
+  ) as Record<AbilityStat, ImprovementAbilityRoll>;
+  const expectedAbilities = Object.fromEntries(
+    abilityStats.map((stat) => [stat, abilities[stat].toScore])
+  ) as Record<AbilityStat, number>;
+
+  return {
+    draft: {
+      ...preview.rolledDraft,
+      hp: {
+        check: tableRoll(snapshot.maxHp),
+        fromMaxHp: snapshot.maxHp,
+        succeeds: true,
+        increase: tableRoll(1),
+        toMaxHp: snapshot.maxHp + 1,
+      },
+      debris: {
+        roll: tableRoll(4),
+        kind: 'silver',
+        silver: tableRoll(3),
+        amount: 3,
+      },
+      abilities,
+      scumSpecialties: { kind: 'notScum' },
+    },
+    expected: {
+      maxHp: snapshot.maxHp + 1,
+      silver: snapshot.silver + 3,
+      abilities: expectedAbilities,
+    },
+  };
+}
+
 // ── PATCH /api/characters/:id ─────────────────────────────────────────────────────
 
 test('PATCH /api/characters/:id updates character fields and returns updated character', async () => {
@@ -344,6 +540,82 @@ test('PATCH /api/characters/:id requires CSRF token', async () => {
     jar,
   });
   await expectStatus(patchResponse, 403);
+});
+
+test('POST /api/characters/:id/improvements/:improvementId/apply applies a full table-edited improvement', async () => {
+  const jar = await bootstrapAnonymousSession();
+  const id = await createCharacterWithBody(jar, { classId: 1 });
+
+  const previewCsrf = await fetchCsrfToken(jar);
+  const previewResponse = await request(`/api/characters/${id}/improvements/preview`, {
+    method: 'POST',
+    headers: { 'x-csrf-token': previewCsrf },
+    jar,
+  });
+  await expectStatus(previewResponse, 200);
+
+  const preview = (await previewResponse.json()) as ImprovementPreview;
+  assert.equal(preview.characterId, id);
+  assert.equal(preview.sequence, 1);
+  assert.equal(preview.rolledDraft.scumSpecialties.kind, 'notScum');
+
+  const reopenCsrf = await fetchCsrfToken(jar);
+  const reopenResponse = await request(`/api/characters/${id}/improvements/preview`, {
+    method: 'POST',
+    headers: { 'x-csrf-token': reopenCsrf },
+    jar,
+  });
+  await expectStatus(reopenResponse, 200);
+
+  const reopenedPreview = (await reopenResponse.json()) as ImprovementPreview;
+  assert.equal(reopenedPreview.id, preview.id);
+  assert.deepEqual(reopenedPreview.rolledDraft, preview.rolledDraft);
+
+  const { draft, expected } = buildTableEditedImprovement(preview);
+  const applyCsrf = await fetchCsrfToken(jar);
+  const applyResponse = await request(
+    `/api/characters/${id}/improvements/${preview.id}/apply?locale=en`,
+    {
+      method: 'POST',
+      json: { draft },
+      headers: { 'x-csrf-token': applyCsrf },
+      jar,
+    }
+  );
+  await expectStatus(applyResponse, 200);
+
+  const applied = (await applyResponse.json()) as CharacterPayload;
+  assert.equal(applied.id, id);
+  assert.equal(applied.maxHp, expected.maxHp);
+  assert.equal(applied.silver, expected.silver);
+  for (const stat of abilityStats) {
+    assert.equal(applied[stat], expected.abilities[stat], `${stat} should be applied`);
+  }
+
+  const fetchResponse = await request(`/api/characters/${id}`, { jar });
+  await expectStatus(fetchResponse, 200);
+  const persisted = (await fetchResponse.json()) as CharacterPayload;
+  assert.equal(persisted.maxHp, expected.maxHp);
+  assert.equal(persisted.silver, expected.silver);
+  for (const stat of abilityStats) {
+    assert.equal(persisted[stat], expected.abilities[stat], `${stat} should persist`);
+  }
+
+  const nextPreviewCsrf = await fetchCsrfToken(jar);
+  const nextPreviewResponse = await request(`/api/characters/${id}/improvements/preview`, {
+    method: 'POST',
+    headers: { 'x-csrf-token': nextPreviewCsrf },
+    jar,
+  });
+  await expectStatus(nextPreviewResponse, 200);
+
+  const nextPreview = (await nextPreviewResponse.json()) as ImprovementPreview;
+  assert.equal(nextPreview.sequence, 2);
+  assert.equal(nextPreview.rolledDraft.snapshot.maxHp, expected.maxHp);
+  assert.equal(nextPreview.rolledDraft.snapshot.silver, expected.silver);
+  for (const stat of abilityStats) {
+    assert.equal(nextPreview.rolledDraft.snapshot.abilities[stat], expected.abilities[stat]);
+  }
 });
 
 // ── Ownership enforcement ─────────────────────────────────────────────────────

@@ -74,10 +74,10 @@ const clampInteger = (value: number, min: number, max: number): number =>
     Math.min(max, Math.floor(Number.isFinite(value) ? value : min)),
   );
 
-// Mirrors the SQL `roll_to_modifier` function (dice_and_utils.sql).
+// Mirrors the backend `rollToModifier` helper.
 // Kept client-side so consumable pip counts can be previewed before save;
 // the server is the source of truth for derived modifiers elsewhere.
-// Exported only for cross-language parity tests — production code should
+// Exported only for parity tests — production code should
 // call this indirectly via `createUsePips`.
 export const rollToModifier = (score?: number): number => {
   const value = Number.isFinite(score) ? Number(score) : 10;
@@ -87,7 +87,10 @@ export const rollToModifier = (score?: number): number => {
   if (value <= 12) return 0;
   if (value <= 14) return 1;
   if (value <= 16) return 2;
-  return 3;
+  if (value <= 18) return 3;
+  if (value <= 19) return 4;
+  if (value <= 20) return 5;
+  return 6;
 };
 
 export const buildCustomItemKey = (

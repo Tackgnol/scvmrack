@@ -177,7 +177,7 @@ export function isValidUUID(id: string): boolean {
 }
 
 /**
- * Mörk Borg stat → modifier table (≤4→-3 … 17+→+3)
+ * Mörk Borg stat → modifier table (≤4→-3 … 21+→+6)
  */
 export function rollToModifier(roll: number): number {
   if (roll <= 4) return -3;
@@ -186,7 +186,10 @@ export function rollToModifier(roll: number): number {
   if (roll <= 12) return 0;
   if (roll <= 14) return 1;
   if (roll <= 16) return 2;
-  return 3;
+  if (roll <= 18) return 3;
+  if (roll <= 19) return 4;
+  if (roll <= 20) return 5;
+  return 6;
 }
 
 /**

@@ -7,6 +7,7 @@ interface FooterProps {
   onGenerateNew: () => void;
   generateNewLabel?: string;
   onKillScvm?: () => void;
+  onGetBetter?: () => void;
 }
 
 const handleOpenPrivacy = () => {
@@ -17,6 +18,7 @@ export default function Footer({
   onGenerateNew,
   generateNewLabel,
   onKillScvm,
+  onGetBetter,
 }: FooterProps) {
   const { t } = useTranslation();
 
@@ -37,6 +39,15 @@ export default function Footer({
             sx={customStyles.killButton}
           >
             {t('actions.killScvm', 'Kill Scvm')}
+          </Button>
+        )}
+        {onGetBetter && (
+          <Button
+            data-testid="get-better-button"
+            onClick={onGetBetter}
+            sx={customStyles.footerButton}
+          >
+            {t('gettingBetter.actions.open', 'Get better')}
           </Button>
         )}
       </Box>

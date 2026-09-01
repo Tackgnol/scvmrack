@@ -667,6 +667,68 @@
     "cancel": "Cancel",
     "retry": "Retry"
   },
+  "gettingBetter": {
+    "title": "Get better",
+    "loading": "Rolling the table",
+    "applied": "Getting better applied",
+    "confirmDiscard": "Discard table values?",
+    "confirmReroll": "Discard local table values?",
+    "stale": "This preview is stale. Reroll from the current sheet before applying.",
+    "actions": {
+      "open": "Get better",
+      "rerollSection": "Reroll",
+      "undo": "Undo edits",
+      "rerollAll": "Reroll all",
+      "rerollCurrent": "Reroll from current sheet",
+      "close": "Close",
+      "apply": "Apply getting better",
+      "applying": "Applying"
+    },
+    "errors": {
+      "preview": "Failed to roll getting better",
+      "reroll": "Failed to reroll getting better",
+      "apply": "Failed to apply getting better"
+    },
+    "hp": {
+      "title": "HP",
+      "check": "6d10 check",
+      "currentMax": "Current max",
+      "result": "Result",
+      "success": "+{{value}} max",
+      "noChange": "No change",
+      "increase": "d6 increase",
+      "finalMax": "Final max"
+    },
+    "debris": {
+      "title": "Debris",
+      "roll": "d6 roll",
+      "kind": "Find",
+      "nothing": "Nothing",
+      "silver": "3d10 silver",
+      "uncleanScroll": "Unclean scroll",
+      "sacredScroll": "Sacred scroll",
+      "scrollRoll": "Scroll roll",
+      "scroll": "Scroll"
+    },
+    "abilities": {
+      "title": "Abilities",
+      "from": "From {{value}}"
+    },
+    "scum": {
+      "title": "Scum specialty",
+      "existing": "Existing",
+      "added": "Added",
+      "primary": "Primary",
+      "secondary": "Secondary",
+      "rerollMode": "Mode",
+      "modes": {
+        "none": "Keep both",
+        "primary": "Reroll primary",
+        "secondary": "Reroll secondary",
+        "both": "Reroll both"
+      }
+    }
+  },
   "powers": {
     "title": "Powers",
     "noScrollsOrPowers": "No scrolls or powers",

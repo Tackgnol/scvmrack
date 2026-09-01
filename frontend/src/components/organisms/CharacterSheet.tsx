@@ -17,11 +17,13 @@ import {
     SummaryBar,
 } from '@/components';
 import { SectionAccordion } from '@/components/molecules/character/SectionAccordion';
+import GettingBetterPanel from '@/components/organisms/getting-better/GettingBetterPanel';
 import {
     isConsumableUseItem,
     isPetItem,
     isScrollItem,
 } from '@/hooks/useEquipmentSections';
+import { useGettingBetterPreview } from '@/hooks/useGettingBetterPreview';
 import { customStyles } from '@/theme/morkBorgTheme';
 import { Box, Typography, useMediaQuery, useTheme } from '@mui/material';
 import { keyframes } from '@mui/system';
@@ -62,7 +64,7 @@ export function CharacterSheet({
     readOnly = false,
 }: CharacterSheetProps) {
     const { t } = useTranslation();
-    const { character, isAuthenticated } = useCharacter();
+    const { character, isAuthenticated, locale } = useCharacter();
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
     const prefersReducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
@@ -74,6 +76,10 @@ export function CharacterSheet({
     const hasBackpack = (character?.storage ?? []).length > 0;
     const defaultExpanded = !isMobile;
     const animateImpact = stamping && !prefersReducedMotion;
+    const gettingBetter = useGettingBetterPreview({
+        characterId: character?.id ?? null,
+        locale,
+    });
 
     return (
         <Box
@@ -146,11 +152,17 @@ export function CharacterSheet({
 
             <Box className="print-hidden">
                 {!readOnly && (
-                    <Footer
-                        onGenerateNew={onGenerateNew}
-                        generateNewLabel={isAuthenticated ? undefined : t('actions.killScvm')}
-                        onKillScvm={isAuthenticated ? onKillScvm : undefined}
-                    />
+                    <>
+                        {gettingBetter.isOpen && (
+                            <GettingBetterPanel controller={gettingBetter} />
+                        )}
+                        <Footer
+                            onGenerateNew={onGenerateNew}
+                            generateNewLabel={isAuthenticated ? undefined : t('actions.killScvm')}
+                            onKillScvm={isAuthenticated ? onKillScvm : undefined}
+                            onGetBetter={character?.id ? gettingBetter.open : undefined}
+                        />
+                    </>
                 )}
             </Box>
         </Box>

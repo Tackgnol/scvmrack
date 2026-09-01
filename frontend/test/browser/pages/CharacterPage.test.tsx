@@ -1,6 +1,7 @@
 import { render } from 'vitest-browser-react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { page, userEvent } from 'vitest/browser';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import BrowserTestProvider from '../BrowserTestProvider';
 import { CharacterPage } from '@/pages/CharacterPage';
 import { useCharacter } from '@/CharacterContext/CharacterContext';
@@ -153,9 +154,15 @@ describe('CharacterPage', () => {
     } as ReturnType<typeof useCharacter>);
 
     return render(
-      <BrowserTestProvider>
-        <CharacterPage />
-      </BrowserTestProvider>
+      <QueryClientProvider
+        client={
+          new QueryClient({ defaultOptions: { queries: { retry: false } } })
+        }
+      >
+        <BrowserTestProvider>
+          <CharacterPage />
+        </BrowserTestProvider>
+      </QueryClientProvider>
     );
   };
 

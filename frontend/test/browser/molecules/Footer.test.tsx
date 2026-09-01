@@ -59,6 +59,26 @@ describe('Footer Component', () => {
     await expect.poll(() => mockOnKillScvm).toHaveBeenCalledOnce();
   });
 
+  it('renders Get better when provided and handles click', async () => {
+    const mockOnGenerateNew = vi.fn();
+    const mockOnGetBetter = vi.fn();
+
+    await render(
+      <BrowserTestProvider>
+        <Footer
+          onGenerateNew={mockOnGenerateNew}
+          onGetBetter={mockOnGetBetter}
+        />
+      </BrowserTestProvider>,
+    );
+
+    const getBetterBtn = page.getByTestId('get-better-button');
+    await expect.element(getBetterBtn).toBeVisible();
+
+    await userEvent.click(getBetterBtn);
+    await expect.poll(() => mockOnGetBetter).toHaveBeenCalledOnce();
+  });
+
   it('opens privacy drawer when legal notice link is clicked', async () => {
     const mockOnGenerateNew = vi.fn();
     await render(
