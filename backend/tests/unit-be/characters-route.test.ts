@@ -625,3 +625,65 @@ test('POST /:id/improvements/:improvementId/apply maps service conflicts', async
 
   await app.close();
 });
+
+test('POST /:id/improvements/:improvementId/apply accepts populated improvement variants', async () => {
+  resetState();
+  currentSession = { user: { id: 'user-1' } };
+  const app = await buildApp();
+  const draft = {
+    ...defaultImprovementDraft(),
+    debris: {
+      roll: { source: 'table', total: 4 },
+      kind: 'silver',
+      silver: { source: 'table', total: 3 },
+      amount: 3,
+    },
+    scumSpecialties: {
+      kind: 'firstImprovement',
+      existing: { key: 'old-specialty', rollValue: 1 },
+      added: {
+        key: 'new-specialty',
+        rollValue: 2,
+        roll: { source: 'table', total: 2 },
+      },
+    },
+  };
+
+  const response = await app.inject({
+    method: 'POST',
+    url: `/${generatedCharacterId}/improvements/d24ac091-af57-47b8-9a1f-003cf4f274b9/apply?locale=en`,
+    payload: { draft },
+  });
+
+  assert.equal(response.statusCode, 200);
+  assert.deepEqual(improvementCalls[0].input.draft, draft);
+
+  await app.close();
+});
+
+test('POST /:id/improvements/:improvementId/apply rejects fields from another improvement variant', async () => {
+  resetState();
+  currentSession = { user: { id: 'user-1' } };
+  const app = await buildApp();
+
+  const response = await app.inject({
+    method: 'POST',
+    url: `/${generatedCharacterId}/improvements/d24ac091-af57-47b8-9a1f-003cf4f274b9/apply?locale=en`,
+    payload: {
+      draft: {
+        ...defaultImprovementDraft(),
+        debris: {
+          roll: { source: 'table', total: 1 },
+          kind: 'nothing',
+          silver: { source: 'table', total: 3 },
+          amount: 3,
+        },
+      },
+    },
+  });
+
+  assert.equal(response.statusCode, 400);
+  assert.deepEqual(improvementCalls, []);
+
+  await app.close();
+});

@@ -97,47 +97,59 @@ const ImprovementHpRollSchema = {
 };
 
 const ImprovementDebrisRollSchema = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['roll', 'kind'],
+  properties: {
+    roll: RollValueSchema,
+    kind: {
+      type: 'string',
+      enum: ['nothing', 'silver', 'uncleanScroll', 'sacredScroll'],
+    },
+    silver: RollValueSchema,
+    amount: { type: 'integer', minimum: 0, maximum: 1000 },
+    scroll: RollValueSchema,
+    itemKey: { type: 'string', maxLength: 255 },
+  },
   oneOf: [
     {
-      type: 'object',
-      additionalProperties: false,
-      required: ['roll', 'kind'],
       properties: {
-        roll: RollValueSchema,
         kind: { const: 'nothing' },
       },
+      not: {
+        anyOf: [
+          { required: ['silver'] },
+          { required: ['amount'] },
+          { required: ['scroll'] },
+          { required: ['itemKey'] },
+        ],
+      },
     },
     {
-      type: 'object',
-      additionalProperties: false,
-      required: ['roll', 'kind', 'silver', 'amount'],
+      required: ['silver', 'amount'],
       properties: {
-        roll: RollValueSchema,
         kind: { const: 'silver' },
-        silver: RollValueSchema,
-        amount: { type: 'integer', minimum: 0, maximum: 1000 },
+      },
+      not: {
+        anyOf: [{ required: ['scroll'] }, { required: ['itemKey'] }],
       },
     },
     {
-      type: 'object',
-      additionalProperties: false,
-      required: ['roll', 'kind', 'scroll', 'itemKey'],
+      required: ['scroll', 'itemKey'],
       properties: {
-        roll: RollValueSchema,
         kind: { const: 'uncleanScroll' },
-        scroll: RollValueSchema,
-        itemKey: { type: 'string', maxLength: 255 },
+      },
+      not: {
+        anyOf: [{ required: ['silver'] }, { required: ['amount'] }],
       },
     },
     {
-      type: 'object',
-      additionalProperties: false,
-      required: ['roll', 'kind', 'scroll', 'itemKey'],
+      required: ['scroll', 'itemKey'],
       properties: {
-        roll: RollValueSchema,
         kind: { const: 'sacredScroll' },
-        scroll: RollValueSchema,
-        itemKey: { type: 'string', maxLength: 255 },
+      },
+      not: {
+        anyOf: [{ required: ['silver'] }, { required: ['amount'] }],
       },
     },
   ],
@@ -165,37 +177,58 @@ const ImprovementAbilityRollSchema = {
 };
 
 const ScumSpecialtyDraftSchema = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['kind'],
+  properties: {
+    kind: {
+      type: 'string',
+      enum: ['notScum', 'firstImprovement', 'laterImprovement'],
+    },
+    existing: SpecialtySlotSchema,
+    added: SpecialtyRollSchema,
+    primary: SpecialtySlotSchema,
+    secondary: SpecialtySlotSchema,
+    rerollMode: {
+      type: 'string',
+      enum: ['none', 'primary', 'secondary', 'both'],
+    },
+  },
   oneOf: [
     {
-      type: 'object',
-      additionalProperties: false,
-      required: ['kind'],
       properties: {
         kind: { const: 'notScum' },
       },
-    },
-    {
-      type: 'object',
-      additionalProperties: false,
-      required: ['kind', 'existing', 'added'],
-      properties: {
-        kind: { const: 'firstImprovement' },
-        existing: SpecialtySlotSchema,
-        added: SpecialtyRollSchema,
+      not: {
+        anyOf: [
+          { required: ['existing'] },
+          { required: ['added'] },
+          { required: ['primary'] },
+          { required: ['secondary'] },
+          { required: ['rerollMode'] },
+        ],
       },
     },
     {
-      type: 'object',
-      additionalProperties: false,
-      required: ['kind', 'primary', 'secondary', 'rerollMode'],
+      required: ['existing', 'added'],
+      properties: {
+        kind: { const: 'firstImprovement' },
+      },
+      not: {
+        anyOf: [
+          { required: ['primary'] },
+          { required: ['secondary'] },
+          { required: ['rerollMode'] },
+        ],
+      },
+    },
+    {
+      required: ['primary', 'secondary', 'rerollMode'],
       properties: {
         kind: { const: 'laterImprovement' },
-        primary: SpecialtySlotSchema,
-        secondary: SpecialtySlotSchema,
-        rerollMode: {
-          type: 'string',
-          enum: ['none', 'primary', 'secondary', 'both'],
-        },
+      },
+      not: {
+        anyOf: [{ required: ['existing'] }, { required: ['added'] }],
       },
     },
   ],
