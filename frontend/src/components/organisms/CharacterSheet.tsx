@@ -27,6 +27,7 @@ import { useGettingBetterPreview } from '@/hooks/useGettingBetterPreview';
 import { customStyles } from '@/theme/morkBorgTheme';
 import { Box, Button, Typography, useMediaQuery, useTheme } from '@mui/material';
 import { keyframes } from '@mui/system';
+import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const sheetImpactAnimation = keyframes`
@@ -48,6 +49,27 @@ const sheetImpactAnimation = keyframes`
         transform: translateY(0) rotate(0deg);
         filter: none;
     }
+`;
+
+const gettingBetterReveal = keyframes`
+    0% {
+        grid-template-rows: 0fr;
+        opacity: 0;
+        transform: translateY(-12px);
+    }
+    55% {
+        opacity: 1;
+    }
+    100% {
+        grid-template-rows: 1fr;
+        opacity: 1;
+        transform: translateY(0);
+    }
+`;
+
+const gettingBetterReducedReveal = keyframes`
+    from { opacity: 0.65; }
+    to { opacity: 1; }
 `;
 
 type CharacterSheetProps = {
@@ -80,6 +102,20 @@ export function CharacterSheet({
         characterId: character?.id ?? null,
         locale,
     });
+    const gettingBetterPanelRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (!gettingBetter.isOpen) return;
+
+        const frame = requestAnimationFrame(() => {
+            gettingBetterPanelRef.current?.scrollIntoView({
+                behavior: prefersReducedMotion ? 'auto' : 'smooth',
+                block: 'start',
+            });
+        });
+
+        return () => cancelAnimationFrame(frame);
+    }, [gettingBetter.isOpen, prefersReducedMotion]);
 
     return (
         <Box
@@ -99,33 +135,42 @@ export function CharacterSheet({
                 <EquippedBar />
             </Box>
             <Box>
-                <CharacterNameAndClass />
-            </Box>
-            {!readOnly && character?.id && (
-                <Box className="print-hidden" sx={{ mb: 2.5 }}>
-                    {!gettingBetter.isOpen && (
-                        <Box
-                            sx={{
-                                display: 'flex',
-                                justifyContent: { xs: 'stretch', sm: 'flex-end' },
-                                mt: 1,
-                            }}
-                        >
+                <CharacterNameAndClass
+                    classAction={
+                        !readOnly && character?.id && !gettingBetter.isOpen ? (
                             <Button
                                 data-testid="get-better-button"
                                 onClick={gettingBetter.open}
                                 sx={{
-                                    ...customStyles.footerButton,
+                                    ...customStyles.buttons.action,
                                     minHeight: 44,
-                                    width: { xs: '100%', sm: 'auto' },
                                 }}
                             >
                                 {t('gettingBetter.actions.open', 'Get better')}
                             </Button>
-                        </Box>
-                    )}
+                        ) : undefined
+                    }
+                />
+            </Box>
+            {!readOnly && character?.id && (
+                <Box className="print-hidden" sx={{ mb: 2.5 }}>
                     {gettingBetter.isOpen && (
-                        <GettingBetterPanel controller={gettingBetter} />
+                        <Box
+                            ref={gettingBetterPanelRef}
+                            sx={{
+                                display: 'grid',
+                                gridTemplateRows: '1fr',
+                                scrollMarginTop: { xs: 2, sm: 3 },
+                                transformOrigin: 'top center',
+                                animation: prefersReducedMotion
+                                    ? `${gettingBetterReducedReveal} 140ms ease-out`
+                                    : `${gettingBetterReveal} 480ms cubic-bezier(0.4, 0, 0.2, 1)`,
+                            }}
+                        >
+                            <Box sx={{ minHeight: 0, overflow: 'hidden' }}>
+                                <GettingBetterPanel controller={gettingBetter} />
+                            </Box>
+                        </Box>
                     )}
                 </Box>
             )}

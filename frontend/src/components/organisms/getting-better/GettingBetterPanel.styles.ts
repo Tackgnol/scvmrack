@@ -83,6 +83,7 @@ export const gettingBetterStyles = {
     },
     "& input": {
       color: morkBorgColors.black,
+      WebkitTextFillColor: morkBorgColors.black,
       textAlign: "center",
       fontFamily: "'Bebas Neue', sans-serif",
       fontSize: "1.2rem",

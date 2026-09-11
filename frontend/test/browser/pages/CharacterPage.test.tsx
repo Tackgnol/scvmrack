@@ -64,7 +64,12 @@ vi.mock('@/components/molecules/character-descriptors/CharacterDescriptors', () 
 }));
 
 vi.mock('@/components/molecules/character/CharacterNameAndClass', () => ({
-  CharacterNameAndClass: () => <section>Character Name And Class</section>,
+  CharacterNameAndClass: ({ classAction }: { classAction?: ReactNode }) => (
+    <section>
+      Character Name And Class
+      {classAction}
+    </section>
+  ),
 }));
 
 vi.mock('@/components/organisms/OnHandSection', () => ({
@@ -291,10 +296,7 @@ describe('CharacterPage', () => {
     await expect.element(identity).toBeVisible();
     await expect.element(getBetter).toBeVisible();
     await expect.element(abilities).toBeVisible();
-    expect(
-      identity.element()!.compareDocumentPosition(getBetter.element()!) &
-        Node.DOCUMENT_POSITION_FOLLOWING
-    ).toBeTruthy();
+    expect(identity.element()!.contains(getBetter.element()!)).toBe(true);
     expect(
       getBetter.element()!.compareDocumentPosition(abilities.element()!) &
         Node.DOCUMENT_POSITION_FOLLOWING

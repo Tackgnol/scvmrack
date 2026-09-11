@@ -1,8 +1,3 @@
-import CasinoIcon from "@mui/icons-material/Casino";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import CloseIcon from "@mui/icons-material/Close";
-import ReplayIcon from "@mui/icons-material/Replay";
-import UndoIcon from "@mui/icons-material/Undo";
 import {
   Box,
   Button,
@@ -164,7 +159,6 @@ function sectionButton(
     <Button
       size="small"
       variant="outlined"
-      startIcon={<CasinoIcon />}
       onClick={onClick}
       disabled={disabled}
       sx={styles.actionButton}
@@ -558,7 +552,6 @@ export function GettingBetterPanel({ controller }: PanelProps) {
       <Box sx={styles.actionRow}>
         <Button
           variant="outlined"
-          startIcon={<UndoIcon />}
           onClick={controller.undoEdits}
           disabled={busy || !controller.isDirty}
           sx={styles.actionButton}
@@ -567,7 +560,6 @@ export function GettingBetterPanel({ controller }: PanelProps) {
         </Button>
         <Button
           variant="outlined"
-          startIcon={<ReplayIcon />}
           onClick={() => controller.rerollSection("all")}
           disabled={busy}
           sx={styles.actionButton}
@@ -578,7 +570,6 @@ export function GettingBetterPanel({ controller }: PanelProps) {
         </Button>
         <Button
           variant="outlined"
-          startIcon={<CloseIcon />}
           onClick={controller.close}
           disabled={busy}
           sx={styles.actionButton}
@@ -587,7 +578,6 @@ export function GettingBetterPanel({ controller }: PanelProps) {
         </Button>
         <Button
           variant="contained"
-          startIcon={<CheckCircleIcon />}
           onClick={controller.apply}
           disabled={busy || !draft}
           sx={styles.applyButton}
