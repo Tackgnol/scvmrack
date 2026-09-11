@@ -102,10 +102,11 @@ export function CharacterSheet({
         characterId: character?.id ?? null,
         locale,
     });
+    const gettingBetterReady = Boolean(gettingBetter.workingDraft);
     const gettingBetterPanelRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        if (!gettingBetter.isOpen) return;
+        if (!gettingBetter.isOpen || !gettingBetterReady) return;
 
         const frame = requestAnimationFrame(() => {
             gettingBetterPanelRef.current?.scrollIntoView({
@@ -115,7 +116,7 @@ export function CharacterSheet({
         });
 
         return () => cancelAnimationFrame(frame);
-    }, [gettingBetter.isOpen, prefersReducedMotion]);
+    }, [gettingBetter.isOpen, gettingBetterReady, prefersReducedMotion]);
 
     return (
         <Box
@@ -157,18 +158,25 @@ export function CharacterSheet({
                     {gettingBetter.isOpen && (
                         <Box
                             ref={gettingBetterPanelRef}
-                            sx={{
-                                display: 'grid',
-                                gridTemplateRows: '1fr',
-                                scrollMarginTop: { xs: 2, sm: 3 },
-                                transformOrigin: 'top center',
-                                animation: prefersReducedMotion
-                                    ? `${gettingBetterReducedReveal} 140ms ease-out`
-                                    : `${gettingBetterReveal} 480ms cubic-bezier(0.4, 0, 0.2, 1)`,
-                            }}
+                            sx={{ scrollMarginTop: { xs: 2, sm: 3 } }}
                         >
-                            <Box sx={{ minHeight: 0, overflow: 'hidden' }}>
-                                <GettingBetterPanel controller={gettingBetter} />
+                            <Box
+                                sx={
+                                    gettingBetterReady
+                                        ? {
+                                            display: 'grid',
+                                            gridTemplateRows: '1fr',
+                                            transformOrigin: 'top center',
+                                            animation: prefersReducedMotion
+                                                ? `${gettingBetterReducedReveal} 140ms ease-out`
+                                                : `${gettingBetterReveal} 480ms cubic-bezier(0.4, 0, 0.2, 1)`,
+                                        }
+                                        : undefined
+                                }
+                            >
+                                <Box sx={{ minHeight: 0, overflow: 'hidden' }}>
+                                    <GettingBetterPanel controller={gettingBetter} />
+                                </Box>
                             </Box>
                         </Box>
                     )}
