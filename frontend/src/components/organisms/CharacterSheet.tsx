@@ -25,7 +25,7 @@ import {
 } from '@/hooks/useEquipmentSections';
 import { useGettingBetterPreview } from '@/hooks/useGettingBetterPreview';
 import { customStyles } from '@/theme/morkBorgTheme';
-import { Box, Typography, useMediaQuery, useTheme } from '@mui/material';
+import { Box, Button, Typography, useMediaQuery, useTheme } from '@mui/material';
 import { keyframes } from '@mui/system';
 import { useTranslation } from 'react-i18next';
 
@@ -101,6 +101,34 @@ export function CharacterSheet({
             <Box>
                 <CharacterNameAndClass />
             </Box>
+            {!readOnly && character?.id && (
+                <Box className="print-hidden" sx={{ mb: 2.5 }}>
+                    {!gettingBetter.isOpen && (
+                        <Box
+                            sx={{
+                                display: 'flex',
+                                justifyContent: { xs: 'stretch', sm: 'flex-end' },
+                                mt: 1,
+                            }}
+                        >
+                            <Button
+                                data-testid="get-better-button"
+                                onClick={gettingBetter.open}
+                                sx={{
+                                    ...customStyles.footerButton,
+                                    minHeight: 44,
+                                    width: { xs: '100%', sm: 'auto' },
+                                }}
+                            >
+                                {t('gettingBetter.actions.open', 'Get better')}
+                            </Button>
+                        </Box>
+                    )}
+                    {gettingBetter.isOpen && (
+                        <GettingBetterPanel controller={gettingBetter} />
+                    )}
+                </Box>
+            )}
             <Abilities />
             <CharacterDescriptors />
 
@@ -152,17 +180,11 @@ export function CharacterSheet({
 
             <Box className="print-hidden">
                 {!readOnly && (
-                    <>
-                        {gettingBetter.isOpen && (
-                            <GettingBetterPanel controller={gettingBetter} />
-                        )}
-                        <Footer
-                            onGenerateNew={onGenerateNew}
-                            generateNewLabel={isAuthenticated ? undefined : t('actions.killScvm')}
-                            onKillScvm={isAuthenticated ? onKillScvm : undefined}
-                            onGetBetter={character?.id ? gettingBetter.open : undefined}
-                        />
-                    </>
+                    <Footer
+                        onGenerateNew={onGenerateNew}
+                        generateNewLabel={isAuthenticated ? undefined : t('actions.killScvm')}
+                        onKillScvm={isAuthenticated ? onKillScvm : undefined}
+                    />
                 )}
             </Box>
         </Box>

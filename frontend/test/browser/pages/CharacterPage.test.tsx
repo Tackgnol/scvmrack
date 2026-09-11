@@ -284,8 +284,21 @@ describe('CharacterPage', () => {
     await expect.element(page.getByText('Summary Bar')).toBeVisible();
     await expect.element(page.getByText('Resource Row')).toBeVisible();
     await expect.element(page.getByText('Equipped Bar')).toBeVisible();
-    await expect.element(page.getByText('Character Name And Class')).toBeVisible();
-    await expect.element(page.getByText('Abilities Section')).toBeVisible();
+    const identity = page.getByText('Character Name And Class');
+    const getBetter = page.getByTestId('get-better-button');
+    const abilities = page.getByText('Abilities Section');
+
+    await expect.element(identity).toBeVisible();
+    await expect.element(getBetter).toBeVisible();
+    await expect.element(abilities).toBeVisible();
+    expect(
+      identity.element()!.compareDocumentPosition(getBetter.element()!) &
+        Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
+    expect(
+      getBetter.element()!.compareDocumentPosition(abilities.element()!) &
+        Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
     await expect.element(page.getByText('Character Descriptors')).toBeVisible();
     await expect.element(page.getByText('Modifiers Panel')).toBeVisible();
     await expect.element(page.getByText('On Hand Section')).toBeVisible();
