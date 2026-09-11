@@ -468,7 +468,7 @@ function buildTableEditedImprovement(preview: ImprovementPreview): {
     draft: {
       ...preview.rolledDraft,
       hp: {
-        check: tableRoll(snapshot.maxHp),
+        check: tableRoll(Math.max(6, snapshot.maxHp)),
         fromMaxHp: snapshot.maxHp,
         succeeds: true,
         increase: tableRoll(1),
