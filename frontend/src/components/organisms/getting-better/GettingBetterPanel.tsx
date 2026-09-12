@@ -492,32 +492,32 @@ export function GettingBetterPanel({ controller }: PanelProps) {
               )}
             </Box>
             {draft.scumSpecialties.kind === "firstImprovement" ? (
-              <Box sx={styles.factGrid}>
+              <Box sx={styles.specialtyGrid}>
                 <Typography sx={styles.label}>
                   {t("gettingBetter.scum.existing", "Existing")}
                 </Typography>
-                <Typography sx={styles.value}>
+                <Typography sx={styles.specialtyValue}>
                   {specialtyName(draft.scumSpecialties.existing.key)}
                 </Typography>
                 <Typography sx={styles.label}>
                   {t("gettingBetter.scum.added", "Added")}
                 </Typography>
-                <Typography sx={styles.value}>
+                <Typography sx={styles.specialtyValue}>
                   {specialtyName(draft.scumSpecialties.added.key)}
                 </Typography>
               </Box>
             ) : (
-              <Box sx={styles.factGrid}>
+              <Box sx={styles.specialtyGrid}>
                 <Typography sx={styles.label}>
                   {t("gettingBetter.scum.primary", "Primary")}
                 </Typography>
-                <Typography sx={styles.value}>
+                <Typography sx={styles.specialtyValue}>
                   {specialtyName(draft.scumSpecialties.primary.key)}
                 </Typography>
                 <Typography sx={styles.label}>
                   {t("gettingBetter.scum.secondary", "Secondary")}
                 </Typography>
-                <Typography sx={styles.value}>
+                <Typography sx={styles.specialtyValue}>
                   {specialtyName(draft.scumSpecialties.secondary.key)}
                 </Typography>
                 <Typography sx={styles.label}>

@@ -55,6 +55,11 @@ export const gettingBetterStyles = {
     gap: 1,
     alignItems: "center",
   },
+  specialtyGrid: {
+    display: "grid",
+    gridTemplateColumns: "minmax(0, 1fr)",
+    rowGap: 0.5,
+  },
   label: {
     color: morkBorgColors.yellow,
     opacity: 0.7,
@@ -68,6 +73,14 @@ export const gettingBetterStyles = {
     fontFamily: "'Bebas Neue', sans-serif",
     fontSize: "1.25rem",
     lineHeight: 1,
+  },
+  specialtyValue: {
+    color: morkBorgColors.white,
+    fontFamily: "'Alegreya', Georgia, serif",
+    fontSize: "0.95rem",
+    lineHeight: 1.45,
+    overflowWrap: "anywhere",
+    mb: 1,
   },
   muted: {
     color: morkBorgColors.white,

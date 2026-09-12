@@ -236,13 +236,17 @@ describe('GettingBetterPanel Browser', () => {
       },
     });
 
+    const existing = 'Filthy Fingersmith: Your snaky little digits get into pockets and pick locks with a DR8 Agility test. You also begin with lockpicks!';
+    const added = 'Coward’s Jab: When attacking by surprise test Agility DR10. On a success you automatically hit once with a light one-handed weapon, dealing normal damage +3.';
+
+    await page.viewport(390, 844);
     await render(
       <BrowserTestProvider>
         <PanelHarness
           initialDraft={scumDraft}
           scumSpecialtyNames={{
-            'abilities.gutterborn_scum.fingersmith': 'Filthy Fingersmith: Pick locks.',
-            'abilities.gutterborn_scum.jab': 'Coward’s Jab: Strike from surprise.',
+            'abilities.gutterborn_scum.fingersmith': existing,
+            'abilities.gutterborn_scum.jab': added,
           }}
         />
       </BrowserTestProvider>,
@@ -250,8 +254,20 @@ describe('GettingBetterPanel Browser', () => {
 
     const panel = page.getByTestId('getting-better-panel');
     await expect.element(panel).toBeVisible();
-    expect(panel.element().textContent).toContain('Filthy Fingersmith: Pick locks.');
-    expect(panel.element().textContent).toContain('Coward’s Jab: Strike from surprise.');
+    const existingText = page.getByText(existing);
+    const addedText = page.getByText(added);
+    await expect.element(existingText).toBeVisible();
+    await expect.element(addedText).toBeVisible();
+    const labelRange = document.createRange();
+    labelRange.selectNodeContents(existingText.element().previousElementSibling!);
+    const existingLabel = labelRange.getBoundingClientRect();
+    const existingValue = existingText.element().getBoundingClientRect();
+    labelRange.selectNodeContents(addedText.element().previousElementSibling!);
+    const addedLabel = labelRange.getBoundingClientRect();
+    const addedValue = addedText.element().getBoundingClientRect();
+    expect(existingLabel.right <= existingValue.left || existingLabel.bottom <= existingValue.top).toBe(true);
+    expect(addedLabel.right <= addedValue.left || addedLabel.bottom <= addedValue.top).toBe(true);
+    expect(existingValue.bottom <= addedLabel.top).toBe(true);
   });
 
   it('renders later Gutterborn Scum reroll mode details', async () => {
