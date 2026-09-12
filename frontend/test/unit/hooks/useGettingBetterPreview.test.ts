@@ -125,6 +125,7 @@ function preview(overrides: Partial<ImprovementPreview> = {}): ImprovementPrevie
     characterId: 'char-1',
     sequence: rolledDraft.sequence,
     rolledDraft,
+    scumSpecialtyNames: {},
     snapshotHash: rolledDraft.snapshot.snapshotHash,
     createdAt: '2026-07-07T10:00:00.000Z',
     updatedAt: '2026-07-07T10:00:00.000Z',
@@ -148,7 +149,7 @@ describe('useGettingBetterPreview', () => {
     act(() => result.current.open());
 
     await waitFor(() => expect(result.current.workingDraft).not.toBeNull());
-    expect(apiMocks.getOrCreateImprovementPreview).toHaveBeenCalledWith('char-1');
+    expect(apiMocks.getOrCreateImprovementPreview).toHaveBeenCalledWith('char-1', 'pl');
     expect(result.current.isOpen).toBe(true);
     expect(result.current.isDirty).toBe(false);
 
@@ -221,6 +222,7 @@ describe('useGettingBetterPreview', () => {
       characterId: 'char-1',
       improvementId: 'improvement-1',
       section: 'hp',
+      locale: 'en',
     });
     expect(result.current.workingDraft?.debris).toEqual({
       roll: { source: 'table', total: 4 },

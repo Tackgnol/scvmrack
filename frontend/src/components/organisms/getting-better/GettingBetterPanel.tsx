@@ -171,6 +171,7 @@ function sectionButton(
 export function GettingBetterPanel({ controller }: PanelProps) {
   const { t } = useTranslation();
   const draft = controller.workingDraft;
+  const specialtyName = (key: string) => controller.preview?.scumSpecialtyNames?.[key] ?? key;
   const busy =
     controller.isLoadingPreview ||
     controller.isRerolling ||
@@ -496,13 +497,13 @@ export function GettingBetterPanel({ controller }: PanelProps) {
                   {t("gettingBetter.scum.existing", "Existing")}
                 </Typography>
                 <Typography sx={styles.value}>
-                  {draft.scumSpecialties.existing.key}
+                  {specialtyName(draft.scumSpecialties.existing.key)}
                 </Typography>
                 <Typography sx={styles.label}>
                   {t("gettingBetter.scum.added", "Added")}
                 </Typography>
                 <Typography sx={styles.value}>
-                  {draft.scumSpecialties.added.key}
+                  {specialtyName(draft.scumSpecialties.added.key)}
                 </Typography>
               </Box>
             ) : (
@@ -511,13 +512,13 @@ export function GettingBetterPanel({ controller }: PanelProps) {
                   {t("gettingBetter.scum.primary", "Primary")}
                 </Typography>
                 <Typography sx={styles.value}>
-                  {draft.scumSpecialties.primary.key}
+                  {specialtyName(draft.scumSpecialties.primary.key)}
                 </Typography>
                 <Typography sx={styles.label}>
                   {t("gettingBetter.scum.secondary", "Secondary")}
                 </Typography>
                 <Typography sx={styles.value}>
-                  {draft.scumSpecialties.secondary.key}
+                  {specialtyName(draft.scumSpecialties.secondary.key)}
                 </Typography>
                 <Typography sx={styles.label}>
                   {t("gettingBetter.scum.rerollMode", "Mode")}

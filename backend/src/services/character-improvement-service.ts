@@ -25,6 +25,7 @@ import {
   type ScrollCatalogRow,
   type ScumSpecialtyRow,
 } from '../repositories/character-improvement-repository.js';
+import { catalogRepository } from '../repositories/catalog-repository.js';
 import { isValidLocale, isValidUUID } from '../utils.js';
 import { fail, ok, unexpected, type ServiceLogger, type ServiceResult } from './result.js';
 import { ownsCharacter, sessionId, sessionUserId, type AppSession } from './session.js';
@@ -37,6 +38,7 @@ type PreviewResponse = {
   characterId: string;
   sequence: number;
   rolledDraft: ImprovementDraft;
+  scumSpecialtyNames: Record<string, string>;
   snapshotHash: string;
   createdAt: string;
   updatedAt: string;
@@ -54,12 +56,25 @@ type CatalogBundle = {
   scumSpecialtyKeys: string[];
 };
 
-function toPreviewResponse(row: CharacterImprovementRow): PreviewResponse {
+async function toPreviewResponse(
+  row: CharacterImprovementRow,
+  locale: string
+): Promise<PreviewResponse> {
+  const draft = row.rolledDraft as ImprovementDraft;
+  const specialties = draft.scumSpecialties;
+  const keys = specialties.kind === 'firstImprovement'
+    ? [specialties.existing.key, specialties.added.key]
+    : specialties.kind === 'laterImprovement'
+      ? [specialties.primary.key, specialties.secondary.key]
+      : [];
+  const translations = await catalogRepository.findTranslations(locale, keys);
+
   return {
     id: row.id,
     characterId: row.characterId,
     sequence: row.sequence,
-    rolledDraft: row.rolledDraft as ImprovementDraft,
+    rolledDraft: draft,
+    scumSpecialtyNames: Object.fromEntries(translations.map(({ key, value }) => [key, value])),
     snapshotHash: row.snapshotHash,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
@@ -366,18 +381,20 @@ export function createCharacterImprovementService(
     async getOrCreatePreview(input: {
       id: string;
       session: AppSession;
+      rawLocale?: unknown;
     }): Promise<ServiceResult<PreviewResponse>> {
       if (!isValidUUID(input.id)) {
         return fail(badRequest('INVALID_CHARACTER_ID', 'Invalid character ID'));
       }
 
       try {
+        const locale = isValidLocale(input.rawLocale) ? input.rawLocale : 'en';
         const owned = await loadOwnedCharacter(input.id, input.session);
         if (!owned.ok) return fail(owned.error);
 
         const active = await characterImprovementRepository.findActive(input.id);
         if (active) {
-          return ok(toPreviewResponse(active));
+          return ok(await toPreviewResponse(active, locale));
         }
 
         const appliedCount =
@@ -396,7 +413,7 @@ export function createCharacterImprovementService(
           draft.snapshot.snapshotHash
         );
 
-        return ok(toPreviewResponse(created));
+        return ok(await toPreviewResponse(created, locale));
       } catch (err) {
         const ruleError = mapRuleError(err);
         if (ruleError) return fail(ruleError);
@@ -416,12 +433,14 @@ export function createCharacterImprovementService(
       improvementId: string;
       section: ImprovementRerollSection;
       session: AppSession;
+      rawLocale?: unknown;
     }): Promise<ServiceResult<PreviewResponse>> {
       if (!isValidUUID(input.id) || !isValidUUID(input.improvementId)) {
         return fail(badRequest('INVALID_CHARACTER_ID', 'Invalid character ID'));
       }
 
       try {
+        const locale = isValidLocale(input.rawLocale) ? input.rawLocale : 'en';
         const owned = await loadOwnedCharacter(input.id, input.session);
         if (!owned.ok) return fail(owned.error);
 
@@ -459,7 +478,7 @@ export function createCharacterImprovementService(
           );
         }
 
-        return ok(toPreviewResponse(updated));
+        return ok(await toPreviewResponse(updated, locale));
       } catch (err) {
         const ruleError = mapRuleError(err);
         if (ruleError) return fail(ruleError);

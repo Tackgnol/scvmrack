@@ -158,6 +158,7 @@ type ImprovementPreview = {
   characterId: string;
   sequence: number;
   rolledDraft: ImprovementDraft;
+  scumSpecialtyNames: Record<string, string>;
   snapshotHash: string;
   createdAt: string;
   updatedAt: string;
@@ -615,6 +616,45 @@ test('POST /api/characters/:id/improvements/:improvementId/apply applies a full 
   assert.equal(nextPreview.rolledDraft.snapshot.silver, expected.silver);
   for (const stat of abilityStats) {
     assert.equal(nextPreview.rolledDraft.snapshot.abilities[stat], expected.abilities[stat]);
+  }
+});
+
+test('POST /api/characters/:id/improvements/preview resolves Scum specialties from database translations', async () => {
+  const jar = await bootstrapAnonymousSession();
+  const id = await createCharacterWithBody(jar, { classId: 2 });
+
+  const plCsrf = await fetchCsrfToken(jar);
+  const plResponse = await request(`/api/characters/${id}/improvements/preview?locale=pl`, {
+    method: 'POST',
+    headers: { 'x-csrf-token': plCsrf },
+    jar,
+  });
+  await expectStatus(plResponse, 200);
+  const plPreview = (await plResponse.json()) as ImprovementPreview;
+  assert.equal(plPreview.rolledDraft.scumSpecialties.kind, 'firstImprovement');
+  if (plPreview.rolledDraft.scumSpecialties.kind !== 'firstImprovement') return;
+
+  const keys = [
+    plPreview.rolledDraft.scumSpecialties.existing.key,
+    plPreview.rolledDraft.scumSpecialties.added.key,
+  ];
+  for (const key of keys) {
+    assert.ok(plPreview.scumSpecialtyNames[key]);
+    assert.notEqual(plPreview.scumSpecialtyNames[key], key);
+  }
+
+  const enCsrf = await fetchCsrfToken(jar);
+  const enResponse = await request(`/api/characters/${id}/improvements/preview?locale=en`, {
+    method: 'POST',
+    headers: { 'x-csrf-token': enCsrf },
+    jar,
+  });
+  await expectStatus(enResponse, 200);
+  const enPreview = (await enResponse.json()) as ImprovementPreview;
+  assert.equal(enPreview.id, plPreview.id);
+  for (const key of keys) {
+    assert.ok(enPreview.scumSpecialtyNames[key]);
+    assert.notEqual(enPreview.scumSpecialtyNames[key], plPreview.scumSpecialtyNames[key]);
   }
 });
 

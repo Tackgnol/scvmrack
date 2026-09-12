@@ -80,7 +80,7 @@ export function useGettingBetterPreview(input: {
   const previewMutation = useMutation({
     mutationFn: async () => {
       if (!characterId) throw new Error("Missing character id");
-      return getOrCreateImprovementPreview(characterId);
+      return getOrCreateImprovementPreview(characterId, locale);
     },
     onSuccess: (nextPreview) => {
       setPreview(nextPreview);
@@ -105,6 +105,7 @@ export function useGettingBetterPreview(input: {
         characterId,
         improvementId: preview.id,
         section,
+        locale,
       });
     },
     onSuccess: (nextPreview, section) => {

@@ -97,6 +97,7 @@ export type ImprovementPreview = {
   characterId: string;
   sequence: number;
   rolledDraft: ImprovementDraft;
+  scumSpecialtyNames: Record<string, string>;
   snapshotHash: string;
   createdAt: string;
   updatedAt: string;
@@ -112,10 +113,12 @@ export const characterImprovementKeys = {
 
 export async function getOrCreateImprovementPreview(
   characterId: string,
+  locale?: string,
 ): Promise<ImprovementPreview> {
+  const query = locale ? `?locale=${encodeURIComponent(locale)}` : "";
   return unwrapApiResult(
     await improvementClient.POST<ImprovementPreview>(
-      `/api/characters/${characterId}/improvements/preview`,
+      `/api/characters/${characterId}/improvements/preview${query}`,
     ),
     "Failed to roll getting better preview",
   );
@@ -125,10 +128,12 @@ export async function rerollImprovementSection(input: {
   characterId: string;
   improvementId: string;
   section: ImprovementRerollSection;
+  locale?: string;
 }): Promise<ImprovementPreview> {
+  const query = input.locale ? `?locale=${encodeURIComponent(input.locale)}` : "";
   return unwrapApiResult(
     await improvementClient.POST<ImprovementPreview>(
-      `/api/characters/${input.characterId}/improvements/${input.improvementId}/reroll/${input.section}`,
+      `/api/characters/${input.characterId}/improvements/${input.improvementId}/reroll/${input.section}${query}`,
     ),
     "Failed to reroll getting better section",
   );

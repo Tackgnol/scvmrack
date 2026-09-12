@@ -77,6 +77,7 @@ let classAbilities: Array<{
 let rollQueue: RollResult[] = [];
 let rollCalls: string[] = [];
 let getFullCalls: Array<{ id: string; locale: string }> = [];
+let translationCalls: Array<{ locale: string; keys: string[] }> = [];
 
 function resetState(): void {
   characterRow = defaultCharacterRow();
@@ -88,6 +89,7 @@ function resetState(): void {
   rollQueue = [];
   rollCalls = [];
   getFullCalls = [];
+  translationCalls = [];
 }
 
 function enqueuePreviewRolls(): void {
@@ -192,6 +194,20 @@ mock.module('../../src/repositories/character-improvement-repository.js', {
           appliedAt: new Date('2026-07-07T10:03:00.000Z'),
         };
         return { applied: true, partyId: characterRow?.partyId ?? null };
+      },
+    },
+  },
+});
+
+mock.module('../../src/repositories/catalog-repository.js', {
+  namedExports: {
+    catalogRepository: {
+      findTranslations: async (locale: string, keys: string[]) => {
+        translationCalls.push({ locale, keys });
+        return keys.map((key) => ({
+          key,
+          value: `${locale}:${key}`,
+        }));
       },
     },
   },
@@ -352,7 +368,7 @@ test('getOrCreatePreview builds Scum first and later specialty drafts', async ()
   rollQueue.push({ total: 2 });
   const service = createCharacterImprovementService(log);
 
-  const first = await service.getOrCreatePreview({ id: characterId, session });
+  const first = await service.getOrCreatePreview({ id: characterId, session, rawLocale: 'pl' });
 
   assert.equal(first.ok, true);
   const firstDraft = activeImprovement?.rolledDraft as ImprovementDraft;
@@ -361,6 +377,19 @@ test('getOrCreatePreview builds Scum first and later specialty drafts', async ()
     assert.equal(firstDraft.scumSpecialties.existing.key, 'scum.one');
     assert.equal(firstDraft.scumSpecialties.added.key, 'scum.two');
   }
+  assert.deepEqual(first.ok && first.value.scumSpecialtyNames, {
+    'scum.one': 'pl:scum.one',
+    'scum.two': 'pl:scum.two',
+  });
+  assert.deepEqual(translationCalls, [
+    { locale: 'pl', keys: ['scum.one', 'scum.two'] },
+  ]);
+
+  const reopened = await service.getOrCreatePreview({ id: characterId, session, rawLocale: 'en' });
+  assert.deepEqual(reopened.ok && reopened.value.scumSpecialtyNames, {
+    'scum.one': 'en:scum.one',
+    'scum.two': 'en:scum.two',
+  });
 
   const applied = await service.apply({
     id: characterId,

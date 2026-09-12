@@ -266,6 +266,7 @@ export const ImprovementPreviewResponseSchema = {
     'characterId',
     'sequence',
     'rolledDraft',
+    'scumSpecialtyNames',
     'snapshotHash',
     'createdAt',
     'updatedAt',
@@ -275,6 +276,10 @@ export const ImprovementPreviewResponseSchema = {
     characterId: { type: 'string', format: 'uuid' },
     sequence: { type: 'integer' },
     rolledDraft: ImprovementDraftSchema,
+    scumSpecialtyNames: {
+      type: 'object',
+      additionalProperties: { type: 'string' },
+    },
     snapshotHash: { type: 'string' },
     createdAt: { type: 'string', format: 'date-time' },
     updatedAt: { type: 'string', format: 'date-time' },
@@ -316,6 +321,7 @@ export const ImprovementPreviewRouteSchema = {
   description: 'Get or create an active Getting Better preview',
   tags: ['characters'],
   params: CharacterIdParamsSchema,
+  querystring: LocaleQuerySchema,
   response: {
     200: ImprovementPreviewResponseSchema,
     400: ErrorSchema,
@@ -331,6 +337,7 @@ export const ImprovementRerollRouteSchema = {
   description: 'Reroll one section of an active Getting Better preview',
   tags: ['characters'],
   params: RerollSectionParamsSchema,
+  querystring: LocaleQuerySchema,
   response: {
     200: ImprovementPreviewResponseSchema,
     400: ErrorSchema,

@@ -256,6 +256,7 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
     // POST /:id/improvements/preview - Get or create active Getting Better preview.
     fastify.post<{
         Params: { id: string };
+        Querystring: { locale?: string };
     }>(
         '/:id/improvements/preview',
         {
@@ -274,6 +275,7 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
             ).getOrCreatePreview({
                 id: request.params.id,
                 session: request.appSession,
+                rawLocale: request.query.locale,
             });
 
             if (!result.ok) {
@@ -290,6 +292,7 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
             improvementId: string;
             section: ImprovementRerollSection;
         };
+        Querystring: { locale?: string };
     }>(
         '/:id/improvements/:improvementId/reroll/:section',
         {
@@ -310,6 +313,7 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
                 improvementId: request.params.improvementId,
                 section: request.params.section,
                 session: request.appSession,
+                rawLocale: request.query.locale,
             });
 
             if (!result.ok) {

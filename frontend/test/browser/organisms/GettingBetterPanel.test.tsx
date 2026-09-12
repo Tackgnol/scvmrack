@@ -70,12 +70,16 @@ function draft(overrides: Partial<ImprovementDraft> = {}): ImprovementDraft {
   };
 }
 
-function preview(rolledDraft: ImprovementDraft): ImprovementPreview {
+function preview(
+  rolledDraft: ImprovementDraft,
+  scumSpecialtyNames: Record<string, string> = {},
+): ImprovementPreview {
   return {
     id: 'improvement-1',
     characterId: 'char-1',
     sequence: rolledDraft.sequence,
     rolledDraft,
+    scumSpecialtyNames,
     snapshotHash: rolledDraft.snapshot.snapshotHash,
     createdAt: '2026-07-07T10:00:00.000Z',
     updatedAt: '2026-07-07T10:00:00.000Z',
@@ -98,17 +102,22 @@ function sectionDirty(
 
 function PanelHarness({
   initialDraft = draft(),
+  scumSpecialtyNames = {},
   events = {},
   onDraftChange,
   staleConflict = false,
 }: {
   initialDraft?: ImprovementDraft;
+  scumSpecialtyNames?: Record<string, string>;
   events?: PanelEvents;
   onDraftChange?: (draft: ImprovementDraft | null) => void;
   staleConflict?: boolean;
 }) {
   const rolledDraft = useMemo(() => initialDraft, [initialDraft]);
-  const activePreview = useMemo(() => preview(rolledDraft), [rolledDraft]);
+  const activePreview = useMemo(
+    () => preview(rolledDraft, scumSpecialtyNames),
+    [rolledDraft, scumSpecialtyNames],
+  );
   const [workingDraft, setWorkingDraft] = useState<ImprovementDraft | null>(
     structuredClone(rolledDraft),
   );
@@ -218,45 +227,58 @@ describe('GettingBetterPanel Browser', () => {
     const scumDraft = draft({
       scumSpecialties: {
         kind: 'firstImprovement',
-        existing: { key: 'class.gutterborn-scum.specialty.1', rollValue: 1 },
+        existing: { key: 'abilities.gutterborn_scum.fingersmith', rollValue: 2 },
         added: {
-          key: 'class.gutterborn-scum.specialty.2',
-          rollValue: 2,
-          roll: serverRoll(2, [2]),
+          key: 'abilities.gutterborn_scum.jab',
+          rollValue: 1,
+          roll: serverRoll(1, [1]),
         },
       },
     });
 
     await render(
       <BrowserTestProvider>
-        <PanelHarness initialDraft={scumDraft} />
+        <PanelHarness
+          initialDraft={scumDraft}
+          scumSpecialtyNames={{
+            'abilities.gutterborn_scum.fingersmith': 'Filthy Fingersmith: Pick locks.',
+            'abilities.gutterborn_scum.jab': 'Coward’s Jab: Strike from surprise.',
+          }}
+        />
       </BrowserTestProvider>,
     );
 
-    await expect.element(page.getByText('Scum specialty')).toBeVisible();
-    await expect.element(page.getByText('class.gutterborn-scum.specialty.1')).toBeVisible();
-    await expect.element(page.getByText('class.gutterborn-scum.specialty.2')).toBeVisible();
+    const panel = page.getByTestId('getting-better-panel');
+    await expect.element(panel).toBeVisible();
+    expect(panel.element().textContent).toContain('Filthy Fingersmith: Pick locks.');
+    expect(panel.element().textContent).toContain('Coward’s Jab: Strike from surprise.');
   });
 
   it('renders later Gutterborn Scum reroll mode details', async () => {
     const scumDraft = draft({
       scumSpecialties: {
         kind: 'laterImprovement',
-        primary: { key: 'class.gutterborn-scum.specialty.3', rollValue: 3 },
-        secondary: { key: 'class.gutterborn-scum.specialty.4', rollValue: 4 },
+        primary: { key: 'abilities.gutterborn_scum.fingersmith', rollValue: 2 },
+        secondary: { key: 'abilities.gutterborn_scum.gob_lobber', rollValue: 3 },
         rerollMode: 'none',
       },
     });
 
     await render(
       <BrowserTestProvider>
-        <PanelHarness initialDraft={scumDraft} />
+        <PanelHarness
+          initialDraft={scumDraft}
+          scumSpecialtyNames={{
+            'abilities.gutterborn_scum.fingersmith': 'Paskudny Kieszonkowiec: Otwierasz zamki.',
+            'abilities.gutterborn_scum.gob_lobber': 'Wstrętny Miotacz Plwociny: Plujesz.',
+          }}
+        />
       </BrowserTestProvider>,
     );
 
     await expect.element(page.getByText('Scum specialty')).toBeVisible();
-    await expect.element(page.getByText('class.gutterborn-scum.specialty.3')).toBeVisible();
-    await expect.element(page.getByText('class.gutterborn-scum.specialty.4')).toBeVisible();
+    await expect.element(page.getByText('Paskudny Kieszonkowiec: Otwierasz zamki.')).toBeVisible();
+    await expect.element(page.getByText('Wstrętny Miotacz Plwociny: Plujesz.')).toBeVisible();
     await expect.element(page.getByText('Keep both')).toBeVisible();
   });
 });

@@ -178,6 +178,7 @@ function defaultImprovementPreview() {
     characterId: generatedCharacterId,
     sequence: 1,
     rolledDraft: defaultImprovementDraft(),
+    scumSpecialtyNames: {},
     snapshotHash: 'snapshot-hash',
     createdAt: '2026-03-01T10:00:00.000Z',
     updatedAt: '2026-03-01T10:00:00.000Z',
@@ -547,18 +548,30 @@ test('POST /new requires a session before generation runs', async () => {
 test('POST /:id/improvements/preview forwards character id and session', async () => {
   resetState();
   currentSession = { user: { id: 'user-1' } };
+  improvementPreviewResult = {
+    ok: true,
+    value: {
+      ...defaultImprovementPreview(),
+      scumSpecialtyNames: { 'abilities.gutterborn_scum.jab': 'Frajerskie Dźgnięcie' },
+    },
+  };
   const app = await buildApp();
 
   const response = await app.inject({
     method: 'POST',
-    url: `/${generatedCharacterId}/improvements/preview`,
+    url: `/${generatedCharacterId}/improvements/preview?locale=pl`,
   });
 
   assert.equal(response.statusCode, 200);
   assert.equal(response.json().id, 'd24ac091-af57-47b8-9a1f-003cf4f274b9');
+  assert.equal(
+    response.json().scumSpecialtyNames['abilities.gutterborn_scum.jab'],
+    'Frajerskie Dźgnięcie'
+  );
   assert.equal(improvementCalls[0].method, 'preview');
   assert.equal(improvementCalls[0].input.id, generatedCharacterId);
   assert.deepEqual(improvementCalls[0].input.session, currentSession);
+  assert.equal(improvementCalls[0].input.rawLocale, 'pl');
 
   await app.close();
 });
@@ -586,7 +599,7 @@ test('POST /:id/improvements/:improvementId/reroll/:section forwards reroll sect
 
   const response = await app.inject({
     method: 'POST',
-    url: `/${generatedCharacterId}/improvements/d24ac091-af57-47b8-9a1f-003cf4f274b9/reroll/abilities`,
+    url: `/${generatedCharacterId}/improvements/d24ac091-af57-47b8-9a1f-003cf4f274b9/reroll/abilities?locale=en`,
   });
 
   assert.equal(response.statusCode, 200);
@@ -595,6 +608,7 @@ test('POST /:id/improvements/:improvementId/reroll/:section forwards reroll sect
   assert.equal(improvementCalls[0].input.improvementId, 'd24ac091-af57-47b8-9a1f-003cf4f274b9');
   assert.equal(improvementCalls[0].input.section, 'abilities');
   assert.deepEqual(improvementCalls[0].input.session, currentSession);
+  assert.equal(improvementCalls[0].input.rawLocale, 'en');
 
   await app.close();
 });
