@@ -142,6 +142,31 @@ describe("ObrPartyRoster", () => {
       .toBeVisible();
   });
 
+  it("shows a divider between adjacent scvm entries but not above the first (RPG-59)", async () => {
+    await render(
+      <BrowserTestProvider>
+        <ObrPartyRoster
+          rows={[
+            { id: cardId, characterId: cardId, card: sampleCard, players: [], tokens: [] },
+            {
+              id: "second-scvm",
+              characterId: "second-scvm",
+              card: { ...sampleCard, id: "second-scvm", name: "Brenna" },
+              players: [],
+              tokens: [],
+            },
+          ]}
+          maxMembers={8}
+        />
+      </BrowserTestProvider>,
+    );
+
+    const entries = page.getByRole("listitem").elements();
+    expect(entries).toHaveLength(2);
+    expect(getComputedStyle(entries[0]).borderTopWidth).toBe("0px");
+    expect(getComputedStyle(entries[1]).borderTopWidth).not.toBe("0px");
+  });
+
   it("renders durable binding controls for GM token and player recovery", async () => {
     const bindSelectedToken = vi.fn(() => Promise.resolve());
     const assignPlayer = vi.fn(() => Promise.resolve());
