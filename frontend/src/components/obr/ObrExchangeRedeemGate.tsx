@@ -36,10 +36,12 @@ export function ObrExchangeRedeemGate() {
         // A redeem can fail (expired/already-used token, network blip). Falling
         // through to the normal (guest) character-load path below beats a
         // stuck loading state.
-      } finally {
-        await clearCurrentSearchParam(OBR_EXCHANGE_TOKEN_QUERY_PARAM);
-        if (!cancelled) setIsRedeeming(false);
       }
+      // React Compiler can't lower try/finally (react-doctor react-hooks-js/todo),
+      // so this cleanup runs after the try/catch instead — equivalent here since
+      // nothing above returns or re-throws.
+      await clearCurrentSearchParam(OBR_EXCHANGE_TOKEN_QUERY_PARAM);
+      if (!cancelled) setIsRedeeming(false);
     })();
 
     return () => {
