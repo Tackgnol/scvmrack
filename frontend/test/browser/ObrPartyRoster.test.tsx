@@ -271,6 +271,63 @@ describe("ObrPartyRoster", () => {
       .toBeVisible();
   });
 
+  it("removes a scvm from the roster in one action, no confirmation dialog", async () => {
+    const onRemoveFromRoster = vi.fn(() => Promise.resolve());
+
+    await render(
+      <BrowserTestProvider>
+        <ObrPartyRoster
+          rows={[
+            {
+              id: cardId,
+              characterId: cardId,
+              card: sampleCard,
+              players: [],
+              tokens: [],
+            },
+          ]}
+          maxMembers={8}
+          onRemoveFromRoster={onRemoveFromRoster}
+        />
+      </BrowserTestProvider>,
+    );
+
+    await userEvent.click(
+      page.getByRole("button", { name: "Remove from roster" }),
+    );
+
+    expect(onRemoveFromRoster).toHaveBeenCalledWith(cardId);
+  });
+
+  it("surfaces a remove-from-roster failure via the roster error banner", async () => {
+    await render(
+      <BrowserTestProvider>
+        <ObrPartyRoster
+          rows={[
+            {
+              id: cardId,
+              characterId: cardId,
+              card: sampleCard,
+              players: [],
+              tokens: [],
+            },
+          ]}
+          maxMembers={8}
+          onRemoveFromRoster={() => Promise.resolve()}
+          removeRosterAction={{
+            characterId: cardId,
+            pending: false,
+            error: "Could not remove Karg from the party",
+          }}
+        />
+      </BrowserTestProvider>,
+    );
+
+    await expect
+      .element(page.getByText("Could not remove Karg from the party"))
+      .toBeVisible();
+  });
+
   it("refreshes the roster on demand so invite-link joins become visible", async () => {
     const onRefresh = vi.fn(() => Promise.resolve());
 

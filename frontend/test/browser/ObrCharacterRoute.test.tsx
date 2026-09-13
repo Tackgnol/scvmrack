@@ -32,6 +32,7 @@ const routeMocks = vi.hoisted(() => ({
   usePartyLimits: vi.fn(),
   usePartyList: vi.fn(),
   useAttachObrRoom: vi.fn(),
+  useKickPartyMember: vi.fn(() => ({ mutateAsync: vi.fn() })),
 }));
 
 const clipboardWriteText = vi.fn<() => Promise<void>>(() => Promise.resolve());
@@ -252,6 +253,7 @@ vi.mock("@/hooks/usePartyRepository", () => ({
   usePartyLimits: routeMocks.usePartyLimits,
   usePartyList: routeMocks.usePartyList,
   useAttachObrRoom: routeMocks.useAttachObrRoom,
+  useKickPartyMember: routeMocks.useKickPartyMember,
 }));
 
 vi.mock("@/components/organisms/CharacterSheet", () => ({
