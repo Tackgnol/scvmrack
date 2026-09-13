@@ -22,9 +22,9 @@ describe('AbilityValueControl Browser', () => {
       </BrowserTestProvider>
     );
 
-    const input = page.getByRole('spinbutton', { name: 'Strength' });
+    const input = page.getByRole('textbox', { name: 'Strength' });
     await expect.element(input).toBeVisible();
-    await expect.element(input).toHaveValue(10);
+    await expect.element(input).toHaveValue('10');
 
   });
 
@@ -68,10 +68,59 @@ describe('AbilityValueControl Browser', () => {
       </BrowserTestProvider>
     );
 
-    const input = page.getByRole('spinbutton', { name: 'Strength' });
+    const input = page.getByRole('textbox', { name: 'Strength' });
     await userEvent.fill(input, '12');
 
     await expect.poll(() => onInputChange).toHaveBeenCalledWith('12');
 
+  });
+
+  it('keeps an emptied field neutral instead of committing a default', async () => {
+    const onInputChange = vi.fn();
+    await render(
+      <BrowserTestProvider>
+        <AbilityValueControl {...defaultProps} onInputChange={onInputChange} />
+      </BrowserTestProvider>
+    );
+
+    const input = page.getByRole('textbox', { name: 'Strength' });
+    await userEvent.fill(input, '');
+
+    await expect.element(input).toHaveValue('');
+    expect(onInputChange).not.toHaveBeenCalled();
+  });
+
+  it('rejects exponent notation without changing the displayed or committed value', async () => {
+    const onInputChange = vi.fn();
+    await render(
+      <BrowserTestProvider>
+        <AbilityValueControl {...defaultProps} onInputChange={onInputChange} />
+      </BrowserTestProvider>
+    );
+
+    const input = page.getByRole('textbox', { name: 'Strength' });
+    await userEvent.fill(input, '15');
+    onInputChange.mockClear();
+    await userEvent.type(input, 'e');
+
+    await expect.element(input).toHaveValue('15');
+    expect(onInputChange).not.toHaveBeenCalled();
+  });
+
+  it('normalizes leading zeroes once the field is committed on blur', async () => {
+    const onInputChange = vi.fn();
+    await render(
+      <BrowserTestProvider>
+        <AbilityValueControl {...defaultProps} value={7} onInputChange={onInputChange} />
+      </BrowserTestProvider>
+    );
+
+    const input = page.getByRole('textbox', { name: 'Strength' });
+    await userEvent.fill(input, '007');
+    await expect.element(input).toHaveValue('007');
+    expect(onInputChange).toHaveBeenLastCalledWith('007');
+
+    await userEvent.tab();
+    await expect.element(input).toHaveValue('7');
   });
 });

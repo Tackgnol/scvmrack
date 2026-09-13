@@ -12,8 +12,9 @@ import RemoveIcon from '@mui/icons-material/Remove';
 import AddIcon from '@mui/icons-material/Add';
 import { customStyles, morkBorgColors } from '@theme/morkBorgTheme.ts';
 import { useValuePulse } from '@/hooks/useValuePulse';
-import { type ChangeEvent, useState } from 'react';
+import { useState } from 'react';
 import { useHpDeathWatch } from '@/hooks/useHpDeathWatch';
+import { useIntegerFieldBuffer } from '@/hooks/useIntegerFieldBuffer';
 import { useTranslation } from 'react-i18next';
 import AnimatedNumber from '../atoms/AnimatedNumber';
 import HpControl from './resources/HpControl';
@@ -45,6 +46,9 @@ export default function ResourcesRow() {
     currentHp,
     character?.id ?? null,
     prefersReducedMotion,
+  );
+  const silverInput = useIntegerFieldBuffer(character?.silver ?? 0, (digits) =>
+    updateField('silver', parseInt(digits, 10))
   );
 
   const handleTierChange = (delta: number) => {
@@ -136,11 +140,12 @@ export default function ResourcesRow() {
             {t('stats.silver')}
           </Typography>
           <TextField
-            type="number"
-            value={character?.silver ?? 0}
-            onChange={(e: ChangeEvent<HTMLInputElement>) =>
-              updateField('silver', parseInt(e.target.value) || 0)
-            }
+            type="text"
+            inputMode="numeric"
+            value={silverInput.value}
+            onChange={silverInput.onChange}
+            onBlur={silverInput.onBlur}
+            onKeyDown={silverInput.onKeyDown}
             size="small"
             sx={customStyles.resourceInput}
             slotProps={{
@@ -225,6 +230,9 @@ export default function ResourcesRow() {
               slotProps={{
                 input: {
                   readOnly: true,
+                },
+                htmlInput: {
+                  'data-testid': 'armor-tier-dash',
                   'aria-label': t('stats.armorTier'),
                 },
               }}
