@@ -7,7 +7,8 @@
   "obr": {
     "layout": {
       "expand": "⤢ Rozszerz",
-      "collapse": "⊠ Zwiń"
+      "collapse": "⊠ Zwiń",
+      "maximize": "⛶ Maks"
     },
     "common": {
       "unnamedScvm": "Scvm bez imienia",

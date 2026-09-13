@@ -10,6 +10,7 @@ const obrMock = vi.hoisted(() => ({
     callback();
   }),
   setWidth: vi.fn(),
+  setHeight: vi.fn(),
 }));
 
 vi.mock("@owlbear-rodeo/sdk", () => ({
@@ -17,6 +18,7 @@ vi.mock("@owlbear-rodeo/sdk", () => ({
     onReady: obrMock.onReady,
     action: {
       setWidth: obrMock.setWidth,
+      setHeight: obrMock.setHeight,
     },
   },
 }));
@@ -71,5 +73,30 @@ describe("ObrLayout", () => {
     expect(getComputedStyle(container!).height).toBe(`${window.innerHeight}px`);
     expect(getComputedStyle(container!).overflow).toBe("hidden");
     expect(getComputedStyle(body!).overflowY).toBe("auto");
+  });
+
+  it("maximizes the panel to the host's available screen size, keeping the other mode selectable (RPG-66)", async () => {
+    vi.spyOn(window.screen, "availWidth", "get").mockReturnValue(1920);
+    vi.spyOn(window.screen, "availHeight", "get").mockReturnValue(1080);
+
+    await render(
+      <BrowserTestProvider>
+        <ObrLayout>
+          <div>Panel body</div>
+        </ObrLayout>
+      </BrowserTestProvider>,
+    );
+
+    await userEvent.click(page.getByRole("button", { name: "⛶ Max" }));
+
+    expect(obrMock.setWidth).toHaveBeenCalledWith(1920);
+    expect(obrMock.setHeight).toHaveBeenCalledWith(1080);
+
+    await expect.element(page.getByRole("button", { name: "⊠ Collapse" })).toBeVisible();
+
+    await userEvent.click(page.getByRole("button", { name: "⊠ Collapse" }));
+
+    expect(obrMock.setWidth).toHaveBeenLastCalledWith(420);
+    await expect.element(page.getByRole("button", { name: "⤢ Expand" })).toBeVisible();
   });
 });
