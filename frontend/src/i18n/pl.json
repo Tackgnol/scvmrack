@@ -47,7 +47,10 @@
       "bindSelectedToken": "Przypisz do tokena",
       "rebindSelectedToken": "Przypisz ponownie",
       "selectTokenToBind": "Wybierz token",
-      "binding": "Przypisywanie"
+      "binding": "Przypisywanie",
+      "openInScvmrack": "Otwórz w scvmrack",
+      "openingInScvmrack": "Otwieranie",
+      "openInScvmrackFailed": "Nie udało się otworzyć w scvmrack"
     },
     "gm": {
       "region": "Widok MG",

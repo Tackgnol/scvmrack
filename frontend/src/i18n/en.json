@@ -47,7 +47,10 @@
       "bindSelectedToken": "Bind to selected token",
       "rebindSelectedToken": "Re-bind selected token",
       "selectTokenToBind": "Select token to bind",
-      "binding": "Binding"
+      "binding": "Binding",
+      "openInScvmrack": "Open in scvmrack",
+      "openingInScvmrack": "Opening",
+      "openInScvmrackFailed": "Could not open in scvmrack"
     },
     "gm": {
       "region": "GM view",
