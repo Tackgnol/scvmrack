@@ -13,6 +13,7 @@ const obrMock = vi.hoisted(() => ({
   }),
   create: vi.fn<() => Promise<void>>(() => Promise.resolve()),
   open: vi.fn<() => Promise<void>>(() => Promise.resolve()),
+  showNotification: vi.fn<() => Promise<void>>(() => Promise.resolve()),
   getRole: vi.fn<() => Promise<"GM" | "PLAYER">>(() =>
     Promise.resolve("PLAYER"),
   ),
@@ -23,6 +24,11 @@ const obrMock = vi.hoisted(() => ({
     Promise.resolve({ x: point.x, y: point.y }),
   ),
 }));
+const authClientMock = vi.hoisted(() => ({
+  issueObrExchangeToken: vi.fn<() => Promise<string>>(() => Promise.resolve("exchange-token")),
+}));
+const windowOpenMock = vi.hoisted(() => vi.fn());
+
 
 vi.mock("@owlbear-rodeo/sdk", () => ({
   default: {
@@ -32,6 +38,9 @@ vi.mock("@owlbear-rodeo/sdk", () => ({
     },
     popover: {
       open: obrMock.open,
+    },
+    notification: {
+      show: obrMock.showNotification,
     },
     player: {
       getRole: obrMock.getRole,
@@ -50,11 +59,19 @@ vi.mock("@owlbear-rodeo/sdk", () => ({
   buildLabel: vi.fn(),
 }));
 
+vi.mock("@/auth/obrAuthClient", () => ({
+  obrAuthClient: authClientMock,
+}));
+
+vi.stubGlobal("open", windowOpenMock);
+
 import {
+
   createEnemyContextMenu,
   createScvmContextMenu,
   ENEMY_CARD_POPOVER_ID,
   getContextCharacterId,
+  createOpenFullSiteContextMenu,
   getObrCardUrl,
   getObrEnemyUrl,
   isObrCardView,
@@ -63,6 +80,7 @@ import {
   SCVM_CARD_POPOVER_ID,
   VIEW_ENEMY_CONTEXT_MENU_ID,
   VIEW_SCVM_CONTEXT_MENU_ID,
+  OPEN_FULL_SITE_CONTEXT_MENU_ID,
 } from "@/obr/contextMenu";
 
 function contextWithMetadata(
@@ -86,9 +104,12 @@ describe("OBR context menu", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     obrMock.getRole.mockResolvedValue("PLAYER");
+    authClientMock.issueObrExchangeToken.mockResolvedValue("exchange-token");
+    windowOpenMock.mockReturnValue({} as Window);
   });
 
   it("creates a view-scvm menu filtered to bound GM and player tokens", () => {
+
     const menu = createScvmContextMenu();
 
     expect(menu.id).toBe(`${EXTENSION_ID}/view-scvm`);
@@ -107,6 +128,74 @@ describe("OBR context menu", () => {
       },
     });
   });
+  it("creates an open-full-site menu for bound tokens", () => {
+    const menu = createOpenFullSiteContextMenu();
+
+    expect(menu.id).toBe(OPEN_FULL_SITE_CONTEXT_MENU_ID);
+    expect(menu.icons[0]).toMatchObject({
+      icon: "/obr-icon.svg",
+      label: "Open in full site",
+      filter: {
+        roles: ["GM", "PLAYER"],
+        every: [
+          {
+            key: ["metadata", CHARACTER_META_KEY],
+            operator: "!=",
+            value: undefined,
+          },
+        ],
+      },
+    });
+  });
+
+  it("issues an anonymous exchange token and opens the full-site bridge", async () => {
+    const menu = createOpenFullSiteContextMenu();
+    const characterId = "f15c7ec3-dad2-4f65-8b69-0f1f642c7d29";
+
+    menu.onClick?.(
+      contextWithMetadata({ [CHARACTER_META_KEY]: characterId }),
+      "element-id",
+    );
+
+    await expect
+      .poll(() => authClientMock.issueObrExchangeToken)
+      .toHaveBeenCalledOnce();
+    expect(windowOpenMock).toHaveBeenCalledWith(
+      `/obr-open?token=exchange-token&character=${characterId}`,
+      "_blank",
+      "noopener,noreferrer",
+    );
+  });
+
+  it("shows a retryable error when the browser blocks the new tab", async () => {
+    windowOpenMock.mockReturnValueOnce(null);
+    const menu = createOpenFullSiteContextMenu();
+
+    menu.onClick?.(
+      contextWithMetadata({ [CHARACTER_META_KEY]: "character-1" }),
+      "element-id",
+    );
+
+    await expect
+      .poll(() => obrMock.showNotification)
+      .toHaveBeenCalledWith(
+        "Could not open a new tab. Allow popups and try Open in full site again.",
+        "ERROR",
+      );
+  });
+
+  it("does not issue a token without a bound character id", () => {
+    const menu = createOpenFullSiteContextMenu();
+
+    menu.onClick?.(
+      contextWithMetadata({ [CHARACTER_META_KEY]: 7 }),
+      "element-id",
+    );
+
+    expect(authClientMock.issueObrExchangeToken).not.toHaveBeenCalled();
+    expect(windowOpenMock).not.toHaveBeenCalled();
+  });
+
 
   it("creates a view-enemy menu filtered to bound GM and player tokens", () => {
     const menu = createEnemyContextMenu();
@@ -241,6 +330,10 @@ describe("OBR context menu", () => {
     );
     expect(obrMock.create).toHaveBeenNthCalledWith(
       2,
+    expect.objectContaining({ id: OPEN_FULL_SITE_CONTEXT_MENU_ID }),
+    );
+    expect(obrMock.create).toHaveBeenNthCalledWith(
+      3,
       expect.objectContaining({ id: VIEW_ENEMY_CONTEXT_MENU_ID }),
     );
   });

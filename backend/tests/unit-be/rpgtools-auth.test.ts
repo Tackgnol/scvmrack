@@ -18,6 +18,7 @@ type SharedAuthOptions = {
     redirectUri: string;
   };
   onLinkAccount: (payload: LinkAccountPayload) => Promise<void>;
+  obrExchange: { allowAnonymousIssue: boolean };
 };
 
 const updateManyCalls: unknown[] = [];
@@ -100,6 +101,10 @@ test('rpgtools auth plugin keeps local and configured origins trusted', async ()
     await app.ready();
 
     assert.ok(registeredSharedAuthOptions);
+    assert.deepEqual(registeredSharedAuthOptions.obrExchange, {
+      allowAnonymousIssue: true,
+    });
+
     assert.deepEqual(
       registeredSharedAuthOptions.trustedOrigins,
       [

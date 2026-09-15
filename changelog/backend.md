@@ -63,6 +63,11 @@ Room-scoped Owlbear Rodeo bindings, backed by the `ObrPlayerCharacterBinding`/
   token's scvm under the same session + owner-or-in-room gate, idempotent
   deletes
 - Binding writes are rate-limited
+- The shared-auth `obr-exchange` bridge is opted into anonymous token issue
+  (`obrExchange: { allowAnonymousIssue: true }`), so an anonymous OBR session
+  can hand its identity to a new top-level tab via `/api/auth/obr-exchange/issue`
+  + `/api/auth/obr-exchange/redeem`. Redeeming carries session identity only;
+  character ownership never transfers
 
 ### Parties (`/api/parties`)
 

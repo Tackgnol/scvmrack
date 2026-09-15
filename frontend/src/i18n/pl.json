@@ -960,6 +960,14 @@
     "typeMinor": "Mała",
     "typePatch": "Poprawka",
     "moreUpdates": "Więcej aktualizacji wkrótce. Świat się kończy, ale my dalej dostarczamy.",
+    "v061": {
+      "gettingBetter": "Mechanika rozwoju „Getting Better” z MÖRK BORG jest już dostępna — zobacz podgląd rzutu, przerzuć go, jeśli nie odpowiada, a potem zastosuj, aby awansować",
+      "scumFixes": "Zdolności rozwoju Scum i opisy specjalizacji wyświetlają się teraz poprawnie, bez nakładania się i bez powrotu do angielskiego",
+      "obrOpen": "Anonimową postać z Owlbear można teraz jednym kliknięciem otworzyć w pełnej wersji Scvmrack",
+      "identityCarry": "Nowa karta używa tej samej sesji bez przenoszenia własności postaci z Owlbear",
+      "safeRetry": "Zablokowana karta lub wygasły link przekazania pokazują teraz jasną informację, jak spróbować ponownie",
+      "obrOwnership": "Obsługa własności w Owlbear jest bardziej stabilna po aktualizacji wspólnego pakietu rpgtools-owlbear do wersji 0.1.1"
+    },
     "v060": {
       "beta": "Scvmrack wszedł w fazę Beta",
       "miseries": "Karty postaci zawierają teraz siedmiostopniowy tor Nieszczęść z kontrolkami dla graczy i MG",
