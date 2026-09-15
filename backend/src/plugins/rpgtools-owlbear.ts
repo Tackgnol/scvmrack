@@ -2,13 +2,11 @@ import fp from 'fastify-plugin';
 import type { FastifyInstance } from 'fastify';
 import { obrRoomBindings } from '@tackgnol/rpgtools-owlbear/server';
 import { obrBindingsDb } from '../lib/obr-bindings-db.js';
+import { characterRepository } from '../repositories/character-repository.js';
 import { getCharacterFull } from '../lib/get-character-full.js';
 import { toCharacterCard } from '../lib/character-card.js';
-import { hasObrWriteSession, type AppSession } from '../services/session.js';
-import {
-  canUseCharacterInObrRoom,
-  filterAdditionalVisibleCharacterIdsInObrRoom,
-} from '../services/obr-room-visibility-service.js';
+import { hasObrWriteSession, ownsCharacter, type AppSession } from '../services/session.js';
+import { filterAdditionalVisibleCharacterIdsInObrRoom } from '../services/obr-room-visibility-service.js';
 
 export default fp(async function rpgtoolsOwlbearPlugin(fastify: FastifyInstance) {
   await fastify.register(obrRoomBindings, {
@@ -20,8 +18,9 @@ export default fp(async function rpgtoolsOwlbearPlugin(fastify: FastifyInstance)
       const fulls = await Promise.all(allowedIds.map((id) => getCharacterFull(id, locale)));
       return fulls.filter((f): f is Record<string, unknown> => f !== null).map(toCharacterCard);
     },
-    async ownsCharacter(session, characterId, roomId) {
-      return canUseCharacterInObrRoom(session as AppSession, characterId, roomId);
+    async ownsCharacter(session, characterId) {
+      const row = await characterRepository.getPartyAccessContext(characterId);
+      return row ? ownsCharacter(session as AppSession, row) : false;
     },
     async extraRoomCharacterIds(ids, roomId) {
       return filterAdditionalVisibleCharacterIdsInObrRoom(ids, roomId);
