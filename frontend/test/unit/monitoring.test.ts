@@ -77,10 +77,9 @@ describe("prepareFrontendEvent", () => {
     ).toBe(appEvent);
   });
 
-  it("drops known crawler chunk-load failures", () => {
+  it("drops crawler events", () => {
     const crawlerEvent = event({
-      message:
-        "Failed to fetch dynamically imported module: https://example.test/assets/page.js",
+      message: "Anonymous session did not start",
       contexts: {
         browser: { name: "Googlebot", version: "2.1" },
         device: { family: "Spider" },
@@ -90,7 +89,7 @@ describe("prepareFrontendEvent", () => {
     expect(
       prepareFrontendEvent(
         crawlerEvent,
-        hint(new TypeError(crawlerEvent.message)),
+        hint(new Error(crawlerEvent.message)),
       ),
     ).toBeNull();
   });

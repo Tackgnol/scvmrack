@@ -4,6 +4,7 @@ User-facing release notes for **Scvm Rack**, newest first.
 
 | Version | Date | Notes |
 |---|---|---|
+| [0.6.1](./0.6.1.md) | 2026-09-15 | Getting Better advancement, plus anonymous Owlbear characters can open in the full site without losing their in-room session |
 | [0.6.0](./0.6.0.md) | 2026-08-24 | Beta milestone with the Misery track, stronger route/session recovery, quieter monitoring, and Owlbear hardening |
 | [0.5.7](./0.5.7.md) | 2026-07-06 | Owlbear room character visibility and panel transport now use the shared package path consistently |
 | [0.5.6](./0.5.6.md) | 2026-07-05 | Owlbear panel now runs on a shared, reusable package used across RPGTools apps |

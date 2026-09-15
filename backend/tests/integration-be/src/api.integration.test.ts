@@ -246,6 +246,40 @@ test('anonymous session can create, list, fetch and delete character', async () 
   );
 });
 
+test('anonymous OBR exchange carries the session without moving character ownership', async () => {
+  const iframeJar = await bootstrapAnonymousSession();
+  const characterId = await createCharacter(iframeJar);
+
+  const issueResponse = await request('/api/auth/obr-exchange/issue', {
+    method: 'POST',
+    json: {},
+    jar: iframeJar,
+  });
+  await expectStatus(issueResponse, 200);
+  const { token } = (await issueResponse.json()) as { token: string };
+
+  const tabJar = new CookieJar();
+  const redeemResponse = await request('/api/auth/obr-exchange/redeem', {
+    method: 'POST',
+    json: { token },
+    jar: tabJar,
+  });
+  await expectStatus(redeemResponse, 200);
+
+  const tabCharacter = await request(`/api/characters/${characterId}`, {
+    jar: tabJar,
+  });
+  await expectStatus(tabCharacter, 200);
+
+  const iframeCharacter = await request(`/api/characters/${characterId}`, {
+    jar: iframeJar,
+  });
+  await expectStatus(iframeCharacter, 200);
+
+  assert.equal((await tabCharacter.json() as { id: string }).id, characterId);
+  assert.equal((await iframeCharacter.json() as { id: string }).id, characterId);
+});
+
 test('DELETE /api/characters/:id returns 404 when the same character is deleted twice', async () => {
   const jar = await bootstrapAnonymousSession();
   const id = await createCharacter(jar);

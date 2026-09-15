@@ -6,19 +6,7 @@ import {
 } from "@/utils/errorUtils";
 
 const CLOUDFLARE_BEACON_RE = /\/beacon\.min\.js(?:\/|$)/i;
-const CHUNK_LOAD_FAILURE_RE =
-  /(?:failed to fetch dynamically imported module|importing a module script failed)/i;
 const CRAWLER_RE = /(?:bot|crawler|spider)/i;
-
-function eventMessages(event: ErrorEvent): string[] {
-  const messages = [event.message];
-
-  for (const exception of event.exception?.values ?? []) {
-    messages.push(exception.value);
-  }
-
-  return messages.filter((message): message is string => !!message);
-}
 
 function hasCloudflareBeaconFrame(event: ErrorEvent): boolean {
   const frames = (event.exception?.values ?? []).flatMap(
@@ -31,15 +19,13 @@ function hasCloudflareBeaconFrame(event: ErrorEvent): boolean {
   );
 }
 
-function isKnownCrawlerChunkFailure(event: ErrorEvent): boolean {
+// Crawlers don't keep cookies or finish app flows, so nothing they hit is
+// actionable — anonymous-session bootstrap failures, chunk loads, all of it.
+function isCrawlerEvent(event: ErrorEvent): boolean {
   const browserName = event.contexts?.browser?.name ?? "";
   const deviceFamily = event.contexts?.device?.family ?? "";
-  const isCrawler = CRAWLER_RE.test(`${browserName} ${deviceFamily}`);
 
-  return (
-    isCrawler &&
-    eventMessages(event).some((message) => CHUNK_LOAD_FAILURE_RE.test(message))
-  );
+  return CRAWLER_RE.test(`${browserName} ${deviceFamily}`);
 }
 
 function stringTag(value: unknown): string | undefined {
@@ -75,7 +61,7 @@ export function prepareFrontendEvent(
   if (
     (originalError !== undefined && !shouldCaptureClientError(originalError)) ||
     hasCloudflareBeaconFrame(event) ||
-    isKnownCrawlerChunkFailure(event)
+    isCrawlerEvent(event)
   ) {
     return null;
   }

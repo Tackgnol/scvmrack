@@ -134,3 +134,14 @@ frontend/.claude/
 frontend/.github/
 frontend/.junie/
 frontend/static/scvmrack_logo.svg
+
+# Session-local scratch checkouts / tool caches (not part of this repo)
+/.rdcheck/
+frontend/.rdcheck/
+/.serena/
+/.worktrees/
+/.rpgtools-shared-auth-rpg252/
+/external-auth/
+/external-auth-edit/
+/.claude/.headroom_wrap_settings.lock
+/overlap.png

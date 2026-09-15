@@ -21,7 +21,9 @@
   actionable diagnostics, and can be retried without refreshing the page
 - **Character sheet** — the core editor (stats, equipment, abilities, powers, pets, notes);
   sheet navigation uses canonical `/character/<id>` URLs without stale `character`
-  query parameters
+  query parameters. A **Get Better** action next to the character's identity
+  opens the Getting Better panel: preview a level-up roll, reroll any section,
+  then apply it to the character
 - **Party** — GM party control (`/party/<id>`) with invite link, live warband
   vital strip, and member kick; player party view binds a scvm via an invite link
   (`/join/<token>`, with `/forge` and `/roll` sub-routes) and shows a live,
@@ -29,7 +31,10 @@
 - **Owlbear Rodeo extension** — `/obr.html` embeds the in-room scvmrack
   experience: players see their own editable sheet, GMs see a live roster built
   from bound scene tokens, bound tokens expose a compact read-only card peek from
-  the context menu, selected tokens can be bound/re-bound with the scvm name
+  the context menu plus a distinct **Open in full site** action — anonymous
+  sessions cross through a short-lived, one-time `/obr-open` handoff that keeps
+  ownership on the embedded session, and blocked or expired links show a retry
+  prompt, selected tokens can be bound/re-bound with the scvm name
   shown in the token indicator, the top OBR controls stay reachable while the
   embedded sheet scrolls, and GMs can move the room into a durable scvmrack
   party with invite/manage links and manage room-scoped enemy cards from inside

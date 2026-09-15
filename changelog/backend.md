@@ -27,6 +27,14 @@ All application routes are mounted under the `/api` prefix.
 - `GET /:id` — fetch a localized character (`get_character_full(id, locale)`)
 - `PATCH /:id` — update a character (plain-text sanitization, length limits, bounds clamping)
 - `DELETE /:id` — delete a character (ownership-enforced)
+- `POST /:id/improvements/preview` — roll a Getting Better preview (pure rule
+  engine in `src/lib/getting-better.ts`); idempotent, backed by a
+  `CharacterImprovement` row with a partial unique index enforcing at most one
+  active preview per character
+- `POST /:id/improvements/:improvementId/reroll/:section` — reroll one section
+  of an active preview
+- `POST /:id/improvements/:improvementId/apply` — apply an active preview to
+  the character
 
 ### Equipment (`/api/equipment`)
 
@@ -56,6 +64,11 @@ Room-scoped Owlbear Rodeo bindings, backed by the `ObrPlayerCharacterBinding`/
   token's scvm under the same session + owner-or-in-room gate, idempotent
   deletes
 - Binding writes are rate-limited
+- The shared-auth `obr-exchange` bridge is opted into anonymous token issue
+  (`obrExchange: { allowAnonymousIssue: true }`), so an anonymous OBR session
+  can hand its identity to a new top-level tab via `/api/auth/obr-exchange/issue`
+  + `/api/auth/obr-exchange/redeem`. Redeeming carries session identity only;
+  character ownership never transfers
 
 ### Parties (`/api/parties`)
 
