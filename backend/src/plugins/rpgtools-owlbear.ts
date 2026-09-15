@@ -5,7 +5,11 @@ import { obrBindingsDb } from '../lib/obr-bindings-db.js';
 import { characterRepository } from '../repositories/character-repository.js';
 import { getCharacterFull } from '../lib/get-character-full.js';
 import { toCharacterCard } from '../lib/character-card.js';
-import { hasObrWriteSession, ownsCharacter, type AppSession } from '../services/session.js';
+import {
+  hasObrWriteSession,
+  ownsCharacter as sessionOwnsCharacter,
+  type AppSession,
+} from '../services/session.js';
 import { filterAdditionalVisibleCharacterIdsInObrRoom } from '../services/obr-room-visibility-service.js';
 
 export default fp(async function rpgtoolsOwlbearPlugin(fastify: FastifyInstance) {
@@ -20,7 +24,7 @@ export default fp(async function rpgtoolsOwlbearPlugin(fastify: FastifyInstance)
     },
     async ownsCharacter(session, characterId) {
       const row = await characterRepository.getPartyAccessContext(characterId);
-      return row ? ownsCharacter(session as AppSession, row) : false;
+      return row ? sessionOwnsCharacter(session as AppSession, row) : false;
     },
     async extraRoomCharacterIds(ids, roomId) {
       return filterAdditionalVisibleCharacterIdsInObrRoom(ids, roomId);
