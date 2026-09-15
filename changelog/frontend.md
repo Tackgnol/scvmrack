@@ -57,6 +57,10 @@
   changes queue as patches → instant UI update via `queryClient.setQueryData`
   → flush after ~1s idle → retry up to 3× with user notification
 - Stat tracking and modifiers (computed + custom), ability cards, scroll/power uses
+- Owner-only Getting Better workflow: a footer action opens a MÖRK BORG-styled
+  inline panel with persistent preview rolls, local table-value edits, undo,
+  per-section rerolls, reroll-all conflict prompts, stale-preview messaging, and
+  explicit apply that refreshes the hydrated character cache
 - Inventory with equipped bar, on-hand vs. storage sections, ammo tracking,
   consumables, pets, and custom-item creation
 - Equipment lookup/add-item flow keeps the add controls stable while search and

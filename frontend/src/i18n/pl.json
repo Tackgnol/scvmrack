@@ -664,6 +664,68 @@
     "cancel": "Anuluj",
     "retry": "Ponów"
   },
+  "gettingBetter": {
+    "title": "Rozwój",
+    "loading": "Rzucanie na tabelę",
+    "applied": "Rozwój zastosowany",
+    "confirmDiscard": "Odrzucić wartości z tabeli?",
+    "confirmReroll": "Odrzucić lokalne wartości z tabeli?",
+    "stale": "Ten podgląd jest nieaktualny. Przerzuć z obecnej karty przed zastosowaniem.",
+    "actions": {
+      "open": "Rozwój",
+      "rerollSection": "Przerzuć",
+      "undo": "Cofnij edycje",
+      "rerollAll": "Przerzuć wszystko",
+      "rerollCurrent": "Przerzuć z obecnej karty",
+      "close": "Zamknij",
+      "apply": "Zastosuj rozwój",
+      "applying": "Stosowanie"
+    },
+    "errors": {
+      "preview": "Nie udało się rzucić rozwoju",
+      "reroll": "Nie udało się przerzucić rozwoju",
+      "apply": "Nie udało się zastosować rozwoju"
+    },
+    "hp": {
+      "title": "PŻ",
+      "check": "Test 6k10",
+      "currentMax": "Obecne maksimum",
+      "result": "Wynik",
+      "success": "+{{value}} maksimum",
+      "noChange": "Bez zmian",
+      "increase": "Wzrost k6",
+      "finalMax": "Końcowe maksimum"
+    },
+    "debris": {
+      "title": "Gruz",
+      "roll": "Rzut k6",
+      "kind": "Znalezisko",
+      "nothing": "Nic",
+      "silver": "3k10 srebra",
+      "uncleanScroll": "Nieczysty zwój",
+      "sacredScroll": "Święty zwój",
+      "scrollRoll": "Rzut zwoju",
+      "scroll": "Zwój"
+    },
+    "abilities": {
+      "title": "Cechy",
+      "from": "Z {{value}}"
+    },
+    "scum": {
+      "title": "Specjalność Scvma",
+      "existing": "Obecna",
+      "added": "Dodana",
+      "primary": "Pierwsza",
+      "secondary": "Druga",
+      "rerollMode": "Tryb",
+      "modes": {
+        "none": "Zachowaj obie",
+        "primary": "Przerzuć pierwszą",
+        "secondary": "Przerzuć drugą",
+        "both": "Przerzuć obie"
+      }
+    }
+  },
   "powers": {
     "title": "Moce",
     "noScrollsOrPowers": "Brak zwojów i mocy",

@@ -25,16 +25,15 @@ All application routes are mounted under the `/api` prefix.
 - `GET /` — list characters owned by the current session user (optional `locale` query param; falls back to `Accept-Language`)
 - `GET /count` — total character count
 - `GET /:id` — fetch a localized character (`get_character_full(id, locale)`)
+- `POST /:id/improvements/preview` — get or create an idempotent active
+  Getting Better preview for the owner
+- `POST /:id/improvements/:improvementId/reroll/:section` — reroll one Getting
+  Better preview section or the full preview without applying character changes
+- `POST /:id/improvements/:improvementId/apply` — validate a submitted Getting
+  Better draft, reject stale snapshots, and atomically apply max HP, silver,
+  ability, equipment, and Scum specialty changes
 - `PATCH /:id` — update a character (plain-text sanitization, length limits, bounds clamping)
 - `DELETE /:id` — delete a character (ownership-enforced)
-- `POST /:id/improvements/preview` — roll a Getting Better preview (pure rule
-  engine in `src/lib/getting-better.ts`); idempotent, backed by a
-  `CharacterImprovement` row with a partial unique index enforcing at most one
-  active preview per character
-- `POST /:id/improvements/:improvementId/reroll/:section` — reroll one section
-  of an active preview
-- `POST /:id/improvements/:improvementId/apply` — apply an active preview to
-  the character
 
 ### Equipment (`/api/equipment`)
 
@@ -135,6 +134,11 @@ Centralized, structured error pipeline (`src/errors.ts` + `plugins/error-handler
 ## Architecture
 
 - **Repository-only Prisma access.** All direct Prisma calls have been removed from `src/lib/`. A new `catalog-repository.ts` centralises catalog reads (weapons, armors, equipment, pets, classes, translations, class ability modifiers). Library files (`inventory.ts`, `get-character-full.ts`, `item-search-service.ts`) now call the repository layer, restoring the Repository → Service → Controller invariant.
+- **Getting Better command drafts.** Character improvements are stored as typed
+  active/applied `CharacterImprovement` rows with one active preview per
+  character. Pure rule functions compute HP, debris, ability, and Gutterborn
+  Scum specialty outcomes; the service normalizes submitted table values before
+  writing through the repository transaction.
 - **Structured error logging.** The `unexpected()` helper in `src/services/result.ts` logs unexpected errors via `{ err: error }` so Pino's error serializer captures the full stack trace.
 - **SSE half-open socket fix.** The party stream route (`GET /api/parties/:id/stream`) calls `reply.raw.end()` in its cleanup path to close the socket when a write error fires before the client disconnects.
 

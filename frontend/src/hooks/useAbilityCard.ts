@@ -14,7 +14,7 @@ export function useAbilityCard(ability: AbilityName) {
   const characterKey = character?.id ?? 'unknown';
 
   const setAbilityValue = (nextValue: number) => {
-    const clamped = Math.max(1, Math.min(20, nextValue));
+    const clamped = Math.max(1, Math.min(21, nextValue));
     updateField(ability, clamped);
   };
 
