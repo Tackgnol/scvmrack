@@ -11,7 +11,15 @@ const obrMock = vi.hoisted(() => ({
   }),
   setWidth: vi.fn(),
   setHeight: vi.fn(),
+  showNotification: vi.fn<() => Promise<void>>(() => Promise.resolve()),
 }));
+const characterMock = vi.hoisted(() => ({ characterId: null as string | null }));
+const authClientMock = vi.hoisted(() => ({
+  issueObrExchangeToken: vi.fn<() => Promise<string>>(() =>
+    Promise.resolve("exchange-token"),
+  ),
+}));
+const windowOpenMock = vi.hoisted(() => vi.fn());
 
 vi.mock("@owlbear-rodeo/sdk", () => ({
   default: {
@@ -20,12 +28,28 @@ vi.mock("@owlbear-rodeo/sdk", () => ({
       setWidth: obrMock.setWidth,
       setHeight: obrMock.setHeight,
     },
+    notification: {
+      show: obrMock.showNotification,
+    },
   },
 }));
+
+vi.mock("@/CharacterContext/CharacterContext", () => ({
+  useCharacter: () => characterMock,
+}));
+
+vi.mock("@/auth/obrAuthClient", () => ({
+  obrAuthClient: authClientMock,
+}));
+
+vi.stubGlobal("open", windowOpenMock);
 
 describe("ObrLayout", () => {
   beforeEach(async () => {
     vi.clearAllMocks();
+    characterMock.characterId = null;
+    authClientMock.issueObrExchangeToken.mockResolvedValue("exchange-token");
+    windowOpenMock.mockReturnValue({} as Window);
     window.localStorage.removeItem("i18nextLng");
     await i18n.changeLanguage("en");
   });
@@ -98,5 +122,61 @@ describe("ObrLayout", () => {
 
     expect(obrMock.setWidth).toHaveBeenLastCalledWith(420);
     await expect.element(page.getByRole("button", { name: "⤢ Expand" })).toBeVisible();
+  });
+
+  it("hides the open-in-scvmrack action without an active character", async () => {
+    await render(
+      <BrowserTestProvider>
+        <ObrLayout>
+          <div>Panel body</div>
+        </ObrLayout>
+      </BrowserTestProvider>,
+    );
+
+    await expect
+      .element(page.getByRole("button", { name: "Open in scvmrack" }))
+      .not.toBeInTheDocument();
+  });
+
+  it("issues an exchange token and opens the full-site bridge (RPG-252)", async () => {
+    characterMock.characterId = "character-1";
+
+    await render(
+      <BrowserTestProvider>
+        <ObrLayout>
+          <div>Panel body</div>
+        </ObrLayout>
+      </BrowserTestProvider>,
+    );
+
+    await userEvent.click(page.getByRole("button", { name: "Open in scvmrack" }));
+
+    await expect
+      .poll(() => authClientMock.issueObrExchangeToken)
+      .toHaveBeenCalledOnce();
+    expect(windowOpenMock).toHaveBeenCalledWith(
+      "/obr-open?token=exchange-token&character=character-1",
+      "_blank",
+      "noopener,noreferrer",
+    );
+  });
+
+  it("shows a retryable error when the browser blocks the new tab", async () => {
+    characterMock.characterId = "character-1";
+    windowOpenMock.mockReturnValueOnce(null);
+
+    await render(
+      <BrowserTestProvider>
+        <ObrLayout>
+          <div>Panel body</div>
+        </ObrLayout>
+      </BrowserTestProvider>,
+    );
+
+    await userEvent.click(page.getByRole("button", { name: "Open in scvmrack" }));
+
+    await expect
+      .poll(() => obrMock.showNotification)
+      .toHaveBeenCalledWith("Could not open in scvmrack", "ERROR");
   });
 });

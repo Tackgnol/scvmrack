@@ -8,7 +8,10 @@
     "layout": {
       "expand": "⤢ Expand",
       "collapse": "⊠ Collapse",
-      "maximize": "⛶ Max"
+      "maximize": "⛶ Max",
+      "openInScvmrack": "Open in scvmrack",
+      "openingInScvmrack": "Opening",
+      "openInScvmrackFailed": "Could not open in scvmrack"
     },
     "common": {
       "unnamedScvm": "Unnamed scvm",
