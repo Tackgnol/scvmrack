@@ -31,18 +31,19 @@
 - **Owlbear Rodeo extension** — `/obr.html` embeds the in-room scvmrack
   experience: players see their own editable sheet, GMs see a live roster built
   from bound scene tokens, bound tokens expose a compact read-only card peek from
-  the context menu plus a distinct **Open in full site** action — anonymous
-  sessions cross through a short-lived, one-time `/obr-open` handoff that keeps
-  ownership on the embedded session, and blocked or expired links show a retry
-  prompt, selected tokens can be bound/re-bound with the scvm name
+  the context menu, selected tokens can be bound/re-bound with the scvm name
   shown in the token indicator, the top OBR controls stay reachable while the
   embedded sheet scrolls, and GMs can move the room into a durable scvmrack
   party with invite/manage links and manage room-scoped enemy cards from inside
   Owlbear; the enemy tab prepares its room board automatically when needed, and
   player-facing enemy cards open as token popovers instead of inline sheet
-  panels. The OBR manifest and extension entry files are CORS-enabled and
-  non-cacheable for Owlbear installs. OBR and the main party view share the same
-  warband projection for combat modifier filtering and armor DR display.
+  panels. An **Open in scvmrack** button in the panel's top bar (next to
+  Expand/Max) works for anonymous sessions too — a short-lived, one-time
+  `/obr-open` handoff keeps ownership on the embedded session, and blocked or
+  expired links show a retry prompt. The OBR manifest and extension entry files
+  are CORS-enabled and non-cacheable for Owlbear installs. OBR and the main
+  party view share the same warband projection for combat modifier filtering
+  and armor DR display.
 - **GM overview** — `/gm` dashboard to create and open parties; party creation
   keeps the yellow name input legible with black text and validates names at 100
   characters before submit

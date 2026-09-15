@@ -1,4 +1,3 @@
-import { obrAuthClient } from "@/auth/obrAuthClient";
 import OBR, {
   type ContextMenuContext,
   type ContextMenuItem,
@@ -13,7 +12,6 @@ import { ENEMY_META_KEY, getContextEnemyId } from "./enemies";
 import { CHARACTER_META_KEY, EXTENSION_ID, scvmrackObrExtension } from "./extension";
 
 export const VIEW_SCVM_CONTEXT_MENU_ID = `${EXTENSION_ID}/view-scvm`;
-export const OPEN_FULL_SITE_CONTEXT_MENU_ID = `${EXTENSION_ID}/open-full-site`;
 export const SCVM_CARD_POPOVER_ID = `${EXTENSION_ID}/card`;
 export const VIEW_ENEMY_CONTEXT_MENU_ID = `${EXTENSION_ID}/view-enemy`;
 export const ENEMY_CARD_POPOVER_ID = `${EXTENSION_ID}/enemy`;
@@ -26,7 +24,7 @@ const ENEMY_GM_POPOVER_WIDTH = 460;
 const ENEMY_GM_POPOVER_HEIGHT = 680;
 
 export function registerScvmContextMenu(): void {
-  registerObrContextMenus(OBR, [createScvmContextMenu(), createOpenFullSiteContextMenu(), createEnemyContextMenu()]);
+  registerObrContextMenus(OBR, [createScvmContextMenu(), createEnemyContextMenu()]);
 }
 
 export function createScvmContextMenu(): ContextMenuItem {
@@ -61,53 +59,6 @@ export function createScvmContextMenu(): ContextMenuItem {
       });
     },
   };
-}
-export function createOpenFullSiteContextMenu(): ContextMenuItem {
-  return {
-    id: OPEN_FULL_SITE_CONTEXT_MENU_ID,
-    icons: [
-      {
-        icon: "/obr-icon.svg",
-        label: "Open in full site",
-        filter: {
-          roles: ["GM", "PLAYER"],
-          every: [
-            {
-              key: ["metadata", CHARACTER_META_KEY],
-              operator: "!=",
-              value: undefined,
-            },
-          ],
-        },
-      },
-    ],
-    onClick: (context) => {
-      const characterId = getContextCharacterId(context);
-      if (!characterId) return;
-
-      void openFullSite(characterId);
-    },
-  };
-}
-
-async function openFullSite(characterId: string): Promise<void> {
-  try {
-    const token = await obrAuthClient.issueObrExchangeToken();
-    const opened = window.open(
-      `/obr-open?token=${encodeURIComponent(token)}&character=${encodeURIComponent(characterId)}`,
-      "_blank",
-      "noopener,noreferrer",
-    );
-    if (opened) return;
-  } catch {
-    // The same retry message covers token issuance and blocked tabs.
-  }
-
-  await OBR.notification.show(
-    "Could not open a new tab. Allow popups and try Open in full site again.",
-
-    "ERROR",
-  );
 }
 export function createEnemyContextMenu(): ContextMenuItem {
   return {
