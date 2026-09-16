@@ -32,7 +32,11 @@ export default mergeConfig(
   viteConfigWithoutUnitTests,
   defineConfig({
     optimizeDeps: {
-      include: ['@mui/icons-material/WarningAmber'],
+      include: [
+        '@mui/icons-material/WarningAmber',
+        '@sentry/browser',
+        'react-dom/client',
+      ],
     },
     test: {
       name: 'browser',
