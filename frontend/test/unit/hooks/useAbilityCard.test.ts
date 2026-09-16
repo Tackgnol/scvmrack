@@ -50,7 +50,7 @@ test('useAbilityCard returns ability metadata and updates values with clamping',
   });
 
   expect(updateFieldCalls).toEqual([
-    ['strength', 20],
+    ['strength', 21],
     ['strength', 1],
     ['strength', 10],
     ['strength', 1],

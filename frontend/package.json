@@ -1,9 +1,7 @@
 {
   "name": "mork-borg-character-sheet",
   "private": true,
-  "version": "0.6.0",
-  "author": "Adam Kościelniak",
-  "license": "MIT",
+  "version": "0.6.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -42,8 +40,8 @@
     "@mui/icons-material": "^7.3.6",
     "@mui/material": "^7.3.6",
     "@sentry/react": "^10.50.0",
-    "@tackgnol/rpgtools-owlbear": "^0.1.0",
-    "@tackgnol/rpgtools-shared-auth": "^1.6.0",
+    "@tackgnol/rpgtools-owlbear": "^0.1.1",
+    "@tackgnol/rpgtools-shared-auth": "^1.7.1",
     "@tanstack/react-query": "^5.90.16",
     "@tanstack/react-router": "^1.153.2",
     "analytics": "^0.8.19",
@@ -90,5 +88,7 @@
     "vite": "^8.0.10",
     "vitest": "^4.1.8",
     "vitest-browser-react": "^2.1.0"
-  }
+  },
+  "author": "Adam Kościelniak",
+  "license": "MIT"
 }

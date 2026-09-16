@@ -1,14 +1,12 @@
 import { describe, expect, test } from 'vitest';
 
-import { rollToModifier } from '../../../src/inventory/customItems';
+import { statToModifier } from '../../../src/utils/stats';
 
-// Pinned truth table from the SQL function in
-// backend/init/03-functions/dice_and_utils.sql (`roll_to_modifier`).
+// Pinned truth table shared with the backend stat modifier helper.
 //
-// Any change to this table MUST be made in lock-step with the SQL ladder.
 // The TS port is kept around purely so consumable pip counts can be previewed
 // before save — server stays the source of truth for derived modifiers.
-const SQL_LADDER: Array<{ score: number; expected: number }> = [
+const MODIFIER_LADDER: Array<{ score: number; expected: number }> = [
   // Lower bound of the ≤ 4 band
   { score: -5, expected: -3 },
   { score: 0, expected: -3 },
@@ -29,22 +27,29 @@ const SQL_LADDER: Array<{ score: number; expected: number }> = [
   // ≤ 16
   { score: 15, expected: 2 },
   { score: 16, expected: 2 },
-  // else
+  // ≤ 18
   { score: 17, expected: 3 },
-  { score: 30, expected: 3 },
+  { score: 18, expected: 3 },
+  // ≤ 19
+  { score: 19, expected: 4 },
+  // ≤ 20
+  { score: 20, expected: 5 },
+  // 21+
+  { score: 21, expected: 6 },
+  { score: 30, expected: 6 },
 ];
 
-describe('rollToModifier JS↔SQL parity', () => {
-  test.each(SQL_LADDER)(
+describe('statToModifier parity', () => {
+  test.each(MODIFIER_LADDER)(
     'score $score → $expected',
     ({ score, expected }) => {
-      expect(rollToModifier(score)).toBe(expected);
+      expect(statToModifier(score)).toBe(expected);
     },
   );
 
   test('non-finite input defaults to a presence of 10 (band 0)', () => {
-    expect(rollToModifier(undefined)).toBe(0);
-    expect(rollToModifier(Number.NaN)).toBe(0);
-    expect(rollToModifier(Infinity)).toBe(0);
+    expect(statToModifier(undefined)).toBe(0);
+    expect(statToModifier(Number.NaN)).toBe(0);
+    expect(statToModifier(Infinity)).toBe(0);
   });
 });

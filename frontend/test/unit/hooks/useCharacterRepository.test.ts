@@ -1,7 +1,7 @@
 import { renderHook } from '@testing-library/react';
 import { beforeEach, expect, test, vi } from 'vitest';
 import { useCharacterRepository } from '../../../src/hooks/useCharacterRepository.ts';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQueryClient } from '@tanstack/react-query';
 
 // Mock the API client
 const apiMocks = vi.hoisted(() => ({
@@ -65,6 +65,34 @@ test('useCharacterRepository returns character data and loading state', () => {
         })
     }),
     expect.any(Object)
+  );
+});
+
+test('REGRESSION: keeps the previous locale data visible while a locale switch refetches (RPG-56/RPG-64)', () => {
+  const queryClient = {
+    setQueryData: vi.fn(),
+    invalidateQueries: vi.fn(),
+    cancelQueries: vi.fn(),
+    getQueryData: vi.fn(),
+    removeQueries: vi.fn(),
+  };
+  (useQueryClient as any).mockReturnValue(queryClient);
+
+  apiMocks.useQuery.mockReturnValue({
+    data: { id: 'char-123', name: 'Test' },
+    isLoading: false,
+    error: null,
+  });
+  apiMocks.useMutation.mockReturnValue({});
+  (useMutation as any).mockReturnValue({});
+
+  renderHook(() => useCharacterRepository('char-123', 'pl'));
+
+  expect(apiMocks.useQuery).toHaveBeenCalledWith(
+    'get',
+    '/api/characters/{id}',
+    expect.any(Object),
+    expect.objectContaining({ placeholderData: keepPreviousData })
   );
 });
 

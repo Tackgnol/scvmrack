@@ -1,6 +1,6 @@
 import { Box, ButtonBase, Typography } from '@mui/material';
 import { useTranslation } from 'react-i18next';
-import { rollToModifier } from '@/inventory/customItems';
+import { statToModifier } from '@/utils/stats';
 import type { AbilityStat, ClasslessStatOption } from '@/api/draft';
 import { DraftSection, type SectionProps } from './DraftSection';
 import { morkBorgColors } from '@/theme/morkBorgTheme';
@@ -100,7 +100,7 @@ function ScatterDie({ value, index, selected }: { value: number; index: number; 
 }
 
 function toModifierLabel(value: number): string {
-  const mod = rollToModifier(value);
+  const mod = statToModifier(value);
   return mod >= 0 ? `+${mod}` : `${mod}`;
 }
 

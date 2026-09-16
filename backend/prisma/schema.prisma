@@ -191,6 +191,7 @@ model Character {
   party           Party?   @relation(fields: [partyId], references: [id], onDelete: SetNull)
   obrPlayerCharacterBindings ObrPlayerCharacterBinding[]
   obrTokenCharacterBindings  ObrTokenCharacterBinding[]
+  improvements    CharacterImprovement[]
 
   @@index([classId], map: "idx_characters_class")
   @@index([createdAt], map: "idx_characters_created")
@@ -198,6 +199,24 @@ model Character {
   @@index([userId], map: "idx_characters_user_id")
   @@index([partyId], map: "idx_characters_party_id")
   @@map("characters")
+}
+
+model CharacterImprovement {
+  id           String    @id @default(uuid()) @db.Uuid
+  characterId  String    @map("character_id") @db.Uuid
+  sequence     Int
+  rolledDraft  Json      @map("rolled_draft")
+  applied      Json?
+  snapshotHash String    @map("snapshot_hash") @db.VarChar(128)
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  appliedAt    DateTime? @map("applied_at")
+
+  character Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+
+  @@unique([characterId, sequence])
+  @@index([characterId, appliedAt])
+  @@map("character_improvements")
 }
 
 model Enemy {

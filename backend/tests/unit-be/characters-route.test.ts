@@ -71,10 +71,14 @@ const draftCalls: Array<{
 }> = [];
 const rerollCalls: Array<{ session: unknown; draft: unknown; section: string; locale: string }> = [];
 const listClassCalls: Array<{ locale: string }> = [];
+const improvementCalls: Array<{ method: string; input: Record<string, unknown> }> = [];
 const updateCalls: unknown[] = [];
 const getFullCalls: Array<{ id: string; locale: string }> = [];
 let currentSession: Session = null;
 let getFullResult: Record<string, unknown> | null = fullCharacter;
+let improvementPreviewResult: unknown;
+let improvementRerollResult: unknown;
+let improvementApplyResult: unknown;
 
 function resetState(): void {
   generateCalls.length = 0;
@@ -82,11 +86,15 @@ function resetState(): void {
   draftCalls.length = 0;
   rerollCalls.length = 0;
   listClassCalls.length = 0;
+  improvementCalls.length = 0;
   updateCalls.length = 0;
   getFullCalls.length = 0;
   currentSession = null;
   getFullResult = fullCharacter;
   draftResult = defaultDraftResult();
+  improvementPreviewResult = { ok: true, value: defaultImprovementPreview() };
+  improvementRerollResult = { ok: true, value: defaultImprovementPreview() };
+  improvementApplyResult = { ok: true, value: fullCharacter };
 }
 
 const validSeeds = Object.fromEntries(
@@ -112,6 +120,68 @@ function defaultDraftResult(): DraftServiceResult {
       id: null,
       classId: 1,
     },
+  };
+}
+
+function defaultAbilityImprovement(fromScore = 10) {
+  return {
+    roll: { source: 'server', total: 2 },
+    fromScore,
+    fromModifier: 0,
+    toModifier: 1,
+    toScore: 13,
+    outcome: 'increase',
+  };
+}
+
+function defaultImprovementDraft() {
+  return {
+    sequence: 1,
+    snapshot: {
+      characterUpdatedAt: '2026-03-01T10:00:00.000Z',
+      maxHp: 4,
+      silver: 30,
+      abilities: {
+        strength: 10,
+        agility: 10,
+        presence: 10,
+        toughness: 10,
+      },
+      abilityKeys: [],
+      equipmentFingerprint: 'empty-equipment',
+      snapshotHash: 'snapshot-hash',
+    },
+    hp: {
+      check: { source: 'server', total: 10 },
+      fromMaxHp: 4,
+      succeeds: true,
+      increase: { source: 'server', total: 2 },
+      toMaxHp: 6,
+    },
+    debris: {
+      roll: { source: 'server', total: 1 },
+      kind: 'nothing',
+    },
+    abilities: {
+      strength: defaultAbilityImprovement(),
+      agility: defaultAbilityImprovement(),
+      presence: defaultAbilityImprovement(),
+      toughness: defaultAbilityImprovement(),
+    },
+    scumSpecialties: { kind: 'notScum' },
+  };
+}
+
+function defaultImprovementPreview() {
+  return {
+    id: 'd24ac091-af57-47b8-9a1f-003cf4f274b9',
+    characterId: generatedCharacterId,
+    sequence: 1,
+    rolledDraft: defaultImprovementDraft(),
+    scumSpecialtyNames: {},
+    snapshotHash: 'snapshot-hash',
+    createdAt: '2026-03-01T10:00:00.000Z',
+    updatedAt: '2026-03-01T10:00:00.000Z',
   };
 }
 
@@ -200,6 +270,25 @@ mock.module('../../src/services/character-draft-service.js', {
           ok: true,
           value: [{ id: 1, name: 'Gutterborn Scvm', description: null }],
         };
+      },
+    }),
+  },
+});
+
+mock.module('../../src/services/character-improvement-service.js', {
+  namedExports: {
+    createCharacterImprovementService: () => ({
+      getOrCreatePreview: async (input: Record<string, unknown>) => {
+        improvementCalls.push({ method: 'preview', input });
+        return improvementPreviewResult;
+      },
+      rerollSection: async (input: Record<string, unknown>) => {
+        improvementCalls.push({ method: 'reroll', input });
+        return improvementRerollResult;
+      },
+      apply: async (input: Record<string, unknown>) => {
+        improvementCalls.push({ method: 'apply', input });
+        return improvementApplyResult;
       },
     }),
   },
@@ -452,6 +541,163 @@ test('POST /new requires a session before generation runs', async () => {
   assert.deepEqual(generateCalls, []);
   assert.deepEqual(updateCalls, []);
   assert.deepEqual(getFullCalls, []);
+
+  await app.close();
+});
+
+test('POST /:id/improvements/preview forwards character id and session', async () => {
+  resetState();
+  currentSession = { user: { id: 'user-1' } };
+  improvementPreviewResult = {
+    ok: true,
+    value: {
+      ...defaultImprovementPreview(),
+      scumSpecialtyNames: { 'abilities.gutterborn_scum.jab': 'Frajerskie Dźgnięcie' },
+    },
+  };
+  const app = await buildApp();
+
+  const response = await app.inject({
+    method: 'POST',
+    url: `/${generatedCharacterId}/improvements/preview?locale=pl`,
+  });
+
+  assert.equal(response.statusCode, 200);
+  assert.equal(response.json().id, 'd24ac091-af57-47b8-9a1f-003cf4f274b9');
+  assert.equal(
+    response.json().scumSpecialtyNames['abilities.gutterborn_scum.jab'],
+    'Frajerskie Dźgnięcie'
+  );
+  assert.equal(improvementCalls[0].method, 'preview');
+  assert.equal(improvementCalls[0].input.id, generatedCharacterId);
+  assert.deepEqual(improvementCalls[0].input.session, currentSession);
+  assert.equal(improvementCalls[0].input.rawLocale, 'pl');
+
+  await app.close();
+});
+
+test('POST /:id/improvements/:improvementId/reroll/:section rejects unknown sections', async () => {
+  resetState();
+  currentSession = { user: { id: 'user-1' } };
+  const app = await buildApp();
+
+  const response = await app.inject({
+    method: 'POST',
+    url: `/${generatedCharacterId}/improvements/d24ac091-af57-47b8-9a1f-003cf4f274b9/reroll/luck`,
+  });
+
+  assert.equal(response.statusCode, 400);
+  assert.deepEqual(improvementCalls, []);
+
+  await app.close();
+});
+
+test('POST /:id/improvements/:improvementId/reroll/:section forwards reroll section', async () => {
+  resetState();
+  currentSession = { user: { id: 'user-1' } };
+  const app = await buildApp();
+
+  const response = await app.inject({
+    method: 'POST',
+    url: `/${generatedCharacterId}/improvements/d24ac091-af57-47b8-9a1f-003cf4f274b9/reroll/abilities?locale=en`,
+  });
+
+  assert.equal(response.statusCode, 200);
+  assert.equal(improvementCalls[0].method, 'reroll');
+  assert.equal(improvementCalls[0].input.id, generatedCharacterId);
+  assert.equal(improvementCalls[0].input.improvementId, 'd24ac091-af57-47b8-9a1f-003cf4f274b9');
+  assert.equal(improvementCalls[0].input.section, 'abilities');
+  assert.deepEqual(improvementCalls[0].input.session, currentSession);
+  assert.equal(improvementCalls[0].input.rawLocale, 'en');
+
+  await app.close();
+});
+
+test('POST /:id/improvements/:improvementId/apply maps service conflicts', async () => {
+  resetState();
+  currentSession = { user: { id: 'user-1' } };
+  improvementApplyResult = {
+    ok: false,
+    error: {
+      statusCode: 409,
+      code: 'STALE_IMPROVEMENT_PREVIEW',
+      message: 'The character changed after this preview was rolled',
+    },
+  };
+  const app = await buildApp();
+
+  const response = await app.inject({
+    method: 'POST',
+    url: `/${generatedCharacterId}/improvements/d24ac091-af57-47b8-9a1f-003cf4f274b9/apply?locale=pl`,
+    payload: { draft: defaultImprovementDraft() },
+  });
+
+  assert.equal(response.statusCode, 409);
+  assert.equal(response.json().code, 'STALE_IMPROVEMENT_PREVIEW');
+  assert.equal(improvementCalls[0].method, 'apply');
+  assert.equal(improvementCalls[0].input.rawLocale, 'pl');
+
+  await app.close();
+});
+
+test('POST /:id/improvements/:improvementId/apply accepts populated improvement variants', async () => {
+  resetState();
+  currentSession = { user: { id: 'user-1' } };
+  const app = await buildApp();
+  const draft = {
+    ...defaultImprovementDraft(),
+    debris: {
+      roll: { source: 'table', total: 4 },
+      kind: 'silver',
+      silver: { source: 'table', total: 3 },
+      amount: 3,
+    },
+    scumSpecialties: {
+      kind: 'firstImprovement',
+      existing: { key: 'old-specialty', rollValue: 1 },
+      added: {
+        key: 'new-specialty',
+        rollValue: 2,
+        roll: { source: 'table', total: 2 },
+      },
+    },
+  };
+
+  const response = await app.inject({
+    method: 'POST',
+    url: `/${generatedCharacterId}/improvements/d24ac091-af57-47b8-9a1f-003cf4f274b9/apply?locale=en`,
+    payload: { draft },
+  });
+
+  assert.equal(response.statusCode, 200);
+  assert.deepEqual(improvementCalls[0].input.draft, draft);
+
+  await app.close();
+});
+
+test('POST /:id/improvements/:improvementId/apply rejects fields from another improvement variant', async () => {
+  resetState();
+  currentSession = { user: { id: 'user-1' } };
+  const app = await buildApp();
+
+  const response = await app.inject({
+    method: 'POST',
+    url: `/${generatedCharacterId}/improvements/d24ac091-af57-47b8-9a1f-003cf4f274b9/apply?locale=en`,
+    payload: {
+      draft: {
+        ...defaultImprovementDraft(),
+        debris: {
+          roll: { source: 'table', total: 1 },
+          kind: 'nothing',
+          silver: { source: 'table', total: 3 },
+          amount: 3,
+        },
+      },
+    },
+  });
+
+  assert.equal(response.statusCode, 400);
+  assert.deepEqual(improvementCalls, []);
 
   await app.close();
 });

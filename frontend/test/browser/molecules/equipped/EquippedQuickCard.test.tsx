@@ -71,6 +71,29 @@ describe('EquippedQuickCard Browser', () => {
 
   });
 
+  it('does not pulse the info control when clicked, unlike the ammo peg (RPG-58)', async () => {
+    await render(
+      <BrowserTestProvider>
+        <EquippedQuickCard
+          {...defaultProps}
+          description="A fine blade"
+          ammoCount={10}
+          onAmmoUse={vi.fn()}
+          dataTestId="equipped-weapon"
+        />
+      </BrowserTestProvider>
+    );
+
+    const infoPeg = page.getByText('i', { exact: true });
+    const ammoPeg = page.getByTestId('equipped-weapon-ammo');
+
+    await userEvent.hover(infoPeg);
+    expect(getComputedStyle(infoPeg.element()!).transform).toBe('none');
+
+    await userEvent.hover(ammoPeg);
+    expect(getComputedStyle(ammoPeg.element()!).transform).not.toBe('none');
+  });
+
   it('handles keyboard interaction (Space/Enter) when onClick provided', async () => {
     const onClick = vi.fn();
     await render(

@@ -34,6 +34,7 @@ vi.mock('@/router/navigation', () => ({
   hasCurrentSearchParam: vi.fn().mockReturnValue(false),
   navigateToLoggedOut: vi.fn(),
   SESSION_EXPIRED_QUERY_PARAM: 'expired',
+  OBR_EXCHANGE_TOKEN_QUERY_PARAM: 'obrExchangeToken',
 }));
 
 vi.mock('@/router/history', () => ({
@@ -228,6 +229,30 @@ test('useAuth skips anonymous bootstrap on invite routes by default', () => {
   const queryClient = { invalidateQueries: vi.fn(), setQueryData: vi.fn() };
   (useQueryClient as any).mockReturnValue(queryClient);
   (appHistory as any).location = { pathname: '/join/tok123' };
+
+  (useQuery as any).mockImplementation((options: any) => {
+    const { queryKey } = options;
+    if (queryKey.includes('session')) {
+      return { data: null, isLoading: false };
+    }
+    if (queryKey.includes('anonymous-bootstrap')) {
+      expect(options.enabled).toBe(false);
+      return { isFetching: false };
+    }
+    return { isLoading: false, data: null };
+  });
+
+  renderHook(() => useAuth());
+
+  expect(signInAnonymous).not.toHaveBeenCalled();
+});
+
+test('useAuth skips anonymous bootstrap while an obr-exchange token is pending (RPG-57)', () => {
+  const queryClient = { invalidateQueries: vi.fn(), setQueryData: vi.fn() };
+  (useQueryClient as any).mockReturnValue(queryClient);
+  (hasCurrentSearchParam as any).mockImplementation(
+    (param: string) => param === 'obrExchangeToken'
+  );
 
   (useQuery as any).mockImplementation((options: any) => {
     const { queryKey } = options;

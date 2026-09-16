@@ -24,6 +24,7 @@ const routeMocks = vi.hoisted(() => ({
   promoteRoom: vi.fn(),
   setCharacterId: vi.fn(),
   signIn: vi.fn(),
+  issueObrExchangeToken: vi.fn(),
   useCharacter: vi.fn(),
   useObrSession: vi.fn(),
   useObrRoomParty: vi.fn(),
@@ -31,6 +32,7 @@ const routeMocks = vi.hoisted(() => ({
   usePartyLimits: vi.fn(),
   usePartyList: vi.fn(),
   useAttachObrRoom: vi.fn(),
+  useKickPartyMember: vi.fn(() => ({ mutateAsync: vi.fn() })),
 }));
 
 const clipboardWriteText = vi.fn<() => Promise<void>>(() => Promise.resolve());
@@ -251,6 +253,7 @@ vi.mock("@/hooks/usePartyRepository", () => ({
   usePartyLimits: routeMocks.usePartyLimits,
   usePartyList: routeMocks.usePartyList,
   useAttachObrRoom: routeMocks.useAttachObrRoom,
+  useKickPartyMember: routeMocks.useKickPartyMember,
 }));
 
 vi.mock("@/components/organisms/CharacterSheet", () => ({
@@ -360,6 +363,7 @@ describe("ObrCharacterRoute", () => {
     obrApiMock.claimAssignedObrCharacter.mockRejectedValue(
       new Error("no OBR player assignment"),
     );
+    routeMocks.issueObrExchangeToken.mockResolvedValue("obr-exchange-token");
     clipboardWriteText.mockResolvedValue(undefined);
     Object.defineProperty(navigator, "clipboard", {
       configurable: true,
@@ -369,6 +373,7 @@ describe("ObrCharacterRoute", () => {
       isLoading: false,
       isAuthenticated: false,
       signIn: routeMocks.signIn,
+      issueObrExchangeToken: routeMocks.issueObrExchangeToken,
     });
     routeMocks.usePromoteObrRoom.mockReturnValue({
       data: null,
@@ -701,6 +706,57 @@ describe("ObrCharacterRoute", () => {
         [PLAYER_CHARACTER_META_KEY]: "f15c7ec3-dad2-4f65-8b69-0f1f642c7d29",
         [PLAYER_NAME_META_KEY]: "Adam",
       });
+  });
+
+  it("opens a new scvmrack tab with an obr-exchange token for an authenticated player (RPG-57)", async () => {
+    routeMocks.role = "PLAYER";
+    routeMocks.useObrSession.mockReturnValue({
+      isLoading: false,
+      isAuthenticated: true,
+      signIn: routeMocks.signIn,
+      issueObrExchangeToken: routeMocks.issueObrExchangeToken,
+    });
+    mockCharacter({
+      id: "f15c7ec3-dad2-4f65-8b69-0f1f642c7d29",
+      name: "Karg",
+      updatedAt: "2026-06-27T12:00:00.000Z",
+    });
+    const windowOpen = vi.spyOn(window, "open").mockReturnValue(null);
+
+    await renderRoute();
+
+    await userEvent.click(
+      page.getByRole("button", { name: "Open in scvmrack" }),
+    );
+
+    await expect
+      .poll(() => routeMocks.issueObrExchangeToken)
+      .toHaveBeenCalled();
+    await expect
+      .poll(() => windowOpen)
+      .toHaveBeenCalledWith(
+        "/character/f15c7ec3-dad2-4f65-8b69-0f1f642c7d29?obrExchangeToken=obr-exchange-token",
+        "_blank",
+        "noopener,noreferrer",
+      );
+
+    windowOpen.mockRestore();
+  });
+
+  it("does not offer to open in scvmrack for an unauthenticated player", async () => {
+    routeMocks.role = "PLAYER";
+    mockCharacter({
+      id: "f15c7ec3-dad2-4f65-8b69-0f1f642c7d29",
+      name: "Karg",
+      updatedAt: "2026-06-27T12:00:00.000Z",
+    });
+
+    await renderRoute();
+
+    await expect.element(page.getByText("Player sheet")).toBeVisible();
+    await expect
+      .element(page.getByRole("button", { name: "Open in scvmrack" }))
+      .not.toBeInTheDocument();
   });
 
   it("disables OBR token binding until a token is selected", async () => {

@@ -4,7 +4,7 @@ import { PathsApiCharactersIdGetParametersQueryLocale } from "@/api/schema.ts";
 import { CharacterResponse } from "@/hooks/models.ts";
 import { getApiLocale, getCharacterKey } from "@/hooks/utils.ts";
 import { getApiErrorStatus, toApiClientError } from '@/utils/errorUtils';
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQueryClient } from "@tanstack/react-query";
 
 export function useCharacterRepository(
     characterId: string | null,
@@ -27,6 +27,11 @@ export function useCharacterRepository(
         },
         {
             enabled: queryEnabled && !!characterId,
+            // The query key bakes in `locale` (see getCharacterKey), so switching
+            // locale looks like a brand-new query. Without this, `.data` reverts
+            // to undefined for the refetch, blanking the sheet and racing
+            // useCharacterEditor's pending patch queue (RPG-56/RPG-64).
+            placeholderData: keepPreviousData,
             // Don't retry client errors (e.g. 404 for a just-deleted character,
             // 403 access denied) — retrying can't fix them and only spams 404s.
             retry: (failureCount, error) => {

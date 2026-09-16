@@ -16,9 +16,19 @@ import {
     RerollBodySchema,
     RerollParamsSchema,
 } from '../../schemas/draft.js';
+import {
+    ImprovementApplyRouteSchema,
+    ImprovementPreviewRouteSchema,
+    ImprovementRerollRouteSchema,
+} from '../../schemas/character-improvement.js';
+import type { ImprovementDraft } from '../../lib/getting-better.js';
 import { sendServiceError } from '../../errors.js';
 import { readObrCharacterAccessHeaders } from '../../lib/obr-character-access.js';
 import { createCharacterDraftService } from '../../services/character-draft-service.js';
+import {
+    createCharacterImprovementService,
+    type ImprovementRerollSection,
+} from '../../services/character-improvement-service.js';
 import { createCharacterService } from '../../services/character-service.js';
 
 type CharacterTypeProvider = JsonSchemaToTsProvider<{
@@ -234,6 +244,111 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
                 session: request.appSession,
                 locale: request.query.locale ?? 'en',
                 obrAccess: readObrCharacterAccessHeaders(request.headers),
+            });
+
+            if (!result.ok) {
+                return sendServiceError(reply, request, result.error);
+            }
+            return result.value;
+        }
+    );
+
+    // POST /:id/improvements/preview - Get or create active Getting Better preview.
+    fastify.post<{
+        Params: { id: string };
+        Querystring: { locale?: string };
+    }>(
+        '/:id/improvements/preview',
+        {
+            config: {
+                rateLimit: {
+                    max: process.env.NODE_ENV === 'test' ? 10000 : 30,
+                    timeWindow: '1 minute',
+                },
+            },
+            schema: ImprovementPreviewRouteSchema,
+        },
+        async (request, reply) => {
+            const result = await createCharacterImprovementService(
+                request.log,
+                request.server.partyBus
+            ).getOrCreatePreview({
+                id: request.params.id,
+                session: request.appSession,
+                rawLocale: request.query.locale,
+            });
+
+            if (!result.ok) {
+                return sendServiceError(reply, request, result.error);
+            }
+            return result.value;
+        }
+    );
+
+    // POST /:id/improvements/:improvementId/reroll/:section - Reroll preview section.
+    fastify.post<{
+        Params: {
+            id: string;
+            improvementId: string;
+            section: ImprovementRerollSection;
+        };
+        Querystring: { locale?: string };
+    }>(
+        '/:id/improvements/:improvementId/reroll/:section',
+        {
+            config: {
+                rateLimit: {
+                    max: process.env.NODE_ENV === 'test' ? 10000 : 30,
+                    timeWindow: '1 minute',
+                },
+            },
+            schema: ImprovementRerollRouteSchema,
+        },
+        async (request, reply) => {
+            const result = await createCharacterImprovementService(
+                request.log,
+                request.server.partyBus
+            ).rerollSection({
+                id: request.params.id,
+                improvementId: request.params.improvementId,
+                section: request.params.section,
+                session: request.appSession,
+                rawLocale: request.query.locale,
+            });
+
+            if (!result.ok) {
+                return sendServiceError(reply, request, result.error);
+            }
+            return result.value;
+        }
+    );
+
+    // POST /:id/improvements/:improvementId/apply - Apply a Getting Better draft.
+    fastify.post<{
+        Params: { id: string; improvementId: string };
+        Body: { draft: ImprovementDraft };
+        Querystring: { locale?: string };
+    }>(
+        '/:id/improvements/:improvementId/apply',
+        {
+            config: {
+                rateLimit: {
+                    max: process.env.NODE_ENV === 'test' ? 10000 : 30,
+                    timeWindow: '1 minute',
+                },
+            },
+            schema: ImprovementApplyRouteSchema,
+        },
+        async (request, reply) => {
+            const result = await createCharacterImprovementService(
+                request.log,
+                request.server.partyBus
+            ).apply({
+                id: request.params.id,
+                improvementId: request.params.improvementId,
+                draft: request.body.draft,
+                session: request.appSession,
+                rawLocale: request.query.locale,
             });
 
             if (!result.ok) {

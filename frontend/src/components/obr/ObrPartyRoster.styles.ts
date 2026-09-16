@@ -163,6 +163,10 @@ export const RosterBindingItem = styled("li")({
   flexDirection: "column",
   gap: 8,
   minWidth: 0,
+  "& + &": {
+    paddingTop: 12,
+    borderTop: `2px solid ${partyColors.black}`,
+  },
 });
 
 export const RosterBindingFallback = styled("div")({

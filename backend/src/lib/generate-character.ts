@@ -21,7 +21,8 @@
 import prisma from './prisma.js';
 import { Prisma } from '@prisma/client';
 import type { Roller } from '@tackgnol/rpg-tools-roller';
-import { rollToModifier, sanitizeString } from '../utils.js';
+import { sanitizeString } from '../utils.js';
+import { statToModifier } from './ability-modifiers.js';
 import { hydrateInventoryUses } from './inventory.js';
 import type {
   AbilityStat,
@@ -313,7 +314,7 @@ async function rollStartingItemTableOne(
   equips: EquipRow[],
 ): Promise<PoolItem[]> {
   const roll = await rollDie(12, roller);
-  const mod = rollToModifier(presence);
+  const mod = statToModifier(presence);
 
   switch (roll) {
     case 1:
@@ -437,7 +438,7 @@ async function rollStartingWeapon(
 
   let ammoAmount: number | null = null;
   if (weapon.ammoType === 'Arrow' || weapon.ammoType === 'Bolt') {
-    ammoAmount = Math.max(0, rollToModifier(presence) + (weapon.defaultAmount ?? 0));
+    ammoAmount = Math.max(0, statToModifier(presence) + (weapon.defaultAmount ?? 0));
   } else if (weapon.defaultAmount !== null) {
     ammoAmount = Math.max(0, weapon.defaultAmount);
   }
@@ -751,7 +752,7 @@ export async function buildCharacterData(
     toughness = (await roll3d6(statsRoller)) + (statModifiers.toughness ?? 0);
   }
   const hpRoll = await rollDie(hpDie, statsRoller);
-  const maxHp = Math.max(1, hpRoll + rollToModifier(toughness));
+  const maxHp = Math.max(1, hpRoll + statToModifier(toughness));
 
   // ── Section: omens ───────────────────────────────────────────────────────
   const omens = await rollDie(2, rollerFor('omens'));

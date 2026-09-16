@@ -52,7 +52,9 @@ const sampleCard: ObrCardCharacter = {
 };
 
 const obrApiMock = vi.hoisted(() => ({
-  fetchObrCards: vi.fn(() => Promise.resolve([])),
+  fetchObrCards: vi.fn<() => Promise<import("@/components/obr/ObrCard").ObrCardCharacter[]>>(
+    () => Promise.resolve([]),
+  ),
 }));
 
 const obrMock = vi.hoisted(() => {
@@ -177,6 +179,31 @@ describe("ObrCardRoute", () => {
 
     await expect.element(page.getByRole("status")).toBeVisible();
     await expect.element(page.getByText("NIE ZNALEZIONO SCVM")).toBeVisible();
+  });
+
+  it("REGRESSION: keeps the previous card visible while a locale switch refetches (RPG-56)", async () => {
+    obrApiMock.fetchObrCards.mockResolvedValueOnce([sampleCard]);
+    await renderCard();
+
+    await expect.element(page.getByText("Karg")).toBeVisible();
+
+    let resolveSecondFetch: (cards: ObrCardCharacter[]) => void;
+    obrApiMock.fetchObrCards.mockReturnValueOnce(
+      new Promise<ObrCardCharacter[]>((resolve) => {
+        resolveSecondFetch = resolve;
+      }),
+    );
+
+    await i18n.changeLanguage("pl");
+
+    // The query key is locale-dependent (`["obr","cards",room,ids,locale]`), so
+    // without `placeholderData` this refetch would blank `.data` and briefly
+    // render the loading skeleton instead of the still-valid previous card.
+    await expect.element(page.getByText("Karg")).toBeVisible();
+    await expect.element(page.getByRole("status")).not.toBeInTheDocument();
+
+    resolveSecondFetch!([{ ...sampleCard, name: "Karg PL" }]);
+    await expect.element(page.getByText("Karg PL")).toBeVisible();
   });
 
   it("lets a GM unbind a token when the scvm card is not found", async () => {

@@ -1,6 +1,7 @@
 import { useCharacter } from "@/CharacterContext/CharacterContext";
 import { CharacterSheet } from "@/components/organisms/CharacterSheet";
 import { ObrTokenBar } from "./ObrTokenBar";
+import { ObrOpenInScvmrackButton } from "./ObrOpenInScvmrackButton";
 import { ObrAuthedPicker } from "./ObrAuthedPicker";
 import { ObrGmView } from "./ObrGmView";
 import { ObrUnavailableState } from "./ObrUnavailableState";
@@ -74,7 +75,8 @@ function hasObrReference(): boolean {
 function ObrPlayerCharacterRoute() {
   const { i18n, t } = useTranslation();
   const { character, setCharacterId, generateNew } = useCharacter();
-  const { isLoading, isAuthenticated, signIn } = useObrSession();
+  const { isLoading, isAuthenticated, signIn, issueObrExchangeToken } =
+    useObrSession();
   const queryClient = useQueryClient();
   const locale = getApiLocale<PathsApiCharactersGetParametersQueryLocale>(
     i18n.language,
@@ -256,6 +258,12 @@ function ObrPlayerCharacterRoute() {
               characterId={character.id}
               characterName={character.name ?? "Scvm"}
             />
+            {isAuthenticated && (
+              <ObrOpenInScvmrackButton
+                characterId={character.id}
+                issueObrExchangeToken={issueObrExchangeToken}
+              />
+            )}
           </PlayerToolbar>
         )}
         <CharacterSheet

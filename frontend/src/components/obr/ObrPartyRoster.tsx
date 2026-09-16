@@ -8,6 +8,7 @@ import {
   type ObrConnectedPlayer,
   type ObrPartyRosterBindingRow,
   type ObrPartyRosterCard,
+  type RemoveFromRosterState,
   useObrRosterCards,
 } from "@/obr/useObrRosterCards";
 import {
@@ -41,6 +42,8 @@ type ObrPartyRosterProps = {
   }) => Promise<void>;
   unassignPlayer?: (playerId: string) => Promise<void>;
   unbindToken?: (tokenId: string) => Promise<void>;
+  onRemoveFromRoster?: (characterId: string) => Promise<void>;
+  removeRosterAction?: RemoveFromRosterState;
 };
 
 const FALLBACK_MAX_MEMBERS = 10;
@@ -57,6 +60,8 @@ export function ObrPartyRoster({
   assignPlayer,
   unassignPlayer,
   unbindToken,
+  onRemoveFromRoster,
+  removeRosterAction,
 }: ObrPartyRosterProps) {
   if (cards) {
     return (
@@ -70,6 +75,8 @@ export function ObrPartyRoster({
         assignPlayer={assignPlayer}
         unassignPlayer={unassignPlayer}
         unbindToken={unbindToken}
+        onRemoveFromRoster={onRemoveFromRoster}
+        removeRosterAction={removeRosterAction}
       />
     );
   }
@@ -86,6 +93,8 @@ export function ObrPartyRoster({
         assignPlayer={assignPlayer}
         unassignPlayer={unassignPlayer}
         unbindToken={unbindToken}
+        onRemoveFromRoster={onRemoveFromRoster}
+        removeRosterAction={removeRosterAction}
       />
     );
   }
@@ -107,6 +116,8 @@ function ObrPartyRosterContainer() {
       assignPlayer={roster.assignPlayer}
       unassignPlayer={roster.unassignPlayer}
       unbindToken={roster.unbindToken}
+      onRemoveFromRoster={roster.removeFromRoster}
+      removeRosterAction={roster.removeRosterAction}
       promotion={<ObrRoomPromotion />}
     />
   );
@@ -123,6 +134,8 @@ function ObrPartyRosterView({
   assignPlayer,
   unassignPlayer,
   unbindToken,
+  onRemoveFromRoster,
+  removeRosterAction = null,
 }: {
   rows: ObrPartyRosterBindingRow[];
   maxMembers: number;
@@ -145,6 +158,8 @@ function ObrPartyRosterView({
   }) => Promise<void>;
   unassignPlayer?: (playerId: string) => Promise<void>;
   unbindToken?: (tokenId: string) => Promise<void>;
+  onRemoveFromRoster?: (characterId: string) => Promise<void>;
+  removeRosterAction?: RemoveFromRosterState;
 }) {
   const { t } = useTranslation();
 
@@ -175,6 +190,11 @@ function ObrPartyRosterView({
       {action?.error && (
         <RosterActionMessage role="alert">{action.error}</RosterActionMessage>
       )}
+      {removeRosterAction?.error && (
+        <RosterActionMessage role="alert">
+          {removeRosterAction.error}
+        </RosterActionMessage>
+      )}
 
       {rows.length > 0 ? (
         <RosterList aria-label="Bound scvm cards">
@@ -188,6 +208,11 @@ function ObrPartyRosterView({
               assignPlayer={assignPlayer}
               unassignPlayer={unassignPlayer}
               unbindToken={unbindToken}
+              onRemoveFromRoster={onRemoveFromRoster}
+              removingFromRoster={
+                removeRosterAction?.pending &&
+                removeRosterAction.characterId === row.characterId
+              }
             />
           ))}
         </RosterList>
@@ -211,6 +236,8 @@ function RosterBindingListItem({
   assignPlayer,
   unassignPlayer,
   unbindToken,
+  onRemoveFromRoster,
+  removingFromRoster = false,
 }: {
   row: ObrPartyRosterBindingRow;
   connectedPlayers: ObrConnectedPlayer[];
@@ -226,6 +253,8 @@ function RosterBindingListItem({
   }) => Promise<void>;
   unassignPlayer?: (playerId: string) => Promise<void>;
   unbindToken?: (tokenId: string) => Promise<void>;
+  onRemoveFromRoster?: (characterId: string) => Promise<void>;
+  removingFromRoster?: boolean;
 }) {
   const { t } = useTranslation();
   const characterName =
@@ -235,6 +264,7 @@ function RosterBindingListItem({
     });
   const assignedPlayerId = row.players[0]?.playerId ?? null;
   const canBindToken = Boolean(bindSelectedToken);
+  const canRemoveFromRoster = Boolean(onRemoveFromRoster);
   const hasGmControls = Boolean(assignPlayer || unassignPlayer || unbindToken);
   const gmControls: ComponentProps<typeof ObrBindingControls> | null =
     hasGmControls
@@ -263,21 +293,34 @@ function RosterBindingListItem({
         </>
       )}
 
-      {canBindToken && (
+      {(canBindToken || canRemoveFromRoster) && (
         <RosterBindingActions>
-          <RosterBindingButton
-            type="button"
-            disabled={pending}
-            onClick={() =>
-              void bindSelectedToken?.({
-                characterId: row.characterId,
-                characterName,
-                playerId: assignedPlayerId,
-              })
-            }
-          >
-            {t("obr.roster.bindSelectedToken", "Bind selected token")}
-          </RosterBindingButton>
+          {canBindToken && (
+            <RosterBindingButton
+              type="button"
+              disabled={pending}
+              onClick={() =>
+                void bindSelectedToken?.({
+                  characterId: row.characterId,
+                  characterName,
+                  playerId: assignedPlayerId,
+                })
+              }
+            >
+              {t("obr.roster.bindSelectedToken", "Bind selected token")}
+            </RosterBindingButton>
+          )}
+          {canRemoveFromRoster && (
+            <RosterBindingButton
+              type="button"
+              disabled={pending || removingFromRoster}
+              onClick={() => void onRemoveFromRoster?.(row.characterId)}
+            >
+              {removingFromRoster
+                ? t("obr.roster.removingFromRoster", "Removing")
+                : t("obr.roster.removeFromRoster", "Remove from roster")}
+            </RosterBindingButton>
+          )}
         </RosterBindingActions>
       )}
     </RosterBindingItem>

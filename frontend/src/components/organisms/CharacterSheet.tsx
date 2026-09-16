@@ -17,14 +17,17 @@ import {
     SummaryBar,
 } from '@/components';
 import { SectionAccordion } from '@/components/molecules/character/SectionAccordion';
+import GettingBetterPanel from '@/components/organisms/getting-better/GettingBetterPanel';
 import {
     isConsumableUseItem,
     isPetItem,
     isScrollItem,
 } from '@/hooks/useEquipmentSections';
+import { useGettingBetterPreview } from '@/hooks/useGettingBetterPreview';
 import { customStyles } from '@/theme/morkBorgTheme';
-import { Box, Typography, useMediaQuery, useTheme } from '@mui/material';
+import { Box, Button, Typography, useMediaQuery, useTheme } from '@mui/material';
 import { keyframes } from '@mui/system';
+import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const sheetImpactAnimation = keyframes`
@@ -48,6 +51,27 @@ const sheetImpactAnimation = keyframes`
     }
 `;
 
+const gettingBetterReveal = keyframes`
+    0% {
+        grid-template-rows: 0fr;
+        opacity: 0;
+        transform: translateY(-12px);
+    }
+    55% {
+        opacity: 1;
+    }
+    100% {
+        grid-template-rows: 1fr;
+        opacity: 1;
+        transform: translateY(0);
+    }
+`;
+
+const gettingBetterReducedReveal = keyframes`
+    from { opacity: 0.65; }
+    to { opacity: 1; }
+`;
+
 type CharacterSheetProps = {
     stamping: boolean;
     onGenerateNew: () => void;
@@ -62,7 +86,7 @@ export function CharacterSheet({
     readOnly = false,
 }: CharacterSheetProps) {
     const { t } = useTranslation();
-    const { character, isAuthenticated } = useCharacter();
+    const { character, isAuthenticated, locale } = useCharacter();
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
     const prefersReducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
@@ -74,6 +98,25 @@ export function CharacterSheet({
     const hasBackpack = (character?.storage ?? []).length > 0;
     const defaultExpanded = !isMobile;
     const animateImpact = stamping && !prefersReducedMotion;
+    const gettingBetter = useGettingBetterPreview({
+        characterId: character?.id ?? null,
+        locale,
+    });
+    const gettingBetterReady = Boolean(gettingBetter.workingDraft);
+    const gettingBetterPanelRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (!gettingBetter.isOpen || !gettingBetterReady) return;
+
+        const frame = requestAnimationFrame(() => {
+            gettingBetterPanelRef.current?.scrollIntoView({
+                behavior: prefersReducedMotion ? 'auto' : 'smooth',
+                block: 'start',
+            });
+        });
+
+        return () => cancelAnimationFrame(frame);
+    }, [gettingBetter.isOpen, gettingBetterReady, prefersReducedMotion]);
 
     return (
         <Box
@@ -93,8 +136,52 @@ export function CharacterSheet({
                 <EquippedBar />
             </Box>
             <Box>
-                <CharacterNameAndClass />
+                <CharacterNameAndClass
+                    classAction={
+                        !readOnly && character?.id && !gettingBetter.isOpen ? (
+                            <Button
+                                data-testid="get-better-button"
+                                onClick={gettingBetter.open}
+                                sx={{
+                                    ...customStyles.buttons.action,
+                                    minHeight: 44,
+                                }}
+                            >
+                                {t('gettingBetter.actions.open', 'Get better')}
+                            </Button>
+                        ) : undefined
+                    }
+                />
             </Box>
+            {!readOnly && character?.id && (
+                <Box className="print-hidden" sx={{ mb: 2.5 }}>
+                    {gettingBetter.isOpen && (
+                        <Box
+                            ref={gettingBetterPanelRef}
+                            sx={{ scrollMarginTop: { xs: 2, sm: 3 } }}
+                        >
+                            <Box
+                                sx={
+                                    gettingBetterReady
+                                        ? {
+                                            display: 'grid',
+                                            gridTemplateRows: '1fr',
+                                            transformOrigin: 'top center',
+                                            animation: prefersReducedMotion
+                                                ? `${gettingBetterReducedReveal} 140ms ease-out`
+                                                : `${gettingBetterReveal} 480ms cubic-bezier(0.4, 0, 0.2, 1)`,
+                                        }
+                                        : undefined
+                                }
+                            >
+                                <Box sx={{ minHeight: 0, overflow: 'hidden' }}>
+                                    <GettingBetterPanel controller={gettingBetter} />
+                                </Box>
+                            </Box>
+                        </Box>
+                    )}
+                </Box>
+            )}
             <Abilities />
             <CharacterDescriptors />
 

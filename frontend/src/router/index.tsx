@@ -44,10 +44,15 @@ const characterCreateRoute = createRoute({
     component: CharacterCreatePage,
 });
 
+// Wrapped (not the bare CharacterPage) so a tab opened via ObrCharacterRoute's
+// "Open in scvmrack" button can redeem its obrExchangeToken before the
+// character load path runs — see ObrExchangeRedeemGate.
 const characterIdRoute = createRoute({
     getParentRoute: () => rootRoute,
     path: '/character/$characterId',
-    component: lazyRouteComponent(() => import('@/pages/CharacterPage').then(m => ({ default: m.CharacterPage }))),
+    component: lazyRouteComponent(() =>
+        import('@/components/obr/ObrExchangeRedeemGate').then(m => ({ default: m.ObrExchangeRedeemGate }))
+    ),
 });
 
 const charactersRoute = createRoute({
@@ -117,8 +122,15 @@ const gmRoute = createRoute({
     component: lazyRouteComponent(() => import('@/pages/GmOverviewPage').then(m => ({ default: m.GmOverviewPage }))),
 });
 
-// Popup callback for Owlbear Rodeo sign-in. Hands a one-time obr-exchange token
-// back to the OBR iframe, then closes. See ObrAuthDonePage / useObrSession.
+// Carries the OBR iframe's session into a new first-party character tab.
+const obrOpenRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: '/obr-open',
+    component: lazyRouteComponent(() => import('@/pages/ObrOpenPage').then(m => ({ default: m.ObrOpenPage }))),
+});
+
+
+// Popup callback for Owlbear Rodeo sign-in. Hands the token back, then closes.
 const obrAuthDoneRoute = createRoute({
     getParentRoute: () => rootRoute,
     path: OBR_AUTH_DONE_PATH,
@@ -144,6 +156,7 @@ const routeTree = rootRoute.addChildren([
     owlbearRoute,
     gmRoute,
     obrAuthDoneRoute,
+    obrOpenRoute,
 ]);
 
 export const router = createRouter({
