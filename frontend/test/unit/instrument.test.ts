@@ -64,7 +64,7 @@ describe("instrument", () => {
         dsn: "https://dsn.example.test/1",
         tunnel: "https://api.example.test/api/tunnel",
         environment: "mydevil",
-        release: "scvmrack@0.6.0",
+        release: "scvmrack@0.6.1",
         tracesSampleRate: 0.2,
         initialScope: { tags: { source: "frontend" } },
         beforeSend: expect.any(Function),

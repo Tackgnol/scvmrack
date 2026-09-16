@@ -142,6 +142,31 @@ describe("ObrPartyRoster", () => {
       .toBeVisible();
   });
 
+  it("shows a divider between adjacent scvm entries but not above the first (RPG-59)", async () => {
+    await render(
+      <BrowserTestProvider>
+        <ObrPartyRoster
+          rows={[
+            { id: cardId, characterId: cardId, card: sampleCard, players: [], tokens: [] },
+            {
+              id: "second-scvm",
+              characterId: "second-scvm",
+              card: { ...sampleCard, id: "second-scvm", name: "Brenna" },
+              players: [],
+              tokens: [],
+            },
+          ]}
+          maxMembers={8}
+        />
+      </BrowserTestProvider>,
+    );
+
+    const entries = page.getByRole("listitem").elements();
+    expect(entries).toHaveLength(2);
+    expect(getComputedStyle(entries[0]).borderTopWidth).toBe("0px");
+    expect(getComputedStyle(entries[1]).borderTopWidth).not.toBe("0px");
+  });
+
   it("renders durable binding controls for GM token and player recovery", async () => {
     const bindSelectedToken = vi.fn(() => Promise.resolve());
     const assignPlayer = vi.fn(() => Promise.resolve());
@@ -268,6 +293,63 @@ describe("ObrPartyRoster", () => {
       .toBeVisible();
     await expect
       .element(page.getByRole("button", { name: "Unbind" }))
+      .toBeVisible();
+  });
+
+  it("removes a scvm from the roster in one action, no confirmation dialog", async () => {
+    const onRemoveFromRoster = vi.fn(() => Promise.resolve());
+
+    await render(
+      <BrowserTestProvider>
+        <ObrPartyRoster
+          rows={[
+            {
+              id: cardId,
+              characterId: cardId,
+              card: sampleCard,
+              players: [],
+              tokens: [],
+            },
+          ]}
+          maxMembers={8}
+          onRemoveFromRoster={onRemoveFromRoster}
+        />
+      </BrowserTestProvider>,
+    );
+
+    await userEvent.click(
+      page.getByRole("button", { name: "Remove from roster" }),
+    );
+
+    expect(onRemoveFromRoster).toHaveBeenCalledWith(cardId);
+  });
+
+  it("surfaces a remove-from-roster failure via the roster error banner", async () => {
+    await render(
+      <BrowserTestProvider>
+        <ObrPartyRoster
+          rows={[
+            {
+              id: cardId,
+              characterId: cardId,
+              card: sampleCard,
+              players: [],
+              tokens: [],
+            },
+          ]}
+          maxMembers={8}
+          onRemoveFromRoster={() => Promise.resolve()}
+          removeRosterAction={{
+            characterId: cardId,
+            pending: false,
+            error: "Could not remove Karg from the party",
+          }}
+        />
+      </BrowserTestProvider>,
+    );
+
+    await expect
+      .element(page.getByText("Could not remove Karg from the party"))
       .toBeVisible();
   });
 

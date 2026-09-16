@@ -3,8 +3,13 @@ import { customStyles } from '@/theme/morkBorgTheme';
 import { CharacterNameSummary, CharacterClassSummary } from '@components/index';
 import { useCharacterNameAndClass } from '@/hooks/useCharacterNameAndClass';
 import { getCharacterViewTransitionName } from '@/router/routeClassification';
+import type { ReactNode } from 'react';
 
-export const CharacterNameAndClass = () => {
+type CharacterNameAndClassProps = {
+  classAction?: ReactNode;
+};
+
+export const CharacterNameAndClass = ({ classAction }: CharacterNameAndClassProps) => {
   const {
     character,
     isLoading,
@@ -54,6 +59,7 @@ export const CharacterNameAndClass = () => {
         label={classLabel}
         className={character.className || fallbackClassName}
         classDescription={character.classDescription ?? undefined}
+        action={classAction}
       />
     </Box>
   );

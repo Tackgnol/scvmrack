@@ -4,7 +4,7 @@ import {
   type ObrCard,
   type ObrLocale,
 } from "@/api/obr";
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { WarbandCardView } from "@/components/organisms/party/WarbandCardView";
 import {
   toWarbandMemberFromCard,
@@ -57,6 +57,10 @@ export function ObrCardRoute({
     queryKey: ["obr", "cards", room, ids, locale],
     queryFn: () => fetchObrCards([ids], room, locale),
     enabled: ids.length > 0 && room.length > 0,
+    // Locale is part of the key, so switching it looks like a brand-new query.
+    // Keep showing the previous locale's card while the new one loads instead
+    // of blanking to the loading skeleton (RPG-56).
+    placeholderData: keepPreviousData,
   });
   const cards = cardQueryData as ObrCardCharacter[] | undefined;
   const card = cards?.[0] ?? null;
@@ -118,7 +122,10 @@ export function ObrCardRoute({
     return <ObrCard card={null} error={t("obr.card.missingId", "Missing scvm id")} />;
   }
 
-  if (isLoading || isFetching) {
+  // isFetching stays true during the background refetch that `placeholderData`
+  // bridges (e.g. a locale switch) — only gate on isLoading (no data at all
+  // yet) so that bridge doesn't get blanked back to the loading skeleton.
+  if (isLoading) {
     return <ObrCard card={null} isLoading />;
   }
 

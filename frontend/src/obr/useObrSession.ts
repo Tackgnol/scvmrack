@@ -18,5 +18,11 @@ export function useObrSession() {
         await queryClient.invalidateQueries({ queryKey: authKeys.session() });
     }, [queryClient]);
 
-    return { ...auth, signIn };
+    // One-time token a new (non-iframe) tab redeems to inherit this session —
+    // see ObrExchangeRedeemGate for the redeem side.
+    const issueObrExchangeToken = useCallback((): Promise<string> => {
+        return obrAuthClient.issueObrExchangeToken();
+    }, []);
+
+    return { ...auth, signIn, issueObrExchangeToken };
 }

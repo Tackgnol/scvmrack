@@ -1,9 +1,9 @@
 import { Box, IconButton, Paper, TextField, Typography } from '@mui/material';
 import { keyframes } from '@mui/system';
 import { customStyles, morkBorgColors } from '@theme/morkBorgTheme.ts';
-import { type ChangeEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import AnimatedNumber from '../../atoms/AnimatedNumber';
+import { useIntegerFieldBuffer } from '../../../hooks/useIntegerFieldBuffer';
 
 const resourceFlash = keyframes`
   0% { box-shadow: 0 0 0 0 rgba(255, 233, 0, 0); }
@@ -82,6 +82,9 @@ export default function HpControl({
   onStepHp,
 }: HpControlProps) {
   const { t } = useTranslation();
+  const hpInput = useIntegerFieldBuffer(currentHp, (digits) =>
+    onSetHp(parseInt(digits, 10))
+  );
 
   return (
     <Paper
@@ -116,13 +119,12 @@ export default function HpControl({
           }}
         >
           <TextField
-            type="number"
-            value={currentHp}
-            onChange={(e: ChangeEvent<HTMLInputElement>) => {
-              const parsedHp = parseInt(e.target.value, 10);
-              const safeHp = Number.isNaN(parsedHp) ? 0 : Math.max(0, parsedHp);
-              onSetHp(safeHp);
-            }}
+            type="text"
+            inputMode="numeric"
+            value={hpInput.value}
+            onChange={hpInput.onChange}
+            onBlur={hpInput.onBlur}
+            onKeyDown={hpInput.onKeyDown}
             size="small"
             sx={{
               ...customStyles.hpInput,
@@ -132,8 +134,6 @@ export default function HpControl({
               htmlInput: {
                 'data-testid': 'hp-input',
                 'aria-label': t('stats.hitPoints'),
-                min: 0,
-                step: 1,
               },
             }}
           />

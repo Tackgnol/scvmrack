@@ -60,7 +60,6 @@ export function createScvmContextMenu(): ContextMenuItem {
     },
   };
 }
-
 export function createEnemyContextMenu(): ContextMenuItem {
   return {
     id: VIEW_ENEMY_CONTEXT_MENU_ID,

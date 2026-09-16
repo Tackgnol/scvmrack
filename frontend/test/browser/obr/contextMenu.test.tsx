@@ -13,6 +13,7 @@ const obrMock = vi.hoisted(() => ({
   }),
   create: vi.fn<() => Promise<void>>(() => Promise.resolve()),
   open: vi.fn<() => Promise<void>>(() => Promise.resolve()),
+  showNotification: vi.fn<() => Promise<void>>(() => Promise.resolve()),
   getRole: vi.fn<() => Promise<"GM" | "PLAYER">>(() =>
     Promise.resolve("PLAYER"),
   ),
@@ -23,7 +24,6 @@ const obrMock = vi.hoisted(() => ({
     Promise.resolve({ x: point.x, y: point.y }),
   ),
 }));
-
 vi.mock("@owlbear-rodeo/sdk", () => ({
   default: {
     onReady: obrMock.onReady,
@@ -32,6 +32,9 @@ vi.mock("@owlbear-rodeo/sdk", () => ({
     },
     popover: {
       open: obrMock.open,
+    },
+    notification: {
+      show: obrMock.showNotification,
     },
     player: {
       getRole: obrMock.getRole,
@@ -89,6 +92,7 @@ describe("OBR context menu", () => {
   });
 
   it("creates a view-scvm menu filtered to bound GM and player tokens", () => {
+
     const menu = createScvmContextMenu();
 
     expect(menu.id).toBe(`${EXTENSION_ID}/view-scvm`);
@@ -107,7 +111,6 @@ describe("OBR context menu", () => {
       },
     });
   });
-
   it("creates a view-enemy menu filtered to bound GM and player tokens", () => {
     const menu = createEnemyContextMenu();
 

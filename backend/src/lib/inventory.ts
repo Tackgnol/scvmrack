@@ -6,7 +6,7 @@
  * functions from inventory_management.sql.
  */
 import { catalogRepository } from '../repositories/catalog-repository.js';
-import { rollToModifier } from '../utils.js';
+import { statToModifier } from './ability-modifiers.js';
 import type { Roller } from '@tackgnol/rpg-tools-roller';
 
 type InventoryItem = Record<string, unknown>;
@@ -66,7 +66,7 @@ export async function hydrateInventoryUses(
         const base = equip.defaultAmount!;
         const modifier =
           key === 'equipment.lantern-oil' || key === 'equipment.medicine-chest'
-            ? rollToModifier(presence)
+            ? statToModifier(presence)
             : 0;
         const count = Math.max(0, base + modifier);
         return { ...obj, uses: Array(count).fill(false) };

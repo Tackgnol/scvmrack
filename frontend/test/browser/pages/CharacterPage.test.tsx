@@ -1,6 +1,7 @@
 import { render } from 'vitest-browser-react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { page, userEvent } from 'vitest/browser';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import BrowserTestProvider from '../BrowserTestProvider';
 import { CharacterPage } from '@/pages/CharacterPage';
 import { useCharacter } from '@/CharacterContext/CharacterContext';
@@ -63,7 +64,12 @@ vi.mock('@/components/molecules/character-descriptors/CharacterDescriptors', () 
 }));
 
 vi.mock('@/components/molecules/character/CharacterNameAndClass', () => ({
-  CharacterNameAndClass: () => <section>Character Name And Class</section>,
+  CharacterNameAndClass: ({ classAction }: { classAction?: ReactNode }) => (
+    <section>
+      Character Name And Class
+      {classAction}
+    </section>
+  ),
 }));
 
 vi.mock('@/components/organisms/OnHandSection', () => ({
@@ -153,9 +159,15 @@ describe('CharacterPage', () => {
     } as ReturnType<typeof useCharacter>);
 
     return render(
-      <BrowserTestProvider>
-        <CharacterPage />
-      </BrowserTestProvider>
+      <QueryClientProvider
+        client={
+          new QueryClient({ defaultOptions: { queries: { retry: false } } })
+        }
+      >
+        <BrowserTestProvider>
+          <CharacterPage />
+        </BrowserTestProvider>
+      </QueryClientProvider>
     );
   };
 
@@ -277,8 +289,18 @@ describe('CharacterPage', () => {
     await expect.element(page.getByText('Summary Bar')).toBeVisible();
     await expect.element(page.getByText('Resource Row')).toBeVisible();
     await expect.element(page.getByText('Equipped Bar')).toBeVisible();
-    await expect.element(page.getByText('Character Name And Class')).toBeVisible();
-    await expect.element(page.getByText('Abilities Section')).toBeVisible();
+    const identity = page.getByText('Character Name And Class');
+    const getBetter = page.getByTestId('get-better-button');
+    const abilities = page.getByText('Abilities Section');
+
+    await expect.element(identity).toBeVisible();
+    await expect.element(getBetter).toBeVisible();
+    await expect.element(abilities).toBeVisible();
+    expect(identity.element()!.contains(getBetter.element()!)).toBe(true);
+    expect(
+      getBetter.element()!.compareDocumentPosition(abilities.element()!) &
+        Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
     await expect.element(page.getByText('Character Descriptors')).toBeVisible();
     await expect.element(page.getByText('Modifiers Panel')).toBeVisible();
     await expect.element(page.getByText('On Hand Section')).toBeVisible();

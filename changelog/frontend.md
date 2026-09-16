@@ -21,7 +21,9 @@
   actionable diagnostics, and can be retried without refreshing the page
 - **Character sheet** — the core editor (stats, equipment, abilities, powers, pets, notes);
   sheet navigation uses canonical `/character/<id>` URLs without stale `character`
-  query parameters
+  query parameters. A **Get Better** action next to the character's identity
+  opens the Getting Better panel: preview a level-up roll, reroll any section,
+  then apply it to the character
 - **Party** — GM party control (`/party/<id>`) with invite link, live warband
   vital strip, and member kick; player party view binds a scvm via an invite link
   (`/join/<token>`, with `/forge` and `/roll` sub-routes) and shows a live,
@@ -35,9 +37,13 @@
   party with invite/manage links and manage room-scoped enemy cards from inside
   Owlbear; the enemy tab prepares its room board automatically when needed, and
   player-facing enemy cards open as token popovers instead of inline sheet
-  panels. The OBR manifest and extension entry files are CORS-enabled and
-  non-cacheable for Owlbear installs. OBR and the main party view share the same
-  warband projection for combat modifier filtering and armor DR display.
+  panels. An **Open in scvmrack** button in the panel's top bar (next to
+  Expand/Max) works for anonymous sessions too — a short-lived, one-time
+  `/obr-open` handoff keeps ownership on the embedded session, and blocked or
+  expired links show a retry prompt. The OBR manifest and extension entry files
+  are CORS-enabled and non-cacheable for Owlbear installs. OBR and the main
+  party view share the same warband projection for combat modifier filtering
+  and armor DR display.
 - **GM overview** — `/gm` dashboard to create and open parties; party creation
   keeps the yellow name input legible with black text and validates names at 100
   characters before submit
@@ -52,6 +58,10 @@
   changes queue as patches → instant UI update via `queryClient.setQueryData`
   → flush after ~1s idle → retry up to 3× with user notification
 - Stat tracking and modifiers (computed + custom), ability cards, scroll/power uses
+- Owner-only Getting Better workflow: a footer action opens a MÖRK BORG-styled
+  inline panel with persistent preview rolls, local table-value edits, undo,
+  per-section rerolls, reroll-all conflict prompts, stale-preview messaging, and
+  explicit apply that refreshes the hydrated character cache
 - Inventory with equipped bar, on-hand vs. storage sections, ammo tracking,
   consumables, pets, and custom-item creation
 - Equipment lookup/add-item flow keeps the add controls stable while search and

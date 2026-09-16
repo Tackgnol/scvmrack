@@ -11,6 +11,9 @@ import { Roller } from '@tackgnol/rpg-tools-roller';
 // Deliberate prod import: the test-utils subpath is where the package exports
 // its deterministic seedable engine, which this feature is built on.
 import { ChaCha20Engine } from '@tackgnol/rpg-tools-roller/test-utils';
+import { ABILITY_STATS, type AbilityStat } from './ability-modifiers.js';
+
+export { ABILITY_STATS, type AbilityStat } from './ability-modifiers.js';
 
 // These const assertions preserve the literal enums used by schemas/draft.ts.
 export const DRAFT_SECTIONS = [
@@ -24,10 +27,7 @@ export const DRAFT_SECTIONS = [
   'personality',
 ] as const;
 
-export const ABILITY_STATS = ['strength', 'agility', 'presence', 'toughness'] as const;
-
 export type DraftSection = (typeof DRAFT_SECTIONS)[number];
-export type AbilityStat = (typeof ABILITY_STATS)[number];
 export type SectionSeeds = Record<DraftSection, string>;
 export type RollerFor = (section: DraftSection) => Roller;
 

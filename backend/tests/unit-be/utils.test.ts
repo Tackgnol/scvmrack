@@ -9,6 +9,7 @@ import {
   sanitizeJsonb,
   sanitizeString,
 } from '../../src/utils.ts';
+import { statToModifier } from '../../src/lib/ability-modifiers.ts';
 
 test('sanitizeString trims plain text without html-encoding user content', () => {
   const value = sanitizeString("  It's quite <obnoxious> really  ", 20);
@@ -90,4 +91,31 @@ test('identifier and locale validators accept expected values', () => {
   assert.equal(isValidLocale('en'), true);
   assert.equal(isValidLocale('pl'), true);
   assert.equal(isValidLocale('de'), false);
+});
+
+test('statToModifier maps the extended ability modifier table', () => {
+  const cases: Array<[number, number]> = [
+    [1, -3],
+    [4, -3],
+    [5, -2],
+    [6, -2],
+    [7, -1],
+    [8, -1],
+    [9, 0],
+    [12, 0],
+    [13, 1],
+    [14, 1],
+    [15, 2],
+    [16, 2],
+    [17, 3],
+    [18, 3],
+    [19, 4],
+    [20, 5],
+    [21, 6],
+    [30, 6],
+  ];
+
+  for (const [roll, expected] of cases) {
+    assert.equal(statToModifier(roll), expected);
+  }
 });

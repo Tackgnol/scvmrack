@@ -2279,13 +2279,8 @@ export const customStyles = {
       cursor: 'pointer',
       userSelect: 'none' as const,
       WebkitTapHighlightColor: 'transparent',
-      transition: 'transform 0.1s ease-out',
       '&:hover': {
-        transform: 'scale(1.2)',
         bgcolor: morkBorgColors.yellow,
-      },
-      '&:active': {
-        transform: 'scale(0.85)',
       },
     },
     ammoPeg: {

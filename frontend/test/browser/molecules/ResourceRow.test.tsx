@@ -77,6 +77,94 @@ describe('ResourceRow Component', () => {
         expect(mockUpdateField).toHaveBeenCalledWith('currentHp', 12);
     });
 
+    it('keeps an emptied HP field neutral instead of committing zero', async () => {
+        await renderWithCharacter({ currentHp: 5 });
+
+        const hpInput = page.getByTestId('hp-input');
+        await userEvent.fill(hpInput, '');
+
+        await expect.element(hpInput).toHaveValue('');
+        expect(mockUpdateField).not.toHaveBeenCalledWith('currentHp', 0);
+        // The death modal only opens off the committed character HP, so it
+        // must not have fired from the empty intermediate state either.
+        await expect.element(page.getByTestId('death-modal-kill-button')).not.toBeInTheDocument();
+    });
+
+    it('rejects exponent notation in the HP field without changing its value', async () => {
+        await renderWithCharacter({ currentHp: 5 });
+
+        const hpInput = page.getByTestId('hp-input');
+        await userEvent.fill(hpInput, '15');
+        mockUpdateField.mockClear();
+        await userEvent.type(hpInput, 'e');
+
+        await expect.element(hpInput).toHaveValue('15');
+        expect(mockUpdateField).not.toHaveBeenCalled();
+    });
+
+    it('normalizes leading zeroes in the HP field on blur', async () => {
+        const { rerender } = await renderWithCharacter({ currentHp: 5 });
+
+        const hpInput = page.getByTestId('hp-input');
+        await userEvent.fill(hpInput, '007');
+        expect(mockUpdateField).toHaveBeenLastCalledWith('currentHp', 7);
+
+        // Mirror the real character context re-rendering with the freshly
+        // committed value after updateField, as the death-modal test above does.
+        vi.mocked(CharacterContextModule.useCharacter).mockReturnValue({
+            character: {
+                id: 'test-char',
+                currentHp: 7,
+                maxHp: 15,
+                omens: 2,
+                silver: 50,
+                equippedArmor: { currentTier: 1, maxTier: 3 },
+            },
+            updateField: mockUpdateField,
+            updateArmorField: mockUpdateArmorField,
+            killAndReplace: mockKillAndReplace,
+        } as any);
+        await rerender(
+            <BrowserTestProvider>
+                <ResourceRow />
+            </BrowserTestProvider>
+        );
+
+        await userEvent.tab();
+        await expect.element(hpInput).toHaveValue('7');
+    });
+
+    it('typing an explicit zero into HP still arms the death modal once committed', async () => {
+        const { rerender } = await renderWithCharacter({ currentHp: 1 });
+
+        const hpInput = page.getByTestId('hp-input');
+        await userEvent.fill(hpInput, '0');
+        expect(mockUpdateField).toHaveBeenCalledWith('currentHp', 0);
+
+        // Mirror the context re-rendering with the freshly committed 0, as the
+        // other death-modal test does — updateField is a spy, not real state.
+        vi.mocked(CharacterContextModule.useCharacter).mockReturnValue({
+            character: {
+                id: 'test-char',
+                currentHp: 0,
+                maxHp: 15,
+                omens: 2,
+                silver: 50,
+                equippedArmor: { currentTier: 1, maxTier: 3 },
+            },
+            updateField: mockUpdateField,
+            updateArmorField: mockUpdateArmorField,
+            killAndReplace: mockKillAndReplace,
+        } as any);
+        await rerender(
+            <BrowserTestProvider>
+                <ResourceRow />
+            </BrowserTestProvider>
+        );
+
+        await expect.element(page.getByTestId('death-modal-kill-button')).toBeVisible();
+    });
+
     it('spawns the Death Modal when HP reaches 0 and handles Kill And Replace', async () => {
         // Render with 1 HP
         const { rerender } = await renderWithCharacter({ currentHp: 1 });
@@ -136,6 +224,58 @@ describe('ResourceRow Component', () => {
         expect(mockUpdateField).toHaveBeenCalledWith('silver', 125);
     });
 
+    it('keeps an emptied Silver field neutral instead of committing zero', async () => {
+        await renderWithCharacter({ silver: 45 });
+
+        const silverInput = page.getByTestId('silver-input');
+        await userEvent.fill(silverInput, '');
+
+        await expect.element(silverInput).toHaveValue('');
+        expect(mockUpdateField).not.toHaveBeenCalledWith('silver', 0);
+    });
+
+    it('rejects exponent notation in the Silver field without changing its value', async () => {
+        await renderWithCharacter({ silver: 45 });
+
+        const silverInput = page.getByTestId('silver-input');
+        await userEvent.fill(silverInput, '15');
+        mockUpdateField.mockClear();
+        await userEvent.type(silverInput, 'e');
+
+        await expect.element(silverInput).toHaveValue('15');
+        expect(mockUpdateField).not.toHaveBeenCalled();
+    });
+
+    it('normalizes leading zeroes in the Silver field on blur', async () => {
+        const { rerender } = await renderWithCharacter({ silver: 45 });
+
+        const silverInput = page.getByTestId('silver-input');
+        await userEvent.fill(silverInput, '007');
+        expect(mockUpdateField).toHaveBeenLastCalledWith('silver', 7);
+
+        vi.mocked(CharacterContextModule.useCharacter).mockReturnValue({
+            character: {
+                id: 'test-char',
+                currentHp: 10,
+                maxHp: 15,
+                omens: 2,
+                silver: 7,
+                equippedArmor: { currentTier: 1, maxTier: 3 },
+            },
+            updateField: mockUpdateField,
+            updateArmorField: mockUpdateArmorField,
+            killAndReplace: mockKillAndReplace,
+        } as any);
+        await rerender(
+            <BrowserTestProvider>
+                <ResourceRow />
+            </BrowserTestProvider>
+        );
+
+        await userEvent.tab();
+        await expect.element(silverInput).toHaveValue('7');
+    });
+
     it('handles armored characters tier boundaries', async () => {
         await renderWithCharacter({ equippedArmor: { currentTier: 1, maxTier: 2 } });
 
@@ -158,7 +298,7 @@ describe('ResourceRow Component', () => {
          const increaseTierBtn = page.getByRole('button', { name: /Increase armor tier/i });
          await expect.element(increaseTierBtn).not.toBeInTheDocument();
 
-         const dashInput = page.getByRole('textbox');
+         const dashInput = page.getByTestId('armor-tier-dash');
          await expect.element(dashInput).toBeVisible();
     });
 });

@@ -17,6 +17,7 @@ import {
   type Statistic,
   type UseCountRule,
 } from '@/hooks/models';
+import { statToModifier } from '@/utils/stats';
 
 export type CustomItemKind = CustomItemCategory;
 
@@ -74,22 +75,6 @@ const clampInteger = (value: number, min: number, max: number): number =>
     Math.min(max, Math.floor(Number.isFinite(value) ? value : min)),
   );
 
-// Mirrors the SQL `roll_to_modifier` function (dice_and_utils.sql).
-// Kept client-side so consumable pip counts can be previewed before save;
-// the server is the source of truth for derived modifiers elsewhere.
-// Exported only for cross-language parity tests — production code should
-// call this indirectly via `createUsePips`.
-export const rollToModifier = (score?: number): number => {
-  const value = Number.isFinite(score) ? Number(score) : 10;
-  if (value <= 4) return -3;
-  if (value <= 6) return -2;
-  if (value <= 8) return -1;
-  if (value <= 12) return 0;
-  if (value <= 14) return 1;
-  if (value <= 16) return 2;
-  return 3;
-};
-
 export const buildCustomItemKey = (
   kind: CustomItemKind,
   id = createModifierId(),
@@ -111,7 +96,7 @@ export const createUsePips = (
   const base = clampInteger(rule.base ?? 0, 0, 50);
   const modifier =
     rule.mode === 'fixedPlusModifier'
-      ? rollToModifier(stats[rule.statistic ?? 'presence'])
+      ? statToModifier(stats[rule.statistic ?? 'presence'])
       : 0;
   const count = clampInteger(base + modifier, 0, 50);
 

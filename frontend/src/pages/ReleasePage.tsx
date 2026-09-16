@@ -35,6 +35,19 @@ const buildReleaseNotes = (t: TFunction): ReleaseNote[] => {
     // newest-first and in sync with that folder when cutting a release.
     return [
         {
+            version: '0.6.1',
+            date: '2026-09-15',
+            type: 'minor',
+            changes: [
+                t('release.v061.gettingBetter', "MÖRK BORG's Getting Better advancement has landed — preview the roll, reroll if you don't like it, then apply it to level up"),
+                t('release.v061.scumFixes', 'Scum improvement abilities and specialty descriptions now read correctly instead of overlapping or falling back to English'),
+                t('release.v061.obrOpen', 'Anonymous Owlbear characters can now open in the full Scvmrack site in one click'),
+                t('release.v061.identityCarry', 'The new tab carries the same session without moving character ownership away from Owlbear'),
+                t('release.v061.safeRetry', 'Blocked tabs and expired handoff links now show a clear retry prompt'),
+                t('release.v061.obrOwnership', 'Owlbear ownership handling is more reliable after bumping the shared rpgtools-owlbear package to 0.1.1'),
+            ],
+        },
+        {
             version: '0.6.0',
             date: '2026-08-24',
             type: 'minor',

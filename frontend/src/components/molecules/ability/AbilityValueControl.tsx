@@ -2,6 +2,7 @@ import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
 import { Box, IconButton, TextField } from '@mui/material';
 import { customStyles } from '@/theme/morkBorgTheme';
+import { useIntegerFieldBuffer } from '@/hooks/useIntegerFieldBuffer';
 
 interface AbilityValueControlProps {
   value: number;
@@ -22,6 +23,8 @@ export default function AbilityValueControl({
   decreaseAriaLabel,
   increaseAriaLabel,
 }: AbilityValueControlProps) {
+  const input = useIntegerFieldBuffer(value, onInputChange);
+
   return (
     <Box sx={customStyles.abilityCardTwo.controls}>
       <IconButton
@@ -33,9 +36,12 @@ export default function AbilityValueControl({
       </IconButton>
 
       <TextField
-        type="number"
-        value={value}
-        onChange={(event) => onInputChange(event.target.value)}
+        type="text"
+        inputMode="numeric"
+        value={input.value}
+        onChange={input.onChange}
+        onBlur={input.onBlur}
+        onKeyDown={input.onKeyDown}
         sx={customStyles.abilityValueInput}
         size="small"
         inputProps={{ 'aria-label': label }}

@@ -25,6 +25,7 @@ export default fp(async function rpgtoolsAuthPlugin(fastify: FastifyInstance) {
     // itch.io embed support: requests marked with x-embedded-session get
     // SameSite=None; Partitioned cookies so the iframe can hold a session.
     embeddedSessions: true,
+    obrExchange: { allowAnonymousIssue: true },
     database: prismaAdapter(prisma, { provider: 'postgresql' }),
     trustedOrigins: Array.from(
       new Set(

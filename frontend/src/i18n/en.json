@@ -7,7 +7,11 @@
   "obr": {
     "layout": {
       "expand": "⤢ Expand",
-      "collapse": "⊠ Collapse"
+      "collapse": "⊠ Collapse",
+      "maximize": "⛶ Max",
+      "openInScvmrack": "Open in scvmrack",
+      "openingInScvmrack": "Opening",
+      "openInScvmrackFailed": "Could not open in scvmrack"
     },
     "common": {
       "unnamedScvm": "Unnamed scvm",
@@ -47,7 +51,10 @@
       "bindSelectedToken": "Bind to selected token",
       "rebindSelectedToken": "Re-bind selected token",
       "selectTokenToBind": "Select token to bind",
-      "binding": "Binding"
+      "binding": "Binding",
+      "openInScvmrack": "Open in scvmrack",
+      "openingInScvmrack": "Opening",
+      "openInScvmrackFailed": "Could not open in scvmrack"
     },
     "gm": {
       "region": "GM view",
@@ -663,6 +670,68 @@
     "cancel": "Cancel",
     "retry": "Retry"
   },
+  "gettingBetter": {
+    "title": "Get better",
+    "loading": "Rolling the table",
+    "applied": "Getting better applied",
+    "confirmDiscard": "Discard table values?",
+    "confirmReroll": "Discard local table values?",
+    "stale": "This preview is stale. Reroll from the current sheet before applying.",
+    "actions": {
+      "open": "Get better",
+      "rerollSection": "Reroll",
+      "undo": "Undo edits",
+      "rerollAll": "Reroll all",
+      "rerollCurrent": "Reroll from current sheet",
+      "close": "Close",
+      "apply": "Apply getting better",
+      "applying": "Applying"
+    },
+    "errors": {
+      "preview": "Failed to roll getting better",
+      "reroll": "Failed to reroll getting better",
+      "apply": "Failed to apply getting better"
+    },
+    "hp": {
+      "title": "HP",
+      "check": "6d10 check",
+      "currentMax": "Current max",
+      "result": "Result",
+      "success": "+{{value}} max",
+      "noChange": "No change",
+      "increase": "d6 increase",
+      "finalMax": "Final max"
+    },
+    "debris": {
+      "title": "Debris",
+      "roll": "d6 roll",
+      "kind": "Find",
+      "nothing": "Nothing",
+      "silver": "3d10 silver",
+      "uncleanScroll": "Unclean scroll",
+      "sacredScroll": "Sacred scroll",
+      "scrollRoll": "Scroll roll",
+      "scroll": "Scroll"
+    },
+    "abilities": {
+      "title": "Abilities",
+      "from": "From {{value}}"
+    },
+    "scum": {
+      "title": "Scum specialty",
+      "existing": "Existing",
+      "added": "Added",
+      "primary": "Primary",
+      "secondary": "Secondary",
+      "rerollMode": "Mode",
+      "modes": {
+        "none": "Keep both",
+        "primary": "Reroll primary",
+        "secondary": "Reroll secondary",
+        "both": "Reroll both"
+      }
+    }
+  },
   "powers": {
     "title": "Powers",
     "noScrollsOrPowers": "No scrolls or powers",
@@ -897,6 +966,14 @@
     "typeMinor": "Minor",
     "typePatch": "Patch",
     "moreUpdates": "More updates coming soon. The world is ending, but we keep shipping.",
+    "v061": {
+      "gettingBetter": "MÖRK BORG's Getting Better advancement has landed — preview the roll, reroll if you don't like it, then apply it to level up",
+      "scumFixes": "Scum improvement abilities and specialty descriptions now read correctly instead of overlapping or falling back to English",
+      "obrOpen": "Anonymous Owlbear characters can now open in the full Scvmrack site in one click",
+      "identityCarry": "The new tab carries the same session without moving character ownership away from Owlbear",
+      "safeRetry": "Blocked tabs and expired handoff links now show a clear retry prompt",
+      "obrOwnership": "Owlbear ownership handling is more reliable after bumping the shared rpgtools-owlbear package to 0.1.1"
+    },
     "v060": {
       "beta": "Scvmrack has entered Beta",
       "miseries": "Character sheets now include the seven-step Misery track, with controls for players and GMs",

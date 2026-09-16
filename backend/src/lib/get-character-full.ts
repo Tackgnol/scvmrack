@@ -15,7 +15,8 @@
  */
 import { catalogRepository } from '../repositories/catalog-repository.js';
 import { characterRepository } from '../repositories/character-repository.js';
-import { snakeToCamel, rollToModifier } from '../utils.js';
+import { snakeToCamel } from '../utils.js';
+import { statToModifier } from './ability-modifiers.js';
 
 // ── Internal types ─────────────────────────────────────────────────────────────
 
@@ -607,7 +608,7 @@ function calculateDR(
     })
     .reduce((acc, m) => acc + (typeof m.value === 'number' ? m.value : 0), 0);
 
-  return 12 - rollToModifier(ability) - sum;
+  return 12 - statToModifier(ability) - sum;
 }
 
 // ── Main export ───────────────────────────────────────────────────────────────
@@ -759,7 +760,7 @@ export async function hydrateCharacterRow(
     resolvedWeapons,
     isCarriedResolvedItem(resolvedArmor) ? resolvedArmor : null,
   );
-  const strengthMod    = rollToModifier(row.strength);
+  const strengthMod    = statToModifier(row.strength);
   const maxEncumbrance = Math.max(0, 8 + strengthMod);
 
   // 8. Computed modifiers

@@ -11,6 +11,7 @@ import { appHistory } from '@/router/history';
 import {
     hasCurrentSearchParam,
     navigateToLoggedOut,
+    OBR_EXCHANGE_TOKEN_QUERY_PARAM,
     SESSION_EXPIRED_QUERY_PARAM,
 } from '@/router/navigation';
 import { clearLastAuthKind, setLastAuthKind } from '@/preferences/lastAuthKind';
@@ -47,6 +48,11 @@ const getSessionExpiredSnapshot = (): boolean => {
 const getInviteRouteSnapshot = (): boolean =>
     (appHistory.location?.pathname ?? '/').startsWith('/join/');
 
+// An obr-exchange redeem is pending (see ObrExchangeRedeemGate) — it must land
+// its session before an anonymous session gets a chance to mint and race it.
+const getHasPendingObrExchangeTokenSnapshot = (): boolean =>
+    hasCurrentSearchParam(OBR_EXCHANGE_TOKEN_QUERY_PARAM);
+
 type UseAuthOptions = {
     bootstrapAnonymous?: boolean;
     fetchSession?: boolean;
@@ -63,7 +69,13 @@ export function useAuth(options: UseAuthOptions = {}) {
         getInviteRouteSnapshot,
         () => false
     );
-    const shouldBootstrapAnonymous = bootstrapAnonymous && !isInviteRoute;
+    const hasPendingObrExchangeToken = useSyncExternalStore(
+        subscribeToHistory,
+        getHasPendingObrExchangeTokenSnapshot,
+        () => false
+    );
+    const shouldBootstrapAnonymous =
+        bootstrapAnonymous && !isInviteRoute && !hasPendingObrExchangeToken;
     const isSessionExpired = useSyncExternalStore(
         subscribeToHistory,
         getSessionExpiredSnapshot,

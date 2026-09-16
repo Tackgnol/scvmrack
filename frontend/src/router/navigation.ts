@@ -4,6 +4,7 @@ export const LOGGED_OUT_QUERY_PARAM = 'logged-out';
 export const SESSION_EXPIRED_QUERY_PARAM = 'expired';
 export const CHARACTER_ID_QUERY_PARAM = 'character';
 export const CLAIM_CHARACTER_QUERY_PARAM = 'claim-character';
+export const OBR_EXCHANGE_TOKEN_QUERY_PARAM = 'obrExchangeToken';
 
 const HOME_PATH = '/character';
 const NEW_CHARACTER_PATH = '/character/new';
