@@ -92,6 +92,7 @@ export type ImprovementPreview = {
   sequence: number;
   rolledDraft: ImprovementDraft;
   scumSpecialtyNames: Record<string, string>;
+  scrollNames: Record<string, string>;
   snapshotHash: string;
   createdAt: string;
   updatedAt: string;

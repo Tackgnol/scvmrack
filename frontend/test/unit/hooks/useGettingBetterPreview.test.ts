@@ -126,6 +126,7 @@ function preview(overrides: Partial<ImprovementPreview> = {}): ImprovementPrevie
     sequence: rolledDraft.sequence,
     rolledDraft,
     scumSpecialtyNames: {},
+    scrollNames: {},
     snapshotHash: rolledDraft.snapshot.snapshotHash,
     createdAt: '2026-07-07T10:00:00.000Z',
     updatedAt: '2026-07-07T10:00:00.000Z',

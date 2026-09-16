@@ -18,6 +18,8 @@ export function GettingBetterPanel({ controller }: PanelProps) {
     controller.isApplying;
   const specialtyName = (key: string) =>
     controller.preview?.scumSpecialtyNames?.[key] ?? key;
+  const scrollName = (key: string) =>
+    controller.preview?.scrollNames?.[key] ?? key;
   const updateDraft = (
     updater: (draft: ImprovementDraft) => ImprovementDraft,
   ) => {
@@ -54,6 +56,7 @@ export function GettingBetterPanel({ controller }: PanelProps) {
         draft={draft}
         busy={busy}
         specialtyName={specialtyName}
+        scrollName={scrollName}
         updateDraft={updateDraft}
         rerollSection={controller.rerollSection}
       />
