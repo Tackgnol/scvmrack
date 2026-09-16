@@ -73,6 +73,7 @@ function draft(overrides: Partial<ImprovementDraft> = {}): ImprovementDraft {
 function preview(
   rolledDraft: ImprovementDraft,
   scumSpecialtyNames: Record<string, string> = {},
+  scrollNames: Record<string, string> = {},
 ): ImprovementPreview {
   return {
     id: 'improvement-1',
@@ -80,6 +81,7 @@ function preview(
     sequence: rolledDraft.sequence,
     rolledDraft,
     scumSpecialtyNames,
+    scrollNames,
     snapshotHash: rolledDraft.snapshot.snapshotHash,
     createdAt: '2026-07-07T10:00:00.000Z',
     updatedAt: '2026-07-07T10:00:00.000Z',
@@ -103,20 +105,22 @@ function sectionDirty(
 function PanelHarness({
   initialDraft = draft(),
   scumSpecialtyNames = {},
+  scrollNames = {},
   events = {},
   onDraftChange,
   staleConflict = false,
 }: {
   initialDraft?: ImprovementDraft;
   scumSpecialtyNames?: Record<string, string>;
+  scrollNames?: Record<string, string>;
   events?: PanelEvents;
   onDraftChange?: (draft: ImprovementDraft | null) => void;
   staleConflict?: boolean;
 }) {
   const rolledDraft = useMemo(() => initialDraft, [initialDraft]);
   const activePreview = useMemo(
-    () => preview(rolledDraft, scumSpecialtyNames),
-    [rolledDraft, scumSpecialtyNames],
+    () => preview(rolledDraft, scumSpecialtyNames, scrollNames),
+    [rolledDraft, scumSpecialtyNames, scrollNames],
   );
   const [workingDraft, setWorkingDraft] = useState<ImprovementDraft | null>(
     structuredClone(rolledDraft),
@@ -221,6 +225,29 @@ describe('GettingBetterPanel Browser', () => {
 
     await userEvent.click(page.getByRole('button', { name: 'Reroll from current sheet' }));
     await expect.poll(() => rerollSection).toHaveBeenCalledWith('all');
+  });
+
+  it('renders a backend-translated sacred scroll name', async () => {
+    const sacredDraft = draft({
+      debris: {
+        roll: serverRoll(6, [6]),
+        kind: 'sacredScroll',
+        scroll: serverRoll(10, [10]),
+        itemKey: 'scroll.sacred.10',
+      },
+    });
+
+    await render(
+      <BrowserTestProvider>
+        <PanelHarness
+          initialDraft={sacredDraft}
+          scrollNames={{ 'scroll.sacred.10': 'Syntaksa enoicka' }}
+        />
+      </BrowserTestProvider>,
+    );
+
+    await expect.element(page.getByText('Syntaksa enoicka')).toBeVisible();
+    await expect.element(page.getByText('scroll.sacred.10')).not.toBeInTheDocument();
   });
 
   it('renders first Gutterborn Scum specialty improvement details', async () => {

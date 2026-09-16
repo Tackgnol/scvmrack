@@ -262,6 +262,33 @@ test('getOrCreatePreview creates once and returns the active preview on reopen',
   ]);
 });
 
+test('getOrCreatePreview returns backend-translated sacred scroll names', async () => {
+  resetState();
+  rollQueue = [
+    { total: 12 },
+    { total: 4 },
+    { total: 6 },
+    { total: 2 },
+    { total: 2 },
+    { total: 2 },
+    { total: 2 },
+    { total: 2 },
+  ];
+  const service = createCharacterImprovementService(log);
+
+  const result = await service.getOrCreatePreview({
+    id: characterId,
+    session,
+    rawLocale: 'pl',
+  });
+
+  assert.equal(result.ok, true);
+  assert.deepEqual(result.ok && result.value.scrollNames, {
+    'sacred-one': 'pl:sacred-one',
+    'sacred-two': 'pl:sacred-two',
+  });
+});
+
 test('rerollSection replaces only the requested section', async () => {
   resetState();
   const originalDraft = await createPreview();

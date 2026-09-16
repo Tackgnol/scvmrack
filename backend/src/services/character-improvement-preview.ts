@@ -30,6 +30,7 @@ export type PreviewResponse = {
   sequence: number;
   rolledDraft: ImprovementDraft;
   scumSpecialtyNames: Record<string, string>;
+  scrollNames: Record<string, string>;
   snapshotHash: string;
   createdAt: string;
   updatedAt: string;
@@ -59,16 +60,30 @@ export async function toPreviewResponse(
       : specialties.kind === 'laterImprovement'
       ? [specialties.primary.key, specialties.secondary.key]
       : [];
-  const translations = await catalogRepository.findTranslations(locale, keys);
+  const scrollFamily =
+    draft.debris.kind === 'sacredScroll'
+      ? 'sacred'
+      : draft.debris.kind === 'uncleanScroll'
+      ? 'unclean'
+      : null;
+  const scrollNameKeys = scrollFamily
+    ? scrollKeys(await characterImprovementRepository.findScrolls(scrollFamily))
+    : [];
+  const translations = await catalogRepository.findTranslations(locale, [
+    ...keys,
+    ...scrollNameKeys,
+  ]);
+  const names = Object.fromEntries(
+    translations.map(({ key, value }) => [key, value])
+  );
 
   return {
     id: row.id,
     characterId: row.characterId,
     sequence: row.sequence,
     rolledDraft: draft,
-    scumSpecialtyNames: Object.fromEntries(
-      translations.map(({ key, value }) => [key, value])
-    ),
+    scumSpecialtyNames: Object.fromEntries(keys.map((key) => [key, names[key]])),
+    scrollNames: Object.fromEntries(scrollNameKeys.map((key) => [key, names[key]])),
     snapshotHash: row.snapshotHash,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),

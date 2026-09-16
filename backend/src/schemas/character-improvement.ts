@@ -267,6 +267,7 @@ export const ImprovementPreviewResponseSchema = {
     'sequence',
     'rolledDraft',
     'scumSpecialtyNames',
+    'scrollNames',
     'snapshotHash',
     'createdAt',
     'updatedAt',
@@ -277,6 +278,10 @@ export const ImprovementPreviewResponseSchema = {
     sequence: { type: 'integer' },
     rolledDraft: ImprovementDraftSchema,
     scumSpecialtyNames: {
+      type: 'object',
+      additionalProperties: { type: 'string' },
+    },
+    scrollNames: {
       type: 'object',
       additionalProperties: { type: 'string' },
     },

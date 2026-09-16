@@ -29,6 +29,7 @@ type Props = {
   draft: ImprovementDraft;
   busy: boolean;
   specialtyName: (key: string) => string;
+  scrollName: (key: string) => string;
   updateDraft: (updater: (draft: ImprovementDraft) => ImprovementDraft) => void;
   rerollSection: (section: ImprovementRerollSection) => void;
 };
@@ -59,6 +60,7 @@ export function GettingBetterPanelSections({
   draft,
   busy,
   specialtyName,
+  scrollName,
   updateDraft,
   rerollSection,
 }: Props) {
@@ -316,7 +318,7 @@ export function GettingBetterPanelSections({
                   const key = scrollKey(kind, roll);
                   return (
                     <MenuItem key={key} value={key}>
-                      {key}
+                      {scrollName(key)}
                     </MenuItem>
                   );
                 })}

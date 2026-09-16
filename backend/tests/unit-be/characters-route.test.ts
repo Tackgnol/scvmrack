@@ -179,6 +179,7 @@ function defaultImprovementPreview() {
     sequence: 1,
     rolledDraft: defaultImprovementDraft(),
     scumSpecialtyNames: {},
+    scrollNames: {},
     snapshotHash: 'snapshot-hash',
     createdAt: '2026-03-01T10:00:00.000Z',
     updatedAt: '2026-03-01T10:00:00.000Z',
