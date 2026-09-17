@@ -32,7 +32,8 @@ vi.mock('@/api', () => ({
   },
 }));
 
-vi.mock('@/hooks/utils', () => ({
+vi.mock('@/hooks/utils', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/hooks/utils')>()),
   getCharacterKey: (id: string, locale?: string) => ['character', id, locale],
 }));
 
@@ -174,6 +175,26 @@ describe('useGettingBetterPreview', () => {
 
     expect(result.current.isDirty).toBe(false);
     expect(result.current.dirtySections.hp).toBe(false);
+  });
+
+  test('normalizes a regional browser locale before requesting a preview', async () => {
+    apiMocks.getOrCreateImprovementPreview.mockImplementation(
+      async (_characterId: string, locale?: string) => {
+        if (locale !== 'en' && locale !== 'pl') {
+          throw new Error('INVALID QUERYSTRING');
+        }
+        return preview();
+      }
+    );
+    const { result } = renderHook(() =>
+      useGettingBetterPreview({ characterId: 'char-1', locale: 'en-US' })
+    );
+
+    act(() => result.current.open());
+
+    await waitFor(() => expect(result.current.workingDraft).not.toBeNull());
+    expect(apiMocks.getOrCreateImprovementPreview).toHaveBeenCalledWith('char-1', 'en');
+    expect(snackbarMocks.showError).not.toHaveBeenCalled();
   });
 
   test('rerolling one section preserves unrelated local table edits', async () => {
