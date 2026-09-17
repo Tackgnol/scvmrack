@@ -10,7 +10,7 @@ import type {
 } from "@/api/characterImprovementTypes";
 import { characterKeys } from "@/api";
 import type { CharacterResponse } from "@/hooks/models";
-import { getCharacterKey } from "@/hooks/utils";
+import { getApiLocale, getCharacterKey } from "@/hooks/utils";
 import { useSnackbar } from "@/SnackbarContext/SnackbarProvider";
 import { getApiErrorStatus, getUserFacingApiErrorMessage } from "@/utils/errorUtils";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -59,6 +59,7 @@ export function useGettingBetterPreview(input: {
   locale?: string;
 }) {
   const { characterId, locale } = input;
+  const apiLocale = getApiLocale<"en" | "pl">(locale);
   const queryClient = useQueryClient();
   const { showError, showSuccess } = useSnackbar();
   const { t } = useTranslation();
@@ -82,7 +83,7 @@ export function useGettingBetterPreview(input: {
   const previewMutation = useMutation({
     mutationFn: async () => {
       if (!characterId) throw new Error("Missing character id");
-      return getOrCreateImprovementPreview(characterId, locale);
+      return getOrCreateImprovementPreview(characterId, apiLocale);
     },
     onSuccess: (nextPreview) => {
       setPreview(nextPreview);
@@ -107,7 +108,7 @@ export function useGettingBetterPreview(input: {
         characterId,
         improvementId: preview.id,
         section,
-        locale,
+        locale: apiLocale,
       });
     },
     onSuccess: (nextPreview, section) => {
@@ -139,12 +140,12 @@ export function useGettingBetterPreview(input: {
         characterId,
         improvementId: preview.id,
         draft: workingDraft,
-        locale,
+        locale: apiLocale,
       });
     },
     onSuccess: (character: CharacterResponse) => {
       if (character?.id) {
-        queryClient.setQueryData(getCharacterKey(character.id, locale), character);
+        queryClient.setQueryData(getCharacterKey(character.id, apiLocale), character);
         queryClient.invalidateQueries({ queryKey: characterKeys.list() });
       }
       setPreview(null);
