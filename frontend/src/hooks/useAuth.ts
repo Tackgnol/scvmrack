@@ -1,7 +1,7 @@
 import { authKeys } from "@/api";
 import {
     fetchSession,
-    signInAnonymous,
+    bootstrapAnonymousSession,
     signOut as signOutRequest,
     type AuthSession,
     type AuthSessionUser,
@@ -128,11 +128,7 @@ export function useAuth(options: UseAuthOptions = {}) {
         retry: false,
         refetchOnWindowFocus: false,
         queryFn: async () => {
-            await signInAnonymous();
-            const createdSession = await fetchSession();
-            if (!createdSession?.user) {
-                throw new Error('Anonymous session did not start');
-            }
+            const createdSession = await bootstrapAnonymousSession();
             queryClient.setQueryData(authKeys.session(), createdSession);
             return createdSession;
         },

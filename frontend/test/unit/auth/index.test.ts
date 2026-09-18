@@ -1,11 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import * as Sentry from '@sentry/react';
 import {
+  bootstrapAnonymousSession,
   fetchSession,
   loginUrl,
   profileUrl,
   signInAnonymous,
   signOut,
 } from '@/auth';
+
+vi.mock('@sentry/react', () => ({ captureMessage: vi.fn() }));
 
 const mockFetch = vi.fn();
 
@@ -54,7 +58,7 @@ describe('auth api helpers', () => {
     await expect(fetchSession()).resolves.toEqual(session);
     expect(mockFetch).toHaveBeenCalledWith(
       'https://api.example.test/api/auth/get-session',
-      { credentials: 'include', headers: {} }
+      { credentials: 'include', cache: 'no-store', headers: {} }
     );
   });
 
@@ -116,5 +120,102 @@ describe('auth api helpers', () => {
 
     expect(loginUrl()).toBe('/api/auth/oauth2/login/logto');
     expect(profileUrl()).toBe('https://auth.rpgtools.co/account/security');
+  });
+
+  describe('bootstrapAnonymousSession', () => {
+    const user = { session: { id: 's' }, user: { id: 'u', isAnonymous: true } };
+    const sessionResponse = (body: unknown) => ({
+      status: 200,
+      ok: true,
+      json: async () => body,
+    });
+    const signInResponse = (status: number) => ({ ok: status < 400, status });
+    const urls = () => mockFetch.mock.calls.map(([url]) => String(url));
+    const run = async () => {
+      const result = bootstrapAnonymousSession();
+      const settled = result.catch(() => undefined);
+      await vi.runAllTimersAsync();
+      await settled;
+      return result;
+    };
+
+    beforeEach(() => vi.useFakeTimers());
+    afterEach(() => vi.useRealTimers());
+
+    it('returns the session without logging when sign-in works first time', async () => {
+      mockFetch
+        .mockResolvedValueOnce(signInResponse(200))
+        .mockResolvedValueOnce(sessionResponse(user));
+
+      await expect(run()).resolves.toEqual(user);
+      expect(Sentry.captureMessage).not.toHaveBeenCalled();
+    });
+
+    it('treats a sign-in 400 as success when a session already exists, and logs it', async () => {
+      mockFetch
+        .mockResolvedValueOnce(signInResponse(400))
+        .mockResolvedValueOnce(sessionResponse(user));
+
+      await expect(run()).resolves.toEqual(user);
+      expect(urls().filter((u) => u.includes('sign-in'))).toHaveLength(1);
+      expect(Sentry.captureMessage).toHaveBeenCalledWith(
+        'Anonymous bootstrap recovered',
+        expect.objectContaining({
+          level: 'warning',
+          fingerprint: ['anonymous-bootstrap-recovered', 'existing-session', '400'],
+        }),
+      );
+    });
+
+    it('retries after a network failure and logs the recovery', async () => {
+      mockFetch
+        .mockRejectedValueOnce(new TypeError('Failed to fetch'))
+        .mockResolvedValueOnce(sessionResponse(null)) // no session yet
+        .mockResolvedValueOnce(signInResponse(200))
+        .mockResolvedValueOnce(sessionResponse(user));
+
+      await expect(run()).resolves.toEqual(user);
+      expect(Sentry.captureMessage).toHaveBeenCalledWith(
+        'Anonymous bootstrap recovered',
+        expect.objectContaining({
+          fingerprint: ['anonymous-bootstrap-recovered', 'retried', 'network'],
+        }),
+      );
+    });
+
+    it('does not retry a 429 and rethrows when no session exists', async () => {
+      mockFetch
+        .mockResolvedValueOnce(signInResponse(429))
+        .mockResolvedValueOnce(sessionResponse(null));
+
+      await expect(run()).rejects.toThrow('Failed to bootstrap anonymous session');
+      expect(urls().filter((u) => u.includes('sign-in'))).toHaveLength(1);
+      expect(Sentry.captureMessage).not.toHaveBeenCalled();
+    });
+
+    it('polls get-session, never sign-in, while the new cookie is not readable yet', async () => {
+      mockFetch
+        .mockResolvedValueOnce(signInResponse(200))
+        .mockResolvedValueOnce(sessionResponse(null))
+        .mockResolvedValueOnce(sessionResponse(user));
+
+      await expect(run()).resolves.toEqual(user);
+      expect(urls().filter((u) => u.includes('sign-in'))).toHaveLength(1);
+      expect(Sentry.captureMessage).toHaveBeenCalledWith(
+        'Anonymous bootstrap recovered',
+        expect.objectContaining({
+          fingerprint: ['anonymous-bootstrap-recovered', 'delayed-session', 'ok'],
+        }),
+      );
+    });
+
+    it('fails with "did not start" when the session never appears', async () => {
+      mockFetch
+        .mockResolvedValueOnce(signInResponse(200))
+        .mockResolvedValue(sessionResponse(null));
+
+      await expect(run()).rejects.toThrow('Anonymous session did not start');
+      expect(Sentry.captureMessage).not.toHaveBeenCalled();
+    });
   });
 });
