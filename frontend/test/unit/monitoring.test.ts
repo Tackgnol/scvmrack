@@ -94,6 +94,24 @@ describe("prepareFrontendEvent", () => {
     ).toBeNull();
   });
 
+  it("drops crawler events from search indexers", () => {
+    const indexerEvent = event({
+      contexts: { browser: { name: "meta-webindexer", version: "1.1" } },
+    });
+
+    expect(prepareFrontendEvent(indexerEvent, hint(new Error("x")))).toBeNull();
+  });
+
+  it.each([
+    "InvalidStateError: Transition was aborted because of invalid state",
+    "InvalidStateError: Transition was aborted because of invalid state. Viewport size changed",
+    "InvalidStateError: Skipped view transition due to graphics process or device reset",
+  ])("drops view transition failures: %s", (message) => {
+    expect(
+      prepareFrontendEvent(event({ message }), hint(new Error(message))),
+    ).toBeNull();
+  });
+
   it("fingerprints server API errors by stable code and operation", () => {
     const error = toApiClientError(
       { code: "CHARACTER_READ_FAILED", message: "failed" },

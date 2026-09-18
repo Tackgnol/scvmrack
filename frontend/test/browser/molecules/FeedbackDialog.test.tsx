@@ -66,7 +66,7 @@ describe('FeedbackDialog', () => {
     await userEvent.type(textbox, 'Something broke');
     await userEvent.click(screen.getByText(/send report/i));
 
-    expect(feedbackRequests).toHaveLength(1);
+    await expect.poll(() => feedbackRequests).toHaveLength(1);
     const [request] = feedbackRequests;
     expect(request.url).toContain('/api/feedback');
     expect(request.body.kind).toBe('error');

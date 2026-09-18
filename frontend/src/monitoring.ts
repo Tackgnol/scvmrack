@@ -6,7 +6,22 @@ import {
 } from "@/utils/errorUtils";
 
 const CLOUDFLARE_BEACON_RE = /\/beacon\.min\.js(?:\/|$)/i;
-const CRAWLER_RE = /(?:bot|crawler|spider)/i;
+const CRAWLER_RE = /(?:bot|crawler|spider|indexer)/i;
+
+// Browser-side View Transitions API failures (viewport resize, GPU reset,
+// superseded transition). Cosmetic: the navigation itself still completes.
+const VIEW_TRANSITION_RE =
+  /(?:transition was aborted because of invalid state|skipped view transition)/i;
+
+function isViewTransitionError(event: ErrorEvent, error: unknown): boolean {
+  const messages = [
+    error instanceof Error ? error.message : undefined,
+    event.message,
+    ...(event.exception?.values ?? []).map((exception) => exception.value),
+  ];
+
+  return messages.some((message) => VIEW_TRANSITION_RE.test(message ?? ""));
+}
 
 function hasCloudflareBeaconFrame(event: ErrorEvent): boolean {
   const frames = (event.exception?.values ?? []).flatMap(
@@ -61,7 +76,8 @@ export function prepareFrontendEvent(
   if (
     (originalError !== undefined && !shouldCaptureClientError(originalError)) ||
     hasCloudflareBeaconFrame(event) ||
-    isCrawlerEvent(event)
+    isCrawlerEvent(event) ||
+    isViewTransitionError(event, originalError)
   ) {
     return null;
   }

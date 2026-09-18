@@ -1,7 +1,8 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { badRequest, sendApiError } from '../errors.js';
 
-const ALLOWED_PROJECTS = new Set(['6']);
+// 5 = scvmrack_fe, 6 = scvmrack_be, 7 = scvmrack_canary (GlitchTip project ids)
+const ALLOWED_PROJECTS = new Set(['5', '6', '7']);
 
 const tunnel: FastifyPluginAsync = async (fastify): Promise<void> => {
   const upstreamHost = process.env.GLITCHTIP_UPSTREAM;
