@@ -3,7 +3,7 @@ import { beforeEach, expect, test, vi } from 'vitest';
 import { useAuth } from '@/hooks/useAuth.ts';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { hasCurrentSearchParam } from '@/router/navigation';
-import { fetchSession, signInAnonymous, signOut } from '@/auth';
+import { bootstrapAnonymousSession, fetchSession, signOut } from '@/auth';
 import { appHistory } from '@/router/history';
 
 vi.mock('@tanstack/react-query', () => ({
@@ -14,7 +14,7 @@ vi.mock('@tanstack/react-query', () => ({
 
 vi.mock('@/auth', () => ({
   fetchSession: vi.fn(),
-  signInAnonymous: vi.fn(),
+  bootstrapAnonymousSession: vi.fn(),
   signOut: vi.fn(),
 }));
 
@@ -129,7 +129,7 @@ test('useAuth bootstraps anonymous sessions when no session exists', async () =>
     session: { id: 'anonymous-session' },
     user: { id: 'anonymous-user', isAnonymous: true },
   };
-  vi.mocked(fetchSession).mockResolvedValue(createdSession);
+  vi.mocked(bootstrapAnonymousSession).mockResolvedValue(createdSession);
 
   let capturedQueryFn: (() => Promise<unknown>) | undefined;
   (useQuery as any).mockImplementation((options: any) => {
@@ -148,18 +148,19 @@ test('useAuth bootstraps anonymous sessions when no session exists', async () =>
 
   await capturedQueryFn?.();
 
-  expect(signInAnonymous).toHaveBeenCalled();
-  expect(fetchSession).toHaveBeenCalled();
+  expect(bootstrapAnonymousSession).toHaveBeenCalled();
   expect(queryClient.setQueryData).toHaveBeenCalledWith(
     ['auth', 'session'],
     createdSession
   );
 });
 
-test('useAuth rejects an anonymous bootstrap that does not produce a readable session', async () => {
+test('useAuth surfaces a failed anonymous bootstrap and does not cache a session', async () => {
   const queryClient = { invalidateQueries: vi.fn(), setQueryData: vi.fn() };
   (useQueryClient as any).mockReturnValue(queryClient);
-  vi.mocked(fetchSession).mockResolvedValue(null);
+  vi.mocked(bootstrapAnonymousSession).mockRejectedValue(
+    new Error('Anonymous session did not start')
+  );
 
   let capturedQueryFn: (() => Promise<unknown>) | undefined;
   (useQuery as any).mockImplementation((options: any) => {
@@ -222,7 +223,7 @@ test('useAuth can skip anonymous bootstrap when no session exists', () => {
 
   renderHook(() => useAuth({ bootstrapAnonymous: false }));
 
-  expect(signInAnonymous).not.toHaveBeenCalled();
+  expect(bootstrapAnonymousSession).not.toHaveBeenCalled();
 });
 
 test('useAuth skips anonymous bootstrap on invite routes by default', () => {
@@ -244,7 +245,7 @@ test('useAuth skips anonymous bootstrap on invite routes by default', () => {
 
   renderHook(() => useAuth());
 
-  expect(signInAnonymous).not.toHaveBeenCalled();
+  expect(bootstrapAnonymousSession).not.toHaveBeenCalled();
 });
 
 test('useAuth skips anonymous bootstrap while an obr-exchange token is pending (RPG-57)', () => {
@@ -268,7 +269,7 @@ test('useAuth skips anonymous bootstrap while an obr-exchange token is pending (
 
   renderHook(() => useAuth());
 
-  expect(signInAnonymous).not.toHaveBeenCalled();
+  expect(bootstrapAnonymousSession).not.toHaveBeenCalled();
 });
 
 test('useAuth can skip session fetch entirely', () => {
@@ -291,7 +292,7 @@ test('useAuth can skip session fetch entirely', () => {
   renderHook(() => useAuth({ fetchSession: false }));
 
   expect(fetchSession).not.toHaveBeenCalled();
-  expect(signInAnonymous).not.toHaveBeenCalled();
+  expect(bootstrapAnonymousSession).not.toHaveBeenCalled();
 });
 
 test('useAuth handles signOut', async () => {

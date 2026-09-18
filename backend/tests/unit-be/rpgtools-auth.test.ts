@@ -134,3 +134,25 @@ test('rpgtools auth plugin keeps local and configured origins trusted', async ()
     await app.close();
   }
 });
+
+test('rpgtools auth plugin marks auth and csrf responses as no-store', async () => {
+  const app = Fastify({ logger: false });
+  await app.register(rpgtoolsAuthPlugin);
+  app.get('/api/auth/get-session', async () => null);
+  app.get('/api/csrf-token', async () => ({ token: 't' }));
+  app.get('/api/characters', async () => []);
+  await app.ready();
+
+  for (const url of ['/api/auth/get-session', '/api/csrf-token']) {
+    const response = await app.inject({ method: 'GET', url });
+    assert.equal(
+      response.headers['cache-control'],
+      'no-store, no-cache, must-revalidate, private',
+      url
+    );
+  }
+  const other = await app.inject({ method: 'GET', url: '/api/characters' });
+  assert.equal(other.headers['cache-control'], undefined);
+
+  await app.close();
+});
