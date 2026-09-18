@@ -90,7 +90,8 @@ const equipment: FastifyPluginAsync = async (fastify) => {
               type: 'string',
               enum: ['weapon', 'armor', 'equipment', 'pet'],
             },
-            id: { type: 'integer', minimum: 1 },
+            // Postgres INT4 ceiling; larger ids overflow in Prisma and surface as a 500.
+            id: { type: 'integer', minimum: 1, maximum: 2147483647 },
           },
         },
         querystring: {

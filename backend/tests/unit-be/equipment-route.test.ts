@@ -49,9 +49,11 @@ mock.module('../../src/lib/prisma.js', {
 });
 
 const { default: equipmentRoutes } = await import('../../src/routes/equipment/index.js');
+const { default: errorHandlerPlugin } = await import('../../src/plugins/error-handler.js');
 
 async function buildApp() {
   const app = Fastify({ logger: false });
+  await app.register(errorHandlerPlugin);
   await app.register(equipmentRoutes);
   await app.ready();
   return app;
@@ -72,6 +74,21 @@ test('GET /:itemType/:id falls back to key when the search id is stale', async (
     { where: { id: 42 } },
     { where: { key: 'weapons.sword' } },
   ]);
+
+  await app.close();
+});
+
+test('GET /:itemType/:id rejects ids beyond the INT4 range before hitting the DB', async () => {
+  findFirstCalls.length = 0;
+  const app = await buildApp();
+
+  const response = await app.inject({
+    method: 'GET',
+    url: '/weapon/9223372036854775807?key=probe',
+  });
+
+  assert.equal(response.statusCode, 400);
+  assert.deepEqual(findFirstCalls, []);
 
   await app.close();
 });

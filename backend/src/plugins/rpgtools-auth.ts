@@ -71,6 +71,14 @@ export default fp(async function rpgtoolsAuthPlugin(fastify: FastifyInstance) {
     },
   });
 
+  // Session state must never be reused by a browser, WebView or proxy: a cached
+  // `get-session` null right after sign-in reads as "session did not start".
+  fastify.addHook('onSend', async (request, reply) => {
+    if (request.url.startsWith('/api/auth/') || request.url.startsWith('/api/csrf-token')) {
+      void reply.header('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+    }
+  });
+
   // /api/auth/oauth2/login/logto is provided by the shared-auth plugin since
   // 1.3.0 (it takes a same-origin `returnTo` query param instead of the old
   // local route's `callbackURL`).
