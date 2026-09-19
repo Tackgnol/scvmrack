@@ -111,6 +111,8 @@ Room-scoped Owlbear Rodeo bindings, backed by the `ObrPlayerCharacterBinding`/
 
 - `GET /health` — liveness probe (`{ status, timestamp }`)
 - OAuth redirect tunnel route
+- `/api/tunnel` relays browser GlitchTip envelopes (ad blockers block direct reports); only allowlisted project ids are forwarded
+- Equipment item ids are validated to the INT4 range (400, not a database error)
 - Shared-auth endpoints: `/api/auth/*`, `/api/csrf-token`, `/api/claim/*`
 - `/test/*` fixture routes (enabled only outside production)
 
@@ -132,7 +134,9 @@ Centralized, structured error pipeline (`src/errors.ts` + `plugins/error-handler
 - Session cookies: `HttpOnly`, `Secure`, `SameSite=Lax`, `__Secure-` prefix
 - HSTS via `@fastify/helmet` (`max-age=31536000; includeSubDomains`)
 - HMAC double-submit CSRF on all state-changing routes outside `/api/auth/*`
-- Rate limiting: 10 req/min on auth, 30 req/min on character/equipment, 20/min on feedback
+- Rate limiting is per visitor, keyed on Cloudflare's `CF-Connecting-IP` (trusted only from the
+  private Caddy hop): 300 req/min global, 20-50/min on character/equipment routes, 20/min on feedback
+- `Cache-Control: no-store` on `/api/auth/*` and `/api/csrf-token`
 - SQL injection guarded by Prisma parameterization / tagged `$queryRaw`
 - Input sanitization helpers (`sanitizeString`, `sanitizeJsonb`, `sanitizeCharacterUpdate`);
   text remains plain API data and HTML escaping is left to render boundaries

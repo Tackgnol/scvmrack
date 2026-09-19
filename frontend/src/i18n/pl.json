@@ -963,6 +963,14 @@
     "typeMinor": "Mała",
     "typePatch": "Poprawka",
     "moreUpdates": "Więcej aktualizacji wkrótce. Świat się kończy, ale my dalej dostarczamy.",
+    "v062": {
+      "guestSignIn": "Logowanie gościa na telefonach i w przeglądarkach wbudowanych w aplikacje odzyskuje się teraz samo, zamiast pokazywać błąd",
+      "noStale": "Odpowiedzi o sesji i tokenie bezpieczeństwa nie są już cache'owane, więc nieaktualna odpowiedź „niezalogowany” nie jest ponownie używana",
+      "perVisitor": "Limity żądań są teraz liczone osobno dla każdego odwiedzającego, a nie wspólnie dla wszystkich, więc szczyty ruchu nie blokują już nowych gości",
+      "headroom": "Ogólny limit żądań wynosi teraz 300 na minutę na odwiedzającego (wcześniej 100)",
+      "itemIds": "Zapytanie o absurdalnie duży identyfikator ekwipunku zwraca teraz poprawny błąd żądania zamiast błędu serwera",
+      "monitoring": "Cichszy monitoring: kosmetyczne błędy przejść między stronami i boty indeksujące nie są już zgłaszane"
+    },
     "v061": {
       "gettingBetter": "Mechanika rozwoju „Getting Better” z MÖRK BORG jest już dostępna — zobacz podgląd rzutu, przerzuć go, jeśli nie odpowiada, a potem zastosuj, aby awansować",
       "scumFixes": "Zdolności rozwoju Scum i opisy specjalizacji wyświetlają się teraz poprawnie, bez nakładania się i bez powrotu do angielskiego",
