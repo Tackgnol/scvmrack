@@ -966,6 +966,14 @@
     "typeMinor": "Minor",
     "typePatch": "Patch",
     "moreUpdates": "More updates coming soon. The world is ending, but we keep shipping.",
+    "v062": {
+      "guestSignIn": "Guest sign-in on phones and in-app browsers now recovers on its own instead of showing an error",
+      "noStale": "Session and security-token responses are never cached, so a stale \"not signed in\" answer is no longer reused",
+      "perVisitor": "Request limits are now counted per visitor instead of shared by everyone, so busy moments no longer lock new visitors out",
+      "headroom": "The general request limit is now 300 per minute per visitor (was 100)",
+      "itemIds": "Asking for an impossibly large equipment id now returns a proper bad-request error instead of a server error",
+      "monitoring": "Quieter monitoring: cosmetic page-transition glitches and search-indexer bots are no longer reported"
+    },
     "v061": {
       "gettingBetter": "MÖRK BORG's Getting Better advancement has landed — preview the roll, reroll if you don't like it, then apply it to level up",
       "scumFixes": "Scum improvement abilities and specialty descriptions now read correctly instead of overlapping or falling back to English",
