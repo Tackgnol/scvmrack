@@ -3,6 +3,8 @@ import test, { mock } from 'node:test';
 
 import Fastify from 'fastify';
 
+import { clientIp } from '../../src/lib/client-ip.js';
+
 type LinkAccountPayload = {
   anonymousUser: { user: { id: string } };
   newUser: { user: { id: string } };
@@ -19,6 +21,7 @@ type SharedAuthOptions = {
   };
   onLinkAccount: (payload: LinkAccountPayload) => Promise<void>;
   obrExchange: { allowAnonymousIssue: boolean };
+  security: { rateLimit: { keyGenerator: unknown } };
 };
 
 const updateManyCalls: unknown[] = [];
@@ -153,6 +156,19 @@ test('rpgtools auth plugin marks auth and csrf responses as no-store', async () 
   }
   const other = await app.inject({ method: 'GET', url: '/api/characters' });
   assert.equal(other.headers['cache-control'], undefined);
+
+  await app.close();
+});
+
+test('rpgtools auth plugin keys rate limits on the real client IP', async () => {
+  registeredSharedAuthOptions = null;
+
+  const app = Fastify({ logger: false });
+  await app.register(rpgtoolsAuthPlugin);
+  await app.ready();
+
+  assert.ok(registeredSharedAuthOptions);
+  assert.equal(registeredSharedAuthOptions.security.rateLimit.keyGenerator, clientIp);
 
   await app.close();
 });
