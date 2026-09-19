@@ -21,7 +21,7 @@ type SharedAuthOptions = {
   };
   onLinkAccount: (payload: LinkAccountPayload) => Promise<void>;
   obrExchange: { allowAnonymousIssue: boolean };
-  security: { rateLimit: { keyGenerator: unknown } };
+  security: { rateLimit: { keyGenerator: unknown; max: number } };
 };
 
 const updateManyCalls: unknown[] = [];
@@ -160,15 +160,26 @@ test('rpgtools auth plugin marks auth and csrf responses as no-store', async () 
   await app.close();
 });
 
-test('rpgtools auth plugin keys rate limits on the real client IP', async () => {
+test('rpgtools auth plugin keys rate limits on the real client IP at 300/min', async () => {
   registeredSharedAuthOptions = null;
 
+  const originalNodeEnv = process.env.NODE_ENV;
+  process.env.NODE_ENV = 'production';
+
   const app = Fastify({ logger: false });
-  await app.register(rpgtoolsAuthPlugin);
-  await app.ready();
+  try {
+    await app.register(rpgtoolsAuthPlugin);
+    await app.ready();
 
-  assert.ok(registeredSharedAuthOptions);
-  assert.equal(registeredSharedAuthOptions.security.rateLimit.keyGenerator, clientIp);
-
-  await app.close();
+    assert.ok(registeredSharedAuthOptions);
+    assert.equal(registeredSharedAuthOptions.security.rateLimit.keyGenerator, clientIp);
+    assert.equal(registeredSharedAuthOptions.security.rateLimit.max, 300);
+  } finally {
+    if (originalNodeEnv === undefined) {
+      delete process.env.NODE_ENV;
+    } else {
+      process.env.NODE_ENV = originalNodeEnv;
+    }
+    await app.close();
+  }
 });

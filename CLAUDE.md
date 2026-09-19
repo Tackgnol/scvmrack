@@ -147,7 +147,7 @@ Pentested with Shannon AI (2026-03-23). All findings remediated or accepted.
 | Password/auth UX | Managed by Logto + Better Auth via shared-auth | Verified |
 | SQL injection | Prisma parameterization and `$queryRaw` tagged templates | Verified |
 | Cache-control | `no-store, no-cache, must-revalidate, private` on all auth responses | Verified |
-| Rate limiting | Per visitor, keyed by `clientIp` (`backend/src/lib/client-ip.ts`): Cloudflare's `CF-Connecting-IP`, trusted only when the peer is a private address (Caddy). Behind Caddy `request.ip` is the Docker gateway for everyone, so never key limits on it. 100 req/min global, 20–50 req/min on character/equipment routes | Verified |
+| Rate limiting | Per visitor, keyed by `clientIp` (`backend/src/lib/client-ip.ts`): Cloudflare's `CF-Connecting-IP`, trusted only when the peer is a private address (Caddy). Behind Caddy `request.ip` is the Docker gateway for everyone, so never key limits on it. 300 req/min global per visitor, 20–50 req/min on character/equipment routes | Verified |
 | Claim signatures | Shared-auth HMAC claim flow | Verified |
 | Swagger/OpenAPI | Disabled in production (`NODE_ENV=production`) | Verified |
 | Dockerfile | Runs as `node` user, not root | Verified |

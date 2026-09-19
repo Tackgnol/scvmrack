@@ -27,7 +27,14 @@ export default fp(async function rpgtoolsAuthPlugin(fastify: FastifyInstance) {
     // SameSite=None; Partitioned cookies so the iframe can hold a session.
     embeddedSessions: true,
     // Rate limits (global and per-route) must be per visitor, not per Caddy hop.
-    security: { rateLimit: { keyGenerator: clientIp } },
+    // The shared-auth default (100/min) is tight for a page load that makes
+    // 15-30 calls; 300/min per visitor is still a real abuse cap.
+    security: {
+      rateLimit: {
+        keyGenerator: clientIp,
+        max: process.env.NODE_ENV === 'test' ? 10000 : 300,
+      },
+    },
     obrExchange: { allowAnonymousIssue: true },
     database: prismaAdapter(prisma, { provider: 'postgresql' }),
     trustedOrigins: Array.from(
