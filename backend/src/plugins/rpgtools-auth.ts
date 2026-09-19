@@ -2,7 +2,6 @@ import fp from 'fastify-plugin';
 import type { FastifyInstance } from 'fastify';
 import { prismaAdapter, rpgtoolsSharedAuth } from '@tackgnol/rpgtools-shared-auth';
 import prisma from '../lib/prisma.js';
-import { clientIp } from '../lib/client-ip.js';
 
 const defaultTrustedOrigins = [
   'http://localhost:5173',
@@ -26,12 +25,12 @@ export default fp(async function rpgtoolsAuthPlugin(fastify: FastifyInstance) {
     // itch.io embed support: requests marked with x-embedded-session get
     // SameSite=None; Partitioned cookies so the iframe can hold a session.
     embeddedSessions: true,
-    // Rate limits (global and per-route) must be per visitor, not per Caddy hop.
-    // The shared-auth default (100/min) is tight for a page load that makes
-    // 15-30 calls; 300/min per visitor is still a real abuse cap.
+    // shared-auth keys limits on the real visitor IP by default (clientIp:
+    // CF-Connecting-IP from our Caddy hop). The shared-auth default (100/min) is
+    // tight for a page load that makes 15-30 calls; 300/min per visitor is still
+    // a real abuse cap.
     security: {
       rateLimit: {
-        keyGenerator: clientIp,
         max: process.env.NODE_ENV === 'test' ? 10000 : 300,
       },
     },
