@@ -35,6 +35,19 @@ const buildReleaseNotes = (t: TFunction): ReleaseNote[] => {
     // newest-first and in sync with that folder when cutting a release.
     return [
         {
+            version: '0.6.2',
+            date: '2026-09-19',
+            type: 'patch',
+            changes: [
+                t('release.v062.guestSignIn', 'Guest sign-in on phones and in-app browsers now recovers on its own instead of showing an error'),
+                t('release.v062.noStale', 'Session and security-token responses are never cached, so a stale "not signed in" answer is no longer reused'),
+                t('release.v062.perVisitor', 'Request limits are now counted per visitor instead of shared by everyone, so busy moments no longer lock new visitors out'),
+                t('release.v062.headroom', 'The general request limit is now 300 per minute per visitor (was 100)'),
+                t('release.v062.itemIds', 'Asking for an impossibly large equipment id now returns a proper bad-request error instead of a server error'),
+                t('release.v062.monitoring', 'Quieter monitoring: cosmetic page-transition glitches and search-indexer bots are no longer reported'),
+            ],
+        },
+        {
             version: '0.6.1',
             date: '2026-09-15',
             type: 'minor',

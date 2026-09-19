@@ -75,10 +75,12 @@
 
 - `ErrorFeedbackProvider` automatically surfaces a dialog on unexpected API errors,
   enriched with HTTP status, API code, and request id
-- Frontend and backend GlitchTip reports carry the same release/environment while
-  using separate projects; production browser traces upload private source maps,
+- Frontend and backend GlitchTip reports carry the same release/environment and share one
+  project (frontend events carry `source: frontend` and are relayed through the backend
+  tunnel because ad blockers block direct requests); production browser traces upload private source maps,
   group API failures by stable code and operation, and discard narrowly identified
-  expected HTTP, navigation, crawler, and Cloudflare beacon noise
+  expected HTTP, navigation, crawler (including search indexers), View Transitions, and
+  Cloudflare beacon noise
 - Missing or forbidden character and print routes recover through a clean character
   selection reset without deleting anything or navigating back to the invalid id;
   expected client errors and navigation aborts stay out of GlitchTip
@@ -89,8 +91,10 @@
 ## Auth & sessions
 
 - Logto sign-in/profile flows plus anonymous guest sessions for first-run ownership
-- Anonymous bootstrap completes only after the new cookie resolves to a readable
-  session; user-id transitions clear ownership-scoped query caches and the
+- Anonymous bootstrap tolerates transient failures: a failed sign-in still succeeds when a
+  session already exists, network/5xx errors retry, and it polls the session (never re-signs-in)
+  until the new cookie is readable; recovered bootstraps log a GlitchTip warning. It completes
+  only once the new cookie resolves to a readable session; user-id transitions clear ownership-scoped query caches and the
   remembered character before protected character flows resume
 - Character claim flow to transfer guest characters after sign-in
 - Session-expiry detection and handling

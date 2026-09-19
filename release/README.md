@@ -4,6 +4,7 @@ User-facing release notes for **Scvm Rack**, newest first.
 
 | Version | Date | Notes |
 |---|---|---|
+| [0.6.2](./0.6.2.md) | 2026-09-19 | Steadier guest sign-in on phones and in-app browsers, and rate limits counted per visitor with more headroom |
 | [0.6.1](./0.6.1.md) | 2026-09-15 | Getting Better advancement, plus anonymous Owlbear characters can open in the full site without losing their in-room session |
 | [0.6.0](./0.6.0.md) | 2026-08-24 | Beta milestone with the Misery track, stronger route/session recovery, quieter monitoring, and Owlbear hardening |
 | [0.5.7](./0.5.7.md) | 2026-07-06 | Owlbear room character visibility and panel transport now use the shared package path consistently |

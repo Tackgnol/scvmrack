@@ -1,6 +1,6 @@
 {
   "name": "scvmgrinder_be",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "description": "This project was bootstrapped with Fastify-CLI.",
   "main": "app.ts",
   "type": "module",
