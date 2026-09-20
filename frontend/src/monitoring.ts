@@ -47,12 +47,19 @@ function stringTag(value: unknown): string | undefined {
   return typeof value === "string" && value.length > 0 ? value : undefined;
 }
 
+// The user's connection dropped mid-request. Nothing in the app caused it and
+// nothing in the app can fix it, and a real outage can't report through our own
+// tunnel anyway — so this group only ever collects other people's flaky wifi.
+// "Failed to fetch dynamically imported module" is excluded: that one means a
+// stale chunk reference, which is ours.
+const NETWORK_FAILURE_RE =
+  /(?:failed to fetch|load failed|networkerror|network request failed)/i;
+
 function isNetworkFailure(error: unknown): boolean {
   return (
     error instanceof Error &&
-    /(?:failed to fetch|load failed|networkerror|network request failed)/i.test(
-      error.message,
-    )
+    NETWORK_FAILURE_RE.test(error.message) &&
+    !/dynamically imported module/i.test(error.message)
   );
 }
 
@@ -77,7 +84,8 @@ export function prepareFrontendEvent(
     (originalError !== undefined && !shouldCaptureClientError(originalError)) ||
     hasCloudflareBeaconFrame(event) ||
     isCrawlerEvent(event) ||
-    isViewTransitionError(event, originalError)
+    isViewTransitionError(event, originalError) ||
+    isNetworkFailure(originalError)
   ) {
     return null;
   }
@@ -90,9 +98,7 @@ export function prepareFrontendEvent(
   const status = getApiErrorStatus(originalError);
   const code = getApiErrorCode(originalError);
   const groupingCode =
-    code ??
-    (status !== undefined ? `HTTP_${status}` : undefined) ??
-    (isNetworkFailure(originalError) ? "NETWORK_FAILURE" : undefined);
+    code ?? (status !== undefined ? `HTTP_${status}` : undefined);
 
   if (!groupingCode) {
     return event;
