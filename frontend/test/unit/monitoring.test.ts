@@ -87,10 +87,7 @@ describe("prepareFrontendEvent", () => {
     });
 
     expect(
-      prepareFrontendEvent(
-        crawlerEvent,
-        hint(new Error(crawlerEvent.message)),
-      ),
+      prepareFrontendEvent(crawlerEvent, hint(new Error(crawlerEvent.message))),
     ).toBeNull();
   });
 
@@ -131,19 +128,25 @@ describe("prepareFrontendEvent", () => {
     );
   });
 
-  it("keeps and fingerprints genuine network failures", () => {
+  it.each([
+    "Failed to fetch",
+    "NetworkError when attempting to fetch resource.",
+    "Load failed",
+  ])("drops dropped-connection errors (%s)", (message) => {
     const networkEvent = event({ tags: { operation: "list_characters" } });
 
     expect(
-      prepareFrontendEvent(
-        networkEvent,
-        hint(new TypeError("Failed to fetch")),
-      ),
-    ).toEqual(
-      expect.objectContaining({
-        fingerprint: ["api-error", "NETWORK_FAILURE", "list_characters"],
-      }),
+      prepareFrontendEvent(networkEvent, hint(new TypeError(message))),
+    ).toBeNull();
+  });
+
+  it("keeps stale-chunk import failures", () => {
+    const chunkEvent = event({ tags: { operation: "list_characters" } });
+    const error = new TypeError(
+      "Failed to fetch dynamically imported module: https://scvmrack.rpgtools.co/assets/x.js",
     );
+
+    expect(prepareFrontendEvent(chunkEvent, hint(error))).not.toBeNull();
   });
 });
 
