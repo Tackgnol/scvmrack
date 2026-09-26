@@ -1,7 +1,7 @@
 # How do the join roll/forge flows roll from the Party Class Pool without changing their screens?
 
 Type: grilling
-Status: open
+Status: claimed
 
 ## Question
 
