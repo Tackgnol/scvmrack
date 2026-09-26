@@ -23,6 +23,7 @@ import { Prisma } from '@prisma/client';
 import type { Roller } from '@tackgnol/rpg-tools-roller';
 import { sanitizeString } from '../utils.js';
 import { statToModifier } from './ability-modifiers.js';
+import { grantedItemKeyForName, grantedPetKeyForName } from './class-grants.js';
 import { hydrateInventoryUses } from './inventory.js';
 import type {
   AbilityStat,
@@ -246,35 +247,13 @@ const GRANTED_ITEM_EXTRAS: Record<string, Partial<PoolItem>> = {
   'equipment.wizard-teeth': { uses: [false, false, false, false] },
 };
 
-// Legacy display-name → catalog-key map. New seed entries should put the catalog
-// key directly in `gainItem`/`gainPet` (resolved by the key-passthrough above) so
-// granting no longer breaks silently when an item is renamed/translated.
-const GRANTED_ITEM_KEYS_BY_NAME: Record<string, string> = {
-  'Crumpled Monster Mask': 'equipment.crumpled-monster-mask',
-  'Wizard Teeth': 'equipment.wizard-teeth',
-  'Lockpicks': 'equipment.lockpicks',
-  'The Brown Scimitar of Galgenbeck': 'weapons.brown-scimitar',
-  "Old Sigürd's Sling": 'weapons.sigurd-sling',
-  "The Shoe of Death's Horse": 'weapons.shoe-of-death',
-  'The Blade of your Ancestors': 'weapons.blade-of-ancestors',
-  'The Snake-Skin Gift': 'weapons.snake-skin-gift',
-  "Sacred Shepherd's Crook": 'weapons.sacred-shepherds-crook',
-};
-
-const GRANTED_PET_KEYS_BY_NAME: Record<string, string> = {
-  'Hawk': 'pets.hawk',
-  'Ancient Gore-Hound': 'pets.gore-hound',
-  'Hamfund the Squire': 'pets.hamfund',
-  'Barbarister the Incredible Horse': 'pets.barbarister',
-};
-
 function buildGrantedClassItem(value: string | undefined, catalog: CatalogCache): PoolItem | null {
   if (!value) return null;
   // Prefer a stable catalog key if the seed already provides one.
   if (catalog.weaponMap.has(value) || catalog.equipMap.has(value) || catalog.armorMap.has(value)) {
     return buildPoolItem(value, catalog, GRANTED_ITEM_EXTRAS[value]);
   }
-  const key = GRANTED_ITEM_KEYS_BY_NAME[value];
+  const key = grantedItemKeyForName(value);
   if (!key) return null;
   return buildPoolItem(key, catalog, GRANTED_ITEM_EXTRAS[key]);
 }
@@ -284,7 +263,7 @@ function buildGrantedClassPet(value: string | undefined, catalog: CatalogCache):
   if (catalog.petMap.has(value)) {
     return buildPoolItem(value, catalog);
   }
-  const key = GRANTED_PET_KEYS_BY_NAME[value];
+  const key = grantedPetKeyForName(value);
   if (!key) return null;
   return buildPoolItem(key, catalog);
 }
