@@ -19,12 +19,14 @@ An implementation-ready spec for GM-authored Custom Classes (creator, Party Clas
 
 - [What did charting settle about custom classes?](issues/00-charting-decisions.md): destination is a spec; GM-owned classes with optional public sharing and moderation; full Book Class parity incl. Class Items; party-only, same join screens; lock-on-use with archive.
 - [What must a Custom Class be able to express to match every Book Class?](issues/01-book-class-parity-audit.md): six Book Classes; parity needs per-class stat dice and omens, a real grant model (item/pet per ability, not name maps or array positions), class-scoped Class Items hidden from catalog search, and generalising the Scum/Herbmaster class-id special cases.
+- [What must a small EU-hosted hobby site do when hosting user-published content?](issues/08-ugc-legal-obligations.md): public classes make scvmrack a DSA hosting platform (micro-exempt from Arts. 15, 20-28); must have an Art. 16 report form open to signed-out users, Art. 17 statements of reasons to authors, contact points and terms, and Art. 18 / Penal Code Art. 240 reporting to police; keep classes text-only.
 
 ## Not yet specified
 
 - **Abuse limits**: caps on classes per GM, text lengths, rate limits for publishing and reporting.
 - **Rendering everywhere**: how Custom Class content and `created by {name}` appear on the print page, the Owlbear sheet and the party page.
 - **Book Classes on the same model**: whether Book Classes migrate onto the Custom Class model (depends on the data model decision).
+- **Legal pages**: terms of service, contact points (authorities + users, PL/EN) and operator details the site lacks today; whether the Polish e-services act applies to a non-commercial operator.
 - **Release plumbing**: creator UI i18n (EN/PL), release notes, FAQ entries.
 
 ## Out of scope
