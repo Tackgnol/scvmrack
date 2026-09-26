@@ -6,12 +6,28 @@ A MÖRK BORG character sheet: players roll and keep scvm, GMs run parties of the
 
 ### Classes
 
+**Built-in Class**:
+A class seeded by scvmrack with no owner: a Book Class, Zine Class or Rack Class.
+_Avoid_: default class, official class, system class
+
 **Book Class**:
-One of the built-in MÖRK BORG classes shipped with the app.
-_Avoid_: default class, MB class, core class
+A Built-in Class from the MÖRK BORG main book.
+_Avoid_: MB class, core class
+
+**Zine Class**:
+A Built-in Class from a third-party publication, shown with its Credit.
+_Avoid_: third-party class
+
+**Rack Class**:
+A Built-in Class made by scvmrack itself for the community.
+_Avoid_: house class
+
+**Credit**:
+The attribution of a Zine Class (or Rack Class) to its work and author, shown as "from {work} by {author}".
+_Avoid_: author, source
 
 **Custom Class**:
-A class authored by a signed-in GM, owned by that GM's account.
+A class authored by a signed-in GM, owned by that GM's account; shown as "created by {name}".
 _Avoid_: homebrew class, user class
 
 **Class Item**:
