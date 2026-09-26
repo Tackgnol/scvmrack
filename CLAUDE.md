@@ -194,3 +194,17 @@ When working on this codebase, use these skills for best results:
 - **`oauth`** — for Logto/OIDC/shared-auth changes
 - **`shannon`** — to run pentests against staging before releases
 - **`postgresql`** — for database schema, functions, or raw SQL query changes
+
+## Agent skills
+
+### Issue tracker
+
+Issues are tracked in Linear (rpgtoolsco workspace, team `RPG`, `RPG-<n>`), not GitHub Issues. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Default five-role vocabulary (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`). See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: one root `CONTEXT.md` + `docs/adr/`, created lazily. See `docs/agents/domain.md`.
