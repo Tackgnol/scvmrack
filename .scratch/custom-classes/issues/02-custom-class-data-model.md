@@ -1,7 +1,7 @@
 # Where do Custom Classes, their abilities, origins and Class Items live, and how does a character point at one?
 
 Type: grilling
-Status: open
+Status: claimed
 Blocked by: 01
 
 ## Question
