@@ -5,4 +5,4 @@ Status: open
 
 ## Question
 
-Room parties can be system-owned with no signed-in GM. Decide whether they roll Book Classes only until a signed-in GM claims the party, and how the pool behaves across claim and room re-attach.
+Room parties can be system-owned with no signed-in GM. Decide whether they roll Book Classes only until a signed-in GM claims the party, and how the pool behaves across claim and room re-attach. Roll/Forge mechanics in rooms are tickets 13 and 14.
