@@ -70,7 +70,7 @@ input[type=number]{font-family:var(--f-head);font-size:1.15rem;text-align:center
 .chip.str{background:var(--str);color:var(--white);border-color:var(--str)} .chip.tou{background:var(--tou);color:var(--white);border-color:var(--tou)}
 .chip.warn{background:var(--pink);color:var(--black);border-color:var(--pink)}
 .chip.ok{background:transparent;color:var(--yellow);border-color:var(--dark-grey)}
-.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px 18px;align-items:end}
 .stack{display:flex;flex-direction:column;gap:12px}
 .stack-lg{display:flex;flex-direction:column;gap:20px}
 .inline{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
@@ -141,6 +141,38 @@ input[type=number]{font-family:var(--f-head);font-size:1.15rem;text-align:center
 details.statebox{margin-top:28px}
 details.statebox summary{cursor:pointer;font-family:var(--f-label);letter-spacing:.2em;text-transform:uppercase;font-size:.75rem;min-height:var(--tap);display:flex;align-items:center}
 .state{background:var(--off-black);color:#c9f2c2;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11.5px;line-height:1.45;max-height:340px;overflow:auto;padding:12px;margin:0;white-space:pre-wrap;border:1px solid var(--grey)}
+
+/* bolder: number controls speak the system's resource-stamp + counter vocabulary */
+.stepper{display:flex;flex-direction:column;gap:4px;min-width:0}
+.stepper-row{display:inline-flex;align-items:stretch}
+.step-btn{width:44px;min-height:50px;background:transparent;border:2px solid var(--yellow);color:var(--yellow);cursor:pointer;display:grid;place-items:center;padding:0;transition:transform .08s ease-out,background .08s ease-out}
+.step-btn svg{width:16px;height:16px}
+.step-btn:hover{background:var(--yellow);color:var(--black)}
+.step-btn:active{transform:translate(1px,1px)}
+.step-btn[disabled]{border-style:dashed;border-color:var(--dark-grey);color:var(--dark-grey);background:transparent;cursor:not-allowed;transform:none}
+input.stamp-num{width:64px;min-height:50px;padding:0;background:var(--yellow)!important;color:var(--black)!important;border:2px solid var(--yellow)!important;border-inline:0!important;
+  font-family:var(--f-head);font-size:1.8rem;line-height:1;text-align:center;caret-color:var(--black);appearance:textfield;-moz-appearance:textfield}
+input.stamp-num::-webkit-inner-spin-button,input.stamp-num::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+input.stamp-num:focus-visible{outline:2px solid var(--yellow);outline-offset:3px}
+input.stamp-num[aria-invalid="true"]{background:var(--pink)!important;border-color:var(--pink)!important;border-style:solid!important}
+.dicepick{display:flex;flex-wrap:wrap;gap:6px}
+.die{min-width:50px;min-height:50px;padding:0 8px;background:transparent;color:var(--white);border:2px solid var(--dark-grey);font-family:var(--f-head);font-size:1.35rem;cursor:pointer;
+  font-variant-numeric:tabular-nums;transition:transform .08s ease-out,border-color .08s ease-out}
+.die:hover{border-color:var(--yellow);color:var(--yellow);transform:translate(-2px,-2px)}
+.die[aria-checked="true"]{background:var(--yellow);color:var(--black);border-color:var(--yellow);transform:rotate(-1.5deg)}
+.statline{display:grid;grid-template-columns:minmax(0,1fr);gap:14px;background:var(--off-black);border:1px solid var(--grey);padding:14px}
+@media (min-width:1080px){.statline{grid-template-columns:84px minmax(0,1fr) 230px;align-items:center}}
+@media (max-width:520px){.die{min-width:44px;min-height:44px;font-size:1.2rem;padding:0 4px}.dicepick{gap:5px}}
+.statname{font-family:var(--f-head);font-size:2rem;line-height:1;color:var(--white);padding:10px 8px;text-align:center;letter-spacing:.04em;justify-self:start;min-width:84px}
+.statname.str{background:var(--str)} .statname.agi{background:var(--agi)} .statname.pre{background:var(--pre)} .statname.tou{background:var(--tou)}
+.statctl{display:flex;flex-wrap:wrap;gap:14px 20px;align-items:flex-end}
+.dropbtn{min-height:50px}
+.result{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+@media (min-width:1080px){.result{align-items:flex-end;text-align:right}}
+.formula{background:var(--yellow);color:var(--black);font-family:var(--f-head);font-size:clamp(1.8rem,4vw,2.3rem);line-height:1;padding:6px 12px 4px;transform:rotate(.6deg);white-space:nowrap;font-variant-numeric:tabular-nums}
+.range{display:flex;flex-direction:column;gap:2px;white-space:nowrap;font-family:var(--f-label);font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);font-variant-numeric:tabular-nums}
+.numgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:18px 20px;align-items:start}
+@media (prefers-reduced-motion:reduce){.die[aria-checked="true"],.formula{transform:none}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}.b-step[aria-current="step"],.stamp{transform:none!important}}
 </style>
 
@@ -178,6 +210,8 @@ const STEPS = [
   { key: 'review', label: 'Test roll & save', hint: 'Roll a scvm from the draft as it stands, then save the class.' },
 ];
 const ARROW_L = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3 5 8l5 5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square"/></svg>';
+const MINUS = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10" stroke="currentColor" stroke-width="2.6" stroke-linecap="square"/></svg>';
+const PLUS = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10M8 3v10" stroke="currentColor" stroke-width="2.6" stroke-linecap="square"/></svg>';
 const ARROW_R = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="m6 3 5 5-5 5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square"/></svg>';
 const DIE = '<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="2" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"/><rect x="4.5" y="4.5" width="2" height="2" fill="currentColor"/><rect x="9.5" y="9.5" width="2" height="2" fill="currentColor"/><rect x="7" y="7" width="2" height="2" fill="currentColor"/></svg>';
 
@@ -247,10 +281,6 @@ let saveMsg = '';
 const tx = (o) => (o ? o[viewLang] || o[state.languages[0]] || o.en || o.pl || '' : '');
 const optional = (path) => path.startsWith('gbNote');
 
-function diceSpec(s) {
-  const mod = s.mod ? (s.mod > 0 ? `+${s.mod}` : `${s.mod}`) : '';
-  return `${s.count}d${s.faces}${s.dropLowest ? ' drop lowest' : ''}${mod ? ` ${mod}` : ''}`;
-}
 function textInput(path, { multiline = false, lang, label = '' } = {}) {
   const v = getPath(path) ?? '';
   const miss = !optional(path) && state.languages.includes(lang) && !String(v).trim();
@@ -263,12 +293,20 @@ function lfield(base, label, { multiline = false } = {}) {
   const path = `${base}.${viewLang}`;
   return `<div><label class="label" for="${fid(path)}">${esc(label)}</label>${textInput(path, { multiline, lang: viewLang })}</div>`;
 }
-function num(path, label, { min = 0, max = 99 } = {}) {
-  return `<label><span class="label">${esc(label)}</span><input type="number" id="${fid(path)}" data-path="${path}" data-num="1" min="${min}" max="${max}" value="${esc(getPath(path))}"></label>`;
+function num(path, label, { min = 0, max = 99, invalid = false } = {}) {
+  const v = Number(getPath(path)) || 0;
+  const id = fid(path);
+  return `<div class="stepper"><label class="label" for="${id}">${esc(label)}</label><div class="stepper-row">
+    <button type="button" class="step-btn" data-act="nudge" data-path="${path}" data-d="-1" aria-label="Decrease ${esc(label)}" ${v <= min ? 'disabled' : ''}>${MINUS}</button>
+    <input type="number" class="stamp-num" id="${id}" data-path="${path}" data-num="1" min="${min}" max="${max}" value="${v}" inputmode="numeric" aria-invalid="${invalid}">
+    <button type="button" class="step-btn" data-act="nudge" data-path="${path}" data-d="1" aria-label="Increase ${esc(label)}" ${v >= max ? 'disabled' : ''}>${PLUS}</button>
+  </div></div>`;
 }
 function dieSelect(path, label, dice, fmt = (x) => `d${x}`) {
   const v = getPath(path);
-  return `<label><span class="label">${esc(label)}</span><select id="${fid(path)}" data-path="${path}" data-num="1">${dice.map((d) => `<option value="${d}" ${d === v ? 'selected' : ''}>${fmt(d)}</option>`).join('')}</select></label>`;
+  const lid = `${fid(path)}-label`;
+  return `<div class="stepper"><span class="label" id="${lid}">${esc(label)}</span><div class="dicepick" role="radiogroup" aria-labelledby="${lid}">${dice.map((d) =>
+    `<button type="button" class="die" role="radio" aria-checked="${d === v}" tabindex="${d === v ? 0 : -1}" data-act="pick" data-path="${path}" data-v="${d}">${fmt(d)}</button>`).join('')}</div></div>`;
 }
 function itemLabel(key) {
   if (!key) return '';
@@ -324,7 +362,7 @@ function rollSpec(s) {
   return { total: kept.reduce((a, b) => a + b, 0) + (s.mod || 0) };
 }
 const scoreMod = (x) => (x <= 4 ? -3 : x <= 6 ? -2 : x <= 8 ? -1 : x <= 12 ? 0 : x <= 14 ? 1 : x <= 16 ? 2 : 3);
-const signed = (n) => (n >= 0 ? `+${n}` : `${n}`);
+const signed = (n) => (n > 0 ? `+${n}` : n < 0 ? `−${Math.abs(n)}` : '0');
 function testRoll() {
   const stats = {};
   STATS.forEach((s) => { const r = rollSpec(state.stats[s.key]); stats[s.key] = { ...r, mod: scoreMod(r.total) }; });
@@ -363,17 +401,33 @@ function langClassBlock() {
     </div>
     <p class="hint">${dual ? 'Every text field needs both languages. Players see their own.' : `Players in either language see the ${langLong[state.languages[0]]} text.`}</p></div>`;
 }
+function statRange(st) {
+  const kept = st.dropLowest && st.count > 1 ? st.count - 1 : st.count;
+  const lo = kept + (st.mod || 0), hi = kept * st.faces + (st.mod || 0);
+  return `<span>score ${lo}–${hi}</span><span>mod ${signed(scoreMod(lo))} to ${signed(scoreMod(hi))}</span>`;
+}
+function formulaText(st) {
+  const mod = st.mod ? ` ${st.mod > 0 ? '+' : '−'}${Math.abs(st.mod)}` : '';
+  return st.dropLowest && st.count > 1 ? `best ${st.count - 1} of ${st.count}d${st.faces}${mod}` : `${st.count}d${st.faces}${mod}`;
+}
 function statsBody() {
   return `<div class="stack">
     ${STATS.map((s) => {
       const p = `stats.${s.key}`, st = state.stats[s.key];
-      return `<fieldset class="row" style="margin:0"><legend class="sr-only">${s.short}</legend>
-        <div class="spread" style="margin-bottom:6px"><span class="chip ${s.cls}">${s.short}</span><span class="micro" data-derived="spec-${s.key}">${diceSpec(st)}</span></div>
-        <div class="dice">${num(`${p}.count`, 'Dice', { min: 1, max: 6 })}${dieSelect(`${p}.faces`, 'Sides', [4, 6, 8, 10, 12])}${num(`${p}.mod`, 'Modifier', { min: -6, max: 6 })}
-        <label class="check"><input type="checkbox" id="${fid(p)}-drop" data-path="${p}.dropLowest" ${st.dropLowest ? 'checked' : ''}>Drop lowest</label></div></fieldset>`;
+      return `<section class="statline" aria-label="${s.short} dice">
+        <div class="statname ${s.cls}" aria-hidden="true">${s.short}</div>
+        <div class="statctl">
+          ${num(`${p}.count`, 'Dice', { min: 1, max: 6 })}
+          ${dieSelect(`${p}.faces`, 'Sides', [4, 6, 8, 10, 12])}
+          ${num(`${p}.mod`, 'Modifier', { min: -6, max: 6 })}
+          <div class="stepper"><span class="label">Lowest die</span><button type="button" class="act dropbtn ${st.dropLowest ? 'on' : ''}" aria-pressed="${st.dropLowest}" data-act="drop" data-path="${p}.dropLowest">${st.dropLowest ? 'Dropped' : 'Kept'}</button></div>
+        </div>
+        <div class="result"><div class="formula" data-derived="formula-${s.key}">${formulaText(st)}</div>
+          <div class="range" data-derived="range-${s.key}">${statRange(st)}</div></div>
+      </section>`;
     }).join('')}
-    <div class="grid2">${dieSelect('hpDie', 'HP die (+ TOU)', [2, 4, 6, 8, 10, 12])}${dieSelect('omenDie', 'Omen die', [2, 4, 6])}${dieSelect('weaponDie', 'Starting weapon die', [4, 6, 8, 10])}${dieSelect('armorDie', 'Starting armor die', [2, 3, 4])}</div>
-    <div class="grid2">${num('silver.count', 'Silver dice', { min: 1, max: 6 })}${dieSelect('silver.faces', 'Silver sides', [4, 6])}${num('silver.mult', 'Silver multiplier', { min: 1, max: 100 })}</div>
+    <div class="row numgrid">${dieSelect('hpDie', 'HP die (+ TOU)', [2, 4, 6, 8, 10, 12])}${dieSelect('omenDie', 'Omen die', [2, 4, 6])}${dieSelect('weaponDie', 'Starting weapon die', [4, 6, 8, 10])}${dieSelect('armorDie', 'Starting armor die', [2, 3, 4])}</div>
+    <div class="row numgrid">${num('silver.count', 'Silver dice', { min: 1, max: 6 })}${dieSelect('silver.faces', 'Silver sides', [4, 6])}${num('silver.mult', 'Silver multiplier', { min: 1, max: 100 })}</div>
   </div>`;
 }
 function grantSelect(i, kind) {
@@ -418,7 +472,7 @@ function abilitiesBody() {
       ${tableEditor(i)}
     </article>`).join('');
   return `<div class="stack">
-    <div class="row spread"><label class="inline" for="f-randomCount"><span class="label" style="margin:0">Each scvm rolls</span><input type="number" id="f-randomCount" data-path="randomCount" data-num="1" min="0" max="20" value="${state.randomCount}" style="width:76px" aria-invalid="${state.randomCount > pool}"><span class="label" style="margin:0">of ${pool} random abilities</span></label>${counter(state.abilities.length, 'abilities')}</div>
+    <div class="row spread">${num('randomCount', `Random abilities each scvm rolls (pool: ${pool})`, { min: 0, max: 20, invalid: state.randomCount > pool })}${counter(state.abilities.length, 'abilities')}</div>
     ${cards || '<div class="empty">No abilities yet. Add a fixed one every scvm gets, or build a random pool.</div>'}
     <div><button type="button" class="btn" data-act="add-ability" ${state.abilities.length >= LIMIT_LIST ? 'disabled' : ''}>Add ability</button></div>
   </div>`;
@@ -532,7 +586,18 @@ function refreshDerived() {
   const rail = root.querySelector('[data-derived="rail"]'); if (rail) rail.innerHTML = railHtml(issues);
   const ls = root.querySelector('[data-derived="langsw"]'); if (ls) ls.innerHTML = langSwitch(issues);
   const iss = root.querySelector('[data-derived="issues"]'); if (iss) iss.innerHTML = issuesHtml(issues);
-  STATS.forEach((s) => root.querySelectorAll(`[data-derived="spec-${s.key}"]`).forEach((el) => { el.textContent = diceSpec(state.stats[s.key]); }));
+  STATS.forEach((s) => {
+    const st2 = state.stats[s.key];
+    const f = root.querySelector(`[data-derived="formula-${s.key}"]`); if (f) f.textContent = formulaText(st2);
+    const r = root.querySelector(`[data-derived="range-${s.key}"]`); if (r) r.innerHTML = statRange(st2);
+  });
+  root.querySelectorAll('.step-btn').forEach((btn) => {
+    const input = document.getElementById(fid(btn.dataset.path)); if (!input) return;
+    const v = Number(input.value) || 0;
+    btn.disabled = Number(btn.dataset.d) < 0 ? v <= Number(input.min) : v >= Number(input.max);
+  });
+  const rc = document.getElementById('f-randomCount');
+  if (rc) rc.setAttribute('aria-invalid', String(state.randomCount > state.abilities.filter((a) => a.random).length));
   const st = root.querySelector('[data-derived="state"]'); if (st) st.textContent = JSON.stringify(state, null, 2);
   root.querySelectorAll('[data-path]').forEach((el) => {
     const m = el.dataset.path.match(/\.(en|pl)$/);
@@ -554,6 +619,14 @@ function onValue(e) {
   refreshDerived();
 }
 root.addEventListener('input', onValue);
+root.addEventListener('keydown', (e) => {
+  const b = e.target.closest && e.target.closest('.die');
+  if (!b || !['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) return;
+  const all = [...b.parentElement.querySelectorAll('.die')];
+  const i = all.indexOf(b) + (e.key === 'ArrowLeft' || e.key === 'ArrowUp' ? -1 : 1);
+  const n = all[(i + all.length) % all.length];
+  e.preventDefault(); n.focus(); n.click();
+});
 root.addEventListener('change', (e) => { onValue(e); if (e.target.tagName === 'SELECT' && /grant/.test(e.target.dataset.path || '')) render(); });
 root.addEventListener('click', (e) => {
   const b = e.target.closest('[data-act]');
@@ -591,6 +664,21 @@ root.addEventListener('click', (e) => {
       if (x.lang) viewLang = x.lang;
       opts = x.path ? { focusPath: x.path } : { focusHeading: true };
       break;
+    }
+    case 'nudge': {
+      const input = document.getElementById(fid(b.dataset.path));
+      const next = Math.max(Number(input.min), Math.min(Number(input.max), (Number(input.value) || 0) + Number(b.dataset.d)));
+      input.value = next; setPath(b.dataset.path, next); saveMsg = ''; refreshDerived(); return;
+    }
+    case 'pick': {
+      setPath(b.dataset.path, Number(v));
+      b.parentElement.querySelectorAll('.die').forEach((x) => { const on = x === b; x.setAttribute('aria-checked', String(on)); x.tabIndex = on ? 0 : -1; });
+      saveMsg = ''; refreshDerived(); return;
+    }
+    case 'drop': {
+      const on = !getPath(b.dataset.path); setPath(b.dataset.path, on);
+      b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); b.textContent = on ? 'Dropped' : 'Kept';
+      refreshDerived(); return;
     }
     case 'roll': testRoll(); break;
     case 'save': {
