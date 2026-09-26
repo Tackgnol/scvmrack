@@ -1,7 +1,7 @@
 # How should the class creator look and flow?
 
 Type: prototype
-Status: open
+Status: claimed
 Blocked by: 03
 
 ## Question
