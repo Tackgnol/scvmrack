@@ -172,6 +172,39 @@ input.stamp-num[aria-invalid="true"]{background:var(--pink)!important;border-col
 .formula{background:var(--yellow);color:var(--black);font-family:var(--f-head);font-size:clamp(1.8rem,4vw,2.3rem);line-height:1;padding:6px 12px 4px;transform:rotate(.6deg);white-space:nowrap;font-variant-numeric:tabular-nums}
 .range{display:flex;flex-direction:column;gap:2px;white-space:nowrap;font-family:var(--f-label);font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);font-variant-numeric:tabular-nums}
 .numgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:18px 20px;align-items:start}
+
+/* shape: Class Items <-> Abilities relationship */
+.typebadge{font-size:.65rem}
+.gate{display:flex;flex-direction:column;gap:14px;border:2px dashed var(--dark-grey);padding:20px}
+.gate h3{margin:0;font-family:var(--f-head);font-size:2rem;font-weight:400;line-height:1;color:var(--yellow);text-transform:uppercase;letter-spacing:.02em;text-wrap:balance}
+.gate p{margin:0;max-width:62ch}
+.gate-no{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between}
+.gate-no p{margin:0;font-style:italic;color:var(--muted)}
+.linkline{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;margin:0;padding:8px 10px;background:var(--black);border:1px solid var(--dark-grey);font-family:var(--f-label);font-size:.75rem;letter-spacing:.1em;text-transform:uppercase}
+.linkline b{font-family:var(--f-head);font-size:1.2rem;font-weight:400;letter-spacing:.03em;color:var(--white)}
+.linkline .odds{color:var(--yellow)}
+.linkline.none{border-style:dashed;color:var(--muted)}
+.linkline .act{margin-left:auto}
+.tray{display:flex;flex-direction:column;gap:10px;background:var(--black);border:2px solid var(--yellow);padding:14px}
+.tray ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.tray li{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center}
+.tray li b{font-family:var(--f-head);font-size:1.2rem;font-weight:400;color:var(--yellow)}
+.tray li .act{margin-left:auto}
+.arrowhead{color:var(--muted);font-family:var(--f-label);font-size:.72rem;letter-spacing:.15em;text-transform:uppercase;margin-left:6px}
+.confirm{display:flex;flex-direction:column;gap:10px;background:var(--blood);color:var(--white);padding:12px;border:2px solid var(--black)}
+.confirm p{margin:0;max-width:65ch}
+.confirm .inline .act{border-color:var(--white);color:var(--white)}
+.confirm .inline .act:hover{background:var(--white);color:var(--blood)}
+.confirm .inline .act.danger{background:var(--white);color:var(--blood)}
+.rowlink{display:grid;grid-template-columns:34px minmax(0,1fr) minmax(0,200px);gap:4px 8px;align-items:start}
+.rowlink > span{font-family:var(--f-head);font-size:1.2rem;color:var(--yellow);text-align:center;padding-top:10px}
+@media (max-width:620px){.rowlink{grid-template-columns:34px minmax(0,1fr)}.rowlink select{grid-column:2}}
+.snackbar{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:40;display:flex;gap:14px;align-items:center;
+  max-width:calc(100vw - 32px);background:var(--black);color:var(--white);border:2px solid var(--yellow);box-shadow:4px 4px 0 var(--black);padding:8px 8px 8px 14px;
+  font-family:var(--f-label);font-size:.8rem;letter-spacing:.1em;text-transform:uppercase}
+.snackbar .btn{min-height:40px;padding:4px 12px;font-size:1.2rem;flex:none}
+.snackbar span{flex:1;min-width:0}
+@media (max-width:620px){.snackbar{left:16px;right:16px;transform:none;max-width:none}body{padding-bottom:120px}}
 @media (prefers-reduced-motion:reduce){.die[aria-checked="true"],.formula{transform:none}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}.b-step[aria-current="step"],.stamp{transform:none!important}}
 </style>
@@ -203,8 +236,8 @@ const CATALOG = [
 const STEPS = [
   { key: 'identity', label: 'Identity', hint: 'What the class is called and how a player first meets it.' },
   { key: 'numbers', label: 'Stats & dice', hint: 'How each stat is rolled, plus HP, omens, silver and starting gear dice.' },
-  { key: 'abilities', label: 'Abilities', hint: 'Fixed abilities every scvm gets, and the pool random ones are rolled from.' },
-  { key: 'items', label: 'Class Items', hint: 'Weapons, armor, gear and pets only this class can grant. They never appear in item search.' },
+  { key: 'items', label: 'Class Items', hint: 'Weapons, armor, gear and pets only this class has. Each one reaches a scvm through one ability, which you pick in the next step. They never appear in item search.' },
+  { key: 'abilities', label: 'Abilities', hint: 'Fixed abilities every scvm gets, and the pool random ones are rolled from. Abilities are how a scvm gets this class’s Class Items.' },
   { key: 'origins', label: 'Origins', hint: 'Where this wretch came from. One is picked at random for each scvm.' },
   { key: 'gb', label: 'Getting Better', hint: 'What happens when a scvm of this class gets better.' },
   { key: 'review', label: 'Test roll & save', hint: 'Roll a scvm from the draft as it stands, then save the class.' },
@@ -217,6 +250,7 @@ const DIE = '<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="2" width
 
 let uid = 100;
 const L = (en, pl) => ({ en, pl });
+const row = (en, pl, item = '') => ({ en, pl, item });
 const state = {
   name: L('Pale Ossuary Keeper', 'Blady Strażnik Kostnicy'),
   description: L('You swept the bone-halls of Galgenbeck until the dead started answering back. Now you carry what they told you.',
@@ -231,6 +265,12 @@ const state = {
   hpDie: 6, omenDie: 4, weaponDie: 8, armorDie: 2,
   silver: { count: 2, faces: 6, mult: 10 },
   randomCount: 1,
+  items: [
+    { id: 11, type: 'weapon', name: L('Reliquary Flail', 'Cep Relikwiarzowy'), dice: '1d6', dmgMod: 0, reach: 'melee', value: 0,
+      effect: { die: 6, rows: [L('The flail wraps your own arm: 1 damage to you.', 'Cep owija się wokół twojej ręki: 1 obrażenie dla ciebie.'), L('No effect', 'Brak efektu'), L('No effect', 'Brak efektu'), L('No effect', 'Brak efektu'), L('No effect', 'Brak efektu'), L('A saint wakes: target is Stunned.', 'Święty budzi się: cel jest ogłuszony.')] } },
+    { id: 12, type: 'pet', name: L('Carrion Crow', 'Padlinożerna Wrona'), hp: 3, actionDie: 4, actionType: 'attack', humanoid: false, value: 0 },
+    { id: 13, type: 'equipment', name: L('Grave-Salt Pouch', 'Sakiewka Grobowej Soli'), kind: 'consumable', uses: 3, value: 0 },
+  ],
   abilities: [
     { id: 1, random: false, name: L('Bone-Reader', 'Czytacz Kości'),
       text: L('Once per day ask a skull one question. It answers truthfully, if unkindly.', 'Raz dziennie zadaj czaszce jedno pytanie. Odpowie szczerze, choć nieuprzejmie.'),
@@ -247,12 +287,7 @@ const state = {
     { id: 5, random: true, name: L('Litany of Bones', 'Litania Kości'),
       text: L('Carry d6 bone charms. Before a fight, roll on the table.', 'Nosisz k6 kościanych amuletów. Przed walką rzuć na tabelę.'),
       grantItem: '', grantPet: '', mods: [],
-      table: { die: 4, rows: [L('The charm cracks. Nothing.', 'Amulet pęka. Nic.'), L('+1 armor tier this fight.', '+1 poziom pancerza w tej walce.'), L('One enemy flees in terror.', 'Jeden wróg ucieka w przerażeniu.'), L('Test Presence DR12 or lose d4 HP.', 'Test Prezencji ST12 albo tracisz k4 PW.')] } },
-  ],
-  items: [
-    { id: 11, type: 'weapon', name: L('Reliquary Flail', 'Cep Relikwiarzowy'), dice: '1d6', dmgMod: 0, reach: 'melee', value: 0,
-      effect: { die: 6, rows: [L('The flail wraps your own arm: 1 damage to you.', 'Cep owija się wokół twojej ręki: 1 obrażenie dla ciebie.'), L('No effect', 'Brak efektu'), L('No effect', 'Brak efektu'), L('No effect', 'Brak efektu'), L('No effect', 'Brak efektu'), L('A saint wakes: target is Stunned.', 'Święty budzi się: cel jest ogłuszony.')] } },
-    { id: 12, type: 'pet', name: L('Carrion Crow', 'Padlinożerna Wrona'), hp: 3, actionDie: 4, actionType: 'attack', humanoid: false, value: 0 },
+      table: { die: 4, rows: [row('The charm cracks. Nothing.', 'Amulet pęka. Nic.'), row('+1 armor tier this fight.', '+1 poziom pancerza w tej walce.'), row('One enemy flees in terror.', 'Jeden wróg ucieka w przerażeniu.'), row('Test Presence DR12 or lose d4 HP.', 'Test Prezencji ST12 albo tracisz k4 PW.')] } },
   ],
   origins: [
     L('The ossuary of the Shunned Chapel', 'Kostnica Wyklętej Kaplicy'),
@@ -262,6 +297,8 @@ const state = {
   gettingBetter: 'extra-ability',
   gbNote: L('', ''),
 };
+// UI-only state (never saved): the Class Items question and in-card confirmations.
+const ui = { itemsNo: false, itemsYes: false, confirm: null, snack: null };
 
 /* ---------- helpers ---------- */
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -272,7 +309,6 @@ function setPath(p, v) {
   o[ks.at(-1)] = v;
 }
 const fid = (p) => `f-${p.replace(/\./g, '-')}`;
-const langName = { en: 'EN', pl: 'PL' };
 const langLong = { en: 'English', pl: 'Polish' };
 let step = 0;
 let viewLang = 'en';
@@ -280,7 +316,33 @@ let lastRoll = null;
 let saveMsg = '';
 const tx = (o) => (o ? o[viewLang] || o[state.languages[0]] || o.en || o.pl || '' : '');
 const optional = (path) => path.startsWith('gbNote');
+const keyOf = (it) => `ci:${it.id}`;
+const itemByKey = (k) => state.items.find((it) => keyOf(it) === k);
+const poolSize = () => state.abilities.filter((a) => a.random).length;
+const typeWord = { weapon: 'weapon', armor: 'armor', equipment: 'gear', pet: 'pet' };
 
+/* One granter per Class Item: an ability's item/pet slot, or one reference-table row. */
+function granterOf(k) {
+  for (let i = 0; i < state.abilities.length; i++) {
+    const a = state.abilities[i];
+    if (a.grantItem === k) return { kind: 'ability', i, a, slot: 'grantItem' };
+    if (a.grantPet === k) return { kind: 'ability', i, a, slot: 'grantPet' };
+    if (a.table) { const r = a.table.rows.findIndex((x) => x.item === k); if (r >= 0) return { kind: 'table', i, a, row: r }; }
+  }
+  return null;
+}
+const odds = (a) => (a.random ? `if rolled · ${state.randomCount} of ${poolSize()}` : 'every scvm');
+function itemStats(it) {
+  if (it.type === 'weapon') return `${it.dice}${it.dmgMod ? ` ${it.dmgMod > 0 ? '+' : '−'}${Math.abs(it.dmgMod)}` : ''} · ${it.reach}`;
+  if (it.type === 'pet') return `${it.hp} HP · d${it.actionDie} ${it.actionType}`;
+  if (it.type === 'armor') return `tier ${it.tier}`;
+  return `${it.kind}${it.uses ? ` · ${it.uses} uses` : ''}`;
+}
+function itemLabel(key) {
+  if (!key) return '';
+  if (key.startsWith('ci:')) { const it = itemByKey(key); return it ? tx(it.name) || 'Unnamed Class Item' : ''; }
+  return (CATALOG.find((c) => c.key === key) || { label: key }).label;
+}
 function textInput(path, { multiline = false, lang, label = '' } = {}) {
   const v = getPath(path) ?? '';
   const miss = !optional(path) && state.languages.includes(lang) && !String(v).trim();
@@ -308,17 +370,10 @@ function dieSelect(path, label, dice, fmt = (x) => `d${x}`) {
   return `<div class="stepper"><span class="label" id="${lid}">${esc(label)}</span><div class="dicepick" role="radiogroup" aria-labelledby="${lid}">${dice.map((d) =>
     `<button type="button" class="die" role="radio" aria-checked="${d === v}" tabindex="${d === v ? 0 : -1}" data-act="pick" data-path="${path}" data-v="${d}">${fmt(d)}</button>`).join('')}</div></div>`;
 }
-function itemLabel(key) {
-  if (!key) return '';
-  if (key.startsWith('ci:')) {
-    const it = state.items.find((i) => `ci:${i.id}` === key);
-    return it ? tx(it.name) || 'Unnamed Class Item' : 'Removed Class Item';
-  }
-  return (CATALOG.find((c) => c.key === key) || { label: key }).label;
-}
 function counter(n, label) {
   return `<span class="counter ${n > LIMIT_LIST ? 'over' : ''}">${n} of ${LIMIT_LIST} ${label}</span>`;
 }
+function announce(msg) { const el = document.getElementById('announce'); if (el) { el.textContent = ''; setTimeout(() => { el.textContent = msg; }, 30); } }
 
 /* ---------- validation (each issue knows where to fix it) ---------- */
 function validate() {
@@ -328,23 +383,20 @@ function validate() {
   });
   text(state.name, 'name', 'class name', 'identity');
   text(state.description, 'description', 'class description', 'identity');
-  state.abilities.forEach((a, i) => {
-    const n = a.name.en || a.name.pl || `ability ${i + 1}`;
-    text(a.name, `abilities.${i}.name`, `“${n}” name`, 'abilities');
-    text(a.text, `abilities.${i}.text`, `“${n}” rules text`, 'abilities');
-    if (a.table) a.table.rows.forEach((r, k) => text(r, `abilities.${i}.table.rows.${k}`, `“${n}” table row ${k + 1}`, 'abilities'));
-    [a.grantItem, a.grantPet].forEach((g) => {
-      if (g && g.startsWith('ci:') && !state.items.some((it) => `ci:${it.id}` === g)) issues.push({ msg: `“${n}” grants a removed Class Item`, step: 'abilities', path: `abilities.${i}.${g === a.grantItem ? 'grantItem' : 'grantPet'}` });
-    });
-  });
   state.items.forEach((it, i) => {
     const n = it.name.en || it.name.pl || `Class Item ${i + 1}`;
-    text(it.name, `items.${i}.name`, `“${n}” name`, 'items');
-    if (it.effect) it.effect.rows.forEach((r, k) => text(r, `items.${i}.effect.rows.${k}`, `“${n}” effect ${k + 1}`, 'items'));
+    text(it.name, `items.${i}.name`, `Class Item “${n}” name`, 'items');
+    if (it.effect) it.effect.rows.forEach((r, k) => text(r, `items.${i}.effect.rows.${k}`, `Class Item “${n}” effect ${k + 1}`, 'items'));
+    if (!granterOf(keyOf(it))) issues.push({ msg: `Class Item “${n}” is not granted by any ability`, step: 'abilities', focusSel: `[data-act="grant-new"][data-v="${it.id}"]` });
+  });
+  state.abilities.forEach((a, i) => {
+    const n = a.name.en || a.name.pl || `ability ${i + 1}`;
+    text(a.name, `abilities.${i}.name`, `ability “${n}” name`, 'abilities');
+    text(a.text, `abilities.${i}.text`, `ability “${n}” rules text`, 'abilities');
+    if (a.table) a.table.rows.forEach((r, k) => text(r, `abilities.${i}.table.rows.${k}`, `ability “${n}” table row ${k + 1}`, 'abilities'));
   });
   state.origins.forEach((o, k) => text(o, `origins.${k}`, `origin ${k + 1}`, 'origins'));
-  const pool = state.abilities.filter((a) => a.random).length;
-  if (state.randomCount > pool) issues.push({ msg: `Rolls ${state.randomCount} random abilities, but the pool has ${pool}`, step: 'abilities', path: 'randomCount' });
+  if (state.randomCount > poolSize()) issues.push({ msg: `Rolls ${state.randomCount} random abilities, but the pool has ${poolSize()}`, step: 'abilities', path: 'randomCount' });
   if (state.abilities.length > LIMIT_LIST) issues.push({ msg: `More than ${LIMIT_LIST} abilities`, step: 'abilities' });
   if (state.items.length > LIMIT_LIST) issues.push({ msg: `More than ${LIMIT_LIST} Class Items`, step: 'items' });
   if (state.origins.length > LIMIT_LIST) issues.push({ msg: `More than ${LIMIT_LIST} origins`, step: 'origins' });
@@ -363,6 +415,7 @@ function rollSpec(s) {
 }
 const scoreMod = (x) => (x <= 4 ? -3 : x <= 6 ? -2 : x <= 8 ? -1 : x <= 12 ? 0 : x <= 14 ? 1 : x <= 16 ? 2 : 3);
 const signed = (n) => (n > 0 ? `+${n}` : n < 0 ? `−${Math.abs(n)}` : '0');
+const sameName = (a, it) => it && tx(a.name).trim().toLowerCase() === tx(it.name).trim().toLowerCase();
 function testRoll() {
   const stats = {};
   STATS.forEach((s) => { const r = rollSpec(state.stats[s.key]); stats[s.key] = { ...r, mod: scoreMod(r.total) }; });
@@ -370,22 +423,27 @@ function testRoll() {
   const silver = Array.from({ length: state.silver.count }, () => d(state.silver.faces)).reduce((a, b) => a + b, 0) * state.silver.mult;
   const fixed = state.abilities.filter((a) => !a.random);
   const pool = [...state.abilities.filter((a) => a.random)].sort(() => Math.random() - 0.5).slice(0, state.randomCount);
-  const abil = [...fixed, ...pool];
-  const grants = abil.flatMap((a) => [a.grantItem, a.grantPet].filter(Boolean)).map(itemLabel);
   const origin = state.origins.length ? state.origins[d(state.origins.length) - 1] : null;
-  lastRoll = { stats, hp, omens: d(state.omenDie), silver, weapon: d(state.weaponDie), armor: d(state.armorDie), abil, grants, origin };
+  lastRoll = { stats, hp, omens: d(state.omenDie), silver, weapon: d(state.weaponDie), armor: d(state.armorDie), abil: [...fixed, ...pool], origin };
 }
 function rollSheet() {
   if (!lastRoll) return `<div class="sheet"><p class="hint" style="margin:0">No test roll yet. A test roll uses the draft exactly as it is and keeps nothing.</p></div>`;
   const r = lastRoll;
+  const lines = [], gear = [];
+  r.abil.forEach((a) => {
+    const granted = [a.grantItem, a.grantPet].filter(Boolean);
+    const merged = granted.map(itemByKey).find((it) => sameName(a, it));
+    lines.push(`<li><b>${esc(tx(a.name))}</b>${a.random ? '<span class="pill">rolled</span>' : ''}${merged ? ` <span class="muted">· ${typeWord[merged.type]} ${esc(itemStats(merged))}</span>` : ''}</li>`);
+    granted.forEach((k) => { const it = itemByKey(k); if (!(it && it === merged)) gear.push(itemLabel(k)); });
+  });
   return `<div class="sheet" aria-live="polite">
     <span class="micro muted">Test scvm · ${esc(tx(state.name))}</span>
     <h3>Nameless Wretch</h3>
     <div class="statrow">${STATS.map((s) => `<div class="statbox"><b>${signed(r.stats[s.key].mod)}</b><span>${s.short} ${r.stats[s.key].total}</span></div>`).join('')}</div>
     <div class="res"><span class="chip hp">HP ${r.hp}</span><span class="chip">Omens ${r.omens}</span><span class="chip">${r.silver} silver</span><span class="chip">Weapon d${state.weaponDie}: ${r.weapon}</span><span class="chip">Armor d${state.armorDie}: ${r.armor}</span></div>
     <div class="small-title">Abilities</div>
-    <ul>${r.abil.map((a) => `<li><b>${esc(tx(a.name))}</b>${a.random ? '<span class="pill">rolled</span>' : ''}</li>`).join('') || '<li class="muted">None</li>'}</ul>
-    ${r.grants.length ? `<div class="small-title">Starts with</div><ul>${r.grants.map((g) => `<li>${esc(g)}</li>`).join('')}</ul>` : ''}
+    <ul>${lines.join('') || '<li class="muted">None</li>'}</ul>
+    ${gear.length ? `<div class="small-title">Also starts with</div><ul>${gear.map((g) => `<li>${esc(g)}</li>`).join('')}</ul>` : ''}
     <div class="small-title">Origin</div><p style="margin:0">${esc(tx(r.origin)) || '<span class="muted">None</span>'}</p>
   </div>`;
 }
@@ -430,53 +488,8 @@ function statsBody() {
     <div class="row numgrid">${num('silver.count', 'Silver dice', { min: 1, max: 6 })}${dieSelect('silver.faces', 'Silver sides', [4, 6])}${num('silver.mult', 'Silver multiplier', { min: 1, max: 100 })}</div>
   </div>`;
 }
-function grantSelect(i, kind) {
-  const path = `abilities.${i}.${kind === 'item' ? 'grantItem' : 'grantPet'}`;
-  const v = getPath(path);
-  const own = state.items.filter((it) => (kind === 'pet' ? it.type === 'pet' : it.type !== 'pet'));
-  const cat = CATALOG.filter((c) => (kind === 'pet' ? c.key.startsWith('pets.') : !c.key.startsWith('pets.')));
-  const broken = v && v.startsWith('ci:') && !state.items.some((it) => `ci:${it.id}` === v);
-  return `<label><span class="label">Grants ${kind === 'item' ? 'an item' : 'a pet'}</span><select id="${fid(path)}" data-path="${path}" aria-invalid="${broken}">
-    <option value="">Nothing</option>
-    ${broken ? `<option value="${v}" selected>Removed Class Item</option>` : ''}
-    <optgroup label="This class's Class Items">${own.map((it) => `<option value="ci:${it.id}" ${v === `ci:${it.id}` ? 'selected' : ''}>${esc(tx(it.name) || 'Unnamed')}</option>`).join('') || '<option disabled>None yet</option>'}</optgroup>
-    <optgroup label="Shared catalog">${cat.map((c) => `<option value="${c.key}" ${v === c.key ? 'selected' : ''}>${esc(c.label)}</option>`).join('')}</optgroup></select></label>`;
-}
-function modsEditor(i) {
-  const a = state.abilities[i];
-  const rows = a.mods.map((m, j) => `<div class="modrow">
-      <select id="${fid(`abilities.${i}.mods.${j}.stat`)}" data-path="abilities.${i}.mods.${j}.stat" aria-label="Stat">${STATS.map((s) => `<option value="${s.key}" ${m.stat === s.key ? 'selected' : ''}>${s.short}</option>`).join('')}</select>
-      <input type="number" id="${fid(`abilities.${i}.mods.${j}.value`)}" data-path="abilities.${i}.mods.${j}.value" data-num="1" min="-6" max="6" value="${m.value}" aria-label="Value">
-      <div class="scopes" role="group" aria-label="Applies to">${SCOPES.map((s) => `<button type="button" class="act ${m.scope === s.key ? 'on' : ''}" aria-pressed="${m.scope === s.key}" data-act="scope" data-i="${i}" data-j="${j}" data-v="${s.key}">${s.label}</button>`).join('')}</div>
-      <button type="button" class="act kill" data-act="rm-mod" data-i="${i}" data-j="${j}">Remove</button>
-    </div>`).join('');
-  return `<div class="stack"><span class="label">Modifiers</span>${rows || '<p class="hint">No modifiers. Most abilities are rules text only.</p>'}
-    <div><button type="button" class="act" data-act="add-mod" data-i="${i}">Add modifier</button></div></div>`;
-}
-function tableEditor(i) {
-  const t = state.abilities[i].table;
-  if (!t) return `<div><button type="button" class="act" data-act="add-table" data-i="${i}">Add reference table</button></div>`;
-  return `<div class="stack"><div class="spread"><span class="label" style="margin:0">Reference table · d${t.die}</span><button type="button" class="act kill" data-act="rm-table" data-i="${i}">Remove table</button></div>
-    ${t.rows.map((r, k) => `<div class="effect"><span>${k + 1}</span>${textInput(`abilities.${i}.table.rows.${k}.${viewLang}`, { lang: viewLang, label: `Row ${k + 1}` })}</div>`).join('')}</div>`;
-}
-function abilitiesBody() {
-  const pool = state.abilities.filter((a) => a.random).length;
-  const cards = state.abilities.map((a, i) => `<article class="row stack" aria-label="${esc(tx(a.name) || 'Unnamed ability')}">
-      <div class="itemhead"><strong>${esc(tx(a.name) || 'Unnamed ability')}</strong>
-        <div class="inline"><div class="seg" role="group" aria-label="Ability kind"><button type="button" class="act ${a.random ? '' : 'on'}" aria-pressed="${!a.random}" data-act="kind" data-i="${i}" data-v="fixed">Fixed</button><button type="button" class="act ${a.random ? 'on' : ''}" aria-pressed="${a.random}" data-act="kind" data-i="${i}" data-v="random">Random pool</button></div>
-        <button type="button" class="act kill" data-act="rm-ability" data-i="${i}">Remove</button></div></div>
-      ${lfield(`abilities.${i}.name`, 'Name')}
-      ${lfield(`abilities.${i}.text`, 'Rules text', { multiline: true })}
-      <div class="grid2">${grantSelect(i, 'item')}${grantSelect(i, 'pet')}</div>
-      ${modsEditor(i)}
-      ${tableEditor(i)}
-    </article>`).join('');
-  return `<div class="stack">
-    <div class="row spread">${num('randomCount', `Random abilities each scvm rolls (pool: ${pool})`, { min: 0, max: 20, invalid: state.randomCount > pool })}${counter(state.abilities.length, 'abilities')}</div>
-    ${cards || '<div class="empty">No abilities yet. Add a fixed one every scvm gets, or build a random pool.</div>'}
-    <div><button type="button" class="btn" data-act="add-ability" ${state.abilities.length >= LIMIT_LIST ? 'disabled' : ''}>Add ability</button></div>
-  </div>`;
-}
+
+/* Class Items: the question first, then the items, each saying who grants it. */
 function itemFields(it, i) {
   const p = `items.${i}`;
   if (it.type === 'weapon') return `<div class="grid2">
@@ -491,22 +504,132 @@ function itemFields(it, i) {
   if (it.type === 'armor') return `<div class="grid2">${dieSelect(`${p}.tier`, 'Armor tier', [1, 2, 3], (x) => `Tier ${x}`)}${num(`${p}.value`, 'Value in silver', { min: 0, max: 9999 })}</div>`;
   return `<div class="grid2"><label><span class="label">Kind</span><select id="${fid(`${p}.kind`)}" data-path="${p}.kind"><option value="consumable" ${it.kind === 'consumable' ? 'selected' : ''}>Consumable</option><option value="wearable" ${it.kind === 'wearable' ? 'selected' : ''}>Wearable</option><option value="gear" ${it.kind === 'gear' ? 'selected' : ''}>Gear</option></select></label>${num(`${p}.uses`, 'Uses', { min: 0, max: 99 })}${num(`${p}.value`, 'Value in silver', { min: 0, max: 9999 })}</div>`;
 }
+function grantedByLine(it) {
+  const g = granterOf(keyOf(it));
+  if (!g) return `<p class="linkline none"><span>Not granted yet</span><span class="muted">pick it in an ability's grant menu, or</span><button type="button" class="act" data-act="grant-new" data-v="${it.id}">Grant from a new ability</button></p>`;
+  const where = g.kind === 'table' ? `table row ${g.row + 1}` : `<span class="odds">${odds(g.a)}</span>`;
+  return `<p class="linkline"><span>Granted by</span><b>${esc(tx(g.a.name) || 'Unnamed ability')}</b><span>·</span>${where}<button type="button" class="act" data-act="goto-granter" data-v="${it.id}">Go to ability</button></p>`;
+}
+function itemConfirm(it) {
+  const g = granterOf(keyOf(it));
+  const who = g ? `${g.kind === 'table' ? 'a table row in ' : ''}the ability “${esc(tx(g.a.name) || 'Unnamed')}”` : '';
+  return `<div class="confirm" role="group" aria-label="Confirm removal"><p>“${esc(tx(it.name) || 'This item')}” is granted by ${who}. Remove the item and clear that grant?</p>
+    <div class="inline"><button type="button" class="act danger" data-act="rm-item-yes" data-v="${it.id}">Remove and clear</button><button type="button" class="act" data-act="confirm-cancel" data-v="item-${it.id}">Keep it</button></div></div>`;
+}
+function addItemRow(full) {
+  return `<div class="inline"><span class="label" style="margin:0">Forge a</span>${['weapon', 'armor', 'equipment', 'pet'].map((t) => `<button type="button" class="act" data-act="add-item" data-v="${t}" ${full ? 'disabled' : ''}>${typeWord[t]}</button>`).join('')}</div>`;
+}
 function itemsBody() {
+  if (!state.items.length && ui.itemsNo) return `<div class="gate-no"><p>No Class Items. Abilities can still grant gear from the shared catalog.</p><button type="button" class="act" data-act="gate-change">Change</button></div>`;
+  if (!state.items.length && !ui.itemsYes) return `<div class="gate">
+      <h3>Does this class carry its own gear or beasts?</h3>
+      <p>Class Items are weapons, armor, gear or pets only this class has, like the Fanged Deserter's Brown Scimitar or an Ancient Gore-Hound. Each one reaches a scvm through one ability.</p>
+      <div class="inline"><button type="button" class="btn save" data-act="gate-yes">Yes, forge a Class Item</button><button type="button" class="btn ink" data-act="gate-no">No, only catalog gear</button></div>
+    </div>`;
   const full = state.items.length >= LIMIT_LIST;
   return `<div class="stack">
-    <div class="spread"><span></span>${counter(state.items.length, 'Class Items')}</div>
-    ${state.items.map((it, i) => `<article class="row stack" aria-label="${esc(tx(it.name) || 'Unnamed Class Item')}">
-      <div class="itemhead"><div class="inline"><span class="typebadge">${it.type}</span><strong>${esc(tx(it.name) || 'Unnamed')}</strong></div>
-        <button type="button" class="act kill" data-act="rm-item" data-i="${i}">Remove</button></div>
-      ${lfield(`items.${i}.name`, 'Name')}${itemFields(it, i)}</article>`).join('') || '<div class="empty">No Class Items. Abilities can still grant items from the shared catalog.</div>'}
-    <div class="inline"><span class="label" style="margin:0">Add</span>${['weapon', 'armor', 'equipment', 'pet'].map((t) => `<button type="button" class="act" data-act="add-item" data-v="${t}" ${full ? 'disabled' : ''}>${t}</button>`).join('')}</div>
+    <div class="spread">${addItemRow(full)}${counter(state.items.length, 'Class Items')}</div>
+    ${state.items.map((it, i) => `<article class="row stack" aria-label="${esc(tx(it.name) || 'Unnamed Class Item')}" data-item="${it.id}">
+      <div class="itemhead"><div class="inline"><span class="typebadge">${typeWord[it.type]}</span><strong>${esc(tx(it.name) || 'Unnamed')}</strong></div>
+        ${ui.confirm && ui.confirm.type === 'item' && ui.confirm.id === it.id ? '' : `<button type="button" class="act kill" data-act="rm-item" data-v="${it.id}">Remove</button>`}</div>
+      ${ui.confirm && ui.confirm.type === 'item' && ui.confirm.id === it.id ? itemConfirm(it) : ''}
+      ${grantedByLine(it)}
+      ${lfield(`items.${i}.name`, 'Name')}${itemFields(it, i)}</article>`).join('') || '<div class="empty">No Class Items yet. Pick a kind above.</div>'}
+  </div>`;
+}
+
+/* Abilities: waiting items first, then each ability with its grant shown as a link. */
+function grantSelect(i, kind) {
+  const a = state.abilities[i];
+  const slot = kind === 'item' ? 'grantItem' : 'grantPet';
+  const path = `abilities.${i}.${slot}`;
+  const v = a[slot];
+  const own = state.items.filter((it) => (kind === 'pet' ? it.type === 'pet' : it.type !== 'pet'));
+  const cat = CATALOG.filter((c) => (kind === 'pet' ? c.key.startsWith('pets.') : !c.key.startsWith('pets.')));
+  const ownOpts = own.map((it) => {
+    const g = granterOf(keyOf(it));
+    const taken = g && !(g.kind === 'ability' && g.i === i && g.slot === slot);
+    return `<option value="${keyOf(it)}" ${v === keyOf(it) ? 'selected' : ''} ${taken ? 'disabled' : ''}>${esc(tx(it.name) || 'Unnamed')}${taken ? ` (granted by ${esc(tx(g.a.name) || 'another ability')})` : ''}</option>`;
+  }).join('');
+  const it = v && v.startsWith('ci:') ? itemByKey(v) : null;
+  const detail = it ? `<p class="linkline"><span class="typebadge">${typeWord[it.type]}</span><span>${esc(itemStats(it))}</span><span>·</span><span class="odds">${odds(a)}</span><button type="button" class="act" data-act="edit-item" data-v="${it.id}">Edit stats</button></p>` : '';
+  return `<div class="stack" style="gap:8px"><label><span class="label">Grants ${kind === 'item' ? 'an item' : 'a pet'}</span><select id="${fid(path)}" data-path="${path}" data-grant="${kind}" data-i="${i}">
+    <option value="">Nothing</option>
+    ${own.length ? `<optgroup label="This class's Class Items">${ownOpts}</optgroup>` : ''}
+    <optgroup label="Shared catalog">${cat.map((c) => `<option value="${c.key}" ${v === c.key ? 'selected' : ''}>${esc(c.label)}</option>`).join('')}</optgroup>
+    ${state.items.length < LIMIT_LIST ? `<option value="__new">+ New Class Item named after this ability</option>` : ''}</select></label>${detail}</div>`;
+}
+function modsEditor(i) {
+  const a = state.abilities[i];
+  const nm = tx(a.name) || `ability ${i + 1}`;
+  const rows = a.mods.map((m, j) => `<div class="modrow">
+      <select id="${fid(`abilities.${i}.mods.${j}.stat`)}" data-path="abilities.${i}.mods.${j}.stat" aria-label="${esc(nm)} modifier ${j + 1} stat">${STATS.map((s) => `<option value="${s.key}" ${m.stat === s.key ? 'selected' : ''}>${s.short}</option>`).join('')}</select>
+      <input type="number" id="${fid(`abilities.${i}.mods.${j}.value`)}" data-path="abilities.${i}.mods.${j}.value" data-num="1" min="-6" max="6" value="${m.value}" aria-label="${esc(nm)} modifier ${j + 1} value">
+      <div class="scopes" role="group" aria-label="Applies to">${SCOPES.map((s) => `<button type="button" class="act ${m.scope === s.key ? 'on' : ''}" aria-pressed="${m.scope === s.key}" data-act="scope" data-i="${i}" data-j="${j}" data-v="${s.key}">${s.label}</button>`).join('')}</div>
+      <button type="button" class="act kill" data-act="rm-mod" data-i="${i}" data-j="${j}">Remove</button>
+    </div>`).join('');
+  return `<div class="stack"><span class="label">Modifiers</span>${rows || '<p class="hint">No modifiers. Most abilities are rules text only.</p>'}
+    <div><button type="button" class="act" data-act="add-mod" data-i="${i}">Add modifier</button></div></div>`;
+}
+function tableEditor(i) {
+  const t = state.abilities[i].table;
+  if (!t) return `<div><button type="button" class="act" data-act="add-table" data-i="${i}">Add reference table</button></div>`;
+  const rowSelect = (k) => {
+    const path = `abilities.${i}.table.rows.${k}.item`;
+    const v = t.rows[k].item || '';
+    return `<select id="${fid(path)}" data-path="${path}" data-rowlink="1" aria-label="Row ${k + 1} grants a Class Item"><option value="">No Class Item</option>${state.items.map((it) => {
+      const g = granterOf(keyOf(it));
+      const taken = g && !(g.kind === 'table' && g.i === i && g.row === k);
+      return `<option value="${keyOf(it)}" ${v === keyOf(it) ? 'selected' : ''} ${taken ? 'disabled' : ''}>${esc(tx(it.name) || 'Unnamed')}${taken ? ' (granted elsewhere)' : ''}</option>`;
+    }).join('')}</select>`;
+  };
+  return `<div class="stack"><div class="spread"><span class="label" style="margin:0">Reference table · d${t.die}</span><button type="button" class="act kill" data-act="rm-table" data-i="${i}">Remove table</button></div>
+    ${t.rows.map((r, k) => `<div class="rowlink"><span>${k + 1}</span>${textInput(`abilities.${i}.table.rows.${k}.${viewLang}`, { lang: viewLang, label: `Row ${k + 1}` })}${state.items.length ? rowSelect(k) : ''}</div>`).join('')}</div>`;
+}
+function abilityConfirm(a, i) {
+  const owned = [a.grantItem, a.grantPet, ...(a.table ? a.table.rows.map((r) => r.item) : [])].filter((k) => k && k.startsWith('ci:')).map(itemByKey).filter(Boolean);
+  const names = owned.map((it) => `“${esc(tx(it.name) || 'Unnamed')}”`).join(' and ');
+  return `<div class="confirm" role="group" aria-label="Confirm removal"><p>“${esc(tx(a.name) || 'This ability')}” is the only way to get the Class Item ${names}. Remove ${owned.length > 1 ? 'those items' : 'the item'} too?</p>
+    <div class="inline"><button type="button" class="act danger" data-act="rm-ability-yes" data-i="${i}" data-v="both">Remove both</button><button type="button" class="act" data-act="rm-ability-yes" data-i="${i}" data-v="keep">Keep the item, ungranted</button><button type="button" class="act" data-act="confirm-cancel" data-v="ability-${a.id}">Cancel</button></div></div>`;
+}
+function abilityHeader(a) {
+  const it = [a.grantItem, a.grantPet].map((k) => (k && k.startsWith('ci:') ? itemByKey(k) : null)).find((x) => sameName(a, x));
+  return `<strong>${esc(tx(a.name) || 'Unnamed ability')}</strong>${it ? `<span class="arrowhead">→ grants ${typeWord[it.type]}</span>` : ''}`;
+}
+function trayHtml() {
+  const waiting = state.items.filter((it) => !granterOf(keyOf(it)));
+  if (!waiting.length) return '';
+  return `<div class="tray" role="group" aria-labelledby="tray-label"><span class="label" id="tray-label" style="margin:0">Class Items waiting for an ability</span>
+    <ul>${waiting.map((it) => `<li><span class="typebadge">${typeWord[it.type]}</span><b>${esc(tx(it.name) || 'Unnamed')}</b><button type="button" class="act" data-act="grant-new" data-v="${it.id}">Grant from a new ability</button></li>`).join('')}</ul>
+    <p class="hint">Or pick one in an existing ability's grant menu below. A class can't be saved while an item waits.</p></div>`;
+}
+function abilitiesBody() {
+  const pool = poolSize();
+  const cards = state.abilities.map((a, i) => {
+    const confirming = ui.confirm && ui.confirm.type === 'ability' && ui.confirm.id === a.id;
+    return `<article class="row stack" aria-label="${esc(tx(a.name) || 'Unnamed ability')}" data-ability="${a.id}">
+      <div class="itemhead"><div class="inline">${abilityHeader(a)}</div>
+        <div class="inline"><div class="seg" role="group" aria-label="Ability kind"><button type="button" class="act ${a.random ? '' : 'on'}" aria-pressed="${!a.random}" data-act="kind" data-i="${i}" data-v="fixed">Fixed</button><button type="button" class="act ${a.random ? 'on' : ''}" aria-pressed="${a.random}" data-act="kind" data-i="${i}" data-v="random">Random pool</button></div>
+        ${confirming ? '' : `<button type="button" class="act kill" data-act="rm-ability" data-i="${i}">Remove</button>`}</div></div>
+      ${confirming ? abilityConfirm(a, i) : ''}
+      ${lfield(`abilities.${i}.name`, 'Name')}
+      ${lfield(`abilities.${i}.text`, 'Rules text', { multiline: true })}
+      <div class="grid2" style="align-items:start">${grantSelect(i, 'item')}${grantSelect(i, 'pet')}</div>
+      ${modsEditor(i)}
+      ${tableEditor(i)}
+    </article>`;
+  }).join('');
+  return `<div class="stack">
+    ${trayHtml()}
+    <div class="row spread">${num('randomCount', `Random abilities each scvm rolls (pool: ${pool})`, { min: 0, max: 20, invalid: state.randomCount > pool })}${counter(state.abilities.length, 'abilities')}</div>
+    ${cards || '<div class="empty">No abilities yet. Add a fixed one every scvm gets, or build a random pool.</div>'}
+    <div><button type="button" class="btn" data-act="add-ability" ${state.abilities.length >= LIMIT_LIST ? 'disabled' : ''}>Add ability</button></div>
   </div>`;
 }
 function originsBody() {
   return `<div class="stack">
-    <div class="spread"><span></span>${counter(state.origins.length, 'origins')}</div>
+    <div class="spread"><button type="button" class="btn" data-act="add-origin" ${state.origins.length >= LIMIT_LIST ? 'disabled' : ''}>Add origin</button>${counter(state.origins.length, 'origins')}</div>
     ${state.origins.map((o, k) => `<div class="row" style="display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:end">${lfield(`origins.${k}`, `Origin ${k + 1}`)}<button type="button" class="act kill" data-act="rm-origin" data-i="${k}" style="min-height:var(--tap)">Remove</button></div>`).join('') || '<div class="empty">No origins yet. A class needs at least one.</div>'}
-    <div><button type="button" class="btn" data-act="add-origin" ${state.origins.length >= LIMIT_LIST ? 'disabled' : ''}>Add origin</button></div>
   </div>`;
 }
 function gbBody() {
@@ -518,7 +641,6 @@ function gbBody() {
   </div>`;
 }
 function reviewBody(issues) {
-  const blocked = issues.length > 0;
   return `<div class="review">
     <div class="stack">
       <div><button type="button" class="btn ink" data-act="roll">${DIE}${lastRoll ? 'Roll again' : 'Roll a test scvm'}</button></div>
@@ -527,7 +649,7 @@ function reviewBody(issues) {
     <div class="stack">
       <span class="label">Before you save</span>
       <div data-derived="issues">${issuesHtml(issues)}</div>
-      <div class="inline"><button type="button" class="btn save" data-act="save" ${blocked ? 'aria-describedby="save-status"' : ''}>Save class</button></div>
+      <div class="inline"><button type="button" class="btn save" data-act="save" aria-describedby="save-status">Save class</button></div>
       <p class="status" id="save-status" role="status">${esc(saveMsg)}</p>
     </div>
   </div>`;
@@ -541,7 +663,8 @@ function issuesHtml(issues) {
 function railHtml(issues) {
   return STEPS.map((s, i) => {
     const n = s.key === 'review' ? issues.length : countFor(issues, s.key);
-    const status = n ? `<span class="chip warn" aria-label="${n} to fix">${n}</span>` : `<span class="chip ok">OK</span>`;
+    let status = n ? `<span class="chip warn" aria-label="${n} to fix">${n}</span>` : `<span class="chip ok" aria-label="Complete">OK</span>`;
+    if (s.key === 'items' && !state.items.length) status = ui.itemsNo ? `<span class="chip ok" aria-label="No Class Items">None</span>` : `<span class="chip ok" aria-label="Not answered yet">?</span>`;
     return `<li><button type="button" class="b-step" data-act="step" data-v="${i}" ${i === step ? 'aria-current="step"' : ''}><span><span class="n">${i + 1}</span>${s.label}</span>${status}</button></li>`;
   }).join('');
 }
@@ -553,13 +676,18 @@ function langSwitch(issues) {
     return `<button type="button" class="act ink ${viewLang === l ? 'on' : ''}" aria-pressed="${viewLang === l}" data-act="view-lang" data-v="${l}">${langLong[l]}${m ? `<span class="miss">${m} missing</span>` : ''}</button>`;
   }).join('')}</div>`;
 }
+function snackHtml() {
+  if (!ui.snack) return '';
+  return `<div class="snackbar" role="status"><span>${esc(ui.snack.msg)}</span><button type="button" class="btn save" data-act="undo">Undo</button></div>`;
+}
 const root = document.getElementById('root');
-function render({ focusHeading = false, focusPath = null } = {}) {
+const stepIndex = (key) => STEPS.findIndex((s) => s.key === key);
+function render({ focusHeading = false, focusPath = null, focusSel = null, keepFocus = null } = {}) {
   if (!state.languages.includes(viewLang)) viewLang = state.languages[0];
   const issues = validate();
   const s = STEPS[step];
   const body = { identity: () => `<div class="stack">${langClassBlock()}${lfield('name', 'Class name')}${lfield('description', 'Description', { multiline: true })}</div>`,
-    numbers: statsBody, abilities: abilitiesBody, items: itemsBody, origins: originsBody, gb: gbBody, review: () => reviewBody(issues) }[s.key]();
+    numbers: statsBody, items: itemsBody, abilities: abilitiesBody, origins: originsBody, gb: gbBody, review: () => reviewBody(issues) }[s.key]();
   root.innerHTML = `<div class="b-layout">
     <nav class="b-railwrap page-level" aria-label="Class creator steps"><ol class="b-rail" data-derived="rail">${railHtml(issues)}</ol></nav>
     <section aria-labelledby="step-title">
@@ -571,15 +699,16 @@ function render({ focusHeading = false, focusPath = null } = {}) {
       </div>
     </section>
   </div>
-  <details class="statebox page-level"><summary>Prototype: draft state that would be saved</summary><pre class="state" data-derived="state"></pre></details>`;
+  <details class="statebox page-level"><summary>Prototype: draft state that would be saved</summary><pre class="state" data-derived="state"></pre></details>
+  <div class="page-level">${snackHtml()}</div>`;
   refreshDerived();
   const cur = root.querySelector('.b-step[aria-current="step"]');
   if (cur && cur.scrollIntoView && window.innerWidth < 880) cur.scrollIntoView({ block: 'nearest', inline: 'nearest' });
-  if (focusPath) {
-    const el = root.querySelector(`[data-path="${CSS.escape(focusPath)}"]`);
-    if (el) { el.focus(); el.scrollIntoView({ block: 'center' }); return; }
-  }
-  if (focusHeading) { const h = document.getElementById('step-title'); h.focus({ preventScroll: true }); window.scrollTo({ top: 0 }); }
+  const tryFocus = (el, center = true) => { if (!el) return false; el.focus({ preventScroll: !center }); if (center) el.scrollIntoView({ block: 'center' }); return true; };
+  if (focusSel && tryFocus(root.querySelector(focusSel))) return;
+  if (focusPath && tryFocus(root.querySelector(`[data-path="${CSS.escape(focusPath)}"]`))) return;
+  if (focusHeading) { const h = document.getElementById('step-title'); h.focus({ preventScroll: true }); window.scrollTo({ top: 0 }); return; }
+  if (keepFocus) { for (const sel of keepFocus) { if (tryFocus(root.querySelector(sel), false)) return; } }
 }
 function refreshDerived() {
   const issues = validate();
@@ -597,7 +726,8 @@ function refreshDerived() {
     btn.disabled = Number(btn.dataset.d) < 0 ? v <= Number(input.min) : v >= Number(input.max);
   });
   const rc = document.getElementById('f-randomCount');
-  if (rc) rc.setAttribute('aria-invalid', String(state.randomCount > state.abilities.filter((a) => a.random).length));
+  if (rc) rc.setAttribute('aria-invalid', String(state.randomCount > poolSize()));
+  root.querySelectorAll('.odds').forEach((el) => { const m = el.textContent.match(/^if rolled/); if (m) el.textContent = `if rolled · ${state.randomCount} of ${poolSize()}`; });
   const st = root.querySelector('[data-derived="state"]'); if (st) st.textContent = JSON.stringify(state, null, 2);
   root.querySelectorAll('[data-path]').forEach((el) => {
     const m = el.dataset.path.match(/\.(en|pl)$/);
@@ -608,17 +738,77 @@ function refreshDerived() {
     if (err) { err.hidden = !miss; if (miss) el.setAttribute('aria-describedby', err.id); else el.removeAttribute('aria-describedby'); }
   });
 }
+
+/* Undo: every removal snapshots the draft first. */
+let snackTimer = null;
+function withUndo(msg, fn) {
+  const snapshot = structuredClone(state);
+  const uiSnap = { itemsNo: ui.itemsNo, itemsYes: ui.itemsYes };
+  fn();
+  ui.confirm = null;
+  ui.snack = { msg, snapshot, uiSnap, step };
+  clearTimeout(snackTimer);
+  snackTimer = setTimeout(() => { ui.snack = null; const el = root.querySelector('.snackbar'); if (el) el.remove(); }, 10000);
+  announce(`${msg} Undo is available.`);
+}
+function undo() {
+  if (!ui.snack) return;
+  const { snapshot, uiSnap, step: s } = ui.snack;
+  Object.keys(state).forEach((k) => { state[k] = snapshot[k]; });
+  Object.assign(ui, uiSnap, { snack: null, confirm: null });
+  step = s;
+  announce('Restored.');
+}
+function newAbilityFor(it) {
+  const a = { id: ++uid, random: true, name: { en: it.name.en, pl: it.name.pl }, text: L('', ''), grantItem: it.type === 'pet' ? '' : keyOf(it), grantPet: it.type === 'pet' ? keyOf(it) : '', mods: [], table: null };
+  state.abilities.push(a);
+  return state.abilities.length - 1;
+}
+function newItem(type, name = L('', '')) {
+  const base = { id: ++uid, type, name: { en: name.en, pl: name.pl }, value: 0 };
+  if (type === 'weapon') Object.assign(base, { dice: '1d6', dmgMod: 0, reach: 'melee', effect: null });
+  if (type === 'pet') Object.assign(base, { hp: 4, actionDie: 4, actionType: 'attack', humanoid: false });
+  if (type === 'armor') Object.assign(base, { tier: 1 });
+  if (type === 'equipment') Object.assign(base, { kind: 'gear', uses: 0 });
+  state.items.push(base);
+  return base;
+}
+function clearGrantsTo(k) {
+  state.abilities.forEach((a) => {
+    if (a.grantItem === k) a.grantItem = '';
+    if (a.grantPet === k) a.grantPet = '';
+    if (a.table) a.table.rows.forEach((r) => { if (r.item === k) r.item = ''; });
+  });
+}
+
 function onValue(e) {
   const el = e.target;
   if (!el.dataset || !el.dataset.path) return;
   let v = el.type === 'checkbox' ? el.checked : el.value;
   if (el.type === 'radio') { if (!el.checked) return; v = el.value; }
   if (el.dataset.num) v = Number(v) || 0;
+  if (el.dataset.grant) {
+    const i = Number(el.dataset.i), slot = el.dataset.grant === 'item' ? 'grantItem' : 'grantPet';
+    const a = state.abilities[i];
+    if (v === '__new') {
+      const it = newItem(el.dataset.grant === 'pet' ? 'pet' : 'weapon', a.name);
+      a[slot] = keyOf(it);
+      announce(`New Class Item “${tx(it.name) || 'Unnamed'}” created and granted by ${tx(a.name) || 'this ability'}. Set its stats in Class Items.`);
+    } else {
+      a[slot] = v;
+      announce(v ? `${tx(a.name) || 'This ability'} now grants ${itemLabel(v)}.` : `${tx(a.name) || 'This ability'} grants nothing.`);
+    }
+    saveMsg = '';
+    render({ keepFocus: [`#${CSS.escape(el.id)}`] });
+    return;
+  }
   setPath(el.dataset.path, v);
   saveMsg = '';
+  if (el.dataset.rowlink) { render({ keepFocus: [`#${CSS.escape(el.id)}`] }); return; }
   refreshDerived();
 }
-root.addEventListener('input', onValue);
+root.addEventListener('input', (e) => { if (e.target.tagName !== 'SELECT') onValue(e); });
+root.addEventListener('change', (e) => { if (e.target.tagName === 'SELECT' || e.target.type === 'radio' || e.target.type === 'checkbox') onValue(e); });
 root.addEventListener('keydown', (e) => {
   const b = e.target.closest && e.target.closest('.die');
   if (!b || !['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) return;
@@ -627,44 +817,13 @@ root.addEventListener('keydown', (e) => {
   const n = all[(i + all.length) % all.length];
   e.preventDefault(); n.focus(); n.click();
 });
-root.addEventListener('change', (e) => { onValue(e); if (e.target.tagName === 'SELECT' && /grant/.test(e.target.dataset.path || '')) render(); });
 root.addEventListener('click', (e) => {
   const b = e.target.closest('[data-act]');
   if (!b || b.disabled) return;
   const i = Number(b.dataset.i), j = Number(b.dataset.j), v = b.dataset.v;
-  const blank = () => L('', '');
-  let opts = {};
+  const same = `[data-act="${b.dataset.act}"]${b.dataset.i != null ? `[data-i="${b.dataset.i}"]` : ''}${b.dataset.j != null ? `[data-j="${b.dataset.j}"]` : ''}${b.dataset.v != null ? `[data-v="${CSS.escape(b.dataset.v)}"]` : ''}`;
+  let opts = { keepFocus: [same] };
   switch (b.dataset.act) {
-    case 'add-ability': state.abilities.push({ id: ++uid, random: true, name: blank(), text: blank(), grantItem: '', grantPet: '', mods: [], table: null }); opts = { focusPath: `abilities.${state.abilities.length - 1}.name.${viewLang}` }; break;
-    case 'rm-ability': state.abilities.splice(i, 1); break;
-    case 'kind': state.abilities[i].random = v === 'random'; break;
-    case 'add-mod': state.abilities[i].mods.push({ stat: 'strength', value: 1, scope: 'all' }); break;
-    case 'rm-mod': state.abilities[i].mods.splice(j, 1); break;
-    case 'scope': state.abilities[i].mods[j].scope = v; break;
-    case 'add-table': state.abilities[i].table = { die: 6, rows: Array.from({ length: 6 }, blank) }; break;
-    case 'rm-table': state.abilities[i].table = null; break;
-    case 'add-item': {
-      const base = { id: ++uid, type: v, name: blank(), value: 0 };
-      if (v === 'weapon') Object.assign(base, { dice: '1d6', dmgMod: 0, reach: 'melee', effect: null });
-      if (v === 'pet') Object.assign(base, { hp: 4, actionDie: 4, actionType: 'attack', humanoid: false });
-      if (v === 'armor') Object.assign(base, { tier: 1 });
-      if (v === 'equipment') Object.assign(base, { kind: 'gear', uses: 0 });
-      state.items.push(base); opts = { focusPath: `items.${state.items.length - 1}.name.${viewLang}` }; break;
-    }
-    case 'rm-item': state.items.splice(i, 1); break;
-    case 'add-origin': state.origins.push(blank()); opts = { focusPath: `origins.${state.origins.length - 1}.${viewLang}` }; break;
-    case 'rm-origin': state.origins.splice(i, 1); break;
-    case 'set-langs': state.languages = v === 'both' ? ['en', 'pl'] : [v]; break;
-    case 'view-lang': viewLang = v; break;
-    case 'step': step = Math.max(0, Math.min(STEPS.length - 1, Number(v))); saveMsg = ''; opts = { focusHeading: true }; break;
-    case 'goto-issue': {
-      const x = validate()[Number(v)];
-      if (!x) return;
-      step = STEPS.findIndex((s) => s.key === x.step);
-      if (x.lang) viewLang = x.lang;
-      opts = x.path ? { focusPath: x.path } : { focusHeading: true };
-      break;
-    }
     case 'nudge': {
       const input = document.getElementById(fid(b.dataset.path));
       const next = Math.max(Number(input.min), Math.min(Number(input.max), (Number(input.value) || 0) + Number(b.dataset.d)));
@@ -680,6 +839,96 @@ root.addEventListener('click', (e) => {
       b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); b.textContent = on ? 'Dropped' : 'Kept';
       refreshDerived(); return;
     }
+    /* Class Items question */
+    case 'gate-yes': ui.itemsYes = true; ui.itemsNo = false; opts = { focusSel: '[data-act="add-item"]' }; break;
+    case 'gate-no': ui.itemsNo = true; ui.itemsYes = false; announce('No Class Items. Abilities can still grant catalog gear.'); opts = { focusSel: '[data-act="gate-change"]' }; break;
+    case 'gate-change': ui.itemsNo = false; opts = { focusSel: '[data-act="gate-yes"]' }; break;
+    case 'add-item': {
+      const it = newItem(v); ui.itemsNo = false;
+      opts = { focusPath: `items.${state.items.length - 1}.name.${viewLang}` };
+      announce(`New ${typeWord[it.type]} added. It still needs an ability that grants it.`);
+      break;
+    }
+    case 'rm-item': {
+      const it = state.items.find((x) => x.id === Number(v));
+      if (granterOf(keyOf(it))) { ui.confirm = { type: 'item', id: it.id }; opts = { focusSel: `[data-act="rm-item-yes"][data-v="${it.id}"]` }; break; }
+      const idx = state.items.indexOf(it);
+      withUndo(`Removed Class Item “${tx(it.name) || 'Unnamed'}”.`, () => { state.items.splice(idx, 1); });
+      opts = { keepFocus: [`[data-act="rm-item"][data-v="${(state.items[idx] || state.items[idx - 1] || {}).id}"]`, '[data-act="add-item"]', '[data-act="gate-yes"]'] };
+      break;
+    }
+    case 'rm-item-yes': {
+      const it = state.items.find((x) => x.id === Number(v)); const idx = state.items.indexOf(it);
+      withUndo(`Removed “${tx(it.name) || 'Unnamed'}” and cleared its grant.`, () => { clearGrantsTo(keyOf(it)); state.items.splice(idx, 1); });
+      opts = { keepFocus: [`[data-act="rm-item"][data-v="${(state.items[idx] || state.items[idx - 1] || {}).id}"]`, '[data-act="add-item"]', '[data-act="gate-yes"]'] };
+      break;
+    }
+    case 'confirm-cancel': {
+      ui.confirm = null;
+      const [type, id] = v.split('-');
+      opts = { keepFocus: [type === 'item' ? `[data-act="rm-item"][data-v="${id}"]` : `[data-ability="${id}"] [data-act="rm-ability"]`] };
+      break;
+    }
+    case 'grant-new': {
+      const it = state.items.find((x) => x.id === Number(v));
+      const ai = newAbilityFor(it);
+      step = stepIndex('abilities');
+      announce(`New ability “${tx(it.name) || 'Unnamed'}” grants ${typeWord[it.type]} “${tx(it.name) || 'Unnamed'}”. Write its rules text.`);
+      opts = { focusPath: `abilities.${ai}.text.${viewLang}` };
+      break;
+    }
+    case 'goto-granter': {
+      const g = granterOf(`ci:${v}`); if (!g) return;
+      step = stepIndex('abilities');
+      opts = { focusSel: g.kind === 'table' ? `#${fid(`abilities.${g.i}.table.rows.${g.row}.item`)}` : `#${fid(`abilities.${g.i}.${g.slot}`)}` };
+      break;
+    }
+    case 'edit-item': {
+      const idx = state.items.findIndex((x) => x.id === Number(v));
+      step = stepIndex('items');
+      opts = { focusPath: `items.${idx}.name.${viewLang}` };
+      break;
+    }
+    /* Abilities */
+    case 'add-ability': state.abilities.push({ id: ++uid, random: true, name: L('', ''), text: L('', ''), grantItem: '', grantPet: '', mods: [], table: null }); opts = { focusPath: `abilities.${state.abilities.length - 1}.name.${viewLang}` }; break;
+    case 'rm-ability': {
+      const a = state.abilities[i];
+      const owns = [a.grantItem, a.grantPet, ...(a.table ? a.table.rows.map((r) => r.item) : [])].some((k) => k && k.startsWith('ci:') && itemByKey(k));
+      if (owns) { ui.confirm = { type: 'ability', id: a.id }; opts = { focusSel: `[data-act="rm-ability-yes"][data-i="${i}"][data-v="both"]` }; break; }
+      withUndo(`Removed ability “${tx(a.name) || 'Unnamed'}”.`, () => { state.abilities.splice(i, 1); });
+      opts = { keepFocus: [`[data-act="rm-ability"][data-i="${Math.min(i, state.abilities.length - 1)}"]`, '[data-act="add-ability"]'] };
+      break;
+    }
+    case 'rm-ability-yes': {
+      const a = state.abilities[i];
+      const owned = [a.grantItem, a.grantPet, ...(a.table ? a.table.rows.map((r) => r.item) : [])].filter((k) => k && k.startsWith('ci:'));
+      withUndo(v === 'both' ? `Removed “${tx(a.name) || 'Unnamed'}” and its Class Item.` : `Removed “${tx(a.name) || 'Unnamed'}”. Its Class Item now waits for an ability.`, () => {
+        state.abilities.splice(i, 1);
+        if (v === 'both') state.items = state.items.filter((it) => !owned.includes(keyOf(it)));
+      });
+      opts = { keepFocus: [v === 'keep' ? '[data-act="grant-new"]' : `[data-act="rm-ability"][data-i="${Math.min(i, state.abilities.length - 1)}"]`, '[data-act="add-ability"]'] };
+      break;
+    }
+    case 'kind': state.abilities[i].random = v === 'random'; announce(`${tx(state.abilities[i].name) || 'Ability'} is now ${v === 'random' ? 'in the random pool' : 'fixed: every scvm gets it'}.`); break;
+    case 'add-mod': state.abilities[i].mods.push({ stat: 'strength', value: 1, scope: 'all' }); opts = { focusSel: `#${fid(`abilities.${i}.mods.${state.abilities[i].mods.length - 1}.stat`)}` }; break;
+    case 'rm-mod': withUndo('Removed modifier.', () => { state.abilities[i].mods.splice(j, 1); }); opts = { keepFocus: [`[data-act="add-mod"][data-i="${i}"]`] }; break;
+    case 'scope': state.abilities[i].mods[j].scope = v; break;
+    case 'add-table': state.abilities[i].table = { die: 6, rows: Array.from({ length: 6 }, () => row('', '')) }; opts = { focusPath: `abilities.${i}.table.rows.0.${viewLang}` }; break;
+    case 'rm-table': withUndo('Removed reference table.', () => { state.abilities[i].table = null; }); opts = { keepFocus: [`[data-act="add-table"][data-i="${i}"]`] }; break;
+    case 'add-origin': state.origins.push(L('', '')); opts = { focusPath: `origins.${state.origins.length - 1}.${viewLang}` }; break;
+    case 'rm-origin': withUndo(`Removed origin ${i + 1}.`, () => { state.origins.splice(i, 1); }); opts = { keepFocus: [`[data-act="rm-origin"][data-i="${Math.min(i, state.origins.length - 1)}"]`, '[data-act="add-origin"]'] }; break;
+    case 'undo': undo(); opts = { focusHeading: true }; break;
+    case 'set-langs': state.languages = v === 'both' ? ['en', 'pl'] : [v]; break;
+    case 'view-lang': viewLang = v; break;
+    case 'step': step = Math.max(0, Math.min(STEPS.length - 1, Number(v))); saveMsg = ''; ui.confirm = null; opts = { focusHeading: true }; break;
+    case 'goto-issue': {
+      const x = validate()[Number(v)];
+      if (!x) return;
+      step = stepIndex(x.step);
+      if (x.lang) viewLang = x.lang;
+      opts = x.focusSel ? { focusSel: x.focusSel } : x.path ? { focusPath: x.path } : { focusHeading: true };
+      break;
+    }
     case 'roll': testRoll(); break;
     case 'save': {
       const n = validate().length;
@@ -693,4 +942,5 @@ root.addEventListener('click', (e) => {
 render();
 })();
 </script>
+<div id="announce" class="sr-only" aria-live="polite"></div>
 <style>.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}</style>

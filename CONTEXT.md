@@ -31,7 +31,7 @@ A class authored by a signed-in GM, owned by that GM's account; shown as "create
 _Avoid_: homebrew class, user class
 
 **Class Item**:
-A weapon, armor, equipment or pet authored inside a Custom Class, grantable only by that class's abilities.
+A weapon, armor, equipment or pet authored inside a Custom Class, granted by exactly one of that class's abilities (or one row of an ability's reference table).
 _Avoid_: custom item, homebrew item
 
 **Public Custom Class**:
