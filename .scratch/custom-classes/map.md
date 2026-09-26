@@ -18,6 +18,7 @@ An implementation-ready spec for GM-authored Custom Classes (creator, Party Clas
 ## Decisions so far
 
 - [What did charting settle about custom classes?](issues/00-charting-decisions.md): destination is a spec; GM-owned classes with optional public sharing and moderation; full Book Class parity incl. Class Items; party-only, same join screens; lock-on-use with archive.
+- [What must a Custom Class be able to express to match every Book Class?](issues/01-book-class-parity-audit.md): six Book Classes; parity needs per-class stat dice and omens, a real grant model (item/pet per ability, not name maps or array positions), class-scoped Class Items hidden from catalog search, and generalising the Scum/Herbmaster class-id special cases.
 
 ## Not yet specified
 
