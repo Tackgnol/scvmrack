@@ -1,7 +1,7 @@
 # What does a GM fill in to author an ability and each kind of Class Item?
 
 Type: grilling
-Status: open
+Status: claimed
 Blocked by: 01
 
 ## Question
