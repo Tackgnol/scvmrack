@@ -21,10 +21,11 @@ An implementation-ready spec for GM-authored Custom Classes (creator, Party Clas
 - [What must a Custom Class be able to express to match every Book Class?](issues/01-book-class-parity-audit.md): six Book Classes; parity needs per-class stat dice and omens, a real grant model (item/pet per ability, not name maps or array positions), class-scoped Class Items hidden from catalog search, and generalising the Scum/Herbmaster class-id special cases.
 - [What must a small EU-hosted hobby site do when hosting user-published content?](issues/08-ugc-legal-obligations.md): public classes make scvmrack a DSA hosting platform (micro-exempt from Arts. 15, 20-28); must have an Art. 16 report form open to signed-out users, Art. 17 statements of reasons to authors, contact points and terms, and Art. 18 / Penal Code Art. 240 reporting to police; keep classes text-only.
 - [Where do Custom Classes, their abilities, origins and Class Items live, and how does a character point at one?](issues/02-custom-class-data-model.md): one `classes` table with a `source` enum (main_book/zine/the_rack/user) plus Credit; text in namespaced `translations` with authored-language fallback; explicit grant columns (Book Classes migrated); scoped Class Items in the catalog tables; per-stat dice + omen die, Book omen values fixed as part of done.
+- [What does a GM fill in to author an ability and each kind of Class Item?](issues/03-ability-and-class-item-authoring.md): fixed/random abilities (roll N of M), one item + one pet grant per ability, reused and extended sheet modifier component (adds `test` etc.), full-parity Class Item fields, dN reference tables (Herbmaster migrates), caps of 20 per list and 1500 chars per field.
 
 ## Not yet specified
 
-- **Abuse limits**: caps on classes per GM, text lengths, rate limits for publishing and reporting.
+- **Abuse limits**: caps on classes per GM and rate limits for publishing and reporting (per-class caps and text length are decided in ticket 03).
 - **Rendering everywhere**: how Custom Class content and `created by {name}` appear on the print page, the Owlbear sheet and the party page.
 - **Legal pages**: terms of service, contact points (authorities + users, PL/EN) and operator details the site lacks today; whether the Polish e-services act applies to a non-commercial operator.
 - **Release plumbing**: creator UI i18n (EN/PL), release notes, FAQ entries.
