@@ -36,6 +36,7 @@ An implementation-ready spec for GM-authored Custom Classes (creator, Party Clas
 - [What limits stop one account from flooding classes, publishing or reports?](issues/19-abuse-limits.md): 50 classes per GM (`CUSTOM_CLASS_MAX_PER_GM`); unreachable versions pruned; saves 10/min; 5 new publications a day; reports 5/hour with a honeypot and merging, no CAPTCHA at launch; limits fail loudly with the reason.
 - [What terms, contact points and operator details must the site publish before public classes ship?](issues/21-legal-pages.md): `/terms` in EN and PL (doubling as the regulamin) with a lawyer's glance; a `/legal` page naming contact@ and scvmrack-appeal@; operator name and email only; footer links; changes announced by banner and email.
 - [How does the GM's game classes setup section work?](issues/06-game-classes-setup-section.md): the switchboard on the GM party page; a pool tally stamp, a skull switch (the traced skull as thumb, animated), Classless as its own row, filters that open their sections, numeral rows with a hover/focus info card, and a read-only `/classes/:id` detail page; confirm the skull's licence before shipping.
+- [What does a signed-out user see on the GM tab?](issues/12-gm-features-overview-page.md): variant B, the real GM dashboard locked behind a yellow grille with a "Sign up to run it" slab and three steps; the GM tab shows for everyone; sign-up goes to Logto (registration first if possible) with `returnTo=/gm`; guests are told their scvm comes with them; the signed-out page is indexed.
 
 ## Not yet specified
 

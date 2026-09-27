@@ -171,7 +171,7 @@ a{color:inherit}
 
 <script>
 (() => {
-const ui = { variant: 'A', guest: false };
+const ui = { variant: 'B', guest: false }; // owner picked B, 2026-09-27
 const ARROW = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h15m-6-7 7 7-7 7" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="square"/></svg>';
 const CARRY = '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 10h11m-4-5 5 5-5 5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square"/></svg>';
 const SW = (on) => `<span class="sk ${on ? 'on' : ''}" aria-hidden="true"><svg viewBox="0 0 64 30"><rect class="track" x="1" y="4" width="62" height="22"/><path class="mark yes" d="m10 15 4 4 8-8"/><path class="mark no" d="m45 11 8 8m0-8-8 8"/><g class="thumb"><use href="#skull-edge" class="edge" x="3" y="1" width="24.1" height="28"/><use href="#skull" class="engraving" x="3" y="1" width="24.1" height="28"/></g></svg></span>`;
