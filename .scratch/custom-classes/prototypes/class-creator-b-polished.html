@@ -274,6 +274,10 @@ article.row > .itemhead{margin:-12px -12px 4px;padding:12px;border-bottom:2px so
 .label.group{font-family:var(--f-head);font-size:1.2rem;letter-spacing:.04em;color:var(--white);margin-bottom:6px}
 .label.group.on-paper{color:var(--black)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}.b-step[aria-current="step"],.stamp{transform:none!important}}
+/* zine authors: a quiet contact line */
+.zine-contact{border-top:1px solid var(--dark-grey);padding-top:12px;margin-top:4px}
+.paper a{color:var(--yellow);text-underline-offset:3px}
+.paper a:hover{color:var(--white)}
 /* iteration 7 follow-up: sentences are set as sentences; hint lines within ~75 characters */
 .keys{text-transform:none;letter-spacing:.04em;font-size:.75rem}
 .status.block{font-family:var(--f-body);font-size:.9rem;letter-spacing:0;text-transform:none}
@@ -653,7 +657,7 @@ function rollSheet() {
 function langClassBlock() {
   const dual = state.languages.length > 1;
   return `<div class="row stack" role="group" aria-labelledby="langs-label"><span class="label group" id="langs-label" style="margin:0">Languages this class is written in</span>
-    <div class="choice"><div class="seg" role="radiogroup" aria-labelledby="langs-label" data-manual="1">
+    <div class="choice"><div class="seg" role="radiogroup" aria-labelledby="langs-label" data-manual="1" data-n="3">
       ${[['en', 'English only', !dual && state.languages[0] === 'en'], ['pl', 'Polish only', !dual && state.languages[0] === 'pl'], ['both', 'Both', dual]].map(([val, text, on]) =>
         `<button type="button" class="act ${on ? 'on' : ''}" role="radio" aria-checked="${on}" tabindex="${on ? 0 : -1}" data-act="set-langs" data-v="${val}">${text}</button>`).join('')}
     </div></div>
@@ -851,6 +855,8 @@ function abilityHeader(a) {
   const it = [a.grantItem, a.grantPet].map((k) => (k && k.startsWith('ci:') ? itemByKey(k) : null)).find((x) => sameName(a, x));
   return `<h3 class="card-h">${esc(tx(a.name) || 'Unnamed ability')}</h3>${it ? `<span class="arrowhead">→ grants ${typeWord[it.type]}</span>` : ''}`;
 }
+// Zine Classes are added by the owner via SQL migration; authors are pointed here (owner decision, 2026-09-27)
+const ZINE_CONTACT = '<p class="fieldhint zine-contact">Zine author? Want to add your class to the roster? <a href="mailto:contact@rpgtools.co">Get in touch (contact@rpgtools.co)</a></p>';
 const ZINE_HELP = `<details class="zine"><summary>Porting a zine?</summary><ul>
   <li>Paste a list straight from the zine. A header line like “d6 Abilities” is dropped, and numbering (“1.”, “2)”, “-”, “•”) is stripped.</li>
   <li>Abilities: paste into an ability’s name, one per line as “Name: rules”, “Name — rules” or “Name. Rules”. “St.” and “Mt.” stay part of the name.</li>
@@ -997,6 +1003,7 @@ function classesHtml() {
         <div class="card-foot"><button type="button" class="act" disabled title="Making a class public is ticket 07">Make public</button><button type="button" class="act on" data-act="back-to-forge">Edit class</button></div>
       </article>
       <p class="fieldhint">Book classes and classes other GMs made public are listed below yours in the real app.</p>
+      ${ZINE_CONTACT}
     </div></section>`;
 }
 function snackHtml() {
@@ -1026,7 +1033,7 @@ function render({ focusHeading = false, focusPath = null, focusSel = null, keepF
   if (STEPS[step].key === 'review') { ui.fresh.clear(); ui.freshOrigins = new WeakSet(); }
   const issues = visible(validate());
   const s = STEPS[step];
-  const body = { identity: () => `<div class="stack">${langClassBlock()}${lfield('name', 'Class name')}${lfield('description', 'Description', { multiline: true })}</div>`,
+  const body = { identity: () => `<div class="stack">${langClassBlock()}${lfield('name', 'Class name')}${lfield('description', 'Description', { multiline: true })}${ZINE_CONTACT}</div>`,
     numbers: statsBody, items: itemsBody, abilities: abilitiesBody, origins: originsBody, gb: gbBody, review: () => reviewBody(issues) }[s.key]();
   root.innerHTML = `<div class="b-layout">
     <nav class="b-railwrap page-level" aria-label="Class creator steps"><ol class="b-rail" data-derived="rail">${railHtml(issues)}</ol><p class="keys" aria-hidden="true">Outside fields: <kbd>Ctrl Z</kbd> undo · <kbd>Ctrl Shift Z</kbd> redo · <kbd>Alt ← →</kbd> steps · <kbd>Esc</kbd> close. In a field, <kbd>Esc</kbd> goes to Done.</p></nav>

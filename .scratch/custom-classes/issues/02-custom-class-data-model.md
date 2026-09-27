@@ -12,6 +12,7 @@ Decide the storage model: extend `classes`/`abilities`/`origins` with an owner, 
 
 - **One `classes` table** for every class, with an explicit `source` enum: `main_book` (Book Class), `zine` (Zine Class), `the_rack` (Rack Class), `user` (Custom Class). Built-in Classes (`main_book`/`zine`/`the_rack`) have no owner and are seeded via SQL; `Character.classId` (Int) is unchanged and the generator keeps one code path.
 - **Credit** columns `credit_work`, `credit_author`, optional `credit_url`, rendered "from {work} by {author}" for Zine (and Rack) Classes. Custom Classes show "created by {owner name}" from `owner_user_id`.
+- **No Credit on Custom Classes (owner decision, 2026-09-27)**: a GM can't mark their own class as a zine's. Zine Classes are added only by the owner through an SQL migration. The creator shows "Zine author? Want to add your class to the roster? Get in touch (contact@rpgtools.co)" instead.
 - **Lifecycle columns**: `owner_user_id`, `languages` (`{en}`/`{pl}`/`{en,pl}`), `visibility` (private/public), `status` (draft/active/archived), `locked_at`, `taken_down_at` + reason. What counts as "used" is ticket 10's call. Built-in Classes are reportable/hideable via the same takedown flow but are never lock-on-use (edited via migrations).
 - **Name uniqueness**: unique per owner instead of global.
 - **Text** lives in `translations` under namespaced keys (e.g. `cc.<classId>.ability.<n>`), so every reader works unchanged; reads fall back to the class's authored language when the reader's locale has no row (single-language classes).

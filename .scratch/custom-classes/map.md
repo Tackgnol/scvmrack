@@ -39,5 +39,6 @@ An implementation-ready spec for GM-authored Custom Classes (creator, Party Clas
 - Overriding or extending the shared flavour tables (body, habits, tales, traits, names).
 - Machine translation of Custom Class text.
 - Class Items entering the shared equipment catalog.
-- Authoring or promoting Built-in Classes (Book/Zine/Rack) in-app; they are seeded via SQL.
+- Authoring or promoting Built-in Classes (Book/Zine/Rack) in-app; they are seeded via SQL. Zine authors are pointed to contact@rpgtools.co instead, and Custom Classes never carry a zine Credit.
+- Starting a Custom Class from an existing class (owner decision, 2026-09-27).
 - Getting Better rules beyond the fixed menu (revisit only on user demand, as a fresh effort).
