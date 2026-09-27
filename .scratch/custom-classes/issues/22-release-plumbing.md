@@ -16,3 +16,4 @@ Work that must exist before Custom Classes ship, with nothing left to decide:
   - `changelog/backend.md` and `frontend.md` updated
 - **FAQ and help**: entries on what Custom Classes are, who can make them, the party-only rule, how public sharing and reporting work, and the zine-author contact line.
 - **Security notes**: add "Party Class Pool content" to the OBR room-access row of `CLAUDE.md`'s security table (ticket 11).
+- **Env vars**: add `CUSTOM_CLASS_MAX_PER_GM` (default 50, ticket 19) to `CLAUDE.md`'s optional backend variables, next to `PARTY_MAX_MEMBERS`, and to the Woodpecker and compose config.

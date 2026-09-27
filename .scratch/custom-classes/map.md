@@ -33,10 +33,10 @@ An implementation-ready spec for GM-authored Custom Classes (creator, Party Clas
 - [How do Owlbear's Roll and Forge use the room's Party Class Pool?](issues/13-obr-roll-and-forge-from-room-pool.md): Roll gets a compact in-popover class picker (Random first); one room-scoped endpoint creates, joins and binds in a transaction; no-party rooms roll Book Classes; a full party creates nothing; Forge carries the room and player in its URL. Build together with ticket 05.
 - [How does Owlbear's Forge keep the player's identity in the new tab?](issues/14-obr-forge-new-tab-identity.md): reuse the shipped RPG-68 `/obr-open` bridge with a `to=forge` destination; the panel refreshes its binding on focus; a different signed-in account fails loud; existing failure screens reused.
 - [How does Custom Class content show on the sheet, print page, party page and Owlbear?](issues/20-custom-class-rendering.md): attribution on the sheet and print page (a tooltip on party cards, none on room cards); hidden classes look normal except removed text; an "older rules" chip for GMs only; same components with collapsible tables; print never truncates; a read-only `/classes/:id` detail page.
+- [What limits stop one account from flooding classes, publishing or reports?](issues/19-abuse-limits.md): 50 classes per GM (`CUSTOM_CLASS_MAX_PER_GM`); unreachable versions pruned; saves 10/min; 5 new publications a day; reports 5/hour with a honeypot and merging, no CAPTCHA at launch; limits fail loudly with the reason.
 
 ## Not yet specified
 
-- **Abuse limits**: ticket 19.
 - **Rendering everywhere**: ticket 20.
 - **Legal pages**: ticket 21.
 - **Release plumbing**: ticket 22.
