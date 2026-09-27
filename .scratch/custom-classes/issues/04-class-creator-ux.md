@@ -40,4 +40,9 @@ Rough prototype of the creator: sections (identity, stats dice, HP/weapon/armor/
   - Step changes are a hard cut; the new step-title stamp thumps down (260 ms scale-and-tilt settle, fully opaque from frame one).
   - Undo snackbar snaps up 14 px; inline "Remove?" confirmations reveal top-down by clip (200 ms).
   - Rapid clicks skip the running transition; `prefers-reduced-motion` makes everything instant.
+- **Link safety** (impeccable `critique` #2 scored 27/40, up from 22, then `harden`):
+  - Creating an item from an ability is an explicit action, never a menu option: "Forge a Class Item for this ability" opens a Weapon / Armor / Gear / Pet choice (types whose slot is taken are disabled). If an ungranted item with the ability's name exists, the ability offers "Grant the waiting …" instead, so no duplicates.
+  - Item cards have a Type control; changing type keeps name, description and value and moves the grant between item/pet slots (or leaves it waiting if the other slot is taken), undoable.
+  - Undo reverses exactly one operation (re-insert at its old position, restore the grants it cleared, never create a second granter), keeps later edits, stays on the current step, focuses the restored element, and pauses its 10 s window while hovered or focused. Repeated changes to the same menu collapse into one undo back to the original value.
+  - Every way of ungranting is safe: removing a reference table whose rows grant items asks first and names them; changing/clearing a grant or table-row link is undoable and announced ("X now waits for an ability"); grant menus stay visible until Done so focus never drops.
 - **Design-system fixes the build should keep**: black focus rings on the yellow page (yellow disappears there), one pink interrupt per area (warnings only), 44px touch targets on touch devices, themed selection/caret/scrollbar, square SVG arrows and die icon instead of Unicode glyphs.

@@ -178,6 +178,7 @@ input.stamp-num[aria-invalid="true"]{background:var(--pink)!important;border-col
 .itemline .result{align-items:flex-start}
 @media (min-width:1000px){.itemline .result{align-items:flex-end;text-align:right}}
 .choice .seg .act{min-height:50px;padding:4px 14px}
+.choice .seg{flex-wrap:wrap;max-width:100%}
 /* distill: abilities collapse to summary rows, one open at a time */
 .abl-sum{width:100%;display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:6px 12px;align-items:center;background:var(--off-black);border:1px solid var(--grey);color:var(--white);
   padding:10px 12px;min-height:56px;text-align:left;cursor:pointer;transition:border-color .08s ease-out}
@@ -354,7 +355,7 @@ const state = {
   gbNote: L('', ''),
 };
 // UI-only state (never saved): the Class Items question and in-card confirmations.
-const ui = { itemsNo: false, itemsYes: false, confirm: null, snack: null, openAbility: null, showGrants: new Set() };
+const ui = { itemsNo: false, itemsYes: false, confirm: null, snack: null, openAbility: null, showGrants: new Set(), forgeFor: null };
 
 /* ---------- helpers ---------- */
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -596,7 +597,9 @@ function itemsBody() {
         ${ui.confirm && ui.confirm.type === 'item' && ui.confirm.id === it.id ? '' : `<button type="button" class="act kill" data-act="rm-item" data-v="${it.id}">Remove</button>`}</div>
       ${ui.confirm && ui.confirm.type === 'item' && ui.confirm.id === it.id ? itemConfirm(it) : ''}
       ${grantedByLine(it)}
-      ${lfield(`items.${i}.name`, 'Name')}${lfield(`items.${i}.description`, 'Description (optional): special rules, effects, flavour', { multiline: true })}${itemFields(it, i)}</article>`).join('') || '<div class="empty">No Class Items yet. Pick a kind above.</div>'}
+      ${lfield(`items.${i}.name`, 'Name')}${lfield(`items.${i}.description`, 'Description (optional): special rules, effects, flavour', { multiline: true })}
+      <div class="stepper choice"><span class="label" id="type-${it.id}">Type</span><div class="seg" role="radiogroup" aria-labelledby="type-${it.id}">${['weapon', 'armor', 'equipment', 'pet'].map((t) => `<button type="button" class="act ${it.type === t ? 'on' : ''}" role="radio" aria-checked="${it.type === t}" data-act="change-type" data-i="${i}" data-v="${t}">${typeWord[t]}</button>`).join('')}</div></div>
+      ${itemFields(it, i)}</article>`).join('') || '<div class="empty">No Class Items yet. Pick a kind above.</div>'}
   </div>`;
 }
 
@@ -619,7 +622,7 @@ function grantSelect(i, kind) {
     <option value="">Nothing</option>
     ${own.length ? `<optgroup label="This class's Class Items">${ownOpts}</optgroup>` : ''}
     <optgroup label="Shared catalog">${cat.map((c) => `<option value="${c.key}" ${v === c.key ? 'selected' : ''}>${esc(c.label)}</option>`).join('')}</optgroup>
-    ${state.items.length < LIMIT_LIST ? `<option value="__new">+ New Class Item named after this ability</option>` : ''}</select></label>${detail}</div>`;
+    </select></label>${detail}</div>`;
 }
 function modsEditor(i) {
   const a = state.abilities[i];
@@ -646,7 +649,12 @@ function tableEditor(i) {
       return `<option value="${keyOf(it)}" ${v === keyOf(it) ? 'selected' : ''} ${taken ? 'disabled' : ''}>${esc(tx(it.name) || 'Unnamed')}${taken ? ' (granted elsewhere)' : ''}</option>`;
     }).join('')}</select>`;
   };
-  return `<div class="stack"><div class="spread"><span class="label group" style="margin:0">Reference table · d${t.die}</span><button type="button" class="act kill" data-act="rm-table" data-i="${i}">Remove table</button></div>
+  const a = state.abilities[i];
+  const linked = t.rows.map((r, k) => ({ k, it: r.item ? itemByKey(r.item) : null })).filter((x) => x.it);
+  const confirming = ui.confirm && ui.confirm.type === 'table' && ui.confirm.id === a.id;
+  const confirmHtml = confirming ? `<div class="confirm" role="group" aria-label="Confirm removal"><p>${linked.map((x) => `Row ${x.k + 1} grants “${esc(tx(x.it.name) || 'Unnamed')}”`).join('. ')}. Remove the table? ${linked.length > 1 ? 'Those items' : 'That item'} will wait for an ability.</p>
+    <div class="inline"><button type="button" class="act danger" data-act="rm-table-yes" data-i="${i}">Remove table</button><button type="button" class="act" data-act="confirm-cancel" data-v="table-${a.id}">Keep it</button></div></div>` : '';
+  return `<div class="stack"><div class="spread"><span class="label group" style="margin:0">Reference table · d${t.die}</span>${confirming ? '' : `<button type="button" class="act kill" data-act="rm-table" data-i="${i}">Remove table</button>`}</div>${confirmHtml}
     ${t.rows.map((r, k) => `<div class="rowlink"><span>${k + 1}</span>${textInput(`abilities.${i}.table.rows.${k}.${viewLang}`, { lang: viewLang, label: `Row ${k + 1}` })}${state.items.length ? rowSelect(k) : ''}</div>`).join('')}</div>`;
 }
 function abilityConfirm(a, i) {
@@ -687,6 +695,17 @@ function abilitySummary(a, i, issues) {
     <span class="inline" style="gap:8px">${miss ? `<span class="chip warn" aria-label="${miss} to fix">${miss}</span>` : ''}<span class="abl-edit">Edit${CHEV}</span></span>
     <span class="abl-chips">${abilityChips(a)}</span></button></article>`;
 }
+function forgeRow(a, i) {
+  if (a.grantItem && a.grantPet) return '';
+  const free = (t) => !a[slotFor(t)];
+  const waiting = state.items.find((it) => !granterOf(keyOf(it)) && sameName(a, it) && free(it.type));
+  if (waiting) return `<div class="extras"><button type="button" class="act" data-act="grant-waiting" data-i="${i}" data-v="${waiting.id}">Grant the waiting ${typeWord[waiting.type]} “${esc(tx(waiting.name) || 'Unnamed')}”</button></div>`;
+  if (state.items.length >= LIMIT_LIST) return '';
+  if (ui.forgeFor !== a.id) return `<div class="extras"><button type="button" class="act" data-act="forge-for" data-i="${i}" data-v="${a.id}">Forge a Class Item for this ability</button></div>`;
+  return `<div class="stepper choice"><span class="label group" id="forge-${a.id}">Forge a Class Item named “${esc(tx(a.name) || 'this ability')}”</span>
+    <div class="inline"><div class="seg" role="group" aria-labelledby="forge-${a.id}">${['weapon', 'armor', 'equipment', 'pet'].map((t) => `<button type="button" class="act" data-act="forge-type" data-i="${i}" data-v="${t}" ${free(t) ? '' : 'disabled title="That grant slot is already used"'}>${typeWord[t]}</button>`).join('')}</div>
+    <button type="button" class="act" data-act="forge-cancel" data-i="${i}" data-v="${a.id}">Cancel</button></div></div>`;
+}
 function abilityOpen(a, i) {
   const confirming = ui.confirm && ui.confirm.type === 'ability' && ui.confirm.id === a.id;
   const showGrants = a.grantItem || a.grantPet || ui.showGrants.has(a.id);
@@ -701,7 +720,7 @@ function abilityOpen(a, i) {
       ${confirming ? abilityConfirm(a, i) : ''}
       ${lfield(`abilities.${i}.name`, 'Name')}
       ${lfield(`abilities.${i}.text`, 'Rules text', { multiline: true })}
-      ${showGrants ? `<div class="grid2" style="align-items:start">${grantSelect(i, 'item')}${grantSelect(i, 'pet')}</div>` : ''}
+      ${showGrants ? `<div class="grid2" style="align-items:start">${grantSelect(i, 'item')}${grantSelect(i, 'pet')}</div>${forgeRow(a, i)}` : ''}
       ${modsEditor(i)}
       ${tableEditor(i)}
       ${extras ? `<div class="extras"><span class="label group" style="margin:0">Extras</span>${extras}</div>` : ''}
@@ -771,7 +790,7 @@ function langSwitch(issues) {
 }
 function snackHtml() {
   if (!ui.snack) return '';
-  return `<div class="snackbar" role="status"><span>${esc(ui.snack.msg)}</span><button type="button" class="btn save" data-act="undo">Undo</button></div>`;
+  return `<div class="snackbar"><span>${esc(ui.snack.msg)}</span><button type="button" class="btn save" data-act="undo">Undo</button></div>`;
 }
 const root = document.getElementById('root');
 const stepIndex = (key) => STEPS.findIndex((s) => s.key === key);
@@ -845,40 +864,67 @@ function withTransition(kind, update) {
   t.finished.finally(() => { if (activeVT === t) { activeVT = null; delete document.documentElement.dataset.vt; } });
 }
 
-/* Undo: every removal snapshots the draft first. */
+/* Undo: every destructive change records its own inverse; undo touches nothing else. */
 let snackTimer = null;
-function withUndo(msg, fn) {
-  const snapshot = structuredClone(state);
-  const uiSnap = { itemsNo: ui.itemsNo, itemsYes: ui.itemsYes };
-  fn();
-  ui.confirm = null;
-  ui.snack = { msg, snapshot, uiSnap, step };
+function armSnack() {
   clearTimeout(snackTimer);
   snackTimer = setTimeout(() => { ui.snack = null; const el = root.querySelector('.snackbar'); if (el) el.remove(); }, 10000);
+}
+function withUndo(msg, doIt, inverse, focusSel = null, coalesceKey = null) {
+  if (coalesceKey && ui.snack && ui.snack.coalesceKey === coalesceKey) {
+    // repeated changes to the same control (e.g. arrowing through a menu) keep ONE undo back to the original value
+    doIt(); ui.snack.msg = msg; armSnack(); announce(`${msg} Undo is available.`); return;
+  }
+  doIt();
+  ui.confirm = null;
+  ui.snack = { msg, inverse, focusSel, coalesceKey };
+  armSnack();
   announce(`${msg} Undo is available.`);
 }
 function undo() {
-  if (!ui.snack) return;
-  const { snapshot, uiSnap, step: s } = ui.snack;
-  Object.keys(state).forEach((k) => { state[k] = snapshot[k]; });
-  Object.assign(ui, uiSnap, { snack: null, confirm: null });
-  step = s;
+  if (!ui.snack) return null;
+  const { inverse, focusSel } = ui.snack;
+  inverse();
+  ui.snack = null; ui.confirm = null;
+  clearTimeout(snackTimer);
   announce('Restored.');
+  return focusSel;
+}
+const abilityById = (id) => state.abilities.find((x) => x.id === id);
+function grantRefs(k) {
+  const refs = [];
+  state.abilities.forEach((a) => {
+    if (a.grantItem === k) refs.push({ aid: a.id, slot: 'grantItem' });
+    if (a.grantPet === k) refs.push({ aid: a.id, slot: 'grantPet' });
+    if (a.table) a.table.rows.forEach((r, row) => { if (r.item === k) refs.push({ aid: a.id, row }); });
+  });
+  return refs;
+}
+function restoreRefs(k, refs) {
+  if (granterOf(k)) return; // one granter per Class Item: never create a second
+  const r = refs.find((x) => abilityById(x.aid));
+  if (!r) return;
+  const a = abilityById(r.aid);
+  if (r.slot) { if (!a[r.slot]) a[r.slot] = k; } else if (a.table && a.table.rows[r.row] && !a.table.rows[r.row].item) a.table.rows[r.row].item = k;
 }
 function newAbilityFor(it) {
   const a = { id: ++uid, random: true, name: { en: it.name.en, pl: it.name.pl }, text: L('', ''), grantItem: it.type === 'pet' ? '' : keyOf(it), grantPet: it.type === 'pet' ? keyOf(it) : '', mods: [], table: null };
   state.abilities.push(a);
   return state.abilities.length - 1;
 }
+const TYPE_DEFAULTS = {
+  weapon: () => ({ diceCount: 1, diceFaces: 6, dmgMod: 0, reach: 'melee' }),
+  pet: () => ({ hp: 4, actionDie: 4, actionType: 'attack', humanoid: false }),
+  armor: () => ({ tier: 1 }),
+  equipment: () => ({ kind: 'gear', uses: 0 }),
+};
+const TYPE_FIELDS = ['diceCount', 'diceFaces', 'dmgMod', 'reach', 'hp', 'actionDie', 'actionType', 'humanoid', 'tier', 'kind', 'uses'];
 function newItem(type, name = L('', '')) {
-  const base = { id: ++uid, type, name: { en: name.en, pl: name.pl }, description: L('', ''), value: 0 };
-  if (type === 'weapon') Object.assign(base, { diceCount: 1, diceFaces: 6, dmgMod: 0, reach: 'melee' });
-  if (type === 'pet') Object.assign(base, { hp: 4, actionDie: 4, actionType: 'attack', humanoid: false });
-  if (type === 'armor') Object.assign(base, { tier: 1 });
-  if (type === 'equipment') Object.assign(base, { kind: 'gear', uses: 0 });
+  const base = { id: ++uid, type, name: { en: name.en, pl: name.pl }, description: L('', ''), value: 0, ...TYPE_DEFAULTS[type]() };
   state.items.push(base);
   return base;
 }
+const slotFor = (type) => (type === 'pet' ? 'grantPet' : 'grantItem');
 function clearGrantsTo(k) {
   state.abilities.forEach((a) => {
     if (a.grantItem === k) a.grantItem = '';
@@ -893,16 +939,23 @@ function onValue(e) {
   let v = el.type === 'checkbox' ? el.checked : el.value;
   if (el.type === 'radio') { if (!el.checked) return; v = el.value; }
   if (el.dataset.num) v = Number(v) || 0;
-  if (el.dataset.grant) {
-    const i = Number(el.dataset.i), slot = el.dataset.grant === 'item' ? 'grantItem' : 'grantPet';
+  if (el.dataset.grant || el.dataset.rowlink) {
+    const prev = getPath(el.dataset.path) || '';
+    if (prev === v) return;
+    const i = el.dataset.grant ? Number(el.dataset.i) : Number(el.dataset.path.split('.')[1]);
     const a = state.abilities[i];
-    if (v === '__new') {
-      const it = newItem(el.dataset.grant === 'pet' ? 'pet' : 'weapon', a.name);
-      a[slot] = keyOf(it);
-      announce(`New Class Item “${tx(it.name) || 'Unnamed'}” created and granted by ${tx(a.name) || 'this ability'}. Set its stats in Class Items.`);
+    const aName = tx(a.name) || 'This ability';
+    ui.showGrants.add(a.id); // keep the grant menus in place after clearing, until Done
+    const now = v ? `${aName} now grants ${itemLabel(v)}.` : `${aName} grants nothing${el.dataset.rowlink ? ' from that row' : ''}.`;
+    const prevItem = prev.startsWith('ci:') ? itemByKey(prev) : null;
+    const coalescing = ui.snack && ui.snack.coalesceKey === el.dataset.path;
+    if (prevItem || coalescing) {
+      const path = el.dataset.path, sel = `#${CSS.escape(el.id)}`;
+      withUndo(prevItem ? `${now} “${tx(prevItem.name) || 'Unnamed'}” now waits for an ability.` : now, () => { setPath(path, v); },
+        () => { if (!abilityById(a.id)) return; if (!prev.startsWith('ci:') || (itemByKey(prev) && (!granterOf(prev) || getPath(path) === prev))) setPath(path, prev); else setPath(path, ''); }, sel, path);
     } else {
-      a[slot] = v;
-      announce(v ? `${tx(a.name) || 'This ability'} now grants ${itemLabel(v)}.` : `${tx(a.name) || 'This ability'} grants nothing.`);
+      setPath(el.dataset.path, v);
+      announce(now);
     }
     saveMsg = '';
     render({ keepFocus: [`#${CSS.escape(el.id)}`] });
@@ -910,10 +963,11 @@ function onValue(e) {
   }
   setPath(el.dataset.path, v);
   saveMsg = '';
-  if (el.dataset.rowlink) { render({ keepFocus: [`#${CSS.escape(el.id)}`] }); return; }
   refreshDerived();
 }
 root.addEventListener('input', (e) => { if (e.target.tagName !== 'SELECT') onValue(e); });
+['mouseover', 'focusin'].forEach((ev) => root.addEventListener(ev, (e) => { if (e.target.closest && e.target.closest('.snackbar')) clearTimeout(snackTimer); }));
+['mouseout', 'focusout'].forEach((ev) => root.addEventListener(ev, (e) => { if (e.target.closest && e.target.closest('.snackbar') && ui.snack) armSnack(); }));
 root.addEventListener('change', (e) => { if (e.target.tagName === 'SELECT' || e.target.type === 'radio' || e.target.type === 'checkbox') onValue(e); });
 root.addEventListener('keydown', (e) => {
   const b = e.target.closest && e.target.closest('.die, .choice .act');
@@ -965,20 +1019,23 @@ root.addEventListener('click', (e) => {
       const it = state.items.find((x) => x.id === Number(v));
       if (granterOf(keyOf(it))) { ui.confirm = { type: 'item', id: it.id }; opts = { focusSel: `[data-act="rm-item-yes"][data-v="${it.id}"]` }; break; }
       const idx = state.items.indexOf(it);
-      withUndo(`Removed Class Item “${tx(it.name) || 'Unnamed'}”.`, () => { state.items.splice(idx, 1); });
+      withUndo(`Removed Class Item “${tx(it.name) || 'Unnamed'}”.`, () => { state.items.splice(idx, 1); },
+        () => { state.items.splice(Math.min(idx, state.items.length), 0, it); }, `[data-act="rm-item"][data-v="${it.id}"]`);
       opts = { keepFocus: [`[data-act="rm-item"][data-v="${(state.items[idx] || state.items[idx - 1] || {}).id}"]`, '[data-act="add-item"]', '[data-act="gate-yes"]'] };
       break;
     }
     case 'rm-item-yes': {
       const it = state.items.find((x) => x.id === Number(v)); const idx = state.items.indexOf(it);
-      withUndo(`Removed “${tx(it.name) || 'Unnamed'}” and cleared its grant.`, () => { clearGrantsTo(keyOf(it)); state.items.splice(idx, 1); });
+      const k = keyOf(it), refs = grantRefs(k);
+      withUndo(`Removed “${tx(it.name) || 'Unnamed'}” and cleared its grant.`, () => { clearGrantsTo(k); state.items.splice(idx, 1); },
+        () => { state.items.splice(Math.min(idx, state.items.length), 0, it); restoreRefs(k, refs); }, `[data-act="rm-item"][data-v="${it.id}"]`);
       opts = { keepFocus: [`[data-act="rm-item"][data-v="${(state.items[idx] || state.items[idx - 1] || {}).id}"]`, '[data-act="add-item"]', '[data-act="gate-yes"]'] };
       break;
     }
     case 'confirm-cancel': {
       ui.confirm = null;
       const [type, id] = v.split('-');
-      opts = { keepFocus: [type === 'item' ? `[data-act="rm-item"][data-v="${id}"]` : `[data-ability="${id}"] [data-act="rm-ability"]`] };
+      opts = { keepFocus: [type === 'item' ? `[data-act="rm-item"][data-v="${id}"]` : type === 'table' ? `[data-ability="${id}"] [data-act="rm-table"]` : `[data-ability="${id}"] [data-act="rm-ability"]`] };
       break;
     }
     case 'grant-new': {
@@ -1006,13 +1063,14 @@ root.addEventListener('click', (e) => {
     /* Abilities */
     case 'add-ability': state.abilities.push({ id: ++uid, random: true, name: L('', ''), text: L('', ''), grantItem: '', grantPet: '', mods: [], table: null }); ui.openAbility = uid; opts = { focusPath: `abilities.${state.abilities.length - 1}.name.${viewLang}` }; break;
     case 'open-ability': { ui.openAbility = Number(v); ui.confirm = null; const idx = state.abilities.findIndex((x) => x.id === Number(v)); opts = { focusPath: `abilities.${idx}.name.${viewLang}` }; break; }
-    case 'close-ability': ui.openAbility = null; ui.confirm = null; opts = { keepFocus: [`[data-act="open-ability"][data-v="${v}"]`] }; break;
+    case 'close-ability': ui.openAbility = null; ui.confirm = null; ui.forgeFor = null; opts = { keepFocus: [`[data-act="open-ability"][data-v="${v}"]`] }; break;
     case 'show-grants': ui.showGrants.add(Number(v)); opts = { focusSel: `#${fid(`abilities.${i}.grantItem`)}` }; break;
     case 'rm-ability': {
       const a = state.abilities[i];
       const owns = [a.grantItem, a.grantPet, ...(a.table ? a.table.rows.map((r) => r.item) : [])].some((k) => k && k.startsWith('ci:') && itemByKey(k));
       if (owns) { ui.confirm = { type: 'ability', id: a.id }; opts = { focusSel: `[data-act="rm-ability-yes"][data-i="${i}"][data-v="both"]` }; break; }
-      withUndo(`Removed ability “${tx(a.name) || 'Unnamed'}”.`, () => { state.abilities.splice(i, 1); });
+      withUndo(`Removed ability “${tx(a.name) || 'Unnamed'}”.`, () => { state.abilities.splice(i, 1); },
+        () => { state.abilities.splice(Math.min(i, state.abilities.length), 0, a); }, `[data-act="open-ability"][data-v="${a.id}"]`);
       ui.openAbility = null;
       opts = { keepFocus: [`[data-act="open-ability"][data-v="${(state.abilities[Math.min(i, state.abilities.length - 1)] || {}).id}"]`, '[data-act="add-ability"]'] };
       break;
@@ -1020,26 +1078,81 @@ root.addEventListener('click', (e) => {
     case 'rm-ability-yes': {
       const a = state.abilities[i];
       const owned = [a.grantItem, a.grantPet, ...(a.table ? a.table.rows.map((r) => r.item) : [])].filter((k) => k && k.startsWith('ci:'));
+      const removedItems = v === 'both' ? state.items.map((it, idx) => ({ it, idx })).filter((x) => owned.includes(keyOf(x.it))) : [];
       withUndo(v === 'both' ? `Removed “${tx(a.name) || 'Unnamed'}” and its Class Item.` : `Removed “${tx(a.name) || 'Unnamed'}”. Its Class Item now waits for an ability.`, () => {
         state.abilities.splice(i, 1);
         if (v === 'both') state.items = state.items.filter((it) => !owned.includes(keyOf(it)));
-      });
+      }, () => {
+        removedItems.forEach(({ it, idx }) => state.items.splice(Math.min(idx, state.items.length), 0, it));
+        // the ability object still carries its grants; drop any that were re-granted elsewhere meanwhile
+        [['grantItem'], ['grantPet']].forEach(([slot]) => { const k = a[slot]; if (k && k.startsWith('ci:') && granterOf(k)) a[slot] = ''; });
+        if (a.table) a.table.rows.forEach((r) => { if (r.item && granterOf(r.item)) r.item = ''; });
+        state.abilities.splice(Math.min(i, state.abilities.length), 0, a);
+      }, `[data-act="open-ability"][data-v="${a.id}"]`);
       ui.openAbility = null;
       opts = { keepFocus: [v === 'keep' ? '[data-act="grant-new"]' : `[data-act="open-ability"][data-v="${(state.abilities[Math.min(i, state.abilities.length - 1)] || {}).id}"]`, '[data-act="add-ability"]'] };
       break;
     }
     case 'kind': state.abilities[i].random = v === 'random'; announce(`${tx(state.abilities[i].name) || 'Ability'} is now ${v === 'random' ? 'in the random pool' : 'fixed: every scvm gets it'}.`); break;
     case 'add-mod': state.abilities[i].mods.push({ stat: 'strength', value: 1, scope: 'all' }); opts = { focusSel: `#${fid(`abilities.${i}.mods.${state.abilities[i].mods.length - 1}.stat`)}` }; break;
-    case 'rm-mod': withUndo('Removed modifier.', () => { state.abilities[i].mods.splice(j, 1); }); opts = { keepFocus: [`[data-act="rm-mod"][data-i="${i}"][data-j="${Math.max(0, j - 1)}"]`, `[data-act="add-mod"][data-i="${i}"]`] }; break;
+    case 'rm-mod': { const ab = state.abilities[i], mod = ab.mods[j]; withUndo('Removed modifier.', () => { ab.mods.splice(j, 1); }, () => { ab.mods.splice(Math.min(j, ab.mods.length), 0, mod); }, `[data-act="rm-mod"][data-i="${i}"][data-j="${j}"]`); } opts = { keepFocus: [`[data-act="rm-mod"][data-i="${i}"][data-j="${Math.max(0, j - 1)}"]`, `[data-act="add-mod"][data-i="${i}"]`] }; break;
     case 'scope': state.abilities[i].mods[j].scope = v; break;
     case 'add-table': state.abilities[i].table = { die: 6, rows: Array.from({ length: 6 }, () => row('', '')) }; opts = { focusPath: `abilities.${i}.table.rows.0.${viewLang}` }; break;
-    case 'rm-table': withUndo('Removed reference table.', () => { state.abilities[i].table = null; }); opts = { keepFocus: [`[data-act="add-table"][data-i="${i}"]`] }; break;
+    case 'rm-table':
+    case 'rm-table-yes': {
+      const ab = state.abilities[i], table = ab.table;
+      const links = table.rows.filter((r) => r.item && itemByKey(r.item));
+      if (b.dataset.act === 'rm-table' && links.length) { ui.confirm = { type: 'table', id: ab.id }; opts = { focusSel: `[data-act="rm-table-yes"][data-i="${i}"]` }; break; }
+      withUndo(links.length ? `Removed reference table. ${links.length > 1 ? 'Its Class Items wait' : 'Its Class Item waits'} for an ability.` : 'Removed reference table.', () => { ab.table = null; },
+        () => { table.rows.forEach((r) => { if (r.item && granterOf(r.item)) r.item = ''; }); ab.table = table; }, `[data-act="rm-table"][data-i="${i}"]`);
+      opts = { keepFocus: [`[data-act="add-table"][data-i="${i}"]`] };
+      break;
+    }
     case 'add-origin': state.origins.push(L('', '')); opts = { focusPath: `origins.${state.origins.length - 1}.${viewLang}` }; break;
-    case 'rm-origin': withUndo(`Removed origin ${i + 1}.`, () => { state.origins.splice(i, 1); }); opts = { keepFocus: [`[data-act="rm-origin"][data-i="${Math.min(i, state.origins.length - 1)}"]`, '[data-act="add-origin"]'] }; break;
-    case 'undo': undo(); opts = { focusHeading: true }; break;
+    case 'rm-origin': { const o = state.origins[i]; withUndo(`Removed origin ${i + 1}.`, () => { state.origins.splice(i, 1); }, () => { state.origins.splice(Math.min(i, state.origins.length), 0, o); }, `[data-act="rm-origin"][data-i="${i}"]`); } opts = { keepFocus: [`[data-act="rm-origin"][data-i="${Math.min(i, state.origins.length - 1)}"]`, '[data-act="add-origin"]'] }; break;
+    case 'undo': { const fs = undo(); opts = { focusSel: fs, keepFocus: ['#step-title'] }; break; }
+    case 'forge-for': ui.forgeFor = Number(v); opts = { focusSel: `[data-act="forge-type"][data-i="${i}"]:not([disabled])` }; break;
+    case 'forge-cancel': ui.forgeFor = null; opts = { keepFocus: [`[data-act="forge-for"][data-i="${i}"]`] }; break;
+    case 'forge-type': {
+      const ab = state.abilities[i];
+      const it = newItem(v, ab.name);
+      ab[slotFor(v)] = keyOf(it); ui.forgeFor = null; ui.itemsNo = false;
+      announce(`New ${typeWord[v]} “${tx(it.name) || 'Unnamed'}” forged and granted by ${tx(ab.name) || 'this ability'}. Set its stats in Class Items.`);
+      opts = { focusSel: `#${fid(`abilities.${i}.${slotFor(v)}`)}` };
+      break;
+    }
+    case 'grant-waiting': {
+      const ab = state.abilities[i], it = state.items.find((x) => x.id === Number(v));
+      ab[slotFor(it.type)] = keyOf(it);
+      announce(`${tx(ab.name) || 'This ability'} now grants ${typeWord[it.type]} “${tx(it.name) || 'Unnamed'}”.`);
+      opts = { focusSel: `#${fid(`abilities.${i}.${slotFor(it.type)}`)}` };
+      break;
+    }
+    case 'change-type': {
+      const it = state.items[i];
+      if (it.type === v) return;
+      const before = structuredClone(it), k = keyOf(it), g = granterOf(k);
+      let note = '';
+      let gBefore = null;
+      if (g && g.kind === 'ability' && g.slot !== slotFor(v)) {
+        gBefore = { aid: g.a.id, grantItem: g.a.grantItem, grantPet: g.a.grantPet };
+        if (!g.a[slotFor(v)]) note = ` Its grant moved to ${v === 'pet' ? 'the pet' : 'the item'} slot.`;
+        else note = ` ${tx(g.a.name) || 'Its ability'} already grants a ${v === 'pet' ? 'pet' : 'item'}, so “${tx(it.name) || 'Unnamed'}” now waits for an ability.`;
+      }
+      withUndo(`“${tx(it.name) || 'Unnamed'}” is now ${typeWord[v] === 'gear' ? 'gear' : `a ${typeWord[v]}`}.${note}`, () => {
+        TYPE_FIELDS.forEach((f) => { delete it[f]; });
+        Object.assign(it, { type: v }, TYPE_DEFAULTS[v]());
+        if (gBefore) { const moveTo = slotFor(v); if (!g.a[moveTo]) g.a[moveTo] = k; g.a[g.slot] = ''; }
+      }, () => {
+        Object.keys(it).forEach((f) => { delete it[f]; });
+        Object.assign(it, before);
+        if (gBefore) { const ab = abilityById(gBefore.aid); if (ab) { ab.grantItem = gBefore.grantItem; ab.grantPet = gBefore.grantPet; } }
+      }, `[data-act="change-type"][data-i="${i}"][data-v="${before.type}"]`);
+      break;
+    }
     case 'set-langs': state.languages = v === 'both' ? ['en', 'pl'] : [v]; break;
     case 'view-lang': viewLang = v; break;
-    case 'step': step = Math.max(0, Math.min(STEPS.length - 1, Number(v))); saveMsg = ''; ui.confirm = null; opts = { focusHeading: true }; break;
+    case 'step': step = Math.max(0, Math.min(STEPS.length - 1, Number(v))); saveMsg = ''; ui.confirm = null; ui.forgeFor = null; opts = { focusHeading: true }; break;
     case 'goto-issue': {
       const x = validate()[Number(v)];
       if (!x) return;
