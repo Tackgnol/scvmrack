@@ -274,6 +274,10 @@ article.row > .itemhead{margin:-12px -12px 4px;padding:12px;border-bottom:2px so
 .label.group{font-family:var(--f-head);font-size:1.2rem;letter-spacing:.04em;color:var(--white);margin-bottom:6px}
 .label.group.on-paper{color:var(--black)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}.b-step[aria-current="step"],.stamp{transform:none!important}}
+/* iteration 7 follow-up: sentences are set as sentences; hint lines within ~75 characters */
+.keys{text-transform:none;letter-spacing:.04em;font-size:.75rem}
+.status.block{font-family:var(--f-body);font-size:.9rem;letter-spacing:0;text-transform:none}
+.hint,.fieldhint{max-width:28em}
 /* iteration 7: porting help */
 details.zine{border:1px dashed var(--dark-grey);padding:8px 12px}
 details.zine summary{cursor:pointer;font-family:var(--f-label);font-size:.75rem;letter-spacing:.2em;text-transform:uppercase;color:var(--yellow);min-height:var(--tap);display:flex;align-items:center}
@@ -1291,7 +1295,7 @@ root.addEventListener('paste', (e) => {
     withUndo(`Pasted ${1 + extra.length} origins. Ctrl+Z undoes the paste.`, () => {
       state.origins[k][lang] = lines[0];
       state.origins.splice(k + 1, 0, ...extra.map((x) => (lang === 'en' ? L(x, '') : L('', x))));
-    }, () => { state.origins = before; }, `[data-path="${path}"]`);
+    }, () => { state.origins = before.map((o) => ({ ...o })); }, `[data-path="${path}"]`); // a fresh copy each time, so redo never edits the snapshot
     render({ keepFocus: [`[data-path="origins.${k + extra.length}.${lang}"]`] }); notePaste();
     return;
   }
@@ -1380,7 +1384,7 @@ root.addEventListener('keydown', (e) => {
   }
   // arrow keys move within true radio groups only; plain button groups (the forge picker) never act on arrows
   const b = e.target.closest && e.target.closest('[role="radio"]');
-  if (!b || !['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) return;
+  if (!b || e.altKey || e.ctrlKey || e.metaKey || !['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) return; // Alt+arrows belong to step navigation
   const all = [...b.parentElement.querySelectorAll('[role="radio"]:not([disabled])')];
   if (b.parentElement.dataset.manual) {
     // destructive choices (Type, table die, class languages): arrows only move focus, Space/Enter commits
@@ -1398,6 +1402,12 @@ const NAV_ACTS = new Set(['open-stat', 'close-stat', 'goto-classes', 'back-to-fo
 let pointerHeld = false, refreshAfterPointer = false;
 document.addEventListener('pointerdown', () => { pointerHeld = true; }, true);
 document.addEventListener('pointerup', () => { pointerHeld = false; if (refreshAfterPointer) { refreshAfterPointer = false; setTimeout(refreshDerived, 0); } }, true);
+// the phone rail scrolls sideways; a partly visible step is centred when it gets focus so its ring is never cut
+root.addEventListener('focusin', (e) => {
+  const st = e.target.closest && e.target.closest('.b-step');
+  // keyboard focus only: moving the rail under a finger or pointer would make the tap miss
+  if (st && window.innerWidth < 880 && st.matches(':focus-visible')) st.scrollIntoView({ block: 'nearest', inline: 'center' });
+});
 root.addEventListener('focusout', (e) => {
   const p = e.target.dataset && e.target.dataset.path;
   if (!p || !pristine(p)) return;
