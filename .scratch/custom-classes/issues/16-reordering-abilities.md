@@ -1,7 +1,7 @@
 # How does a GM reorder abilities (and the other lists) in the creator?
 
 Type: prototype
-Status: open
+Status: resolved
 Blocked by: 04
 
 ## Question
@@ -44,7 +44,9 @@ The owner wants reordering (decided 2026-09-27). Zines print abilities, origins 
 - `abilities.roll_value` numbers each Book Class's random abilities (the book's d6 list). `origins.roll` orders origins, and the Getting Better repository already sorts by it.
 - The generator never rolls by number: it shuffles the random pool evenly. `roll_value` is only used to index `classes.random_abilities` (grants by array position), which ticket 02 replaces with explicit grant columns.
 
-## Proposed answer (to confirm with the owner)
+## Answer
+
+Owner confirmed the prototype and these proposals, 2026-09-27.
 
 1. **What reorders**: abilities, Class Items, origins and reference-table rows. Modifiers don't: an ability has at most 6 and their order changes nothing.
 2. **The control**:
