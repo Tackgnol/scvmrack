@@ -272,6 +272,9 @@ article.row > .itemhead{margin:-12px -12px 4px;padding:12px;border-bottom:2px so
 .label.group{font-family:var(--f-head);font-size:1.2rem;letter-spacing:.04em;color:var(--white);margin-bottom:6px}
 .label.group.on-paper{color:var(--black)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}.b-step[aria-current="step"],.stamp{transform:none!important}}
+/* iteration 5 follow-up: table rows wrap instead of truncating; issue rows read as sentences */
+.rowlink textarea{min-height:var(--tap);resize:none}
+.issues button span:first-child{font-family:var(--f-body);font-size:.9rem;letter-spacing:0;text-transform:none}
 /* iteration 5: phone grids without phantom cells, tighter phone stat lines, key legend */
 .keys{margin:14px 0 0;font-family:var(--f-label);font-size:.65rem;letter-spacing:.15em;text-transform:uppercase;color:var(--black);line-height:1.8}
 .keys kbd{font:inherit;border:1px solid var(--black);padding:0 4px;white-space:nowrap}
@@ -456,6 +459,7 @@ const keyOf = (it) => `ci:${it.id}`;
 const itemByKey = (k) => state.items.find((it) => keyOf(it) === k);
 const poolSize = () => state.abilities.filter((a) => a.random).length;
 const typeWord = { weapon: 'weapon', armor: 'armor', equipment: 'gear', pet: 'pet' };
+const aType = (t) => (t === 'armor' ? `${typeWord[t]}` : `a ${typeWord[t]}`);
 const signed = (n) => (n > 0 ? `+${n}` : n < 0 ? `−${Math.abs(n)}` : '0');
 const modText = (m) => { const st = STATS.find((x) => x.key === m.stat); const sc = SCOPES.find((x) => x.key === m.scope); return `${signed(m.value)} ${st ? st.short : ''}${m.scope !== 'all' && sc ? ` ${sc.label.toLowerCase()}` : ''}`; };
 
@@ -703,7 +707,7 @@ function itemConfirm(it) {
     <div class="inline"><button type="button" class="act danger" data-act="rm-item-yes" data-v="${it.id}">Remove and clear</button><button type="button" class="act" data-act="confirm-cancel" data-v="item-${it.id}">Keep it</button></div></div>`;
 }
 function addItemRow(full) {
-  return `<div class="inline"><span class="label group" style="margin:0">Forge a</span>${['weapon', 'armor', 'equipment', 'pet'].map((t) => `<button type="button" class="act" data-act="add-item" data-v="${t}" aria-label="Forge a ${typeWord[t]}" ${full ? 'disabled' : ''}>${typeWord[t]}</button>`).join('')}</div>`;
+  return `<div class="inline"><span class="label group" style="margin:0">Forge a</span>${['weapon', 'armor', 'equipment', 'pet'].map((t) => `<button type="button" class="act" data-act="add-item" data-v="${t}" aria-label="Forge ${aType(t)}" ${full ? 'disabled' : ''}>${typeWord[t]}</button>`).join('')}</div>`;
 }
 function itemSummary(it, i, issues) {
   const miss = issues.filter((x) => x.path && x.path.startsWith(`items.${i}.`)).length;
@@ -802,7 +806,7 @@ function tableEditor(i) {
   return `<div class="stack"><div class="spread"><span class="label group" style="margin:0">Reference table · d${t.die}</span>${confirming ? '' : `<button type="button" class="act kill" data-act="rm-table" data-i="${i}">Remove table</button>`}</div>${confirmHtml}
     <p class="fieldhint">A list the player rolls on when the ability says so. The sheet shows the result; it never applies it.</p>
     ${dieSelect(`abilities.${i}.table.die`, 'Table die (one row per side)', [2, 3, 4, 6, 8, 10, 12], undefined, 'Paste several lines into a row to fill the rows below it.', 'table-die', `data-i="${i}"`)}
-    ${t.rows.map((r, k) => `<div class="rowlink"><span>${k + 1}</span>${textInput(`abilities.${i}.table.rows.${k}.${viewLang}`, { lang: viewLang, label: `Row ${k + 1}` })}${showLinks ? rowSelect(k) : ''}</div>`).join('')}
+    ${t.rows.map((r, k) => `<div class="rowlink"><span>${k + 1}</span>${textInput(`abilities.${i}.table.rows.${k}.${viewLang}`, { multiline: true, lang: viewLang, label: `Row ${k + 1}` })}${showLinks ? rowSelect(k) : ''}</div>`).join('')}
     ${state.items.length && !showLinks ? `<div><button type="button" class="act" data-act="link-rows" data-v="${a.id}" data-i="${i}">Let a row grant a Class Item</button></div>` : ''}</div>`;
 }
 function abilityConfirm(a, i) {
@@ -852,7 +856,7 @@ function forgeRow(a, i) {
   if (state.items.length >= LIMIT_LIST) return '';
   if (ui.forgeFor !== a.id) return `<div class="extras"><button type="button" class="act" data-act="forge-for" data-i="${i}" data-v="${a.id}">Forge a Class Item for this ability</button></div>`;
   return `<div class="stepper choice"><span class="label group" id="forge-${a.id}">Forge a Class Item named “${esc(tx(a.name) || 'this ability')}”</span>
-    <div class="inline"><div class="seg" role="group" aria-labelledby="forge-${a.id}">${['weapon', 'armor', 'equipment', 'pet'].map((t) => `<button type="button" class="act" data-act="forge-type" data-i="${i}" data-v="${t}" aria-label="Forge a ${typeWord[t]} for this ability" ${free(t) ? '' : 'disabled title="That grant slot is already used"'}>${typeWord[t]}</button>`).join('')}</div>
+    <div class="inline"><div class="seg" role="group" aria-labelledby="forge-${a.id}">${['weapon', 'armor', 'equipment', 'pet'].map((t) => `<button type="button" class="act" data-act="forge-type" data-i="${i}" data-v="${t}" aria-label="Forge ${aType(t)} for this ability" ${free(t) ? '' : 'disabled title="That grant slot is already used"'}>${typeWord[t]}</button>`).join('')}</div>
     <button type="button" class="act" data-act="forge-cancel" data-i="${i}" data-v="${a.id}">Cancel</button></div></div>`;
 }
 function abilityOpen(a, i) {
@@ -1294,9 +1298,17 @@ root.addEventListener('keydown', (e) => {
 });
 const NAV_ACTS = new Set(['goto-classes', 'back-to-forge', 'undo', 'redo', 'step', 'open-ability', 'close-ability', 'open-item', 'close-item', 'view-lang', 'goto-issue', 'goto-granter', 'edit-item', 'roll', 'forge-for', 'forge-cancel',
   'show-grants', 'more-scopes', 'link-rows', 'gate-yes', 'gate-no', 'gate-change', 'confirm-cancel', 'rm-item', 'rm-ability', 'rm-table', 'save']);
+// Leaving a fresh field re-flags it, but never while a pointer is down: rewriting the rail between
+// mousedown and click would swallow the click. The refresh waits until after the click lands.
+let pointerHeld = false, refreshAfterPointer = false;
+document.addEventListener('pointerdown', () => { pointerHeld = true; }, true);
+document.addEventListener('pointerup', () => { pointerHeld = false; if (refreshAfterPointer) { refreshAfterPointer = false; setTimeout(refreshDerived, 0); } }, true);
 root.addEventListener('focusout', (e) => {
   const p = e.target.dataset && e.target.dataset.path;
-  if (p && pristine(p)) { ui.touched.add(p); refreshDerived(); }
+  if (!p || !pristine(p)) return;
+  ui.touched.add(p);
+  // a touch tap moves focus after pointerup, so the refresh also waits for the tap's click to finish
+  if (pointerHeld) refreshAfterPointer = true; else setTimeout(refreshDerived, 0);
 });
 root.addEventListener('click', (e) => {
   const b = e.target.closest('[data-act]');
