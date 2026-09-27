@@ -15,3 +15,4 @@ Work that must exist before Custom Classes ship, with nothing left to decide:
   - version bumps in `backend/package.json` and `frontend/package.json`
   - `changelog/backend.md` and `frontend.md` updated
 - **FAQ and help**: entries on what Custom Classes are, who can make them, the party-only rule, how public sharing and reporting work, and the zine-author contact line.
+- **Security notes**: add "Party Class Pool content" to the OBR room-access row of `CLAUDE.md`'s security table (ticket 11).
