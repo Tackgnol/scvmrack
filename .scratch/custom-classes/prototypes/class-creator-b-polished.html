@@ -227,6 +227,16 @@ input.stamp-num[aria-invalid="true"]{background:var(--pink)!important;border-col
 .snackbar span{flex:1;min-width:0}
 @media (max-width:620px){.snackbar{left:16px;right:16px;transform:none;max-width:none}body{padding-bottom:120px}}
 @media (prefers-reduced-motion:reduce){.die[aria-checked="true"],.formula{transform:none}}
+/* polish: cards lift a tone, fields sink, clear separation (DESIGN.md tonal layers only) */
+.row,.statline,.abl-sum{background:var(--grey);border:2px solid var(--dark-grey)}
+.abl-sum:hover{border-color:var(--yellow)}
+.abl.open{border:2px solid var(--yellow)}
+.row input[type=text],.row textarea,.row select,.statline select{background:var(--black);border-color:var(--dark-grey)}
+.row input[type=text]:hover,.row input[type=text]:focus,.row textarea:hover,.row textarea:focus,.row select:hover,.row select:focus{border-color:var(--yellow)}
+.row .linkline{background:var(--black)}
+article.row > .itemhead{margin:-12px -12px 4px;padding:12px;border-bottom:2px solid var(--dark-grey)}
+.stack > article.row + article.row,.stack > .abl + .abl,.stack > .statline + .statline{margin-top:8px}
+.itemline{border-top-color:var(--dark-grey)}
 /* polish: four-level title hierarchy on DESIGN.md's ramp */
 #step-title{font-size:2rem;padding:4px 12px 2px}
 .label.group{font-family:var(--f-head);font-size:1.2rem;letter-spacing:.04em;color:var(--white);margin-bottom:6px}
