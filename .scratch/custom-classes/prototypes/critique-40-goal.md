@@ -23,7 +23,7 @@
 
 - 40/40 reached, or
 - the score does not rise for two iterations in a row (record why it plateaued), or
-- the iteration cap is hit, or
+- the iteration cap is hit (**5 iterations**, run autonomously via a self-paced `/loop`), or
 - the owner says stop.
 
 ## Log
