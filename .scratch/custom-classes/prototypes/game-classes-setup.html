@@ -117,9 +117,38 @@ h1{font-family:var(--f-head);font-size:clamp(2.6rem,7vw,3.3rem);line-height:.95;
 /* the classless row: the same switch, set apart above the classes */
 .b-row.classless{border-top:0;border-bottom:3px solid var(--dark-grey);grid-template-columns:auto minmax(0,1fr)}
 .b-row.classless .cname{font-family:var(--f-head);font-size:1.6rem;letter-spacing:.03em;text-transform:uppercase}
-/* stamp press when a skull slides on */
-@keyframes press{0%{transform:translateX(34px) scale(1.25)}60%{transform:translateX(34px) scale(.94)}100%{transform:translateX(34px) scale(1)}}
-.b-row.just .sk .thumb{transform-box:view-box;transform-origin:15px 15px;animation:press .22s cubic-bezier(.2,.8,.2,1)}
+/* the state change. The panel re-renders on every click, so plain transitions never run: the switch that was just
+   flipped gets .flip-on / .flip-off and plays it from the old state. The skull rolls along the track (tilting into
+   the roll), overshoots, squashes as it lands and settles; the track floods with the new colour behind it, the
+   old mark goes out first and the new one comes in last. */
+.sk .thumb{transform-box:view-box;transform-origin:15px 15px}
+@keyframes thumb-on{
+  0%{transform:translateX(0) rotate(0)}
+  45%{transform:translateX(24px) rotate(14deg)}
+  70%{transform:translateX(37px) rotate(-5deg) scale(1.08,.9)}
+  86%{transform:translateX(33px) rotate(2deg) scale(.97,1.04)}
+  100%{transform:translateX(34px) rotate(0) scale(1)}}
+@keyframes thumb-off{
+  0%{transform:translateX(34px) rotate(0)}
+  45%{transform:translateX(10px) rotate(-14deg)}
+  70%{transform:translateX(-3px) rotate(5deg) scale(1.08,.9)}
+  86%{transform:translateX(1px) rotate(-2deg) scale(.97,1.04)}
+  100%{transform:translateX(0) rotate(0) scale(1)}}
+@keyframes track-on{0%,20%{fill:var(--grey);stroke:var(--muted)}70%,100%{fill:var(--yellow);stroke:var(--black)}}
+@keyframes track-off{0%,20%{fill:var(--yellow);stroke:var(--black)}70%,100%{fill:var(--grey);stroke:var(--muted)}}
+@keyframes edge-on{0%,30%{fill:var(--muted)}80%,100%{fill:var(--white)}}
+@keyframes edge-off{0%,30%{fill:var(--white)}80%,100%{fill:var(--muted)}}
+@keyframes mark-out{0%{opacity:1}30%,100%{opacity:0}}
+@keyframes mark-in{0%,65%{opacity:0;transform:scale(.4)}85%{opacity:1;transform:scale(1.15)}100%{opacity:1;transform:scale(1)}}
+.sk .mark{transform-box:fill-box;transform-origin:center}
+.sk.flip-on .thumb{animation:thumb-on .42s cubic-bezier(.3,.7,.3,1)}
+.sk.flip-off .thumb{animation:thumb-off .42s cubic-bezier(.3,.7,.3,1)}
+.sk.flip-on .track{animation:track-on .42s linear}
+.sk.flip-off .track{animation:track-off .42s linear}
+.sk.flip-on .edge{animation:edge-on .42s linear}
+.sk.flip-off .edge{animation:edge-off .42s linear}
+.sk.flip-on .mark.no,.sk.flip-off .mark.yes{animation:mark-out .42s linear}
+.sk.flip-on .mark.yes,.sk.flip-off .mark.no{animation:mark-in .42s cubic-bezier(.3,.7,.3,1)}
 /* hover / focus card: a yellow title strip with a notch pointing back at the name */
 .info{position:absolute;z-index:4;left:100px;top:calc(100% - 2px);width:min(400px,calc(100vw - 60px));background:var(--grey);border:2px solid var(--yellow);box-shadow:6px 6px 0 var(--pink);display:none;color:var(--white)}
 .info::before{content:"";position:absolute;left:18px;top:-11px;width:0;height:0;border:9px solid transparent;border-top:0;border-bottom:10px solid var(--yellow)}
@@ -234,12 +263,11 @@ function visible() {
 const SWITCH = `<svg viewBox="0 0 64 30" aria-hidden="true"><rect class="track" x="1" y="4" width="62" height="22"/>
   <path class="mark yes" d="m10 15 4 4 8-8"/><path class="mark no" d="m45 11 8 8m0-8-8 8"/>
   <g class="thumb"><use href="#skull-edge" class="edge" x="3" y="1" width="24.1" height="28"/><use href="#skull" class="engraving" x="3" y="1" width="24.1" height="28"/></g></svg>`;
-const skullSwitch = (on, act, v, label) => `<button type="button" class="sk" role="switch" aria-checked="${on}" aria-label="${esc(label)}" ${ro() ? 'aria-disabled="true"' : ''} data-act="${act}" ${v != null ? `data-v="${v}"` : ''}>${SWITCH}</button>`;
+const skullSwitch = (on, act, v, label) => `<button type="button" class="sk ${ui.flip === `${act}:${v ?? ''}` ? (on ? 'flip-on' : 'flip-off') : ''}" role="switch" aria-checked="${on}" aria-label="${esc(label)}" ${ro() ? 'aria-disabled="true"' : ''} data-act="${act}" ${v != null ? `data-v="${v}"` : ''}>${SWITCH}</button>`;
 function toggle(id) {
   if (ro()) return;
   const c = byId(id), on = !ui.pool.has(id);
   if (on) ui.pool.add(id); else ui.pool.delete(id);
-  ui.just = on ? id : null;
   ui.status = `${c.name} ${on ? 'added to' : 'removed from'} the pool. Saved.`;
   announce(ui.status);
 }
@@ -267,7 +295,7 @@ function infoCard(c) {
 }
 function rowHtml(c) {
   const on = ui.pool.has(c.id);
-  return `<div class="b-row ${on ? 'on' : 'off'} ${ui.just === c.id ? 'just' : ''}">${skullSwitch(on, 'switch', c.id, `${c.name} in the pool`)}
+  return `<div class="b-row ${on ? 'on' : 'off'}">${skullSwitch(on, 'switch', c.id, `${c.name} in the pool`)}
     <div class="who"><button type="button" class="linkish cname" data-act="detail" data-v="${c.id}" aria-describedby="info-${c.id}">${esc(c.name)}</button>
       <span class="blurb">${esc(c.blurb)}</span>
       <div class="meta">${langChip(c)}${attribution(c) ? `<span class="attr">${esc(attribution(c))}</span>` : ''}</div></div>
@@ -337,7 +365,7 @@ function render() {
     <div class="proto-bar" role="toolbar" aria-label="Prototype controls"><b>Prototype</b>
       <button type="button" data-act="toggle-notice" class="${ui.showNotice ? 'on' : ''}">Removed notice</button><button type="button" data-act="toggle-unclaimed" class="${ui.unclaimed ? 'on' : ''}">Unclaimed room</button></div>`;
   if (focusSel) { const el = document.querySelector(focusSel); if (el) el.focus({ preventScroll: true }); }
-  ui.just = null;
+  ui.flip = null;
 }
 document.addEventListener('click', (e) => {
   const b = e.target.closest('[data-act]');
@@ -347,8 +375,8 @@ document.addEventListener('click', (e) => {
     case 'toggle-notice': ui.showNotice = !ui.showNotice; break;
     case 'toggle-unclaimed': ui.unclaimed = !ui.unclaimed; if (ui.unclaimed) { ui.pool = new Set([1, 2, 3, 4, 5, 6]); ui.classless = true; } break;
     case 'dismiss': ui.showNotice = false; break;
-    case 'switch': toggle(id); break;
-    case 'classless': ui.classless = !ui.classless; ui.status = `Classless ${ui.classless ? 'on' : 'off'}. Saved.`; announce(ui.status); break;
+    case 'switch': toggle(id); ui.flip = `switch:${v}`; break;
+    case 'classless': ui.flip = 'classless:'; ui.classless = !ui.classless; ui.status = `Classless ${ui.classless ? 'on' : 'off'}. Saved.`; announce(ui.status); break;
     // picking a filter opens the section(s) it shows
     case 'filter': ui.filter = v; if (FILTER_GROUPS[v]) FILTER_GROUPS[v].forEach((g) => ui.openGroups.add(g)); break;
     case 'lang': ui.lang = v; break;
