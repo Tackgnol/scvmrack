@@ -24,6 +24,7 @@ An implementation-ready spec for GM-authored Custom Classes (creator, Party Clas
 - [What does a GM fill in to author an ability and each kind of Class Item?](issues/03-ability-and-class-item-authoring.md): fixed/random abilities (roll N of M), one item + one pet grant per ability, reused and extended sheet modifier component (adds `test` etc.), full-parity Class Item fields, dN reference tables (Herbmaster migrates), caps of 20 per list and 1500 chars per field.
 - [How do the join roll/forge flows roll from the Party Class Pool without changing their screens?](issues/05-party-aware-generation.md): invite token carries the party; no token means Book Classes only; every party character goes through the class screen (no blind roll); create + join in one transaction; pool re-checked on confirm; classless is a GM toggle; Owlbear split out.
 - [How should the class creator look and flow?](issues/04-class-creator-ux.md): variant B, a seven-step Forge flow with a status rail, one-language-at-a-time switch with missing counts, on-field validation plus Fix jumps, and a test roll on the final step; polished with impeccable.
+- [How does a GM find a catalog item or pet to grant?](issues/18-catalog-grant-search.md): the main page's fuzzy item search (`ItemAutocomplete` over `/api/equipment/search`), filtered to the slot's types, with the class's own Class Items pinned above results; Zine and Rack items are not grantable.
 
 ## Not yet specified
 

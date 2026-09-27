@@ -1,7 +1,7 @@
 # How does a GM find a catalog item or pet to grant?
 
 Type: grilling
-Status: open
+Status: resolved
 Blocked by: 03
 
 ## Question
@@ -14,7 +14,7 @@ An ability can grant one item and one pet: this class's own Class Items, or any 
 - **Own Class Items**: shown in the same search, pinned above catalog results, or kept in a separate list.
 - **Keyboard and undo**: the control follows the creator's rules (arrows move without committing, Enter picks, Esc steps out, one undoable change per pick).
 
-## Answer (partial)
+## Answer
 
 - **The control (owner decision, 2026-09-27)**: the grant picker reuses the main page's fuzzy item search: the `ItemAutocomplete` component with the `useEquipmentSearch` hook, backed by `GET /api/equipment/search` (trigram search; `q`, `locale`, `limit`). No new search endpoint and no picker dialog.
 - **What follows from it**:
@@ -22,8 +22,6 @@ An ability can grant one item and one pet: this class's own Class Items, or any 
   - Class Items are scoped and never appear in this search (ticket 02), so the class's own Class Items need their own place in the picker.
   - It searches the GM's `locale` only, as on the sheet.
 
-## Still open
-
-- Own Class Items: pinned above the search results, or offered as a separate list next to the search.
-- Zine and Rack Class items: can a GM grant them, or only Book and plain catalog items?
-- The creator's keyboard rules apply to the picker: arrows move without committing, Enter picks, Esc steps out, and each pick is one undoable change. Check that the existing autocomplete meets them, or note what it needs.
+- **Own Class Items (owner decision, 2026-09-27)**: pinned above the search results in the same field, labelled "This class". Typing filters them along with the catalog hits.
+- **Zine and Rack Class items (owner decision, 2026-09-27)**: not grantable. A Custom Class grants its own Class Items, plain catalog items and Book Class items (like the Brown Scimitar). Zine and Rack items stay with their classes.
+- **Build note**: the picker follows the creator's keyboard rules (arrows move without committing, Enter picks, Esc steps out, each pick is one undoable change). Check the existing `ItemAutocomplete` against them when building it.
