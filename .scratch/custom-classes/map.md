@@ -27,10 +27,10 @@ An implementation-ready spec for GM-authored Custom Classes (creator, Party Clas
 
 ## Not yet specified
 
-- **Abuse limits**: caps on classes per GM and rate limits for publishing and reporting (per-class caps and text length are decided in ticket 03).
-- **Rendering everywhere**: how Custom Class content and `created by {name}` appear on the print page, the Owlbear sheet and the party page.
-- **Legal pages**: terms of service, contact points (authorities + users, PL/EN) and operator details the site lacks today; whether the Polish e-services act applies to a non-commercial operator.
-- **Release plumbing**: creator UI i18n (EN/PL), release notes, FAQ entries.
+- **Abuse limits**: ticket 19.
+- **Rendering everywhere**: ticket 20.
+- **Legal pages**: ticket 21.
+- **Release plumbing**: ticket 22.
 
 ## Out of scope
 
