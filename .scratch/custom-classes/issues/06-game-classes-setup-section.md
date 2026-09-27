@@ -6,3 +6,5 @@ Status: open
 ## Question
 
 Prototype the GM-screen section: Book Classes selected by default (Zine and Rack Classes start off, decided in ticket 02), toggle any class on/off, an `Enable classless scvm` toggle (on by default, ticket 05), search, `my classes only` filter, public classes shown with their author, and the on-open check that notifies `class X has been removed by Y` when a pooled class was archived, unpublished or taken down.
+
+Also prototype the read-only class detail page (`/classes/:id`, ticket 20) that pool entries, search results and report links open.
