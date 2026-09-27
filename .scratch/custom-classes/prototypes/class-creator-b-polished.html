@@ -95,6 +95,7 @@ input[type=number]{font-family:var(--f-head);font-size:1.2rem;text-align:center;
 .modrow{display:flex;flex-wrap:wrap;gap:14px 20px;align-items:flex-end;background:var(--black);border:2px solid var(--dark-grey);padding:12px}
 .modrow .kill{margin-left:auto}
 .statseg .act{min-width:56px;color:var(--white)}
+.statseg .act:hover{color:var(--black)}
 .statseg .act.on.str{background:var(--str);color:var(--white)} .statseg .act.on.agi{background:var(--agi);color:var(--white)}
 .statseg .act.on.pre{background:var(--pre);color:var(--white)} .statseg .act.on.tou{background:var(--tou);color:var(--white)}
 .seg{display:inline-flex;border:1px solid var(--yellow)}
@@ -273,6 +274,11 @@ article.row > .itemhead{margin:-12px -12px 4px;padding:12px;border-bottom:2px so
 .label.group{font-family:var(--f-head);font-size:1.2rem;letter-spacing:.04em;color:var(--white);margin-bottom:6px}
 .label.group.on-paper{color:var(--black)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}.b-step[aria-current="step"],.stamp{transform:none!important}}
+/* iteration 7: porting help */
+details.zine{border:1px dashed var(--dark-grey);padding:8px 12px}
+details.zine summary{cursor:pointer;font-family:var(--f-label);font-size:.75rem;letter-spacing:.2em;text-transform:uppercase;color:var(--yellow);min-height:var(--tap);display:flex;align-items:center}
+details.zine ul{margin:4px 0 8px;padding-left:18px;color:var(--white);max-width:36em}
+details.zine li{margin:2px 0}
 /* iteration 6 follow-up: rail focus not clipped on phones, body lines within 75 characters, 44px steppers on touch */
 @media (max-width:879px){.b-rail{padding:6px 10px 12px 6px;scroll-padding-inline:6px}}
 .hint,.fieldhint{max-width:36em}
@@ -450,7 +456,7 @@ const state = {
 };
 // UI-only state (never saved): the Class Items question and in-card confirmations.
 const ui = { itemsNo: false, itemsYes: false, confirm: null, snack: null, undo: [], redo: [], openAbility: null, openItem: null, showGrants: new Set(), forgeFor: null, moreScopes: new Set(),
-  fresh: new Set(), touched: new Set(), cutRows: {}, linkRows: new Set() };
+  fresh: new Set(), freshOrigins: new WeakSet(), touched: new Set(), cutRows: {}, linkRows: new Set() };
 
 /* ---------- helpers ---------- */
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -512,9 +518,10 @@ function entOf(path) {
   if (m) { const a = state.abilities[Number(m[1])]; return a ? [`t:${a.id}`, `a:${a.id}`] : []; }
   m = path.match(/^abilities\.(\d+)\./); if (m) { const a = state.abilities[Number(m[1])]; return a ? [`a:${a.id}`] : []; }
   m = path.match(/^items\.(\d+)\./); if (m) { const it = state.items[Number(m[1])]; return it ? [`i:${it.id}`] : []; }
+  m = path.match(/^origins\.(\d+)\./); if (m) { const o = state.origins[Number(m[1])]; return o && ui.freshOrigins.has(o) ? [true] : []; }
   return [];
 }
-const pristine = (path) => !ui.touched.has(path) && entOf(path).some((t) => ui.fresh.has(t));
+const pristine = (path) => !ui.touched.has(path) && entOf(path).some((t) => t === true || ui.fresh.has(t));
 const visible = (issues) => (STEPS[step].key === 'review' ? issues : issues.filter((x) => !x.path || !pristine(x.path)));
 function textInput(path, { multiline = false, lang, label = '' } = {}) {
   const v = getPath(path) ?? '';
@@ -583,7 +590,7 @@ function validate() {
   if (state.abilities.length > LIMIT_LIST) issues.push({ msg: `More than ${LIMIT_LIST} abilities`, step: 'abilities' });
   if (state.items.length > LIMIT_LIST) issues.push({ msg: `More than ${LIMIT_LIST} Class Items`, step: 'items' });
   if (state.origins.length > LIMIT_LIST) issues.push({ msg: `More than ${LIMIT_LIST} origins`, step: 'origins' });
-  if (state.origins.length === 0) issues.push({ msg: 'Add at least one origin', step: 'origins' });
+  if (state.origins.length === 0) issues.push({ msg: 'Add at least one origin', step: 'origins', focusSel: '[data-act="add-origin"]' });
   return issues;
 }
 const countFor = (issues, key) => issues.filter((x) => x.step === key).length;
@@ -840,6 +847,12 @@ function abilityHeader(a) {
   const it = [a.grantItem, a.grantPet].map((k) => (k && k.startsWith('ci:') ? itemByKey(k) : null)).find((x) => sameName(a, x));
   return `<h3 class="card-h">${esc(tx(a.name) || 'Unnamed ability')}</h3>${it ? `<span class="arrowhead">→ grants ${typeWord[it.type]}</span>` : ''}`;
 }
+const ZINE_HELP = `<details class="zine"><summary>Porting a zine?</summary><ul>
+  <li>Paste a list straight from the zine. A header line like “d6 Abilities” is dropped, and numbering (“1.”, “2)”, “-”, “•”) is stripped.</li>
+  <li>Abilities: paste into an ability’s name, one per line as “Name: rules”, “Name — rules” or “Name. Rules”. “St.” and “Mt.” stay part of the name.</li>
+  <li>Origins: paste into an origin, one per line.</li>
+  <li>Table rows: paste into a row. The table grows to the smallest die that fits, up to d12.</li>
+  <li>Ctrl+Z straight after a paste undoes it.</li></ul></details>`;
 function trayHtml() {
   const waiting = state.items.filter((it) => !granterOf(keyOf(it)));
   if (!waiting.length) return '';
@@ -908,16 +921,17 @@ function abilitiesBody() {
   const cards = state.abilities.map((a, i) => (ui.openAbility === a.id ? abilityOpen(a, i) : abilitySummary(a, i, issues))).join('');
   return `<div class="stack">
     ${trayHtml()}
+    ${ZINE_HELP}
     <div class="row spread">${num('randomCount', 'Random abilities rolled', { min: 0, max: Math.max(pool, state.randomCount), invalid: state.randomCount > pool, hint: `Every scvm gets all Fixed abilities, plus this many rolled from the Random pool (${pool} in it). A zine’s “roll d6 for your ability” is a pool of 6 with 1 rolled.` })}${counter(state.abilities.length, 'abilities')}</div>
     <div class="stack" style="gap:8px">${cards || '<div class="empty">No abilities yet. Add a fixed one every scvm gets, or build a random pool.</div>'}</div>
-    <div style="view-transition-name:abl-add"><button type="button" class="btn save" data-act="add-ability" ${state.abilities.length >= LIMIT_LIST ? 'disabled' : ''}>Add ability</button></div>
+    <div style="view-transition-name:abl-add"><button type="button" class="btn ink" data-act="add-ability" ${state.abilities.length >= LIMIT_LIST ? 'disabled' : ''}>Add ability</button></div>
   </div>`;
 }
 function originsBody() {
   return `<div class="stack">
-    <div class="spread"><button type="button" class="btn save" data-act="add-origin" ${state.origins.length >= LIMIT_LIST ? 'disabled' : ''}>Add origin</button>${counter(state.origins.length, 'origins')}</div>
+    <div class="spread"><button type="button" class="btn ink" data-act="add-origin" ${state.origins.length >= LIMIT_LIST ? 'disabled' : ''}>Add origin</button>${counter(state.origins.length, 'origins')}</div>
     ${state.origins.map((o, k) => `<div class="row stack" style="gap:6px"><div class="spread"><label class="label" for="${fid(`origins.${k}.${viewLang}`)}" style="margin:0">Origin ${k + 1}</label><button type="button" class="act kill" data-act="rm-origin" data-i="${k}">Remove</button></div>${textInput(`origins.${k}.${viewLang}`, { lang: viewLang })}</div>`).join('') || '<div class="empty">No origins yet. A class needs at least one.</div>'}
-    <p class="fieldhint" style="max-width:65ch">Paste several lines into an origin to add one origin per line.</p>
+    ${ZINE_HELP}
   </div>`;
 }
 function gbBody() {
@@ -935,9 +949,10 @@ function reviewBody(issues) {
     </div>
     <div class="stack">
       <span class="label group">Before you save</span>
+      ${saveMsg && saveMsg !== 'SAVED' ? `<div id="save-status" role="status"><p class="status block">${esc(saveMsg)}</p></div>` : ''}
       <div data-derived="issues">${issuesHtml(issues)}</div>
       <div class="inline"><button type="button" class="btn save" data-act="save" aria-describedby="save-status" ${saveMsg === 'SAVED' ? 'disabled' : ''}>${saveMsg === 'SAVED' ? 'Saved' : 'Save class'}</button></div>
-      <div id="save-status" role="status">${saveMsg === 'SAVED' ? `<div class="forged"><b>Forged</b><span>“${esc(state.name[state.languages[0]] || tx(state.name))}” is saved to your classes. Any edit here re-arms Save.</span><button type="button" class="btn ink" data-act="goto-classes">Go to my classes${ARROW_R}</button></div>` : saveMsg ? `<p class="status block">${esc(saveMsg)}</p>` : ''}</div>
+      ${saveMsg && saveMsg !== 'SAVED' ? '' : '<div id="save-status" role="status">'}${saveMsg === 'SAVED' ? `<div class="forged"><b>Forged</b><span>“${esc(state.name[state.languages[0]] || tx(state.name))}” is saved to your classes. Any edit here re-arms Save.</span><button type="button" class="btn ink" data-act="goto-classes">Go to my classes${ARROW_R}</button></div>` : ''}${saveMsg && saveMsg !== 'SAVED' ? '' : '</div>'}
     </div>
   </div>`;
 }
@@ -986,9 +1001,17 @@ function snackHtml() {
   const n = ui.undo.length;
   return `<div class="snackbar"><span>${esc(ui.snack.msg)}${n > 1 ? `<br><span class="count muted">${n} changes can be undone · Ctrl+Z</span>` : ''}</span><button type="button" class="btn save" data-act="undo" aria-keyshortcuts="Control+Z Meta+Z">Undo</button></div>`;
 }
+const shortMsg = (m) => { const x = m.split(/(?<=[.”])\s/)[0]; return x.length > 52 ? `${x.slice(0, 50)}…` : x; };
+function clearRedo() {
+  ui.redo = [];
+  if (ui.snack && ui.snack.undone) { ui.snack = null; clearTimeout(snackTimer); const el = root.querySelector('.snackbar'); if (el) el.remove(); document.body.classList.remove('has-snack'); }
+  const nu = root && root.querySelector('[data-derived="navundo"]'); if (nu) nu.innerHTML = navUndoHtml();
+}
 function navUndoHtml() {
   if (ui.snack) return '';
-  return `${ui.undo.length ? `<button type="button" class="act ink" data-act="undo" aria-keyshortcuts="Control+Z Meta+Z">Undo last change (${ui.undo.length})</button>` : ''}${ui.redo.length ? `<button type="button" class="act ink" data-act="redo" aria-keyshortcuts="Control+Shift+Z Control+Y">Redo (${ui.redo.length})</button>` : ''}`;
+  const top = ui.undo.at(-1);
+  const where = top && top.step !== step ? ` (${STEPS[top.step].label})` : '';
+  return `${top ? `<button type="button" class="act ink" data-act="undo" aria-label="Undo: ${esc(top.msg)}${esc(where)}">Undo: ${esc(shortMsg(top.msg))}${esc(where)}</button>` : ''}${ui.redo.length ? `<button type="button" class="act ink" data-act="redo" aria-keyshortcuts="Control+Shift+Z Control+Y">Redo (${ui.redo.length})</button>` : ''}`;
 }
 const root = document.getElementById('root');
 const stepIndex = (key) => STEPS.findIndex((s) => s.key === key);
@@ -996,7 +1019,7 @@ function render({ focusHeading = false, focusPath = null, focusSel = null, keepF
   if (!state.languages.includes(viewLang)) viewLang = state.languages[0];
   document.querySelector('.masthead h1').textContent = ui.view === 'classes' ? 'Your classes' : 'Forge a class';
   if (ui.view === 'classes') { root.innerHTML = classesHtml(); document.body.classList.remove('has-snack'); const h = document.getElementById('step-title'); h.focus({ preventScroll: true }); window.scrollTo({ top: 0 }); return; }
-  if (STEPS[step].key === 'review') ui.fresh.clear();
+  if (STEPS[step].key === 'review') { ui.fresh.clear(); ui.freshOrigins = new WeakSet(); }
   const issues = visible(validate());
   const s = STEPS[step];
   const body = { identity: () => `<div class="stack">${langClassBlock()}${lfield('name', 'Class name')}${lfield('description', 'Description', { multiline: true })}</div>`,
@@ -1019,7 +1042,13 @@ function render({ focusHeading = false, focusPath = null, focusSel = null, keepF
   refreshDerived();
   const cur = root.querySelector('.b-step[aria-current="step"]');
   if (cur && cur.scrollIntoView && window.innerWidth < 880) cur.scrollIntoView({ block: 'nearest', inline: 'center' });
-  const tryFocus = (el, center = true) => { if (!el) return false; el.focus({ preventScroll: !center }); if (center) el.scrollIntoView({ block: 'center' }); return true; };
+  const tryFocus = (el, center = true) => {
+    if (!el) return false;
+    el.focus({ preventScroll: !center });
+    if (center) el.scrollIntoView({ block: 'center' });
+    else { const r = el.getBoundingClientRect(); if (r.bottom < 0 || r.top > window.innerHeight) el.scrollIntoView({ block: 'nearest' }); }
+    return true;
+  };
   if (focusSel && tryFocus(root.querySelector(focusSel), !stay)) return;
   if (focusPath && tryFocus(root.querySelector(`input[data-path="${CSS.escape(focusPath)}"],textarea[data-path="${CSS.escape(focusPath)}"],select[data-path="${CSS.escape(focusPath)}"]`) || root.querySelector(`[data-path="${CSS.escape(focusPath)}"]`), !stay)) return;
   if (focusHeading) { const h = document.getElementById('step-title'); h.focus({ preventScroll: true }); window.scrollTo({ top: 0 }); return; }
@@ -1082,19 +1111,21 @@ function armSnack() {
     const nu = root.querySelector('[data-derived="navundo"]'); if (nu) nu.innerHTML = navUndoHtml();
   }, 10000);
 }
-function withUndo(msg, doIt, inverse, focusSel = null, coalesceKey = null) {
+// quiet entries (adds, Fixed/Random flips) are undoable without a snackbar; the step nav names them
+function withUndo(msg, doIt, inverse, focusSel = null, coalesceKey = null, quiet = false) {
   const top = ui.undo.at(-1);
   if (coalesceKey && top && ui.snack === top && top.coalesceKey === coalesceKey) {
     // repeated changes to the same control (e.g. arrowing through a menu) keep ONE undo back to the original value
-    doIt(); top.msg = msg; top.doIt = doIt; ui.redo = []; armSnack(); announce(`${msg} Undo is available.`); return;
+    doIt(); markEdit(); top.msg = msg; top.doIt = doIt; top.rev = ui.rev; clearRedo(); armSnack(); announce(`${msg} Undo is available.`); return;
   }
   doIt();
   markEdit();
   ui.confirm = null;
-  ui.redo = [];
-  const entry = { msg, inverse, doIt, focusSel, coalesceKey, step, openAbility: ui.openAbility, openItem: ui.openItem, trigger: currentTrigger };
+  clearRedo();
+  const entry = { msg, inverse, doIt, focusSel, coalesceKey, step, openAbility: ui.openAbility, openItem: ui.openItem, trigger: currentTrigger, rev: ui.rev };
   ui.undo.push(entry);
   if (ui.undo.length > UNDO_DEPTH) ui.undo.shift();
+  if (quiet) { if (ui.snack) { ui.snack = null; clearTimeout(snackTimer); } announce(msg); return; }
   ui.snack = entry;
   armSnack();
   announce(`${msg} Undo is available (Ctrl+Z).`);
@@ -1106,6 +1137,7 @@ function undo() {
   ui.redo.push(e);
   step = e.step; ui.openAbility = e.openAbility; ui.openItem = e.openItem;
   ui.confirm = null; ui.forgeFor = null; markEdit();
+  if (ui.undo.length) ui.undo.at(-1).rev = ui.rev; // the next older change is now the one "just made"
   ui.snack = { undone: true, msg: e.msg };
   armSnack();
   announce(`Undone: ${e.msg} Redo with Ctrl+Shift+Z.`);
@@ -1117,7 +1149,7 @@ function redo() {
   step = e.step; ui.openAbility = e.openAbility; ui.openItem = e.openItem;
   e.doIt();
   ui.undo.push(e); ui.snack = e; armSnack();
-  ui.confirm = null; markEdit();
+  ui.confirm = null; markEdit(); e.rev = ui.rev;
   announce(`Redone: ${e.msg}`);
   return e.trigger;
 }
@@ -1169,7 +1201,7 @@ function clearGrantsTo(k) {
 function onValue(e) {
   const el = e.target;
   if (!el.dataset || !el.dataset.path) return;
-  ui.redo = [];
+  if (ui.redo.length || (ui.snack && ui.snack.undone)) clearRedo();
   let v = el.type === 'checkbox' ? el.checked : el.value;
   if (el.type === 'radio') { if (!el.checked) return; v = el.value; }
   if (el.dataset.num) {
@@ -1198,6 +1230,7 @@ function onValue(e) {
       announce(now);
     }
     markEdit();
+    if (ui.undo.length && ui.snack === ui.undo.at(-1)) ui.undo.at(-1).rev = ui.rev; // the grant change itself is the change just made
     render({ keepFocus: [`#${CSS.escape(el.id)}`] });
     return;
   }
@@ -1215,7 +1248,19 @@ root.addEventListener('change', (e) => {
 /* Paste several lines: one origin per line, or one table row per line. Undoable as one change. */
 function notePaste() {
   const top = ui.undo.at(-1), el = document.activeElement;
-  if (top && el && el.dataset && el.dataset.path) { top.pasteField = el.dataset.path; top.pasteValue = el.value; top.trigger = `[data-path="${el.dataset.path}"]`; }
+  if (top && el && el.dataset && el.dataset.path) {
+    top.pasteField = el.dataset.path; top.pasteValue = el.value; top.trigger = `[data-path="${el.dataset.path}"]`;
+    if (el.setSelectionRange) { const n = el.value.length; el.setSelectionRange(n, n); } // keep typing at the end, not before the pasted text
+  }
+}
+// "Name: rules" / "Name — rules" first; else the first ". " that doesn't end an abbreviation ("St. Varg's Mercy. Heal d4.")
+const ABBR = /(?:^|\s)(?:St|Mt|Dr|Mr|Mrs|Sr|Jr|No|Ft|vs)$/;
+function splitRule(line) {
+  const x = line.match(/^(.{1,60}?)\s*[:—–]\s+(.+)$/);
+  if (x) return [x[1].trim(), x[2].trim()];
+  const re = /\.\s+/g; let mm;
+  while ((mm = re.exec(line))) { const head = line.slice(0, mm.index); if (head.length >= 3 && head.length <= 60 && !ABBR.test(head)) return [head.trim(), line.slice(mm.index + mm[0].length).trim()]; }
+  return [line, ''];
 }
 root.addEventListener('paste', (e) => {
   const el = e.target;
@@ -1225,6 +1270,16 @@ root.addEventListener('paste', (e) => {
   let lines = (e.clipboardData ? e.clipboardData.getData('text') : '').split(/\r?\n/).map((x) => x.trim()).filter(Boolean);
   if (lines.length > 1 && /^d\d+\b/i.test(lines[0]) && lines[0].length < 40) lines = lines.slice(1);
   lines = lines.map((x) => x.replace(/^(?:\d{1,2}[.):]?|[-•*–])\s+/, '').trim()).filter(Boolean);
+  const single = path.match(/^abilities\.(\d+)\.name\.(en|pl)$/);
+  if (single && lines.length === 1 && splitRule(lines[0])[1]) {
+    // one "Name: rules" line fills the name and, if empty, the rules text
+    e.preventDefault();
+    const a0 = state.abilities[Number(single[1])], lang = single[2], [nm, txt] = splitRule(lines[0]);
+    const before = { name: { ...a0.name }, text: { ...a0.text } };
+    withUndo(`Pasted “${nm}” with its rules.`, () => { a0.name[lang] = nm; if (!a0.text[lang]) a0.text[lang] = txt; }, () => { a0.name = before.name; a0.text = before.text; }, `[data-path="${path}"]`);
+    render({ keepFocus: [`[data-path="${path}"]`] }); notePaste();
+    return;
+  }
   if (lines.length < 2) return;
   let m = path.match(/^origins\.(\d+)\.(en|pl)$/);
   if (m) {
@@ -1245,7 +1300,7 @@ root.addEventListener('paste', (e) => {
     e.preventDefault();
     const i0 = Number(m[1]), lang = m[2];
     // "Name: rules" or "Name — rules" first; "Name. Rules" only when the name is 4+ letters (so "St. Varg" stays whole)
-    const split = (line) => { const x = line.match(/^(.{1,60}?)\s*[:—–]\s+(.+)$/) || line.match(/^([^.]{4,60})\.\s+(.+)$/); return x ? [x[1].trim(), x[2].trim()] : [line, '']; };
+    const split = splitRule;
     const before = state.abilities.map((a) => ({ ...a, name: { ...a.name }, text: { ...a.text } }));
     const room = LIMIT_LIST - state.abilities.length;
     const parsed = lines.map(split), extra = parsed.slice(1, 1 + room);
@@ -1287,6 +1342,13 @@ document.addEventListener('keydown', (e) => {
   }
   if (mod && !e.shiftKey && e.key.toLowerCase() === 'z' && (!typing(e.target) || pasteUndoable(e.target))) {
     if (!ui.undo.length) return;
+    const top = ui.undo.at(-1);
+    if (top.rev !== (ui.rev || 0) && !pasteUndoable(e.target)) {
+      // something unrecorded changed since: Ctrl+Z never reaches back past it; the named button still can
+      e.preventDefault();
+      announce(`Nothing to undo from the keyboard: your last edit was typed. The Undo button in the step bar can still undo “${shortMsg(top.msg)}”.`);
+      return;
+    }
     e.preventDefault();
     const fs = undo();
     render({ focusSel: fs, keepFocus: UNDO_FOCUS });
@@ -1300,7 +1362,8 @@ document.addEventListener('keydown', (e) => {
   }
   // Esc backs out of the innermost open thing: a confirm, the forge picker, then the open card
   if (e.key === 'Escape' && (typing(e.target) || e.target.tagName === 'SELECT')) {
-    const done = e.target.closest('article.open') && e.target.closest('article.open').querySelector('[data-act="close-ability"],[data-act="close-item"]');
+    const card = e.target.closest('.open');
+    const done = card && card.querySelector('[data-act="close-ability"],[data-act="close-item"],[data-act="close-stat"]');
     if (done) { e.preventDefault(); done.focus(); }
     return;
   }
@@ -1349,7 +1412,7 @@ root.addEventListener('click', (e) => {
   const same = `[data-act="${b.dataset.act}"]${b.dataset.i != null ? `[data-i="${b.dataset.i}"]` : ''}${b.dataset.j != null ? `[data-j="${b.dataset.j}"]` : ''}${b.dataset.v != null ? `[data-v="${CSS.escape(b.dataset.v)}"]` : ''}`;
   let opts = { keepFocus: [same] };
   currentTrigger = b.dataset.act === 'undo' || b.dataset.act === 'redo' ? null : same;
-  if (!NAV_ACTS.has(b.dataset.act)) { ui.redo = []; markEdit(); }
+  if (!NAV_ACTS.has(b.dataset.act)) { if (ui.redo.length || (ui.snack && ui.snack.undone)) clearRedo(); markEdit(); }
   switch (b.dataset.act) {
     case 'nudge': {
       const input = document.getElementById(fid(b.dataset.path));
@@ -1390,7 +1453,9 @@ root.addEventListener('click', (e) => {
     case 'gate-no': ui.itemsNo = true; ui.itemsYes = false; announce('No Class Items. Abilities can still grant catalog gear.'); opts = { focusSel: '[data-act="gate-change"]' }; break;
     case 'gate-change': ui.itemsNo = false; opts = { focusSel: '[data-act="gate-yes"]' }; break;
     case 'add-item': {
-      const it = newItem(v); ui.itemsNo = false; ui.openItem = it.id; ui.fresh.add(`i:${it.id}`);
+      let it = null;
+      withUndo(`Added a new ${typeWord[v]}.`, () => { it = newItem(v); }, () => { clearGrantsTo(keyOf(it)); state.items = state.items.filter((x) => x !== it); }, null, null, true);
+      ui.itemsNo = false; ui.openItem = it.id; ui.fresh.add(`i:${it.id}`);
       opts = { focusPath: `items.${state.items.length - 1}.name.${viewLang}` };
       announce(`New ${typeWord[it.type]} added. It still needs an ability that grants it.`);
       break;
@@ -1443,7 +1508,7 @@ root.addEventListener('click', (e) => {
       break;
     }
     /* Abilities */
-    case 'add-ability': state.abilities.push({ id: ++uid, random: true, name: L('', ''), text: L('', ''), grantItem: '', grantPet: '', mods: [], table: null }); ui.openAbility = uid; ui.fresh.add(`a:${uid}`); opts = { focusPath: `abilities.${state.abilities.length - 1}.name.${viewLang}` }; break;
+    case 'add-ability': { let na = null; withUndo('Added an ability.', () => { na = { id: ++uid, random: true, name: L('', ''), text: L('', ''), grantItem: '', grantPet: '', mods: [], table: null }; state.abilities.push(na); }, () => { state.abilities = state.abilities.filter((x) => x !== na); }, null, null, true); } ui.openAbility = uid; ui.fresh.add(`a:${uid}`); opts = { focusPath: `abilities.${state.abilities.length - 1}.name.${viewLang}` }; break;
     case 'open-ability': { ui.openAbility = Number(v); ui.confirm = null; const idx = state.abilities.findIndex((x) => x.id === Number(v)); opts = { focusPath: `abilities.${idx}.name.${viewLang}` }; break; }
     case 'close-ability': ui.fresh.delete(`a:${v}`); ui.fresh.delete(`t:${v}`); delete ui.cutRows[v]; ui.openAbility = null; ui.confirm = null; ui.forgeFor = null; opts = { keepFocus: [`[data-act="open-ability"][data-v="${v}"]`] }; break;
     case 'show-grants': ui.showGrants.add(Number(v)); opts = { focusSel: `#${fid(`abilities.${i}.grantItem`)}` }; break;
@@ -1485,7 +1550,7 @@ root.addEventListener('click', (e) => {
       opts = { focusPath: `abilities.${i + 1}.name.${viewLang}` };
       break;
     }
-    case 'kind': state.abilities[i].random = v === 'random'; announce(`${tx(state.abilities[i].name) || 'Ability'} is now ${v === 'random' ? 'in the random pool' : 'fixed: every scvm gets it'}.`); break;
+    case 'kind': { const ka = state.abilities[i], was = ka.random, now = v === 'random'; if (was !== now) withUndo(`${tx(ka.name) || 'Ability'} is now ${now ? 'random' : 'fixed'}.`, () => { ka.random = now; }, () => { ka.random = was; }, `[data-act="kind"][data-i="${i}"][data-v="${was ? 'random' : 'fixed'}"]`, null, true); } announce(`${tx(state.abilities[i].name) || 'Ability'} is now ${v === 'random' ? 'in the random pool' : 'fixed: every scvm gets it'}.`); break;
     case 'add-mod': {
       const base = b.dataset.base, mods = getPath(`${base}.mods`);
       mods.push({ stat: 'strength', value: 1, scope: 'all' });
@@ -1528,7 +1593,7 @@ root.addEventListener('click', (e) => {
       opts = { keepFocus: [`[data-act="add-table"][data-i="${i}"]`] };
       break;
     }
-    case 'add-origin': state.origins.push(L('', '')); opts = { focusPath: `origins.${state.origins.length - 1}.${viewLang}` }; break;
+    case 'add-origin': { const no = L('', ''); ui.freshOrigins.add(no); withUndo('Added an origin.', () => { state.origins.push(no); }, () => { state.origins = state.origins.filter((x) => x !== no); }, null, null, true); } opts = { focusPath: `origins.${state.origins.length - 1}.${viewLang}` }; break;
     case 'rm-origin': { const o = state.origins[i]; withUndo(`Removed origin ${i + 1}${tx(o) ? ` “${tx(o)}”` : ''}.`, () => { state.origins.splice(i, 1); }, () => { state.origins.splice(Math.min(i, state.origins.length), 0, o); }, `[data-act="rm-origin"][data-i="${i}"]`); } opts = { keepFocus: [`[data-act="rm-origin"][data-i="${Math.min(i, state.origins.length - 1)}"]`, '[data-act="add-origin"]'] }; break;
     case 'undo': { const fs = undo(); opts = { focusSel: fs, keepFocus: UNDO_FOCUS }; break; }
     case 'redo': { const fs = redo(); opts = { focusSel: fs, keepFocus: ['[data-act="redo"]', ...UNDO_FOCUS] }; break; }
