@@ -1,3 +1,5 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Class Forge Prototype</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -17,7 +19,7 @@
 }
 *{box-sizing:border-box;border-radius:0}
 html,body{background:var(--yellow)}
-body{color:var(--black);font-family:var(--f-body);font-size:15px;line-height:1.5;padding-inline:16px;padding-block:0 48px;
+body{color:var(--black);font-family:var(--f-body);font-size:.9rem;line-height:1.5;padding-inline:16px;padding-block:0 48px;
   background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='.04'/></svg>");
   scrollbar-color:var(--pink) var(--grey)}
 ::selection{background:var(--black);color:var(--yellow)}
@@ -29,8 +31,9 @@ input,textarea{caret-color:var(--yellow)}
 .page-level :focus-visible,.btn:focus-visible,.b-step:focus-visible,.act.ink:focus-visible{outline-color:var(--black)}
 .wrap{max-width:1180px;margin:0 auto}
 .masthead{max-width:1180px;margin:0 auto;padding-block:16px 12px;display:flex;flex-wrap:wrap;gap:6px 16px;align-items:baseline;justify-content:space-between}
-.masthead h1{font-family:var(--f-display);font-size:clamp(2.2rem,6vw,3.2rem);line-height:.85;margin:0;text-transform:uppercase;font-weight:400}
-.masthead p{margin:0;font-family:var(--f-label);font-size:.72rem;letter-spacing:.2em;text-transform:uppercase}
+.masthead h1{font-family:var(--f-display);font-size:3rem;line-height:.85;margin:0;text-transform:uppercase;font-weight:400;color:var(--black)}
+@media (max-width:600px){body{font-size:1rem}}
+.masthead p{margin:0;color:var(--black);font-family:var(--f-label);font-size:.75rem;letter-spacing:.2em;text-transform:uppercase}
 .stamp{display:inline-block;background:var(--yellow);color:var(--black);border:3px solid var(--black);box-shadow:4px 4px 0 var(--black);
   font-family:var(--f-head);font-size:1.5rem;line-height:1;padding:2px 10px;text-transform:uppercase;transform:rotate(-.4deg);margin:0;font-weight:400}
 .stamp:focus{outline:none}
@@ -43,11 +46,11 @@ input,textarea{caret-color:var(--yellow)}
 input[type=text],input[type=number],select,textarea{background:var(--grey);border:2px solid var(--dark-grey);color:var(--white);padding:8px 10px;width:100%;min-height:var(--tap)}
 input:hover,input:focus,select:hover,select:focus,textarea:hover,textarea:focus{border-color:var(--yellow);outline:none}
 textarea{resize:vertical;min-height:72px;font-family:var(--f-body)}
-input[type=number]{font-family:var(--f-head);font-size:1.15rem;text-align:center;font-variant-numeric:tabular-nums}
+input[type=number]{font-family:var(--f-head);font-size:1.2rem;text-align:center;font-variant-numeric:tabular-nums}
 [aria-invalid="true"]{border-color:var(--pink)!important;border-style:dashed!important}
 .field-error[hidden]{display:none}
 .field-error{display:block;margin-top:4px;font-family:var(--f-label);font-size:.65rem;letter-spacing:.15em;text-transform:uppercase;color:var(--pink)}
-.btn{font-family:var(--f-head);font-size:1.15rem;text-transform:uppercase;background:var(--pink);color:var(--black);border:2px solid var(--black);
+.btn{font-family:var(--f-head);font-size:1.2rem;text-transform:uppercase;background:var(--pink);color:var(--black);border:2px solid var(--black);
   padding:8px 16px;min-height:var(--tap);cursor:pointer;box-shadow:3px 3px 0 var(--black);transition:transform .08s ease-out,box-shadow .08s ease-out;display:inline-flex;align-items:center;gap:8px}
 .btn:hover{transform:translate(-2px,-2px);box-shadow:4px 4px 0 var(--black);background:var(--yellow)}
 .btn:active{transform:none;box-shadow:none}
@@ -80,15 +83,17 @@ input[type=number]{font-family:var(--f-head);font-size:1.15rem;text-align:center
 @media (max-width:520px){.dice{grid-template-columns:repeat(3,minmax(0,1fr))}.dice .check{grid-column:1/-1}}
 .check{display:flex;gap:8px;align-items:center;font-family:var(--f-label);font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--white);min-height:var(--tap);cursor:pointer}
 .check input{accent-color:var(--pink);width:18px;height:18px;flex:none}
-.counter{font-family:var(--f-label);font-size:.7rem;letter-spacing:.15em;color:var(--muted);font-variant-numeric:tabular-nums}
+.counter{font-family:var(--f-label);font-size:.75rem;letter-spacing:.15em;color:var(--muted);font-variant-numeric:tabular-nums}
 .counter.over{color:var(--pink)}
 .empty{border:2px dashed var(--dark-grey);padding:16px;text-align:center;color:var(--muted);font-style:italic}
 .itemhead{display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap}
 .itemhead strong{font-family:var(--f-head);font-size:1.5rem;text-transform:uppercase;color:var(--yellow);font-weight:400;letter-spacing:.02em}
-.typebadge{font-family:var(--f-label);font-size:.62rem;letter-spacing:.2em;background:var(--yellow);color:var(--black);padding:2px 6px;text-transform:uppercase}
-.modrow{display:grid;grid-template-columns:88px 76px minmax(0,1fr) auto;gap:8px;align-items:center}
-@media (max-width:620px){.modrow{grid-template-columns:1fr 1fr auto}.modrow .scopes{grid-column:1/-1;grid-row:2}}
-.scopes{display:flex;flex-wrap:wrap;gap:4px}
+.typebadge{font-family:var(--f-label);font-size:.65rem;letter-spacing:.2em;background:var(--yellow);color:var(--black);padding:2px 6px;text-transform:uppercase}
+.modrow{display:flex;flex-wrap:wrap;gap:14px 20px;align-items:flex-end;background:var(--black);border:2px solid var(--dark-grey);padding:12px}
+.modrow .kill{margin-left:auto}
+.statseg .act{min-width:56px;color:var(--white)}
+.statseg .act.on.str{background:var(--str);color:var(--white)} .statseg .act.on.agi{background:var(--agi);color:var(--white)}
+.statseg .act.on.pre{background:var(--pre);color:var(--white)} .statseg .act.on.tou{background:var(--tou);color:var(--white)}
 .seg{display:inline-flex;border:1px solid var(--yellow)}
 .seg .act{border:0}
 .seg .act + .act{border-left:1px solid var(--yellow)}
@@ -121,24 +126,24 @@ input[type=number]{font-family:var(--f-head);font-size:1.15rem;text-align:center
 .sheet h3{font-family:var(--f-gothic);color:var(--yellow);font-size:1.5rem;margin:0 0 4px;font-weight:400}
 .statrow{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:10px 0}
 .statbox{background:var(--yellow);color:var(--black);text-align:center;padding:6px 2px}
-.statbox b{display:block;font-family:var(--f-head);font-size:1.8rem;line-height:1;font-weight:400;font-variant-numeric:tabular-nums}
-.statbox span{font-family:var(--f-label);font-size:.62rem;letter-spacing:.15em}
+.statbox b{display:block;font-family:var(--f-head);font-size:2rem;line-height:1;font-weight:400;font-variant-numeric:tabular-nums}
+.statbox span{font-family:var(--f-label);font-size:.65rem;letter-spacing:.15em}
 .res{display:flex;flex-wrap:wrap;gap:6px}
 .res .chip{font-size:.72rem}
 .chip.hp{background:var(--blood);color:var(--yellow);border-color:var(--blood)}
 .small-title{font-family:var(--f-head);font-size:1.2rem;text-transform:uppercase;color:var(--yellow);margin:14px 0 4px;letter-spacing:.03em;font-weight:400}
 .sheet ul{margin:0;padding-left:18px}
-.pill{padding:1px 6px;background:var(--dark-grey);font-family:var(--f-label);font-size:.62rem;letter-spacing:.15em;text-transform:uppercase;margin-left:6px}
+.pill{padding:1px 6px;background:var(--dark-grey);font-family:var(--f-label);font-size:.65rem;letter-spacing:.15em;text-transform:uppercase;margin-left:6px}
 .issues{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
 .issues button{width:100%;text-align:left;background:var(--pink);color:var(--black);font-family:var(--f-label);font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;
   padding:8px 10px;min-height:var(--tap);border:2px solid var(--black);cursor:pointer;display:flex;justify-content:space-between;gap:10px;align-items:center}
 .issues button:hover{background:var(--white)}
 .issues button span:last-child{white-space:nowrap;text-decoration:underline;text-underline-offset:3px}
-.ready{background:var(--yellow);color:var(--black);border:2px solid var(--black);padding:10px 12px;font-family:var(--f-label);letter-spacing:.1em;text-transform:uppercase;font-size:.8rem}
+.ready{background:var(--yellow);color:var(--black);border:2px solid var(--black);padding:10px 12px;font-family:var(--f-label);letter-spacing:.1em;text-transform:uppercase;font-size:.75rem}
 .status{min-height:1.4em;font-family:var(--f-label);font-size:.75rem;letter-spacing:.12em;text-transform:uppercase}
 details.statebox{margin-top:28px}
-details.statebox summary{cursor:pointer;font-family:var(--f-label);letter-spacing:.2em;text-transform:uppercase;font-size:.75rem;min-height:var(--tap);display:flex;align-items:center}
-.state{background:var(--off-black);color:#c9f2c2;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11.5px;line-height:1.45;max-height:340px;overflow:auto;padding:12px;margin:0;white-space:pre-wrap;border:1px solid var(--grey)}
+details.statebox summary{cursor:pointer;font-family:var(--f-label);letter-spacing:.2em;font-size:.75rem;min-height:var(--tap);display:flex;align-items:center}
+.state{background:var(--off-black);color:var(--white);font-family:monospace;font-size:.75rem;line-height:1.45;max-height:340px;overflow:auto;padding:12px;margin:0;white-space:pre-wrap;border:1px solid var(--grey)}
 
 /* bolder: number controls speak the system's resource-stamp + counter vocabulary */
 .stepper{display:flex;flex-direction:column;gap:4px;min-width:0}
@@ -149,12 +154,12 @@ details.statebox summary{cursor:pointer;font-family:var(--f-label);letter-spacin
 .step-btn:active{transform:translate(1px,1px)}
 .step-btn[disabled]{border-style:dashed;border-color:var(--dark-grey);color:var(--dark-grey);background:transparent;cursor:not-allowed;transform:none}
 input.stamp-num{width:64px;min-height:50px;padding:0;background:var(--yellow)!important;color:var(--black)!important;border:2px solid var(--yellow)!important;border-inline:0!important;
-  font-family:var(--f-head);font-size:1.8rem;line-height:1;text-align:center;caret-color:var(--black);appearance:textfield;-moz-appearance:textfield}
+  font-family:var(--f-head);font-size:2rem;line-height:1;text-align:center;caret-color:var(--black);appearance:textfield;-moz-appearance:textfield}
 input.stamp-num::-webkit-inner-spin-button,input.stamp-num::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
 input.stamp-num:focus-visible{outline:2px solid var(--yellow);outline-offset:3px}
 input.stamp-num[aria-invalid="true"]{background:var(--pink)!important;border-color:var(--pink)!important;border-style:solid!important}
 .dicepick{display:flex;flex-wrap:wrap;gap:6px}
-.die{min-width:50px;min-height:50px;padding:0 8px;background:transparent;color:var(--white);border:2px solid var(--dark-grey);font-family:var(--f-head);font-size:1.35rem;cursor:pointer;
+.die{min-width:50px;min-height:50px;padding:0 8px;background:transparent;color:var(--white);border:2px solid var(--dark-grey);font-family:var(--f-head);font-size:1.5rem;cursor:pointer;
   font-variant-numeric:tabular-nums;transition:transform .08s ease-out,border-color .08s ease-out}
 .die:hover{border-color:var(--yellow);color:var(--yellow);transform:translate(-2px,-2px)}
 .die[aria-checked="true"]{background:var(--yellow);color:var(--black);border-color:var(--yellow);transform:rotate(-1.5deg)}
@@ -167,14 +172,14 @@ input.stamp-num[aria-invalid="true"]{background:var(--pink)!important;border-col
 .dropbtn{min-height:50px}
 .result{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
 @media (min-width:1080px){.result{align-items:flex-end;text-align:right}}
-.formula{background:var(--yellow);color:var(--black);font-family:var(--f-head);font-size:clamp(1.8rem,4vw,2.3rem);line-height:1;padding:6px 12px 4px;transform:rotate(.6deg);white-space:nowrap;font-variant-numeric:tabular-nums}
-.range{display:flex;flex-direction:column;gap:2px;white-space:nowrap;font-family:var(--f-label);font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);font-variant-numeric:tabular-nums}
+.formula{background:var(--yellow);color:var(--black);font-family:var(--f-head);font-size:2rem;line-height:1;padding:6px 12px 4px;transform:rotate(.6deg);white-space:nowrap;font-variant-numeric:tabular-nums}
+.range{display:flex;flex-direction:column;gap:2px;white-space:nowrap;font-family:var(--f-label);font-size:.75rem;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);font-variant-numeric:tabular-nums}
 .numgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:18px 20px;align-items:start}
 
 /* polish: one control grammar for every Class Item */
 .itemline{display:grid;grid-template-columns:minmax(0,1fr);gap:14px;align-items:center;border-top:1px solid var(--grey);padding-top:14px}
 @media (min-width:1000px){.itemline{grid-template-columns:minmax(0,1fr) 240px}}
-.itemline .formula{font-size:1.5rem;white-space:normal;overflow-wrap:anywhere;max-width:100%}
+.itemline .formula{font-size:1.5rem;white-space:normal;overflow-wrap:break-word;max-width:100%}
 .itemline .result{align-items:flex-start}
 @media (min-width:1000px){.itemline .result{align-items:flex-end;text-align:right}}
 .choice .seg .act{min-height:50px;padding:4px 14px}
@@ -183,7 +188,7 @@ input.stamp-num[aria-invalid="true"]{background:var(--pink)!important;border-col
 .abl-sum{width:100%;display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:6px 12px;align-items:center;background:var(--off-black);border:1px solid var(--grey);color:var(--white);
   padding:10px 12px;min-height:56px;text-align:left;cursor:pointer;transition:border-color .08s ease-out}
 .abl-sum:hover{border-color:var(--yellow)}
-.abl-name{font-family:var(--f-head);font-size:1.5rem;letter-spacing:.03em;text-transform:uppercase;color:var(--yellow);min-width:0;overflow-wrap:anywhere}
+.abl-name{font-family:var(--f-head);font-size:1.5rem;letter-spacing:.03em;text-transform:uppercase;color:var(--yellow);min-width:0;overflow-wrap:break-word;hyphens:manual}
 .abl-chips{grid-column:2 / -1;display:flex;flex-wrap:wrap;gap:4px}
 .abl-chips:empty{display:none}
 .abl-edit{display:inline-flex;gap:6px;align-items:center;font-family:var(--f-label);font-size:.75rem;letter-spacing:.15em;text-transform:uppercase;color:var(--muted)}
@@ -207,6 +212,7 @@ input.stamp-num[aria-invalid="true"]{background:var(--pink)!important;border-col
 .linkline .odds{color:var(--yellow)}
 .linkline.none{border-style:dashed;color:var(--muted)}
 .linkline .act{margin-left:auto}
+.linkline .aside{font-family:var(--f-body);font-style:italic;text-transform:none;letter-spacing:0;color:var(--muted);font-size:.9rem}
 .tray{display:flex;flex-direction:column;gap:10px;background:var(--black);border:2px solid var(--yellow);padding:14px}
 .tray ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
 .tray li{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center}
@@ -223,7 +229,7 @@ input.stamp-num[aria-invalid="true"]{background:var(--pink)!important;border-col
 @media (max-width:620px){.rowlink{grid-template-columns:34px minmax(0,1fr)}.rowlink select{grid-column:2}}
 .snackbar{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:40;display:flex;gap:14px;align-items:center;
   max-width:calc(100vw - 32px);background:var(--black);color:var(--white);border:2px solid var(--yellow);box-shadow:4px 4px 0 var(--black);padding:8px 8px 8px 14px;
-  font-family:var(--f-label);font-size:.8rem;letter-spacing:.1em;text-transform:uppercase}
+  font-family:var(--f-label);font-size:.75rem;letter-spacing:.1em;text-transform:uppercase}
 .snackbar .btn{min-height:40px;padding:4px 12px;font-size:1.2rem;flex:none}
 .snackbar span{flex:1;min-width:0}
 @media (max-width:620px){.snackbar{left:16px;right:16px;transform:none;max-width:none}body{padding-bottom:120px}}
@@ -263,6 +269,29 @@ article.row > .itemhead{margin:-12px -12px 4px;padding:12px;border-bottom:2px so
 .label.group{font-family:var(--f-head);font-size:1.2rem;letter-spacing:.04em;color:var(--white);margin-bottom:6px}
 .label.group.on-paper{color:var(--black)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}.b-step[aria-current="step"],.stamp{transform:none!important}}
+/* iteration 3: collapsed Class Items, field hints, undo stack, forged stamp */
+.fieldhint{font-family:var(--f-body);font-style:italic;font-size:.9rem;color:var(--muted);margin:4px 0 0;max-width:65ch;line-height:1.4}
+.stepper .fieldhint{max-width:34ch}
+.stepper.choice{align-items:flex-start}
+.card-h{margin:0;font:inherit}
+.itemhead .card-h{font-family:var(--f-head);font-size:1.5rem;text-transform:uppercase;color:var(--yellow);font-weight:400;letter-spacing:.02em}
+.item-sum .formula{font-size:1.2rem;transform:none;padding:4px 8px 2px;white-space:nowrap}
+.item-sum{grid-template-columns:auto minmax(0,1fr) auto}
+@media (max-width:520px){
+  .abl-sum{grid-template-columns:minmax(0,1fr) auto}
+  .abl-sum .kindtag,.abl-sum .typebadge{grid-column:1;grid-row:1;justify-self:start}
+  .abl-sum .abl-name{grid-column:1 / -1;grid-row:2}
+  .abl-sum .abl-meta{grid-column:2;grid-row:1}
+  .abl-chips{grid-column:1 / -1}
+}
+.snackbar .count{font-family:var(--f-label);font-size:.65rem;letter-spacing:.1em}
+@media (min-width:880px){.snackbar{left:max(16px,calc((100vw - 1180px) / 2 + 16px));transform:none;width:250px;flex-direction:column;align-items:stretch;gap:8px;padding:10px}.snackbar .btn{justify-content:center}}
+body.has-snack{padding-bottom:140px}
+.forged{display:flex;flex-wrap:wrap;gap:12px 18px;align-items:center;background:var(--yellow);color:var(--black);border:3px solid var(--black);box-shadow:6px 6px 0 var(--black);padding:14px 16px}
+.forged b{font-family:var(--f-display);font-size:3rem;line-height:.9;text-transform:uppercase;font-weight:400;transform:rotate(-2deg);display:inline-block;animation:stamp-press 260ms cubic-bezier(0.16,1,0.3,1) both}
+.forged span{font-family:var(--f-label);letter-spacing:.1em;text-transform:uppercase;font-size:.75rem;max-width:40ch}
+.forged-inline{font-family:var(--f-head);font-size:1.2rem}
+@media (prefers-reduced-motion:reduce){.forged b{animation:none;transform:none}}
 </style>
 
 <header class="masthead">
@@ -281,9 +310,12 @@ const STATS = [
   { key: 'toughness', short: 'TOU', cls: 'tou' },
 ];
 const SCOPES = [
-  { key: 'all', label: 'All' }, { key: 'combat', label: 'Combat' }, { key: 'defence', label: 'Defence' },
-  { key: 'melee', label: 'Melee' }, { key: 'ranged', label: 'Ranged' }, { key: 'powers', label: 'Powers' }, { key: 'tests', label: 'Tests' },
+  { key: 'all', label: 'All' }, { key: 'combat', label: 'Combat' }, { key: 'defence', label: 'Defence' }, { key: 'tests', label: 'Tests' },
+  { key: 'melee', label: 'Melee', more: true }, { key: 'ranged', label: 'Ranged', more: true }, { key: 'powers', label: 'Powers', more: true },
 ];
+// the book's starting tables, as seeded (weapons.roll 1-10, armors.roll 1-4)
+const BOOK_WEAPONS = ['Femur (d4)', 'Staff (d4)', 'Shortsword (d4)', 'Knife (d4)', 'Warhammer (d6)', 'Sword (d6)', 'Bow (d6)', 'Flail (d8)', 'Crossbow (d8)', 'Zweihänder (d10)'];
+const BOOK_ARMOR = ['fur, tier 1', 'light armor, tier 1', 'medium armor, tier 2', 'heavy armor, tier 3'];
 const CATALOG = [
   { key: 'weapons.brown-scimitar', label: 'The Brown Scimitar of Galgenbeck' },
   { key: 'equipment.lockpicks', label: 'Lockpicks' },
@@ -291,8 +323,8 @@ const CATALOG = [
 ];
 const STEPS = [
   { key: 'identity', label: 'Identity', hint: 'What the class is called and how a player first meets it.' },
-  { key: 'numbers', label: 'Stats & dice', hint: 'How each stat is rolled, plus HP, omens, silver and starting gear dice.' },
-  { key: 'items', label: 'Class Items', hint: 'Weapons, armor, gear and pets only this class has. Each one reaches a scvm through one ability, which you pick in the next step. They never appear in item search.' },
+  { key: 'numbers', label: 'Stats & dice', hint: 'How each stat is rolled, plus HP, omens, silver and starting gear dice. “Lowest die: Dropped” throws the lowest die away, so 4 dice read “best 3 of 4d6”.' },
+  { key: 'items', label: 'Class Items', hint: 'Gear only this class has. It never appears in item search.' },
   { key: 'abilities', label: 'Abilities', hint: 'Fixed abilities every scvm gets, and the pool random ones are rolled from. Abilities are how a scvm gets this class’s Class Items.' },
   { key: 'origins', label: 'Origins', hint: 'Where this wretch came from. One is picked at random for each scvm.' },
   { key: 'gb', label: 'Getting Better', hint: 'What happens when a scvm of this class gets better.' },
@@ -322,11 +354,11 @@ const state = {
   silver: { count: 2, faces: 6, mult: 10 },
   randomCount: 1,
   items: [
-    { id: 11, type: 'weapon', name: L('Reliquary Flail', 'Cep Relikwiarzowy'), diceCount: 1, diceFaces: 6, dmgMod: 0, reach: 'melee', value: 0,
+    { id: 11, type: 'weapon', name: L('Reliquary Flail', 'Cep Relikwiarzowy'), diceCount: 1, diceFaces: 6, dmgMod: 0, reach: 'melee', ammo: 'none', ammoCount: 10, ammoName: L('', ''), mods: [], value: 0,
       description: L('Roll d6 when you hit. On a 1 the chain wraps your own arm: 1 damage to you. On a 6 a saint wakes and the target is stunned.',
                      'Rzuć k6 po trafieniu. Na 1 łańcuch owija się wokół twojej ręki: 1 obrażenie dla ciebie. Na 6 budzi się święty i cel jest ogłuszony.') },
-    { id: 12, type: 'pet', name: L('Carrion Crow', 'Padlinożerna Wrona'), hp: 3, actionDie: 4, actionType: 'attack', humanoid: false, value: 0, description: L('Pecks at eyes. Remembers who wronged you.', 'Dziobie w oczy. Pamięta, kto cię skrzywdził.') },
-    { id: 13, type: 'equipment', name: L('Grave-Salt Pouch', 'Sakiewka Grobowej Soli'), kind: 'consumable', uses: 3, value: 0, description: L('', '') },
+    { id: 12, type: 'pet', name: L('Carrion Crow', 'Padlinożerna Wrona'), hp: 3, actionDie: 4, actionType: 'attack', humanoid: false, mods: [], value: 0, description: L('Pecks at eyes. Remembers who wronged you.', 'Dziobie w oczy. Pamięta, kto cię skrzywdził.') },
+    { id: 13, type: 'equipment', name: L('Grave-Salt Pouch', 'Sakiewka Grobowej Soli'), kind: 'consumable', uses: 3, effect: 'none', effectDie: 6, value: 0, description: L('', '') },
   ],
   abilities: [
     { id: 1, random: false, name: L('Bone-Reader', 'Czytacz Kości'),
@@ -355,7 +387,7 @@ const state = {
   gbNote: L('', ''),
 };
 // UI-only state (never saved): the Class Items question and in-card confirmations.
-const ui = { itemsNo: false, itemsYes: false, confirm: null, snack: null, openAbility: null, showGrants: new Set(), forgeFor: null };
+const ui = { itemsNo: false, itemsYes: false, confirm: null, snack: null, undo: [], openAbility: null, openItem: null, showGrants: new Set(), forgeFor: null, moreScopes: new Set() };
 
 /* ---------- helpers ---------- */
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -372,11 +404,13 @@ let viewLang = 'en';
 let lastRoll = null;
 let saveMsg = '';
 const tx = (o) => (o ? o[viewLang] || o[state.languages[0]] || o.en || o.pl || '' : '');
-const optional = (path) => path.startsWith('gbNote') || /^items\.\d+\.description\./.test(path);
+const optional = (path) => path.startsWith('gbNote') || /^items\.\d+\.(description|ammoName)\./.test(path);
 const keyOf = (it) => `ci:${it.id}`;
 const itemByKey = (k) => state.items.find((it) => keyOf(it) === k);
 const poolSize = () => state.abilities.filter((a) => a.random).length;
 const typeWord = { weapon: 'weapon', armor: 'armor', equipment: 'gear', pet: 'pet' };
+const signed = (n) => (n > 0 ? `+${n}` : n < 0 ? `−${Math.abs(n)}` : '0');
+const modText = (m) => { const st = STATS.find((x) => x.key === m.stat); const sc = SCOPES.find((x) => x.key === m.scope); return `${signed(m.value)} ${st ? st.short : ''}${m.scope !== 'all' && sc ? ` ${sc.label.toLowerCase()}` : ''}`; };
 
 /* One granter per Class Item: an ability's item/pet slot, or one reference-table row. */
 function granterOf(k) {
@@ -390,10 +424,15 @@ function granterOf(k) {
 }
 const odds = (a) => (a.random ? `if rolled · ${state.randomCount} of ${poolSize()}` : 'every scvm');
 function itemStats(it) {
-  if (it.type === 'weapon') return `${it.diceCount}d${it.diceFaces}${it.dmgMod ? ` ${it.dmgMod > 0 ? '+' : '−'}${Math.abs(it.dmgMod)}` : ''} · ${it.reach}`;
-  if (it.type === 'pet') return `${it.hp} HP · d${it.actionDie} ${it.actionType === 'buff' ? 'buff' : 'attack'}${it.humanoid ? ' · humanoid' : ''}`;
-  if (it.type === 'armor') return `armor tier ${it.tier}`;
-  return `${it.kind}${it.uses ? ` · ${it.uses} uses` : ''}`;
+  const mods = (it.mods || []).length && !(it.type === 'pet' && it.actionType !== 'buff') ? ` · ${it.mods.map(modText).join(', ')}` : '';
+  if (it.type === 'weapon') {
+    const ammo = it.reach !== 'ranged' || it.ammo === 'none' ? '' : it.ammo === 'infinite' ? ' · endless ammo' : ` · ${it.ammoCount} ${(tx(it.ammoName) || 'ammo').toLowerCase()}`;
+    return `${it.diceCount}d${it.diceFaces}${it.dmgMod ? ` ${it.dmgMod > 0 ? '+' : '−'}${Math.abs(it.dmgMod)}` : ''} · ${it.reach}${ammo}${mods}`;
+  }
+  if (it.type === 'pet') return `${it.hp} HP · d${it.actionDie} ${it.actionType === 'buff' ? 'buff' : 'attack'}${it.humanoid ? ' · humanoid' : ''}${mods}`;
+  if (it.type === 'armor') return `armor tier ${it.tier}${mods}`;
+  const eff = it.effect === 'damage' ? ` · d${it.effectDie} damage on use` : it.effect === 'die' ? ` · d${it.effectDie} effect on use` : '';
+  return `${it.kind}${it.uses ? ` · ${it.uses} uses` : ''}${eff}`;
 }
 function itemLabel(key) {
   if (!key) return '';
@@ -408,24 +447,28 @@ function textInput(path, { multiline = false, lang, label = '' } = {}) {
   const input = multiline ? `<textarea ${attrs}>${esc(v)}</textarea>` : `<input type="text" ${attrs} value="${esc(v)}">`;
   return `${input}<span class="field-error" id="${id}-err" ${miss ? '' : 'hidden'}>${langLong[lang]} text missing</span>`;
 }
-function lfield(base, label, { multiline = false } = {}) {
+const hintHtml = (id, hint) => (hint ? `<p class="fieldhint" id="${id}">${esc(hint)}</p>` : '');
+function lfield(base, label, { multiline = false, hint = '' } = {}) {
   const path = `${base}.${viewLang}`;
-  return `<div><label class="label" for="${fid(path)}">${esc(label)}</label>${textInput(path, { multiline, lang: viewLang })}</div>`;
+  return `<div><label class="label" for="${fid(path)}">${esc(label)}</label>${textInput(path, { multiline, lang: viewLang })}${hintHtml(`${fid(path)}-hint`, hint)}</div>`;
 }
-function num(path, label, { min = 0, max = 99, invalid = false } = {}) {
+// numbers read and write a true minus sign (−1), matching the result stamps
+const parseNum = (x) => Number(String(x).trim().replace(/[−–]/g, '-').replace(/^\+/, '')) || 0;
+const fmtNum = (v, min) => (min < 0 ? signed(v) : String(v));
+function num(path, label, { min = 0, max = 99, invalid = false, hint = '' } = {}) {
   const v = Number(getPath(path)) || 0;
   const id = fid(path);
   return `<div class="stepper"><label class="label" for="${id}">${esc(label)}</label><div class="stepper-row">
-    <button type="button" class="step-btn" data-act="nudge" data-path="${path}" data-d="-1" aria-label="Decrease ${esc(label)}" ${v <= min ? 'disabled' : ''}>${MINUS}</button>
-    <input type="number" class="stamp-num" id="${id}" data-path="${path}" data-num="1" min="${min}" max="${max}" value="${v}" inputmode="numeric" aria-invalid="${invalid}">
-    <button type="button" class="step-btn" data-act="nudge" data-path="${path}" data-d="1" aria-label="Increase ${esc(label)}" ${v >= max ? 'disabled' : ''}>${PLUS}</button>
-  </div></div>`;
+    <button type="button" class="step-btn" data-act="nudge" data-path="${path}" data-d="-1" aria-label="Decrease ${esc(label)}" tabindex="-1" ${v <= min ? 'disabled' : ''}>${MINUS}</button>
+    <input type="text" class="stamp-num" id="${id}" data-path="${path}" data-num="1" data-min="${min}" min="${min}" max="${max}" value="${fmtNum(v, min)}" inputmode="numeric" autocomplete="off" role="spinbutton" aria-valuemin="${min}" aria-valuemax="${max}" aria-valuenow="${v}" aria-invalid="${invalid}" ${hint ? `aria-describedby="${id}-hint"` : ''}>
+    <button type="button" class="step-btn" data-act="nudge" data-path="${path}" data-d="1" aria-label="Increase ${esc(label)}" tabindex="-1" ${v >= max ? 'disabled' : ''}>${PLUS}</button>
+  </div>${hintHtml(`${id}-hint`, hint)}</div>`;
 }
-function dieSelect(path, label, dice, fmt = (x) => `d${x}`) {
+function dieSelect(path, label, dice, fmt = (x) => `d${x}`, hint = '', act = 'pick', extra = '') {
   const v = getPath(path);
   const lid = `${fid(path)}-label`;
-  return `<div class="stepper"><span class="label" id="${lid}">${esc(label)}</span><div class="dicepick" role="radiogroup" aria-labelledby="${lid}">${dice.map((d) =>
-    `<button type="button" class="die" role="radio" aria-checked="${d === v}" tabindex="${d === v ? 0 : -1}" data-act="pick" data-path="${path}" data-v="${d}">${fmt(d)}</button>`).join('')}</div></div>`;
+  return `<div class="stepper"><span class="label" id="${lid}">${esc(label)}</span><div class="dicepick" role="radiogroup" aria-labelledby="${lid}" ${hint ? `aria-describedby="${lid}-hint"` : ''}>${dice.map((d) =>
+    `<button type="button" class="die" role="radio" aria-checked="${d === v}" tabindex="${d === v ? 0 : -1}" data-act="${act}" data-path="${path}" data-v="${d}" ${extra}>${fmt(d)}</button>`).join('')}</div>${hintHtml(`${lid}-hint`, hint)}</div>`;
 }
 function counter(n, label) {
   return `<span class="counter ${n > LIMIT_LIST ? 'over' : ''}">${n} of ${LIMIT_LIST} ${label}</span>`;
@@ -470,7 +513,6 @@ function rollSpec(s) {
   return { total: kept.reduce((a, b) => a + b, 0) + (s.mod || 0) };
 }
 const scoreMod = (x) => (x <= 4 ? -3 : x <= 6 ? -2 : x <= 8 ? -1 : x <= 12 ? 0 : x <= 14 ? 1 : x <= 16 ? 2 : 3);
-const signed = (n) => (n > 0 ? `+${n}` : n < 0 ? `−${Math.abs(n)}` : '0');
 const sameName = (a, it) => it && tx(a.name).trim().toLowerCase() === tx(it.name).trim().toLowerCase();
 function testRoll() {
   const stats = {};
@@ -490,13 +532,15 @@ function rollSheet() {
     const granted = [a.grantItem, a.grantPet].filter(Boolean);
     const merged = granted.map(itemByKey).find((it) => sameName(a, it));
     lines.push(`<li><b>${esc(tx(a.name))}</b>${a.random ? '<span class="pill">rolled</span>' : ''}${merged ? ` <span class="muted">· ${typeWord[merged.type]} ${esc(itemStats(merged))}</span>` : ''}</li>`);
-    granted.forEach((k) => { const it = itemByKey(k); if (!(it && it === merged)) gear.push(itemLabel(k)); });
+    granted.forEach((k) => { const it = itemByKey(k); if (!(it && it === merged)) gear.push(it ? `${itemLabel(k)} · ${typeWord[it.type]} ${itemStats(it)}` : itemLabel(k)); });
   });
   return `<div class="sheet" aria-live="polite">
     <span class="micro muted">Test scvm · ${esc(tx(state.name))}</span>
     <h3>Nameless Wretch</h3>
     <div class="statrow">${STATS.map((s) => `<div class="statbox"><b>${signed(r.stats[s.key].mod)}</b><span>${s.short} ${r.stats[s.key].total}</span></div>`).join('')}</div>
-    <div class="res"><span class="chip hp">HP ${r.hp}</span><span class="chip">Omens ${r.omens}</span><span class="chip">${r.silver} silver</span><span class="chip">Weapon d${state.weaponDie}: ${r.weapon}</span><span class="chip">Armor d${state.armorDie}: ${r.armor}</span></div>
+    <div class="res"><span class="chip hp">HP ${r.hp}</span><span class="chip">Omens ${r.omens}</span><span class="chip">${r.silver} silver</span></div>
+    <div class="small-title">Starting gear</div>
+    <ul><li>Weapon <span class="muted">d${state.weaponDie} → ${r.weapon}:</span> ${esc(BOOK_WEAPONS[r.weapon - 1])}</li><li>Armor <span class="muted">d${state.armorDie} → ${r.armor}:</span> ${esc(BOOK_ARMOR[r.armor - 1])}</li></ul>
     <div class="small-title">Abilities</div>
     <ul>${lines.join('') || '<li class="muted">None</li>'}</ul>
     ${gear.length ? `<div class="small-title">Also starts with</div><ul>${gear.map((g) => `<li>${esc(g)}</li>`).join('')}</ul>` : ''}
@@ -513,7 +557,7 @@ function langClassBlock() {
       <button type="button" class="act ${!dual && state.languages[0] === 'pl' ? 'on' : ''}" aria-pressed="${!dual && state.languages[0] === 'pl'}" data-act="set-langs" data-v="pl">Polish only</button>
       <button type="button" class="act ${dual ? 'on' : ''}" aria-pressed="${dual}" data-act="set-langs" data-v="both">Both</button>
     </div>
-    <p class="hint">${dual ? 'Every text field needs both languages. Players see their own.' : `Players in either language see the ${langLong[state.languages[0]]} text.`}</p></div>`;
+    <p class="hint">${dual ? 'Every text field needs both languages. Players see their own.' : `Players in either language see the ${langLong[state.languages[0]]} text. Text you wrote in the other language is kept, only hidden.`}</p></div>`;
 }
 function statRange(st) {
   const kept = st.dropLowest && st.count > 1 ? st.count - 1 : st.count;
@@ -540,17 +584,17 @@ function statsBody() {
           <div class="range" data-derived="range-${s.key}">${statRange(st)}</div></div>
       </section>`;
     }).join('')}
-    <div class="row numgrid">${dieSelect('hpDie', 'HP die (+ TOU)', [2, 4, 6, 8, 10, 12])}${dieSelect('omenDie', 'Omen die', [2, 4, 6])}${dieSelect('weaponDie', 'Starting weapon die', [4, 6, 8, 10])}${dieSelect('armorDie', 'Starting armor die', [2, 3, 4])}</div>
-    <div class="row numgrid">${num('silver.count', 'Silver dice', { min: 1, max: 6 })}${dieSelect('silver.faces', 'Silver sides', [4, 6])}${num('silver.mult', 'Silver multiplier', { min: 1, max: 100 })}</div>
+    <div class="row numgrid">${dieSelect('hpDie', 'HP die (+ TOU)', [2, 4, 6, 8, 10, 12], undefined, 'Starting HP is this die plus Toughness, at least 1. Book classes use d4 to d10.')}${dieSelect('omenDie', 'Omen die', [2, 4, 6], undefined, 'Omens the scvm starts with. Book classes use d2 or d4.')}${dieSelect('weaponDie', 'Starting weapon die', [4, 6, 8, 10], undefined, 'Rolls on the book’s starting weapon table. d10 can reach the Zweihänder; d4 stops at the Knife.')}${dieSelect('armorDie', 'Starting armor die', [2, 3, 4], undefined, 'Rolls on the book’s armor table. d4 can reach heavy armor; d2 stops at light armor.')}</div>
+    <div class="row numgrid">${num('silver.count', 'Silver dice', { min: 1, max: 6 })}${dieSelect('silver.faces', 'Silver sides', [4, 6])}${num('silver.mult', 'Silver multiplier', { min: 1, max: 100, hint: 'Silver is the dice total times this. The book default is 2d6 × 10.' })}</div>
   </div>`;
 }
 
 /* Class Items: the question first, then the items, each saying who grants it. */
-function choice(path, label, options) {
+function choice(path, label, options, rerender = '', cls = '') {
   const v = getPath(path);
   const lid = `${fid(path)}-label`;
-  return `<div class="stepper choice"><span class="label" id="${lid}">${esc(label)}</span><div class="seg" role="radiogroup" aria-labelledby="${lid}">${options.map(([val, text]) =>
-    `<button type="button" class="act ${String(v) === String(val) ? 'on' : ''}" role="radio" aria-checked="${String(v) === String(val)}" data-act="choose" data-path="${path}" data-v="${val}">${esc(text)}</button>`).join('')}</div></div>`;
+  return `<div class="stepper choice"><span class="label" id="${lid}">${esc(label)}</span><div class="seg ${cls}" role="radiogroup" aria-labelledby="${lid}">${options.map(([val, text, c = '']) =>
+    `<button type="button" class="act ${c} ${String(v) === String(val) ? 'on' : ''}" role="radio" aria-checked="${String(v) === String(val)}" data-act="choose" data-path="${path}" data-v="${val}" ${rerender ? 'data-rerender="1"' : ''}>${esc(text)}</button>`).join('')}</div></div>`;
 }
 function itemLine(it, i, controls) {
   return `<div class="itemline"><div class="statctl">${controls}</div>
@@ -559,17 +603,24 @@ function itemLine(it, i, controls) {
 function itemFields(it, i) {
   const p = `items.${i}`;
   const value = num(`${p}.value`, 'Value in silver', { min: 0, max: 9999 });
-  if (it.type === 'weapon') return itemLine(it, i,
-    `${num(`${p}.diceCount`, 'Damage dice', { min: 1, max: 6 })}${dieSelect(`${p}.diceFaces`, 'Sides', [2, 4, 6, 8, 10, 12])}${num(`${p}.dmgMod`, 'Modifier', { min: -6, max: 6 })}${choice(`${p}.reach`, 'Reach', [['melee', 'Melee'], ['ranged', 'Ranged']])}${value}`)
-    + '';
+  const nm = tx(it.name) || 'Unnamed';
+  if (it.type === 'weapon') {
+    const ranged = it.reach === 'ranged';
+    const ammo = ranged ? `${choice(`${p}.ammo`, 'Ammo', [['none', 'None'], ['counted', 'Counted'], ['infinite', 'Endless']], 'ammo')}${it.ammo === 'counted' ? num(`${p}.ammoCount`, 'Starting ammo', { min: 1, max: 99 }) : ''}` : '';
+    return itemLine(it, i,
+      `${num(`${p}.diceCount`, 'Damage dice', { min: 1, max: 6 })}${dieSelect(`${p}.diceFaces`, 'Sides', [2, 4, 6, 8, 10, 12])}${num(`${p}.dmgMod`, 'Modifier', { min: -6, max: 6 })}${choice(`${p}.reach`, 'Reach', [['melee', 'Melee'], ['ranged', 'Ranged']], 'reach')}${ammo}${value}`)
+      + (ranged && it.ammo === 'counted' ? lfield(`${p}.ammoName`, 'Ammo name (optional)', { hint: 'Arrows, bolts, stones. Leave empty for “ammo”.' }) : '')
+      + modsEditor(p, nm, 'Modifiers while wielded');
+  }
   if (it.type === 'pet') return itemLine(it, i,
-    `${num(`${p}.hp`, 'HP', { min: 1, max: 99 })}${dieSelect(`${p}.actionDie`, 'Action die', [2, 4, 6, 8, 10])}${choice(`${p}.actionType`, 'Action', [['attack', 'Attacks'], ['buff', 'Buffs allies']])}${choice(`${p}.humanoid`, 'Kind', [['false', 'Beast'], ['true', 'Humanoid']])}`);
-  if (it.type === 'armor') return itemLine(it, i, `${dieSelect(`${p}.tier`, 'Armor tier', [1, 2, 3], (x) => `Tier ${x}`)}${value}`);
-  return itemLine(it, i, `${choice(`${p}.kind`, 'Kind', [['consumable', 'Consumable'], ['wearable', 'Wearable'], ['gear', 'Gear']])}${num(`${p}.uses`, 'Uses', { min: 0, max: 99 })}${value}`);
+    `${num(`${p}.hp`, 'HP', { min: 1, max: 99 })}${dieSelect(`${p}.actionDie`, 'Action die', [2, 4, 6, 8, 10])}${choice(`${p}.actionType`, 'Action', [['attack', 'Attacks'], ['buff', 'Buffs allies']], 'rerender')}${choice(`${p}.humanoid`, 'Kind', [['false', 'Beast'], ['true', 'Humanoid']])}`)
+    + (it.actionType === 'buff' ? modsEditor(p, nm, 'Buffs it gives') : '');
+  if (it.type === 'armor') return itemLine(it, i, `${dieSelect(`${p}.tier`, 'Armor tier', [1, 2, 3], (x) => `Tier ${x}`)}${value}`) + modsEditor(p, nm, 'Modifiers while worn');
+  return itemLine(it, i, `${choice(`${p}.kind`, 'Kind', [['consumable', 'Consumable'], ['wearable', 'Wearable'], ['gear', 'Gear']])}${num(`${p}.uses`, 'Uses', { min: 0, max: 99 })}${choice(`${p}.effect`, 'On use', [['none', 'Text only'], ['damage', 'Deals damage'], ['die', 'Effect die']], 'rerender')}${it.effect !== 'none' ? dieSelect(`${p}.effectDie`, it.effect === 'damage' ? 'Damage die' : 'Effect die', [2, 4, 6, 8, 10, 12]) : ''}${value}`);
 }
 function grantedByLine(it) {
   const g = granterOf(keyOf(it));
-  if (!g) return `<p class="linkline none"><span>Not granted yet</span><span class="muted">pick it in an ability's grant menu, or</span><button type="button" class="act" data-act="grant-new" data-v="${it.id}">Grant from a new ability</button></p>`;
+  if (!g) return `<p class="linkline none"><span>Not granted yet</span><span class="aside">Pick it in an ability’s grant menu, or</span><button type="button" class="act" data-act="grant-new" data-v="${it.id}">Grant from a new ability</button></p>`;
   const where = g.kind === 'table' ? `table row ${g.row + 1}` : `<span class="odds">${odds(g.a)}</span>`;
   return `<p class="linkline"><span>Granted by</span><b>${esc(tx(g.a.name) || 'Unnamed ability')}</b><span>·</span>${where}<button type="button" class="act" data-act="goto-granter" data-v="${it.id}">Go to ability</button></p>`;
 }
@@ -582,6 +633,28 @@ function itemConfirm(it) {
 function addItemRow(full) {
   return `<div class="inline"><span class="label group" style="margin:0">Forge a</span>${['weapon', 'armor', 'equipment', 'pet'].map((t) => `<button type="button" class="act" data-act="add-item" data-v="${t}" ${full ? 'disabled' : ''}>${typeWord[t]}</button>`).join('')}</div>`;
 }
+function itemSummary(it, i, issues) {
+  const miss = issues.filter((x) => x.path && x.path.startsWith(`items.${i}.`)).length;
+  const g = granterOf(keyOf(it));
+  const who = g ? `<span class="chip">granted by ${esc(tx(g.a.name) || 'Unnamed ability')}${g.kind === 'table' ? ` · row ${g.row + 1}` : ''}</span>` : '<span class="chip warn">waits for an ability</span>';
+  return `<article class="abl" data-item="${it.id}" style="view-transition-name:item-${it.id}"><h3 class="card-h"><button type="button" class="abl-sum item-sum" data-act="open-item" data-v="${it.id}" aria-expanded="false">
+    <span class="typebadge">${typeWord[it.type]}</span>
+    <span class="abl-name">${esc(tx(it.name) || 'Unnamed')}</span>
+    <span class="inline abl-meta" style="gap:8px">${miss ? `<span class="chip warn" aria-label="${miss} to fix">${miss}</span>` : ''}<span class="abl-edit">Edit${CHEV}</span></span>
+    <span class="abl-chips"><span class="chip stat">${esc(itemStats(it))}</span>${who}</span></button></h3></article>`;
+}
+function itemOpen(it, i) {
+  const confirming = ui.confirm && ui.confirm.type === 'item' && ui.confirm.id === it.id;
+  return `<article class="row stack abl open" id="item-${it.id}" style="view-transition-name:item-${it.id}" aria-label="${esc(tx(it.name) || 'Unnamed Class Item')}" data-item="${it.id}">
+      <div class="itemhead"><div class="inline"><span class="typebadge">${typeWord[it.type]}</span><h3 class="card-h">${esc(tx(it.name) || 'Unnamed')}</h3></div></div>
+      ${confirming ? itemConfirm(it) : ''}
+      ${grantedByLine(it)}
+      ${lfield(`items.${i}.name`, 'Name')}${lfield(`items.${i}.description`, 'Description (optional)', { multiline: true, hint: 'Special rules, effects and flavour, as the player reads them. scvmrack never rolls or applies them.' })}
+      <div class="stepper choice"><span class="label" id="type-${it.id}">Type</span><div class="seg" role="radiogroup" aria-labelledby="type-${it.id}">${['weapon', 'armor', 'equipment', 'pet'].map((t) => `<button type="button" class="act ${it.type === t ? 'on' : ''}" role="radio" aria-checked="${it.type === t}" data-act="change-type" data-i="${i}" data-v="${t}">${typeWord[t]}</button>`).join('')}</div></div>
+      ${itemFields(it, i)}
+      <div class="card-foot">${confirming ? '' : `<button type="button" class="act kill" data-act="rm-item" data-v="${it.id}">Remove</button>`}<button type="button" class="act" data-act="dup-item" data-v="${it.id}" ${state.items.length >= LIMIT_LIST ? 'disabled' : ''}>Duplicate</button><button type="button" class="act on" data-act="close-item" data-v="${it.id}" aria-expanded="true">Done</button></div>
+    </article>`;
+}
 function itemsBody() {
   if (!state.items.length && ui.itemsNo) return `<div class="gate-no"><p>No Class Items. Abilities can still grant gear from the shared catalog.</p><button type="button" class="act" data-act="gate-change">Change</button></div>`;
   if (!state.items.length && !ui.itemsYes) return `<div class="gate">
@@ -590,16 +663,10 @@ function itemsBody() {
       <div class="inline"><button type="button" class="btn save" data-act="gate-yes">Yes, forge a Class Item</button><button type="button" class="btn ink" data-act="gate-no">No, only catalog gear</button></div>
     </div>`;
   const full = state.items.length >= LIMIT_LIST;
+  const issues = validate();
   return `<div class="stack">
     <div class="spread">${addItemRow(full)}${counter(state.items.length, 'Class Items')}</div>
-    ${state.items.map((it, i) => `<article class="row stack" aria-label="${esc(tx(it.name) || 'Unnamed Class Item')}" data-item="${it.id}">
-      <div class="itemhead"><div class="inline"><span class="typebadge">${typeWord[it.type]}</span><strong>${esc(tx(it.name) || 'Unnamed')}</strong></div>
-        ${ui.confirm && ui.confirm.type === 'item' && ui.confirm.id === it.id ? '' : `<button type="button" class="act kill" data-act="rm-item" data-v="${it.id}">Remove</button>`}</div>
-      ${ui.confirm && ui.confirm.type === 'item' && ui.confirm.id === it.id ? itemConfirm(it) : ''}
-      ${grantedByLine(it)}
-      ${lfield(`items.${i}.name`, 'Name')}${lfield(`items.${i}.description`, 'Description (optional): special rules, effects, flavour', { multiline: true })}
-      <div class="stepper choice"><span class="label" id="type-${it.id}">Type</span><div class="seg" role="radiogroup" aria-labelledby="type-${it.id}">${['weapon', 'armor', 'equipment', 'pet'].map((t) => `<button type="button" class="act ${it.type === t ? 'on' : ''}" role="radio" aria-checked="${it.type === t}" data-act="change-type" data-i="${i}" data-v="${t}">${typeWord[t]}</button>`).join('')}</div></div>
-      ${itemFields(it, i)}</article>`).join('') || '<div class="empty">No Class Items yet. Pick a kind above.</div>'}
+    <div class="stack" style="gap:8px">${state.items.map((it, i) => (ui.openItem === it.id ? itemOpen(it, i) : itemSummary(it, i, issues))).join('') || '<div class="empty">No Class Items yet. Pick a kind above.</div>'}</div>
   </div>`;
 }
 
@@ -624,18 +691,23 @@ function grantSelect(i, kind) {
     <optgroup label="Shared catalog">${cat.map((c) => `<option value="${c.key}" ${v === c.key ? 'selected' : ''}>${esc(c.label)}</option>`).join('')}</optgroup>
     </select></label>${detail}</div>`;
 }
-function modsEditor(i) {
-  const a = state.abilities[i];
-  const nm = tx(a.name) || `ability ${i + 1}`;
-  const rows = a.mods.map((m, j) => `<div class="modrow">
-      <select id="${fid(`abilities.${i}.mods.${j}.stat`)}" data-path="abilities.${i}.mods.${j}.stat" aria-label="${esc(nm)} modifier ${j + 1} stat">${STATS.map((s) => `<option value="${s.key}" ${m.stat === s.key ? 'selected' : ''}>${s.short}</option>`).join('')}</select>
-      <input type="number" id="${fid(`abilities.${i}.mods.${j}.value`)}" data-path="abilities.${i}.mods.${j}.value" data-num="1" min="-6" max="6" value="${m.value}" aria-label="${esc(nm)} modifier ${j + 1} value">
-      <div class="scopes" role="group" aria-label="Applies to">${SCOPES.map((s) => `<button type="button" class="act ${m.scope === s.key ? 'on' : ''}" aria-pressed="${m.scope === s.key}" data-act="scope" data-i="${i}" data-j="${j}" data-v="${s.key}">${s.label}</button>`).join('')}</div>
-      <button type="button" class="act kill" data-act="rm-mod" data-i="${i}" data-j="${j}">Remove</button>
-    </div>`).join('');
-  if (!rows) return '';
-  return `<div class="stack"><span class="label group">Modifiers</span>${rows}
-    <div><button type="button" class="act" data-act="add-mod" data-i="${i}">Add another modifier</button></div></div>`;
+function modsEditor(base, nm, title = 'Modifiers') {
+  const mods = getPath(`${base}.mods`) || [];
+  const isAbility = base.startsWith('abilities.');
+  const rows = mods.map((m, j) => {
+    const mp = `${base}.mods.${j}`;
+    const more = ui.moreScopes.has(mp) || SCOPES.find((x) => x.key === m.scope).more;
+    return `<div class="modrow" role="group" aria-label="${esc(nm)} modifier ${j + 1}">
+      ${choice(`${mp}.stat`, 'Stat', STATS.map((s) => [s.key, s.short, s.cls]), 'rerender', 'statseg')}
+      ${num(`${mp}.value`, 'Value', { min: -6, max: 6 })}
+      <div class="stepper choice"><span class="label" id="${fid(mp)}-scope">Applies to</span><div class="inline" style="gap:6px"><div class="seg" role="radiogroup" aria-labelledby="${fid(mp)}-scope">${SCOPES.filter((s) => more || !s.more).map((s) =>
+        `<button type="button" class="act ${m.scope === s.key ? 'on' : ''}" role="radio" aria-checked="${m.scope === s.key}" data-act="choose" data-path="${mp}.scope" data-v="${s.key}" data-rerender="1">${s.label}</button>`).join('')}</div>${more ? '' : `<button type="button" class="act" data-act="more-scopes" data-path="${mp}" aria-label="More scopes: melee, ranged, powers">More</button>`}</div></div>
+      <button type="button" class="act kill" data-act="rm-mod" data-base="${base}" data-j="${j}">Remove</button>
+    </div>`;
+  }).join('');
+  if (!rows) return isAbility ? '' : `<div class="extras"><button type="button" class="act" data-act="add-mod" data-base="${base}">Add modifier</button></div>`;
+  return `<div class="stack"><span class="label group">${esc(title)}</span>${rows}
+    <div><button type="button" class="act" data-act="add-mod" data-base="${base}" ${mods.length >= 6 ? 'disabled' : ''}>Add another modifier</button></div></div>`;
 }
 function tableEditor(i) {
   const t = state.abilities[i].table;
@@ -655,6 +727,7 @@ function tableEditor(i) {
   const confirmHtml = confirming ? `<div class="confirm" role="group" aria-label="Confirm removal"><p>${linked.map((x) => `Row ${x.k + 1} grants “${esc(tx(x.it.name) || 'Unnamed')}”`).join('. ')}. Remove the table? ${linked.length > 1 ? 'Those items' : 'That item'} will wait for an ability.</p>
     <div class="inline"><button type="button" class="act danger" data-act="rm-table-yes" data-i="${i}">Remove table</button><button type="button" class="act" data-act="confirm-cancel" data-v="table-${a.id}">Keep it</button></div></div>` : '';
   return `<div class="stack"><div class="spread"><span class="label group" style="margin:0">Reference table · d${t.die}</span>${confirming ? '' : `<button type="button" class="act kill" data-act="rm-table" data-i="${i}">Remove table</button>`}</div>${confirmHtml}
+    ${dieSelect(`abilities.${i}.table.die`, 'Table die (one row per side)', [2, 3, 4, 6, 8, 10, 12], undefined, 'Paste several lines into a row to fill the rows below it.', 'table-die', `data-i="${i}"`)}
     ${t.rows.map((r, k) => `<div class="rowlink"><span>${k + 1}</span>${textInput(`abilities.${i}.table.rows.${k}.${viewLang}`, { lang: viewLang, label: `Row ${k + 1}` })}${state.items.length ? rowSelect(k) : ''}</div>`).join('')}</div>`;
 }
 function abilityConfirm(a, i) {
@@ -665,7 +738,7 @@ function abilityConfirm(a, i) {
 }
 function abilityHeader(a) {
   const it = [a.grantItem, a.grantPet].map((k) => (k && k.startsWith('ci:') ? itemByKey(k) : null)).find((x) => sameName(a, x));
-  return `<strong>${esc(tx(a.name) || 'Unnamed ability')}</strong>${it ? `<span class="arrowhead">→ grants ${typeWord[it.type]}</span>` : ''}`;
+  return `<h3 class="card-h">${esc(tx(a.name) || 'Unnamed ability')}</h3>${it ? `<span class="arrowhead">→ grants ${typeWord[it.type]}</span>` : ''}`;
 }
 function trayHtml() {
   const waiting = state.items.filter((it) => !granterOf(keyOf(it)));
@@ -680,20 +753,20 @@ function abilityChips(a) {
   [['grantItem', 'item'], ['grantPet', 'pet']].forEach(([slot, word]) => {
     const k = a[slot]; if (!k) return;
     const it = k.startsWith('ci:') ? itemByKey(k) : null;
-    if (it && sameName(a, it)) chips.push(`→ ${typeWord[it.type]}`);
+    if (it && sameName(a, it)) chips.push(`→ ${typeWord[it.type]} · ${esc(itemStats(it))}`);
     else chips.push(`${it ? typeWord[it.type] : word}: ${esc(itemLabel(k))}`);
   });
-  a.mods.forEach((m) => { const st = STATS.find((x) => x.key === m.stat); chips.push(`${signed(m.value)} ${st ? st.short : ''}${m.scope !== 'all' ? ` ${SCOPES.find((x) => x.key === m.scope).label.toLowerCase()}` : ''}`); });
+  a.mods.forEach((m) => chips.push(esc(modText(m))));
   if (a.table) chips.push(`d${a.table.die} table`);
   return chips.map((c) => `<span class="chip">${c}</span>`).join('');
 }
 function abilitySummary(a, i, issues) {
   const miss = issues.filter((x) => x.path && x.path.startsWith(`abilities.${i}.`)).length;
-  return `<article class="abl" data-ability="${a.id}" style="view-transition-name:abl-${a.id}"><button type="button" class="abl-sum" data-act="open-ability" data-v="${a.id}" aria-expanded="false" aria-controls="abl-${a.id}">
+  return `<article class="abl" data-ability="${a.id}" style="view-transition-name:abl-${a.id}"><h3 class="card-h"><button type="button" class="abl-sum" data-act="open-ability" data-v="${a.id}" aria-expanded="false">
     <span class="kindtag ${a.random ? '' : 'fixed'}">${a.random ? 'Random' : 'Fixed'}</span>
     <span class="abl-name">${esc(tx(a.name) || 'Unnamed ability')}</span>
-    <span class="inline" style="gap:8px">${miss ? `<span class="chip warn" aria-label="${miss} to fix">${miss}</span>` : ''}<span class="abl-edit">Edit${CHEV}</span></span>
-    <span class="abl-chips">${abilityChips(a)}</span></button></article>`;
+    <span class="inline abl-meta" style="gap:8px">${miss ? `<span class="chip warn" aria-label="${miss} to fix">${miss}</span>` : ''}<span class="abl-edit">Edit${CHEV}</span></span>
+    <span class="abl-chips">${abilityChips(a)}</span></button></h3></article>`;
 }
 function forgeRow(a, i) {
   if (a.grantItem && a.grantPet) return '';
@@ -710,21 +783,22 @@ function abilityOpen(a, i) {
   const confirming = ui.confirm && ui.confirm.type === 'ability' && ui.confirm.id === a.id;
   const showGrants = a.grantItem || a.grantPet || ui.showGrants.has(a.id);
   const extras = [
-    showGrants ? '' : `<button type="button" class="act" data-act="show-grants" data-v="${a.id}" data-i="${i}">Add a grant</button>`,
-    a.mods.length ? '' : `<button type="button" class="act" data-act="add-mod" data-i="${i}">Add modifier</button>`,
+    showGrants ? '' : `<button type="button" class="act" data-act="show-grants" data-v="${a.id}" data-i="${i}">Grant an item or pet</button>`,
+    showGrants || state.items.length >= LIMIT_LIST ? '' : `<button type="button" class="act" data-act="forge-for" data-i="${i}" data-v="${a.id}">Forge a Class Item for it</button>`,
+    a.mods.length ? '' : `<button type="button" class="act" data-act="add-mod" data-base="abilities.${i}">Add modifier</button>`,
     a.table ? '' : `<button type="button" class="act" data-act="add-table" data-i="${i}">Add reference table</button>`,
   ].join('');
   return `<article class="row stack abl open" id="abl-${a.id}" style="view-transition-name:abl-${a.id}" aria-label="${esc(tx(a.name) || 'Unnamed ability')}" data-ability="${a.id}">
       <div class="itemhead"><div class="inline">${abilityHeader(a)}</div>
-        <div class="inline"><div class="seg" role="group" aria-label="Ability kind"><button type="button" class="act ${a.random ? '' : 'on'}" aria-pressed="${!a.random}" data-act="kind" data-i="${i}" data-v="fixed">Fixed</button><button type="button" class="act ${a.random ? 'on' : ''}" aria-pressed="${a.random}" data-act="kind" data-i="${i}" data-v="random">Random pool</button></div></div></div>
+        <div class="inline"><div class="seg" role="radiogroup" aria-label="Ability kind"><button type="button" class="act ${a.random ? '' : 'on'}" role="radio" aria-checked="${!a.random}" data-act="kind" data-i="${i}" data-v="fixed">Fixed</button><button type="button" class="act ${a.random ? 'on' : ''}" role="radio" aria-checked="${a.random}" data-act="kind" data-i="${i}" data-v="random">Random pool</button></div></div></div>
       ${confirming ? abilityConfirm(a, i) : ''}
       ${lfield(`abilities.${i}.name`, 'Name')}
       ${lfield(`abilities.${i}.text`, 'Rules text', { multiline: true })}
-      ${showGrants ? `<div class="grid2" style="align-items:start">${grantSelect(i, 'item')}${grantSelect(i, 'pet')}</div>${forgeRow(a, i)}` : ''}
-      ${modsEditor(i)}
+      ${showGrants ? `<div class="stack" style="gap:8px"><div class="grid2" style="align-items:start">${grantSelect(i, 'item')}${grantSelect(i, 'pet')}</div><p class="fieldhint" style="max-width:65ch">A scvm who gets this ability starts with what it grants.</p></div>${forgeRow(a, i)}` : ''}
+      ${modsEditor(`abilities.${i}`, tx(a.name) || `ability ${i + 1}`)}
       ${tableEditor(i)}
       ${extras ? `<div class="extras"><span class="label group" style="margin:0">Extras</span>${extras}</div>` : ''}
-      <div class="card-foot">${confirming ? '' : `<button type="button" class="act kill" data-act="rm-ability" data-i="${i}">Remove ability</button>`}<button type="button" class="act on" data-act="close-ability" data-v="${a.id}" aria-controls="abl-${a.id}" aria-expanded="true">Done</button></div>
+      <div class="card-foot">${confirming ? '' : `<button type="button" class="act kill" data-act="rm-ability" data-i="${i}">Remove ability</button>`}<button type="button" class="act" data-act="dup-ability" data-i="${i}" ${state.abilities.length >= LIMIT_LIST ? 'disabled' : ''}>Duplicate</button><button type="button" class="act on" data-act="close-ability" data-v="${a.id}" aria-controls="abl-${a.id}" aria-expanded="true">Done</button></div>
     </article>`;
 }
 function abilitiesBody() {
@@ -733,7 +807,7 @@ function abilitiesBody() {
   const cards = state.abilities.map((a, i) => (ui.openAbility === a.id ? abilityOpen(a, i) : abilitySummary(a, i, issues))).join('');
   return `<div class="stack">
     ${trayHtml()}
-    <div class="row spread">${num('randomCount', `Random abilities each scvm rolls (pool: ${pool})`, { min: 0, max: 20, invalid: state.randomCount > pool })}${counter(state.abilities.length, 'abilities')}</div>
+    <div class="row spread">${num('randomCount', 'Random abilities rolled', { min: 0, max: Math.max(pool, state.randomCount), invalid: state.randomCount > pool, hint: `Every scvm gets all Fixed abilities, plus this many rolled from the Random pool (${pool} in it).` })}${counter(state.abilities.length, 'abilities')}</div>
     <div class="stack" style="gap:8px">${cards || '<div class="empty">No abilities yet. Add a fixed one every scvm gets, or build a random pool.</div>'}</div>
     <div style="view-transition-name:abl-add"><button type="button" class="btn" data-act="add-ability" ${state.abilities.length >= LIMIT_LIST ? 'disabled' : ''}>Add ability</button></div>
   </div>`;
@@ -741,14 +815,14 @@ function abilitiesBody() {
 function originsBody() {
   return `<div class="stack">
     <div class="spread"><button type="button" class="btn" data-act="add-origin" ${state.origins.length >= LIMIT_LIST ? 'disabled' : ''}>Add origin</button>${counter(state.origins.length, 'origins')}</div>
-    ${state.origins.map((o, k) => `<div class="row" style="display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:end">${lfield(`origins.${k}`, `Origin ${k + 1}`)}<button type="button" class="act kill" data-act="rm-origin" data-i="${k}" style="min-height:var(--tap)">Remove</button></div>`).join('') || '<div class="empty">No origins yet. A class needs at least one.</div>'}
+    ${state.origins.map((o, k) => `<div class="row stack" style="gap:6px"><div class="spread"><label class="label" for="${fid(`origins.${k}.${viewLang}`)}" style="margin:0">Origin ${k + 1}</label><button type="button" class="act kill" data-act="rm-origin" data-i="${k}">Remove</button></div>${textInput(`origins.${k}.${viewLang}`, { lang: viewLang })}</div>`).join('') || '<div class="empty">No origins yet. A class needs at least one.</div>'}
+    <p class="fieldhint" style="max-width:65ch">Paste several lines into an origin to add one origin per line.</p>
   </div>`;
 }
 function gbBody() {
   return `<div class="stack">
-    <div class="row stack" role="radiogroup" aria-labelledby="gb-label"><span class="label group" id="gb-label" style="margin:0">Rule</span>
-    <label class="check"><input type="radio" name="gb" id="gb-book" data-path="gettingBetter" value="book" ${state.gettingBetter === 'book' ? 'checked' : ''}>Book rules: HP, abilities and debris</label>
-    <label class="check"><input type="radio" name="gb" id="gb-extra" data-path="gettingBetter" value="extra-ability" ${state.gettingBetter === 'extra-ability' ? 'checked' : ''}>Book rules, and gain a random class ability you don't have yet</label></div>
+    <div class="row stack">${choice('gettingBetter', 'Rule', [['book', 'Book rules'], ['extra-ability', 'Book rules + a new ability']])}
+    <p class="fieldhint" style="max-width:65ch">Book rules: max HP may grow, each ability score may rise or fall, and the scvm searches the debris for silver or scrolls. “+ a new ability” also rolls one random ability from this class’s pool that the scvm doesn’t have yet.</p></div>
     ${lfield('gbNote', 'Rules note for the player (optional)', { multiline: true })}
   </div>`;
 }
@@ -762,7 +836,7 @@ function reviewBody(issues) {
       <span class="label group">Before you save</span>
       <div data-derived="issues">${issuesHtml(issues)}</div>
       <div class="inline"><button type="button" class="btn save" data-act="save" aria-describedby="save-status">Save class</button></div>
-      <p class="status" id="save-status" role="status">${esc(saveMsg)}</p>
+      <div id="save-status" role="status">${saveMsg === 'SAVED' ? `<div class="forged"><b>Forged</b><span>“${esc(tx(state.name))}” is saved. In the real app it now appears in your class list.</span></div>` : `<p class="status">${esc(saveMsg)}</p>`}</div>
     </div>
   </div>`;
 }
@@ -790,7 +864,8 @@ function langSwitch(issues) {
 }
 function snackHtml() {
   if (!ui.snack) return '';
-  return `<div class="snackbar"><span>${esc(ui.snack.msg)}</span><button type="button" class="btn save" data-act="undo">Undo</button></div>`;
+  const n = ui.undo.length;
+  return `<div class="snackbar"><span>${esc(ui.snack.msg)}${n > 1 ? `<br><span class="count muted">${n} changes can be undone · Ctrl+Z</span>` : ''}</span><button type="button" class="btn save" data-act="undo" aria-keyshortcuts="Control+Z Meta+Z">Undo</button></div>`;
 }
 const root = document.getElementById('root');
 const stepIndex = (key) => STEPS.findIndex((s) => s.key === key);
@@ -806,13 +881,14 @@ function render({ focusHeading = false, focusPath = null, focusSel = null, keepF
       <div class="b-head page-level"><h2 class="stamp" id="step-title" tabindex="-1">${s.label}</h2><div data-derived="langsw">${langSwitch(issues)}</div></div>
       <div class="paper stack-lg"><p class="hint">${s.hint}</p>${body}</div>
       <div class="b-nav page-level" style="view-transition-name:step-nav">
-        <button type="button" class="btn" data-act="step" data-v="${step - 1}" ${step === 0 ? 'disabled' : ''}>${ARROW_L}Back</button>
+        <button type="button" class="btn ink" data-act="step" data-v="${step - 1}" ${step === 0 ? 'disabled' : ''}>${ARROW_L}Back</button>
         ${step < STEPS.length - 1 ? `<button type="button" class="btn save" data-act="step" data-v="${step + 1}">${STEPS[step + 1].label}${ARROW_R}</button>` : ''}
       </div>
     </section>
   </div>
   <details class="statebox page-level"><summary>Prototype: draft state that would be saved</summary><pre class="state" data-derived="state"></pre></details>
   <div class="page-level">${snackHtml()}</div>`;
+  document.body.classList.toggle('has-snack', !!ui.snack);
   refreshDerived();
   const cur = root.querySelector('.b-step[aria-current="step"]');
   if (cur && cur.scrollIntoView && window.innerWidth < 880) cur.scrollIntoView({ block: 'nearest', inline: 'nearest' });
@@ -834,7 +910,8 @@ function refreshDerived() {
   });
   root.querySelectorAll('.step-btn').forEach((btn) => {
     const input = document.getElementById(fid(btn.dataset.path)); if (!input) return;
-    const v = Number(input.value) || 0;
+    const v = parseNum(input.value);
+    input.setAttribute('aria-valuenow', String(v));
     btn.disabled = Number(btn.dataset.d) < 0 ? v <= Number(input.min) : v >= Number(input.max);
   });
   state.items.forEach((it) => { const el = root.querySelector(`[data-derived="item-${it.id}"]`); if (el) el.textContent = itemStats(it); });
@@ -866,29 +943,36 @@ function withTransition(kind, update) {
 
 /* Undo: every destructive change records its own inverse; undo touches nothing else. */
 let snackTimer = null;
+const UNDO_DEPTH = 10;
 function armSnack() {
   clearTimeout(snackTimer);
-  snackTimer = setTimeout(() => { ui.snack = null; const el = root.querySelector('.snackbar'); if (el) el.remove(); }, 10000);
+  snackTimer = setTimeout(() => { ui.snack = null; const el = root.querySelector('.snackbar'); if (el) el.remove(); document.body.classList.remove('has-snack'); }, 10000);
 }
 function withUndo(msg, doIt, inverse, focusSel = null, coalesceKey = null) {
-  if (coalesceKey && ui.snack && ui.snack.coalesceKey === coalesceKey) {
+  const top = ui.undo.at(-1);
+  if (coalesceKey && top && ui.snack === top && top.coalesceKey === coalesceKey) {
     // repeated changes to the same control (e.g. arrowing through a menu) keep ONE undo back to the original value
-    doIt(); ui.snack.msg = msg; armSnack(); announce(`${msg} Undo is available.`); return;
+    doIt(); top.msg = msg; armSnack(); announce(`${msg} Undo is available.`); return;
   }
   doIt();
   ui.confirm = null;
-  ui.snack = { msg, inverse, focusSel, coalesceKey };
+  const entry = { msg, inverse, focusSel, coalesceKey, step, openAbility: ui.openAbility, openItem: ui.openItem };
+  ui.undo.push(entry);
+  if (ui.undo.length > UNDO_DEPTH) ui.undo.shift();
+  ui.snack = entry;
   armSnack();
-  announce(`${msg} Undo is available.`);
+  announce(`${msg} Undo is available (Ctrl+Z).`);
 }
 function undo() {
-  if (!ui.snack) return null;
-  const { inverse, focusSel } = ui.snack;
-  inverse();
-  ui.snack = null; ui.confirm = null;
-  clearTimeout(snackTimer);
-  announce('Restored.');
-  return focusSel;
+  const e = ui.undo.pop();
+  if (!e) return null;
+  e.inverse();
+  step = e.step; ui.openAbility = e.openAbility; ui.openItem = e.openItem;
+  ui.confirm = null; ui.forgeFor = null; saveMsg = '';
+  ui.snack = ui.undo.at(-1) || null;
+  if (ui.snack) armSnack(); else clearTimeout(snackTimer);
+  announce(`Undone: ${e.msg}`);
+  return e.focusSel;
 }
 const abilityById = (id) => state.abilities.find((x) => x.id === id);
 function grantRefs(k) {
@@ -913,12 +997,12 @@ function newAbilityFor(it) {
   return state.abilities.length - 1;
 }
 const TYPE_DEFAULTS = {
-  weapon: () => ({ diceCount: 1, diceFaces: 6, dmgMod: 0, reach: 'melee' }),
-  pet: () => ({ hp: 4, actionDie: 4, actionType: 'attack', humanoid: false }),
-  armor: () => ({ tier: 1 }),
-  equipment: () => ({ kind: 'gear', uses: 0 }),
+  weapon: () => ({ diceCount: 1, diceFaces: 6, dmgMod: 0, reach: 'melee', ammo: 'none', ammoCount: 10, ammoName: L('', ''), mods: [] }),
+  pet: () => ({ hp: 4, actionDie: 4, actionType: 'attack', humanoid: false, mods: [] }),
+  armor: () => ({ tier: 1, mods: [] }),
+  equipment: () => ({ kind: 'gear', uses: 0, effect: 'none', effectDie: 6 }),
 };
-const TYPE_FIELDS = ['diceCount', 'diceFaces', 'dmgMod', 'reach', 'hp', 'actionDie', 'actionType', 'humanoid', 'tier', 'kind', 'uses'];
+const TYPE_FIELDS = ['diceCount', 'diceFaces', 'dmgMod', 'reach', 'ammo', 'ammoCount', 'ammoName', 'hp', 'actionDie', 'actionType', 'humanoid', 'tier', 'kind', 'uses', 'effect', 'effectDie', 'mods'];
 function newItem(type, name = L('', '')) {
   const base = { id: ++uid, type, name: { en: name.en, pl: name.pl }, description: L('', ''), value: 0, ...TYPE_DEFAULTS[type]() };
   state.items.push(base);
@@ -938,7 +1022,7 @@ function onValue(e) {
   if (!el.dataset || !el.dataset.path) return;
   let v = el.type === 'checkbox' ? el.checked : el.value;
   if (el.type === 'radio') { if (!el.checked) return; v = el.value; }
-  if (el.dataset.num) v = Number(v) || 0;
+  if (el.dataset.num) v = Math.max(Number(el.min), Math.min(Number(el.max), parseNum(v)));
   if (el.dataset.grant || el.dataset.rowlink) {
     const prev = getPath(el.dataset.path) || '';
     if (prev === v) return;
@@ -968,11 +1052,69 @@ function onValue(e) {
 root.addEventListener('input', (e) => { if (e.target.tagName !== 'SELECT') onValue(e); });
 ['mouseover', 'focusin'].forEach((ev) => root.addEventListener(ev, (e) => { if (e.target.closest && e.target.closest('.snackbar')) clearTimeout(snackTimer); }));
 ['mouseout', 'focusout'].forEach((ev) => root.addEventListener(ev, (e) => { if (e.target.closest && e.target.closest('.snackbar') && ui.snack) armSnack(); }));
-root.addEventListener('change', (e) => { if (e.target.tagName === 'SELECT' || e.target.type === 'radio' || e.target.type === 'checkbox') onValue(e); });
+root.addEventListener('change', (e) => {
+  if (e.target.tagName === 'SELECT' || e.target.type === 'radio' || e.target.type === 'checkbox') onValue(e);
+  else if (e.target.dataset && e.target.dataset.num) e.target.value = fmtNum(getPath(e.target.dataset.path), Number(e.target.min));
+});
+/* Paste several lines: one origin per line, or one table row per line. Undoable as one change. */
+root.addEventListener('paste', (e) => {
+  const el = e.target;
+  const path = el.dataset && el.dataset.path;
+  if (!path) return;
+  const lines = (e.clipboardData ? e.clipboardData.getData('text') : '').split(/\r?\n/).map((x) => x.trim()).filter(Boolean);
+  if (lines.length < 2) return;
+  let m = path.match(/^origins\.(\d+)\.(en|pl)$/);
+  if (m) {
+    e.preventDefault();
+    const k = Number(m[1]), lang = m[2];
+    const before = state.origins.map((o) => ({ ...o }));
+    const room = LIMIT_LIST - state.origins.length;
+    const extra = lines.slice(1, 1 + room);
+    withUndo(`Pasted ${1 + extra.length} origins.`, () => {
+      state.origins[k][lang] = lines[0];
+      state.origins.splice(k + 1, 0, ...extra.map((x) => (lang === 'en' ? L(x, '') : L('', x))));
+    }, () => { state.origins = before; }, `[data-path="${path}"]`);
+    render({ keepFocus: [`[data-path="origins.${k + extra.length}.${lang}"]`] });
+    return;
+  }
+  m = path.match(/^abilities\.(\d+)\.table\.rows\.(\d+)\.(en|pl)$/);
+  if (m) {
+    e.preventDefault();
+    const t = state.abilities[Number(m[1])].table, r0 = Number(m[2]), lang = m[3];
+    const before = t.rows.map((r) => ({ ...r }));
+    const used = lines.slice(0, t.rows.length - r0);
+    withUndo(`Pasted ${used.length} table rows.${lines.length > used.length ? ` ${lines.length - used.length} did not fit a d${t.die}.` : ''}`, () => {
+      used.forEach((x, n) => { t.rows[r0 + n][lang] = x; });
+    }, () => { t.rows.forEach((r, n) => { r[lang] = before[n][lang]; }); }, `[data-path="${path}"]`);
+    render({ keepFocus: [`[data-path="abilities.${m[1]}.table.rows.${r0 + used.length - 1}.${lang}"]`] });
+  }
+});
+const typing = (el) => el && (el.tagName === 'TEXTAREA' || (el.tagName === 'INPUT' && !el.dataset.num));
+document.addEventListener('keydown', (e) => {
+  // Ctrl/Cmd+Z undoes the last recorded change; text fields keep their own native undo
+  if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'z' && !typing(e.target)) {
+    if (!ui.undo.length) return;
+    e.preventDefault();
+    const fs = undo();
+    render({ focusSel: fs, keepFocus: ['#step-title'] });
+    return;
+  }
+  // Esc backs out of the innermost open thing: a confirm, the forge picker, then the open card
+  if (e.key === 'Escape' && e.target.tagName !== 'SELECT') {
+    const btn = root.querySelector('[data-act="confirm-cancel"]') || root.querySelector('[data-act="forge-cancel"]') || root.querySelector('[data-act="close-ability"]') || root.querySelector('[data-act="close-item"]');
+    if (btn) { e.preventDefault(); btn.click(); }
+  }
+});
 root.addEventListener('keydown', (e) => {
-  const b = e.target.closest && e.target.closest('.die, .choice .act');
+  if (e.target.dataset && e.target.dataset.num && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
+    const btn = e.target.parentElement.querySelector(`[data-act="nudge"][data-d="${e.key === 'ArrowUp' ? 1 : -1}"]`);
+    e.preventDefault(); if (btn && !btn.disabled) btn.click();
+    return;
+  }
+  // arrow keys move within true radio groups only; plain button groups (the forge picker) never act on arrows
+  const b = e.target.closest && e.target.closest('[role="radio"]');
   if (!b || !['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) return;
-  const all = [...b.parentElement.querySelectorAll('.die, .act')];
+  const all = [...b.parentElement.querySelectorAll('[role="radio"]:not([disabled])')];
   const i = all.indexOf(b) + (e.key === 'ArrowLeft' || e.key === 'ArrowUp' ? -1 : 1);
   const n = all[(i + all.length) % all.length];
   e.preventDefault(); n.focus(); n.click();
@@ -986,8 +1128,8 @@ root.addEventListener('click', (e) => {
   switch (b.dataset.act) {
     case 'nudge': {
       const input = document.getElementById(fid(b.dataset.path));
-      const next = Math.max(Number(input.min), Math.min(Number(input.max), (Number(input.value) || 0) + Number(b.dataset.d)));
-      input.value = next; setPath(b.dataset.path, next); saveMsg = ''; refreshDerived(); return;
+      const next = Math.max(Number(input.min), Math.min(Number(input.max), parseNum(input.value) + Number(b.dataset.d)));
+      input.value = fmtNum(next, Number(input.min)); setPath(b.dataset.path, next); saveMsg = ''; refreshDerived(); return;
     }
     case 'pick': {
       setPath(b.dataset.path, Number(v));
@@ -997,8 +1139,10 @@ root.addEventListener('click', (e) => {
     case 'choose': {
       const val = v === 'true' ? true : v === 'false' ? false : v;
       setPath(b.dataset.path, val);
+      saveMsg = '';
+      if (b.dataset.rerender) { opts = { keepFocus: [same] }; break; }
       b.parentElement.querySelectorAll('.act').forEach((x) => { const on = x === b; x.classList.toggle('on', on); x.setAttribute('aria-checked', String(on)); });
-      saveMsg = ''; refreshDerived(); return;
+      refreshDerived(); return;
     }
     case 'drop': {
       const on = !getPath(b.dataset.path); setPath(b.dataset.path, on);
@@ -1007,10 +1151,21 @@ root.addEventListener('click', (e) => {
     }
     /* Class Items question */
     case 'gate-yes': ui.itemsYes = true; ui.itemsNo = false; opts = { focusSel: '[data-act="add-item"]' }; break;
+    case 'open-item': { ui.openItem = Number(v); ui.confirm = null; const idx = state.items.findIndex((x) => x.id === Number(v)); opts = { focusPath: `items.${idx}.name.${viewLang}` }; break; }
+    case 'close-item': ui.openItem = null; ui.confirm = null; opts = { keepFocus: [`[data-act="open-item"][data-v="${v}"]`] }; break;
+    case 'dup-item': {
+      const src = state.items.find((x) => x.id === Number(v)), idx = state.items.indexOf(src);
+      const copy = { ...structuredClone(src), id: ++uid };
+      withUndo(`Duplicated “${tx(src.name) || 'Unnamed'}”. The copy waits for an ability.`, () => { state.items.splice(idx + 1, 0, copy); ui.openItem = copy.id; },
+        () => { state.items = state.items.filter((x) => x !== copy); }, `[data-act="dup-item"][data-v="${src.id}"]`);
+      ui.openItem = copy.id;
+      opts = { focusPath: `items.${idx + 1}.name.${viewLang}` };
+      break;
+    }
     case 'gate-no': ui.itemsNo = true; ui.itemsYes = false; announce('No Class Items. Abilities can still grant catalog gear.'); opts = { focusSel: '[data-act="gate-change"]' }; break;
     case 'gate-change': ui.itemsNo = false; opts = { focusSel: '[data-act="gate-yes"]' }; break;
     case 'add-item': {
-      const it = newItem(v); ui.itemsNo = false;
+      const it = newItem(v); ui.itemsNo = false; ui.openItem = it.id;
       opts = { focusPath: `items.${state.items.length - 1}.name.${viewLang}` };
       announce(`New ${typeWord[it.type]} added. It still needs an ability that grants it.`);
       break;
@@ -1021,7 +1176,8 @@ root.addEventListener('click', (e) => {
       const idx = state.items.indexOf(it);
       withUndo(`Removed Class Item “${tx(it.name) || 'Unnamed'}”.`, () => { state.items.splice(idx, 1); },
         () => { state.items.splice(Math.min(idx, state.items.length), 0, it); }, `[data-act="rm-item"][data-v="${it.id}"]`);
-      opts = { keepFocus: [`[data-act="rm-item"][data-v="${(state.items[idx] || state.items[idx - 1] || {}).id}"]`, '[data-act="add-item"]', '[data-act="gate-yes"]'] };
+      ui.openItem = null;
+      opts = { keepFocus: [`[data-act="open-item"][data-v="${(state.items[idx] || state.items[idx - 1] || {}).id}"]`, '[data-act="add-item"]', '[data-act="gate-yes"]'] };
       break;
     }
     case 'rm-item-yes': {
@@ -1029,7 +1185,8 @@ root.addEventListener('click', (e) => {
       const k = keyOf(it), refs = grantRefs(k);
       withUndo(`Removed “${tx(it.name) || 'Unnamed'}” and cleared its grant.`, () => { clearGrantsTo(k); state.items.splice(idx, 1); },
         () => { state.items.splice(Math.min(idx, state.items.length), 0, it); restoreRefs(k, refs); }, `[data-act="rm-item"][data-v="${it.id}"]`);
-      opts = { keepFocus: [`[data-act="rm-item"][data-v="${(state.items[idx] || state.items[idx - 1] || {}).id}"]`, '[data-act="add-item"]', '[data-act="gate-yes"]'] };
+      ui.openItem = null;
+      opts = { keepFocus: [`[data-act="open-item"][data-v="${(state.items[idx] || state.items[idx - 1] || {}).id}"]`, '[data-act="add-item"]', '[data-act="gate-yes"]'] };
       break;
     }
     case 'confirm-cancel': {
@@ -1056,7 +1213,7 @@ root.addEventListener('click', (e) => {
     }
     case 'edit-item': {
       const idx = state.items.findIndex((x) => x.id === Number(v));
-      step = stepIndex('items');
+      step = stepIndex('items'); ui.openItem = Number(v);
       opts = { focusPath: `items.${idx}.name.${viewLang}` };
       break;
     }
@@ -1093,10 +1250,41 @@ root.addEventListener('click', (e) => {
       opts = { keepFocus: [v === 'keep' ? '[data-act="grant-new"]' : `[data-act="open-ability"][data-v="${(state.abilities[Math.min(i, state.abilities.length - 1)] || {}).id}"]`, '[data-act="add-ability"]'] };
       break;
     }
+    case 'dup-ability': {
+      const src = state.abilities[i];
+      const copy = { ...structuredClone(src), id: ++uid, grantItem: '', grantPet: '' };
+      if (copy.table) copy.table.rows.forEach((r) => { r.item = ''; }); // one granter per Class Item: the copy grants nothing
+      withUndo(`Duplicated “${tx(src.name) || 'Unnamed'}” without its grants.`, () => { state.abilities.splice(i + 1, 0, copy); },
+        () => { state.abilities = state.abilities.filter((x) => x !== copy); }, `[data-act="dup-ability"][data-i="${i}"]`);
+      ui.openAbility = copy.id;
+      opts = { focusPath: `abilities.${i + 1}.name.${viewLang}` };
+      break;
+    }
     case 'kind': state.abilities[i].random = v === 'random'; announce(`${tx(state.abilities[i].name) || 'Ability'} is now ${v === 'random' ? 'in the random pool' : 'fixed: every scvm gets it'}.`); break;
-    case 'add-mod': state.abilities[i].mods.push({ stat: 'strength', value: 1, scope: 'all' }); opts = { focusSel: `#${fid(`abilities.${i}.mods.${state.abilities[i].mods.length - 1}.stat`)}` }; break;
-    case 'rm-mod': { const ab = state.abilities[i], mod = ab.mods[j]; withUndo('Removed modifier.', () => { ab.mods.splice(j, 1); }, () => { ab.mods.splice(Math.min(j, ab.mods.length), 0, mod); }, `[data-act="rm-mod"][data-i="${i}"][data-j="${j}"]`); } opts = { keepFocus: [`[data-act="rm-mod"][data-i="${i}"][data-j="${Math.max(0, j - 1)}"]`, `[data-act="add-mod"][data-i="${i}"]`] }; break;
-    case 'scope': state.abilities[i].mods[j].scope = v; break;
+    case 'add-mod': {
+      const base = b.dataset.base, mods = getPath(`${base}.mods`);
+      mods.push({ stat: 'strength', value: 1, scope: 'all' });
+      opts = { focusSel: `[data-path="${base}.mods.${mods.length - 1}.stat"][aria-checked="true"]` };
+      break;
+    }
+    case 'rm-mod': {
+      const base = b.dataset.base, mods = getPath(`${base}.mods`), mod = mods[j];
+      withUndo(`Removed modifier ${modText(mod)}.`, () => { mods.splice(j, 1); }, () => { mods.splice(Math.min(j, mods.length), 0, mod); }, `[data-act="rm-mod"][data-base="${base}"][data-j="${j}"]`);
+      opts = { keepFocus: [`[data-act="rm-mod"][data-base="${base}"][data-j="${Math.max(0, j - 1)}"]`, `[data-act="add-mod"][data-base="${base}"]`] };
+      break;
+    }
+    case 'more-scopes': ui.moreScopes.add(b.dataset.path); opts = { focusSel: `[data-path="${b.dataset.path}.scope"][data-v="melee"]` }; break;
+    case 'table-die': {
+      const ab = state.abilities[i], t = ab.table, n = Number(v);
+      if (t.die === n) return;
+      const before = { die: t.die, rows: t.rows.map((r) => ({ ...r })) };
+      const dropped = t.rows.slice(n).filter((r) => r.en || r.pl || r.item);
+      const msg = `Table is now a d${n}.${dropped.length ? ` ${dropped.length} filled ${dropped.length > 1 ? 'rows were' : 'row was'} cut${dropped.some((r) => r.item) ? ', and its Class Item waits for an ability' : ''}.` : ''}`;
+      const apply = () => { t.die = n; t.rows = Array.from({ length: n }, (_, k) => t.rows[k] || row('', '')); };
+      if (dropped.length) withUndo(msg, apply, () => { t.die = before.die; t.rows = before.rows.map((r) => ({ ...r, item: r.item && granterOf(r.item) && granterOf(r.item).a !== ab ? '' : r.item })); }, `[data-act="table-die"][data-i="${i}"][data-v="${before.die}"]`, `table-${ab.id}`);
+      else { apply(); announce(msg); }
+      break;
+    }
     case 'add-table': state.abilities[i].table = { die: 6, rows: Array.from({ length: 6 }, () => row('', '')) }; opts = { focusPath: `abilities.${i}.table.rows.0.${viewLang}` }; break;
     case 'rm-table':
     case 'rm-table-yes': {
@@ -1111,14 +1299,16 @@ root.addEventListener('click', (e) => {
     case 'add-origin': state.origins.push(L('', '')); opts = { focusPath: `origins.${state.origins.length - 1}.${viewLang}` }; break;
     case 'rm-origin': { const o = state.origins[i]; withUndo(`Removed origin ${i + 1}.`, () => { state.origins.splice(i, 1); }, () => { state.origins.splice(Math.min(i, state.origins.length), 0, o); }, `[data-act="rm-origin"][data-i="${i}"]`); } opts = { keepFocus: [`[data-act="rm-origin"][data-i="${Math.min(i, state.origins.length - 1)}"]`, '[data-act="add-origin"]'] }; break;
     case 'undo': { const fs = undo(); opts = { focusSel: fs, keepFocus: ['#step-title'] }; break; }
-    case 'forge-for': ui.forgeFor = Number(v); opts = { focusSel: `[data-act="forge-type"][data-i="${i}"]:not([disabled])` }; break;
+    case 'forge-for': ui.forgeFor = Number(v); ui.showGrants.add(Number(v)); opts = { focusSel: `[data-act="forge-type"][data-i="${i}"]:not([disabled])` }; break;
     case 'forge-cancel': ui.forgeFor = null; opts = { keepFocus: [`[data-act="forge-for"][data-i="${i}"]`] }; break;
     case 'forge-type': {
-      const ab = state.abilities[i];
-      const it = newItem(v, ab.name);
-      ab[slotFor(v)] = keyOf(it); ui.forgeFor = null; ui.itemsNo = false;
-      announce(`New ${typeWord[v]} “${tx(it.name) || 'Unnamed'}” forged and granted by ${tx(ab.name) || 'this ability'}. Set its stats in Class Items.`);
-      opts = { focusSel: `#${fid(`abilities.${i}.${slotFor(v)}`)}` };
+      const ab = state.abilities[i], slot = slotFor(v);
+      let it = null;
+      withUndo(`Forged ${typeWord[v]} “${tx(ab.name) || 'Unnamed'}”, granted by this ability. Set its stats in Class Items.`, () => {
+        it = newItem(v, ab.name); ab[slot] = keyOf(it);
+      }, () => { clearGrantsTo(keyOf(it)); state.items = state.items.filter((x) => x !== it); }, `[data-act="forge-for"][data-i="${i}"]`);
+      ui.forgeFor = null; ui.itemsNo = false;
+      opts = { focusSel: `#${fid(`abilities.${i}.${slot}`)}` };
       break;
     }
     case 'grant-waiting': {
@@ -1144,13 +1334,21 @@ root.addEventListener('click', (e) => {
         Object.assign(it, { type: v }, TYPE_DEFAULTS[v]());
         if (gBefore) { const moveTo = slotFor(v); if (!g.a[moveTo]) g.a[moveTo] = k; g.a[g.slot] = ''; }
       }, () => {
-        Object.keys(it).forEach((f) => { delete it[f]; });
-        Object.assign(it, before);
-        if (gBefore) { const ab = abilityById(gBefore.aid); if (ab) { ab.grantItem = gBefore.grantItem; ab.grantPet = gBefore.grantPet; } }
-      }, `[data-act="change-type"][data-i="${i}"][data-v="${before.type}"]`);
+        // name, description and value may have changed since: restore only the type and its stats
+        TYPE_FIELDS.forEach((f) => { delete it[f]; });
+        it.type = before.type;
+        TYPE_FIELDS.forEach((f) => { if (f in before) it[f] = before[f]; });
+        if (gBefore) { const ab = abilityById(gBefore.aid); if (ab) { const cur = granterOf(k); if (!cur || cur.a === ab) { ab.grantItem = gBefore.grantItem; ab.grantPet = gBefore.grantPet; } } }
+      }, `[data-act="change-type"][data-i="${i}"][data-v="${before.type}"]`, `type-${it.id}`);
       break;
     }
-    case 'set-langs': state.languages = v === 'both' ? ['en', 'pl'] : [v]; break;
+    case 'set-langs': {
+      const was = state.languages.slice(), now = v === 'both' ? ['en', 'pl'] : [v];
+      if (was.join() === now.join()) return;
+      if (was.length > now.length) withUndo(`Writing in ${langLong[v]} only. The ${langLong[was.find((l) => l !== v)]} text is kept, only hidden.`, () => { state.languages = now; }, () => { state.languages = was; }, `[data-act="set-langs"][data-v="both"]`, 'langs');
+      else state.languages = now;
+      break;
+    }
     case 'view-lang': viewLang = v; break;
     case 'step': step = Math.max(0, Math.min(STEPS.length - 1, Number(v))); saveMsg = ''; ui.confirm = null; ui.forgeFor = null; opts = { focusHeading: true }; break;
     case 'goto-issue': {
@@ -1159,21 +1357,22 @@ root.addEventListener('click', (e) => {
       step = stepIndex(x.step);
       if (x.lang) viewLang = x.lang;
       { const m = x.path && x.path.match(/^abilities\.(\d+)\./); if (m) ui.openAbility = state.abilities[Number(m[1])].id; }
+      { const m = x.path && x.path.match(/^items\.(\d+)\./); if (m) ui.openItem = state.items[Number(m[1])].id; }
       opts = x.focusSel ? { focusSel: x.focusSel } : x.path ? { focusPath: x.path } : { focusHeading: true };
       break;
     }
     case 'roll': testRoll(); break;
     case 'save': {
       const n = validate().length;
-      saveMsg = n ? `${n} ${n === 1 ? 'thing' : 'things'} to fix before this class can be saved. Use Fix to jump to each one.` : 'Saved. In the real app this class now appears in your class list.';
+      saveMsg = n ? `${n} ${n === 1 ? 'thing' : 'things'} to fix before this class can be saved. Use Fix to jump to each one.` : 'SAVED';
       break;
     }
     default: return;
   }
   const act = b.dataset.act;
   const kind = act === 'step' || act === 'goto-issue' || act === 'goto-granter' || act === 'edit-item' || act === 'grant-new' ? 'step'
-    : act === 'open-ability' || act === 'add-ability' || act === 'show-grants' ? 'open'
-    : act === 'close-ability' || act === 'rm-ability' || act === 'rm-ability-yes' ? 'close' : null;
+    : act === 'open-ability' || act === 'add-ability' || act === 'show-grants' || act === 'open-item' || act === 'add-item' || act === 'dup-item' || act === 'dup-ability' ? 'open'
+    : act === 'close-ability' || act === 'rm-ability' || act === 'rm-ability-yes' || act === 'close-item' || act === 'rm-item' || act === 'rm-item-yes' ? 'close' : null;
   if (kind === 'open' || kind === 'close') opts.stay = true;
   if (kind) withTransition(kind, () => render(opts)); else render(opts);
 });
