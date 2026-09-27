@@ -390,6 +390,20 @@ body.is-dragging{user-select:none;-webkit-user-select:none;cursor:grabbing}
 .rowlink{grid-template-columns:auto 26px minmax(0,1fr) minmax(0,200px)}
 .rowlink > .gripwrap{padding-top:0;align-self:start}
 @media (max-width:620px){.rowlink{grid-template-columns:auto 26px minmax(0,1fr)}.rowlink select{grid-column:3}}
+/* Ticket 15 fixes. Field edges reach 3:1 against every surface they sit on (WCAG 1.4.11), and hover and focus look
+   different: hover lightens the edge, focus inks it yellow with a pink offset. */
+:root{--edge:#6e6e6e}
+input[type=text],input[type=number],select,textarea,.row input[type=text],.row textarea,.row select,.statline select{border-color:var(--edge)}
+input[type=text]:hover,select:hover,textarea:hover,.row input[type=text]:hover,.row textarea:hover,.row select:hover,.statline select:hover{border-color:var(--white)}
+input[type=text]:focus,select:focus,textarea:focus,.row input[type=text]:focus,.row textarea:focus,.row select:focus,.statline select:focus{border-color:var(--yellow);box-shadow:3px 3px 0 var(--pink)}
+/* one pink interrupt while blocked Save shows: rail and language counts step back to ink */
+#root.blocked .b-rail .chip.warn,#root.blocked .langsw .act .miss{background:var(--black);color:var(--yellow);border-color:var(--black)}
+/* snackbar messages read as sentences */
+.snackbar > span:first-child{font-family:var(--f-body);font-size:.9rem;letter-spacing:0;text-transform:none;line-height:1.35}
+.snackbar .count{font-family:var(--f-label);text-transform:uppercase}
+/* modifier rows: the Remove button sits in the row's own header, never wrapped under a control */
+.modhead{flex:1 1 100%;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.modhead .label{margin:0}
 </style>
 
 <header class="masthead">
@@ -836,11 +850,11 @@ function modsEditor(base, nm, title = 'Modifiers') {
     const mp = `${base}.mods.${j}`;
     const more = ui.moreScopes.has(mp) || SCOPES.find((x) => x.key === m.scope).more;
     return `<div class="modrow" role="group" aria-label="${esc(nm)} modifier ${j + 1}">
+      <div class="modhead"><span class="label">Modifier ${j + 1}</span><button type="button" class="act" data-act="rm-mod" data-base="${base}" data-j="${j}" aria-label="Remove modifier ${esc(modText(m))}">Remove</button></div>
       ${choice(`${mp}.stat`, 'Stat', STATS.map((s) => [s.key, s.short, s.cls]), 'rerender', 'statseg')}
       ${num(`${mp}.value`, 'Value', { min: -6, max: 6 })}
       <div class="stepper choice"><span class="label" id="${fid(mp)}-scope">Applies to</span><div class="inline" style="gap:6px"><div class="seg" role="radiogroup" aria-labelledby="${fid(mp)}-scope" data-n="${more ? 7 : 4}">${SCOPES.filter((s) => more || !s.more).map((s) =>
         `<button type="button" class="act ${m.scope === s.key ? 'on' : ''}" role="radio" aria-checked="${m.scope === s.key}" tabindex="${m.scope === s.key ? 0 : -1}" data-act="choose" data-path="${mp}.scope" data-v="${s.key}" data-rerender="1">${s.label}</button>`).join('')}</div>${more ? '' : `<button type="button" class="act" data-act="more-scopes" data-path="${mp}" aria-label="More scopes: melee, ranged, powers">More</button>`}</div><p class="fieldhint">${SCOPE_HINT[m.scope]}</p></div>
-      <button type="button" class="act" data-act="rm-mod" data-base="${base}" data-j="${j}" aria-label="Remove modifier ${esc(modText(m))}">Remove modifier</button>
     </div>`;
   }).join('');
   if (!rows) return isAbility ? '' : `<div class="extras"><button type="button" class="act" data-act="add-mod" data-base="${base}">Add modifier</button></div>`;
@@ -922,7 +936,8 @@ function moveTo(lk, from, to, { coalesce = true, act = 'grip' } = {}) {
   const o = arr[from], n = arr.length;
   const place = (k) => { const a = listArr(lk); a.splice(a.indexOf(o), 1); a.splice(k, 0, o); };
   const where = lk.startsWith('rows:') ? `row ${to + 1}` : `position ${to + 1} of ${n}`;
-  withUndo(`Moved ${listLabel(lk, o, from)} to ${where}.`, () => place(to), () => place(from), `[data-act="grip"][data-list="${lk}"][data-i="${from}"]`, coalesce ? `move:${lk}:${oid(o)}` : null, true);
+  withUndo(`Moved ${listLabel(lk, o, from)} to ${where}.`, () => place(to), () => place(from), `[data-act="grip"][data-list="${lk}"][data-i="${from}"]`, coalesce ? `move:${lk}:${oid(o)}` : null, true,
+    () => { const k = listArr(lk).indexOf(o); return `${listLabel(lk, o, k)} is back at ${lk.startsWith('rows:') ? `row ${k + 1}` : `position ${k + 1}`}.`; });
   return act === 'grip' || act === 'move' ? `[data-act="grip"][data-list="${lk}"][data-i="${to}"]` : `[data-mlist="${lk}"][data-mi="${to}"] [data-act="${act}"]`;
 }
 const GRIP = '<svg viewBox="0 0 10 16" aria-hidden="true"><g fill="currentColor"><rect x="1" y="1" width="3" height="3"/><rect x="6" y="1" width="3" height="3"/><rect x="1" y="6.5" width="3" height="3"/><rect x="6" y="6.5" width="3" height="3"/><rect x="1" y="12" width="3" height="3"/><rect x="6" y="12" width="3" height="3"/></g></svg>';
@@ -961,12 +976,13 @@ function abilitySummary(a, i, issues) {
 function forgeRow(a, i) {
   if (a.grantItem && a.grantPet) return '';
   const free = (t) => !a[slotFor(t)];
+  const taken = (t) => `This ability already grants the ${t === 'pet' ? 'pet' : 'item'} “${itemLabel(a[slotFor(t)])}”`;
   const waiting = state.items.find((it) => !granterOf(keyOf(it)) && sameName(a, it) && free(it.type));
   if (waiting) return `<div class="extras"><button type="button" class="act" data-act="grant-waiting" data-i="${i}" data-v="${waiting.id}">Grant the waiting ${typeWord[waiting.type]} “${esc(tx(waiting.name) || 'Unnamed')}”</button></div>`;
   if (state.items.length >= LIMIT_LIST) return '';
   if (ui.forgeFor !== a.id) return `<div class="extras"><button type="button" class="act" data-act="forge-for" data-i="${i}" data-v="${a.id}">Forge a Class Item for this ability</button></div>`;
   return `<div class="stepper choice"><span class="label group" id="forge-${a.id}">Forge a Class Item named “${esc(tx(a.name) || 'this ability')}”</span>
-    <div class="inline"><div class="seg" role="group" aria-labelledby="forge-${a.id}">${['weapon', 'armor', 'equipment', 'pet'].map((t) => `<button type="button" class="act" data-act="forge-type" data-i="${i}" data-v="${t}" aria-label="Forge ${aType(t)} for this ability" ${free(t) ? '' : 'disabled title="That grant slot is already used"'}>${typeWord[t]}</button>`).join('')}</div>
+    <div class="inline"><div class="seg" role="group" aria-labelledby="forge-${a.id}">${['weapon', 'armor', 'equipment', 'pet'].map((t) => `<button type="button" class="act" data-act="forge-type" data-i="${i}" data-v="${t}" ${free(t) ? `aria-label="Forge ${aType(t)} for this ability"` : `aria-label="Forge ${aType(t)}: unavailable, ${esc(taken(t))}" disabled title="${esc(taken(t))}"`}>${typeWord[t]}</button>`).join('')}</div>
     <button type="button" class="act" data-act="forge-cancel" data-i="${i}" data-v="${a.id}">Cancel</button></div></div>`;
 }
 function abilityOpen(a, i) {
@@ -1081,10 +1097,11 @@ function classesHtml() {
 }
 function snackHtml() {
   if (!ui.snack) return '';
-  if (ui.snack.undone) return `<div class="snackbar"><span>Undone: ${esc(ui.snack.msg)}</span><span class="inline" style="gap:6px"><button type="button" class="btn save" data-act="redo" aria-keyshortcuts="Control+Shift+Z Control+Y">Redo</button>${ui.undo.length ? `<button type="button" class="act" data-act="undo">Undo earlier (${ui.undo.length})</button>` : ''}</span></div>`;
+  if (ui.snack.undone) return `<div class="snackbar"><span>Undone: ${esc(firstSentence(ui.snack.msg))}</span><span class="inline" style="gap:6px"><button type="button" class="btn save" data-act="redo" aria-keyshortcuts="Control+Shift+Z Control+Y">Redo</button>${ui.undo.length ? `<button type="button" class="act" data-act="undo">Undo earlier (${ui.undo.length})</button>` : ''}</span></div>`;
   const n = ui.undo.length;
-  return `<div class="snackbar"><span>${esc(ui.snack.msg)}${n > 1 ? `<br><span class="count muted">${n} changes can be undone · Ctrl+Z</span>` : ''}</span><button type="button" class="btn save" data-act="undo" aria-keyshortcuts="Control+Z Meta+Z">Undo</button></div>`;
+  return `<div class="snackbar"><span>${esc(firstSentence(ui.snack.msg))}${n > 1 ? `<br><span class="count muted">${n} changes can be undone · Ctrl+Z</span>` : ''}</span><button type="button" class="btn save" data-act="undo" aria-keyshortcuts="Control+Z Meta+Z">Undo</button></div>`;
 }
+const firstSentence = (m) => m.split(/(?<=[.”])\s/)[0];
 const shortMsg = (m) => { const x = m.split(/(?<=[.”])\s/)[0]; return x.length > 52 ? `${x.slice(0, 50)}…` : x; };
 function clearRedo() {
   ui.redo = [];
@@ -1139,6 +1156,7 @@ function render({ focusHeading = false, focusPath = null, focusSel = null, keepF
   if (keepFocus) { for (const sel of keepFocus) { if (tryFocus(root.querySelector(sel), false)) return; } }
 }
 function refreshDerived() {
+  root.classList.toggle('blocked', STEPS[step].key === 'review' && !!saveMsg && saveMsg !== 'SAVED');
   const issues = visible(validate());
   // only rewrite a derived block when it actually changed (keeps nodes stable while typing)
   const put = (el, html) => { if (el && el.dataset.html !== html) { el.innerHTML = html; el.dataset.html = html; } };
@@ -1185,6 +1203,23 @@ function withTransition(kind, update) {
   t.finished.finally(() => { if (activeVT === t) { activeVT = null; delete document.documentElement.dataset.vt; } });
 }
 
+// While a view transition runs, Chrome hit-tests only its pseudo-element tree, so a click landing mid-animation hits
+// <html> and is lost (rapid clicks on ability rows left an earlier one open). Finish the transition at once and replay
+// the click on whatever sits under the pointer now: the last click always wins.
+document.addEventListener('click', (e) => {
+  const t = activeVT;
+  if (!t || e.target !== document.documentElement) return;
+  e.stopPropagation(); e.preventDefault();
+  const x = e.clientX, y = e.clientY;
+  t.skipTransition();
+  t.finished.finally(() => {
+    const el = document.elementFromPoint(x, y);
+    const hit = el && el.closest('[data-act], summary, a, input, textarea, select');
+    if (!hit) return;
+    if (hit.matches('input, textarea, select')) hit.focus(); else hit.click();
+  });
+}, true);
+
 /* Undo: every destructive change records its own inverse; undo touches nothing else. */
 let snackTimer = null;
 const UNDO_DEPTH = 10;
@@ -1196,7 +1231,9 @@ function armSnack() {
   }, 10000);
 }
 // quiet entries (adds, Fixed/Random flips) are undoable without a snackbar; the step nav names them
-function withUndo(msg, doIt, inverse, focusSel = null, coalesceKey = null, quiet = false) {
+// `back` (optional) says what undo brings back; it is read after the inverse runs, so a coalesced run of changes is
+// described by where it returns to, never by its last value
+function withUndo(msg, doIt, inverse, focusSel = null, coalesceKey = null, quiet = false, back = null) {
   const top = ui.undo.at(-1);
   if (coalesceKey && top && top.coalesceKey === coalesceKey && (ui.snack === top || (quiet && top.quiet && top.rev === ui.rev))) {
     // repeated changes to the same control (e.g. arrowing through a menu, moving one card again) keep ONE undo back to the original
@@ -1206,13 +1243,17 @@ function withUndo(msg, doIt, inverse, focusSel = null, coalesceKey = null, quiet
   markEdit();
   ui.confirm = null;
   clearRedo();
-  const entry = { msg, inverse, doIt, focusSel, coalesceKey, quiet, step, openAbility: ui.openAbility, openItem: ui.openItem, trigger: currentTrigger, rev: ui.rev };
+  const entry = { msg, inverse, doIt, back, focusSel, coalesceKey, quiet, step, openAbility: ui.openAbility, openItem: ui.openItem, trigger: currentTrigger, rev: ui.rev };
   ui.undo.push(entry);
   if (ui.undo.length > UNDO_DEPTH) ui.undo.shift();
   if (quiet) { if (ui.snack) { ui.snack = null; clearTimeout(snackTimer); } announce(msg); return; }
   ui.snack = entry;
   armSnack();
   announce(`${msg} Undo is available (Ctrl+Z).`);
+}
+function syncUndoUi() {
+  if (!ui.snack) { const el = root.querySelector('.snackbar'); if (el) el.remove(); document.body.classList.remove('has-snack'); }
+  const nu = root.querySelector('[data-derived="navundo"]'); if (nu) nu.innerHTML = navUndoHtml();
 }
 function undo() {
   const e = ui.undo.pop();
@@ -1222,9 +1263,11 @@ function undo() {
   step = e.step; ui.openAbility = e.openAbility; ui.openItem = e.openItem;
   ui.confirm = null; ui.forgeFor = null; markEdit();
   if (ui.undo.length) ui.undo.at(-1).rev = ui.rev; // the next older change is now the one "just made"
-  ui.snack = { undone: true, msg: e.msg };
+  e.undoneRev = ui.rev; // redo from inside the field works only while nothing changed since this undo
+  const said = e.back ? e.back() : e.msg;
+  ui.snack = { undone: true, msg: said };
   armSnack();
-  announce(`Undone: ${e.msg} Redo with Ctrl+Shift+Z.`);
+  announce(`Undone: ${said} Redo with Ctrl+Shift+Z.`);
   return e.focusSel;
 }
 function redo() {
@@ -1303,15 +1346,13 @@ function onValue(e) {
     ui.showGrants.add(a.id); // keep the grant menus in place after clearing, until Done
     const now = v ? `${aName} now grants ${itemLabel(v)}.` : `${aName} grants nothing${el.dataset.rowlink ? ' from that row' : ''}.`;
     const prevItem = prev.startsWith('ci:') ? itemByKey(prev) : null;
-    const coalescing = ui.snack && ui.snack.coalesceKey === el.dataset.path;
-    if (prevItem || coalescing) {
+    // every grant change is undoable, including the first pick from Nothing
+    {
       const path = el.dataset.path, sel = `#${CSS.escape(el.id)}`;
       currentTrigger = sel;
       withUndo(prevItem ? `${v ? now : `${aName} grants nothing${el.dataset.rowlink ? ' from that row' : ''}.`} The ${typeWord[prevItem.type]} “${tx(prevItem.name) || 'Unnamed'}” now waits for an ability.` : now, () => { setPath(path, v); },
-        () => { if (!abilityById(a.id)) return; if (!prev.startsWith('ci:') || (itemByKey(prev) && (!granterOf(prev) || getPath(path) === prev))) setPath(path, prev); else setPath(path, ''); }, sel, path);
-    } else {
-      setPath(el.dataset.path, v);
-      announce(now);
+        () => { if (!abilityById(a.id)) return; if (!prev.startsWith('ci:') || (itemByKey(prev) && (!granterOf(prev) || getPath(path) === prev))) setPath(path, prev); else setPath(path, ''); }, sel, path, false,
+        () => { const cur = getPath(path); return `${tx(a.name) || 'This ability'} grants ${cur ? itemLabel(cur) : 'nothing'}${el.dataset.rowlink ? ' from that row' : ''} again.`; });
     }
     markEdit();
     if (ui.undo.length && ui.snack === ui.undo.at(-1)) ui.undo.at(-1).rev = ui.rev; // the grant change itself is the change just made
@@ -1415,19 +1456,24 @@ root.addEventListener('paste', (e) => {
 // every field (text, number) keeps its own native undo; app undo works everywhere else
 const typing = (el) => el && (el.tagName === 'TEXTAREA' || el.tagName === 'INPUT');
 // ...except right after a paste into this field that it has not changed since: then Ctrl+Z undoes the paste
+// ...and a number field right after its own +/− or arrow nudge, while nothing else changed
+const nudgeUndoable = (el) => { const top = ui.undo.at(-1); return !!(top && top.nudgePath && el && el.dataset && el.dataset.path === top.nudgePath && top.rev === (ui.rev || 0)); };
+// redo from inside the field that the undone paste or nudge belongs to, while nothing changed since the undo
+// (a multi-line paste ends in its last new line, while its undo returns to the line pasted into: either counts)
+const fieldRedoable = (el) => { const r = ui.redo.at(-1); const p = el && el.dataset && el.dataset.path; return !!(r && p && (r.pasteField || r.nudgePath) && (r.pasteField === p || r.nudgePath === p || r.focusSel === `[data-path="${p}"]`) && r.undoneRev === (ui.rev || 0)); };
 const pasteUndoable = (el) => { const top = ui.undo.at(-1); return !!(top && top.pasteField && el && el.dataset && el.dataset.path === top.pasteField && el.value === top.pasteValue); };
 document.addEventListener('keydown', (e) => {
   // Ctrl/Cmd+Z undoes the last recorded change; text fields keep their own native undo
   const mod = (e.ctrlKey || e.metaKey) && !e.altKey;
-  if (mod && !typing(e.target) && ((e.shiftKey && e.key.toLowerCase() === 'z') || (!e.shiftKey && e.key.toLowerCase() === 'y'))) {
+  if (mod && (!typing(e.target) || fieldRedoable(e.target)) && ((e.shiftKey && e.key.toLowerCase() === 'z') || (!e.shiftKey && e.key.toLowerCase() === 'y'))) {
     if (!ui.redo.length) return;
     e.preventDefault(); const fs = redo(); render({ focusSel: fs, keepFocus: UNDO_FOCUS });
     return;
   }
-  if (mod && !e.shiftKey && e.key.toLowerCase() === 'z' && (!typing(e.target) || pasteUndoable(e.target))) {
+  if (mod && !e.shiftKey && e.key.toLowerCase() === 'z' && (!typing(e.target) || pasteUndoable(e.target) || nudgeUndoable(e.target))) {
     if (!ui.undo.length) return;
     const top = ui.undo.at(-1);
-    if (top.rev !== (ui.rev || 0) && !pasteUndoable(e.target)) {
+    if (top.rev !== (ui.rev || 0) && !pasteUndoable(e.target) && !nudgeUndoable(e.target)) {
       // something unrecorded changed since: Ctrl+Z never reaches back past it; the named button still can
       e.preventDefault();
       announce(`Nothing to undo from the keyboard: your last edit was typed. The Undo button in the step bar can still undo “${shortMsg(top.msg)}”.`);
@@ -1487,7 +1533,7 @@ root.addEventListener('keydown', (e) => {
   const n = all[(i + all.length) % all.length];
   e.preventDefault(); n.focus(); n.click();
 });
-const NAV_ACTS = new Set(['open-stat', 'close-stat', 'goto-classes', 'back-to-forge', 'undo', 'redo', 'step', 'open-ability', 'close-ability', 'open-item', 'close-item', 'view-lang', 'goto-issue', 'goto-granter', 'edit-item', 'roll', 'forge-for', 'forge-cancel',
+const NAV_ACTS = new Set(['nudge', 'open-stat', 'close-stat', 'goto-classes', 'back-to-forge', 'undo', 'redo', 'step', 'open-ability', 'close-ability', 'open-item', 'close-item', 'view-lang', 'goto-issue', 'goto-granter', 'edit-item', 'roll', 'forge-for', 'forge-cancel',
   'grip', 'move', 'move-close', 'show-grants', 'more-scopes', 'link-rows', 'gate-yes', 'gate-no', 'gate-change', 'confirm-cancel', 'rm-item', 'rm-ability', 'rm-table', 'save']);
 // Leaving a fresh field re-flags it, but never while a pointer is down: rewriting the rail between
 // mousedown and click would swallow the click. The refresh waits until after the click lands.
@@ -1535,9 +1581,15 @@ root.addEventListener('click', (e) => {
     }
     case 'move-close': ui.moveMenu = null; opts = { focusSel: `[data-act="grip"][data-list="${b.dataset.list}"][data-i="${i}"]`, stay: true }; break;
     case 'nudge': {
-      const input = document.getElementById(fid(b.dataset.path));
-      const next = Math.max(Number(input.min), Math.min(Number(input.max), parseNum(input.value) + Number(b.dataset.d)));
-      input.value = fmtNum(next, Number(input.min)); setPath(b.dataset.path, next); markEdit(); refreshDerived(); return;
+      const path = b.dataset.path, input = document.getElementById(fid(path)), min = Number(input.min);
+      const prev = getPath(path), next = Math.max(min, Math.min(Number(input.max), parseNum(input.value) + Number(b.dataset.d)));
+      if (next === prev) { input.value = fmtNum(next, min); return; }
+      const lbl = (root.querySelector(`label[for="${input.id}"]`) || { textContent: 'Value' }).textContent;
+      currentTrigger = `#${input.id}`;
+      withUndo(`${lbl} set to ${fmtNum(next, min)}.`, () => { setPath(path, next); }, () => { setPath(path, prev); }, `#${input.id}`, `nudge:${path}`, true,
+        () => `${lbl} is back to ${fmtNum(getPath(path), min)}.`);
+      Object.assign(ui.undo.at(-1), { nudgePath: path, trigger: `#${input.id}` });
+      input.value = fmtNum(next, min); refreshDerived(); syncUndoUi(); return;
     }
     case 'pick': {
       setPath(b.dataset.path, Number(v));
@@ -1760,13 +1812,13 @@ root.addEventListener('click', (e) => {
         // put the item back in exactly the slots it held before the first change, never creating a second granter
         state.abilities.forEach((x) => { if (x.grantItem === k) x.grantItem = ''; if (x.grantPet === k) x.grantPet = ''; });
         if (!granterOf(k)) slotsBefore.forEach((sb) => { const ab = abilityById(sb.id); if (!ab) return; if (sb.grantItem && !ab.grantItem) ab.grantItem = k; if (sb.grantPet && !ab.grantPet) ab.grantPet = k; });
-      }, `[data-act="change-type"][data-i="${i}"][data-v="${before.type}"]`, `type-${it.id}`);
+      }, `[data-act="change-type"][data-i="${i}"][data-v="${before.type}"]`, `type-${it.id}`, false, () => `“${tx(it.name) || 'Unnamed'}” is ${typeWord[it.type] === 'gear' ? 'gear' : `a ${typeWord[it.type]}`} again, with its stats.`);
       break;
     }
     case 'set-langs': {
       const was = state.languages.slice(), now = v === 'both' ? ['en', 'pl'] : [v];
       if (was.join() === now.join()) return;
-      if (was.length > now.length) withUndo(`Writing in ${langLong[v]} only. The ${langLong[was.find((l) => l !== v)]} text is kept, only hidden.`, () => { state.languages = now; }, () => { state.languages = was; }, `[data-act="set-langs"][data-v="both"]`, 'langs');
+      if (was.length > now.length) withUndo(`Writing in ${langLong[v]} only. The ${langLong[was.find((l) => l !== v)]} text is kept, only hidden.`, () => { state.languages = now; }, () => { state.languages = was; }, `[data-act="set-langs"][data-v="both"]`, 'langs', false, () => `Writing in ${state.languages.map((l) => langLong[l]).join(' and ')} again.`);
       else state.languages = now;
       break;
     }
