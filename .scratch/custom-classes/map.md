@@ -27,6 +27,7 @@ An implementation-ready spec for GM-authored Custom Classes (creator, Party Clas
 - [How does a GM find a catalog item or pet to grant?](issues/18-catalog-grant-search.md): the main page's fuzzy item search (`ItemAutocomplete` over `/api/equipment/search`), filtered to the slot's types, with the class's own Class Items pinned above results; Zine and Rack items are not grantable.
 - [What happens when a used Custom Class is edited, archived or unpublished?](issues/10-class-locking-and-archiving.md): versioning replaces the lock (ADR 0001). Characters keep the Class Version they were rolled with, the creator tells the GM before a save creates a version, pools follow the latest, and delete archives a used lineage.
 - [How do class creator drafts autosave and come back?](issues/17-draft-autosave.md): server-side `class_drafts` JSON documents with a local safety net; 1s debounced saves; one draft per class plus 3 new-class drafts; stale-revision saves fail loudly with load-newer or keep-mine; 90-day expiry shown in the UI.
+- [How do publishing, reporting and takedowns work?](issues/07-public-sharing-and-moderation.md): owner publishes with a rights checkbox; anyone can report (signed out, `/report`); SES emails (wired as in roster); statement of reasons with an in-app dispute and scvmrack-appeal@rpgtools.co; admin panel with a moderation log; take down vs remove content; serious reports flagged for the owner; log kept forever, reporter data anonymised after 2 years.
 
 ## Not yet specified
 
