@@ -49,7 +49,7 @@ h1{font-family:var(--f-head);font-size:clamp(2.6rem,7vw,3.3rem);line-height:.95;
 .linkish{background:none;border:0;padding:0;color:var(--white);text-decoration:underline;text-underline-offset:3px;cursor:pointer;font:inherit;text-align:left}
 .linkish:hover{color:var(--yellow)}
 .search{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-.search input[type=search]{flex:1 1 220px;min-height:var(--tap);background:var(--grey);border:2px solid var(--dark-grey);color:var(--white);padding:6px 10px}
+.search input[type=search]{flex:1 1 220px;caret-color:var(--yellow);min-height:var(--tap);background:var(--grey);border:2px solid var(--dark-grey);color:var(--white);padding:6px 10px}
 .search input[type=search]:focus{border-color:var(--yellow);outline:none}
 .seg{display:inline-flex;flex-wrap:wrap;border:1px solid var(--yellow)}
 .seg .act{border:0}
@@ -74,34 +74,73 @@ h1{font-family:var(--f-head);font-size:clamp(2.6rem,7vw,3.3rem);line-height:.95;
 /* switchboard */
 .b-bar{background:var(--black);padding:8px 0;display:grid;gap:8px}
 @media (min-width:700px){.b-bar{position:sticky;top:0;z-index:3}}
-.summary{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
-.b-group{border-top:2px solid var(--dark-grey)}
-.b-group > button{width:100%;display:flex;justify-content:space-between;align-items:center;gap:12px;background:none;border:0;color:var(--white);padding:10px 0;cursor:pointer;min-height:var(--tap);text-align:left}
-.b-group > button .gname{font-family:var(--f-head);font-size:1.5rem;letter-spacing:.03em;text-transform:uppercase;color:var(--yellow)}
-.b-group > button .gdesc{font-style:italic;color:var(--muted);flex:1;min-width:0}
-.b-group > button{flex-wrap:wrap}
-@media (max-width:700px){.b-group > button .gname{flex:1}.b-group > button .gdesc{order:9;flex-basis:100%}}
-.b-group > button svg{width:14px;height:14px;transition:transform .12s}
+.b-group{border-top:3px solid var(--dark-grey);margin-top:6px}
+.b-group > button{width:100%;display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;align-items:baseline;gap:4px 16px;background:none;border:0;color:var(--white);padding:18px 4px 10px;cursor:pointer;min-height:var(--tap);text-align:left}
+.b-group > button .gname{font-family:var(--f-head);font-size:2rem;line-height:1;letter-spacing:.03em;text-transform:uppercase;color:var(--yellow)}
+.b-group > button .gdesc{font-style:italic;color:var(--muted);min-width:0}
+.b-group > button:hover .gname{color:var(--white)}
+.tallyfrac{font-family:var(--f-head);font-size:1.6rem;line-height:1;color:var(--white);white-space:nowrap}
+.tallyfrac small{font-family:var(--f-label);font-size:.65rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-left:4px}
+.tallyfrac .of{color:var(--muted)}
+.tallyfrac.none{color:var(--muted)}
+.b-group > button svg{width:18px;height:18px;align-self:center;color:var(--yellow);transition:transform .12s}
 .b-group > button[aria-expanded="true"] svg{transform:rotate(180deg)}
-.b-row{position:relative;display:grid;grid-template-columns:auto minmax(0,1fr) minmax(0,15em);gap:4px 14px;align-items:center;padding:8px 6px;border-top:1px solid var(--grey)}
+@media (max-width:700px){.b-group > button .gname{font-size:1.6rem}.b-group > button{grid-template-columns:minmax(0,1fr) auto auto}.b-group > button .gdesc{grid-column:1/-1;grid-row:2}}
+.b-rows{padding-bottom:8px}
+.b-row{position:relative;display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:4px 18px;align-items:center;padding:10px 8px;border-top:1px solid var(--grey)}
 .b-row:hover,.b-row:focus-within{background:var(--off-black)}
-.b-row .who{display:grid;gap:2px;min-width:0}
+.b-row .who{display:grid;gap:3px;min-width:0}
 .b-row .meta{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center}
 .cname{font-family:var(--f-gothic);font-size:1.15rem;line-height:1.2}
+.b-row .cname{font-size:1.35rem;color:var(--white);transition:color .12s}
+.b-row.off .cname{color:#9a9a9a}
+.b-row.off .blurb{color:#777}
 .blurb{color:#bbb;font-size:.9rem;overflow:hidden;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical}
-.shape{display:grid;gap:2px;justify-items:end;text-align:right;font-family:var(--f-label);font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
-.shape b{color:var(--white);font-weight:400}
-.shape .playing{color:var(--yellow)}
-@media (max-width:700px){.b-row{grid-template-columns:auto minmax(0,1fr)}.shape{grid-column:2;justify-items:start;text-align:left}}
-/* hover / focus card */
-.info{position:absolute;z-index:4;left:92px;top:calc(100% - 4px);width:min(380px,calc(100vw - 60px));background:var(--grey);border:2px solid var(--yellow);box-shadow:4px 4px 0 var(--pink);padding:12px;display:none;gap:8px;color:var(--white)}
-.b-row:hover .info,.b-row:focus-within .info{display:grid}
-.info .cname{font-size:1.3rem}
-.info dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:2px 10px;font-size:.9rem}
+/* the class shape: numeral cells, then the rule and who plays it */
+.shape{display:grid;grid-template-columns:repeat(2,auto);gap:2px 16px;justify-content:end;text-align:right;font-family:var(--f-label);font-size:.66rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.stat{display:grid;justify-items:end;line-height:1.1}
+.stat b{font-family:var(--f-head);font-weight:400;font-size:1.7rem;line-height:1;letter-spacing:.02em;color:var(--white)}
+.b-row.off .stat b{color:#9a9a9a}
+.shape .rule{grid-column:1/-1;font-size:.7rem}
+.shape .playing{grid-column:1/-1;color:var(--yellow);font-size:.7rem}
+@media (max-width:700px){.b-row{grid-template-columns:auto minmax(0,1fr);padding:10px 4px}.shape{grid-column:2;display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 12px;justify-content:start;text-align:left}.stat{display:flex;gap:4px;align-items:baseline}.stat b{font-size:1.3rem}}
+/* the classless row: the same switch, set apart above the classes */
+.b-row.classless{border-top:0;border-bottom:3px solid var(--dark-grey);grid-template-columns:auto minmax(0,1fr)}
+.b-row.classless .cname{font-family:var(--f-head);font-size:1.6rem;letter-spacing:.03em;text-transform:uppercase}
+/* stamp press when a skull slides on */
+@keyframes press{0%{transform:translateX(38px) scale(1.28)}60%{transform:translateX(38px) scale(.94)}100%{transform:translateX(38px) scale(1)}}
+.b-row.just .bone .skull{transform-box:view-box;transform-origin:14px 15px;animation:press .22s cubic-bezier(.2,.8,.2,1)}
+/* hover / focus card: a yellow title strip with a notch pointing back at the name */
+.info{position:absolute;z-index:4;left:112px;top:calc(100% - 2px);width:min(400px,calc(100vw - 60px));background:var(--grey);border:2px solid var(--yellow);box-shadow:6px 6px 0 var(--pink);display:none;color:var(--white)}
+.info::before{content:"";position:absolute;left:18px;top:-11px;width:0;height:0;border:9px solid transparent;border-top:0;border-bottom:10px solid var(--yellow)}
+.b-row:hover .info,.b-row:focus-within .info{display:block}
+.info .strip{background:var(--yellow);color:var(--black);padding:6px 12px 4px;display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.info .strip .cname{font-size:1.35rem}
+.info .strip .src{font-family:var(--f-label);font-size:.65rem;letter-spacing:.16em;text-transform:uppercase;white-space:nowrap}
+.info .body{padding:10px 12px 12px;display:grid;gap:8px}
+.info .body > p{margin:0;font-style:italic}
+.info dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:3px 12px;font-size:.9rem}
 .info dt{font-family:var(--f-label);font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--pink);padding-top:3px}
 .info dd{margin:0}
 @media (hover:none){.b-row:hover .info{display:none}}
-@media (max-width:700px){.info{left:6px}}
+@media (max-width:700px){.info{left:4px}}
+/* the section head: the heading, and the pool tally as a big numeral */
+.pool-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:12px 24px;padding-bottom:4px}
+.pool-head h2{font-family:var(--f-head);font-weight:400;font-size:clamp(2rem,5vw,2.6rem);line-height:.95;letter-spacing:.03em;text-transform:uppercase;color:var(--yellow);margin:0 0 6px;text-wrap:balance}
+.pool-head > div{flex:1 1 22em;min-width:0}
+.pool-head .hint{color:#aaa}
+.tally{flex:none}
+.tally{display:grid;grid-template-columns:auto auto;gap:0 12px;align-items:end;margin:0}
+.tally .big{font-family:var(--f-head);font-size:4.4rem;line-height:.8;color:var(--black);background:var(--yellow);padding:8px 10px 2px;transform:rotate(-2deg);box-shadow:4px 4px 0 var(--pink)}
+.tally .big.zero{background:var(--pink)}
+.tally .parts{display:grid;gap:1px;font-family:var(--f-label);font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.tally .parts b{font-weight:400;color:var(--white)}
+.tally .parts .lead{color:var(--yellow);font-size:.8rem}
+@media (max-width:600px){.tally .big{font-size:3.4rem}}
+.q{position:relative;flex:1 1 220px;display:flex}
+.q svg{position:absolute;left:10px;top:50%;width:18px;height:18px;transform:translateY(-50%);color:var(--muted);pointer-events:none}
+.q:focus-within svg{color:var(--yellow)}
+.search .q input[type=search]{flex:1;padding-left:36px}
 
 /* class detail page (ticket 20) */
 .detail{position:fixed;inset:0;z-index:40;background:var(--yellow);overflow:auto;padding:16px}
@@ -119,7 +158,10 @@ h1{font-family:var(--f-head);font-size:clamp(2.6rem,7vw,3.3rem);line-height:.95;
 .proto-bar button{font-family:var(--f-label);font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;border:2px solid var(--black);background:transparent;padding:4px 8px;min-height:36px;cursor:pointer}
 .proto-bar button.on{background:var(--black);color:var(--yellow)}
 .proto-state{background:var(--off-black);color:#ddd;font:11px/1.4 monospace;white-space:pre-wrap;padding:10px;max-height:220px;overflow:auto}
-@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+::selection{background:var(--pink);color:var(--black)}
+html{scrollbar-color:var(--black) var(--yellow)}
+.proto-state{scrollbar-color:var(--muted) var(--off-black)}
 </style>
 
 <!-- Skull engraving supplied by the owner (openclipart; source file in assets/skull.svg). Check its licence before shipping. -->
@@ -167,6 +209,7 @@ function announce(m) { const el = document.getElementById('announce'); el.textCo
 const LANG = { en: 'English', pl: 'Polish' };
 const attribution = (c) => c.src === 'book' ? '' : c.credit ? c.credit : c.src === 'mine' ? `created by you${c.private ? ' · private' : ''}` : `created by ${c.author}`;
 const langChip = (c) => `<span class="chip" title="Written in ${c.langs.map((l) => LANG[l]).join(' and ')}">${c.langs.join(' · ').toUpperCase()}</span>`;
+const scvmHere = (n, tail) => `${n} scvm ${tail}${n === 1 ? 's' : ''} it`;
 const plural = (n, w) => `${n} ${n === 1 ? w : w.endsWith('s') ? `${w}es` : `${w}s`}`;
 const ro = () => ui.unclaimed;
 const pooled = () => CLASSES.filter((c) => ui.pool.has(c.id));
@@ -185,28 +228,39 @@ function toggle(id) {
   if (ro()) return;
   const c = byId(id), on = !ui.pool.has(id);
   if (on) ui.pool.add(id); else ui.pool.delete(id);
+  ui.just = on ? id : null;
   ui.status = `${c.name} ${on ? 'added to' : 'removed from'} the pool. Saved.`;
   announce(ui.status);
 }
+const GLASS = '<svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.8" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="m13 13 5 5" stroke="currentColor" stroke-width="3" stroke-linecap="square"/></svg>';
+const SHORT = { book: 'Book', zine: 'Zine', rack: 'Rack', mine: 'mine', public: 'public' };
+function tallyHtml() {
+  const pool = pooled();
+  const parts = GROUPS.map(([g]) => [g, pool.filter((c) => c.src === g).length]).filter(([, n]) => n);
+  return `<p class="tally" aria-label="Pool summary: ${plural(pool.length, 'class')} on${ui.classless ? ', plus Classless' : ''}"><span class="big ${pool.length ? '' : 'zero'}" aria-hidden="true">${pool.length}</span>
+    <span class="parts" aria-hidden="true"><span class="lead">${pool.length === 1 ? 'class' : 'classes'} on</span>${parts.map(([g, n]) => `<span><b>${n}</b> ${SHORT[g]}</span>`).join('')}${ui.classless ? '<span><b>+</b> Classless</span>' : ''}</span></p>`;
+}
 const CHEV = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square"/></svg>';
 
+const SRC = { book: 'Book class', zine: 'Zine class', rack: 'Rack class', mine: 'Your class', public: 'Public class' };
 function infoCard(c) {
-  return `<div class="info" role="tooltip" id="info-${c.id}"><span class="cname">${esc(c.name)}</span><p style="margin:0">${esc(c.blurb)}</p>
+  return `<div class="info" role="tooltip" id="info-${c.id}"><div class="strip"><span class="cname">${esc(c.name)}</span><span class="src">${SRC[c.src]}</span></div>
+    <div class="body"><p>${esc(c.blurb)}</p>
     <dl><dt>Abilities</dt><dd>${c.ab}, 1 rolled from the random pool</dd>
       <dt>Class Items</dt><dd>${c.items ? plural(c.items, 'item') : 'none'}</dd>
       <dt>Getting Better</dt><dd>${esc(c.gb)}</dd>
       <dt>Written in</dt><dd>${c.langs.map((l) => LANG[l]).join(' and ')}</dd>
       ${c.version ? `<dt>Version</dt><dd>${c.version}${c.src === 'public' ? ' (you always get the latest)' : ''}</dd>` : ''}
-      <dt>Here</dt><dd>${c.playing ? `${plural(c.playing, 'scvm')} in this warband play it` : 'nobody in this warband plays it'}</dd></dl>
-    ${attribution(c) ? `<span class="attr">${esc(attribution(c))}</span>` : ''}</div>`;
+      <dt>Here</dt><dd>${c.playing ? `${scvmHere(c.playing, 'in this warband play')}` : 'nobody in this warband plays it'}</dd></dl>
+    ${attribution(c) ? `<span class="attr">${esc(attribution(c))}</span>` : ''}</div></div>`;
 }
 function rowHtml(c) {
   const on = ui.pool.has(c.id);
-  return `<div class="b-row">${bone(on, 'switch', c.id, `${c.name} in the pool`)}
+  return `<div class="b-row ${on ? 'on' : 'off'} ${ui.just === c.id ? 'just' : ''}">${bone(on, 'switch', c.id, `${c.name} in the pool`)}
     <div class="who"><button type="button" class="linkish cname" data-act="detail" data-v="${c.id}" aria-describedby="info-${c.id}">${esc(c.name)}</button>
       <span class="blurb">${esc(c.blurb)}</span>
       <div class="meta">${langChip(c)}${attribution(c) ? `<span class="attr">${esc(attribution(c))}</span>` : ''}</div></div>
-    <div class="shape"><span><b>${c.ab}</b> abilities · <b>${c.items}</b> Class Items</span><span>${esc(c.gb)}</span>${c.playing ? `<span class="playing">${plural(c.playing, 'scvm')} play it here</span>` : ''}</div>
+    <div class="shape"><span class="stat"><b>${c.ab}</b>abilities</span><span class="stat"><b>${c.items}</b>${c.items === 1 ? 'Class Item' : 'Class Items'}</span><span class="rule">Getting Better: ${esc(c.gb)}</span>${c.playing ? `<span class="playing">${scvmHere(c.playing, 'play')} here</span>` : ''}</div>
     ${infoCard(c)}</div>`;
 }
 function panelHtml() {
@@ -219,17 +273,18 @@ function panelHtml() {
     if (!shown.length) return '';
     const on = all.filter((c) => ui.pool.has(c.id)).length;
     const open = ui.openGroups.has(g) || ui.query.trim();
-    return `<div class="b-group"><button type="button" data-act="group" data-v="${g}" aria-expanded="${!!open}"><span class="gname">${title}</span><span class="gdesc">${desc}</span><span class="chip ${on ? 'on' : ''}">${on} of ${all.length} on</span>${CHEV}</button>
-      ${open ? shown.map(rowHtml).join('') : ''}</div>`;
+    return `<div class="b-group"><button type="button" data-act="group" data-v="${g}" aria-expanded="${!!open}"><span class="gname">${title}</span><span class="gdesc">${desc}</span><span class="tallyfrac ${on ? '' : 'none'}" aria-label="${on} of ${all.length} on">${on}<span class="of">/${all.length}</span><small>on</small></span>${CHEV}</button>
+      ${open ? `<div class="b-rows">${shown.map(rowHtml).join('')}</div>` : ''}</div>`;
   }).join('');
   return `${ui.showNotice ? `<div class="notice" role="status"><p><b>“${esc(REMOVED.name)}”</b> has been removed by ${esc(REMOVED.by)} (${esc(REMOVED.why)}). It's no longer in this pool; scvm already playing it keep it.</p><button type="button" class="act" data-act="dismiss">Got it</button></div>` : ''}
     ${ro() ? '<p class="readonly">Owlbear room party with no GM yet: it rolls the default pool (Book Classes, Classless). Claim it from inside the room to change it.</p>' : ''}
     ${pool.length === 0 && !ui.classless ? '<p class="notice" style="margin:0" role="alert">Nobody can roll a scvm with an empty pool. Keep at least one class or Classless on.</p>' : ''}
-    <div class="b-bar"><div class="search"><input type="search" placeholder="Search classes, authors or blurbs" aria-label="Search classes" value="${esc(ui.query)}" data-act="query">
+    <div class="b-bar"><div class="search"><div class="q">${GLASS}<input type="search" placeholder="Search classes, authors or blurbs" aria-label="Search classes" value="${esc(ui.query)}" data-act="query"></div>
       <div class="seg" role="radiogroup" aria-label="Show">${f.map(([v, t]) => `<button type="button" class="act ${ui.filter === v ? 'on' : ''}" role="radio" aria-checked="${ui.filter === v}" data-act="filter" data-v="${v}">${t}</button>`).join('')}</div>
       <div class="seg" role="radiogroup" aria-label="Language">${l.map(([v, t]) => `<button type="button" class="act ${ui.lang === v ? 'on' : ''}" role="radio" aria-checked="${ui.lang === v}" data-act="lang" data-v="${v}">${t}</button>`).join('')}</div></div>
-      <div class="spread">${bone(ui.classless, 'classless', null, 'Enable classless scvm', 'Enable classless scvm')}
-        <p class="summary" aria-label="Pool summary"><span class="chip on">${plural(pool.length, 'class')} on</span>${GROUPS.map(([g, t]) => { const n = pool.filter((c) => c.src === g).length; return n ? `<span class="chip">${n} ${{ book: 'Book', zine: 'Zine', rack: 'Rack', mine: 'mine', public: 'public' }[g]}</span>` : ''; }).join('')}${ui.classless ? '<span class="chip">+ Classless</span>' : ''}</p></div></div>
+      </div>
+    <div class="b-row classless ${ui.classless ? 'on' : 'off'}">${bone(ui.classless, 'classless', null, 'Classless scvm in the pool')}
+      <div class="who"><span class="cname">Classless</span><span class="blurb">Plain scvm: no class, no abilities. Players can pick it; Random never does.</span></div></div>
     ${groups || '<p class="hint">Nothing matches that search.</p>'}
     <p class="hint">Players see ${plural(pool.length, 'class')}${ui.classless ? ' and Classless' : ''}. Random picks evenly among the classes; it never picks Classless.</p>`;
 }
@@ -259,8 +314,10 @@ function render() {
       <div class="member"><b>Sister Mold</b><span class="attr">Pale Ossuary Keeper</span><span class="chip warn" title="Rolled with version 2; the class is now on version 3">Older rules</span></div>
       <div class="member"><b>Karg</b><span class="attr">Fanged Deserter</span></div></div></div>
     <section class="panel" aria-labelledby="classes-title">
-      <div class="spread"><p class="label" id="classes-title">Classes this warband can roll</p><span class="status" role="status">${esc(ui.status)}</span></div>
-      <p class="hint">Players who join through the invite link or this Owlbear room pick from this pool. Changes save at once; scvm already playing a class keep it. Hover or focus a class for details.</p>
+      <div class="pool-head"><div><h2 id="classes-title">Classes this warband can roll</h2>
+        <p class="hint">Players who join through the invite link or this Owlbear room pick from this pool. Changes save at once; scvm already playing a class keep it. Hover or focus a class for details.</p></div>
+        ${tallyHtml()}</div>
+      <span class="status" role="status">${esc(ui.status)}</span>
       ${panelHtml()}
     </section>
     <div class="panel stub"><p class="label">Guild</p><span class="muted">(unchanged)</span></div>
@@ -269,6 +326,7 @@ function render() {
     <div class="proto-bar" role="toolbar" aria-label="Prototype controls"><b>Prototype</b>
       <button type="button" data-act="toggle-notice" class="${ui.showNotice ? 'on' : ''}">Removed notice</button><button type="button" data-act="toggle-unclaimed" class="${ui.unclaimed ? 'on' : ''}">Unclaimed room</button></div>`;
   if (focusSel) { const el = document.querySelector(focusSel); if (el) el.focus({ preventScroll: true }); }
+  ui.just = null;
 }
 document.addEventListener('click', (e) => {
   const b = e.target.closest('[data-act]');
