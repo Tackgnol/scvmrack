@@ -28,7 +28,9 @@ button,input,select,textarea{font:inherit;color:inherit}
 input,textarea{caret-color:var(--yellow)}
 :focus-visible{outline:2px solid var(--yellow);outline-offset:2px}
 /* On the yellow page a yellow ring disappears: ink it black there. */
-.page-level :focus-visible,.btn:focus-visible,.b-step:focus-visible,.act.ink:focus-visible{outline-color:var(--black)}
+.page-level :focus-visible,.b-step:focus-visible,.act.ink:focus-visible,.forged .btn:focus-visible{outline-color:var(--black)}
+/* on black surfaces the ring stays yellow, including the snackbar that lives in a page-level wrapper */
+.snackbar :focus-visible,.paper .btn:not(.forged .btn):focus-visible{outline:2px solid var(--yellow);outline-offset:3px}
 .wrap{max-width:1180px;margin:0 auto}
 .masthead{max-width:1180px;margin:0 auto;padding-block:16px 12px;display:flex;flex-wrap:wrap;gap:6px 16px;align-items:baseline;justify-content:space-between}
 .masthead h1{font-family:var(--f-display);font-size:3rem;line-height:.85;margin:0;text-transform:uppercase;font-weight:400;color:var(--black)}
@@ -64,7 +66,7 @@ input[type=number]{font-family:var(--f-head);font-size:1.2rem;text-align:center;
 .act:hover{background:var(--yellow);color:var(--black)}
 .act.on{background:var(--yellow);color:var(--black)}
 .act[disabled],.act[disabled]:hover{background:transparent;color:var(--muted);border-color:var(--dark-grey);border-style:dashed;cursor:not-allowed}
-.act.kill{border-color:var(--blood);color:var(--white);background:var(--blood)}
+.act.kill{border-color:var(--blood);color:var(--yellow);background:var(--blood)}
 .act.kill:hover{background:var(--white);color:var(--blood);border-color:var(--white)}
 .act.ink{color:var(--black);border-color:var(--black)}
 .act.ink:hover,.act.ink.on{background:var(--black);color:var(--yellow)}
@@ -136,10 +138,10 @@ input[type=number]{font-family:var(--f-head);font-size:1.2rem;text-align:center;
 .sheet ul{margin:0;padding-left:18px}
 .pill{padding:1px 6px;background:var(--dark-grey);font-family:var(--f-label);font-size:.65rem;letter-spacing:.15em;text-transform:uppercase;margin-left:6px}
 .issues{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
-.issues button{width:100%;text-align:left;background:var(--pink);color:var(--black);font-family:var(--f-label);font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;
+.issues button{width:100%;text-align:left;background:var(--grey);color:var(--white);font-family:var(--f-label);font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;
   padding:8px 10px;min-height:var(--tap);border:2px solid var(--black);cursor:pointer;display:flex;justify-content:space-between;gap:10px;align-items:center}
-.issues button:hover{background:var(--white)}
-.issues button span:last-child{white-space:nowrap;text-decoration:underline;text-underline-offset:3px}
+.issues button:hover{border-color:var(--yellow)}
+.issues button span:last-child{white-space:nowrap;background:var(--pink);color:var(--black);padding:2px 8px}
 .ready{background:var(--yellow);color:var(--black);border:2px solid var(--black);padding:10px 12px;font-family:var(--f-label);letter-spacing:.1em;text-transform:uppercase;font-size:.75rem}
 .status{min-height:1.4em;font-family:var(--f-label);font-size:.75rem;letter-spacing:.12em;text-transform:uppercase}
 details.statebox{margin-top:28px}
@@ -270,6 +272,17 @@ article.row > .itemhead{margin:-12px -12px 4px;padding:12px;border-bottom:2px so
 .label.group{font-family:var(--f-head);font-size:1.2rem;letter-spacing:.04em;color:var(--white);margin-bottom:6px}
 .label.group.on-paper{color:var(--black)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}.b-step[aria-current="step"],.stamp{transform:none!important}}
+/* iteration 5: phone grids without phantom cells, tighter phone stat lines, key legend */
+.keys{margin:14px 0 0;font-family:var(--f-label);font-size:.65rem;letter-spacing:.15em;text-transform:uppercase;color:var(--black);line-height:1.8}
+.keys kbd{font:inherit;border:1px solid var(--black);padding:0 4px;white-space:nowrap}
+@media (max-width:879px),(pointer:coarse){.keys{display:none}}
+.counter[hidden]{display:none}
+@media (max-width:520px){
+  .step-btn{width:40px;min-height:46px}
+  input.stamp-num{width:52px;min-height:46px;font-size:1.5rem}
+  .statline .statctl > :nth-child(2){order:1}
+  .statline .statctl > :nth-child(4){order:2}
+}
 /* iteration 4: hierarchy, grids on phones, previews */
 .paper .btn[disabled]{color:var(--yellow);border-color:var(--yellow);border-style:dashed}
 .btn.quiet{background:transparent;color:var(--black);border-color:var(--black);box-shadow:none}
@@ -282,8 +295,10 @@ article.row > .itemhead{margin:-12px -12px 4px;padding:12px;border-bottom:2px so
 textarea{field-sizing:content;max-height:24em}
 .status.block{background:var(--pink);color:var(--black);padding:8px 10px;border:2px solid var(--black)}
 @media (max-width:520px){
-  .choice .seg{display:grid;grid-template-columns:repeat(auto-fit,minmax(84px,1fr));gap:1px;background:var(--yellow);width:100%}
-  .choice .seg .act{background:var(--black);border:0!important}
+  .choice .seg{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:transparent;border:0;width:100%;padding:1px}
+  .choice .seg[data-n="3"]{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .choice .seg .act{background:var(--black);border:0!important;box-shadow:0 0 0 1px var(--yellow)}
+  .stepper.choice .inline > [data-act="more-scopes"]{flex:1 1 100%}
   .choice .seg .act.on{background:var(--yellow)}
   .choice .seg.statseg .act.on{background:var(--yellow);color:var(--black)}
   .stepper.choice{flex:1 1 100%;align-items:stretch}
@@ -434,6 +449,7 @@ let step = 0;
 let viewLang = 'en';
 let lastRoll = null;
 let saveMsg = '';
+function markEdit() { saveMsg = ''; ui.rev = (ui.rev || 0) + 1; }
 const tx = (o) => (o ? o[viewLang] || o[state.languages[0]] || o.en || o.pl || '' : '');
 const optional = (path) => path.startsWith('gbNote') || /^items\.\d+\.(description|ammoName)\./.test(path);
 const keyOf = (it) => `ci:${it.id}`;
@@ -487,7 +503,8 @@ function textInput(path, { multiline = false, lang, label = '' } = {}) {
   const id = fid(path);
   const attrs = `id="${id}" data-path="${path}" maxlength="${LIMIT_TEXT}" aria-invalid="${miss}" ${miss ? `aria-describedby="${id}-err"` : ''} ${label ? `aria-label="${esc(label)}"` : ''}`;
   const input = multiline ? `<textarea ${attrs}>${esc(v)}</textarea>` : `<input type="text" ${attrs} value="${esc(v)}">`;
-  return `${input}<span class="field-error" id="${id}-err" ${miss ? '' : 'hidden'}>${langLong[lang]} text missing</span>`;
+  const len = String(v).length;
+  return `${input}<span class="field-error" id="${id}-err" ${miss ? '' : 'hidden'}>${langLong[lang]} text missing</span><span class="counter ${len >= LIMIT_TEXT ? 'over' : ''}" id="${id}-count" ${len > LIMIT_TEXT * 0.8 ? '' : 'hidden'}>${len} of ${LIMIT_TEXT} characters</span>`;
 }
 const hintHtml = (id, hint) => (hint ? `<p class="fieldhint" id="${id}">${esc(hint)}</p>` : '');
 function lfield(base, label, { multiline = false, hint = '' } = {}) {
@@ -504,7 +521,7 @@ function num(path, label, { min = 0, max = 99, invalid = false, hint = '' } = {}
     <button type="button" class="step-btn" data-act="nudge" data-path="${path}" data-d="-1" aria-label="Decrease ${esc(label)}" tabindex="-1" ${v <= min ? 'disabled' : ''}>${MINUS}</button>
     <input type="text" class="stamp-num" id="${id}" data-path="${path}" data-num="1" data-min="${min}" min="${min}" max="${max}" value="${fmtNum(v, min)}" inputmode="numeric" autocomplete="off" role="spinbutton" aria-valuemin="${min}" aria-valuemax="${max}" aria-valuenow="${v}" aria-invalid="${invalid}" ${hint ? `aria-describedby="${id}-hint"` : ''}>
     <button type="button" class="step-btn" data-act="nudge" data-path="${path}" data-d="1" aria-label="Increase ${esc(label)}" tabindex="-1" ${v >= max ? 'disabled' : ''}>${PLUS}</button>
-  </div>${hintHtml(`${id}-hint`, hint)}</div>`;
+  </div><span class="field-error" id="${id}-clamp" hidden></span>${hintHtml(`${id}-hint`, hint)}</div>`;
 }
 function dieSelect(path, label, dice, fmt = (x) => `d${x}`, hint = '', act = 'pick', extra = '') {
   const v = getPath(path);
@@ -543,7 +560,7 @@ function validate() {
     if ((gi && gi.type === 'pet') || (gp && gp.type !== 'pet')) issues.push({ msg: `Ability “${n}” holds a Class Item in the wrong grant slot`, step: 'abilities', path: `abilities.${i}.${gi && gi.type === 'pet' ? 'grantItem' : 'grantPet'}` });
   });
   state.origins.forEach((o, k) => text(o, `origins.${k}`, `origin ${k + 1}`, 'origins'));
-  if (state.randomCount > poolSize()) issues.push({ msg: `Rolls ${state.randomCount} random abilities, but the pool has ${poolSize()}`, step: 'abilities', path: 'randomCount' });
+  if (state.randomCount > poolSize()) issues.push({ msg: `Rolls ${state.randomCount} random ${state.randomCount === 1 ? 'ability' : 'abilities'}, but the pool has ${poolSize()}`, step: 'abilities', path: 'randomCount' });
   if (state.abilities.length > LIMIT_LIST) issues.push({ msg: `More than ${LIMIT_LIST} abilities`, step: 'abilities' });
   if (state.items.length > LIMIT_LIST) issues.push({ msg: `More than ${LIMIT_LIST} Class Items`, step: 'items' });
   if (state.origins.length > LIMIT_LIST) issues.push({ msg: `More than ${LIMIT_LIST} origins`, step: 'origins' });
@@ -572,13 +589,14 @@ function testRoll() {
   const origin = state.origins.length ? state.origins[d(state.origins.length) - 1] : null;
   const tables = {};
   [...fixed, ...pool].forEach((a) => { if (a.table) tables[a.id] = d(a.table.die); });
-  lastRoll = { stats, hp, omens: d(state.omenDie), silver, weapon: d(state.weaponDie), armor: d(state.armorDie), abil: [...fixed, ...pool], origin, tables };
+  lastRoll = { stats, hp, omens: d(state.omenDie), silver, weapon: d(state.weaponDie), armor: d(state.armorDie), abil: [...fixed, ...pool], origin, tables, rev: ui.rev || 0 };
 }
 function rollSheet() {
   if (!lastRoll) return `<div class="sheet"><p class="hint" style="margin:0">No test roll yet. A test roll uses the draft exactly as it is and keeps nothing.</p></div>`;
   const r = lastRoll;
+  const stale = r.rev !== (ui.rev || 0);
   const lines = [], gear = [];
-  r.abil.forEach((a) => {
+  r.abil.filter((a) => abilityById(a.id)).forEach((a) => {
     const granted = [a.grantItem, a.grantPet].filter(Boolean);
     const merged = granted.map(itemByKey).find((it) => sameName(a, it));
     const tr = a.table && r.tables && r.tables[a.id] ? a.table.rows[r.tables[a.id] - 1] : null;
@@ -588,6 +606,7 @@ function rollSheet() {
   });
   return `<div class="sheet" aria-live="polite">
     <span class="micro muted">Test scvm · ${esc(tx(state.name))}</span>
+    ${stale ? '<p class="status block" style="margin:8px 0">The draft changed since this roll. Roll again to see it.</p>' : ''}
     <h3>Nameless Wretch</h3>
     <div class="statrow">${STATS.map((s) => `<div class="statbox"><b>${signed(r.stats[s.key].mod)}</b><span>${s.short} ${r.stats[s.key].total}</span></div>`).join('')}</div>
     <div class="res"><span class="chip hp">HP ${r.hp}</span><span class="chip">Omens ${r.omens}</span><span class="chip">${r.silver} silver</span></div>
@@ -608,7 +627,7 @@ function langClassBlock() {
       ${[['en', 'English only', !dual && state.languages[0] === 'en'], ['pl', 'Polish only', !dual && state.languages[0] === 'pl'], ['both', 'Both', dual]].map(([val, text, on]) =>
         `<button type="button" class="act ${on ? 'on' : ''}" role="radio" aria-checked="${on}" tabindex="${on ? 0 : -1}" data-act="set-langs" data-v="${val}">${text}</button>`).join('')}
     </div></div>
-    <p class="hint">${dual ? 'Every text field needs both languages. Players see their own.' : `Players in either language see the ${langLong[state.languages[0]]} text. Text you wrote in the other language is kept, only hidden.`}</p></div>`;
+    <p class="hint">${dual ? 'Every text field needs both languages. Players see their own. “Writing in” at the top only switches which one you are editing.' : `Players in either language see the ${langLong[state.languages[0]]} text. Text you wrote in the other language is kept, only hidden.`}</p></div>`;
 }
 function statRange(st) {
   const kept = st.dropLowest && st.count > 1 ? st.count - 1 : st.count;
@@ -644,8 +663,11 @@ function statsBody() {
 function choice(path, label, options, rerender = '', cls = '') {
   const v = getPath(path);
   const lid = `${fid(path)}-label`;
-  return `<div class="stepper choice"><span class="label" id="${lid}">${esc(label)}</span><div class="seg ${cls}" role="radiogroup" aria-labelledby="${lid}">${options.map(([val, text, c = '']) =>
-    `<button type="button" class="act ${c} ${String(v) === String(val) ? 'on' : ''}" role="radio" aria-checked="${String(v) === String(val)}" data-act="choose" data-path="${path}" data-v="${val}" ${rerender ? 'data-rerender="1"' : ''}>${esc(text)}</button>`).join('')}</div></div>`;
+  const any = options.some(([val]) => String(v) === String(val));
+  return `<div class="stepper choice"><span class="label" id="${lid}">${esc(label)}</span><div class="seg ${cls}" role="radiogroup" aria-labelledby="${lid}" data-n="${options.length}">${options.map(([val, text, c = ''], k) => {
+    const on = String(v) === String(val);
+    return `<button type="button" class="act ${c} ${on ? 'on' : ''}" role="radio" aria-checked="${on}" tabindex="${on || (!any && k === 0) ? 0 : -1}" data-act="choose" data-path="${path}" data-v="${val}" ${rerender ? 'data-rerender="1"' : ''}>${esc(text)}</button>`;
+  }).join('')}</div></div>`;
 }
 function itemLine(it, i, controls) {
   return `<div class="itemline"><div class="statctl">${controls}</div>
@@ -750,8 +772,8 @@ function modsEditor(base, nm, title = 'Modifiers') {
     return `<div class="modrow" role="group" aria-label="${esc(nm)} modifier ${j + 1}">
       ${choice(`${mp}.stat`, 'Stat', STATS.map((s) => [s.key, s.short, s.cls]), 'rerender', 'statseg')}
       ${num(`${mp}.value`, 'Value', { min: -6, max: 6 })}
-      <div class="stepper choice"><span class="label" id="${fid(mp)}-scope">Applies to</span><div class="inline" style="gap:6px"><div class="seg" role="radiogroup" aria-labelledby="${fid(mp)}-scope">${SCOPES.filter((s) => more || !s.more).map((s) =>
-        `<button type="button" class="act ${m.scope === s.key ? 'on' : ''}" role="radio" aria-checked="${m.scope === s.key}" data-act="choose" data-path="${mp}.scope" data-v="${s.key}" data-rerender="1">${s.label}</button>`).join('')}</div>${more ? '' : `<button type="button" class="act" data-act="more-scopes" data-path="${mp}" aria-label="More scopes: melee, ranged, powers">More</button>`}</div><p class="fieldhint">${SCOPE_HINT[m.scope]}</p></div>
+      <div class="stepper choice"><span class="label" id="${fid(mp)}-scope">Applies to</span><div class="inline" style="gap:6px"><div class="seg" role="radiogroup" aria-labelledby="${fid(mp)}-scope" data-n="${more ? 7 : 4}">${SCOPES.filter((s) => more || !s.more).map((s) =>
+        `<button type="button" class="act ${m.scope === s.key ? 'on' : ''}" role="radio" aria-checked="${m.scope === s.key}" tabindex="${m.scope === s.key ? 0 : -1}" data-act="choose" data-path="${mp}.scope" data-v="${s.key}" data-rerender="1">${s.label}</button>`).join('')}</div>${more ? '' : `<button type="button" class="act" data-act="more-scopes" data-path="${mp}" aria-label="More scopes: melee, ranged, powers">More</button>`}</div><p class="fieldhint">${SCOPE_HINT[m.scope]}</p></div>
       <button type="button" class="act" data-act="rm-mod" data-base="${base}" data-j="${j}" aria-label="Remove modifier ${esc(modText(m))}">Remove modifier</button>
     </div>`;
   }).join('');
@@ -844,9 +866,9 @@ function abilityOpen(a, i) {
   ].join('');
   return `<article class="row stack abl open" id="abl-${a.id}" style="view-transition-name:abl-${a.id}" aria-label="${esc(tx(a.name) || 'Unnamed ability')}" data-ability="${a.id}">
       <div class="itemhead"><div class="inline">${abilityHeader(a)}</div>
-        <div class="inline"><div class="seg" role="radiogroup" aria-label="Ability kind"><button type="button" class="act ${a.random ? '' : 'on'}" role="radio" aria-checked="${!a.random}" data-act="kind" data-i="${i}" data-v="fixed">Fixed</button><button type="button" class="act ${a.random ? 'on' : ''}" role="radio" aria-checked="${a.random}" data-act="kind" data-i="${i}" data-v="random">Random pool</button></div></div></div>
+        <div class="inline"><div class="seg" role="radiogroup" aria-label="Ability kind"><button type="button" class="act ${a.random ? '' : 'on'}" role="radio" aria-checked="${!a.random}" tabindex="${a.random ? -1 : 0}" data-act="kind" data-i="${i}" data-v="fixed">Fixed</button><button type="button" class="act ${a.random ? 'on' : ''}" role="radio" aria-checked="${a.random}" tabindex="${a.random ? 0 : -1}" data-act="kind" data-i="${i}" data-v="random">Random pool</button></div></div></div>
       ${confirming ? abilityConfirm(a, i) : ''}
-      ${lfield(`abilities.${i}.name`, 'Name')}
+      ${lfield(`abilities.${i}.name`, 'Name', { hint: 'Porting a zine? Paste its ability list here, one per line as “Name: rules”, and each line becomes an ability.' })}
       ${lfield(`abilities.${i}.text`, 'Rules text', { multiline: true })}
       ${showGrants ? `<div class="stack" style="gap:8px"><div class="grid2" style="align-items:start">${grantSelect(i, 'item')}${grantSelect(i, 'pet')}</div><p class="fieldhint" style="max-width:65ch">A scvm who gets this ability starts with what it grants.</p></div>${forgeRow(a, i)}` : ''}
       ${modsEditor(`abilities.${i}`, tx(a.name) || `ability ${i + 1}`)}
@@ -920,8 +942,9 @@ function langSwitch(issues) {
 /* After FORGED the GM goes to their class list (owner decision, iteration 4). Stub of that page. */
 function classesHtml() {
   const n = state.abilities.length, pool = poolSize();
+  const tx = (o) => o[state.languages[0]] || o.en || o.pl || '';
   return `<section aria-labelledby="step-title" class="stack-lg">
-    <div class="b-head page-level"><h2 class="stamp" id="step-title" tabindex="-1">My classes</h2><span class="micro">Prototype stub of the class list</span></div>
+    <div class="b-head page-level"><h2 class="stamp" id="step-title" tabindex="-1">Made by you</h2><span class="micro">Prototype stub of the class list</span></div>
     <div class="paper stack">
       <article class="row stack abl open" aria-label="${esc(tx(state.name))}">
         <div class="itemhead"><div class="inline"><span class="typebadge">Custom</span><h3 class="card-h">${esc(tx(state.name))}</h3></div><span class="chip ok">Just forged</span></div>
@@ -934,13 +957,19 @@ function classesHtml() {
 }
 function snackHtml() {
   if (!ui.snack) return '';
+  if (ui.snack.undone) return `<div class="snackbar"><span>Undone: ${esc(ui.snack.msg)}</span><span class="inline" style="gap:6px"><button type="button" class="btn save" data-act="redo" aria-keyshortcuts="Control+Shift+Z Control+Y">Redo</button>${ui.undo.length ? `<button type="button" class="act" data-act="undo">Undo earlier (${ui.undo.length})</button>` : ''}</span></div>`;
   const n = ui.undo.length;
   return `<div class="snackbar"><span>${esc(ui.snack.msg)}${n > 1 ? `<br><span class="count muted">${n} changes can be undone · Ctrl+Z</span>` : ''}</span><button type="button" class="btn save" data-act="undo" aria-keyshortcuts="Control+Z Meta+Z">Undo</button></div>`;
+}
+function navUndoHtml() {
+  if (ui.snack) return '';
+  return `${ui.undo.length ? `<button type="button" class="act ink" data-act="undo" aria-keyshortcuts="Control+Z Meta+Z">Undo last change (${ui.undo.length})</button>` : ''}${ui.redo.length ? `<button type="button" class="act ink" data-act="redo" aria-keyshortcuts="Control+Shift+Z Control+Y">Redo (${ui.redo.length})</button>` : ''}`;
 }
 const root = document.getElementById('root');
 const stepIndex = (key) => STEPS.findIndex((s) => s.key === key);
 function render({ focusHeading = false, focusPath = null, focusSel = null, keepFocus = null, stay = false } = {}) {
   if (!state.languages.includes(viewLang)) viewLang = state.languages[0];
+  document.querySelector('.masthead h1').textContent = ui.view === 'classes' ? 'Your classes' : 'Forge a class';
   if (ui.view === 'classes') { root.innerHTML = classesHtml(); document.body.classList.remove('has-snack'); const h = document.getElementById('step-title'); h.focus({ preventScroll: true }); window.scrollTo({ top: 0 }); return; }
   if (STEPS[step].key === 'review') ui.fresh.clear();
   const issues = visible(validate());
@@ -948,13 +977,13 @@ function render({ focusHeading = false, focusPath = null, focusSel = null, keepF
   const body = { identity: () => `<div class="stack">${langClassBlock()}${lfield('name', 'Class name')}${lfield('description', 'Description', { multiline: true })}</div>`,
     numbers: statsBody, items: itemsBody, abilities: abilitiesBody, origins: originsBody, gb: gbBody, review: () => reviewBody(issues) }[s.key]();
   root.innerHTML = `<div class="b-layout">
-    <nav class="b-railwrap page-level" aria-label="Class creator steps"><ol class="b-rail" data-derived="rail">${railHtml(issues)}</ol></nav>
+    <nav class="b-railwrap page-level" aria-label="Class creator steps"><ol class="b-rail" data-derived="rail">${railHtml(issues)}</ol><p class="keys" aria-hidden="true">Keys: <kbd>Ctrl Z</kbd> undo · <kbd>Ctrl Shift Z</kbd> redo · <kbd>Alt ← →</kbd> steps · <kbd>Esc</kbd> close</p></nav>
     <section aria-labelledby="step-title">
       <div class="b-head page-level"><div class="inline" style="gap:12px"><h2 class="stamp" id="step-title" tabindex="-1">${s.label}</h2><span class="stepcount">Step ${step + 1} of ${STEPS.length}</span></div><div data-derived="langsw">${langSwitch(issues)}</div></div>
       <div class="paper stack-lg"><p class="hint">${s.hint}</p>${body}</div>
       <div class="b-nav page-level" style="view-transition-name:step-nav">
         <button type="button" class="btn quiet" data-act="step" data-v="${step - 1}" ${step === 0 ? 'disabled' : ''} aria-keyshortcuts="Alt+ArrowLeft">${ARROW_L}Back</button>
-        ${!ui.snack && ui.undo.length ? `<button type="button" class="act ink" data-act="undo" aria-keyshortcuts="Control+Z Meta+Z">Undo last change (${ui.undo.length})</button>` : ''}
+        <span class="inline" data-derived="navundo">${navUndoHtml()}</span>
         ${step < STEPS.length - 1 ? `<button type="button" class="btn ink" data-act="step" data-v="${step + 1}" aria-keyshortcuts="Alt+ArrowRight">${STEPS[step + 1].label}${ARROW_R}</button>` : ''}
       </div>
     </section>
@@ -967,7 +996,7 @@ function render({ focusHeading = false, focusPath = null, focusSel = null, keepF
   if (cur && cur.scrollIntoView && window.innerWidth < 880) cur.scrollIntoView({ block: 'nearest', inline: 'center' });
   const tryFocus = (el, center = true) => { if (!el) return false; el.focus({ preventScroll: !center }); if (center) el.scrollIntoView({ block: 'center' }); return true; };
   if (focusSel && tryFocus(root.querySelector(focusSel), !stay)) return;
-  if (focusPath && tryFocus(root.querySelector(`[data-path="${CSS.escape(focusPath)}"]`), !stay)) return;
+  if (focusPath && tryFocus(root.querySelector(`input[data-path="${CSS.escape(focusPath)}"],textarea[data-path="${CSS.escape(focusPath)}"],select[data-path="${CSS.escape(focusPath)}"]`) || root.querySelector(`[data-path="${CSS.escape(focusPath)}"]`), !stay)) return;
   if (focusHeading) { const h = document.getElementById('step-title'); h.focus({ preventScroll: true }); window.scrollTo({ top: 0 }); return; }
   if (keepFocus) { for (const sel of keepFocus) { if (tryFocus(root.querySelector(sel), false)) return; } }
 }
@@ -997,6 +1026,8 @@ function refreshDerived() {
     if (!m || optional(el.dataset.path)) return;
     const miss = state.languages.includes(m[1]) && !String(el.value).trim() && !pristine(el.dataset.path);
     el.setAttribute('aria-invalid', String(miss));
+    const cnt = document.getElementById(`${el.id}-count`);
+    if (cnt) { const len = String(el.value).length; cnt.hidden = len <= LIMIT_TEXT * 0.8; cnt.textContent = `${len} of ${LIMIT_TEXT} characters`; cnt.classList.toggle('over', len >= LIMIT_TEXT); }
     const err = document.getElementById(`${el.id}-err`);
     if (err) { err.hidden = !miss; if (miss) el.setAttribute('aria-describedby', err.id); else el.removeAttribute('aria-describedby'); }
   });
@@ -1021,8 +1052,7 @@ function armSnack() {
   clearTimeout(snackTimer);
   snackTimer = setTimeout(() => {
     ui.snack = null; const el = root.querySelector('.snackbar'); if (el) el.remove(); document.body.classList.remove('has-snack');
-    const nav = root.querySelector('.b-nav'), back = nav && nav.querySelector('[data-act="step"]');
-    if (back && ui.undo.length && !nav.querySelector('[data-act="undo"]')) back.insertAdjacentHTML('afterend', `<button type="button" class="act ink" data-act="undo" aria-keyshortcuts="Control+Z Meta+Z">Undo last change (${ui.undo.length})</button>`);
+    const nu = root.querySelector('[data-derived="navundo"]'); if (nu) nu.innerHTML = navUndoHtml();
   }, 10000);
 }
 function withUndo(msg, doIt, inverse, focusSel = null, coalesceKey = null) {
@@ -1032,6 +1062,7 @@ function withUndo(msg, doIt, inverse, focusSel = null, coalesceKey = null) {
     doIt(); top.msg = msg; top.doIt = doIt; ui.redo = []; armSnack(); announce(`${msg} Undo is available.`); return;
   }
   doIt();
+  markEdit();
   ui.confirm = null;
   ui.redo = [];
   const entry = { msg, inverse, doIt, focusSel, coalesceKey, step, openAbility: ui.openAbility, openItem: ui.openItem };
@@ -1047,9 +1078,9 @@ function undo() {
   e.inverse();
   ui.redo.push(e);
   step = e.step; ui.openAbility = e.openAbility; ui.openItem = e.openItem;
-  ui.confirm = null; ui.forgeFor = null; saveMsg = '';
-  ui.snack = ui.undo.at(-1) || null;
-  if (ui.snack) armSnack(); else clearTimeout(snackTimer);
+  ui.confirm = null; ui.forgeFor = null; markEdit();
+  ui.snack = { undone: true, msg: e.msg };
+  armSnack();
   announce(`Undone: ${e.msg} Redo with Ctrl+Shift+Z.`);
   return e.focusSel;
 }
@@ -1059,7 +1090,7 @@ function redo() {
   step = e.step; ui.openAbility = e.openAbility; ui.openItem = e.openItem;
   e.doIt();
   ui.undo.push(e); ui.snack = e; armSnack();
-  ui.confirm = null; saveMsg = '';
+  ui.confirm = null; markEdit();
   announce(`Redone: ${e.msg}`);
   return true;
 }
@@ -1113,7 +1144,12 @@ function onValue(e) {
   ui.redo = [];
   let v = el.type === 'checkbox' ? el.checked : el.value;
   if (el.type === 'radio') { if (!el.checked) return; v = el.value; }
-  if (el.dataset.num) v = Math.max(Number(el.min), Math.min(Number(el.max), parseNum(v)));
+  if (el.dataset.num) {
+    const raw = parseNum(v);
+    v = Math.max(Number(el.min), Math.min(Number(el.max), raw));
+    const note = document.getElementById(`${el.id}-clamp`);
+    if (note) { note.hidden = raw === v; note.textContent = `Range ${fmtNum(Number(el.min), Number(el.min))} to ${fmtNum(Number(el.max), Number(el.min))}`; }
+  }
   if (el.dataset.grant || el.dataset.rowlink) {
     const prev = getPath(el.dataset.path) || '';
     if (prev === v) return;
@@ -1132,12 +1168,12 @@ function onValue(e) {
       setPath(el.dataset.path, v);
       announce(now);
     }
-    saveMsg = '';
+    markEdit();
     render({ keepFocus: [`#${CSS.escape(el.id)}`] });
     return;
   }
   setPath(el.dataset.path, v);
-  saveMsg = '';
+  markEdit();
   refreshDerived();
 }
 root.addEventListener('input', (e) => { if (e.target.tagName !== 'SELECT') onValue(e); });
@@ -1152,7 +1188,10 @@ root.addEventListener('paste', (e) => {
   const el = e.target;
   const path = el.dataset && el.dataset.path;
   if (!path) return;
-  const lines = (e.clipboardData ? e.clipboardData.getData('text') : '').split(/\r?\n/).map((x) => x.trim()).filter(Boolean);
+  // zine lists: drop a "d6 Origins" style header, strip "1." / "1)" / "-" / "•" prefixes
+  let lines = (e.clipboardData ? e.clipboardData.getData('text') : '').split(/\r?\n/).map((x) => x.trim()).filter(Boolean);
+  if (lines.length > 1 && /^d\d+\b/i.test(lines[0]) && lines[0].length < 40) lines = lines.slice(1);
+  lines = lines.map((x) => x.replace(/^(?:\d{1,2}[.):]?|[-•*–])\s+/, '').trim()).filter(Boolean);
   if (lines.length < 2) return;
   let m = path.match(/^origins\.(\d+)\.(en|pl)$/);
   if (m) {
@@ -1172,7 +1211,8 @@ root.addEventListener('paste', (e) => {
   if (m) {
     e.preventDefault();
     const i0 = Number(m[1]), lang = m[2];
-    const split = (line) => { const x = line.match(/^(.{1,60}?)(?:\s*[:—–]\s+|\.\s+)(.+)$/); return x ? [x[1].trim(), x[2].trim()] : [line, '']; };
+    // "Name: rules" or "Name — rules" first; "Name. Rules" only when the name is 4+ letters (so "St. Varg" stays whole)
+    const split = (line) => { const x = line.match(/^(.{1,60}?)\s*[:—–]\s+(.+)$/) || line.match(/^([^.]{4,60})\.\s+(.+)$/); return x ? [x[1].trim(), x[2].trim()] : [line, '']; };
     const before = state.abilities.map((a) => ({ ...a, name: { ...a.name }, text: { ...a.text } }));
     const room = LIMIT_LIST - state.abilities.length;
     const parsed = lines.map(split), extra = parsed.slice(1, 1 + room);
@@ -1188,11 +1228,15 @@ root.addEventListener('paste', (e) => {
   if (m) {
     e.preventDefault();
     const t = state.abilities[Number(m[1])].table, r0 = Number(m[2]), lang = m[3];
-    const before = t.rows.map((r) => ({ ...r }));
-    const used = lines.slice(0, t.rows.length - r0);
-    withUndo(`Pasted ${used.length} table rows.${lines.length > used.length ? ` ${lines.length - used.length} did not fit a d${t.die}.` : ''}`, () => {
+    const before = { die: t.die, rows: t.rows.map((r) => ({ ...r })) };
+    // a longer list grows the table to the smallest die that fits it
+    const need = r0 + lines.length, die = [2, 3, 4, 6, 8, 10, 12].find((x) => x >= need) || 12;
+    const grow = die > t.die;
+    const used = lines.slice(0, Math.max(t.die, die) - r0);
+    withUndo(`Pasted ${used.length} table rows.${grow ? ` The table grew to a d${die} to fit them.` : ''}${lines.length > used.length ? ` ${lines.length - used.length} did not fit a d12.` : ''}`, () => {
+      if (grow) { t.die = die; while (t.rows.length < die) t.rows.push(row('', '')); }
       used.forEach((x, n) => { t.rows[r0 + n][lang] = x; });
-    }, () => { t.rows.forEach((r, n) => { r[lang] = before[n][lang]; }); }, `[data-path="${path}"]`);
+    }, () => { t.die = before.die; t.rows = before.rows.map((r, n) => ({ ...(t.rows[n] || r), en: r.en, pl: r.pl })); }, `[data-path="${path}"]`);
     render({ keepFocus: [`[data-path="abilities.${m[1]}.table.rows.${r0 + used.length - 1}.${lang}"]`] });
   }
 });
@@ -1219,6 +1263,11 @@ document.addEventListener('keydown', (e) => {
     return;
   }
   // Esc backs out of the innermost open thing: a confirm, the forge picker, then the open card
+  if (e.key === 'Escape' && typing(e.target)) {
+    const done = e.target.closest('article.open') && e.target.closest('article.open').querySelector('[data-act="close-ability"],[data-act="close-item"]');
+    if (done) { e.preventDefault(); done.focus(); }
+    return;
+  }
   if (e.key === 'Escape') {
     const btn = root.querySelector('[data-act="confirm-cancel"]') || root.querySelector('[data-act="forge-cancel"]') || root.querySelector('[data-act="close-ability"]') || root.querySelector('[data-act="close-item"]');
     if (btn) { e.preventDefault(); btn.click(); }
@@ -1243,7 +1292,7 @@ root.addEventListener('keydown', (e) => {
   const n = all[(i + all.length) % all.length];
   e.preventDefault(); n.focus(); n.click();
 });
-const NAV_ACTS = new Set(['goto-classes', 'back-to-forge', 'undo', 'step', 'open-ability', 'close-ability', 'open-item', 'close-item', 'view-lang', 'goto-issue', 'goto-granter', 'edit-item', 'roll', 'forge-for', 'forge-cancel',
+const NAV_ACTS = new Set(['goto-classes', 'back-to-forge', 'undo', 'redo', 'step', 'open-ability', 'close-ability', 'open-item', 'close-item', 'view-lang', 'goto-issue', 'goto-granter', 'edit-item', 'roll', 'forge-for', 'forge-cancel',
   'show-grants', 'more-scopes', 'link-rows', 'gate-yes', 'gate-no', 'gate-change', 'confirm-cancel', 'rm-item', 'rm-ability', 'rm-table', 'save']);
 root.addEventListener('focusout', (e) => {
   const p = e.target.dataset && e.target.dataset.path;
@@ -1255,24 +1304,24 @@ root.addEventListener('click', (e) => {
   const i = Number(b.dataset.i), j = Number(b.dataset.j), v = b.dataset.v;
   const same = `[data-act="${b.dataset.act}"]${b.dataset.i != null ? `[data-i="${b.dataset.i}"]` : ''}${b.dataset.j != null ? `[data-j="${b.dataset.j}"]` : ''}${b.dataset.v != null ? `[data-v="${CSS.escape(b.dataset.v)}"]` : ''}`;
   let opts = { keepFocus: [same] };
-  if (!NAV_ACTS.has(b.dataset.act)) ui.redo = [];
+  if (!NAV_ACTS.has(b.dataset.act)) { ui.redo = []; markEdit(); }
   switch (b.dataset.act) {
     case 'nudge': {
       const input = document.getElementById(fid(b.dataset.path));
       const next = Math.max(Number(input.min), Math.min(Number(input.max), parseNum(input.value) + Number(b.dataset.d)));
-      input.value = fmtNum(next, Number(input.min)); setPath(b.dataset.path, next); saveMsg = ''; refreshDerived(); return;
+      input.value = fmtNum(next, Number(input.min)); setPath(b.dataset.path, next); markEdit(); refreshDerived(); return;
     }
     case 'pick': {
       setPath(b.dataset.path, Number(v));
       b.parentElement.querySelectorAll('.die').forEach((x) => { const on = x === b; x.setAttribute('aria-checked', String(on)); x.tabIndex = on ? 0 : -1; });
-      saveMsg = ''; refreshDerived(); return;
+      markEdit(); refreshDerived(); return;
     }
     case 'choose': {
       const val = v === 'true' ? true : v === 'false' ? false : v;
       setPath(b.dataset.path, val);
-      saveMsg = '';
+      markEdit();
       if (b.dataset.rerender) { opts = { keepFocus: [same] }; break; }
-      b.parentElement.querySelectorAll('.act').forEach((x) => { const on = x === b; x.classList.toggle('on', on); x.setAttribute('aria-checked', String(on)); });
+      b.parentElement.querySelectorAll('.act').forEach((x) => { const on = x === b; x.classList.toggle('on', on); x.setAttribute('aria-checked', String(on)); x.tabIndex = on ? 0 : -1; });
       refreshDerived(); return;
     }
     case 'drop': {
@@ -1437,6 +1486,7 @@ root.addEventListener('click', (e) => {
     case 'add-origin': state.origins.push(L('', '')); opts = { focusPath: `origins.${state.origins.length - 1}.${viewLang}` }; break;
     case 'rm-origin': { const o = state.origins[i]; withUndo(`Removed origin ${i + 1}.`, () => { state.origins.splice(i, 1); }, () => { state.origins.splice(Math.min(i, state.origins.length), 0, o); }, `[data-act="rm-origin"][data-i="${i}"]`); } opts = { keepFocus: [`[data-act="rm-origin"][data-i="${Math.min(i, state.origins.length - 1)}"]`, '[data-act="add-origin"]'] }; break;
     case 'undo': { const fs = undo(); opts = { focusSel: fs, keepFocus: UNDO_FOCUS }; break; }
+    case 'redo': redo(); opts = { keepFocus: ['[data-act="redo"]', ...UNDO_FOCUS] }; break;
     case 'forge-for': ui.forgeFor = Number(v); ui.showGrants.add(Number(v)); opts = { focusSel: `[data-act="forge-type"][data-i="${i}"]:not([disabled])` }; break;
     case 'forge-cancel': ui.forgeFor = null; opts = { keepFocus: [`[data-act="forge-for"][data-i="${i}"]`] }; break;
     case 'forge-type': {
@@ -1491,7 +1541,7 @@ root.addEventListener('click', (e) => {
       break;
     }
     case 'view-lang': viewLang = v; break;
-    case 'step': step = Math.max(0, Math.min(STEPS.length - 1, Number(v))); saveMsg = ''; ui.confirm = null; ui.forgeFor = null; opts = { focusHeading: true }; break;
+    case 'step': step = Math.max(0, Math.min(STEPS.length - 1, Number(v))); if (saveMsg !== 'SAVED') saveMsg = ''; ui.confirm = null; ui.forgeFor = null; opts = { focusHeading: true }; break;
     case 'goto-issue': {
       const x = validate()[Number(v)];
       if (!x) return;
@@ -1504,10 +1554,11 @@ root.addEventListener('click', (e) => {
     }
     case 'roll': testRoll(); break;
     case 'goto-classes': ui.view = 'classes'; break;
-    case 'back-to-forge': ui.view = null; step = 0; saveMsg = ''; opts = { focusHeading: true }; break;
+    case 'back-to-forge': ui.view = null; step = 0; opts = { focusHeading: true }; break;
     case 'save': {
       const n = validate().length;
       saveMsg = n ? `${n} ${n === 1 ? 'thing' : 'things'} to fix before this class can be saved. Use Fix to jump to each one.` : 'SAVED';
+      opts = n ? { focusSel: '[data-act="goto-issue"]' } : { focusSel: '[data-act="goto-classes"]' };
       break;
     }
     default: return;
