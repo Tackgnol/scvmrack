@@ -228,30 +228,24 @@ input.stamp-num[aria-invalid="true"]{background:var(--pink)!important;border-col
 @media (max-width:620px){.snackbar{left:16px;right:16px;transform:none;max-width:none}body{padding-bottom:120px}}
 @media (prefers-reduced-motion:reduce){.die[aria-checked="true"],.formula{transform:none}}
 
-/* animate: continuity for ability open/close, stamp press on step change, quiet feedback */
-@keyframes stamp-press{from{opacity:0;transform:scale(1.18) rotate(-3deg)}to{opacity:1;transform:none}}
-@keyframes fade-out{to{opacity:0}}
-@keyframes fade-in{from{opacity:0}}
-@keyframes snack-in{from{opacity:0;translate:0 12px}to{opacity:1;translate:0 0}}
+/* animate: hard cuts and physical motion only (no opacity), per the MÖRK BORG world */
+@keyframes stamp-press{from{transform:scale(1.18) rotate(-3deg)}to{transform:none}}
+@keyframes snack-in{from{translate:0 14px}to{translate:0 0}}
 @keyframes reveal-down{from{clip-path:inset(0 0 100% 0)}to{clip-path:inset(0 0 0 0)}}
 ::view-transition-group(*){animation-duration:320ms;animation-timing-function:cubic-bezier(0.16,1,0.3,1)}
 html[data-vt="close"]::view-transition-group(*){animation-duration:220ms}
-html[data-vt="open"]::view-transition-image-pair(*),html[data-vt="close"]::view-transition-image-pair(*){overflow:clip}
-html[data-vt="open"]::view-transition-old(*),html[data-vt="open"]::view-transition-new(*),
-html[data-vt="close"]::view-transition-old(*),html[data-vt="close"]::view-transition-new(*){height:100%;object-fit:none;object-position:top}
-html[data-vt="close"]::view-transition-old(*),html[data-vt="close"]::view-transition-new(*){animation-duration:180ms}
-html[data-vt="open"]::view-transition-old(*){animation-duration:120ms}
-html[data-vt="step"]::view-transition-old(root){animation:fade-out 140ms ease-out both}
-html[data-vt="step"]::view-transition-new(root){animation:fade-in 200ms ease-out both}
-html[data-vt="step"]::view-transition-old(step-stamp){animation:fade-out 100ms ease-out both}
+::view-transition-image-pair(*){overflow:clip}
+/* no cross-fades: the old image disappears at once, the new one is fully there from frame one */
+::view-transition-old(*){animation:none;display:none}
+::view-transition-new(*){animation:none;height:100%;object-fit:none;object-position:top}
 html[data-vt="step"]::view-transition-new(step-stamp){animation:stamp-press 260ms cubic-bezier(0.16,1,0.3,1) both}
 html[data-vt="step"]::view-transition-group(step-stamp){animation:none}
 #step-title{view-transition-name:step-stamp}
-.snackbar{animation:snack-in 200ms cubic-bezier(0.16,1,0.3,1)}
+.snackbar{animation:snack-in 180ms cubic-bezier(0.16,1,0.3,1)}
 .confirm{animation:reveal-down 200ms cubic-bezier(0.16,1,0.3,1)}
 @media (prefers-reduced-motion:reduce){
-  ::view-transition-group(*),::view-transition-old(*),::view-transition-new(*){animation:none!important}
-  .snackbar,.confirm{animation:fade-in 150ms ease-out}
+  ::view-transition-group(*),::view-transition-new(*){animation:none!important}
+  .snackbar,.confirm{animation:none}
 }
 /* polish: cards lift a tone, fields sink, clear separation (DESIGN.md tonal layers only) */
 .row,.statline,.abl-sum{background:var(--grey);border:2px solid var(--dark-grey)}
