@@ -25,3 +25,4 @@ Also prototype the read-only class detail page (`/classes/:id`, ticket 20) that 
   - **Filters open their sections**: Book → Book; Zine & Rack → both; My classes only → Mine; Public → Public.
   - **Group descriptions** under each heading.
   - **Unchanged**: search, the classless switch, the removed-class notice, the empty-pool warning, the read-only unclaimed-room state, the "older rules" chip and the class detail page.
+- **Round 3**: the switch uses the owner's engraved skull (`prototypes/assets/skull.svg`, inlined once as an SVG `<symbol>`). It sits on a square stamp plate that slides along a bone track: a grey plate on a dim bone when off, a yellow plate outlined in black on a yellow bone when on. **Before shipping**, confirm the skull's licence (the owner's file came from openclipart / "OpenClipart-Vectors"; openclipart is public domain, Pixabay uses its own licence) and credit it if needed.
