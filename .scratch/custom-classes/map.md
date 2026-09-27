@@ -17,7 +17,7 @@ An implementation-ready spec for GM-authored Custom Classes (creator, Party Clas
 
 ## Decisions so far
 
-- [What did charting settle about custom classes?](issues/00-charting-decisions.md): destination is a spec; GM-owned classes with optional public sharing and moderation; full Book Class parity incl. Class Items; party-only, same join screens; lock-on-use with archive.
+- [What did charting settle about custom classes?](issues/00-charting-decisions.md): destination is a spec; GM-owned classes with optional public sharing and moderation; full Book Class parity incl. Class Items; party-only, same join screens; versioned (ticket 10) with archive.
 - [What must a Custom Class be able to express to match every Book Class?](issues/01-book-class-parity-audit.md): six Book Classes; parity needs per-class stat dice and omens, a real grant model (item/pet per ability, not name maps or array positions), class-scoped Class Items hidden from catalog search, and generalising the Scum/Herbmaster class-id special cases.
 - [What must a small EU-hosted hobby site do when hosting user-published content?](issues/08-ugc-legal-obligations.md): public classes make scvmrack a DSA hosting platform (micro-exempt from Arts. 15, 20-28); must have an Art. 16 report form open to signed-out users, Art. 17 statements of reasons to authors, contact points and terms, and Art. 18 / Penal Code Art. 240 reporting to police; keep classes text-only.
 - [Where do Custom Classes, their abilities, origins and Class Items live, and how does a character point at one?](issues/02-custom-class-data-model.md): one `classes` table with a `source` enum (main_book/zine/the_rack/user) plus Credit; text in namespaced `translations` with authored-language fallback; explicit grant columns (Book Classes migrated); scoped Class Items in the catalog tables; per-stat dice + omen die, Book omen values fixed as part of done.
@@ -25,6 +25,7 @@ An implementation-ready spec for GM-authored Custom Classes (creator, Party Clas
 - [How do the join roll/forge flows roll from the Party Class Pool without changing their screens?](issues/05-party-aware-generation.md): invite token carries the party; no token means Book Classes only; every party character goes through the class screen (no blind roll); create + join in one transaction; pool re-checked on confirm; classless is a GM toggle; Owlbear split out.
 - [How should the class creator look and flow?](issues/04-class-creator-ux.md): variant B, a seven-step Forge flow with a status rail, one-language-at-a-time switch with missing counts, on-field validation plus Fix jumps, and a test roll on the final step; polished with impeccable.
 - [How does a GM find a catalog item or pet to grant?](issues/18-catalog-grant-search.md): the main page's fuzzy item search (`ItemAutocomplete` over `/api/equipment/search`), filtered to the slot's types, with the class's own Class Items pinned above results; Zine and Rack items are not grantable.
+- [What happens when a used Custom Class is edited, archived or unpublished?](issues/10-class-locking-and-archiving.md): versioning replaces the lock (ADR 0001). Characters keep the Class Version they were rolled with, the creator tells the GM before a save creates a version, pools follow the latest, and delete archives a used lineage.
 
 ## Not yet specified
 

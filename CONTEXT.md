@@ -38,8 +38,12 @@ _Avoid_: custom item, homebrew item
 A Custom Class its author has made visible to other GMs.
 _Avoid_: shared class, community class
 
+**Class Version**:
+One immutable snapshot of a Custom Class; a character plays the exact Class Version it was rolled with, while new rolls use the latest.
+_Avoid_: revision, locked class
+
 **Archived Custom Class**:
-A Custom Class that can no longer be rolled but still backs the characters already playing it.
+A Custom Class that can no longer be rolled but still backs the characters already playing its Class Versions.
 _Avoid_: deleted class
 
 ### Parties

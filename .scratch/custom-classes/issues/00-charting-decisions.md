@@ -21,6 +21,6 @@ Fix the destination and the scope-shaping decisions for custom classes before an
 - **Same mechanism**: joining a party shows the same roll/forge screens; the Party Class Pool only changes which classes they draw from.
 - **Party Class Pool**: Book Classes selected by default, any class toggleable, searchable. On opening the GM screen, a check notifies `class X has been removed by Y` for pooled classes that are gone.
 - **Player sees**: `playing custom class created by {name}` (author's Logto profile name).
-- **Locking**: a Custom Class locks once used; the GM duplicates to change it; delete means archive. Existing characters never break.
+- **Locking**: a Custom Class locks once used; the GM duplicates to change it; delete means archive. Existing characters never break. *Superseded by ticket 10 (ADR 0001): versioning instead of a lock; the promise that existing characters never break stands.*
 - **Moderation**: small admin panel; admins are an allowlist of user ids delivered as a Woodpecker secret (`from_secret`, like `logto_app_secret`) into a backend env var. Report reasons include copyright (`I own this class and do not wish it on scvmrack`) and abusive/illegal content. Classes publish immediately; takedown hides from search and other GMs' pools, characters keep it.
 - **Public classes in pools**: other GMs can pool a Public Custom Class; unpublish/takedown stops new rolls, existing characters keep it.

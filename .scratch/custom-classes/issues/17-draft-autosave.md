@@ -6,6 +6,8 @@ Blocked by: 02, 10
 
 ## Question
 
+Settled by ticket 10: autosave never creates Class Versions. Editing a used class works on a draft, and only an explicit Save mints a new version.
+
 The owner wants draft autosave (decided 2026-09-27): a GM who is interrupted mid-forge, closes the tab or switches device must not lose the class. Decide:
 
 - **Where drafts live**: server-side per GM account (works across devices; needs a table or a `status = draft` class row), browser storage (no backend, but lost with the device), or both.
