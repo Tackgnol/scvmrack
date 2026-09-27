@@ -227,6 +227,32 @@ input.stamp-num[aria-invalid="true"]{background:var(--pink)!important;border-col
 .snackbar span{flex:1;min-width:0}
 @media (max-width:620px){.snackbar{left:16px;right:16px;transform:none;max-width:none}body{padding-bottom:120px}}
 @media (prefers-reduced-motion:reduce){.die[aria-checked="true"],.formula{transform:none}}
+
+/* animate: continuity for ability open/close, stamp press on step change, quiet feedback */
+@keyframes stamp-press{from{opacity:0;transform:scale(1.18) rotate(-3deg)}to{opacity:1;transform:none}}
+@keyframes fade-out{to{opacity:0}}
+@keyframes fade-in{from{opacity:0}}
+@keyframes snack-in{from{opacity:0;translate:0 12px}to{opacity:1;translate:0 0}}
+@keyframes reveal-down{from{clip-path:inset(0 0 100% 0)}to{clip-path:inset(0 0 0 0)}}
+::view-transition-group(*){animation-duration:320ms;animation-timing-function:cubic-bezier(0.16,1,0.3,1)}
+html[data-vt="close"]::view-transition-group(*){animation-duration:220ms}
+html[data-vt="open"]::view-transition-image-pair(*),html[data-vt="close"]::view-transition-image-pair(*){overflow:clip}
+html[data-vt="open"]::view-transition-old(*),html[data-vt="open"]::view-transition-new(*),
+html[data-vt="close"]::view-transition-old(*),html[data-vt="close"]::view-transition-new(*){height:100%;object-fit:none;object-position:top}
+html[data-vt="close"]::view-transition-old(*),html[data-vt="close"]::view-transition-new(*){animation-duration:180ms}
+html[data-vt="open"]::view-transition-old(*){animation-duration:120ms}
+html[data-vt="step"]::view-transition-old(root){animation:fade-out 140ms ease-out both}
+html[data-vt="step"]::view-transition-new(root){animation:fade-in 200ms ease-out both}
+html[data-vt="step"]::view-transition-old(step-stamp){animation:fade-out 100ms ease-out both}
+html[data-vt="step"]::view-transition-new(step-stamp){animation:stamp-press 260ms cubic-bezier(0.16,1,0.3,1) both}
+html[data-vt="step"]::view-transition-group(step-stamp){animation:none}
+#step-title{view-transition-name:step-stamp}
+.snackbar{animation:snack-in 200ms cubic-bezier(0.16,1,0.3,1)}
+.confirm{animation:reveal-down 200ms cubic-bezier(0.16,1,0.3,1)}
+@media (prefers-reduced-motion:reduce){
+  ::view-transition-group(*),::view-transition-old(*),::view-transition-new(*){animation:none!important}
+  .snackbar,.confirm{animation:fade-in 150ms ease-out}
+}
 /* polish: cards lift a tone, fields sink, clear separation (DESIGN.md tonal layers only) */
 .row,.statline,.abl-sum{background:var(--grey);border:2px solid var(--dark-grey)}
 .abl-sum:hover{border-color:var(--yellow)}
@@ -661,7 +687,7 @@ function abilityChips(a) {
 }
 function abilitySummary(a, i, issues) {
   const miss = issues.filter((x) => x.path && x.path.startsWith(`abilities.${i}.`)).length;
-  return `<article class="abl" data-ability="${a.id}"><button type="button" class="abl-sum" data-act="open-ability" data-v="${a.id}" aria-expanded="false" aria-controls="abl-${a.id}">
+  return `<article class="abl" data-ability="${a.id}" style="view-transition-name:abl-${a.id}"><button type="button" class="abl-sum" data-act="open-ability" data-v="${a.id}" aria-expanded="false" aria-controls="abl-${a.id}">
     <span class="kindtag ${a.random ? '' : 'fixed'}">${a.random ? 'Random' : 'Fixed'}</span>
     <span class="abl-name">${esc(tx(a.name) || 'Unnamed ability')}</span>
     <span class="inline" style="gap:8px">${miss ? `<span class="chip warn" aria-label="${miss} to fix">${miss}</span>` : ''}<span class="abl-edit">Edit${CHEV}</span></span>
@@ -675,7 +701,7 @@ function abilityOpen(a, i) {
     a.mods.length ? '' : `<button type="button" class="act" data-act="add-mod" data-i="${i}">Add modifier</button>`,
     a.table ? '' : `<button type="button" class="act" data-act="add-table" data-i="${i}">Add reference table</button>`,
   ].join('');
-  return `<article class="row stack abl open" id="abl-${a.id}" aria-label="${esc(tx(a.name) || 'Unnamed ability')}" data-ability="${a.id}">
+  return `<article class="row stack abl open" id="abl-${a.id}" style="view-transition-name:abl-${a.id}" aria-label="${esc(tx(a.name) || 'Unnamed ability')}" data-ability="${a.id}">
       <div class="itemhead"><div class="inline">${abilityHeader(a)}</div>
         <div class="inline"><div class="seg" role="group" aria-label="Ability kind"><button type="button" class="act ${a.random ? '' : 'on'}" aria-pressed="${!a.random}" data-act="kind" data-i="${i}" data-v="fixed">Fixed</button><button type="button" class="act ${a.random ? 'on' : ''}" aria-pressed="${a.random}" data-act="kind" data-i="${i}" data-v="random">Random pool</button></div></div></div>
       ${confirming ? abilityConfirm(a, i) : ''}
@@ -696,7 +722,7 @@ function abilitiesBody() {
     ${trayHtml()}
     <div class="row spread">${num('randomCount', `Random abilities each scvm rolls (pool: ${pool})`, { min: 0, max: 20, invalid: state.randomCount > pool })}${counter(state.abilities.length, 'abilities')}</div>
     <div class="stack" style="gap:8px">${cards || '<div class="empty">No abilities yet. Add a fixed one every scvm gets, or build a random pool.</div>'}</div>
-    <div><button type="button" class="btn" data-act="add-ability" ${state.abilities.length >= LIMIT_LIST ? 'disabled' : ''}>Add ability</button></div>
+    <div style="view-transition-name:abl-add"><button type="button" class="btn" data-act="add-ability" ${state.abilities.length >= LIMIT_LIST ? 'disabled' : ''}>Add ability</button></div>
   </div>`;
 }
 function originsBody() {
@@ -755,7 +781,7 @@ function snackHtml() {
 }
 const root = document.getElementById('root');
 const stepIndex = (key) => STEPS.findIndex((s) => s.key === key);
-function render({ focusHeading = false, focusPath = null, focusSel = null, keepFocus = null } = {}) {
+function render({ focusHeading = false, focusPath = null, focusSel = null, keepFocus = null, stay = false } = {}) {
   if (!state.languages.includes(viewLang)) viewLang = state.languages[0];
   const issues = validate();
   const s = STEPS[step];
@@ -766,7 +792,7 @@ function render({ focusHeading = false, focusPath = null, focusSel = null, keepF
     <section aria-labelledby="step-title">
       <div class="b-head page-level"><h2 class="stamp" id="step-title" tabindex="-1">${s.label}</h2><div data-derived="langsw">${langSwitch(issues)}</div></div>
       <div class="paper stack-lg"><p class="hint">${s.hint}</p>${body}</div>
-      <div class="b-nav page-level">
+      <div class="b-nav page-level" style="view-transition-name:step-nav">
         <button type="button" class="btn" data-act="step" data-v="${step - 1}" ${step === 0 ? 'disabled' : ''}>${ARROW_L}Back</button>
         ${step < STEPS.length - 1 ? `<button type="button" class="btn save" data-act="step" data-v="${step + 1}">${STEPS[step + 1].label}${ARROW_R}</button>` : ''}
       </div>
@@ -778,8 +804,8 @@ function render({ focusHeading = false, focusPath = null, focusSel = null, keepF
   const cur = root.querySelector('.b-step[aria-current="step"]');
   if (cur && cur.scrollIntoView && window.innerWidth < 880) cur.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   const tryFocus = (el, center = true) => { if (!el) return false; el.focus({ preventScroll: !center }); if (center) el.scrollIntoView({ block: 'center' }); return true; };
-  if (focusSel && tryFocus(root.querySelector(focusSel))) return;
-  if (focusPath && tryFocus(root.querySelector(`[data-path="${CSS.escape(focusPath)}"]`))) return;
+  if (focusSel && tryFocus(root.querySelector(focusSel), !stay)) return;
+  if (focusPath && tryFocus(root.querySelector(`[data-path="${CSS.escape(focusPath)}"]`), !stay)) return;
   if (focusHeading) { const h = document.getElementById('step-title'); h.focus({ preventScroll: true }); window.scrollTo({ top: 0 }); return; }
   if (keepFocus) { for (const sel of keepFocus) { if (tryFocus(root.querySelector(sel), false)) return; } }
 }
@@ -811,6 +837,18 @@ function refreshDerived() {
     const err = document.getElementById(`${el.id}-err`);
     if (err) { err.hidden = !miss; if (miss) el.setAttribute('aria-describedby', err.id); else el.removeAttribute('aria-describedby'); }
   });
+}
+
+/* Motion: view transitions for continuity; skipped under reduced motion or without support. */
+const reduceMotion = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : { matches: true };
+let activeVT = null;
+function withTransition(kind, update) {
+  if (!document.startViewTransition || reduceMotion.matches) { update(); return; }
+  if (activeVT) activeVT.skipTransition();
+  document.documentElement.dataset.vt = kind;
+  const t = document.startViewTransition(update);
+  activeVT = t;
+  t.finished.finally(() => { if (activeVT === t) { activeVT = null; delete document.documentElement.dataset.vt; } });
 }
 
 /* Undo: every removal snapshots the draft first. */
@@ -1025,7 +1063,12 @@ root.addEventListener('click', (e) => {
     }
     default: return;
   }
-  render(opts);
+  const act = b.dataset.act;
+  const kind = act === 'step' || act === 'goto-issue' || act === 'goto-granter' || act === 'edit-item' || act === 'grant-new' ? 'step'
+    : act === 'open-ability' || act === 'add-ability' || act === 'show-grants' ? 'open'
+    : act === 'close-ability' || act === 'rm-ability' || act === 'rm-ability-yes' ? 'close' : null;
+  if (kind === 'open' || kind === 'close') opts.stay = true;
+  if (kind) withTransition(kind, () => render(opts)); else render(opts);
 });
 render();
 })();
