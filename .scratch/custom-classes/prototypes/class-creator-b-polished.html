@@ -889,7 +889,7 @@ function reviewBody(issues) {
       <span class="label group">Before you save</span>
       <div data-derived="issues">${issuesHtml(issues)}</div>
       <div class="inline"><button type="button" class="btn save" data-act="save" aria-describedby="save-status" ${saveMsg === 'SAVED' ? 'disabled' : ''}>${saveMsg === 'SAVED' ? 'Saved' : 'Save class'}</button></div>
-      <div id="save-status" role="status">${saveMsg === 'SAVED' ? `<div class="forged"><b>Forged</b><span>“${esc(tx(state.name))}” is saved. In the real app it now appears in your class list. Any edit re-arms Save.</span></div>` : saveMsg ? `<p class="status block">${esc(saveMsg)}</p>` : ''}</div>
+      <div id="save-status" role="status">${saveMsg === 'SAVED' ? `<div class="forged"><b>Forged</b><span>“${esc(tx(state.name))}” is saved to your classes. Any edit here re-arms Save.</span><button type="button" class="btn ink" data-act="goto-classes">Go to my classes${ARROW_R}</button></div>` : saveMsg ? `<p class="status block">${esc(saveMsg)}</p>` : ''}</div>
     </div>
   </div>`;
 }
@@ -916,6 +916,21 @@ function langSwitch(issues) {
     return `<button type="button" class="act ink ${viewLang === l ? 'on' : ''}" role="radio" aria-checked="${viewLang === l}" tabindex="${viewLang === l ? 0 : -1}" data-act="view-lang" data-v="${l}">${langLong[l]}${m ? `<span class="miss">${m} missing</span>` : ''}</button>`;
   }).join('')}</div></div>`;
 }
+/* After FORGED the GM goes to their class list (owner decision, iteration 4). Stub of that page. */
+function classesHtml() {
+  const n = state.abilities.length, pool = poolSize();
+  return `<section aria-labelledby="step-title" class="stack-lg">
+    <div class="b-head page-level"><h2 class="stamp" id="step-title" tabindex="-1">My classes</h2><span class="micro">Prototype stub of the class list</span></div>
+    <div class="paper stack">
+      <article class="row stack abl open" aria-label="${esc(tx(state.name))}">
+        <div class="itemhead"><div class="inline"><span class="typebadge">Custom</span><h3 class="card-h">${esc(tx(state.name))}</h3></div><span class="chip ok">Just forged</span></div>
+        <p class="hint">${esc(tx(state.description))}</p>
+        <div class="abl-chips" style="grid-column:auto"><span class="chip">${state.languages.map((l) => langLong[l]).join(' + ')}</span><span class="chip">${n} abilities · ${state.randomCount} of ${pool} rolled</span><span class="chip">${state.items.length} Class Items</span><span class="chip">Private</span></div>
+        <div class="card-foot"><button type="button" class="act" disabled title="Making a class public is ticket 07">Make public</button><button type="button" class="act on" data-act="back-to-forge">Edit class</button></div>
+      </article>
+      <p class="fieldhint">Book classes and classes other GMs made public are listed below yours in the real app.</p>
+    </div></section>`;
+}
 function snackHtml() {
   if (!ui.snack) return '';
   const n = ui.undo.length;
@@ -925,6 +940,7 @@ const root = document.getElementById('root');
 const stepIndex = (key) => STEPS.findIndex((s) => s.key === key);
 function render({ focusHeading = false, focusPath = null, focusSel = null, keepFocus = null, stay = false } = {}) {
   if (!state.languages.includes(viewLang)) viewLang = state.languages[0];
+  if (ui.view === 'classes') { root.innerHTML = classesHtml(); document.body.classList.remove('has-snack'); const h = document.getElementById('step-title'); h.focus({ preventScroll: true }); window.scrollTo({ top: 0 }); return; }
   if (STEPS[step].key === 'review') ui.fresh.clear();
   const issues = visible(validate());
   const s = STEPS[step];
@@ -1226,7 +1242,7 @@ root.addEventListener('keydown', (e) => {
   const n = all[(i + all.length) % all.length];
   e.preventDefault(); n.focus(); n.click();
 });
-const NAV_ACTS = new Set(['undo', 'step', 'open-ability', 'close-ability', 'open-item', 'close-item', 'view-lang', 'goto-issue', 'goto-granter', 'edit-item', 'roll', 'forge-for', 'forge-cancel',
+const NAV_ACTS = new Set(['goto-classes', 'back-to-forge', 'undo', 'step', 'open-ability', 'close-ability', 'open-item', 'close-item', 'view-lang', 'goto-issue', 'goto-granter', 'edit-item', 'roll', 'forge-for', 'forge-cancel',
   'show-grants', 'more-scopes', 'link-rows', 'gate-yes', 'gate-no', 'gate-change', 'confirm-cancel', 'rm-item', 'rm-ability', 'rm-table', 'save']);
 root.addEventListener('focusout', (e) => {
   const p = e.target.dataset && e.target.dataset.path;
@@ -1486,6 +1502,8 @@ root.addEventListener('click', (e) => {
       break;
     }
     case 'roll': testRoll(); break;
+    case 'goto-classes': ui.view = 'classes'; break;
+    case 'back-to-forge': ui.view = null; step = 0; saveMsg = ''; opts = { focusHeading: true }; break;
     case 'save': {
       const n = validate().length;
       saveMsg = n ? `${n} ${n === 1 ? 'thing' : 'things'} to fix before this class can be saved. Use Fix to jump to each one.` : 'SAVED';
@@ -1495,6 +1513,7 @@ root.addEventListener('click', (e) => {
   }
   const act = b.dataset.act;
   const kind = act === 'step' || act === 'goto-issue' || act === 'goto-granter' || act === 'edit-item' || act === 'grant-new' ? 'step'
+    : act === 'goto-classes' || act === 'back-to-forge' ? 'step'
     : act === 'open-ability' || act === 'add-ability' || act === 'show-grants' || act === 'open-item' || act === 'add-item' || act === 'dup-item' || act === 'dup-ability' ? 'open'
     : act === 'close-ability' || act === 'rm-ability' || act === 'rm-ability-yes' || act === 'close-item' || act === 'rm-item' || act === 'rm-item-yes' ? 'close' : null;
   if (kind === 'open' || kind === 'close') opts.stay = true;
