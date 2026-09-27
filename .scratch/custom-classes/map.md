@@ -31,6 +31,7 @@ An implementation-ready spec for GM-authored Custom Classes (creator, Party Clas
 - [How does the Scum-style Getting Better rule become a class setting shared by Book and Custom Classes?](issues/09-getting-better-class-setting.md): one `getting_better_rule` per class (Book rules / + a new ability / Specialist) plus a rules note; Specialist generalises Gutterborn Scum to N specialties with per-specialty Keep/Reroll; Scum migrates to it and the hardcoded id goes.
 - [Which Party Class Pool does an Owlbear room party owned by `system:obr-room` use?](issues/11-obr-room-party-pools.md): the default pool, read-only until a GM claims it; claiming keeps it as the start; attaching a GM's party replaces an empty system party (409 with a claim hint if players joined); pool content falls under the accepted room-trust residual.
 - [How do Owlbear's Roll and Forge use the room's Party Class Pool?](issues/13-obr-roll-and-forge-from-room-pool.md): Roll gets a compact in-popover class picker (Random first); one room-scoped endpoint creates, joins and binds in a transaction; no-party rooms roll Book Classes; a full party creates nothing; Forge carries the room and player in its URL. Build together with ticket 05.
+- [How does Owlbear's Forge keep the player's identity in the new tab?](issues/14-obr-forge-new-tab-identity.md): reuse the shipped RPG-68 `/obr-open` bridge with a `to=forge` destination; the panel refreshes its binding on focus; a different signed-in account fails loud; existing failure screens reused.
 
 ## Not yet specified
 
