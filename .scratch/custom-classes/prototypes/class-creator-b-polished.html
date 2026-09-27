@@ -599,6 +599,7 @@ function validate() {
   if (state.items.length > LIMIT_LIST) issues.push({ msg: `More than ${LIMIT_LIST} Class Items`, step: 'items' });
   if (state.origins.length > LIMIT_LIST) issues.push({ msg: `More than ${LIMIT_LIST} origins`, step: 'origins' });
   if (state.origins.length === 0) issues.push({ msg: 'Add at least one origin', step: 'origins', focusSel: '[data-act="add-origin"]' });
+  if (state.gettingBetter === 'specialist' && poolSize() < state.randomCount + 1) issues.push({ msg: 'Specialist needs at least one more random ability than each scvm rolls', step: 'gb', focusSel: '[data-path="gettingBetter"][data-v="specialist"]' });
   return issues;
 }
 const countFor = (issues, key) => issues.filter((x) => x.step === key).length;
@@ -946,8 +947,13 @@ function originsBody() {
 }
 function gbBody() {
   return `<div class="stack">
-    <div class="row stack">${choice('gettingBetter', 'Rule', [['book', 'Book rules'], ['extra-ability', 'Book rules + a new ability']])}
-    <p class="fieldhint" style="max-width:65ch">Book rules: max HP may grow, each ability score may rise or fall, and the scvm searches the debris for silver or scrolls. “+ a new ability” also rolls one random ability from this class’s pool that the scvm doesn’t have yet.</p></div>
+    <div class="row stack">${choice('gettingBetter', 'Rule', [['book', 'Book rules'], ['extra-ability', 'Book rules + a new ability'], ['specialist', 'Specialist']], 'rerender')}
+    <p class="fieldhint">${{
+      book: 'Book rules: max HP may grow, each ability score may rise or fall, and the scvm searches the debris for silver or scrolls.',
+      'extra-ability': 'Book rules, and every improvement also rolls one random ability from this class’s pool that the scvm doesn’t have yet, with anything it grants.',
+      specialist: 'Book rules. The scvm’s random abilities are its specialties: the first improvement adds one more, and each later improvement may reroll any of them.',
+    }[state.gettingBetter]}</p>
+    ${state.gettingBetter === 'specialist' && poolSize() < state.randomCount + 1 ? `<p class="status block">Specialist needs at least one more random ability than each scvm rolls (pool ${poolSize()}, rolls ${state.randomCount}).</p>` : ''}</div>
     ${lfield('gbNote', 'Rules note for the player (optional)', { multiline: true })}
   </div>`;
 }

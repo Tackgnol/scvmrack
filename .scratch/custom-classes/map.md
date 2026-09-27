@@ -28,6 +28,7 @@ An implementation-ready spec for GM-authored Custom Classes (creator, Party Clas
 - [What happens when a used Custom Class is edited, archived or unpublished?](issues/10-class-locking-and-archiving.md): versioning replaces the lock (ADR 0001). Characters keep the Class Version they were rolled with, the creator tells the GM before a save creates a version, pools follow the latest, and delete archives a used lineage.
 - [How do class creator drafts autosave and come back?](issues/17-draft-autosave.md): server-side `class_drafts` JSON documents with a local safety net; 1s debounced saves; one draft per class plus 3 new-class drafts; stale-revision saves fail loudly with load-newer or keep-mine; 90-day expiry shown in the UI.
 - [How do publishing, reporting and takedowns work?](issues/07-public-sharing-and-moderation.md): owner publishes with a rights checkbox; anyone can report (signed out, `/report`); SES emails (wired as in roster); statement of reasons with an in-app dispute and scvmrack-appeal@rpgtools.co; admin panel with a moderation log; take down vs remove content; serious reports flagged for the owner; log kept forever, reporter data anonymised after 2 years.
+- [How does the Scum-style Getting Better rule become a class setting shared by Book and Custom Classes?](issues/09-getting-better-class-setting.md): one `getting_better_rule` per class (Book rules / + a new ability / Specialist) plus a rules note; Specialist generalises Gutterborn Scum to N specialties with per-specialty Keep/Reroll; Scum migrates to it and the hardcoded id goes.
 
 ## Not yet specified
 
@@ -45,4 +46,4 @@ An implementation-ready spec for GM-authored Custom Classes (creator, Party Clas
 - Class Items entering the shared equipment catalog.
 - Authoring or promoting Built-in Classes (Book/Zine/Rack) in-app; they are seeded via SQL. Zine authors are pointed to contact@rpgtools.co instead, and Custom Classes never carry a zine Credit.
 - Starting a Custom Class from an existing class (owner decision, 2026-09-27).
-- Getting Better rules beyond the fixed menu (revisit only on user demand, as a fresh effort).
+- Getting Better rules beyond the three-option menu (Book rules / + a new ability / Specialist; revisit only on user demand, as a fresh effort).

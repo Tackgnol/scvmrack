@@ -46,6 +46,16 @@ _Avoid_: revision, locked class
 A Custom Class that can no longer be rolled but still backs the characters already playing its Class Versions.
 _Avoid_: deleted class
 
+### Getting Better
+
+**Getting Better Rule**:
+The per-class choice of how a scvm improves: Book rules, Book rules plus a new ability, or Specialist.
+_Avoid_: improvement mode, level-up rule
+
+**Specialist**:
+The Getting Better Rule where a scvm's random class abilities are its specialties: the first improvement adds one, later ones may reroll any.
+_Avoid_: Scum rule, Gutterborn rule
+
 ### Parties
 
 **Party Class Pool**:
