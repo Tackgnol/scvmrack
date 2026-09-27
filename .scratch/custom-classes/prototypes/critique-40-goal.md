@@ -33,4 +33,4 @@
 | 0 | 22/40 | first critique (Class Items ↔ Abilities) | `f0a69dd` |
 | 1 | 27/40 | shape, distill, polish, animate passes | `d19d718` |
 | 2 | – | harden: explicit forge, change type, scoped undo, safe ungranting (not yet re-scored) | `d19d718` |
-| 3 | 28/40 | scored the harden pass; fixed: arrow-safe forge/type (P1), undo stack + Ctrl+Z + Esc, collapsed Class Items (2.4k→0.9k px desktop, 4.2k→1.3k mobile), modifier row in Stats grammar (items too), ammo, use effect, table die, paste lines, duplicate, field hints with book values, resolved test roll, Forged stamp, DESIGN ramp sizes (detector 10→1) | _this commit_ |
+| 3 | 28/40 | scored the harden pass; fixed: arrow-safe forge/type (P1), undo stack + Ctrl+Z + Esc, collapsed Class Items (2.4k→0.9k px desktop, 4.2k→1.3k mobile), modifier row in Stats grammar (items too), ammo, use effect, table die, paste lines, duplicate, field hints with book values, resolved test roll, Forged stamp, DESIGN ramp sizes (detector 10→1) | `6eed31a` |
