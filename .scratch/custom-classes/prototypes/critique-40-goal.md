@@ -1,0 +1,35 @@
+# Experiment: class creator critique to 40/40
+
+**Goal:** get `impeccable critique` of `class-creator-b-polished.html` to **40/40** (every Nielsen heuristic scored 4, "genuinely excellent").
+
+**Start:** 27/40 at commit `d19d718` on `wayfinder/custom-classes`. Roll back with `git checkout d19d718 -- .scratch/custom-classes/prototypes/class-creator-b-polished.html`.
+
+## One iteration
+
+1. Run `/impeccable critique` on the prototype: dual-agent (design review + detector/overlay), full report, snapshot saved.
+2. Take its priority issues in order and fix them with the command it names (`harden`, `distill`, `shape`, `polish`, `clarify`, `layout`, ...), following each playbook and the craft floor.
+3. Verify in one batched pass (scripted interactions + desktop/mobile render + detector), fix what that shows, confirm once.
+4. Publish to the same artifact, commit on `wayfinder/custom-classes`, append a row to the log below.
+
+## Invariants (the experiment may not break these)
+
+- Product decisions in tickets 00, 02, 03, 04 stand: Class Items before Abilities with the gate question; one granter per Class Item; collapsed abilities with one open; free-text item descriptions (no effect tables); structured reference tables; one language at a time; the Stats-step control grammar; four title levels.
+- `DESIGN.md` and `PRODUCT.md` win over the critique: no rounded corners, no blurred shadows, no gradients, pink as an interrupt only, **no opacity animation**.
+- It stays a throwaway prototype: no backend, no real persistence.
+- A fix that needs a **new product decision** (e.g. reordering abilities, a zine credit on Custom Classes, catalog search behaviour) is put to the owner as a question, not invented.
+- Commits as the repo's configured user, no Co-Authored-By or Claude attribution.
+
+## Stop conditions
+
+- 40/40 reached, or
+- the score does not rise for two iterations in a row (record why it plateaued), or
+- the iteration cap is hit, or
+- the owner says stop.
+
+## Log
+
+| # | Score | Main fixes | Commit |
+|---|---|---|---|
+| 0 | 22/40 | first critique (Class Items ↔ Abilities) | `f0a69dd` |
+| 1 | 27/40 | shape, distill, polish, animate passes | `d19d718` |
+| 2 | – | harden: explicit forge, change type, scoped undo, safe ungranting (not yet re-scored) | `d19d718` |
