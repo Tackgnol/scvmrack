@@ -273,6 +273,12 @@ article.row > .itemhead{margin:-12px -12px 4px;padding:12px;border-bottom:2px so
 .label.group{font-family:var(--f-head);font-size:1.2rem;letter-spacing:.04em;color:var(--white);margin-bottom:6px}
 .label.group.on-paper{color:var(--black)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}.b-step[aria-current="step"],.stamp{transform:none!important}}
+/* iteration 6 follow-up: rail focus not clipped on phones, body lines within 75 characters, 44px steppers on touch */
+@media (max-width:879px){.b-rail{padding:6px 10px 12px 6px;scroll-padding-inline:6px}}
+.hint,.fieldhint{max-width:36em}
+.stepper .fieldhint{max-width:34ch}
+@media (max-width:520px) and (pointer:coarse){.stepper-row .step-btn{width:44px}}
+.statbox span{text-transform:uppercase}
 /* iteration 6: collapsed stat lines on phones */
 .statline.stat-sum{width:100%;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:12px;cursor:pointer;color:var(--white);text-align:left}
 .statline.stat-sum .formula{justify-self:start;font-size:1.5rem;grid-column:2;grid-row:1}
@@ -1021,9 +1027,11 @@ function render({ focusHeading = false, focusPath = null, focusSel = null, keepF
 }
 function refreshDerived() {
   const issues = visible(validate());
-  const rail = root.querySelector('[data-derived="rail"]'); if (rail) rail.innerHTML = railHtml(issues);
-  const ls = root.querySelector('[data-derived="langsw"]'); if (ls) ls.innerHTML = langSwitch(issues);
-  const iss = root.querySelector('[data-derived="issues"]'); if (iss) iss.innerHTML = issuesHtml(issues);
+  // only rewrite a derived block when it actually changed (keeps nodes stable while typing)
+  const put = (el, html) => { if (el && el.dataset.html !== html) { el.innerHTML = html; el.dataset.html = html; } };
+  put(root.querySelector('[data-derived="rail"]'), railHtml(issues));
+  put(root.querySelector('[data-derived="langsw"]'), langSwitch(issues));
+  put(root.querySelector('[data-derived="issues"]'), issuesHtml(issues));
   STATS.forEach((s) => {
     const st2 = state.stats[s.key];
     const f = root.querySelector(`[data-derived="formula-${s.key}"]`); if (f) f.textContent = formulaText(st2);
