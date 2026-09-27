@@ -63,6 +63,7 @@ input[type=number]{font-family:var(--f-head);font-size:1.2rem;text-align:center;
   border:1px solid var(--yellow);padding:4px 12px;min-height:36px;cursor:pointer}
 .act:hover{background:var(--yellow);color:var(--black)}
 .act.on{background:var(--yellow);color:var(--black)}
+.act[disabled],.act[disabled]:hover{background:transparent;color:var(--muted);border-color:var(--dark-grey);border-style:dashed;cursor:not-allowed}
 .act.kill{border-color:var(--blood);color:var(--white);background:var(--blood)}
 .act.kill:hover{background:var(--white);color:var(--blood);border-color:var(--white)}
 .act.ink{color:var(--black);border-color:var(--black)}
