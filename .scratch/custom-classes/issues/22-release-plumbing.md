@@ -2,7 +2,7 @@
 
 Type: task
 Status: open
-Blocked by: 04, 06, 07
+Blocked by: 04, 06, 07, 21
 
 ## Question
 
@@ -17,3 +17,4 @@ Work that must exist before Custom Classes ship, with nothing left to decide:
 - **FAQ and help**: entries on what Custom Classes are, who can make them, the party-only rule, how public sharing and reporting work, and the zine-author contact line.
 - **Security notes**: add "Party Class Pool content" to the OBR room-access row of `CLAUDE.md`'s security table (ticket 11).
 - **Env vars**: add `CUSTOM_CLASS_MAX_PER_GM` (default 50, ticket 19) to `CLAUDE.md`'s optional backend variables, next to `PARTY_MAX_MEMBERS`, and to the Woodpecker and compose config.
+- **Legal pages** (ticket 21): draft `/terms` (EN and PL, the PL version doubling as the *regulamin*) for the owner's review and a lawyer's glance; build `/legal` with the contact points and operator name and email; add the footer links and the terms-change banner.
