@@ -366,6 +366,30 @@ body.has-snack{padding-bottom:140px}
 .forged span{font-family:var(--f-label);letter-spacing:.1em;text-transform:uppercase;font-size:.75rem;max-width:40ch}
 .forged-inline{font-family:var(--f-head);font-size:1.2rem}
 @media (prefers-reduced-motion:reduce){.forged b{animation:none;transform:none}}
+/* Reordering (ticket 16): a grip on every orderable card and row. Drag it (mouse, pen, touch), tap it for a
+   Move menu, or press Alt+Up/Down anywhere on the card outside a text field. */
+.gripwrap{position:relative;display:flex;align-self:stretch}
+.grip{display:grid;place-items:center;width:32px;min-height:var(--tap);background:var(--black);border:1px solid var(--dark-grey);color:var(--muted);cursor:grab;touch-action:none;padding:0}
+.grip svg{width:10px;height:16px}
+.grip:hover,.grip[aria-expanded="true"]{color:var(--yellow);border-color:var(--yellow)}
+@media (pointer:coarse){.grip{width:44px}}
+.movable{display:grid;grid-template-columns:auto minmax(0,1fr);gap:0 6px;align-items:stretch}
+.movable > .card-h{min-width:0}
+.itemhead .gripwrap{align-self:center}
+.dragging{position:relative;z-index:30;box-shadow:6px 6px 0 var(--pink);transition:none!important}
+.dragging .grip{cursor:grabbing;color:var(--black);background:var(--yellow);border-color:var(--yellow)}
+.is-dragging [data-mlist]:not(.dragging){transition:transform .16s cubic-bezier(.2,.8,.2,1)}
+body.is-dragging{user-select:none;-webkit-user-select:none;cursor:grabbing}
+.movemenu{position:absolute;z-index:31;left:0;top:calc(100% + 4px);display:grid;gap:4px;min-width:176px;background:var(--black);border:2px solid var(--yellow);box-shadow:4px 4px 0 var(--pink);padding:6px}
+/* each card is its own stacking context (view-transition-name), so the one holding an open menu is lifted above its neighbours */
+[data-mlist]:has(.movemenu){position:relative;z-index:32}
+.movemenu .act{width:100%;text-align:left}
+.movemenu .act[disabled]{opacity:.35;cursor:default}
+.movemenu .act[disabled]:hover{background:transparent;color:var(--yellow)}
+@media (prefers-reduced-motion:reduce){.is-dragging [data-mlist]{transition:none!important}}
+.rowlink{grid-template-columns:auto 26px minmax(0,1fr) minmax(0,200px)}
+.rowlink > .gripwrap{padding-top:0;align-self:start}
+@media (max-width:620px){.rowlink{grid-template-columns:auto 26px minmax(0,1fr)}.rowlink select{grid-column:3}}
 </style>
 
 <header class="masthead">
@@ -464,7 +488,7 @@ const state = {
 };
 // UI-only state (never saved): the Class Items question and in-card confirmations.
 const ui = { itemsNo: false, itemsYes: false, confirm: null, snack: null, undo: [], redo: [], openAbility: null, openItem: null, showGrants: new Set(), forgeFor: null, moreScopes: new Set(),
-  fresh: new Set(), freshOrigins: new WeakSet(), touched: new Set(), cutRows: {}, linkRows: new Set() };
+  fresh: new Set(), freshOrigins: new WeakSet(), touched: new Set(), cutRows: {}, linkRows: new Set(), moveMenu: null };
 
 /* ---------- helpers ---------- */
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -750,7 +774,7 @@ function itemSummary(it, i, issues) {
   const miss = issues.filter((x) => x.path && x.path.startsWith(`items.${i}.`)).length;
   const g = granterOf(keyOf(it));
   const who = g ? `<span class="chip">granted by ${esc(tx(g.a.name) || 'Unnamed ability')}${g.kind === 'table' ? ` · row ${g.row + 1}` : ''}</span>` : '<span class="chip warn">waits for an ability</span>';
-  return `<article class="abl" data-item="${it.id}" style="view-transition-name:item-${it.id}"><h3 class="card-h"><button type="button" class="abl-sum item-sum" data-act="open-item" data-v="${it.id}" aria-expanded="false" aria-label="${esc(tx(it.name) || 'Unnamed')}, ${typeWord[it.type]}" aria-describedby="item-chips-${it.id}">
+  return `<article class="abl movable" data-mlist="items" data-mi="${i}" data-item="${it.id}" style="view-transition-name:item-${it.id}">${grip('items', i, state.items.length, tx(it.name) || 'Unnamed item')}<h3 class="card-h"><button type="button" class="abl-sum item-sum" data-act="open-item" data-v="${it.id}" aria-expanded="false" aria-label="${esc(tx(it.name) || 'Unnamed')}, ${typeWord[it.type]}" aria-describedby="item-chips-${it.id}">
     <span class="typebadge">${typeWord[it.type]}</span>
     <span class="abl-name">${esc(tx(it.name) || 'Unnamed')}</span>
     <span class="inline abl-meta" style="gap:8px">${miss ? `<span class="chip warn" aria-label="${miss} to fix">${miss}</span>` : ''}<span class="abl-edit">Edit${CHEV}</span></span>
@@ -758,8 +782,8 @@ function itemSummary(it, i, issues) {
 }
 function itemOpen(it, i) {
   const confirming = ui.confirm && ui.confirm.type === 'item' && ui.confirm.id === it.id;
-  return `<article class="row stack abl open" id="item-${it.id}" style="view-transition-name:item-${it.id}" aria-label="${esc(tx(it.name) || 'Unnamed Class Item')}" data-item="${it.id}">
-      <div class="itemhead"><div class="inline"><span class="typebadge">${typeWord[it.type]}</span><h3 class="card-h">${esc(tx(it.name) || 'Unnamed')}</h3></div></div>
+  return `<article class="row stack abl open" id="item-${it.id}" style="view-transition-name:item-${it.id}" aria-label="${esc(tx(it.name) || 'Unnamed Class Item')}" data-item="${it.id}" data-mlist="items" data-mi="${i}">
+      <div class="itemhead"><div class="inline">${grip('items', i, state.items.length, tx(it.name) || 'Unnamed item')}<span class="typebadge">${typeWord[it.type]}</span><h3 class="card-h">${esc(tx(it.name) || 'Unnamed')}</h3></div></div>
       ${confirming ? itemConfirm(it) : ''}
       ${grantedByLine(it)}
       ${lfield(`items.${i}.name`, 'Name')}${lfield(`items.${i}.description`, 'Description (optional)', { multiline: true, hint: 'Special rules, effects and flavour, as the player reads them. scvmrack never rolls or applies them.' })}
@@ -779,6 +803,7 @@ function itemsBody() {
   const issues = visible(validate());
   return `<div class="stack">
     <div class="spread">${addItemRow(full)}${counter(state.items.length, 'Class Items')}</div>
+    ${state.items.length > 1 ? ORDER_HINT('The class page lists Class Items in this order.') : ''}
     <div class="stack" style="gap:8px">${state.items.map((it, i) => (ui.openItem === it.id ? itemOpen(it, i) : itemSummary(it, i, issues))).join('') || '<div class="empty">No Class Items yet. Pick a kind above.</div>'}</div>
   </div>`;
 }
@@ -841,9 +866,9 @@ function tableEditor(i) {
   const confirmHtml = confirming ? `<div class="confirm" role="group" aria-label="Confirm removal"><p>${linked.map((x) => `Row ${x.k + 1} grants “${esc(tx(x.it.name) || 'Unnamed')}”`).join('. ')}. Remove the table? ${linked.length > 1 ? 'Those items' : 'That item'} will wait for an ability.</p>
     <div class="inline"><button type="button" class="act danger" data-act="rm-table-yes" data-i="${i}">Remove table</button><button type="button" class="act" data-act="confirm-cancel" data-v="table-${a.id}">Keep it</button></div></div>` : '';
   return `<div class="stack"><div class="spread"><span class="label group" style="margin:0">Reference table · d${t.die}</span>${confirming ? '' : `<button type="button" class="act kill" data-act="rm-table" data-i="${i}">Remove table</button>`}</div>${confirmHtml}
-    <p class="fieldhint">A list the player rolls on when the ability says so. The sheet shows the result; it never applies it.</p>
+    <p class="fieldhint">A list the player rolls on when the ability says so. The sheet shows the result; it never applies it. A row's number is its die result: moving a row changes which roll gives it, and its Class Item link moves with it.</p>
     ${dieSelect(`abilities.${i}.table.die`, 'Table die (one row per side)', [2, 3, 4, 6, 8, 10, 12], undefined, 'Paste several lines into a row to fill the rows below it.', 'table-die', `data-i="${i}"`)}
-    ${t.rows.map((r, k) => `<div class="rowlink"><span>${k + 1}</span>${textInput(`abilities.${i}.table.rows.${k}.${viewLang}`, { multiline: true, lang: viewLang, label: `Row ${k + 1}` })}${showLinks ? rowSelect(k) : ''}</div>`).join('')}
+    ${t.rows.map((r, k) => `<div class="rowlink" data-mlist="rows:${a.id}" data-mi="${k}" style="view-transition-name:r-${oid(r)}">${grip(`rows:${a.id}`, k, t.rows.length, `row ${k + 1}`)}<span>${k + 1}</span>${textInput(`abilities.${i}.table.rows.${k}.${viewLang}`, { multiline: true, lang: viewLang, label: `Row ${k + 1}` })}${showLinks ? rowSelect(k) : ''}</div>`).join('')}
     ${state.items.length && !showLinks ? `<div><button type="button" class="act" data-act="link-rows" data-v="${a.id}" data-i="${i}">Let a row grant a Class Item</button></div>` : ''}</div>`;
 }
 function abilityConfirm(a, i) {
@@ -871,6 +896,44 @@ function trayHtml() {
     <ul>${waiting.map((it) => `<li><span class="typebadge">${typeWord[it.type]}</span><b>${esc(tx(it.name) || 'Unnamed')}</b><button type="button" class="act" data-act="grant-new" data-v="${it.id}" aria-label="Grant ${esc(tx(it.name) || 'this item')} from a new ability">Grant from a new ability</button></li>`).join('')}</ul>
     <p class="hint">Or pick one in an existing ability's grant menu below. A class can't be saved while an item waits.</p></div>`;
 }
+/* Reordering (ticket 16): abilities, Class Items, origins and table rows keep an explicit order. The sheet, the class
+   page and the test roll list them in it; Random abilities and origins are numbered in it; a table row's number is its
+   die result. Each move is one undoable change; repeated moves of the same thing collapse into one. */
+const oids = new WeakMap(); let oidN = 0;
+const oid = (o) => { if (!oids.has(o)) oids.set(o, ++oidN); return oids.get(o); };
+function listArr(lk) {
+  if (lk === 'abilities') return state.abilities;
+  if (lk === 'items') return state.items;
+  if (lk === 'origins') return state.origins;
+  const a = abilityById(Number(lk.split(':')[1]));
+  return a && a.table ? a.table.rows : null;
+}
+function listLabel(lk, o, k) {
+  if (lk === 'abilities') return `“${tx(o.name) || 'Unnamed ability'}”`;
+  if (lk === 'items') return `“${tx(o.name) || 'Unnamed item'}”`;
+  if (lk === 'origins') return tx(o) ? `origin “${tx(o)}”` : `origin ${k + 1}`;
+  return `row ${k + 1}`;
+}
+function moveTo(lk, from, to, { coalesce = true, act = 'grip' } = {}) {
+  const arr = listArr(lk);
+  if (!arr || from < 0 || from >= arr.length) return null;
+  to = Math.max(0, Math.min(arr.length - 1, to));
+  if (to === from) return null;
+  const o = arr[from], n = arr.length;
+  const place = (k) => { const a = listArr(lk); a.splice(a.indexOf(o), 1); a.splice(k, 0, o); };
+  const where = lk.startsWith('rows:') ? `row ${to + 1}` : `position ${to + 1} of ${n}`;
+  withUndo(`Moved ${listLabel(lk, o, from)} to ${where}.`, () => place(to), () => place(from), `[data-act="grip"][data-list="${lk}"][data-i="${from}"]`, coalesce ? `move:${lk}:${oid(o)}` : null, true);
+  return act === 'grip' || act === 'move' ? `[data-act="grip"][data-list="${lk}"][data-i="${to}"]` : `[data-mlist="${lk}"][data-mi="${to}"] [data-act="${act}"]`;
+}
+const GRIP = '<svg viewBox="0 0 10 16" aria-hidden="true"><g fill="currentColor"><rect x="1" y="1" width="3" height="3"/><rect x="6" y="1" width="3" height="3"/><rect x="1" y="6.5" width="3" height="3"/><rect x="6" y="6.5" width="3" height="3"/><rect x="1" y="12" width="3" height="3"/><rect x="6" y="12" width="3" height="3"/></g></svg>';
+function grip(lk, i, n, name) {
+  if (n < 2) return '';
+  const open = ui.moveMenu && ui.moveMenu.lk === lk && ui.moveMenu.i === i;
+  const b = (to, t, dis) => `<button type="button" class="act" data-act="move" data-list="${lk}" data-i="${i}" data-v="${to}" ${dis ? 'disabled' : ''}>${t}</button>`;
+  const menu = open ? `<div class="movemenu" role="group" aria-label="Move ${esc(name)}">${b('up', 'Move up', i === 0)}${b('down', 'Move down', i === n - 1)}${b('top', 'To the top', i === 0)}${b('bottom', 'To the bottom', i === n - 1)}<button type="button" class="act" data-act="move-close" data-list="${lk}" data-i="${i}">Close</button></div>` : '';
+  return `<span class="gripwrap"><button type="button" class="grip" data-act="grip" data-list="${lk}" data-i="${i}" aria-label="Move ${esc(name)}, ${i + 1} of ${n}" aria-expanded="${open}" aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown" title="Drag to move, or tap for Move up/down">${GRIP}</button>${menu}</span>`;
+}
+const ORDER_HINT = (what) => `<p class="fieldhint orderhint">Drag a card by its grip, tap the grip for Move up or down, or press <kbd>Alt ↑ ↓</kbd> on a card. ${what}</p>`;
 const CHEV = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square"/></svg>';
 function abilityChips(a) {
   const chips = [];
@@ -886,8 +949,10 @@ function abilityChips(a) {
 }
 function abilitySummary(a, i, issues) {
   const miss = issues.filter((x) => x.path && x.path.startsWith(`abilities.${i}.`)).length;
-  return `<article class="abl" data-ability="${a.id}" style="view-transition-name:abl-${a.id}"><h3 class="card-h"><button type="button" class="abl-sum" data-act="open-ability" data-v="${a.id}" aria-expanded="false" aria-label="${esc(tx(a.name) || 'Unnamed ability')}, ${a.random ? 'random' : 'fixed'}" aria-describedby="abl-chips-${a.id}">
-    <span class="kindtag ${a.random ? '' : 'fixed'}">${a.random ? 'Random' : 'Fixed'}</span>
+  // Random abilities are numbered in pool order, as a zine prints its d6 list
+  const rank = a.random ? state.abilities.filter((x) => x.random).indexOf(a) + 1 : 0;
+  return `<article class="abl movable" data-mlist="abilities" data-mi="${i}" data-ability="${a.id}" style="view-transition-name:abl-${a.id}">${grip('abilities', i, state.abilities.length, tx(a.name) || 'Unnamed ability')}<h3 class="card-h"><button type="button" class="abl-sum" data-act="open-ability" data-v="${a.id}" aria-expanded="false" aria-label="${esc(tx(a.name) || 'Unnamed ability')}, ${a.random ? `random ${rank}` : 'fixed'}" aria-describedby="abl-chips-${a.id}">
+    <span class="kindtag ${a.random ? '' : 'fixed'}">${a.random ? `Random ${rank}` : 'Fixed'}</span>
     <span class="abl-name">${esc(tx(a.name) || 'Unnamed ability')}</span>
     <span class="inline abl-meta" style="gap:8px">${miss ? `<span class="chip warn" aria-label="${miss} to fix">${miss}</span>` : ''}<span class="abl-edit">Edit${CHEV}</span></span>
     ${tx(a.text) ? `<span class="abl-text">${esc(tx(a.text))}</span>` : ''}
@@ -913,8 +978,8 @@ function abilityOpen(a, i) {
     a.mods.length ? '' : `<button type="button" class="act" data-act="add-mod" data-base="abilities.${i}">Add modifier</button>`,
     a.table ? '' : `<button type="button" class="act" data-act="add-table" data-i="${i}">Add reference table</button>`,
   ].join('');
-  return `<article class="row stack abl open" id="abl-${a.id}" style="view-transition-name:abl-${a.id}" aria-label="${esc(tx(a.name) || 'Unnamed ability')}" data-ability="${a.id}">
-      <div class="itemhead"><div class="inline">${abilityHeader(a)}</div>
+  return `<article class="row stack abl open" id="abl-${a.id}" style="view-transition-name:abl-${a.id}" aria-label="${esc(tx(a.name) || 'Unnamed ability')}" data-ability="${a.id}" data-mlist="abilities" data-mi="${i}">
+      <div class="itemhead"><div class="inline">${grip('abilities', i, state.abilities.length, tx(a.name) || 'Unnamed ability')}${abilityHeader(a)}</div>
         <div class="inline"><div class="seg" role="radiogroup" aria-label="Ability kind"><button type="button" class="act ${a.random ? '' : 'on'}" role="radio" aria-checked="${!a.random}" tabindex="${a.random ? -1 : 0}" data-act="kind" data-i="${i}" data-v="fixed">Fixed</button><button type="button" class="act ${a.random ? 'on' : ''}" role="radio" aria-checked="${a.random}" tabindex="${a.random ? 0 : -1}" data-act="kind" data-i="${i}" data-v="random">Random pool</button></div></div></div>
       ${confirming ? abilityConfirm(a, i) : ''}
       ${lfield(`abilities.${i}.name`, 'Name', { hint: 'Porting a zine? Paste its ability list here, one per line as “Name: rules”, and each line becomes an ability.' })}
@@ -934,6 +999,7 @@ function abilitiesBody() {
     ${trayHtml()}
     ${ZINE_HELP}
     <div class="row spread">${num('randomCount', 'Random abilities rolled', { min: 0, max: Math.max(pool, state.randomCount), invalid: state.randomCount > pool, hint: `Every scvm gets all Fixed abilities, plus this many rolled from the Random pool (${pool} in it). A zine’s “roll d6 for your ability” is a pool of 6 with 1 rolled.` })}${counter(state.abilities.length, 'abilities')}</div>
+    ${state.abilities.length > 1 ? ORDER_HINT('The sheet and the class page show abilities in this order, and Random ones are numbered in it.') : ''}
     <div class="stack" style="gap:8px">${cards || '<div class="empty">No abilities yet. Add a fixed one every scvm gets, or build a random pool.</div>'}</div>
     <div style="view-transition-name:abl-add"><button type="button" class="btn ink" data-act="add-ability" ${state.abilities.length >= LIMIT_LIST ? 'disabled' : ''}>Add ability</button></div>
   </div>`;
@@ -941,7 +1007,8 @@ function abilitiesBody() {
 function originsBody() {
   return `<div class="stack">
     <div class="spread"><button type="button" class="btn ink" data-act="add-origin" ${state.origins.length >= LIMIT_LIST ? 'disabled' : ''}>Add origin</button>${counter(state.origins.length, 'origins')}</div>
-    ${state.origins.map((o, k) => `<div class="row stack" style="gap:6px"><div class="spread"><label class="label" for="${fid(`origins.${k}.${viewLang}`)}" style="margin:0">Origin ${k + 1}</label><button type="button" class="act kill" data-act="rm-origin" data-i="${k}">Remove</button></div>${textInput(`origins.${k}.${viewLang}`, { lang: viewLang })}</div>`).join('') || '<div class="empty">No origins yet. A class needs at least one.</div>'}
+    ${state.origins.length > 1 ? ORDER_HINT('Origins are numbered in this order, as the zine prints them; a scvm still gets one at random.') : ''}
+    ${state.origins.map((o, k) => `<div class="row stack" data-mlist="origins" data-mi="${k}" style="gap:6px;view-transition-name:o-${oid(o)}"><div class="spread"><span class="inline" style="gap:8px">${grip('origins', k, state.origins.length, tx(o) ? `origin “${tx(o)}”` : `origin ${k + 1}`)}<label class="label" for="${fid(`origins.${k}.${viewLang}`)}" style="margin:0">Origin ${k + 1}</label></span><button type="button" class="act kill" data-act="rm-origin" data-i="${k}">Remove</button></div>${textInput(`origins.${k}.${viewLang}`, { lang: viewLang })}</div>`).join('') || '<div class="empty">No origins yet. A class needs at least one.</div>'}
     ${ZINE_HELP}
   </div>`;
 }
@@ -1042,7 +1109,7 @@ function render({ focusHeading = false, focusPath = null, focusSel = null, keepF
   const body = { identity: () => `<div class="stack">${langClassBlock()}${lfield('name', 'Class name')}${lfield('description', 'Description', { multiline: true })}${ZINE_CONTACT}</div>`,
     numbers: statsBody, items: itemsBody, abilities: abilitiesBody, origins: originsBody, gb: gbBody, review: () => reviewBody(issues) }[s.key]();
   root.innerHTML = `<div class="b-layout">
-    <nav class="b-railwrap page-level" aria-label="Class creator steps"><ol class="b-rail" data-derived="rail">${railHtml(issues)}</ol><p class="keys" aria-hidden="true">Outside fields: <kbd>Ctrl Z</kbd> undo · <kbd>Ctrl Shift Z</kbd> redo · <kbd>Alt ← →</kbd> steps · <kbd>Esc</kbd> close. In a field, <kbd>Esc</kbd> goes to Done.</p></nav>
+    <nav class="b-railwrap page-level" aria-label="Class creator steps"><ol class="b-rail" data-derived="rail">${railHtml(issues)}</ol><p class="keys" aria-hidden="true">Outside fields: <kbd>Ctrl Z</kbd> undo · <kbd>Ctrl Shift Z</kbd> redo · <kbd>Alt ← →</kbd> steps · <kbd>Alt ↑ ↓</kbd> move a card · <kbd>Esc</kbd> close. In a field, <kbd>Esc</kbd> goes to Done.</p></nav>
     <section aria-labelledby="step-title">
       <div class="b-head page-level"><div class="inline" style="gap:12px"><h2 class="stamp" id="step-title" tabindex="-1">${s.label}</h2><span class="stepcount">Step ${step + 1} of ${STEPS.length}</span></div><div data-derived="langsw">${langSwitch(issues)}</div></div>
       <div class="paper stack-lg"><p class="hint">${s.hint}</p>${body}</div>
@@ -1131,15 +1198,15 @@ function armSnack() {
 // quiet entries (adds, Fixed/Random flips) are undoable without a snackbar; the step nav names them
 function withUndo(msg, doIt, inverse, focusSel = null, coalesceKey = null, quiet = false) {
   const top = ui.undo.at(-1);
-  if (coalesceKey && top && ui.snack === top && top.coalesceKey === coalesceKey) {
-    // repeated changes to the same control (e.g. arrowing through a menu) keep ONE undo back to the original value
-    doIt(); markEdit(); top.msg = msg; top.doIt = doIt; top.rev = ui.rev; clearRedo(); armSnack(); announce(`${msg} Undo is available.`); return;
+  if (coalesceKey && top && top.coalesceKey === coalesceKey && (ui.snack === top || (quiet && top.quiet && top.rev === ui.rev))) {
+    // repeated changes to the same control (e.g. arrowing through a menu, moving one card again) keep ONE undo back to the original
+    doIt(); markEdit(); top.msg = msg; top.doIt = doIt; top.rev = ui.rev; clearRedo(); if (!quiet) armSnack(); announce(quiet ? msg : `${msg} Undo is available.`); return;
   }
   doIt();
   markEdit();
   ui.confirm = null;
   clearRedo();
-  const entry = { msg, inverse, doIt, focusSel, coalesceKey, step, openAbility: ui.openAbility, openItem: ui.openItem, trigger: currentTrigger, rev: ui.rev };
+  const entry = { msg, inverse, doIt, focusSel, coalesceKey, quiet, step, openAbility: ui.openAbility, openItem: ui.openItem, trigger: currentTrigger, rev: ui.rev };
   ui.undo.push(entry);
   if (ui.undo.length > UNDO_DEPTH) ui.undo.shift();
   if (quiet) { if (ui.snack) { ui.snack = null; clearTimeout(snackTimer); } announce(msg); return; }
@@ -1371,6 +1438,18 @@ document.addEventListener('keydown', (e) => {
     render({ focusSel: fs, keepFocus: UNDO_FOCUS });
     return;
   }
+  // Alt+Up/Down moves the card or row that holds focus (never from inside a text field or menu)
+  if (e.altKey && !e.ctrlKey && !e.metaKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown') && !typing(e.target) && e.target.tagName !== 'SELECT') {
+    const c = e.target.closest && e.target.closest('[data-mlist]');
+    if (!c) return;
+    e.preventDefault();
+    const lk = c.dataset.mlist, from = Number(c.dataset.mi), act = e.target.dataset.act || 'grip';
+    ui.moveMenu = null;
+    const fs = moveTo(lk, from, from + (e.key === 'ArrowUp' ? -1 : 1), { act });
+    if (!fs) { announce(e.key === 'ArrowUp' ? 'Already first.' : 'Already last.'); return; }
+    withTransition('move', () => render({ focusSel: fs, stay: true }));
+    return;
+  }
   // Alt+Left/Right moves between steps
   if (e.altKey && !e.ctrlKey && !e.metaKey && (e.key === 'ArrowLeft' || e.key === 'ArrowRight') && !typing(e.target) && e.target.tagName !== 'SELECT') {
     const b = root.querySelector(`.b-nav [data-act="step"][data-v="${step + (e.key === 'ArrowLeft' ? -1 : 1)}"]:not([disabled])`);
@@ -1385,7 +1464,7 @@ document.addEventListener('keydown', (e) => {
     return;
   }
   if (e.key === 'Escape') {
-    const btn = root.querySelector('[data-act="confirm-cancel"]') || root.querySelector('[data-act="close-stat"]') || root.querySelector('[data-act="forge-cancel"]') || root.querySelector('[data-act="close-ability"]') || root.querySelector('[data-act="close-item"]');
+    const btn = root.querySelector('[data-act="move-close"]') || root.querySelector('[data-act="confirm-cancel"]') || root.querySelector('[data-act="close-stat"]') || root.querySelector('[data-act="forge-cancel"]') || root.querySelector('[data-act="close-ability"]') || root.querySelector('[data-act="close-item"]');
     if (btn) { e.preventDefault(); btn.click(); }
   }
 });
@@ -1409,7 +1488,7 @@ root.addEventListener('keydown', (e) => {
   e.preventDefault(); n.focus(); n.click();
 });
 const NAV_ACTS = new Set(['open-stat', 'close-stat', 'goto-classes', 'back-to-forge', 'undo', 'redo', 'step', 'open-ability', 'close-ability', 'open-item', 'close-item', 'view-lang', 'goto-issue', 'goto-granter', 'edit-item', 'roll', 'forge-for', 'forge-cancel',
-  'show-grants', 'more-scopes', 'link-rows', 'gate-yes', 'gate-no', 'gate-change', 'confirm-cancel', 'rm-item', 'rm-ability', 'rm-table', 'save']);
+  'grip', 'move', 'move-close', 'show-grants', 'more-scopes', 'link-rows', 'gate-yes', 'gate-no', 'gate-change', 'confirm-cancel', 'rm-item', 'rm-ability', 'rm-table', 'save']);
 // Leaving a fresh field re-flags it, but never while a pointer is down: rewriting the rail between
 // mousedown and click would swallow the click. The refresh waits until after the click lands.
 let pointerHeld = false, refreshAfterPointer = false;
@@ -1436,7 +1515,25 @@ root.addEventListener('click', (e) => {
   let opts = { keepFocus: [same] };
   currentTrigger = b.dataset.act === 'undo' || b.dataset.act === 'redo' ? null : same;
   if (!NAV_ACTS.has(b.dataset.act)) { if (ui.redo.length || (ui.snack && ui.snack.undone)) clearRedo(); markEdit(); }
+  if (!['grip', 'move', 'move-close'].includes(b.dataset.act)) ui.moveMenu = null;
   switch (b.dataset.act) {
+    case 'grip': {
+      const lk = b.dataset.list, open = ui.moveMenu && ui.moveMenu.lk === lk && ui.moveMenu.i === i;
+      ui.moveMenu = open ? null : { lk, i };
+      opts = { focusSel: open ? same : `.movemenu [data-act="move"]:not([disabled])`, stay: true };
+      break;
+    }
+    case 'move': {
+      // the menu stays open on the moved card, so Move up, Move up… walks it and collapses into one undo
+      const lk = b.dataset.list, n = listArr(lk).length;
+      const to = Math.max(0, Math.min(n - 1, { up: i - 1, down: i + 1, top: 0, bottom: n - 1 }[v]));
+      moveTo(lk, i, to);
+      ui.moveMenu = { lk, i: to };
+      const again = (v === 'up' || v === 'top') ? to > 0 : to < n - 1;
+      opts = { focusSel: again ? `.movemenu [data-act="move"][data-v="${v}"]` : `.movemenu [data-act="move"]:not([disabled])`, stay: true };
+      break;
+    }
+    case 'move-close': ui.moveMenu = null; opts = { focusSel: `[data-act="grip"][data-list="${b.dataset.list}"][data-i="${i}"]`, stay: true }; break;
     case 'nudge': {
       const input = document.getElementById(fid(b.dataset.path));
       const next = Math.max(Number(input.min), Math.min(Number(input.max), parseNum(input.value) + Number(b.dataset.d)));
@@ -1700,13 +1797,66 @@ root.addEventListener('click', (e) => {
     default: return;
   }
   const act = b.dataset.act;
-  const kind = act === 'step' || act === 'goto-issue' || act === 'goto-granter' || act === 'edit-item' || act === 'grant-new' ? 'step'
+  const kind = act === 'move' ? 'move' : act === 'step' || act === 'goto-issue' || act === 'goto-granter' || act === 'edit-item' || act === 'grant-new' ? 'step'
     : act === 'goto-classes' || act === 'back-to-forge' ? 'step'
     : act === 'open-ability' || act === 'add-ability' || act === 'show-grants' || act === 'open-item' || act === 'add-item' || act === 'dup-item' || act === 'dup-ability' ? 'open'
     : act === 'close-ability' || act === 'rm-ability' || act === 'rm-ability-yes' || act === 'close-item' || act === 'rm-item' || act === 'rm-item-yes' ? 'close' : null;
   if (kind === 'open' || kind === 'close') opts.stay = true;
   if (kind) withTransition(kind, () => render(opts)); else render(opts);
 });
+/* Drag by the grip (mouse, pen, touch). A press that doesn't travel is a tap: the click opens the Move menu. The other
+   cards slide aside live; dropping commits one undoable move. Esc or a cancelled pointer puts everything back. */
+let drag = null, swallowClick = false;
+root.addEventListener('pointerdown', (e) => {
+  swallowClick = false; // a fresh press is never the tail of the last drag
+  const g = e.target.closest && e.target.closest('.grip');
+  if (!g || (e.pointerType === 'mouse' && e.button !== 0)) return;
+  const c = g.closest('[data-mlist]');
+  if (!c) return;
+  drag = { g, c, id: e.pointerId, lk: g.dataset.list, from: Number(g.dataset.i), to: Number(g.dataset.i), x0: e.clientX, y0: e.clientY, on: false };
+  try { g.setPointerCapture(e.pointerId); } catch (_) { /* older browsers */ }
+});
+root.addEventListener('pointermove', (e) => {
+  if (!drag || e.pointerId !== drag.id) return;
+  if (!drag.on) {
+    if (Math.hypot(e.clientX - drag.x0, e.clientY - drag.y0) < 6) return;
+    drag.on = true;
+    if (ui.moveMenu) { ui.moveMenu = null; const m = root.querySelector('.movemenu'); if (m) m.remove(); }
+    drag.sibs = [...drag.c.parentElement.children].filter((x) => x.dataset && x.dataset.mlist === drag.lk);
+    drag.box = drag.sibs.map((x) => { const r = x.getBoundingClientRect(); return { top: r.top + window.scrollY, h: r.height }; });
+    const gap = drag.box.length > 1 ? Math.max(0, drag.box[1].top - drag.box[0].top - drag.box[0].h) : 8;
+    drag.shift = drag.box[drag.from].h + gap;
+    drag.sy0 = window.scrollY;
+    drag.c.classList.add('dragging'); document.body.classList.add('is-dragging');
+  }
+  e.preventDefault();
+  drag.c.style.transform = `translateY(${e.clientY - drag.y0 + window.scrollY - drag.sy0}px)`;
+  const py = e.clientY + window.scrollY;
+  let to = drag.from;
+  drag.box.forEach((b, k) => { const mid = b.top + b.h / 2; if (k < drag.from && py < mid) to = Math.min(to, k); if (k > drag.from && py > mid) to = Math.max(to, k); });
+  drag.to = to;
+  drag.sibs.forEach((x, k) => {
+    if (k === drag.from) return;
+    const d = drag.from < k && k <= to ? -drag.shift : to <= k && k < drag.from ? drag.shift : 0;
+    x.style.transform = d ? `translateY(${d}px)` : '';
+  });
+  if (e.clientY < 70) window.scrollBy(0, -14); else if (e.clientY > window.innerHeight - 70) window.scrollBy(0, 14);
+});
+function endDrag(commit) {
+  const d = drag; drag = null;
+  if (!d || !d.on) return; // a tap: the click that follows opens the Move menu
+  swallowClick = true; setTimeout(() => { swallowClick = false; }, 400);
+  const home = `[data-act="grip"][data-list="${d.lk}"][data-i="${d.from}"]`;
+  const fs = commit && d.to !== d.from ? moveTo(d.lk, d.from, d.to, { coalesce: false }) : null;
+  withTransition('move', () => {
+    document.body.classList.remove('is-dragging');
+    render({ focusSel: fs || home, stay: true });
+  });
+}
+root.addEventListener('pointerup', (e) => { if (drag && e.pointerId === drag.id) endDrag(true); });
+root.addEventListener('pointercancel', (e) => { if (drag && e.pointerId === drag.id) endDrag(false); });
+root.addEventListener('click', (e) => { if (swallowClick && e.target.closest && e.target.closest('.grip')) { e.stopPropagation(); e.preventDefault(); swallowClick = false; } }, true);
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && drag && drag.on) { e.preventDefault(); e.stopImmediatePropagation(); endDrag(false); } }, true);
 if (window.matchMedia) window.matchMedia('(max-width:520px)').addEventListener('change', () => { if (STEPS[step].key === 'numbers') render(); });
 render();
 })();
