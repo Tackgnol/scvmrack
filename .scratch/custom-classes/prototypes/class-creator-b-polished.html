@@ -400,16 +400,20 @@ input[type=text]:focus,select:focus,textarea:focus,.row input[type=text]:focus,.
 #root.blocked .b-rail .chip.warn,#root.blocked .langsw .act .miss{background:var(--black);color:var(--yellow);border-color:var(--black)}
 /* snackbar messages read as sentences */
 .snackbar > span:first-child{font-family:var(--f-body);font-size:.9rem;letter-spacing:0;text-transform:none;line-height:1.35}
+/* the whole message shows (a consequence is never cut off), clamped to four lines */
+.snackbar .msg{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:4;overflow:hidden}
 .snackbar .count{font-family:var(--f-label);text-transform:uppercase}
 /* modifier rows: the Remove button sits in the row's own header, never wrapped under a control */
 .modhead{flex:1 1 100%;display:flex;justify-content:space-between;align-items:center;gap:8px}
 .modhead .label{margin:0}
+/* field labels are bone white in the creator (owner decision, 2026-09-27): pink is left for blockers, counts and missing text */
+.paper .label{color:var(--white)}
 /* critique round 2 */
 /* phones: a hovered or tapped segment never goes black on black; real hover (mouse) gets the yellow fill */
 @media (max-width:520px){.choice .seg .act:not(.on):hover{background:var(--black);color:var(--yellow)}.choice .seg.statseg .act:not(.on):hover{color:var(--white)}}
 @media (max-width:520px) and (hover:hover){.choice .seg .act:not(.on):hover,.choice .seg.statseg .act:not(.on):hover{background:var(--yellow);color:var(--black)}}
 /* FORGED: the display face never sits inside a card (DESIGN.md), and its shadow shows on the black paper */
-.forged{box-shadow:6px 6px 0 var(--white)}
+.forged{box-shadow:6px 6px 0 var(--pink)}
 .forged b{font-family:var(--f-head)}
 /* information chips on the type ramp's 0.75rem step, hint lines near 75 characters */
 .abl-chips .chip{font-size:.75rem}
@@ -950,7 +954,9 @@ function moveTo(lk, from, to, { coalesce = true, act = 'grip' } = {}) {
   const where = lk.startsWith('rows:') ? `row ${to + 1}` : `position ${to + 1} of ${n}`;
   withUndo(`Moved ${listLabel(lk, o, from)} to ${where}.`, () => place(to), () => place(from), `[data-act="grip"][data-list="${lk}"][data-i="${from}"]`, coalesce ? `move:${lk}:${oid(o)}` : null, true,
     () => { const k = listArr(lk).indexOf(o); return `${listLabel(lk, o, k)} is back at ${lk.startsWith('rows:') ? `row ${k + 1}` : `position ${k + 1}`}.`; });
-  return act === 'grip' || act === 'move' ? `[data-act="grip"][data-list="${lk}"][data-i="${to}"]` : `[data-mlist="${lk}"][data-mi="${to}"] [data-act="${act}"]`;
+  const sel = act === 'grip' || act === 'move' ? `[data-act="grip"][data-list="${lk}"][data-i="${to}"]` : `[data-mlist="${lk}"][data-mi="${to}"] [data-act="${act}"]`;
+  ui.undo.at(-1).trigger = sel; // redo lands on the moved card, whether the move came from a click, a key or a drag
+  return sel;
 }
 const GRIP = '<svg viewBox="0 0 10 16" aria-hidden="true"><g fill="currentColor"><rect x="1" y="1" width="3" height="3"/><rect x="6" y="1" width="3" height="3"/><rect x="1" y="6.5" width="3" height="3"/><rect x="6" y="6.5" width="3" height="3"/><rect x="1" y="12" width="3" height="3"/><rect x="6" y="12" width="3" height="3"/></g></svg>';
 function grip(lk, i, n, name) {
@@ -1110,9 +1116,9 @@ function classesHtml() {
 function snackHtml() {
   if (!ui.snack) return '';
   if (ui.snack.note) return `<div class="snackbar"><span>${esc(ui.snack.msg)}<br><span class="count muted">Last change: ${esc(shortMsg(ui.snack.last))}</span></span><button type="button" class="btn save" data-act="undo" aria-label="Undo anyway: ${esc(ui.snack.last)}">Undo it anyway</button></div>`;
-  if (ui.snack.undone) return `<div class="snackbar"><span>Undone: ${esc(firstSentence(ui.snack.msg))}</span><span class="inline" style="gap:6px"><button type="button" class="btn save" data-act="redo" aria-keyshortcuts="Control+Shift+Z Control+Y">Redo</button>${ui.undo.length ? `<button type="button" class="act" data-act="undo">Undo earlier (${ui.undo.length})</button>` : ''}</span></div>`;
+  if (ui.snack.undone) return `<div class="snackbar"><span><span class="msg">Undone: ${esc(ui.snack.msg)}</span></span><span class="inline" style="gap:6px"><button type="button" class="btn save" data-act="redo" aria-keyshortcuts="Control+Shift+Z Control+Y">Redo</button>${ui.undo.length ? `<button type="button" class="act" data-act="undo">Undo earlier (${ui.undo.length})</button>` : ''}</span></div>`;
   const n = ui.undo.length;
-  return `<div class="snackbar"><span>${esc(firstSentence(ui.snack.msg))}${n > 1 ? `<br><span class="count muted">${n} changes can be undone · Ctrl+Z</span>` : ''}</span><button type="button" class="btn save" data-act="undo" aria-keyshortcuts="Control+Z Meta+Z">Undo</button></div>`;
+  return `<div class="snackbar"><span><span class="msg">${esc(ui.snack.msg)}</span>${n > 1 ? `<br><span class="count muted">${n} changes can be undone · Ctrl+Z</span>` : ''}</span><button type="button" class="btn save" data-act="undo" aria-keyshortcuts="Control+Z Meta+Z">Undo</button></div>`;
 }
 // a sentence ends at "." or ".”" followed by a capital, never after an abbreviation or a bare closing quote
 const SENT_ABBR = /(?:^|[\s“])(?:St|Mt|Dr|Mr|Mrs|Sr|Jr|No|Ft|vs)$/;
@@ -1376,7 +1382,8 @@ function onValue(e) {
     {
       const path = el.dataset.path, sel = `#${CSS.escape(el.id)}`;
       currentTrigger = sel;
-      withUndo(prevItem ? `${v ? now : `${aName} grants nothing${el.dataset.rowlink ? ' from that row' : ''}.`} The ${typeWord[prevItem.type]} “${tx(prevItem.name) || 'Unnamed'}” now waits for an ability.` : now, () => { setPath(path, v); },
+      // the consequence leads: an item that lost its only granter blocks Save
+      withUndo(prevItem ? `The ${typeWord[prevItem.type]} “${tx(prevItem.name) || 'Unnamed'}” now waits for an ability: ${v ? now.replace(/\.$/, ' instead.') : `${aName} grants nothing${el.dataset.rowlink ? ' from that row' : ''}.`}` : now, () => { setPath(path, v); },
         () => { if (!abilityById(a.id)) return; if (!prev.startsWith('ci:') || (itemByKey(prev) && (!granterOf(prev) || getPath(path) === prev))) setPath(path, prev); else setPath(path, ''); }, sel, path, false,
         () => { const cur = getPath(path); return `${tx(a.name) || 'This ability'} grants ${cur ? itemLabel(cur) : 'nothing'}${el.dataset.rowlink ? ' from that row' : ''} again.`; });
     }
@@ -1592,7 +1599,10 @@ root.addEventListener('click', (e) => {
   const same = `[data-act="${b.dataset.act}"]${b.dataset.path != null ? `[data-path="${CSS.escape(b.dataset.path)}"]` : ''}${b.dataset.base != null ? `[data-base="${CSS.escape(b.dataset.base)}"]` : ''}${b.dataset.list != null ? `[data-list="${CSS.escape(b.dataset.list)}"]` : ''}${b.dataset.i != null ? `[data-i="${b.dataset.i}"]` : ''}${b.dataset.j != null ? `[data-j="${b.dataset.j}"]` : ''}${b.dataset.v != null ? `[data-v="${CSS.escape(b.dataset.v)}"]` : ''}`;
   let opts = { keepFocus: [same] };
   currentTrigger = b.dataset.act === 'undo' || b.dataset.act === 'redo' ? null : same;
-  if (!NAV_ACTS.has(b.dataset.act)) { if (ui.redo.length || (ui.snack && ui.snack.undone)) clearRedo(); markEdit(); }
+  // re-clicking what is already chosen changes nothing, so it is not an edit
+  const noop = { 'set-langs': () => (v === 'both' ? 'en,pl' : v) === state.languages.join(), kind: () => state.abilities[i] && state.abilities[i].random === (v === 'random'),
+    'change-type': () => state.items[i] && state.items[i].type === v, 'table-die': () => state.abilities[i] && state.abilities[i].table && state.abilities[i].table.die === Number(v) }[b.dataset.act];
+  if (!NAV_ACTS.has(b.dataset.act) && !(noop && noop())) { if (ui.redo.length || (ui.snack && ui.snack.undone)) clearRedo(); markEdit(); }
   if (!['grip', 'move', 'move-close'].includes(b.dataset.act)) ui.moveMenu = null;
   switch (b.dataset.act) {
     case 'grip': {

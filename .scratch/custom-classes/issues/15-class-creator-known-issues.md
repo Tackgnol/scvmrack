@@ -1,7 +1,7 @@
 # Fix the class creator prototype's remaining known issues
 
 Type: task
-Status: open
+Status: resolved
 Blocked by: 04
 
 ## Question
@@ -104,3 +104,38 @@ The confirming critique scored **28/40** (the run before scored 33). All nine it
 14. No state renders text in the same colour as its background at any breakpoint, including sticky touch hover.
 15. Opening a card on touch does not open the keyboard.
 16. Editor shortcuts never trigger browser navigation.
+
+## Critique round 3 and close (2026-09-27)
+
+The second confirming critique scored **30/40**. The trend over the last runs is 32, 32, 33, 28, 30. As in the critique experiment, each round finds new edge cases. The owner closed the ticket after its regressions were fixed, and every other finding went to the build as acceptance criteria.
+
+**Fixed, each with a scripted repro:**
+- The snackbar shows the whole message, clamped to four lines, with the consequence first: "The weapon “Bone-Reader” now waits for an ability: Bone-Reader now grants Lockpicks instead." The first-sentence cut is gone.
+- Redo after a keyboard or drag move lands on the moved card. Before, it went to the step rail or the top of the page.
+- The FORGED shadow is pink. DESIGN.md allows black or pink offsets, and black vanishes on the paper.
+- Re-clicking the already-chosen language, kind, type or table die is not an edit. This removes a false Ctrl+Z refusal, and the class no longer silently un-saves.
+- Field labels in the creator are bone white (owner decision). Pink is kept for blockers, counts and missing text.
+
+**Owner decisions:**
+- **Typed text joins the undo history, per field.** A field's edits collapse into one undo entry, committed on blur or after about 1s idle. Ctrl+Z outside a field undoes the last field edit; inside a field it stays the field's own. The "Ctrl+Z skipped" refusal goes away. Built in the real creator, not in the prototype.
+- **Creator field labels are bone white.** The sheet and the party page keep their look.
+
+### Final acceptance criteria (adding to 1–16)
+
+17. Every text field's edits are one undo entry per field, committed on blur or after about 1s idle. App-level Ctrl+Z outside a field undoes it, with no refusal state.
+18. A message never hides a consequence. When a change orphans a Class Item, that is said first, and the whole message is shown.
+19. Undo and redo of any change, including keyboard and drag moves, return focus to the control that made it.
+20. Re-choosing the current value is not an edit: it doesn't touch the undo history, the Save state or the refusal logic.
+21. The creator's field labels are not pink. Pink marks blockers, counts and missing text only.
+
+### Carried to the build (found by the critiques, not fixed in the prototype)
+
+- "Forge" names three things (add an item, create and grant, the Forged save stamp). Pick distinct verbs when writing the real copy.
+- The Class Items rail tile should count an item that no ability grants, not just the Abilities step.
+- The Abilities step carries four blocks before the first card. Consider folding the zine help into one place and moving the order hint into the grip's tooltip.
+- Esc should dismiss the snackbar; the Move menu should close when focus leaves it; the snackbar should not follow the GM across steps.
+- Fix on a Polish issue should not silently switch "Writing in" for every later step (or it should say so).
+- Radio groups that commit only on Enter (Type, table die, languages) need a visible cue.
+- The ordering hint names Alt+↑/↓ on phones, where there is no keyboard.
+- Disabled +/− buttons are nearly invisible (1.21:1). The rail's "OK" chips and the type badges are 0.65rem, below the detector's 11px floor, which is a DESIGN.md question.
+- When an ability and its item share a name, undo copy should say "its item".
