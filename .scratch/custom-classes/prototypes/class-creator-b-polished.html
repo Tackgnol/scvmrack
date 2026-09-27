@@ -269,6 +269,33 @@ article.row > .itemhead{margin:-12px -12px 4px;padding:12px;border-bottom:2px so
 .label.group{font-family:var(--f-head);font-size:1.2rem;letter-spacing:.04em;color:var(--white);margin-bottom:6px}
 .label.group.on-paper{color:var(--black)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}.b-step[aria-current="step"],.stamp{transform:none!important}}
+/* iteration 4: hierarchy, grids on phones, previews */
+.paper .btn[disabled]{color:var(--yellow);border-color:var(--yellow);border-style:dashed}
+.btn.quiet{background:transparent;color:var(--black);border-color:var(--black);box-shadow:none}
+.btn.quiet:hover{background:transparent;transform:none;box-shadow:none;text-decoration:underline;text-underline-offset:4px}
+.b-nav{align-items:center}
+.stepcount{display:none;font-family:var(--f-label);font-size:.75rem;letter-spacing:.2em;text-transform:uppercase}
+@media (max-width:879px){.stepcount{display:inline}}
+.abl-text{grid-column:2 / -1;color:var(--muted);font-family:var(--f-body);font-style:italic;font-size:.9rem;line-height:1.35;overflow:hidden;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;text-transform:none;letter-spacing:0}
+@media (max-width:520px){.abl-text{grid-column:1 / -1}}
+textarea{field-sizing:content;max-height:24em}
+.status.block{background:var(--pink);color:var(--black);padding:8px 10px;border:2px solid var(--black)}
+@media (max-width:520px){
+  .choice .seg{display:grid;grid-template-columns:repeat(auto-fit,minmax(84px,1fr));gap:1px;background:var(--yellow);width:100%}
+  .choice .seg .act{background:var(--black);border:0!important}
+  .choice .seg .act.on{background:var(--yellow)}
+  .choice .seg.statseg .act.on{background:var(--yellow);color:var(--black)}
+  .stepper.choice{flex:1 1 100%;align-items:stretch}
+  .stepper.choice .inline > .seg{flex:1 1 100%}
+  .statline .formula{font-size:1.5rem;white-space:normal;text-align:right}
+  .statline .statname{font-size:1.5rem;min-width:64px;padding:8px 6px}
+}
+@media (max-width:1079px){
+  .statline{grid-template-columns:auto minmax(0,1fr)}
+  .statline .statname{grid-column:1;grid-row:1}
+  .statline .result{grid-column:2;grid-row:1;align-items:flex-end;text-align:right}
+  .statline .statctl{grid-column:1 / -1;grid-row:2}
+}
 /* iteration 3: collapsed Class Items, field hints, undo stack, forged stamp */
 .fieldhint{font-family:var(--f-body);font-style:italic;font-size:.9rem;color:var(--muted);margin:4px 0 0;max-width:65ch;line-height:1.4}
 .stepper .fieldhint{max-width:34ch}
@@ -313,6 +340,8 @@ const SCOPES = [
   { key: 'all', label: 'All' }, { key: 'combat', label: 'Combat' }, { key: 'defence', label: 'Defence' }, { key: 'tests', label: 'Tests' },
   { key: 'melee', label: 'Melee', more: true }, { key: 'ranged', label: 'Ranged', more: true }, { key: 'powers', label: 'Powers', more: true },
 ];
+const SCOPE_HINT = { all: 'Every roll with this stat.', combat: 'Attack and defence rolls only.', defence: 'Defence rolls only.', tests: 'Tests only, never combat.',
+  melee: 'Melee attacks only.', ranged: 'Ranged attacks only.', powers: 'Using powers and scrolls only.' };
 // the book's starting tables, as seeded (weapons.roll 1-10, armors.roll 1-4)
 const BOOK_WEAPONS = ['Femur (d4)', 'Staff (d4)', 'Shortsword (d4)', 'Knife (d4)', 'Warhammer (d6)', 'Sword (d6)', 'Bow (d6)', 'Flail (d8)', 'Crossbow (d8)', 'Zweihänder (d10)'];
 const BOOK_ARMOR = ['fur, tier 1', 'light armor, tier 1', 'medium armor, tier 2', 'heavy armor, tier 3'];
@@ -323,7 +352,7 @@ const CATALOG = [
 ];
 const STEPS = [
   { key: 'identity', label: 'Identity', hint: 'What the class is called and how a player first meets it.' },
-  { key: 'numbers', label: 'Stats & dice', hint: 'How each stat is rolled, plus HP, omens, silver and starting gear dice. “Lowest die: Dropped” throws the lowest die away, so 4 dice read “best 3 of 4d6”.' },
+  { key: 'numbers', label: 'Stats & dice', hint: 'How each stat is rolled, plus HP, omens, silver and starting gear dice. The book rolls every score on 3d6, and book classes shift some by −1 to +2. “Lowest die: Dropped” throws the lowest die away, so 4 dice read “best 3 of 4d6”.' },
   { key: 'items', label: 'Class Items', hint: 'Gear only this class has. It never appears in item search.' },
   { key: 'abilities', label: 'Abilities', hint: 'Fixed abilities every scvm gets, and the pool random ones are rolled from. Abilities are how a scvm gets this class’s Class Items.' },
   { key: 'origins', label: 'Origins', hint: 'Where this wretch came from. One is picked at random for each scvm.' },
@@ -387,7 +416,8 @@ const state = {
   gbNote: L('', ''),
 };
 // UI-only state (never saved): the Class Items question and in-card confirmations.
-const ui = { itemsNo: false, itemsYes: false, confirm: null, snack: null, undo: [], openAbility: null, openItem: null, showGrants: new Set(), forgeFor: null, moreScopes: new Set() };
+const ui = { itemsNo: false, itemsYes: false, confirm: null, snack: null, undo: [], redo: [], openAbility: null, openItem: null, showGrants: new Set(), forgeFor: null, moreScopes: new Set(),
+  fresh: new Set(), touched: new Set(), cutRows: {}, linkRows: new Set() };
 
 /* ---------- helpers ---------- */
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -439,9 +469,20 @@ function itemLabel(key) {
   if (key.startsWith('ci:')) { const it = itemByKey(key); return it ? tx(it.name) || 'Unnamed Class Item' : ''; }
   return (CATALOG.find((c) => c.key === key) || { label: key }).label;
 }
+/* A field of something just added isn't flagged while you're still filling it in:
+   only after you leave that field, close its card, or visit Review. */
+function entOf(path) {
+  let m = path.match(/^abilities\.(\d+)\.table\./);
+  if (m) { const a = state.abilities[Number(m[1])]; return a ? [`t:${a.id}`, `a:${a.id}`] : []; }
+  m = path.match(/^abilities\.(\d+)\./); if (m) { const a = state.abilities[Number(m[1])]; return a ? [`a:${a.id}`] : []; }
+  m = path.match(/^items\.(\d+)\./); if (m) { const it = state.items[Number(m[1])]; return it ? [`i:${it.id}`] : []; }
+  return [];
+}
+const pristine = (path) => !ui.touched.has(path) && entOf(path).some((t) => ui.fresh.has(t));
+const visible = (issues) => (STEPS[step].key === 'review' ? issues : issues.filter((x) => !x.path || !pristine(x.path)));
 function textInput(path, { multiline = false, lang, label = '' } = {}) {
   const v = getPath(path) ?? '';
-  const miss = !optional(path) && state.languages.includes(lang) && !String(v).trim();
+  const miss = !optional(path) && state.languages.includes(lang) && !String(v).trim() && !pristine(path);
   const id = fid(path);
   const attrs = `id="${id}" data-path="${path}" maxlength="${LIMIT_TEXT}" aria-invalid="${miss}" ${miss ? `aria-describedby="${id}-err"` : ''} ${label ? `aria-label="${esc(label)}"` : ''}`;
   const input = multiline ? `<textarea ${attrs}>${esc(v)}</textarea>` : `<input type="text" ${attrs} value="${esc(v)}">`;
@@ -467,7 +508,7 @@ function num(path, label, { min = 0, max = 99, invalid = false, hint = '' } = {}
 function dieSelect(path, label, dice, fmt = (x) => `d${x}`, hint = '', act = 'pick', extra = '') {
   const v = getPath(path);
   const lid = `${fid(path)}-label`;
-  return `<div class="stepper"><span class="label" id="${lid}">${esc(label)}</span><div class="dicepick" role="radiogroup" aria-labelledby="${lid}" ${hint ? `aria-describedby="${lid}-hint"` : ''}>${dice.map((d) =>
+  return `<div class="stepper"><span class="label" id="${lid}">${esc(label)}</span><div class="dicepick" role="radiogroup" aria-labelledby="${lid}" ${hint ? `aria-describedby="${lid}-hint"` : ''} ${act === 'pick' ? '' : 'data-manual="1"'}>${dice.map((d) =>
     `<button type="button" class="die" role="radio" aria-checked="${d === v}" tabindex="${d === v ? 0 : -1}" data-act="${act}" data-path="${path}" data-v="${d}" ${extra}>${fmt(d)}</button>`).join('')}</div>${hintHtml(`${lid}-hint`, hint)}</div>`;
 }
 function counter(n, label) {
@@ -492,7 +533,13 @@ function validate() {
     const n = a.name.en || a.name.pl || `ability ${i + 1}`;
     text(a.name, `abilities.${i}.name`, `ability “${n}” name`, 'abilities');
     text(a.text, `abilities.${i}.text`, `ability “${n}” rules text`, 'abilities');
-    if (a.table) a.table.rows.forEach((r, k) => text(r, `abilities.${i}.table.rows.${k}`, `ability “${n}” table row ${k + 1}`, 'abilities'));
+    if (a.table) state.languages.forEach((l) => {
+      const empty = a.table.rows.map((r, k) => k).filter((k) => !String(a.table.rows[k][l] || '').trim());
+      if (empty.length) issues.push({ msg: `${langLong[l]} missing: ${empty.length === 1 ? `row ${empty[0] + 1}` : `${empty.length} rows`} of the “${n}” table`, step: 'abilities', lang: l, path: `abilities.${i}.table.rows.${empty[0]}.${l}` });
+    });
+    const gi = a.grantItem && a.grantItem.startsWith('ci:') ? itemByKey(a.grantItem) : null;
+    const gp = a.grantPet && a.grantPet.startsWith('ci:') ? itemByKey(a.grantPet) : null;
+    if ((gi && gi.type === 'pet') || (gp && gp.type !== 'pet')) issues.push({ msg: `Ability “${n}” holds a Class Item in the wrong grant slot`, step: 'abilities', path: `abilities.${i}.${gi && gi.type === 'pet' ? 'grantItem' : 'grantPet'}` });
   });
   state.origins.forEach((o, k) => text(o, `origins.${k}`, `origin ${k + 1}`, 'origins'));
   if (state.randomCount > poolSize()) issues.push({ msg: `Rolls ${state.randomCount} random abilities, but the pool has ${poolSize()}`, step: 'abilities', path: 'randomCount' });
@@ -522,7 +569,9 @@ function testRoll() {
   const fixed = state.abilities.filter((a) => !a.random);
   const pool = [...state.abilities.filter((a) => a.random)].sort(() => Math.random() - 0.5).slice(0, state.randomCount);
   const origin = state.origins.length ? state.origins[d(state.origins.length) - 1] : null;
-  lastRoll = { stats, hp, omens: d(state.omenDie), silver, weapon: d(state.weaponDie), armor: d(state.armorDie), abil: [...fixed, ...pool], origin };
+  const tables = {};
+  [...fixed, ...pool].forEach((a) => { if (a.table) tables[a.id] = d(a.table.die); });
+  lastRoll = { stats, hp, omens: d(state.omenDie), silver, weapon: d(state.weaponDie), armor: d(state.armorDie), abil: [...fixed, ...pool], origin, tables };
 }
 function rollSheet() {
   if (!lastRoll) return `<div class="sheet"><p class="hint" style="margin:0">No test roll yet. A test roll uses the draft exactly as it is and keeps nothing.</p></div>`;
@@ -531,7 +580,9 @@ function rollSheet() {
   r.abil.forEach((a) => {
     const granted = [a.grantItem, a.grantPet].filter(Boolean);
     const merged = granted.map(itemByKey).find((it) => sameName(a, it));
-    lines.push(`<li><b>${esc(tx(a.name))}</b>${a.random ? '<span class="pill">rolled</span>' : ''}${merged ? ` <span class="muted">· ${typeWord[merged.type]} ${esc(itemStats(merged))}</span>` : ''}</li>`);
+    const tr = a.table && r.tables && r.tables[a.id] ? a.table.rows[r.tables[a.id] - 1] : null;
+    lines.push(`<li><b>${esc(tx(a.name))}</b>${a.random ? '<span class="pill">rolled</span>' : ''}${merged ? ` <span class="muted">· ${typeWord[merged.type]} ${esc(itemStats(merged))}</span>` : ''}${tr ? `<br><span class="muted">Table d${a.table.die} → ${r.tables[a.id]}:</span> ${esc(tx(tr)) || '<span class="muted">empty row</span>'}` : ''}</li>`);
+    if (tr && tr.item) gear.push(`${itemLabel(tr.item)} · from the table`);
     granted.forEach((k) => { const it = itemByKey(k); if (!(it && it === merged)) gear.push(it ? `${itemLabel(k)} · ${typeWord[it.type]} ${itemStats(it)}` : itemLabel(k)); });
   });
   return `<div class="sheet" aria-live="polite">
@@ -552,11 +603,10 @@ function rollSheet() {
 function langClassBlock() {
   const dual = state.languages.length > 1;
   return `<div class="row stack" role="group" aria-labelledby="langs-label"><span class="label group" id="langs-label" style="margin:0">Languages this class is written in</span>
-    <div class="seg" role="group" aria-label="Class languages">
-      <button type="button" class="act ${!dual && state.languages[0] === 'en' ? 'on' : ''}" aria-pressed="${!dual && state.languages[0] === 'en'}" data-act="set-langs" data-v="en">English only</button>
-      <button type="button" class="act ${!dual && state.languages[0] === 'pl' ? 'on' : ''}" aria-pressed="${!dual && state.languages[0] === 'pl'}" data-act="set-langs" data-v="pl">Polish only</button>
-      <button type="button" class="act ${dual ? 'on' : ''}" aria-pressed="${dual}" data-act="set-langs" data-v="both">Both</button>
-    </div>
+    <div class="choice"><div class="seg" role="radiogroup" aria-labelledby="langs-label" data-manual="1">
+      ${[['en', 'English only', !dual && state.languages[0] === 'en'], ['pl', 'Polish only', !dual && state.languages[0] === 'pl'], ['both', 'Both', dual]].map(([val, text, on]) =>
+        `<button type="button" class="act ${on ? 'on' : ''}" role="radio" aria-checked="${on}" tabindex="${on ? 0 : -1}" data-act="set-langs" data-v="${val}">${text}</button>`).join('')}
+    </div></div>
     <p class="hint">${dual ? 'Every text field needs both languages. Players see their own.' : `Players in either language see the ${langLong[state.languages[0]]} text. Text you wrote in the other language is kept, only hidden.`}</p></div>`;
 }
 function statRange(st) {
@@ -578,7 +628,7 @@ function statsBody() {
           ${num(`${p}.count`, 'Dice', { min: 1, max: 6 })}
           ${dieSelect(`${p}.faces`, 'Sides', [4, 6, 8, 10, 12])}
           ${num(`${p}.mod`, 'Modifier', { min: -6, max: 6 })}
-          <div class="stepper"><span class="label">Lowest die</span><button type="button" class="act dropbtn ${st.dropLowest ? 'on' : ''}" aria-pressed="${st.dropLowest}" data-act="drop" data-path="${p}.dropLowest">${st.dropLowest ? 'Dropped' : 'Kept'}</button></div>
+          ${choice(`${p}.dropLowest`, 'Lowest die', [['false', 'Kept'], ['true', 'Dropped']])}
         </div>
         <div class="result"><div class="formula" data-derived="formula-${s.key}">${formulaText(st)}</div>
           <div class="range" data-derived="range-${s.key}">${statRange(st)}</div></div>
@@ -606,17 +656,16 @@ function itemFields(it, i) {
   const nm = tx(it.name) || 'Unnamed';
   if (it.type === 'weapon') {
     const ranged = it.reach === 'ranged';
-    const ammo = ranged ? `${choice(`${p}.ammo`, 'Ammo', [['none', 'None'], ['counted', 'Counted'], ['infinite', 'Endless']], 'ammo')}${it.ammo === 'counted' ? num(`${p}.ammoCount`, 'Starting ammo', { min: 1, max: 99 }) : ''}` : '';
+    const ammo = ranged ? `${choice(`${p}.ammo`, 'Ammo', [['none', 'None'], ['counted', 'Counted'], ['infinite', 'Endless']], 'ammo')}${it.ammo === 'counted' ? `${num(`${p}.ammoCount`, 'Starting ammo', { min: 1, max: 99 })}<div style="flex:1 1 220px;min-width:0">${lfield(`${p}.ammoName`, 'Ammo name (optional)', { hint: 'Arrows, bolts, stones. Empty reads “ammo”.' })}</div>` : ''}` : '';
     return itemLine(it, i,
       `${num(`${p}.diceCount`, 'Damage dice', { min: 1, max: 6 })}${dieSelect(`${p}.diceFaces`, 'Sides', [2, 4, 6, 8, 10, 12])}${num(`${p}.dmgMod`, 'Modifier', { min: -6, max: 6 })}${choice(`${p}.reach`, 'Reach', [['melee', 'Melee'], ['ranged', 'Ranged']], 'reach')}${ammo}${value}`)
-      + (ranged && it.ammo === 'counted' ? lfield(`${p}.ammoName`, 'Ammo name (optional)', { hint: 'Arrows, bolts, stones. Leave empty for “ammo”.' }) : '')
       + modsEditor(p, nm, 'Modifiers while wielded');
   }
   if (it.type === 'pet') return itemLine(it, i,
     `${num(`${p}.hp`, 'HP', { min: 1, max: 99 })}${dieSelect(`${p}.actionDie`, 'Action die', [2, 4, 6, 8, 10])}${choice(`${p}.actionType`, 'Action', [['attack', 'Attacks'], ['buff', 'Buffs allies']], 'rerender')}${choice(`${p}.humanoid`, 'Kind', [['false', 'Beast'], ['true', 'Humanoid']])}`)
     + (it.actionType === 'buff' ? modsEditor(p, nm, 'Buffs it gives') : '');
   if (it.type === 'armor') return itemLine(it, i, `${dieSelect(`${p}.tier`, 'Armor tier', [1, 2, 3], (x) => `Tier ${x}`)}${value}`) + modsEditor(p, nm, 'Modifiers while worn');
-  return itemLine(it, i, `${choice(`${p}.kind`, 'Kind', [['consumable', 'Consumable'], ['wearable', 'Wearable'], ['gear', 'Gear']])}${num(`${p}.uses`, 'Uses', { min: 0, max: 99 })}${choice(`${p}.effect`, 'On use', [['none', 'Text only'], ['damage', 'Deals damage'], ['die', 'Effect die']], 'rerender')}${it.effect !== 'none' ? dieSelect(`${p}.effectDie`, it.effect === 'damage' ? 'Damage die' : 'Effect die', [2, 4, 6, 8, 10, 12]) : ''}${value}`);
+  return itemLine(it, i, `${choice(`${p}.kind`, 'Kind', [['consumable', 'Consumable'], ['wearable', 'Wearable'], ['gear', 'Carried']])}${num(`${p}.uses`, 'Uses', { min: 0, max: 99 })}${choice(`${p}.effect`, 'On use', [['none', 'Text only'], ['damage', 'Deals damage'], ['die', 'Effect die']], 'rerender')}${it.effect !== 'none' ? dieSelect(`${p}.effectDie`, it.effect === 'damage' ? 'Damage die' : 'Effect die', [2, 4, 6, 8, 10, 12]) : ''}${value}`);
 }
 function grantedByLine(it) {
   const g = granterOf(keyOf(it));
@@ -631,17 +680,17 @@ function itemConfirm(it) {
     <div class="inline"><button type="button" class="act danger" data-act="rm-item-yes" data-v="${it.id}">Remove and clear</button><button type="button" class="act" data-act="confirm-cancel" data-v="item-${it.id}">Keep it</button></div></div>`;
 }
 function addItemRow(full) {
-  return `<div class="inline"><span class="label group" style="margin:0">Forge a</span>${['weapon', 'armor', 'equipment', 'pet'].map((t) => `<button type="button" class="act" data-act="add-item" data-v="${t}" ${full ? 'disabled' : ''}>${typeWord[t]}</button>`).join('')}</div>`;
+  return `<div class="inline"><span class="label group" style="margin:0">Forge a</span>${['weapon', 'armor', 'equipment', 'pet'].map((t) => `<button type="button" class="act" data-act="add-item" data-v="${t}" aria-label="Forge a ${typeWord[t]}" ${full ? 'disabled' : ''}>${typeWord[t]}</button>`).join('')}</div>`;
 }
 function itemSummary(it, i, issues) {
   const miss = issues.filter((x) => x.path && x.path.startsWith(`items.${i}.`)).length;
   const g = granterOf(keyOf(it));
   const who = g ? `<span class="chip">granted by ${esc(tx(g.a.name) || 'Unnamed ability')}${g.kind === 'table' ? ` · row ${g.row + 1}` : ''}</span>` : '<span class="chip warn">waits for an ability</span>';
-  return `<article class="abl" data-item="${it.id}" style="view-transition-name:item-${it.id}"><h3 class="card-h"><button type="button" class="abl-sum item-sum" data-act="open-item" data-v="${it.id}" aria-expanded="false">
+  return `<article class="abl" data-item="${it.id}" style="view-transition-name:item-${it.id}"><h3 class="card-h"><button type="button" class="abl-sum item-sum" data-act="open-item" data-v="${it.id}" aria-expanded="false" aria-label="${esc(tx(it.name) || 'Unnamed')}, ${typeWord[it.type]}. Edit" aria-describedby="item-chips-${it.id}">
     <span class="typebadge">${typeWord[it.type]}</span>
     <span class="abl-name">${esc(tx(it.name) || 'Unnamed')}</span>
     <span class="inline abl-meta" style="gap:8px">${miss ? `<span class="chip warn" aria-label="${miss} to fix">${miss}</span>` : ''}<span class="abl-edit">Edit${CHEV}</span></span>
-    <span class="abl-chips"><span class="chip stat">${esc(itemStats(it))}</span>${who}</span></button></h3></article>`;
+    <span class="abl-chips" id="item-chips-${it.id}"><span class="chip stat">${esc(itemStats(it))}</span>${who}${miss ? `<span class="sr-only">, ${miss} to fix</span>` : ''}</span></button></h3></article>`;
 }
 function itemOpen(it, i) {
   const confirming = ui.confirm && ui.confirm.type === 'item' && ui.confirm.id === it.id;
@@ -650,7 +699,7 @@ function itemOpen(it, i) {
       ${confirming ? itemConfirm(it) : ''}
       ${grantedByLine(it)}
       ${lfield(`items.${i}.name`, 'Name')}${lfield(`items.${i}.description`, 'Description (optional)', { multiline: true, hint: 'Special rules, effects and flavour, as the player reads them. scvmrack never rolls or applies them.' })}
-      <div class="stepper choice"><span class="label" id="type-${it.id}">Type</span><div class="seg" role="radiogroup" aria-labelledby="type-${it.id}">${['weapon', 'armor', 'equipment', 'pet'].map((t) => `<button type="button" class="act ${it.type === t ? 'on' : ''}" role="radio" aria-checked="${it.type === t}" data-act="change-type" data-i="${i}" data-v="${t}">${typeWord[t]}</button>`).join('')}</div></div>
+      <div class="stepper choice"><span class="label" id="type-${it.id}">Type</span><div class="seg" role="radiogroup" aria-labelledby="type-${it.id}" aria-describedby="type-${it.id}-hint" data-manual="1">${['weapon', 'armor', 'equipment', 'pet'].map((t) => `<button type="button" class="act ${it.type === t ? 'on' : ''}" role="radio" aria-checked="${it.type === t}" tabindex="${it.type === t ? 0 : -1}" data-act="change-type" data-i="${i}" data-v="${t}">${typeWord[t]}</button>`).join('')}</div><p class="fieldhint" id="type-${it.id}-hint">Changing type resets its stats. Undo brings them back.</p></div>
       ${itemFields(it, i)}
       <div class="card-foot">${confirming ? '' : `<button type="button" class="act kill" data-act="rm-item" data-v="${it.id}">Remove</button>`}<button type="button" class="act" data-act="dup-item" data-v="${it.id}" ${state.items.length >= LIMIT_LIST ? 'disabled' : ''}>Duplicate</button><button type="button" class="act on" data-act="close-item" data-v="${it.id}" aria-expanded="true">Done</button></div>
     </article>`;
@@ -663,7 +712,7 @@ function itemsBody() {
       <div class="inline"><button type="button" class="btn save" data-act="gate-yes">Yes, forge a Class Item</button><button type="button" class="btn ink" data-act="gate-no">No, only catalog gear</button></div>
     </div>`;
   const full = state.items.length >= LIMIT_LIST;
-  const issues = validate();
+  const issues = visible(validate());
   return `<div class="stack">
     <div class="spread">${addItemRow(full)}${counter(state.items.length, 'Class Items')}</div>
     <div class="stack" style="gap:8px">${state.items.map((it, i) => (ui.openItem === it.id ? itemOpen(it, i) : itemSummary(it, i, issues))).join('') || '<div class="empty">No Class Items yet. Pick a kind above.</div>'}</div>
@@ -701,8 +750,8 @@ function modsEditor(base, nm, title = 'Modifiers') {
       ${choice(`${mp}.stat`, 'Stat', STATS.map((s) => [s.key, s.short, s.cls]), 'rerender', 'statseg')}
       ${num(`${mp}.value`, 'Value', { min: -6, max: 6 })}
       <div class="stepper choice"><span class="label" id="${fid(mp)}-scope">Applies to</span><div class="inline" style="gap:6px"><div class="seg" role="radiogroup" aria-labelledby="${fid(mp)}-scope">${SCOPES.filter((s) => more || !s.more).map((s) =>
-        `<button type="button" class="act ${m.scope === s.key ? 'on' : ''}" role="radio" aria-checked="${m.scope === s.key}" data-act="choose" data-path="${mp}.scope" data-v="${s.key}" data-rerender="1">${s.label}</button>`).join('')}</div>${more ? '' : `<button type="button" class="act" data-act="more-scopes" data-path="${mp}" aria-label="More scopes: melee, ranged, powers">More</button>`}</div></div>
-      <button type="button" class="act kill" data-act="rm-mod" data-base="${base}" data-j="${j}">Remove</button>
+        `<button type="button" class="act ${m.scope === s.key ? 'on' : ''}" role="radio" aria-checked="${m.scope === s.key}" data-act="choose" data-path="${mp}.scope" data-v="${s.key}" data-rerender="1">${s.label}</button>`).join('')}</div>${more ? '' : `<button type="button" class="act" data-act="more-scopes" data-path="${mp}" aria-label="More scopes: melee, ranged, powers">More</button>`}</div><p class="fieldhint">${SCOPE_HINT[m.scope]}</p></div>
+      <button type="button" class="act" data-act="rm-mod" data-base="${base}" data-j="${j}" aria-label="Remove modifier ${esc(modText(m))}">Remove modifier</button>
     </div>`;
   }).join('');
   if (!rows) return isAbility ? '' : `<div class="extras"><button type="button" class="act" data-act="add-mod" data-base="${base}">Add modifier</button></div>`;
@@ -724,11 +773,14 @@ function tableEditor(i) {
   const a = state.abilities[i];
   const linked = t.rows.map((r, k) => ({ k, it: r.item ? itemByKey(r.item) : null })).filter((x) => x.it);
   const confirming = ui.confirm && ui.confirm.type === 'table' && ui.confirm.id === a.id;
+  const showLinks = state.items.length && (linked.length || ui.linkRows.has(a.id));
   const confirmHtml = confirming ? `<div class="confirm" role="group" aria-label="Confirm removal"><p>${linked.map((x) => `Row ${x.k + 1} grants “${esc(tx(x.it.name) || 'Unnamed')}”`).join('. ')}. Remove the table? ${linked.length > 1 ? 'Those items' : 'That item'} will wait for an ability.</p>
     <div class="inline"><button type="button" class="act danger" data-act="rm-table-yes" data-i="${i}">Remove table</button><button type="button" class="act" data-act="confirm-cancel" data-v="table-${a.id}">Keep it</button></div></div>` : '';
   return `<div class="stack"><div class="spread"><span class="label group" style="margin:0">Reference table · d${t.die}</span>${confirming ? '' : `<button type="button" class="act kill" data-act="rm-table" data-i="${i}">Remove table</button>`}</div>${confirmHtml}
+    <p class="fieldhint">A list the player rolls on when the ability says so. The sheet shows the result; it never applies it.</p>
     ${dieSelect(`abilities.${i}.table.die`, 'Table die (one row per side)', [2, 3, 4, 6, 8, 10, 12], undefined, 'Paste several lines into a row to fill the rows below it.', 'table-die', `data-i="${i}"`)}
-    ${t.rows.map((r, k) => `<div class="rowlink"><span>${k + 1}</span>${textInput(`abilities.${i}.table.rows.${k}.${viewLang}`, { lang: viewLang, label: `Row ${k + 1}` })}${state.items.length ? rowSelect(k) : ''}</div>`).join('')}</div>`;
+    ${t.rows.map((r, k) => `<div class="rowlink"><span>${k + 1}</span>${textInput(`abilities.${i}.table.rows.${k}.${viewLang}`, { lang: viewLang, label: `Row ${k + 1}` })}${showLinks ? rowSelect(k) : ''}</div>`).join('')}
+    ${state.items.length && !showLinks ? `<div><button type="button" class="act" data-act="link-rows" data-v="${a.id}" data-i="${i}">Let a row grant a Class Item</button></div>` : ''}</div>`;
 }
 function abilityConfirm(a, i) {
   const owned = [a.grantItem, a.grantPet, ...(a.table ? a.table.rows.map((r) => r.item) : [])].filter((k) => k && k.startsWith('ci:')).map(itemByKey).filter(Boolean);
@@ -762,11 +814,12 @@ function abilityChips(a) {
 }
 function abilitySummary(a, i, issues) {
   const miss = issues.filter((x) => x.path && x.path.startsWith(`abilities.${i}.`)).length;
-  return `<article class="abl" data-ability="${a.id}" style="view-transition-name:abl-${a.id}"><h3 class="card-h"><button type="button" class="abl-sum" data-act="open-ability" data-v="${a.id}" aria-expanded="false">
+  return `<article class="abl" data-ability="${a.id}" style="view-transition-name:abl-${a.id}"><h3 class="card-h"><button type="button" class="abl-sum" data-act="open-ability" data-v="${a.id}" aria-expanded="false" aria-label="${esc(tx(a.name) || 'Unnamed ability')}, ${a.random ? 'random' : 'fixed'}. Edit" aria-describedby="abl-chips-${a.id}">
     <span class="kindtag ${a.random ? '' : 'fixed'}">${a.random ? 'Random' : 'Fixed'}</span>
     <span class="abl-name">${esc(tx(a.name) || 'Unnamed ability')}</span>
     <span class="inline abl-meta" style="gap:8px">${miss ? `<span class="chip warn" aria-label="${miss} to fix">${miss}</span>` : ''}<span class="abl-edit">Edit${CHEV}</span></span>
-    <span class="abl-chips">${abilityChips(a)}</span></button></h3></article>`;
+    ${tx(a.text) ? `<span class="abl-text">${esc(tx(a.text))}</span>` : ''}
+    <span class="abl-chips" id="abl-chips-${a.id}">${abilityChips(a)}${miss ? `<span class="sr-only">, ${miss} to fix</span>` : ''}</span></button></h3></article>`;
 }
 function forgeRow(a, i) {
   if (a.grantItem && a.grantPet) return '';
@@ -776,7 +829,7 @@ function forgeRow(a, i) {
   if (state.items.length >= LIMIT_LIST) return '';
   if (ui.forgeFor !== a.id) return `<div class="extras"><button type="button" class="act" data-act="forge-for" data-i="${i}" data-v="${a.id}">Forge a Class Item for this ability</button></div>`;
   return `<div class="stepper choice"><span class="label group" id="forge-${a.id}">Forge a Class Item named “${esc(tx(a.name) || 'this ability')}”</span>
-    <div class="inline"><div class="seg" role="group" aria-labelledby="forge-${a.id}">${['weapon', 'armor', 'equipment', 'pet'].map((t) => `<button type="button" class="act" data-act="forge-type" data-i="${i}" data-v="${t}" ${free(t) ? '' : 'disabled title="That grant slot is already used"'}>${typeWord[t]}</button>`).join('')}</div>
+    <div class="inline"><div class="seg" role="group" aria-labelledby="forge-${a.id}">${['weapon', 'armor', 'equipment', 'pet'].map((t) => `<button type="button" class="act" data-act="forge-type" data-i="${i}" data-v="${t}" aria-label="Forge a ${typeWord[t]} for this ability" ${free(t) ? '' : 'disabled title="That grant slot is already used"'}>${typeWord[t]}</button>`).join('')}</div>
     <button type="button" class="act" data-act="forge-cancel" data-i="${i}" data-v="${a.id}">Cancel</button></div></div>`;
 }
 function abilityOpen(a, i) {
@@ -797,24 +850,24 @@ function abilityOpen(a, i) {
       ${showGrants ? `<div class="stack" style="gap:8px"><div class="grid2" style="align-items:start">${grantSelect(i, 'item')}${grantSelect(i, 'pet')}</div><p class="fieldhint" style="max-width:65ch">A scvm who gets this ability starts with what it grants.</p></div>${forgeRow(a, i)}` : ''}
       ${modsEditor(`abilities.${i}`, tx(a.name) || `ability ${i + 1}`)}
       ${tableEditor(i)}
-      ${extras ? `<div class="extras"><span class="label group" style="margin:0">Extras</span>${extras}</div>` : ''}
+      ${extras ? `<div class="stack" style="gap:6px"><div class="extras"><span class="label group" style="margin:0">Extras</span>${extras}</div>${showGrants ? '' : '<p class="fieldhint">Grant gives this ability an existing Class Item or catalog gear. Forge makes a new Class Item named after the ability.</p>'}</div>` : ''}
       <div class="card-foot">${confirming ? '' : `<button type="button" class="act kill" data-act="rm-ability" data-i="${i}">Remove ability</button>`}<button type="button" class="act" data-act="dup-ability" data-i="${i}" ${state.abilities.length >= LIMIT_LIST ? 'disabled' : ''}>Duplicate</button><button type="button" class="act on" data-act="close-ability" data-v="${a.id}" aria-controls="abl-${a.id}" aria-expanded="true">Done</button></div>
     </article>`;
 }
 function abilitiesBody() {
   const pool = poolSize();
-  const issues = validate();
+  const issues = visible(validate());
   const cards = state.abilities.map((a, i) => (ui.openAbility === a.id ? abilityOpen(a, i) : abilitySummary(a, i, issues))).join('');
   return `<div class="stack">
     ${trayHtml()}
-    <div class="row spread">${num('randomCount', 'Random abilities rolled', { min: 0, max: Math.max(pool, state.randomCount), invalid: state.randomCount > pool, hint: `Every scvm gets all Fixed abilities, plus this many rolled from the Random pool (${pool} in it).` })}${counter(state.abilities.length, 'abilities')}</div>
+    <div class="row spread">${num('randomCount', 'Random abilities rolled', { min: 0, max: Math.max(pool, state.randomCount), invalid: state.randomCount > pool, hint: `Every scvm gets all Fixed abilities, plus this many rolled from the Random pool (${pool} in it). A zine’s “roll d6 for your ability” is a pool of 6 with 1 rolled.` })}${counter(state.abilities.length, 'abilities')}</div>
     <div class="stack" style="gap:8px">${cards || '<div class="empty">No abilities yet. Add a fixed one every scvm gets, or build a random pool.</div>'}</div>
-    <div style="view-transition-name:abl-add"><button type="button" class="btn" data-act="add-ability" ${state.abilities.length >= LIMIT_LIST ? 'disabled' : ''}>Add ability</button></div>
+    <div style="view-transition-name:abl-add"><button type="button" class="btn save" data-act="add-ability" ${state.abilities.length >= LIMIT_LIST ? 'disabled' : ''}>Add ability</button></div>
   </div>`;
 }
 function originsBody() {
   return `<div class="stack">
-    <div class="spread"><button type="button" class="btn" data-act="add-origin" ${state.origins.length >= LIMIT_LIST ? 'disabled' : ''}>Add origin</button>${counter(state.origins.length, 'origins')}</div>
+    <div class="spread"><button type="button" class="btn save" data-act="add-origin" ${state.origins.length >= LIMIT_LIST ? 'disabled' : ''}>Add origin</button>${counter(state.origins.length, 'origins')}</div>
     ${state.origins.map((o, k) => `<div class="row stack" style="gap:6px"><div class="spread"><label class="label" for="${fid(`origins.${k}.${viewLang}`)}" style="margin:0">Origin ${k + 1}</label><button type="button" class="act kill" data-act="rm-origin" data-i="${k}">Remove</button></div>${textInput(`origins.${k}.${viewLang}`, { lang: viewLang })}</div>`).join('') || '<div class="empty">No origins yet. A class needs at least one.</div>'}
     <p class="fieldhint" style="max-width:65ch">Paste several lines into an origin to add one origin per line.</p>
   </div>`;
@@ -835,8 +888,8 @@ function reviewBody(issues) {
     <div class="stack">
       <span class="label group">Before you save</span>
       <div data-derived="issues">${issuesHtml(issues)}</div>
-      <div class="inline"><button type="button" class="btn save" data-act="save" aria-describedby="save-status">Save class</button></div>
-      <div id="save-status" role="status">${saveMsg === 'SAVED' ? `<div class="forged"><b>Forged</b><span>“${esc(tx(state.name))}” is saved. In the real app it now appears in your class list.</span></div>` : `<p class="status">${esc(saveMsg)}</p>`}</div>
+      <div class="inline"><button type="button" class="btn save" data-act="save" aria-describedby="save-status" ${saveMsg === 'SAVED' ? 'disabled' : ''}>${saveMsg === 'SAVED' ? 'Saved' : 'Save class'}</button></div>
+      <div id="save-status" role="status">${saveMsg === 'SAVED' ? `<div class="forged"><b>Forged</b><span>“${esc(tx(state.name))}” is saved. In the real app it now appears in your class list. Any edit re-arms Save.</span></div>` : saveMsg ? `<p class="status block">${esc(saveMsg)}</p>` : ''}</div>
     </div>
   </div>`;
 }
@@ -857,10 +910,11 @@ function railHtml(issues) {
 function langSwitch(issues) {
   if (state.languages.length < 2) return `<span class="micro">${langLong[state.languages[0]]} only</span>`;
   const key = STEPS[step].key;
-  return `<div class="langsw" role="group" aria-label="Writing in"><span class="label">Writing in</span>${state.languages.map((l) => {
+  if (key === 'numbers') return '';
+  return `<div class="langsw"><span class="label" id="writing-in">Writing in</span><div class="langsw" role="radiogroup" aria-labelledby="writing-in">${state.languages.map((l) => {
     const m = missingIn(issues, l, key === 'review' ? null : key);
-    return `<button type="button" class="act ink ${viewLang === l ? 'on' : ''}" aria-pressed="${viewLang === l}" data-act="view-lang" data-v="${l}">${langLong[l]}${m ? `<span class="miss">${m} missing</span>` : ''}</button>`;
-  }).join('')}</div>`;
+    return `<button type="button" class="act ink ${viewLang === l ? 'on' : ''}" role="radio" aria-checked="${viewLang === l}" tabindex="${viewLang === l ? 0 : -1}" data-act="view-lang" data-v="${l}">${langLong[l]}${m ? `<span class="miss">${m} missing</span>` : ''}</button>`;
+  }).join('')}</div></div>`;
 }
 function snackHtml() {
   if (!ui.snack) return '';
@@ -871,18 +925,20 @@ const root = document.getElementById('root');
 const stepIndex = (key) => STEPS.findIndex((s) => s.key === key);
 function render({ focusHeading = false, focusPath = null, focusSel = null, keepFocus = null, stay = false } = {}) {
   if (!state.languages.includes(viewLang)) viewLang = state.languages[0];
-  const issues = validate();
+  if (STEPS[step].key === 'review') ui.fresh.clear();
+  const issues = visible(validate());
   const s = STEPS[step];
   const body = { identity: () => `<div class="stack">${langClassBlock()}${lfield('name', 'Class name')}${lfield('description', 'Description', { multiline: true })}</div>`,
     numbers: statsBody, items: itemsBody, abilities: abilitiesBody, origins: originsBody, gb: gbBody, review: () => reviewBody(issues) }[s.key]();
   root.innerHTML = `<div class="b-layout">
     <nav class="b-railwrap page-level" aria-label="Class creator steps"><ol class="b-rail" data-derived="rail">${railHtml(issues)}</ol></nav>
     <section aria-labelledby="step-title">
-      <div class="b-head page-level"><h2 class="stamp" id="step-title" tabindex="-1">${s.label}</h2><div data-derived="langsw">${langSwitch(issues)}</div></div>
+      <div class="b-head page-level"><div class="inline" style="gap:12px"><h2 class="stamp" id="step-title" tabindex="-1">${s.label}</h2><span class="stepcount">Step ${step + 1} of ${STEPS.length}</span></div><div data-derived="langsw">${langSwitch(issues)}</div></div>
       <div class="paper stack-lg"><p class="hint">${s.hint}</p>${body}</div>
       <div class="b-nav page-level" style="view-transition-name:step-nav">
-        <button type="button" class="btn ink" data-act="step" data-v="${step - 1}" ${step === 0 ? 'disabled' : ''}>${ARROW_L}Back</button>
-        ${step < STEPS.length - 1 ? `<button type="button" class="btn save" data-act="step" data-v="${step + 1}">${STEPS[step + 1].label}${ARROW_R}</button>` : ''}
+        <button type="button" class="btn quiet" data-act="step" data-v="${step - 1}" ${step === 0 ? 'disabled' : ''} aria-keyshortcuts="Alt+ArrowLeft">${ARROW_L}Back</button>
+        ${!ui.snack && ui.undo.length ? `<button type="button" class="act ink" data-act="undo" aria-keyshortcuts="Control+Z Meta+Z">Undo last change (${ui.undo.length})</button>` : ''}
+        ${step < STEPS.length - 1 ? `<button type="button" class="btn ink" data-act="step" data-v="${step + 1}" aria-keyshortcuts="Alt+ArrowRight">${STEPS[step + 1].label}${ARROW_R}</button>` : ''}
       </div>
     </section>
   </div>
@@ -891,7 +947,7 @@ function render({ focusHeading = false, focusPath = null, focusSel = null, keepF
   document.body.classList.toggle('has-snack', !!ui.snack);
   refreshDerived();
   const cur = root.querySelector('.b-step[aria-current="step"]');
-  if (cur && cur.scrollIntoView && window.innerWidth < 880) cur.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  if (cur && cur.scrollIntoView && window.innerWidth < 880) cur.scrollIntoView({ block: 'nearest', inline: 'center' });
   const tryFocus = (el, center = true) => { if (!el) return false; el.focus({ preventScroll: !center }); if (center) el.scrollIntoView({ block: 'center' }); return true; };
   if (focusSel && tryFocus(root.querySelector(focusSel), !stay)) return;
   if (focusPath && tryFocus(root.querySelector(`[data-path="${CSS.escape(focusPath)}"]`), !stay)) return;
@@ -899,7 +955,7 @@ function render({ focusHeading = false, focusPath = null, focusSel = null, keepF
   if (keepFocus) { for (const sel of keepFocus) { if (tryFocus(root.querySelector(sel), false)) return; } }
 }
 function refreshDerived() {
-  const issues = validate();
+  const issues = visible(validate());
   const rail = root.querySelector('[data-derived="rail"]'); if (rail) rail.innerHTML = railHtml(issues);
   const ls = root.querySelector('[data-derived="langsw"]'); if (ls) ls.innerHTML = langSwitch(issues);
   const iss = root.querySelector('[data-derived="issues"]'); if (iss) iss.innerHTML = issuesHtml(issues);
@@ -922,7 +978,7 @@ function refreshDerived() {
   root.querySelectorAll('[data-path]').forEach((el) => {
     const m = el.dataset.path.match(/\.(en|pl)$/);
     if (!m || optional(el.dataset.path)) return;
-    const miss = state.languages.includes(m[1]) && !String(el.value).trim();
+    const miss = state.languages.includes(m[1]) && !String(el.value).trim() && !pristine(el.dataset.path);
     el.setAttribute('aria-invalid', String(miss));
     const err = document.getElementById(`${el.id}-err`);
     if (err) { err.hidden = !miss; if (miss) el.setAttribute('aria-describedby', err.id); else el.removeAttribute('aria-describedby'); }
@@ -946,17 +1002,22 @@ let snackTimer = null;
 const UNDO_DEPTH = 10;
 function armSnack() {
   clearTimeout(snackTimer);
-  snackTimer = setTimeout(() => { ui.snack = null; const el = root.querySelector('.snackbar'); if (el) el.remove(); document.body.classList.remove('has-snack'); }, 10000);
+  snackTimer = setTimeout(() => {
+    ui.snack = null; const el = root.querySelector('.snackbar'); if (el) el.remove(); document.body.classList.remove('has-snack');
+    const nav = root.querySelector('.b-nav'), back = nav && nav.querySelector('[data-act="step"]');
+    if (back && ui.undo.length && !nav.querySelector('[data-act="undo"]')) back.insertAdjacentHTML('afterend', `<button type="button" class="act ink" data-act="undo" aria-keyshortcuts="Control+Z Meta+Z">Undo last change (${ui.undo.length})</button>`);
+  }, 10000);
 }
 function withUndo(msg, doIt, inverse, focusSel = null, coalesceKey = null) {
   const top = ui.undo.at(-1);
   if (coalesceKey && top && ui.snack === top && top.coalesceKey === coalesceKey) {
     // repeated changes to the same control (e.g. arrowing through a menu) keep ONE undo back to the original value
-    doIt(); top.msg = msg; armSnack(); announce(`${msg} Undo is available.`); return;
+    doIt(); top.msg = msg; top.doIt = doIt; ui.redo = []; armSnack(); announce(`${msg} Undo is available.`); return;
   }
   doIt();
   ui.confirm = null;
-  const entry = { msg, inverse, focusSel, coalesceKey, step, openAbility: ui.openAbility, openItem: ui.openItem };
+  ui.redo = [];
+  const entry = { msg, inverse, doIt, focusSel, coalesceKey, step, openAbility: ui.openAbility, openItem: ui.openItem };
   ui.undo.push(entry);
   if (ui.undo.length > UNDO_DEPTH) ui.undo.shift();
   ui.snack = entry;
@@ -967,13 +1028,25 @@ function undo() {
   const e = ui.undo.pop();
   if (!e) return null;
   e.inverse();
+  ui.redo.push(e);
   step = e.step; ui.openAbility = e.openAbility; ui.openItem = e.openItem;
   ui.confirm = null; ui.forgeFor = null; saveMsg = '';
   ui.snack = ui.undo.at(-1) || null;
   if (ui.snack) armSnack(); else clearTimeout(snackTimer);
-  announce(`Undone: ${e.msg}`);
+  announce(`Undone: ${e.msg} Redo with Ctrl+Shift+Z.`);
   return e.focusSel;
 }
+function redo() {
+  const e = ui.redo.pop();
+  if (!e) return false;
+  step = e.step; ui.openAbility = e.openAbility; ui.openItem = e.openItem;
+  e.doIt();
+  ui.undo.push(e); ui.snack = e; armSnack();
+  ui.confirm = null; saveMsg = '';
+  announce(`Redone: ${e.msg}`);
+  return true;
+}
+const UNDO_FOCUS = ['article.open [data-path]', '#step-title'];
 const abilityById = (id) => state.abilities.find((x) => x.id === id);
 function grantRefs(k) {
   const refs = [];
@@ -1020,6 +1093,7 @@ function clearGrantsTo(k) {
 function onValue(e) {
   const el = e.target;
   if (!el.dataset || !el.dataset.path) return;
+  ui.redo = [];
   let v = el.type === 'checkbox' ? el.checked : el.value;
   if (el.type === 'radio') { if (!el.checked) return; v = el.value; }
   if (el.dataset.num) v = Math.max(Number(el.min), Math.min(Number(el.max), parseNum(v)));
@@ -1077,6 +1151,22 @@ root.addEventListener('paste', (e) => {
     render({ keepFocus: [`[data-path="origins.${k + extra.length}.${lang}"]`] });
     return;
   }
+  m = path.match(/^abilities\.(\d+)\.name\.(en|pl)$/);
+  if (m) {
+    e.preventDefault();
+    const i0 = Number(m[1]), lang = m[2];
+    const split = (line) => { const x = line.match(/^(.{1,60}?)(?:\s*[:—–]\s+|\.\s+)(.+)$/); return x ? [x[1].trim(), x[2].trim()] : [line, '']; };
+    const before = state.abilities.map((a) => ({ ...a, name: { ...a.name }, text: { ...a.text } }));
+    const room = LIMIT_LIST - state.abilities.length;
+    const parsed = lines.map(split), extra = parsed.slice(1, 1 + room);
+    withUndo(`Pasted ${1 + extra.length} abilities into the random pool.`, () => {
+      const a0 = state.abilities[i0];
+      a0.name[lang] = parsed[0][0]; if (parsed[0][1] && !a0.text[lang]) a0.text[lang] = parsed[0][1];
+      state.abilities.splice(i0 + 1, 0, ...extra.map(([nm, txt]) => ({ id: ++uid, random: true, name: lang === 'en' ? L(nm, '') : L('', nm), text: lang === 'en' ? L(txt, '') : L('', txt), grantItem: '', grantPet: '', mods: [], table: null })));
+    }, () => { const keep = new Set(before.map((a) => a.id)); state.abilities = state.abilities.filter((a) => keep.has(a.id)); const a0 = abilityById(before[i0].id); if (a0) { a0.name = before[i0].name; a0.text = before[i0].text; } }, `[data-path="${path}"]`);
+    render({ keepFocus: [`[data-path="${path}"]`] });
+    return;
+  }
   m = path.match(/^abilities\.(\d+)\.table\.rows\.(\d+)\.(en|pl)$/);
   if (m) {
     e.preventDefault();
@@ -1092,15 +1182,27 @@ root.addEventListener('paste', (e) => {
 const typing = (el) => el && (el.tagName === 'TEXTAREA' || (el.tagName === 'INPUT' && !el.dataset.num));
 document.addEventListener('keydown', (e) => {
   // Ctrl/Cmd+Z undoes the last recorded change; text fields keep their own native undo
-  if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'z' && !typing(e.target)) {
+  const mod = (e.ctrlKey || e.metaKey) && !e.altKey;
+  if (mod && !typing(e.target) && ((e.shiftKey && e.key.toLowerCase() === 'z') || (!e.shiftKey && e.key.toLowerCase() === 'y'))) {
+    if (!ui.redo.length) return;
+    e.preventDefault(); redo(); render({ keepFocus: UNDO_FOCUS });
+    return;
+  }
+  if (mod && !e.shiftKey && e.key.toLowerCase() === 'z' && !typing(e.target)) {
     if (!ui.undo.length) return;
     e.preventDefault();
     const fs = undo();
-    render({ focusSel: fs, keepFocus: ['#step-title'] });
+    render({ focusSel: fs, keepFocus: UNDO_FOCUS });
+    return;
+  }
+  // Alt+Left/Right moves between steps
+  if (e.altKey && !e.ctrlKey && !e.metaKey && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+    const b = root.querySelector(`.b-nav [data-act="step"][data-v="${step + (e.key === 'ArrowLeft' ? -1 : 1)}"]:not([disabled])`);
+    if (b) { e.preventDefault(); b.click(); }
     return;
   }
   // Esc backs out of the innermost open thing: a confirm, the forge picker, then the open card
-  if (e.key === 'Escape' && e.target.tagName !== 'SELECT') {
+  if (e.key === 'Escape') {
     const btn = root.querySelector('[data-act="confirm-cancel"]') || root.querySelector('[data-act="forge-cancel"]') || root.querySelector('[data-act="close-ability"]') || root.querySelector('[data-act="close-item"]');
     if (btn) { e.preventDefault(); btn.click(); }
   }
@@ -1115,9 +1217,20 @@ root.addEventListener('keydown', (e) => {
   const b = e.target.closest && e.target.closest('[role="radio"]');
   if (!b || !['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) return;
   const all = [...b.parentElement.querySelectorAll('[role="radio"]:not([disabled])')];
+  if (b.parentElement.dataset.manual) {
+    // destructive choices (Type, table die, class languages): arrows only move focus, Space/Enter commits
+    const n = all[(all.indexOf(b) + (e.key === 'ArrowLeft' || e.key === 'ArrowUp' ? -1 : 1) + all.length) % all.length];
+    e.preventDefault(); n.focus(); return;
+  }
   const i = all.indexOf(b) + (e.key === 'ArrowLeft' || e.key === 'ArrowUp' ? -1 : 1);
   const n = all[(i + all.length) % all.length];
   e.preventDefault(); n.focus(); n.click();
+});
+const NAV_ACTS = new Set(['undo', 'step', 'open-ability', 'close-ability', 'open-item', 'close-item', 'view-lang', 'goto-issue', 'goto-granter', 'edit-item', 'roll', 'forge-for', 'forge-cancel',
+  'show-grants', 'more-scopes', 'link-rows', 'gate-yes', 'gate-no', 'gate-change', 'confirm-cancel', 'rm-item', 'rm-ability', 'rm-table', 'save']);
+root.addEventListener('focusout', (e) => {
+  const p = e.target.dataset && e.target.dataset.path;
+  if (p && pristine(p)) { ui.touched.add(p); refreshDerived(); }
 });
 root.addEventListener('click', (e) => {
   const b = e.target.closest('[data-act]');
@@ -1125,6 +1238,7 @@ root.addEventListener('click', (e) => {
   const i = Number(b.dataset.i), j = Number(b.dataset.j), v = b.dataset.v;
   const same = `[data-act="${b.dataset.act}"]${b.dataset.i != null ? `[data-i="${b.dataset.i}"]` : ''}${b.dataset.j != null ? `[data-j="${b.dataset.j}"]` : ''}${b.dataset.v != null ? `[data-v="${CSS.escape(b.dataset.v)}"]` : ''}`;
   let opts = { keepFocus: [same] };
+  if (!NAV_ACTS.has(b.dataset.act)) ui.redo = [];
   switch (b.dataset.act) {
     case 'nudge': {
       const input = document.getElementById(fid(b.dataset.path));
@@ -1152,7 +1266,7 @@ root.addEventListener('click', (e) => {
     /* Class Items question */
     case 'gate-yes': ui.itemsYes = true; ui.itemsNo = false; opts = { focusSel: '[data-act="add-item"]' }; break;
     case 'open-item': { ui.openItem = Number(v); ui.confirm = null; const idx = state.items.findIndex((x) => x.id === Number(v)); opts = { focusPath: `items.${idx}.name.${viewLang}` }; break; }
-    case 'close-item': ui.openItem = null; ui.confirm = null; opts = { keepFocus: [`[data-act="open-item"][data-v="${v}"]`] }; break;
+    case 'close-item': ui.fresh.delete(`i:${v}`); ui.openItem = null; ui.confirm = null; opts = { keepFocus: [`[data-act="open-item"][data-v="${v}"]`] }; break;
     case 'dup-item': {
       const src = state.items.find((x) => x.id === Number(v)), idx = state.items.indexOf(src);
       const copy = { ...structuredClone(src), id: ++uid };
@@ -1165,7 +1279,7 @@ root.addEventListener('click', (e) => {
     case 'gate-no': ui.itemsNo = true; ui.itemsYes = false; announce('No Class Items. Abilities can still grant catalog gear.'); opts = { focusSel: '[data-act="gate-change"]' }; break;
     case 'gate-change': ui.itemsNo = false; opts = { focusSel: '[data-act="gate-yes"]' }; break;
     case 'add-item': {
-      const it = newItem(v); ui.itemsNo = false; ui.openItem = it.id;
+      const it = newItem(v); ui.itemsNo = false; ui.openItem = it.id; ui.fresh.add(`i:${it.id}`);
       opts = { focusPath: `items.${state.items.length - 1}.name.${viewLang}` };
       announce(`New ${typeWord[it.type]} added. It still needs an ability that grants it.`);
       break;
@@ -1198,7 +1312,7 @@ root.addEventListener('click', (e) => {
     case 'grant-new': {
       const it = state.items.find((x) => x.id === Number(v));
       const ai = newAbilityFor(it);
-      ui.openAbility = state.abilities[ai].id;
+      ui.openAbility = state.abilities[ai].id; ui.fresh.add(`a:${ui.openAbility}`);
       step = stepIndex('abilities');
       announce(`New ability “${tx(it.name) || 'Unnamed'}” grants ${typeWord[it.type]} “${tx(it.name) || 'Unnamed'}”. Write its rules text.`);
       opts = { focusPath: `abilities.${ai}.text.${viewLang}` };
@@ -1218,9 +1332,9 @@ root.addEventListener('click', (e) => {
       break;
     }
     /* Abilities */
-    case 'add-ability': state.abilities.push({ id: ++uid, random: true, name: L('', ''), text: L('', ''), grantItem: '', grantPet: '', mods: [], table: null }); ui.openAbility = uid; opts = { focusPath: `abilities.${state.abilities.length - 1}.name.${viewLang}` }; break;
+    case 'add-ability': state.abilities.push({ id: ++uid, random: true, name: L('', ''), text: L('', ''), grantItem: '', grantPet: '', mods: [], table: null }); ui.openAbility = uid; ui.fresh.add(`a:${uid}`); opts = { focusPath: `abilities.${state.abilities.length - 1}.name.${viewLang}` }; break;
     case 'open-ability': { ui.openAbility = Number(v); ui.confirm = null; const idx = state.abilities.findIndex((x) => x.id === Number(v)); opts = { focusPath: `abilities.${idx}.name.${viewLang}` }; break; }
-    case 'close-ability': ui.openAbility = null; ui.confirm = null; ui.forgeFor = null; opts = { keepFocus: [`[data-act="open-ability"][data-v="${v}"]`] }; break;
+    case 'close-ability': ui.fresh.delete(`a:${v}`); ui.fresh.delete(`t:${v}`); delete ui.cutRows[v]; ui.openAbility = null; ui.confirm = null; ui.forgeFor = null; opts = { keepFocus: [`[data-act="open-ability"][data-v="${v}"]`] }; break;
     case 'show-grants': ui.showGrants.add(Number(v)); opts = { focusSel: `#${fid(`abilities.${i}.grantItem`)}` }; break;
     case 'rm-ability': {
       const a = state.abilities[i];
@@ -1277,15 +1391,22 @@ root.addEventListener('click', (e) => {
     case 'table-die': {
       const ab = state.abilities[i], t = ab.table, n = Number(v);
       if (t.die === n) return;
+      // rows cut by a smaller die are set aside until the card closes; a bigger die brings them back
       const before = { die: t.die, rows: t.rows.map((r) => ({ ...r })) };
+      const cut = ui.cutRows[ab.id] || (ui.cutRows[ab.id] = []);
       const dropped = t.rows.slice(n).filter((r) => r.en || r.pl || r.item);
-      const msg = `Table is now a d${n}.${dropped.length ? ` ${dropped.length} filled ${dropped.length > 1 ? 'rows were' : 'row was'} cut${dropped.some((r) => r.item) ? ', and its Class Item waits for an ability' : ''}.` : ''}`;
-      const apply = () => { t.die = n; t.rows = Array.from({ length: n }, (_, k) => t.rows[k] || row('', '')); };
-      if (dropped.length) withUndo(msg, apply, () => { t.die = before.die; t.rows = before.rows.map((r) => ({ ...r, item: r.item && granterOf(r.item) && granterOf(r.item).a !== ab ? '' : r.item })); }, `[data-act="table-die"][data-i="${i}"][data-v="${before.die}"]`, `table-${ab.id}`);
-      else { apply(); announce(msg); }
+      const back = n > t.die ? cut.slice(t.die, n).filter((r) => r && (r.en || r.pl)).length : 0;
+      const msg = `Table is now a d${n} (was d${t.die}).${dropped.length ? ` ${dropped.length} filled ${dropped.length > 1 ? 'rows' : 'row'} set aside${dropped.some((r) => r.item) ? '; its Class Item waits for an ability' : ''}.` : ''}${back ? ` ${back} set-aside ${back > 1 ? 'rows' : 'row'} came back.` : ''}`;
+      withUndo(msg, () => {
+        t.rows.slice(n).forEach((r, k) => { cut[n + k] = { ...r }; });
+        const old = t.rows;
+        t.die = n;
+        t.rows = Array.from({ length: n }, (_, k) => old[k] || (cut[k] ? { ...cut[k], item: cut[k].item && granterOf(cut[k].item) ? '' : cut[k].item } : row('', '')));
+      }, () => { t.die = before.die; t.rows = before.rows.map((r) => ({ ...r, item: r.item && granterOf(r.item) && granterOf(r.item).a !== ab ? '' : r.item })); }, `[data-act="table-die"][data-i="${i}"][data-v="${before.die}"]`);
       break;
     }
-    case 'add-table': state.abilities[i].table = { die: 6, rows: Array.from({ length: 6 }, () => row('', '')) }; opts = { focusPath: `abilities.${i}.table.rows.0.${viewLang}` }; break;
+    case 'link-rows': ui.linkRows.add(Number(v)); opts = { focusSel: `#${fid(`abilities.${i}.table.rows.0.item`)}` }; break;
+    case 'add-table': ui.fresh.add(`t:${state.abilities[i].id}`); state.abilities[i].table = { die: 6, rows: Array.from({ length: 6 }, () => row('', '')) }; opts = { focusPath: `abilities.${i}.table.rows.0.${viewLang}` }; break;
     case 'rm-table':
     case 'rm-table-yes': {
       const ab = state.abilities[i], table = ab.table;
@@ -1298,7 +1419,7 @@ root.addEventListener('click', (e) => {
     }
     case 'add-origin': state.origins.push(L('', '')); opts = { focusPath: `origins.${state.origins.length - 1}.${viewLang}` }; break;
     case 'rm-origin': { const o = state.origins[i]; withUndo(`Removed origin ${i + 1}.`, () => { state.origins.splice(i, 1); }, () => { state.origins.splice(Math.min(i, state.origins.length), 0, o); }, `[data-act="rm-origin"][data-i="${i}"]`); } opts = { keepFocus: [`[data-act="rm-origin"][data-i="${Math.min(i, state.origins.length - 1)}"]`, '[data-act="add-origin"]'] }; break;
-    case 'undo': { const fs = undo(); opts = { focusSel: fs, keepFocus: ['#step-title'] }; break; }
+    case 'undo': { const fs = undo(); opts = { focusSel: fs, keepFocus: UNDO_FOCUS }; break; }
     case 'forge-for': ui.forgeFor = Number(v); ui.showGrants.add(Number(v)); opts = { focusSel: `[data-act="forge-type"][data-i="${i}"]:not([disabled])` }; break;
     case 'forge-cancel': ui.forgeFor = null; opts = { keepFocus: [`[data-act="forge-for"][data-i="${i}"]`] }; break;
     case 'forge-type': {
@@ -1307,7 +1428,7 @@ root.addEventListener('click', (e) => {
       withUndo(`Forged ${typeWord[v]} “${tx(ab.name) || 'Unnamed'}”, granted by this ability. Set its stats in Class Items.`, () => {
         it = newItem(v, ab.name); ab[slot] = keyOf(it);
       }, () => { clearGrantsTo(keyOf(it)); state.items = state.items.filter((x) => x !== it); }, `[data-act="forge-for"][data-i="${i}"]`);
-      ui.forgeFor = null; ui.itemsNo = false;
+      ui.forgeFor = null; ui.itemsNo = false; if (it) ui.fresh.add(`i:${it.id}`);
       opts = { focusSel: `#${fid(`abilities.${i}.${slot}`)}` };
       break;
     }
@@ -1322,6 +1443,7 @@ root.addEventListener('click', (e) => {
       const it = state.items[i];
       if (it.type === v) return;
       const before = structuredClone(it), k = keyOf(it), g = granterOf(k);
+      const slotsBefore = state.abilities.filter((x) => x.grantItem === k || x.grantPet === k).map((x) => ({ id: x.id, grantItem: x.grantItem === k, grantPet: x.grantPet === k }));
       let note = '';
       let gBefore = null;
       if (g && g.kind === 'ability' && g.slot !== slotFor(v)) {
@@ -1338,7 +1460,9 @@ root.addEventListener('click', (e) => {
         TYPE_FIELDS.forEach((f) => { delete it[f]; });
         it.type = before.type;
         TYPE_FIELDS.forEach((f) => { if (f in before) it[f] = before[f]; });
-        if (gBefore) { const ab = abilityById(gBefore.aid); if (ab) { const cur = granterOf(k); if (!cur || cur.a === ab) { ab.grantItem = gBefore.grantItem; ab.grantPet = gBefore.grantPet; } } }
+        // put the item back in exactly the slots it held before the first change, never creating a second granter
+        state.abilities.forEach((x) => { if (x.grantItem === k) x.grantItem = ''; if (x.grantPet === k) x.grantPet = ''; });
+        if (!granterOf(k)) slotsBefore.forEach((sb) => { const ab = abilityById(sb.id); if (!ab) return; if (sb.grantItem && !ab.grantItem) ab.grantItem = k; if (sb.grantPet && !ab.grantPet) ab.grantPet = k; });
       }, `[data-act="change-type"][data-i="${i}"][data-v="${before.type}"]`, `type-${it.id}`);
       break;
     }
