@@ -62,3 +62,45 @@ The build must meet these; the prototype shows each one.
 7. Snackbar text is a short sentence in sentence case; the live region carries the full message.
 8. Row controls (Remove) sit in the row's header and never wrap under a field at 390px.
 9. A disabled control says why, in words a GM uses: the blocking item by name, never "slot".
+
+## Critique round 2 (2026-09-27)
+
+The confirming critique scored **28/40** (the run before scored 33). All nine items above passed their repros. It found two older P1s the earlier rounds missed, and two regressions from this ticket's fixes. The owner chose to fix all five priority issues, with **Save sealing the undo history** and focus drawn **yellow with a white offset** (pink stays for interrupts). Fixed, each with a scripted repro:
+
+- **[P1] Keyboard edits hit the wrong row.** Focus was restored by a selector without the field path, so arrowing a modifier's Stat or scope, or its Space, changed another row, or a weapon's Reach. Focus is now restored by `data-path` (and by `data-base` / `data-list`).
+- **[P1] Undo outlived Save.** A successful Save now clears the undo and redo history. Ctrl+Z on the class list does nothing, and editing again starts fresh; this matches ticket 17's "resuming starts a fresh history".
+- **[P2] Undo holes.**
+  - These are now quiet, collapsing undo steps: die picks, option choices, add modifier, add reference table, granting a waiting item, and adding a language.
+  - A refused Ctrl+Z (a field was edited after the last recorded change) now shows a snackbar ("Ctrl+Z skipped: you edited a field after that change", naming the last change) with **Undo it anyway**; before, only screen readers heard it.
+  - The stack is 30 deep.
+- **[P2] Cut-off messages** (a regression from this ticket). Sentences split only at "." or ".”" before a capital, never after an abbreviation or a bare closing quote. Grammar: "Forge a weapon / armor / gear / a pet", "is now armor".
+- **[P2] Phone black on black.** At 390px a hovered or tapped segment keeps readable text; the yellow hover fill is mouse-only.
+- **Minor:**
+  - The focus shadow is white, not pink.
+  - FORGED uses the headline face (the display face never sits inside a card), and its shadow shows on black.
+  - Information chips are 0.75rem; hint lines are about 75 characters.
+  - The order hint's key is styled.
+  - The stats die grid no longer orphans the armor die.
+  - "Forge a Class Item for this ability" everywhere, and Cancel re-hides grant menus it revealed.
+  - A waiting Class Item's chip is no longer pink.
+  - A table paste says how many filled rows it replaced, and asks to check the other language.
+  - The test roll is announced as a summary.
+  - On touch, opening a card focuses the card, not its Name field, so no keyboard pops up.
+  - Alt+←/→ never reaches the browser's Back/Forward from the editor.
+  - A changed, unsaved draft asks before the page unloads (the real creator autosaves, ticket 17).
+- **Left as-is:**
+  - The advisory "1rem phone body" (it keeps iOS from zooming inputs).
+  - Add-button placement per step.
+  - The prototype-only state panel.
+  - The zine contact line (owner decision).
+  - The Stats step's density: a product question, "book defaults / customise", not a defect.
+
+### More acceptance criteria for the real creator
+
+10. After any re-render, focus returns to the same field or control, identified by its path, never to a same-valued control elsewhere.
+11. Save ends the undo history.
+12. When a shortcut is refused, the refusal is visible, not only announced, and offers the explicit action.
+13. Messages are cut only at sentence ends; type words take the right article.
+14. No state renders text in the same colour as its background at any breakpoint, including sticky touch hover.
+15. Opening a card on touch does not open the keyboard.
+16. Editor shortcuts never trigger browser navigation.

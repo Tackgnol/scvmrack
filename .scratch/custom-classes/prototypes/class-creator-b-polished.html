@@ -391,11 +391,11 @@ body.is-dragging{user-select:none;-webkit-user-select:none;cursor:grabbing}
 .rowlink > .gripwrap{padding-top:0;align-self:start}
 @media (max-width:620px){.rowlink{grid-template-columns:auto 26px minmax(0,1fr)}.rowlink select{grid-column:3}}
 /* Ticket 15 fixes. Field edges reach 3:1 against every surface they sit on (WCAG 1.4.11), and hover and focus look
-   different: hover lightens the edge, focus inks it yellow with a pink offset. */
+   different: hover lightens the edge, focus inks it yellow with a white offset (pink stays for interrupts). */
 :root{--edge:#6e6e6e}
 input[type=text],input[type=number],select,textarea,.row input[type=text],.row textarea,.row select,.statline select{border-color:var(--edge)}
 input[type=text]:hover,select:hover,textarea:hover,.row input[type=text]:hover,.row textarea:hover,.row select:hover,.statline select:hover{border-color:var(--white)}
-input[type=text]:focus,select:focus,textarea:focus,.row input[type=text]:focus,.row textarea:focus,.row select:focus,.statline select:focus{border-color:var(--yellow);box-shadow:3px 3px 0 var(--pink)}
+input[type=text]:focus,select:focus,textarea:focus,.row input[type=text]:focus,.row textarea:focus,.row select:focus,.statline select:focus{border-color:var(--yellow);box-shadow:3px 3px 0 var(--white)}
 /* one pink interrupt while blocked Save shows: rail and language counts step back to ink */
 #root.blocked .b-rail .chip.warn,#root.blocked .langsw .act .miss{background:var(--black);color:var(--yellow);border-color:var(--black)}
 /* snackbar messages read as sentences */
@@ -404,6 +404,18 @@ input[type=text]:focus,select:focus,textarea:focus,.row input[type=text]:focus,.
 /* modifier rows: the Remove button sits in the row's own header, never wrapped under a control */
 .modhead{flex:1 1 100%;display:flex;justify-content:space-between;align-items:center;gap:8px}
 .modhead .label{margin:0}
+/* critique round 2 */
+/* phones: a hovered or tapped segment never goes black on black; real hover (mouse) gets the yellow fill */
+@media (max-width:520px){.choice .seg .act:not(.on):hover{background:var(--black);color:var(--yellow)}.choice .seg.statseg .act:not(.on):hover{color:var(--white)}}
+@media (max-width:520px) and (hover:hover){.choice .seg .act:not(.on):hover,.choice .seg.statseg .act:not(.on):hover{background:var(--yellow);color:var(--black)}}
+/* FORGED: the display face never sits inside a card (DESIGN.md), and its shadow shows on the black paper */
+.forged{box-shadow:6px 6px 0 var(--white)}
+.forged b{font-family:var(--f-head)}
+/* information chips on the type ramp's 0.75rem step, hint lines near 75 characters */
+.abl-chips .chip{font-size:.75rem}
+.hint,.fieldhint{max-width:31em}
+.orderhint kbd{font:inherit;font-style:normal;border:1px solid var(--muted);padding:0 4px;white-space:nowrap}
+.numgrid{grid-template-columns:repeat(auto-fit,minmax(190px,1fr))}
 </style>
 
 <header class="masthead">
@@ -526,7 +538,7 @@ const itemByKey = (k) => state.items.find((it) => keyOf(it) === k);
 const poolSize = () => state.abilities.filter((a) => a.random).length;
 const typeWord = { weapon: 'weapon', armor: 'armor', equipment: 'gear', pet: 'pet' };
 const copyName = (n) => ({ en: n.en ? `${n.en} (copy)` : '', pl: n.pl ? `${n.pl} (kopia)` : '' });
-const aType = (t) => (t === 'armor' ? `${typeWord[t]}` : `a ${typeWord[t]}`);
+const aType = (t) => (t === 'armor' || t === 'equipment' ? typeWord[t] : `a ${typeWord[t]}`); // "armor", "gear", "a weapon", "a pet"
 const signed = (n) => (n > 0 ? `+${n}` : n < 0 ? `−${Math.abs(n)}` : '0');
 const modText = (m) => { const st = STATS.find((x) => x.key === m.stat); const sc = SCOPES.find((x) => x.key === m.scope); return `${signed(m.value)} ${st ? st.short : ''}${m.scope !== 'all' && sc ? ` ${sc.label.toLowerCase()}` : ''}`; };
 
@@ -677,7 +689,7 @@ function rollSheet() {
     if (tr && tr.item) gear.push(`${itemLabel(tr.item)} · from the table`);
     granted.forEach((k) => { const it = itemByKey(k); if (!(it && it === merged)) gear.push(it ? `${itemLabel(k)} · ${typeWord[it.type]} ${itemStats(it)}` : itemLabel(k)); });
   });
-  return `<div class="sheet" aria-live="polite">
+  return `<div class="sheet">
     <span class="micro muted">Test scvm · ${esc(tx(state.name))}</span>
     ${stale ? '<p class="status block" style="margin:8px 0">The draft changed since this roll. Roll again to see it.</p>' : ''}
     <h3>Nameless Wretch</h3>
@@ -782,12 +794,12 @@ function itemConfirm(it) {
     <div class="inline"><button type="button" class="act danger" data-act="rm-item-yes" data-v="${it.id}">Remove and clear</button><button type="button" class="act" data-act="confirm-cancel" data-v="item-${it.id}">Keep it</button></div></div>`;
 }
 function addItemRow(full) {
-  return `<div class="inline"><span class="label group" style="margin:0">Forge a</span>${['weapon', 'armor', 'equipment', 'pet'].map((t) => `<button type="button" class="act" data-act="add-item" data-v="${t}" aria-label="Forge ${aType(t)}" ${full ? 'disabled' : ''}>${typeWord[t]}</button>`).join('')}</div>`;
+  return `<div class="inline"><span class="label group" style="margin:0">Forge</span>${['weapon', 'armor', 'equipment', 'pet'].map((t) => `<button type="button" class="act" data-act="add-item" data-v="${t}" aria-label="Forge ${aType(t)}" ${full ? 'disabled' : ''}>${aType(t)}</button>`).join('')}</div>`;
 }
 function itemSummary(it, i, issues) {
   const miss = issues.filter((x) => x.path && x.path.startsWith(`items.${i}.`)).length;
   const g = granterOf(keyOf(it));
-  const who = g ? `<span class="chip">granted by ${esc(tx(g.a.name) || 'Unnamed ability')}${g.kind === 'table' ? ` · row ${g.row + 1}` : ''}</span>` : '<span class="chip warn">waits for an ability</span>';
+  const who = g ? `<span class="chip">granted by ${esc(tx(g.a.name) || 'Unnamed ability')}${g.kind === 'table' ? ` · row ${g.row + 1}` : ''}</span>` : '<span class="chip">waits for an ability</span>';
   return `<article class="abl movable" data-mlist="items" data-mi="${i}" data-item="${it.id}" style="view-transition-name:item-${it.id}">${grip('items', i, state.items.length, tx(it.name) || 'Unnamed item')}<h3 class="card-h"><button type="button" class="abl-sum item-sum" data-act="open-item" data-v="${it.id}" aria-expanded="false" aria-label="${esc(tx(it.name) || 'Unnamed')}, ${typeWord[it.type]}" aria-describedby="item-chips-${it.id}">
     <span class="typebadge">${typeWord[it.type]}</span>
     <span class="abl-name">${esc(tx(it.name) || 'Unnamed')}</span>
@@ -796,7 +808,7 @@ function itemSummary(it, i, issues) {
 }
 function itemOpen(it, i) {
   const confirming = ui.confirm && ui.confirm.type === 'item' && ui.confirm.id === it.id;
-  return `<article class="row stack abl open" id="item-${it.id}" style="view-transition-name:item-${it.id}" aria-label="${esc(tx(it.name) || 'Unnamed Class Item')}" data-item="${it.id}" data-mlist="items" data-mi="${i}">
+  return `<article class="row stack abl open" tabindex="-1" id="item-${it.id}" style="view-transition-name:item-${it.id}" aria-label="${esc(tx(it.name) || 'Unnamed Class Item')}" data-item="${it.id}" data-mlist="items" data-mi="${i}">
       <div class="itemhead"><div class="inline">${grip('items', i, state.items.length, tx(it.name) || 'Unnamed item')}<span class="typebadge">${typeWord[it.type]}</span><h3 class="card-h">${esc(tx(it.name) || 'Unnamed')}</h3></div></div>
       ${confirming ? itemConfirm(it) : ''}
       ${grantedByLine(it)}
@@ -990,11 +1002,11 @@ function abilityOpen(a, i) {
   const showGrants = a.grantItem || a.grantPet || ui.showGrants.has(a.id);
   const extras = [
     showGrants ? '' : `<button type="button" class="act" data-act="show-grants" data-v="${a.id}" data-i="${i}">Grant an item or pet</button>`,
-    showGrants || state.items.length >= LIMIT_LIST ? '' : `<button type="button" class="act" data-act="forge-for" data-i="${i}" data-v="${a.id}">Forge a Class Item for it</button>`,
+    showGrants || state.items.length >= LIMIT_LIST ? '' : `<button type="button" class="act" data-act="forge-for" data-i="${i}" data-v="${a.id}">Forge a Class Item for this ability</button>`,
     a.mods.length ? '' : `<button type="button" class="act" data-act="add-mod" data-base="abilities.${i}">Add modifier</button>`,
     a.table ? '' : `<button type="button" class="act" data-act="add-table" data-i="${i}">Add reference table</button>`,
   ].join('');
-  return `<article class="row stack abl open" id="abl-${a.id}" style="view-transition-name:abl-${a.id}" aria-label="${esc(tx(a.name) || 'Unnamed ability')}" data-ability="${a.id}" data-mlist="abilities" data-mi="${i}">
+  return `<article class="row stack abl open" tabindex="-1" id="abl-${a.id}" style="view-transition-name:abl-${a.id}" aria-label="${esc(tx(a.name) || 'Unnamed ability')}" data-ability="${a.id}" data-mlist="abilities" data-mi="${i}">
       <div class="itemhead"><div class="inline">${grip('abilities', i, state.abilities.length, tx(a.name) || 'Unnamed ability')}${abilityHeader(a)}</div>
         <div class="inline"><div class="seg" role="radiogroup" aria-label="Ability kind"><button type="button" class="act ${a.random ? '' : 'on'}" role="radio" aria-checked="${!a.random}" tabindex="${a.random ? -1 : 0}" data-act="kind" data-i="${i}" data-v="fixed">Fixed</button><button type="button" class="act ${a.random ? 'on' : ''}" role="radio" aria-checked="${a.random}" tabindex="${a.random ? 0 : -1}" data-act="kind" data-i="${i}" data-v="random">Random pool</button></div></div></div>
       ${confirming ? abilityConfirm(a, i) : ''}
@@ -1097,12 +1109,19 @@ function classesHtml() {
 }
 function snackHtml() {
   if (!ui.snack) return '';
+  if (ui.snack.note) return `<div class="snackbar"><span>${esc(ui.snack.msg)}<br><span class="count muted">Last change: ${esc(shortMsg(ui.snack.last))}</span></span><button type="button" class="btn save" data-act="undo" aria-label="Undo anyway: ${esc(ui.snack.last)}">Undo it anyway</button></div>`;
   if (ui.snack.undone) return `<div class="snackbar"><span>Undone: ${esc(firstSentence(ui.snack.msg))}</span><span class="inline" style="gap:6px"><button type="button" class="btn save" data-act="redo" aria-keyshortcuts="Control+Shift+Z Control+Y">Redo</button>${ui.undo.length ? `<button type="button" class="act" data-act="undo">Undo earlier (${ui.undo.length})</button>` : ''}</span></div>`;
   const n = ui.undo.length;
   return `<div class="snackbar"><span>${esc(firstSentence(ui.snack.msg))}${n > 1 ? `<br><span class="count muted">${n} changes can be undone · Ctrl+Z</span>` : ''}</span><button type="button" class="btn save" data-act="undo" aria-keyshortcuts="Control+Z Meta+Z">Undo</button></div>`;
 }
-const firstSentence = (m) => m.split(/(?<=[.”])\s/)[0];
-const shortMsg = (m) => { const x = m.split(/(?<=[.”])\s/)[0]; return x.length > 52 ? `${x.slice(0, 50)}…` : x; };
+// a sentence ends at "." or ".”" followed by a capital, never after an abbreviation or a bare closing quote
+const SENT_ABBR = /(?:^|[\s“])(?:St|Mt|Dr|Mr|Mrs|Sr|Jr|No|Ft|vs)$/;
+function firstSentence(m) {
+  const re = /\.”?\s+(?=[A-Z“])/g; let x;
+  while ((x = re.exec(m))) { if (!SENT_ABBR.test(m.slice(0, x.index))) return m.slice(0, x.index + x[0].trimEnd().length); }
+  return m;
+}
+const shortMsg = (m) => { const x = firstSentence(m); return x.length > 52 ? `${x.slice(0, 50)}…` : x; };
 function clearRedo() {
   ui.redo = [];
   if (ui.snack && ui.snack.undone) { ui.snack = null; clearTimeout(snackTimer); const el = root.querySelector('.snackbar'); if (el) el.remove(); document.body.classList.remove('has-snack'); }
@@ -1138,7 +1157,7 @@ function render({ focusHeading = false, focusPath = null, focusSel = null, keepF
     </section>
   </div>
   <details class="statebox page-level"><summary>Prototype: draft state that would be saved</summary><pre class="state" data-derived="state"></pre></details>
-  <div class="page-level">${snackHtml()}</div>`;
+  <div class="page-level" data-snack>${snackHtml()}</div>`;
   document.body.classList.toggle('has-snack', !!ui.snack);
   refreshDerived();
   const cur = root.querySelector('.b-step[aria-current="step"]');
@@ -1222,7 +1241,7 @@ document.addEventListener('click', (e) => {
 
 /* Undo: every destructive change records its own inverse; undo touches nothing else. */
 let snackTimer = null;
-const UNDO_DEPTH = 10;
+const UNDO_DEPTH = 30;
 function armSnack() {
   clearTimeout(snackTimer);
   snackTimer = setTimeout(() => {
@@ -1250,6 +1269,13 @@ function withUndo(msg, doIt, inverse, focusSel = null, coalesceKey = null, quiet
   ui.snack = entry;
   armSnack();
   announce(`${msg} Undo is available (Ctrl+Z).`);
+}
+const touchFirst = () => !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
+const labelOf = (grp) => { const el = document.getElementById(grp.getAttribute('aria-labelledby') || ''); return el ? el.textContent.trim() : 'Value'; };
+function showSnack() {
+  const host = root.querySelector('[data-snack]'); if (host) host.innerHTML = snackHtml();
+  document.body.classList.toggle('has-snack', !!ui.snack); armSnack();
+  const nu = root.querySelector('[data-derived="navundo"]'); if (nu) nu.innerHTML = navUndoHtml();
 }
 function syncUndoUi() {
   if (!ui.snack) { const el = root.querySelector('.snackbar'); if (el) el.remove(); document.body.classList.remove('has-snack'); }
@@ -1413,7 +1439,7 @@ root.addEventListener('paste', (e) => {
     const before = state.origins.map((o) => ({ ...o }));
     const room = LIMIT_LIST - state.origins.length;
     const extra = lines.slice(1, 1 + room);
-    withUndo(`Pasted ${1 + extra.length} origins. Ctrl+Z undoes the paste.`, () => {
+    withUndo(`Pasted ${1 + extra.length} origins.`, () => {
       state.origins[k][lang] = lines[0];
       state.origins.splice(k + 1, 0, ...extra.map((x) => (lang === 'en' ? L(x, '') : L('', x))));
     }, () => { state.origins = before.map((o) => ({ ...o })); }, `[data-path="${path}"]`); // a fresh copy each time, so redo never edits the snapshot
@@ -1446,7 +1472,11 @@ root.addEventListener('paste', (e) => {
     const need = r0 + lines.length, die = [2, 3, 4, 6, 8, 10, 12].find((x) => x >= need) || 12;
     const grow = die > t.die;
     const used = lines.slice(0, Math.max(t.die, die) - r0);
-    withUndo(`Pasted ${used.length} table rows.${grow ? ` The table grew to a d${die} to fit them.` : ''}${lines.length > used.length ? ` ${lines.length - used.length} did not fit a d12.` : ''}`, () => {
+    // say when a paste replaces rows that already had text, and that the other language may no longer match
+    const over = used.filter((x, n) => t.rows[r0 + n] && String(t.rows[r0 + n][lang] || '').trim()).length;
+    const other = state.languages.find((l) => l !== lang);
+    const overMsg = over ? ` ${over} filled ${over > 1 ? 'rows were' : 'row was'} replaced${other ? `; check ${over > 1 ? 'their' : 'its'} ${langLong[other]} text` : ''}.` : '';
+    withUndo(`Pasted ${used.length} table rows.${overMsg}${grow ? ` The table grew to a d${die} to fit them.` : ''}${lines.length > used.length ? ` ${lines.length - used.length} did not fit a d12.` : ''}`, () => {
       if (grow) { t.die = die; while (t.rows.length < die) t.rows.push(row('', '')); }
       used.forEach((x, n) => { t.rows[r0 + n][lang] = x; });
     }, () => { t.die = before.die; t.rows = before.rows.map((r, n) => ({ ...(t.rows[n] || r), en: r.en, pl: r.pl })); }, `[data-path="${path}"]`);
@@ -1476,7 +1506,8 @@ document.addEventListener('keydown', (e) => {
     if (top.rev !== (ui.rev || 0) && !pasteUndoable(e.target) && !nudgeUndoable(e.target)) {
       // something unrecorded changed since: Ctrl+Z never reaches back past it; the named button still can
       e.preventDefault();
-      announce(`Nothing to undo from the keyboard: your last edit was typed. The Undo button in the step bar can still undo “${shortMsg(top.msg)}”.`);
+      ui.snack = { note: true, msg: 'Ctrl+Z skipped: you edited a field after that change.', last: top.msg };
+      showSnack(); announce(`${ui.snack.msg} Last recorded change: ${top.msg} The Undo it anyway button still undoes it.`);
       return;
     }
     e.preventDefault();
@@ -1499,7 +1530,8 @@ document.addEventListener('keydown', (e) => {
   // Alt+Left/Right moves between steps
   if (e.altKey && !e.ctrlKey && !e.metaKey && (e.key === 'ArrowLeft' || e.key === 'ArrowRight') && !typing(e.target) && e.target.tagName !== 'SELECT') {
     const b = root.querySelector(`.b-nav [data-act="step"][data-v="${step + (e.key === 'ArrowLeft' ? -1 : 1)}"]:not([disabled])`);
-    if (b) { e.preventDefault(); b.click(); }
+    if (ui.view !== 'classes') e.preventDefault();
+    if (b) b.click(); else announce(e.key === 'ArrowLeft' ? 'This is the first step.' : 'This is the last step.');
     return;
   }
   // Esc backs out of the innermost open thing: a confirm, the forge picker, then the open card
@@ -1533,7 +1565,7 @@ root.addEventListener('keydown', (e) => {
   const n = all[(i + all.length) % all.length];
   e.preventDefault(); n.focus(); n.click();
 });
-const NAV_ACTS = new Set(['nudge', 'open-stat', 'close-stat', 'goto-classes', 'back-to-forge', 'undo', 'redo', 'step', 'open-ability', 'close-ability', 'open-item', 'close-item', 'view-lang', 'goto-issue', 'goto-granter', 'edit-item', 'roll', 'forge-for', 'forge-cancel',
+const NAV_ACTS = new Set(['nudge', 'pick', 'choose', 'open-stat', 'close-stat', 'goto-classes', 'back-to-forge', 'undo', 'redo', 'step', 'open-ability', 'close-ability', 'open-item', 'close-item', 'view-lang', 'goto-issue', 'goto-granter', 'edit-item', 'roll', 'forge-for', 'forge-cancel',
   'grip', 'move', 'move-close', 'show-grants', 'more-scopes', 'link-rows', 'gate-yes', 'gate-no', 'gate-change', 'confirm-cancel', 'rm-item', 'rm-ability', 'rm-table', 'save']);
 // Leaving a fresh field re-flags it, but never while a pointer is down: rewriting the rail between
 // mousedown and click would swallow the click. The refresh waits until after the click lands.
@@ -1557,7 +1589,7 @@ root.addEventListener('click', (e) => {
   const b = e.target.closest('[data-act]');
   if (!b || b.disabled) return;
   const i = Number(b.dataset.i), j = Number(b.dataset.j), v = b.dataset.v;
-  const same = `[data-act="${b.dataset.act}"]${b.dataset.i != null ? `[data-i="${b.dataset.i}"]` : ''}${b.dataset.j != null ? `[data-j="${b.dataset.j}"]` : ''}${b.dataset.v != null ? `[data-v="${CSS.escape(b.dataset.v)}"]` : ''}`;
+  const same = `[data-act="${b.dataset.act}"]${b.dataset.path != null ? `[data-path="${CSS.escape(b.dataset.path)}"]` : ''}${b.dataset.base != null ? `[data-base="${CSS.escape(b.dataset.base)}"]` : ''}${b.dataset.list != null ? `[data-list="${CSS.escape(b.dataset.list)}"]` : ''}${b.dataset.i != null ? `[data-i="${b.dataset.i}"]` : ''}${b.dataset.j != null ? `[data-j="${b.dataset.j}"]` : ''}${b.dataset.v != null ? `[data-v="${CSS.escape(b.dataset.v)}"]` : ''}`;
   let opts = { keepFocus: [same] };
   currentTrigger = b.dataset.act === 'undo' || b.dataset.act === 'redo' ? null : same;
   if (!NAV_ACTS.has(b.dataset.act)) { if (ui.redo.length || (ui.snack && ui.snack.undone)) clearRedo(); markEdit(); }
@@ -1592,17 +1624,25 @@ root.addEventListener('click', (e) => {
       input.value = fmtNum(next, min); refreshDerived(); syncUndoUi(); return;
     }
     case 'pick': {
-      setPath(b.dataset.path, Number(v));
-      b.parentElement.querySelectorAll('.die').forEach((x) => { const on = x === b; x.setAttribute('aria-checked', String(on)); x.tabIndex = on ? 0 : -1; });
-      markEdit(); refreshDerived(); return;
+      // one quiet undo per run of picks on one die (arrowing through d4…d12 collapses)
+      const path = b.dataset.path, prev = getPath(path), grp = b.parentElement;
+      if (prev === Number(v)) return;
+      const lbl = labelOf(grp), prevText = (grp.querySelector(`[data-v="${prev}"]`) || { textContent: String(prev) }).textContent;
+      withUndo(`${lbl}: ${b.textContent}.`, () => { setPath(path, Number(v)); }, () => { setPath(path, prev); }, `[data-act="pick"][data-path="${path}"][data-v="${prev}"]`, `pick:${path}`, true, () => `${lbl} is ${prevText} again.`);
+      ui.undo.at(-1).trigger = `[data-act="pick"][data-path="${path}"][data-v="${v}"]`;
+      grp.querySelectorAll('.die').forEach((x) => { const on = x === b; x.setAttribute('aria-checked', String(on)); x.tabIndex = on ? 0 : -1; });
+      refreshDerived(); syncUndoUi(); return;
     }
     case 'choose': {
+      const path = b.dataset.path, prev = getPath(path), grp = b.parentElement;
       const val = v === 'true' ? true : v === 'false' ? false : v;
-      setPath(b.dataset.path, val);
-      markEdit();
+      if (String(prev) === String(val)) return;
+      const lbl = labelOf(grp), prevText = (grp.querySelector(`[data-v="${String(prev)}"]`) || { textContent: String(prev) }).textContent;
+      withUndo(`${lbl}: ${b.textContent}.`, () => { setPath(path, val); }, () => { setPath(path, prev); }, `[data-act="choose"][data-path="${path}"][data-v="${String(prev)}"]`, `choose:${path}`, true, () => `${lbl} is ${prevText} again.`);
+      ui.undo.at(-1).trigger = `[data-act="choose"][data-path="${path}"][data-v="${v}"]`;
       if (b.dataset.rerender) { opts = { keepFocus: [same] }; break; }
-      b.parentElement.querySelectorAll('.act').forEach((x) => { const on = x === b; x.classList.toggle('on', on); x.setAttribute('aria-checked', String(on)); x.tabIndex = on ? 0 : -1; });
-      refreshDerived(); return;
+      grp.querySelectorAll('.act').forEach((x) => { const on = x === b; x.classList.toggle('on', on); x.setAttribute('aria-checked', String(on)); x.tabIndex = on ? 0 : -1; });
+      refreshDerived(); syncUndoUi(); return;
     }
     case 'drop': {
       const on = !getPath(b.dataset.path); setPath(b.dataset.path, on);
@@ -1611,7 +1651,7 @@ root.addEventListener('click', (e) => {
     }
     /* Class Items question */
     case 'gate-yes': ui.itemsYes = true; ui.itemsNo = false; opts = { focusSel: '[data-act="add-item"]' }; break;
-    case 'open-item': { ui.openItem = Number(v); ui.confirm = null; const idx = state.items.findIndex((x) => x.id === Number(v)); opts = { focusPath: `items.${idx}.name.${viewLang}` }; break; }
+    case 'open-item': { ui.openItem = Number(v); ui.confirm = null; const idx = state.items.findIndex((x) => x.id === Number(v)); opts = touchFirst() ? { focusSel: `#item-${v}` } : { focusPath: `items.${idx}.name.${viewLang}` }; break; }
     case 'close-item': ui.fresh.delete(`i:${v}`); ui.openItem = null; ui.confirm = null; opts = { keepFocus: [`[data-act="open-item"][data-v="${v}"]`] }; break;
     case 'dup-item': {
       const src = state.items.find((x) => x.id === Number(v)), idx = state.items.indexOf(src);
@@ -1681,7 +1721,7 @@ root.addEventListener('click', (e) => {
     }
     /* Abilities */
     case 'add-ability': { let na = null; withUndo('Added an ability.', () => { na = { id: ++uid, random: true, name: L('', ''), text: L('', ''), grantItem: '', grantPet: '', mods: [], table: null }; state.abilities.push(na); }, () => { state.abilities = state.abilities.filter((x) => x !== na); }, null, null, true); } ui.openAbility = uid; ui.fresh.add(`a:${uid}`); opts = { focusPath: `abilities.${state.abilities.length - 1}.name.${viewLang}` }; break;
-    case 'open-ability': { ui.openAbility = Number(v); ui.confirm = null; const idx = state.abilities.findIndex((x) => x.id === Number(v)); opts = { focusPath: `abilities.${idx}.name.${viewLang}` }; break; }
+    case 'open-ability': { ui.openAbility = Number(v); ui.confirm = null; const idx = state.abilities.findIndex((x) => x.id === Number(v)); opts = touchFirst() ? { focusSel: `#abl-${v}` } : { focusPath: `abilities.${idx}.name.${viewLang}` }; break; }
     case 'close-ability': ui.fresh.delete(`a:${v}`); ui.fresh.delete(`t:${v}`); delete ui.cutRows[v]; ui.openAbility = null; ui.confirm = null; ui.forgeFor = null; opts = { keepFocus: [`[data-act="open-ability"][data-v="${v}"]`] }; break;
     case 'show-grants': ui.showGrants.add(Number(v)); opts = { focusSel: `#${fid(`abilities.${i}.grantItem`)}` }; break;
     case 'rm-ability': {
@@ -1724,8 +1764,8 @@ root.addEventListener('click', (e) => {
     }
     case 'kind': { const ka = state.abilities[i], was = ka.random, now = v === 'random'; if (was !== now) withUndo(`${tx(ka.name) || 'Ability'} is now ${now ? 'random' : 'fixed'}.`, () => { ka.random = now; }, () => { ka.random = was; }, `[data-act="kind"][data-i="${i}"][data-v="${was ? 'random' : 'fixed'}"]`, null, true); } announce(`${tx(state.abilities[i].name) || 'Ability'} is now ${v === 'random' ? 'in the random pool' : 'fixed: every scvm gets it'}.`); break;
     case 'add-mod': {
-      const base = b.dataset.base, mods = getPath(`${base}.mods`);
-      mods.push({ stat: 'strength', value: 1, scope: 'all' });
+      const base = b.dataset.base, mods = getPath(`${base}.mods`), m = { stat: 'strength', value: 1, scope: 'all' };
+      withUndo('Added a modifier.', () => { mods.push(m); }, () => { const k = mods.indexOf(m); if (k >= 0) mods.splice(k, 1); }, `[data-act="add-mod"][data-base="${base}"]`, null, true);
       opts = { focusSel: `[data-path="${base}.mods.${mods.length - 1}.stat"][aria-checked="true"]` };
       break;
     }
@@ -1754,7 +1794,7 @@ root.addEventListener('click', (e) => {
       break;
     }
     case 'link-rows': ui.linkRows.add(Number(v)); opts = { focusSel: `#${fid(`abilities.${i}.table.rows.0.item`)}` }; break;
-    case 'add-table': ui.fresh.add(`t:${state.abilities[i].id}`); state.abilities[i].table = { die: 6, rows: Array.from({ length: 6 }, () => row('', '')) }; opts = { focusPath: `abilities.${i}.table.rows.0.${viewLang}` }; break;
+    case 'add-table': { const ab = state.abilities[i], t = { die: 6, rows: Array.from({ length: 6 }, () => row('', '')) }; ui.fresh.add(`t:${ab.id}`); withUndo('Added a reference table.', () => { ab.table = t; }, () => { if (ab.table === t) ab.table = null; }, `[data-act="add-table"][data-i="${i}"]`, null, true); } opts = { focusPath: `abilities.${i}.table.rows.0.${viewLang}` }; break;
     case 'rm-table':
     case 'rm-table-yes': {
       const ab = state.abilities[i], table = ab.table;
@@ -1769,8 +1809,8 @@ root.addEventListener('click', (e) => {
     case 'rm-origin': { const o = state.origins[i]; withUndo(`Removed origin ${i + 1}${tx(o) ? ` “${tx(o)}”` : ''}.`, () => { state.origins.splice(i, 1); }, () => { state.origins.splice(Math.min(i, state.origins.length), 0, o); }, `[data-act="rm-origin"][data-i="${i}"]`); } opts = { keepFocus: [`[data-act="rm-origin"][data-i="${Math.min(i, state.origins.length - 1)}"]`, '[data-act="add-origin"]'] }; break;
     case 'undo': { const fs = undo(); opts = { focusSel: fs, keepFocus: UNDO_FOCUS }; break; }
     case 'redo': { const fs = redo(); opts = { focusSel: fs, keepFocus: ['[data-act="redo"]', ...UNDO_FOCUS] }; break; }
-    case 'forge-for': ui.forgeFor = Number(v); ui.showGrants.add(Number(v)); opts = { focusSel: `[data-act="forge-type"][data-i="${i}"]:not([disabled])` }; break;
-    case 'forge-cancel': ui.forgeFor = null; opts = { keepFocus: [`[data-act="forge-for"][data-i="${i}"]`] }; break;
+    case 'forge-for': ui.forgeFor = Number(v); if (!ui.showGrants.has(Number(v))) { ui.showGrants.add(Number(v)); ui.forgeRevealed = Number(v); } opts = { focusSel: `[data-act="forge-type"][data-i="${i}"]:not([disabled])` }; break;
+    case 'forge-cancel': { const ab = abilityById(Number(v)); if (ui.forgeRevealed === Number(v) && ab && !ab.grantItem && !ab.grantPet) ui.showGrants.delete(Number(v)); ui.forgeRevealed = null; ui.forgeFor = null; opts = { keepFocus: [`[data-act="forge-for"][data-i="${i}"]`, `[data-act="show-grants"][data-i="${i}"]`] }; break; }
     case 'forge-type': {
       const ab = state.abilities[i], slot = slotFor(v);
       let it = null;
@@ -1782,9 +1822,8 @@ root.addEventListener('click', (e) => {
       break;
     }
     case 'grant-waiting': {
-      const ab = state.abilities[i], it = state.items.find((x) => x.id === Number(v));
-      ab[slotFor(it.type)] = keyOf(it);
-      announce(`${tx(ab.name) || 'This ability'} now grants ${typeWord[it.type]} “${tx(it.name) || 'Unnamed'}”.`);
+      const ab = state.abilities[i], it = state.items.find((x) => x.id === Number(v)), slot = slotFor(it.type), k = keyOf(it);
+      withUndo(`${tx(ab.name) || 'This ability'} now grants ${aType(it.type)} “${tx(it.name) || 'Unnamed'}”.`, () => { ab[slot] = k; }, () => { if (ab[slot] === k) ab[slot] = ''; }, `[data-act="forge-for"][data-i="${i}"]`, null, true);
       opts = { focusSel: `#${fid(`abilities.${i}.${slotFor(it.type)}`)}` };
       break;
     }
@@ -1800,7 +1839,7 @@ root.addEventListener('click', (e) => {
         if (!g.a[slotFor(v)]) note = ` Its grant moved to ${v === 'pet' ? 'the pet' : 'the item'} slot.`;
         else note = ` ${tx(g.a.name) || 'Its ability'} already grants a ${v === 'pet' ? 'pet' : 'item'}, so “${tx(it.name) || 'Unnamed'}” now waits for an ability.`;
       }
-      withUndo(`“${tx(it.name) || 'Unnamed'}” is now ${typeWord[v] === 'gear' ? 'gear' : `a ${typeWord[v]}`}.${note}`, () => {
+      withUndo(`“${tx(it.name) || 'Unnamed'}” is now ${aType(v)}.${note}`, () => {
         TYPE_FIELDS.forEach((f) => { delete it[f]; });
         Object.assign(it, { type: v }, TYPE_DEFAULTS[v]());
         if (gBefore) { const moveTo = slotFor(v); if (!g.a[moveTo]) g.a[moveTo] = k; g.a[g.slot] = ''; }
@@ -1812,14 +1851,14 @@ root.addEventListener('click', (e) => {
         // put the item back in exactly the slots it held before the first change, never creating a second granter
         state.abilities.forEach((x) => { if (x.grantItem === k) x.grantItem = ''; if (x.grantPet === k) x.grantPet = ''; });
         if (!granterOf(k)) slotsBefore.forEach((sb) => { const ab = abilityById(sb.id); if (!ab) return; if (sb.grantItem && !ab.grantItem) ab.grantItem = k; if (sb.grantPet && !ab.grantPet) ab.grantPet = k; });
-      }, `[data-act="change-type"][data-i="${i}"][data-v="${before.type}"]`, `type-${it.id}`, false, () => `“${tx(it.name) || 'Unnamed'}” is ${typeWord[it.type] === 'gear' ? 'gear' : `a ${typeWord[it.type]}`} again, with its stats.`);
+      }, `[data-act="change-type"][data-i="${i}"][data-v="${before.type}"]`, `type-${it.id}`, false, () => `“${tx(it.name) || 'Unnamed'}” is ${aType(it.type)} again, with its stats.`);
       break;
     }
     case 'set-langs': {
       const was = state.languages.slice(), now = v === 'both' ? ['en', 'pl'] : [v];
       if (was.join() === now.join()) return;
       if (was.length > now.length) withUndo(`Writing in ${langLong[v]} only. The ${langLong[was.find((l) => l !== v)]} text is kept, only hidden.`, () => { state.languages = now; }, () => { state.languages = was; }, `[data-act="set-langs"][data-v="both"]`, 'langs', false, () => `Writing in ${state.languages.map((l) => langLong[l]).join(' and ')} again.`);
-      else state.languages = now;
+      else withUndo(`Writing in ${now.map((l) => langLong[l]).join(' and ')}.`, () => { state.languages = now; }, () => { state.languages = was; }, `[data-act="set-langs"][data-v="${was.length > 1 ? 'both' : was[0]}"]`, 'langs', true, () => `Writing in ${state.languages.map((l) => langLong[l]).join(' and ')} again.`);
       break;
     }
     case 'view-lang': viewLang = v; break;
@@ -1834,7 +1873,7 @@ root.addEventListener('click', (e) => {
       opts = x.focusSel ? { focusSel: x.focusSel } : x.path ? { focusPath: x.path } : { focusHeading: true };
       break;
     }
-    case 'roll': testRoll(); break;
+    case 'roll': testRoll(); announce(`Test scvm rolled: ${lastRoll.abil.map((a) => tx(a.name)).filter(Boolean).join(', ') || 'no abilities'}; HP ${lastRoll.hp}; origin ${tx(lastRoll.origin) || 'none'}.`); break;
     case 'open-stat': ui.openStat = v; opts = { focusSel: `#${fid(`stats.${v}.count`)}`, stay: true }; break;
     case 'close-stat': ui.openStat = null; opts = { focusSel: `[data-act="open-stat"][data-v="${v}"]`, stay: true }; break;
     case 'goto-classes': ui.view = 'classes'; break;
@@ -1842,6 +1881,8 @@ root.addEventListener('click', (e) => {
     case 'save': {
       const n = validate().length;
       saveMsg = n ? `${n} ${n === 1 ? 'thing' : 'things'} to fix before this class can be saved. Use Fix to jump to each one.` : 'SAVED';
+      // Save seals the history (owner decision, 2026-09-27): nothing before it can be undone, and editing again starts fresh
+      if (!n) { ui.undo = []; ui.redo = []; announce('Saved. Undo starts fresh from here.'); }
       if (ui.snack) { ui.snack = null; clearTimeout(snackTimer); } // the standing Undo in the step nav keeps the stack reachable
       opts = n ? { focusSel: '[data-act="goto-issue"]' } : { focusSel: '[data-act="goto-classes"]' };
       break;
@@ -1909,6 +1950,8 @@ root.addEventListener('pointerup', (e) => { if (drag && e.pointerId === drag.id)
 root.addEventListener('pointercancel', (e) => { if (drag && e.pointerId === drag.id) endDrag(false); });
 root.addEventListener('click', (e) => { if (swallowClick && e.target.closest && e.target.closest('.grip')) { e.stopPropagation(); e.preventDefault(); swallowClick = false; } }, true);
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && drag && drag.on) { e.preventDefault(); e.stopImmediatePropagation(); endDrag(false); } }, true);
+// the prototype keeps nothing: warn before leaving a changed, unsaved draft (the real creator autosaves, ticket 17)
+window.addEventListener('beforeunload', (e) => { if ((ui.rev || 0) > 0 && saveMsg !== 'SAVED') { e.preventDefault(); e.returnValue = ''; } });
 if (window.matchMedia) window.matchMedia('(max-width:520px)').addEventListener('change', () => { if (STEPS[step].key === 'numbers') render(); });
 render();
 })();
