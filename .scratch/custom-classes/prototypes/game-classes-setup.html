@@ -1,0 +1,336 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Game Classes Setup Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya:ital,wght@0,400;0,700;1,400&family=Antonio:wght@400;700&family=Bebas+Neue&family=MedievalSharp&display=swap">
+<style>
+/* PROTOTYPE, throwaway. Wayfinder ticket 06: the GM screen's game classes setup (Party Class Pool) and the
+   read-only class detail page (ticket 20). Three variants of the Classes panel, switchable with ?variant=a|b|c
+   and the bottom bar. Mimics PartyPage.tsx (stamp, title, dark panels with pink offset shadow). Nothing is saved. */
+:root{
+  --yellow:#FFE900; --pink:#FF3EB5; --black:#0a0a0a; --off-black:#111; --grey:#1a1a1a; --dark-grey:#2a2a2a;
+  --white:#f5f5f5; --muted:#888; --blood:#8b0000;
+  --f-head:'Bebas Neue','Arial Narrow',sans-serif; --f-label:'Antonio','Arial Narrow',sans-serif;
+  --f-body:'Alegreya',Georgia,serif; --f-gothic:'MedievalSharp',Georgia,serif; --tap:44px;
+}
+*{box-sizing:border-box;border-radius:0}
+html,body{background:var(--yellow)}
+body{margin:0;color:var(--black);font-family:var(--f-body);font-size:.9rem;line-height:1.5;padding:0 16px 120px}
+@media (max-width:600px){body{font-size:1rem}}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--black);outline-offset:2px}
+.panel :focus-visible,.drawer :focus-visible,.detail :focus-visible{outline-color:var(--yellow)}
+.wrap{max-width:980px;margin:0 auto;display:grid;gap:16px;padding-top:16px}
+.stamp{display:inline-block;width:fit-content;background:var(--pink);color:var(--black);font-family:var(--f-label);font-size:.75rem;letter-spacing:.24em;text-transform:uppercase;padding:2px 8px}
+h1{font-family:var(--f-head);font-size:clamp(2.6rem,7vw,3.3rem);line-height:.95;letter-spacing:.04em;margin:6px 0 0;font-weight:400;text-transform:uppercase}
+.panel{background:var(--black);color:var(--white);border:3px solid var(--black);box-shadow:6px 6px 0 var(--pink);padding:16px;display:grid;gap:12px}
+@media (max-width:600px){.panel{padding:12px}}
+.label{color:var(--pink);font-family:var(--f-label);font-size:.75rem;letter-spacing:.16em;text-transform:uppercase;margin:0}
+.label.ink{color:var(--black)}
+.muted{color:var(--muted)}
+.hint{font-style:italic;color:var(--muted);margin:0;max-width:36em}
+.row{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center}
+.spread{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;justify-content:space-between}
+.btn{font-family:var(--f-head);font-size:1.2rem;text-transform:uppercase;background:var(--pink);color:var(--black);border:2px solid var(--yellow);padding:6px 14px;min-height:var(--tap);cursor:pointer;box-shadow:3px 3px 0 var(--yellow)}
+.btn:hover{background:var(--yellow)}
+.act{font-family:var(--f-label);font-size:.72rem;letter-spacing:.15em;text-transform:uppercase;background:transparent;color:var(--yellow);border:1px solid var(--yellow);padding:4px 10px;min-height:36px;cursor:pointer}
+.act:hover,.act.on{background:var(--yellow);color:var(--black)}
+.act[disabled]{color:var(--muted);border-color:var(--dark-grey);border-style:dashed;cursor:not-allowed;background:transparent}
+.act.kill{background:var(--blood);border-color:var(--blood);color:var(--yellow)}
+@media (pointer:coarse){.act{min-height:var(--tap)}}
+.chip{display:inline-block;font-family:var(--f-label);font-size:.65rem;letter-spacing:.15em;text-transform:uppercase;padding:2px 7px;border:1px solid var(--dark-grey);color:var(--white);white-space:nowrap}
+.chip.src-book{background:var(--white);color:var(--black);border-color:var(--white)}
+.chip.src-zine,.chip.src-rack{border-color:var(--yellow);color:var(--yellow)}
+.chip.src-mine{background:var(--yellow);color:var(--black);border-color:var(--yellow)}
+.chip.src-public{border-color:var(--white)}
+.chip.warn{background:var(--pink);color:var(--black);border-color:var(--pink)}
+.attr{font-family:var(--f-body);font-style:italic;color:var(--muted);font-size:.9rem}
+.cname{font-family:var(--f-gothic);font-size:1.2rem;color:var(--white);line-height:1.2}
+.search{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.search input[type=search]{flex:1 1 220px;min-height:var(--tap);background:var(--grey);border:2px solid var(--dark-grey);color:var(--white);padding:6px 10px}
+.search input[type=search]:focus{border-color:var(--yellow);outline:none}
+.seg{display:inline-flex;flex-wrap:wrap;border:1px solid var(--yellow)}
+.seg .act{border:0}
+.seg .act + .act{border-left:1px solid var(--yellow)}
+.switch{display:inline-flex;align-items:center;gap:10px;cursor:pointer;min-height:var(--tap);font-family:var(--f-label);letter-spacing:.12em;text-transform:uppercase;font-size:.75rem}
+.switch input{position:absolute;opacity:0;width:1px;height:1px}
+.switch .track{width:46px;height:26px;border:2px solid var(--yellow);position:relative;flex:none;background:transparent}
+.switch .track::after{content:'';position:absolute;top:3px;left:3px;width:16px;height:16px;background:var(--yellow);transition:left .08s ease-out}
+.switch input:checked + .track{background:var(--yellow)}
+.switch input:checked + .track::after{left:23px;background:var(--black)}
+.switch input:focus-visible + .track{outline:2px solid var(--yellow);outline-offset:3px}
+.switch input:disabled + .track{border-style:dashed;border-color:var(--dark-grey)}
+.switch input:disabled + .track::after{background:var(--dark-grey)}
+.notice{background:var(--pink);color:var(--black);border:2px solid var(--black);padding:10px 12px;display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;justify-content:space-between}
+.notice p{margin:0;max-width:60ch}
+.notice .act{color:var(--black);border-color:var(--black)}
+.notice .act:hover{background:var(--black);color:var(--pink)}
+.readonly{border:1px dashed var(--yellow);padding:8px 12px;font-family:var(--f-label);font-size:.75rem;letter-spacing:.1em;text-transform:uppercase;color:var(--yellow)}
+.status{font-family:var(--f-label);font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);min-height:1.4em}
+.linkish{background:none;border:0;padding:0;color:var(--white);text-decoration:underline;text-underline-offset:3px;cursor:pointer;font:inherit;text-align:left}
+.linkish:hover{color:var(--yellow)}
+.empty{border:2px dashed var(--dark-grey);padding:14px;color:var(--muted);font-style:italic;text-align:center}
+
+/* mocked surrounding page */
+.stub{display:flex;justify-content:space-between;align-items:center}
+.members{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.member{background:var(--black);color:var(--white);padding:10px;border:2px solid var(--black);display:grid;gap:4px}
+.member b{font-family:var(--f-gothic);font-weight:400;font-size:1.05rem}
+
+/* Variant A: pool beside the rack */
+.a-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:16px}
+@media (min-width:800px){.a-grid{grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr)}}
+.a-list{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.a-item{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 10px;align-items:center;background:var(--grey);border:2px solid var(--dark-grey);padding:8px 10px}
+.a-item .meta{display:flex;flex-wrap:wrap;gap:4px 6px;align-items:center}
+
+/* Variant B: switchboard */
+.b-bar{position:sticky;top:0;z-index:2;background:var(--black);padding:8px 0;display:grid;gap:8px}
+.b-group{border-top:2px solid var(--dark-grey)}
+.b-group > button{width:100%;display:flex;justify-content:space-between;align-items:center;background:none;border:0;color:var(--white);padding:10px 0;cursor:pointer;min-height:var(--tap);text-align:left}
+.b-group > button .gname{font-family:var(--f-head);font-size:1.5rem;letter-spacing:.03em;text-transform:uppercase;color:var(--yellow)}
+.b-row{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;align-items:center;padding:8px 0;border-top:1px solid var(--grey)}
+.b-row .meta{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center}
+
+/* Variant C: tarot hand */
+.c-hand{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.c-card{position:relative;background:var(--off-black);border:2px solid var(--yellow);min-height:190px;padding:12px 10px;display:flex;flex-direction:column;gap:8px;cursor:pointer;color:var(--white);text-align:left;box-shadow:4px 4px 0 var(--pink)}
+.c-card:hover{transform:translate(-2px,-2px);box-shadow:6px 6px 0 var(--pink)}
+.c-card .cname{font-size:1.3rem}
+.c-card > .chip{align-self:flex-start}
+.c-card .num{position:absolute;top:6px;right:8px;font-family:var(--f-head);color:var(--muted)}
+.c-card.draw{border-style:dashed;align-items:center;justify-content:center;box-shadow:none;color:var(--yellow);font-family:var(--f-head);font-size:1.5rem;text-transform:uppercase}
+.c-card.classless{border-color:var(--white);box-shadow:4px 4px 0 var(--white)}
+.drawer{position:fixed;inset:0;z-index:30;background:rgba(10,10,10,.92);display:flex;justify-content:flex-end}
+.drawer > div{background:var(--black);color:var(--white);width:min(560px,100%);height:100%;overflow:auto;padding:16px;display:grid;gap:12px;align-content:start;border-left:3px solid var(--yellow)}
+.c-rack{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+
+/* class detail page (ticket 20) */
+.detail{position:fixed;inset:0;z-index:40;background:var(--yellow);overflow:auto;padding:16px}
+.detail .sheet{max-width:760px;margin:0 auto;display:grid;gap:14px}
+.detail h2{font-family:var(--f-gothic);font-weight:400;font-size:2rem;margin:0;line-height:1.1}
+.detail .panel h3{font-family:var(--f-head);font-weight:400;font-size:1.5rem;letter-spacing:.03em;text-transform:uppercase;color:var(--yellow);margin:0}
+.detail ul{margin:0;padding-left:18px}
+.detail li{margin:4px 0}
+
+/* prototype chrome */
+.proto-bar{position:fixed;left:50%;bottom:12px;transform:translateX(-50%);z-index:50;display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:center;background:var(--white);color:var(--black);border:3px solid var(--black);box-shadow:4px 4px 0 var(--black);padding:6px 8px;max-width:calc(100vw - 24px)}
+.proto-bar b{font-family:var(--f-label);letter-spacing:.15em;text-transform:uppercase;font-size:.7rem}
+.proto-bar button{font-family:var(--f-label);font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;border:2px solid var(--black);background:transparent;padding:4px 8px;min-height:36px;cursor:pointer}
+.proto-bar button.on{background:var(--black);color:var(--yellow)}
+.proto-state{background:var(--off-black);color:#ddd;font:11px/1.4 monospace;white-space:pre-wrap;padding:10px;max-height:220px;overflow:auto}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}.c-card:hover{transform:none}}
+</style>
+
+<main class="wrap" id="app"></main>
+<div id="announce" aria-live="polite" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)"></div>
+
+<script>
+(() => {
+const ME = 'Adam';
+// Classes a GM can pool: Book (seeded), Zine/Rack (seeded, with Credit), mine, and other GMs' public classes.
+const CLASSES = [
+  { id: 1, src: 'book', name: 'Fanged Deserter', langs: ['en', 'pl'], blurb: 'Thirty or so friends who never let you down: your teeth.' },
+  { id: 2, src: 'book', name: 'Gutterborn Scum', langs: ['en', 'pl'], blurb: 'An ill star smiled upon your birth.' },
+  { id: 3, src: 'book', name: 'Esoteric Hermit', langs: ['en', 'pl'], blurb: 'The stone of your cave is one with the stars.' },
+  { id: 4, src: 'book', name: 'Wretched Royalty', langs: ['en', 'pl'], blurb: 'Bowed down only by the memories of your own lost glory.' },
+  { id: 5, src: 'book', name: 'Heretical Priest', langs: ['en', 'pl'], blurb: 'Hunted by the Two-Headed Basilisks of the One True Faith.' },
+  { id: 6, src: 'book', name: 'Occult Herbmaster', langs: ['en', 'pl'], blurb: 'Born of the mushroom, raised in the glade.' },
+  { id: 20, src: 'zine', name: 'Ossuary Knight', langs: ['en'], credit: 'from Terrible Dungeons and Awesome Heroes by Toby McDungeonface', blurb: 'Armoured in the bones of better knights.' },
+  { id: 21, src: 'rack', name: 'Mire Pilgrim', langs: ['en', 'pl'], credit: 'from the Rack by scvmrack', blurb: 'Walks the bog roads no map admits to.' },
+  { id: 100, src: 'mine', name: 'Pale Ossuary Keeper', langs: ['en', 'pl'], author: ME, version: 3, blurb: 'You swept the bone-halls of Galgenbeck until the dead started answering back.' },
+  { id: 101, src: 'mine', name: 'Bog Witch', langs: ['en'], author: ME, version: 1, private: true, blurb: 'The mire keeps what you give it, and gives back worse.' },
+  { id: 200, src: 'public', name: 'Carrion Saint', langs: ['pl'], author: 'Morbid Marta', version: 2, blurb: 'Święta padlina, która wciąż się modli.' },
+  { id: 201, src: 'public', name: 'Tollgate Hag', langs: ['en', 'pl'], author: 'Dread Rafał', version: 5, blurb: 'Nobody crosses the bridge without paying something.' },
+  { id: 202, src: 'public', name: 'Chain Monk', langs: ['en'], author: 'Grimsby', version: 1, blurb: 'Every link a sin, every sin a link.' },
+];
+const SRC_LABEL = { book: 'Book', zine: 'Zine', rack: 'Rack', mine: 'Mine', public: 'Public' };
+// A pooled class that was removed since the GM last looked (ticket 06's on-open check).
+const REMOVED = { name: "Grave Warden's Due", by: 'Morbid Marta', why: 'archived by its author' };
+
+const params = new URLSearchParams(location.search);
+const ui = {
+  variant: ['a', 'b', 'c'].includes(params.get('variant')) ? params.get('variant') : 'a',
+  // pool: Book Classes on by default, Zine/Rack off (ticket 02), classless on (ticket 05)
+  pool: new Set([1, 2, 3, 4, 5, 6, 100]),
+  classless: true,
+  query: '', filter: 'all', lang: 'any',
+  showNotice: true, unclaimed: false,
+  openGroups: new Set(['book', 'mine']), drawer: false, detail: null, status: '',
+};
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const byId = (id) => CLASSES.find((c) => c.id === id);
+function announce(m) { const el = document.getElementById('announce'); el.textContent = ''; setTimeout(() => { el.textContent = m; }, 30); }
+const attribution = (c) => c.src === 'book' ? '' : c.credit ? c.credit : c.src === 'mine' ? `created by you${c.private ? ' · private' : ''}` : `created by ${c.author}`;
+const srcChip = (c) => `<span class="chip src-${c.src}">${SRC_LABEL[c.src]}</span>`;
+const langChip = (c) => `<span class="chip" title="Written in ${c.langs.map((l) => (l === 'en' ? 'English' : 'Polish')).join(' and ')}">${c.langs.join(' · ').toUpperCase()}</span>`;
+function visible() {
+  const q = ui.query.trim().toLowerCase();
+  return CLASSES.filter((c) => (ui.filter === 'all' || (ui.filter === 'zr' ? c.src === 'zine' || c.src === 'rack' : c.src === ui.filter))
+    && (ui.lang === 'any' || c.langs.includes(ui.lang))
+    && (!q || `${c.name} ${attribution(c)}`.toLowerCase().includes(q)));
+}
+const pooled = () => CLASSES.filter((c) => ui.pool.has(c.id));
+const poolEmpty = () => ui.pool.size === 0 && !ui.classless;
+const ro = () => ui.unclaimed;
+function toggle(id, on) {
+  if (ro()) return;
+  const c = byId(id);
+  if (on) ui.pool.add(id); else ui.pool.delete(id);
+  ui.status = `${c.name} ${on ? 'added to' : 'removed from'} the pool. Saved.`;
+  announce(ui.status);
+}
+
+/* ---------- shared bits ---------- */
+function noticeHtml() {
+  if (!ui.showNotice) return '';
+  return `<div class="notice" role="status"><p><b>“${esc(REMOVED.name)}”</b> has been removed by ${esc(REMOVED.by)} (${esc(REMOVED.why)}). It's no longer in this pool; scvm already playing it keep it.</p><button type="button" class="act" data-act="dismiss">Got it</button></div>`;
+}
+function readonlyHtml() {
+  return ro() ? `<p class="readonly">Owlbear room party with no GM yet: it rolls the default pool (Book Classes, Classless). Claim it from inside the room to change it.</p>` : '';
+}
+function classlessHtml() {
+  return `<label class="switch"><input type="checkbox" data-act="classless" ${ui.classless ? 'checked' : ''} ${ro() ? 'disabled' : ''}><span class="track"></span>Enable classless scvm</label>`;
+}
+function emptyWarn() {
+  return poolEmpty() ? `<p class="notice" style="margin:0" role="alert">Nobody can roll a scvm with an empty pool. Keep at least one class or Classless on.</p>` : '';
+}
+function filtersHtml() {
+  const f = [['all', 'All'], ['book', 'Book'], ['zr', 'Zine & Rack'], ['mine', 'My classes only'], ['public', 'Public']];
+  const l = [['any', 'Any language'], ['en', 'EN'], ['pl', 'PL']];
+  return `<div class="search"><input type="search" placeholder="Search classes or authors" aria-label="Search classes or authors" value="${esc(ui.query)}" data-act="query">
+    <div class="seg" role="radiogroup" aria-label="Show">${f.map(([v, t]) => `<button type="button" class="act ${ui.filter === v ? 'on' : ''}" role="radio" aria-checked="${ui.filter === v}" data-act="filter" data-v="${v}">${t}</button>`).join('')}</div>
+    <div class="seg" role="radiogroup" aria-label="Language">${l.map(([v, t]) => `<button type="button" class="act ${ui.lang === v ? 'on' : ''}" role="radio" aria-checked="${ui.lang === v}" data-act="lang" data-v="${v}">${t}</button>`).join('')}</div></div>`;
+}
+const randomNote = () => `<p class="hint">Players see ${pooled().length} class${pooled().length === 1 ? '' : 'es'}${ui.classless ? ' and Classless' : ''}. Random picks evenly among the classes; it never picks Classless.</p>`;
+const nameBtn = (c) => `<button type="button" class="linkish cname" data-act="detail" data-v="${c.id}">${esc(c.name)}</button>`;
+
+/* ---------- Variant A: your pool beside the rack ---------- */
+function variantA() {
+  const pool = pooled();
+  const rack = visible().filter((c) => !ui.pool.has(c.id));
+  const item = (c, inPool) => `<li class="a-item"><div style="display:grid;gap:2px">${nameBtn(c)}<div class="meta">${srcChip(c)}${langChip(c)}${attribution(c) ? `<span class="attr">${esc(attribution(c))}</span>` : ''}</div></div>
+    ${inPool ? `<button type="button" class="act" data-act="remove" data-v="${c.id}" ${ro() ? 'disabled' : ''} aria-label="Remove ${esc(c.name)} from the pool">Remove</button>` : `<button type="button" class="act" data-act="add" data-v="${c.id}" ${ro() ? 'disabled' : ''} aria-label="Add ${esc(c.name)} to the pool">Add</button>`}</li>`;
+  return `<div class="a-grid">
+    <section style="display:grid;gap:10px;align-content:start"><div class="spread"><p class="label">In this warband's pool · ${pool.length}</p></div>
+      ${classlessHtml()}
+      <ul class="a-list">${pool.map((c) => item(c, true)).join('') || '<li class="empty">No classes yet. Add some from the rack.</li>'}</ul>${randomNote()}</section>
+    <section style="display:grid;gap:10px;align-content:start"><p class="label">The rack</p>${filtersHtml()}
+      <ul class="a-list">${rack.map((c) => item(c, false)).join('') || '<li class="empty">Nothing matches. Everything that matches is already in the pool, or try another filter.</li>'}</ul></section></div>`;
+}
+
+/* ---------- Variant B: one switchboard grouped by source ---------- */
+function variantB() {
+  const groups = [['book', 'Book Classes'], ['zine', 'Zine Classes'], ['rack', 'Rack Classes'], ['mine', 'My classes'], ['public', "Other GMs' public classes"]];
+  const vis = visible();
+  const body = groups.map(([g, title]) => {
+    const all = CLASSES.filter((c) => c.src === g), shown = vis.filter((c) => c.src === g);
+    if (!shown.length) return '';
+    const on = all.filter((c) => ui.pool.has(c.id)).length;
+    const open = ui.openGroups.has(g) || ui.query.trim();
+    return `<div class="b-group"><button type="button" data-act="group" data-v="${g}" aria-expanded="${!!open}"><span class="gname">${title}</span><span class="chip ${on ? 'src-mine' : ''}">${on} of ${all.length} on</span></button>
+      ${open ? shown.map((c) => `<div class="b-row"><label class="switch" aria-label="${esc(c.name)} in the pool"><input type="checkbox" data-act="switch" data-v="${c.id}" ${ui.pool.has(c.id) ? 'checked' : ''} ${ro() ? 'disabled' : ''}><span class="track"></span></label>
+        <div style="display:grid;gap:2px">${nameBtn(c)}<div class="meta">${langChip(c)}${attribution(c) ? `<span class="attr">${esc(attribution(c))}</span>` : ''}</div></div></div>`).join('') : ''}</div>`;
+  }).join('');
+  return `<div class="b-bar">${filtersHtml()}${classlessHtml()}</div>${body || '<p class="empty">Nothing matches that search.</p>'}${randomNote()}`;
+}
+
+/* ---------- Variant C: the pool as a hand of cards, the rack in a drawer ---------- */
+function variantC() {
+  const pool = pooled();
+  const card = (c, n) => `<button type="button" class="c-card" data-act="detail" data-v="${c.id}"><span class="num">${n}</span>${srcChip(c)}<span class="cname">${esc(c.name)}</span><span class="attr">${esc(attribution(c) || c.blurb)}</span><span style="margin-top:auto">${langChip(c)}</span></button>`;
+  return `<div class="spread">${classlessHtml()}<button type="button" class="btn" data-act="drawer" ${ro() ? 'disabled' : ''}>Draw from the rack</button></div>
+    <div class="c-hand">${pool.map((c, i) => card(c, i + 1)).join('')}
+      ${ui.classless ? `<div class="c-card classless" aria-label="Classless is on"><span class="chip">Classless</span><span class="cname">No class</span><span class="attr">Plain scvm: d6 HP, no abilities.</span></div>` : ''}
+      ${ro() ? '' : `<button type="button" class="c-card draw" data-act="drawer">+ Draw</button>`}</div>${randomNote()}
+    ${ui.drawer ? `<div class="drawer" role="dialog" aria-modal="true" aria-label="The rack"><div>
+      <div class="spread"><p class="label">The rack · tap to add or remove</p><button type="button" class="act" data-act="drawer-close">Done</button></div>${filtersHtml()}
+      <ul class="c-rack">${visible().map((c) => `<li class="a-item"><div style="display:grid;gap:2px">${nameBtn(c)}<div class="meta">${srcChip(c)}${langChip(c)}${attribution(c) ? `<span class="attr">${esc(attribution(c))}</span>` : ''}</div></div>
+        <button type="button" class="act ${ui.pool.has(c.id) ? 'on' : ''}" aria-pressed="${ui.pool.has(c.id)}" data-act="flip" data-v="${c.id}">${ui.pool.has(c.id) ? 'In pool' : 'Add'}</button></li>`).join('') || '<li class="empty">Nothing matches.</li>'}</ul></div></div>` : ''}`;
+}
+
+/* ---------- class detail page (ticket 20): latest version, read-only ---------- */
+function detailHtml() {
+  const c = byId(ui.detail);
+  const custom = c.src === 'mine' || c.src === 'public';
+  return `<div class="detail" role="dialog" aria-modal="true" aria-labelledby="d-title"><div class="sheet">
+    <div class="spread"><span class="stamp">${SRC_LABEL[c.src]} class</span><button type="button" class="act" style="color:var(--black);border-color:var(--black)" data-act="detail-close">Back to the warband</button></div>
+    <h2 id="d-title">${esc(c.name)}</h2>
+    ${attribution(c) ? `<p class="attr" style="color:var(--black);margin:0">${esc(attribution(c))}${custom ? ` · version ${c.version}` : ''}</p>` : ''}
+    ${c.langs.length === 1 ? `<p class="hint" style="color:var(--black)">This class is written in ${c.langs[0] === 'en' ? 'English' : 'Polish'}.</p>` : ''}
+    <div class="panel"><p style="margin:0">${esc(c.blurb)}</p></div>
+    <div class="panel"><h3>Abilities</h3><p class="hint">Every scvm gets the fixed abilities, plus 1 rolled from the random pool.</p>
+      <ul><li><b>Bone-Reader</b> <span class="chip">Fixed</span>: once per day ask a skull one question.</li><li><b>Reliquary Flail</b> <span class="chip">Random</span>: grants weapon 1d6 · melee.</li><li><b>Litany of Bones</b> <span class="chip">Random</span>: d4 table.</li></ul></div>
+    <div class="panel"><h3>Class Items</h3><ul><li><b>Reliquary Flail</b>: weapon · 1d6 · melee</li><li><b>Carrion Crow</b>: pet · 3 HP · d4 attack</li></ul></div>
+    <div class="panel"><h3>Origins · Getting Better</h3><ul><li>The ossuary of the Shunned Chapel</li><li>A plague pit outside Grift</li></ul><p class="hint">Getting Better: Specialist.</p></div>
+    ${custom && c.src !== 'mine' ? `<p style="margin:0"><button type="button" class="linkish" style="color:var(--black)" data-act="report">Report this class</button></p>` : ''}
+  </div></div>`;
+}
+
+/* ---------- page ---------- */
+function render() {
+  const focusSel = document.activeElement && document.activeElement.dataset && document.activeElement.dataset.act
+    ? `[data-act="${document.activeElement.dataset.act}"]${document.activeElement.dataset.v ? `[data-v="${document.activeElement.dataset.v}"]` : ''}` : null;
+  const variants = { a: variantA, b: variantB, c: variantC };
+  document.getElementById('app').innerHTML = `
+    <div><span class="stamp">GM party control</span><h1>The Grave Wardens</h1></div>
+    <div class="panel stub"><p class="label">Invite link</p><span class="muted">(collapsed)</span></div>
+    <div><p class="label ink">Warband · 3/10</p><div class="members">
+      <div class="member"><b>Ulv the Unwashed</b><span class="attr">Pale Ossuary Keeper</span></div>
+      <div class="member"><b>Sister Mold</b><span class="attr">Pale Ossuary Keeper</span><span class="chip warn" title="Rolled with version 2; the class is now on version 3">Older rules</span></div>
+      <div class="member"><b>Karg</b><span class="attr">Fanged Deserter</span></div></div></div>
+    <section class="panel" aria-labelledby="classes-title">
+      <div class="spread"><p class="label" id="classes-title">Classes this warband can roll</p><span class="status" role="status">${esc(ui.status)}</span></div>
+      <p class="hint">Players who join through the invite link or this Owlbear room pick from this pool. Changes save at once; scvm already playing a class keep it.</p>
+      ${noticeHtml()}${readonlyHtml()}${emptyWarn()}${variants[ui.variant]()}
+    </section>
+    <div class="panel stub"><p class="label">Guild</p><span class="muted">(unchanged)</span></div>
+    <details><summary class="label ink">Prototype: pool state</summary><pre class="proto-state">${esc(JSON.stringify({ variant: ui.variant, pool: pooled().map((c) => c.name), classless: ui.classless, unclaimedRoomParty: ui.unclaimed }, null, 2))}</pre></details>
+    ${ui.detail ? detailHtml() : ''}
+    <div class="proto-bar" role="toolbar" aria-label="Prototype controls"><b>Variant</b>${['a', 'b', 'c'].map((v) => `<button type="button" class="${ui.variant === v ? 'on' : ''}" data-act="variant" data-v="${v}">${{ a: 'A · pool + rack', b: 'B · switchboard', c: 'C · hand' }[v]}</button>`).join('')}
+      <button type="button" data-act="toggle-notice" class="${ui.showNotice ? 'on' : ''}">Removed notice</button><button type="button" data-act="toggle-unclaimed" class="${ui.unclaimed ? 'on' : ''}">Unclaimed room</button></div>`;
+  if (focusSel) { const el = document.querySelector(focusSel); if (el) el.focus({ preventScroll: true }); }
+}
+document.addEventListener('click', (e) => {
+  const b = e.target.closest('[data-act]');
+  if (!b || b.disabled) return;
+  const v = b.dataset.v, id = Number(v);
+  switch (b.dataset.act) {
+    case 'variant': ui.variant = v; history.replaceState(null, '', `?variant=${v}`); ui.drawer = false; break;
+    case 'toggle-notice': ui.showNotice = !ui.showNotice; break;
+    case 'toggle-unclaimed': ui.unclaimed = !ui.unclaimed; if (ui.unclaimed) { ui.pool = new Set([1, 2, 3, 4, 5, 6]); ui.classless = true; } break;
+    case 'dismiss': ui.showNotice = false; break;
+    case 'add': toggle(id, true); break;
+    case 'remove': toggle(id, false); break;
+    case 'flip': toggle(id, !ui.pool.has(id)); break;
+    case 'filter': ui.filter = v; break;
+    case 'lang': ui.lang = v; break;
+    case 'group': if (ui.openGroups.has(v)) ui.openGroups.delete(v); else ui.openGroups.add(v); break;
+    case 'drawer': ui.drawer = true; break;
+    case 'drawer-close': ui.drawer = false; break;
+    case 'detail': ui.detail = id; break;
+    case 'detail-close': ui.detail = null; break;
+    case 'report': alert('Opens the report form (ticket 07).'); return;
+    default: return;
+  }
+  render();
+});
+document.addEventListener('change', (e) => {
+  const el = e.target;
+  if (el.dataset.act === 'switch') { toggle(Number(el.dataset.v), el.checked); render(); }
+  if (el.dataset.act === 'classless') { ui.classless = el.checked; ui.status = `Classless ${el.checked ? 'on' : 'off'}. Saved.`; announce(ui.status); render(); }
+});
+document.addEventListener('input', (e) => {
+  if (e.target.dataset.act !== 'query') return;
+  ui.query = e.target.value; const pos = e.target.selectionStart; render();
+  const q = document.querySelector('[data-act="query"]'); if (q) { q.focus(); q.setSelectionRange(pos, pos); }
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return;
+  if (ui.detail) { ui.detail = null; render(); } else if (ui.drawer) { ui.drawer = false; render(); }
+});
+render();
+})();
+</script>
