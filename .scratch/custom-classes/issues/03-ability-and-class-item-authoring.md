@@ -20,5 +20,5 @@ For an ability: fixed vs random, roll value, name/description (per language), wh
   - Armor: tier 1–3, modifiers, value.
   - Equipment: wearable/consumable, uses, use effect (single/multi use; optional damage, effect die, temporary statuses), value.
   - Pet: HP, action die + type (attack/buff), buff modifiers, humanoid.
-- **Reference tables**: an ability can carry a dN reference table (entries optionally linked to Class Items) that the player opens from the sheet. The Occult Herbmaster's decoctions migrate onto it, retiring the `classId === 6` code.
+- **Reference tables**: an ability can carry a dN reference table (entries optionally linked to Class Items) that the player opens from the sheet. The Occult Herbmaster's decoctions migrate onto it, retiring the `classId === 6` code. Confirmed during ticket 04: reference tables stay structured (unlike weapon effect tables, which became free text) because their rows can grant Class Items.
 - **Limits**: at most 20 abilities, 20 Class Items and 20 origins per class; 1500 characters per text field.
