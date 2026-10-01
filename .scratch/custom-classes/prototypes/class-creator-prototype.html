@@ -1,0 +1,674 @@
+<title>Class Forge Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya:ital,wght@0,400;0,700;1,400&family=Antonio:wght@400;700&family=Bebas+Neue&family=Caveat+Brush&family=MedievalSharp&display=swap">
+<style>
+/* PROTOTYPE — throwaway. Custom Class creator, three variants (wayfinder ticket 04).
+   Tokens mirror DESIGN.md. Single committed look (yellow paper), no dark theme by design. */
+:root{
+  --yellow:#FFE900; --pink:#FF3EB5; --black:#0a0a0a; --off-black:#111111; --grey:#1a1a1a;
+  --dark-grey:#2a2a2a; --white:#f5f5f5; --muted:#888888; --blood:#8b0000;
+  --agi:#2d5a27; --pre:#5a2754; --str:#5a3d27; --tou:#27455a;
+  --f-display:'Caveat Brush',cursive; --f-head:'Bebas Neue','Arial Narrow',sans-serif;
+  --f-gothic:'MedievalSharp',Georgia,serif; --f-label:'Antonio','Arial Narrow',sans-serif;
+  --f-body:'Alegreya',Georgia,serif;
+  color-scheme: light;
+}
+*{box-sizing:border-box;border-radius:0}
+html,body{background:var(--yellow)}
+body{color:var(--black);font-family:var(--f-body);font-size:15px;line-height:1.5;padding-inline:16px;padding-block:0 110px;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='.05'/></svg>")}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--yellow);outline-offset:2px}
+.wrap{max-width:1180px;margin:0 auto}
+.proto-banner{max-width:1180px;margin:0 auto;padding-block:14px;display:flex;flex-wrap:wrap;gap:8px 16px;align-items:baseline;justify-content:space-between}
+.proto-banner h1{font-family:var(--f-display);font-size:clamp(2.2rem,6vw,3.2rem);line-height:.85;margin:0;text-transform:uppercase}
+.proto-banner p{margin:0;font-family:var(--f-label);font-size:.72rem;letter-spacing:.2em;text-transform:uppercase}
+.stamp{display:inline-block;background:var(--yellow);color:var(--black);border:3px solid var(--black);box-shadow:4px 4px 0 var(--black);
+  font-family:var(--f-head);font-size:1.5rem;line-height:1;padding:2px 10px;text-transform:uppercase;transform:rotate(-.4deg);margin:0 0 14px}
+.stamp.r{transform:rotate(.5deg)}
+.paper{background:var(--black);color:var(--white);border:1px solid var(--grey);padding:20px}
+.row{background:var(--off-black);border:1px solid var(--grey);padding:12px}
+.label{font-family:var(--f-label);font-size:.72rem;letter-spacing:.2em;text-transform:uppercase;color:var(--pink);display:block;margin-bottom:4px}
+.micro{font-family:var(--f-label);font-size:.65rem;letter-spacing:.15em;text-transform:uppercase}
+.muted{color:var(--muted)}
+input[type=text],input[type=number],select,textarea{background:var(--grey);border:2px solid var(--dark-grey);color:var(--white);padding:8px 10px;width:100%}
+input:hover,input:focus,select:hover,select:focus,textarea:hover,textarea:focus{border-color:var(--yellow);outline:none}
+textarea{resize:vertical;min-height:64px;font-family:var(--f-body)}
+input[type=number]{font-family:var(--f-head);font-size:1.15rem;text-align:center}
+.missing{border-color:var(--pink)!important;border-style:dashed!important}
+.btn{font-family:var(--f-head);font-size:1.1rem;text-transform:uppercase;background:var(--pink);color:var(--black);border:2px solid var(--black);
+  padding:6px 14px;cursor:pointer;box-shadow:3px 3px 0 var(--black);transition:transform .08s,box-shadow .08s}
+.btn:hover{transform:translate(-2px,-2px);box-shadow:4px 4px 0 var(--black);background:var(--yellow)}
+.btn:active{transform:none;box-shadow:none}
+.btn.save{background:var(--yellow)} .btn.save:hover{background:var(--white)}
+.act{font-family:var(--f-label);font-size:.7rem;letter-spacing:.15em;text-transform:uppercase;background:transparent;color:var(--yellow);
+  border:1px solid var(--yellow);padding:4px 12px;cursor:pointer}
+.act:hover{background:var(--yellow);color:var(--black)}
+.act.kill{border-color:var(--blood);color:var(--white);background:var(--blood)}
+.act.kill:hover{background:var(--pink);color:var(--black);border-color:var(--pink)}
+.act.on{background:var(--yellow);color:var(--black)}
+.act.ink{color:var(--black);border-color:var(--black)}
+.act.ink:hover{background:var(--black);color:var(--yellow)}
+.act.ink.on{background:var(--black);color:var(--yellow)}
+input[type=number],select{min-height:44px}
+.c-stat select{padding:4px 2px;min-width:0}
+.chip{display:inline-block;font-family:var(--f-label);font-size:.65rem;letter-spacing:.15em;text-transform:uppercase;padding:3px 8px;background:var(--black);color:var(--yellow);border:1px solid var(--yellow)}
+.chip.agi{background:var(--agi);color:var(--white);border-color:var(--agi)} .chip.pre{background:var(--pre);color:var(--white);border-color:var(--pre)}
+.chip.str{background:var(--str);color:var(--white);border-color:var(--str)} .chip.tou{background:var(--tou);color:var(--white);border-color:var(--tou)}
+.chip.warn{background:var(--pink);color:var(--black);border-color:var(--black)}
+.chip.ok{background:var(--yellow);color:var(--black);border-color:var(--black)}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.stack{display:flex;flex-direction:column;gap:12px}
+.inline{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.dice{display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) auto;gap:6px;align-items:end}
+.dice label{min-width:0}
+.check{display:flex;gap:6px;align-items:center;font-family:var(--f-label);font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--white)}
+.check input{accent-color:var(--pink);width:16px;height:16px}
+.counter{font-family:var(--f-label);font-size:.7rem;letter-spacing:.15em;color:var(--muted)}
+.counter.over{color:var(--pink)}
+.issues{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.issues li{background:var(--pink);color:var(--black);font-family:var(--f-label);font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;padding:6px 10px;border:2px solid var(--black)}
+.issues li.fine{background:var(--yellow)}
+.sheet{background:var(--black);color:var(--white);border:4px solid var(--black);padding:16px}
+.sheet h3{font-family:var(--f-gothic);color:var(--yellow);font-size:1.5rem;margin:0 0 4px;font-weight:400}
+.statrow{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:10px 0}
+.statbox{background:var(--yellow);color:var(--black);text-align:center;padding:6px 2px}
+.statbox b{display:block;font-family:var(--f-head);font-size:1.7rem;line-height:1}
+.statbox span{font-family:var(--f-label);font-size:.62rem;letter-spacing:.15em}
+.res{display:flex;flex-wrap:wrap;gap:6px}
+.res .chip{font-size:.72rem}
+.small-title{font-family:var(--f-head);font-size:1.15rem;text-transform:uppercase;color:var(--yellow);margin:12px 0 4px;letter-spacing:.03em}
+.sheet ul{margin:0;padding-left:18px}
+.state{background:var(--off-black);color:#b8f0b0;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11.5px;line-height:1.45;max-height:320px;overflow:auto;padding:12px;margin:0;white-space:pre-wrap;border:1px solid var(--grey)}
+details.statebox{margin-top:20px}
+details.statebox summary{cursor:pointer;font-family:var(--f-label);letter-spacing:.2em;text-transform:uppercase;font-size:.75rem}
+.langpair{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px}
+.lang-tag{font-family:var(--f-label);font-size:.62rem;letter-spacing:.2em;color:var(--muted);margin-left:6px}
+.modrow{display:grid;grid-template-columns:90px 80px 1fr auto;gap:6px;align-items:center}
+.scopes{display:flex;flex-wrap:wrap;gap:4px}
+.itemhead{display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
+.itemhead strong{font-family:var(--f-head);font-size:1.2rem;text-transform:uppercase;color:var(--yellow);font-weight:400}
+.typebadge{font-family:var(--f-label);font-size:.62rem;letter-spacing:.2em;background:var(--yellow);color:var(--black);padding:2px 6px;text-transform:uppercase}
+.effect{display:grid;grid-template-columns:34px 1fr;gap:4px 8px;align-items:center}
+.effect span{font-family:var(--f-head);font-size:1.1rem;color:var(--yellow);text-align:center}
+.pill{padding:1px 6px;background:var(--dark-grey);font-family:var(--f-label);font-size:.62rem;letter-spacing:.15em;text-transform:uppercase}
+
+/* Variant A */
+.a-layout{display:grid;grid-template-columns:minmax(0,1fr);gap:24px}
+@media (min-width:960px){.a-layout{grid-template-columns:minmax(0,1fr) 360px}.a-side{position:sticky;top:12px;align-self:start}}
+.a-section{margin-bottom:26px}
+
+/* Variant B */
+.b-layout{display:grid;grid-template-columns:minmax(0,1fr);gap:20px}
+@media (min-width:860px){.b-layout{grid-template-columns:240px minmax(0,1fr)}}
+.b-rail{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px}
+@media (min-width:860px){.b-rail{flex-direction:column;overflow:visible}}
+.b-step{display:flex;justify-content:space-between;align-items:center;gap:10px;background:var(--black);color:var(--white);border:3px solid var(--grey);padding:8px 10px;cursor:pointer;text-align:left;flex:0 0 auto;min-width:170px;font-family:var(--f-gothic);font-size:1rem}
+.b-step.cur{border-color:var(--yellow);box-shadow:4px 4px 0 var(--pink);transform:rotate(-1deg)}
+.b-step:hover{border-color:var(--pink)}
+.b-langbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:14px}
+.b-nav{display:flex;justify-content:space-between;gap:10px;margin-top:18px;flex-wrap:wrap}
+.bigroll{font-family:var(--f-display);font-size:2.4rem;line-height:1;padding:14px 28px}
+
+/* Variant C */
+.c-top{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;justify-content:space-between;margin-bottom:16px}
+.c-name{font-family:var(--f-gothic)!important;font-size:1.7rem!important;color:var(--yellow)!important;background:var(--black)!important;border:2px solid var(--yellow)!important}
+.c-name:focus{border-color:var(--pink)!important}
+.c-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:18px}
+@media (min-width:900px){.c-grid{grid-template-columns:minmax(0,1.1fr) minmax(0,1fr)}}
+.c-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+@media (min-width:560px){.c-stats{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.c-stat{background:var(--yellow);color:var(--black);border:3px solid var(--black);box-shadow:4px 4px 0 var(--black);padding:8px}
+.c-stat:nth-child(odd){transform:rotate(-.5deg)} .c-stat:nth-child(even){transform:rotate(.4deg)}
+.c-stat h4{margin:0 0 4px;font-family:var(--f-head);font-size:1.3rem;font-weight:400;display:flex;justify-content:space-between}
+.c-stat .spec{font-family:var(--f-head);font-size:2rem;line-height:1;text-align:center}
+.c-stat input{background:var(--black);color:var(--yellow);border:0;padding:4px;font-size:1rem}
+.c-stat .dice{grid-template-columns:repeat(3,minmax(0,1fr))}
+.c-stat .rolled{font-family:var(--f-label);font-size:.7rem;letter-spacing:.12em;text-align:center;min-height:1.2em}
+.c-res{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-top:14px}
+.c-resbox{background:var(--black);color:var(--white);border:1px solid var(--grey);padding:8px}
+.c-resbox b{font-family:var(--f-head);font-size:1.3rem;color:var(--yellow);font-weight:400}
+.c-card{background:var(--off-black);border:1px solid var(--grey);padding:12px;transition:border-color .2s}
+.c-card:hover{border-color:var(--pink)}
+.gap-top{margin-top:14px}
+
+/* Switcher (not part of the design) */
+.switcher{position:fixed;left:50%;bottom:calc(14px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:50;display:flex;align-items:center;gap:6px;
+  background:#ffffff;color:#000;border:2px dashed #000;padding:6px 8px;box-shadow:0 6px 18px rgba(0,0,0,.25);font-family:ui-sans-serif,system-ui,sans-serif;font-size:13px;max-width:calc(100vw - 32px)}
+.switcher button{background:#000;color:#fff;border:0;width:34px;height:30px;cursor:pointer;font-size:16px}
+.switcher .lbl{padding:0 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.switcher .tag{font-size:10px;letter-spacing:.12em;text-transform:uppercase;opacity:.6;margin-right:4px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}.b-step.cur,.c-stat,.stamp{transform:none!important}}
+</style>
+
+<header class="proto-banner">
+  <h1>Forge a class</h1>
+  <p>Prototype · wayfinder ticket 04 · nothing saves · flip variants with ← →</p>
+</header>
+<main class="wrap" id="root"></main>
+
+<nav class="switcher" aria-label="Prototype variant switcher">
+  <button type="button" id="prev" aria-label="Previous variant">←</button>
+  <span class="lbl"><span class="tag">Prototype</span><span id="vlabel"></span></span>
+  <button type="button" id="next" aria-label="Next variant">→</button>
+</nav>
+
+<script>
+(() => {
+const VARIANTS = [
+  { key: 'A', name: 'Grimoire scroll' },
+  { key: 'B', name: 'Forge steps' },
+  { key: 'C', name: 'Sheet mirror' },
+];
+const LIMIT_LIST = 20, LIMIT_TEXT = 1500;
+const STATS = [
+  { key: 'strength', short: 'STR', cls: 'str' },
+  { key: 'agility', short: 'AGI', cls: 'agi' },
+  { key: 'presence', short: 'PRE', cls: 'pre' },
+  { key: 'toughness', short: 'TOU', cls: 'tou' },
+];
+const SCOPES = [
+  { key: 'all', label: 'All', inc: ['melee','ranged','defence','cast','ability','test'] },
+  { key: 'combat', label: 'Combat', inc: ['melee','ranged','cast'] },
+  { key: 'defence', label: 'Defence', inc: ['defence'] },
+  { key: 'melee', label: 'Melee', inc: ['melee'] },
+  { key: 'ranged', label: 'Ranged', inc: ['ranged'] },
+  { key: 'powers', label: 'Powers', inc: ['cast'] },
+  { key: 'tests', label: 'Tests (new)', inc: ['test'] },
+];
+const CATALOG = [
+  { key: 'weapons.brown-scimitar', label: 'The Brown Scimitar of Galgenbeck (catalog)' },
+  { key: 'equipment.lockpicks', label: 'Lockpicks (catalog)' },
+  { key: 'pets.hawk', label: 'Hawk (catalog pet)' },
+];
+
+let uid = 100;
+const L = (en, pl) => ({ en, pl });
+const state = {
+  name: L('Pale Ossuary Keeper', 'Blady Strażnik Kostnicy'),
+  description: L('You swept the bone-halls of Galgenbeck until the dead started answering back. Now you carry what they told you.',
+                 'Zamiatałeś kostnice Galgenbecku, aż umarli zaczęli odpowiadać. Teraz niesiesz to, co ci powiedzieli.'),
+  languages: ['en', 'pl'],
+  stats: {
+    strength: { count: 3, faces: 6, mod: -1, dropLowest: false },
+    agility: { count: 3, faces: 6, mod: 0, dropLowest: false },
+    presence: { count: 4, faces: 6, mod: 0, dropLowest: true },
+    toughness: { count: 3, faces: 6, mod: 1, dropLowest: false },
+  },
+  hpDie: 6, omenDie: 4, weaponDie: 8, armorDie: 2,
+  silver: { count: 2, faces: 6, mult: 10 },
+  randomCount: 1,
+  abilities: [
+    { id: 1, random: false, name: L('Bone-Reader', 'Czytacz Kości'),
+      text: L('Once per day ask a skull one question. It answers truthfully, if unkindly.', 'Raz dziennie zadaj czaszce jedno pytanie. Odpowie szczerze, choć nieuprzejmie.'),
+      grantItem: '', grantPet: '', mods: [], table: null },
+    { id: 2, random: true, name: L('Reliquary Flail', 'Cep Relikwiarzowy'),
+      text: L('A chain of saints\' knuckles on a femur haft.', 'Łańcuch z kostek świętych na trzonku z kości udowej.'),
+      grantItem: 'ci:11', grantPet: '', mods: [], table: null },
+    { id: 3, random: true, name: L('Carrion Crow', 'Padlinożerna Wrona'),
+      text: L('It follows you. It remembers faces.', 'Podąża za tobą. Pamięta twarze.'),
+      grantItem: '', grantPet: 'ci:12', mods: [], table: null },
+    { id: 4, random: true, name: L('Grave Sense', ''),
+      text: L('You smell the recently dead through walls. +2 on Presence tests to find them.', ''),
+      grantItem: '', grantPet: '', mods: [{ stat: 'presence', value: 2, scope: 'tests' }], table: null },
+    { id: 5, random: true, name: L('Litany of Bones', 'Litania Kości'),
+      text: L('Carry d6 bone charms. Before a fight, roll on the table.', 'Nosisz k6 kościanych amuletów. Przed walką rzuć na tabelę.'),
+      grantItem: '', grantPet: '', mods: [],
+      table: { die: 4, rows: [L('The charm cracks. Nothing.', 'Amulet pęka. Nic.'), L('+1 armor tier this fight.', '+1 poziom pancerza w tej walce.'), L('One enemy flees in terror.', 'Jeden wróg ucieka w przerażeniu.'), L('Test Presence DR12 or lose d4 HP.', 'Test Prezencji ST12 albo tracisz k4 PW.')] } },
+  ],
+  items: [
+    { id: 11, type: 'weapon', name: L('Reliquary Flail', 'Cep Relikwiarzowy'), dice: '1d6', dmgMod: 0, reach: 'melee', value: 0,
+      effect: { die: 6, rows: [L('The flail wraps your own arm: 1 damage to you.', 'Cep owija się wokół twojej ręki: 1 obrażenie dla ciebie.'), L('No effect', 'Brak efektu'), L('No effect', 'Brak efektu'), L('No effect', 'Brak efektu'), L('No effect', 'Brak efektu'), L('A saint wakes: target is Stunned.', 'Święty budzi się: cel jest ogłuszony.')] } },
+    { id: 12, type: 'pet', name: L('Carrion Crow', 'Padlinożerna Wrona'), hp: 3, actionDie: 4, actionType: 'attack', humanoid: false, value: 0 },
+  ],
+  origins: [
+    L('The ossuary of the Shunned Chapel', 'Kostnica Wyklętej Kaplicy'),
+    L('A plague pit outside Grift', 'Dół zarazy pod Griftem'),
+    L('The catacombs under Schleswig', ''),
+  ],
+  gettingBetter: 'extra-ability',
+  gbNote: L('', ''),
+};
+
+/* ---------- helpers ---------- */
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const getPath = (p) => p.split('.').reduce((o, k) => (o == null ? o : o[k]), state);
+function setPath(p, v) {
+  const ks = p.split('.'); let o = state;
+  for (let i = 0; i < ks.length - 1; i++) o = o[ks[i]];
+  o[ks.at(-1)] = v;
+}
+const langName = { en: 'EN', pl: 'PL' };
+let variant = 'A';
+let bStep = 0;
+let viewLang = 'en';
+let lastRoll = null;
+
+function diceSpec(s) {
+  const mod = s.mod ? (s.mod > 0 ? `+${s.mod}` : `${s.mod}`) : '';
+  return `${s.count}d${s.faces}${s.dropLowest ? 'dl' : ''}${mod}`;
+}
+function textInput(path, { multiline = false, lang, cls = '', placeholder = '' } = {}) {
+  const v = getPath(path) ?? '';
+  const miss = state.languages.includes(lang) && !String(v).trim();
+  const tag = multiline ? 'textarea' : 'input';
+  const common = `id="f-${path.replace(/\./g, '-')}" data-path="${path}" class="${cls} ${miss ? 'missing' : ''}" maxlength="${LIMIT_TEXT}" placeholder="${esc(placeholder || (miss ? `Missing ${langName[lang]}` : ''))}"`;
+  return multiline ? `<textarea ${common}>${esc(v)}</textarea>` : `<input type="text" ${common} value="${esc(v)}">`;
+}
+/* Localised field: mode 'pair' shows every class language side by side; 'one' shows viewLang only */
+function lfield(base, label, { multiline = false, mode = 'pair', cls = '' } = {}) {
+  const langs = mode === 'pair' ? state.languages : [viewLang];
+  const body = langs.map((l) => `<label>${mode === 'pair' && langs.length > 1 ? `<span class="lang-tag">${langName[l]}</span>` : ''}${textInput(`${base}.${l}`, { multiline, lang: l, cls })}</label>`).join('');
+  return `<div><span class="label">${esc(label)}${mode === 'one' ? `<span class="lang-tag">${langName[viewLang]}</span>` : ''}</span><div class="${langs.length > 1 ? 'langpair' : ''}">${body}</div></div>`;
+}
+function num(path, label, { min = 0, max = 99 } = {}) {
+  return `<label><span class="label">${esc(label)}</span><input type="number" id="f-${path.replace(/\./g, '-')}" data-path="${path}" data-num="1" min="${min}" max="${max}" value="${esc(getPath(path))}"></label>`;
+}
+function dieSelect(path, label, dice) {
+  const v = getPath(path);
+  return `<label><span class="label">${esc(label)}</span><select id="f-${path.replace(/\./g, '-')}" data-path="${path}" data-num="1">${dice.map((d) => `<option value="${d}" ${d === v ? 'selected' : ''}>d${d}</option>`).join('')}</select></label>`;
+}
+function statDice(stat) {
+  const p = `stats.${stat}`;
+  const s = state.stats[stat];
+  return `<div class="dice">
+    ${num(`${p}.count`, 'Dice', { min: 1, max: 6 })}
+    ${dieSelect(`${p}.faces`, 'Sides', [4, 6, 8, 10, 12])}
+    ${num(`${p}.mod`, 'Mod', { min: -6, max: 6 })}
+    <label class="check" style="padding-bottom:10px"><input type="checkbox" id="f-${p}-drop" data-path="${p}.dropLowest" ${s.dropLowest ? 'checked' : ''}>Drop lowest</label>
+  </div>`;
+}
+function itemLabel(key) {
+  if (!key) return '';
+  if (key.startsWith('ci:')) {
+    const it = state.items.find((i) => `ci:${i.id}` === key);
+    return it ? `${it.name[viewLang] || it.name.en || it.name.pl} (Class Item)` : '(removed Class Item)';
+  }
+  return (CATALOG.find((c) => c.key === key) || { label: key }).label;
+}
+function grantSelect(i, kind) {
+  const path = `abilities.${i}.${kind === 'item' ? 'grantItem' : 'grantPet'}`;
+  const v = getPath(path);
+  const own = state.items.filter((it) => (kind === 'pet' ? it.type === 'pet' : it.type !== 'pet'));
+  const cat = CATALOG.filter((c) => (kind === 'pet' ? c.key.startsWith('pets.') : !c.key.startsWith('pets.')));
+  const opts = [`<option value="">— none —</option>`,
+    `<optgroup label="This class's Class Items">${own.map((it) => `<option value="ci:${it.id}" ${v === `ci:${it.id}` ? 'selected' : ''}>${esc(it.name[viewLang] || it.name.en || it.name.pl || 'Unnamed')}</option>`).join('')}</optgroup>`,
+    `<optgroup label="Shared catalog">${cat.map((c) => `<option value="${c.key}" ${v === c.key ? 'selected' : ''}>${esc(c.label)}</option>`).join('')}</optgroup>`];
+  return `<label><span class="label">Grants ${kind === 'item' ? 'item' : 'pet'}</span><select id="f-${path.replace(/\./g, '-')}" data-path="${path}">${opts.join('')}</select></label>`;
+}
+function modsEditor(i) {
+  const a = state.abilities[i];
+  const rows = a.mods.map((m, j) => `<div class="modrow">
+      <select id="f-abilities-${i}-mods-${j}-stat" data-path="abilities.${i}.mods.${j}.stat">${STATS.map((s) => `<option value="${s.key}" ${m.stat === s.key ? 'selected' : ''}>${s.short}</option>`).join('')}</select>
+      <input type="number" id="f-abilities-${i}-mods-${j}-value" data-path="abilities.${i}.mods.${j}.value" data-num="1" min="-6" max="6" value="${m.value}">
+      <div class="scopes">${SCOPES.map((s) => `<button type="button" class="act ${m.scope === s.key ? 'on' : ''}" data-act="scope" data-i="${i}" data-j="${j}" data-v="${s.key}">${s.label}</button>`).join('')}</div>
+      <button type="button" class="act kill" data-act="rm-mod" data-i="${i}" data-j="${j}" aria-label="Remove modifier">✕</button>
+    </div>`).join('');
+  return `<div class="stack"><span class="label">Modifiers <span class="muted micro">(same editor as sheet modifiers)</span></span>${rows || '<span class="micro muted">No modifiers.</span>'}
+    <div><button type="button" class="act" data-act="add-mod" data-i="${i}">+ Modifier</button></div></div>`;
+}
+function tableEditor(i, mode) {
+  const t = state.abilities[i].table;
+  if (!t) return `<div><button type="button" class="act" data-act="add-table" data-i="${i}">+ Reference table</button></div>`;
+  return `<div class="stack"><div class="inline" style="justify-content:space-between"><span class="label">Reference table · d${t.die}</span><button type="button" class="act kill" data-act="rm-table" data-i="${i}">Remove table</button></div>
+    <div class="stack">${t.rows.map((r, k) => `<div class="effect"><span>${k + 1}</span>${lfield(`abilities.${i}.table.rows.${k}`, '', { mode })}</div>`).join('')}</div></div>`;
+}
+function abilityCard(a, i, mode) {
+  return `<div class="row stack" data-ability="${i}">
+    <div class="itemhead"><strong>${esc(a.name[viewLang] || a.name.en || a.name.pl || 'Unnamed ability')}</strong>
+      <div class="inline"><button type="button" class="act ${a.random ? '' : 'on'}" data-act="kind" data-i="${i}" data-v="fixed">Fixed</button><button type="button" class="act ${a.random ? 'on' : ''}" data-act="kind" data-i="${i}" data-v="random">Random pool</button>
+      <button type="button" class="act kill" data-act="rm-ability" data-i="${i}">Remove</button></div></div>
+    ${lfield(`abilities.${i}.name`, 'Name', { mode })}
+    ${lfield(`abilities.${i}.text`, 'Rules text', { multiline: true, mode })}
+    <div class="grid2">${grantSelect(i, 'item')}${grantSelect(i, 'pet')}</div>
+    ${modsEditor(i)}
+    ${tableEditor(i, mode)}
+  </div>`;
+}
+function itemCard(it, i, mode) {
+  const p = `items.${i}`;
+  let fields = '';
+  if (it.type === 'weapon') {
+    fields = `<div class="grid2">
+      <label><span class="label">Damage dice</span><input type="text" id="f-${p}-dice" data-path="${p}.dice" value="${esc(it.dice)}"></label>
+      ${num(`${p}.dmgMod`, 'Damage mod', { min: -6, max: 6 })}
+      <label><span class="label">Reach</span><select id="f-${p}-reach" data-path="${p}.reach"><option value="melee" ${it.reach === 'melee' ? 'selected' : ''}>Melee</option><option value="ranged" ${it.reach === 'ranged' ? 'selected' : ''}>Ranged</option></select></label>
+      ${num(`${p}.value`, 'Value (s)', { min: 0, max: 9999 })}</div>
+      ${it.effect ? `<div class="stack"><span class="label">Effect table · d${it.effect.die}</span>${it.effect.rows.map((r, k) => `<div class="effect"><span>${k + 1}</span>${lfield(`${p}.effect.rows.${k}`, '', { mode })}</div>`).join('')}</div>` : ''}`;
+  } else if (it.type === 'pet') {
+    fields = `<div class="grid2">${num(`${p}.hp`, 'HP', { min: 1, max: 99 })}${dieSelect(`${p}.actionDie`, 'Action die', [2, 4, 6, 8, 10])}
+      <label><span class="label">Action</span><select id="f-${p}-actionType" data-path="${p}.actionType"><option value="attack" ${it.actionType === 'attack' ? 'selected' : ''}>Attack</option><option value="buff" ${it.actionType === 'buff' ? 'selected' : ''}>Buff allies</option></select></label>
+      <label class="check" style="align-self:end;padding-bottom:10px"><input type="checkbox" id="f-${p}-humanoid" data-path="${p}.humanoid" ${it.humanoid ? 'checked' : ''}>Humanoid</label></div>`;
+  } else if (it.type === 'armor') {
+    fields = `<div class="grid2">${dieSelect(`${p}.tier`, 'Tier', [1, 2, 3])}${num(`${p}.value`, 'Value (s)', { min: 0, max: 9999 })}</div>`;
+  } else {
+    fields = `<div class="grid2"><label><span class="label">Kind</span><select id="f-${p}-kind" data-path="${p}.kind"><option value="consumable" ${it.kind === 'consumable' ? 'selected' : ''}>Consumable</option><option value="wearable" ${it.kind === 'wearable' ? 'selected' : ''}>Wearable</option><option value="gear" ${it.kind === 'gear' ? 'selected' : ''}>Gear</option></select></label>${num(`${p}.uses`, 'Uses', { min: 0, max: 99 })}${num(`${p}.value`, 'Value (s)', { min: 0, max: 9999 })}</div>`;
+  }
+  return `<div class="row stack">
+    <div class="itemhead"><div class="inline"><span class="typebadge">${it.type}</span><strong>${esc(it.name[viewLang] || it.name.en || it.name.pl || 'Unnamed')}</strong></div>
+      <button type="button" class="act kill" data-act="rm-item" data-i="${i}">Remove</button></div>
+    ${lfield(`${p}.name`, 'Name', { mode })}
+    ${fields}
+  </div>`;
+}
+function langToggles() {
+  return `<div class="inline"><span class="label" style="margin:0">Class languages</span>
+    ${['en', 'pl'].map((l) => `<button type="button" class="act ${state.languages.includes(l) ? 'on' : ''}" data-act="toggle-lang" data-v="${l}">${langName[l]}</button>`).join('')}
+    <span class="micro muted">${state.languages.length > 1 ? 'Dual: every text field in both' : `Single: ${langName[state.languages[0]]} only, shown to everyone`}</span></div>`;
+}
+function counter(n, label) {
+  return `<span class="counter ${n > LIMIT_LIST ? 'over' : ''}">${n}/${LIMIT_LIST} ${label}</span>`;
+}
+
+/* ---------- validation ---------- */
+function collectText() {
+  const out = [];
+  const push = (obj, where) => out.push({ obj, where });
+  push(state.name, 'Class name'); push(state.description, 'Class description');
+  state.abilities.forEach((a) => {
+    const n = a.name.en || a.name.pl || 'unnamed ability';
+    push(a.name, `Ability “${n}” name`); push(a.text, `Ability “${n}” text`);
+    if (a.table) a.table.rows.forEach((r, k) => push(r, `“${n}” table row ${k + 1}`));
+  });
+  state.items.forEach((it) => {
+    const n = it.name.en || it.name.pl || 'unnamed item';
+    push(it.name, `Class Item “${n}” name`);
+    if (it.effect) it.effect.rows.forEach((r, k) => push(r, `“${n}” effect ${k + 1}`));
+  });
+  state.origins.forEach((o, k) => push(o, `Origin ${k + 1}`));
+  return out;
+}
+function validate() {
+  const issues = [];
+  const byStep = { identity: 0, numbers: 0, abilities: 0, items: 0, origins: 0, gb: 0 };
+  collectText().forEach(({ obj, where }) => {
+    state.languages.forEach((l) => {
+      if (!String(obj[l] || '').trim()) {
+        issues.push(`${langName[l]} missing: ${where}`);
+        const step = where.startsWith('Class ') && !where.startsWith('Class Item') ? 'identity' : where.startsWith('Origin') ? 'origins' : where.startsWith('Class Item') || where.includes('effect') ? 'items' : 'abilities';
+        byStep[step]++;
+      }
+    });
+  });
+  const pool = state.abilities.filter((a) => a.random).length;
+  if (state.randomCount > pool) { issues.push(`Rolls ${state.randomCount} random abilities but the pool has ${pool}`); byStep.abilities++; }
+  if (state.abilities.length > LIMIT_LIST) { issues.push(`More than ${LIMIT_LIST} abilities`); byStep.abilities++; }
+  if (state.items.length > LIMIT_LIST) { issues.push(`More than ${LIMIT_LIST} Class Items`); byStep.items++; }
+  if (state.origins.length > LIMIT_LIST) { issues.push(`More than ${LIMIT_LIST} origins`); byStep.origins++; }
+  if (state.origins.length === 0) { issues.push('Add at least one origin'); byStep.origins++; }
+  state.abilities.forEach((a) => {
+    [a.grantItem, a.grantPet].forEach((g) => { if (g && g.startsWith('ci:') && !state.items.some((it) => `ci:${it.id}` === g)) { issues.push(`“${a.name.en || a.name.pl}” grants a removed Class Item`); byStep.abilities++; } });
+  });
+  return { issues, byStep };
+}
+function issuesHtml() {
+  const { issues } = validate();
+  if (!issues.length) return `<ul class="issues"><li class="fine">Ready to save. Nothing missing.</li></ul>`;
+  return `<ul class="issues">${issues.slice(0, 8).map((m) => `<li>${esc(m)}</li>`).join('')}${issues.length > 8 ? `<li>+${issues.length - 8} more</li>` : ''}</ul>`;
+}
+
+/* ---------- test roll ---------- */
+const d = (n) => 1 + Math.floor(Math.random() * n);
+function rollSpec(s) {
+  const rolls = Array.from({ length: s.count }, () => d(s.faces)).sort((a, b) => a - b);
+  const kept = s.dropLowest && rolls.length > 1 ? rolls.slice(1) : rolls;
+  return { rolls, total: kept.reduce((a, b) => a + b, 0) + (s.mod || 0) };
+}
+const scoreMod = (x) => (x <= 4 ? -3 : x <= 6 ? -2 : x <= 8 ? -1 : x <= 12 ? 0 : x <= 14 ? 1 : x <= 16 ? 2 : 3);
+function testRoll() {
+  const stats = {};
+  STATS.forEach((s) => { const r = rollSpec(state.stats[s.key]); stats[s.key] = { ...r, mod: scoreMod(r.total) }; });
+  const hp = Math.max(1, d(state.hpDie) + stats.toughness.mod);
+  const silver = Array.from({ length: state.silver.count }, () => d(state.silver.faces)).reduce((a, b) => a + b, 0) * state.silver.mult;
+  const fixed = state.abilities.filter((a) => !a.random);
+  const pool = [...state.abilities.filter((a) => a.random)].sort(() => Math.random() - 0.5).slice(0, state.randomCount);
+  const abil = [...fixed, ...pool];
+  const grants = abil.flatMap((a) => [a.grantItem, a.grantPet].filter(Boolean)).map(itemLabel);
+  const origin = state.origins.length ? state.origins[d(state.origins.length) - 1] : null;
+  lastRoll = { stats, hp, omens: d(state.omenDie), silver, weapon: d(state.weaponDie), armor: d(state.armorDie), abil, grants, origin };
+}
+const tx = (o) => (o ? o[viewLang] || o[state.languages[0]] || o.en || o.pl || '' : '');
+function rollSheet() {
+  if (!lastRoll) return `<div class="sheet"><p class="micro muted" style="margin:0">No test roll yet. Rolling uses the draft as it is now and saves nothing.</p></div>`;
+  const r = lastRoll;
+  return `<div class="sheet">
+    <span class="micro muted">Test scvm · ${esc(tx(state.name))}</span>
+    <h3>Nameless Wretch</h3>
+    <div class="statrow">${STATS.map((s) => `<div class="statbox"><b>${r.stats[s.key].mod >= 0 ? '+' : ''}${r.stats[s.key].mod}</b><span>${s.short} · ${r.stats[s.key].total}</span></div>`).join('')}</div>
+    <div class="res"><span class="chip warn" style="background:var(--blood);color:var(--yellow);border-color:var(--blood)">HP ${r.hp}</span><span class="chip">Omens ${r.omens}</span><span class="chip">${r.silver}s</span><span class="chip">Weapon roll ${r.weapon}</span><span class="chip">Armor roll ${r.armor}</span></div>
+    <div class="small-title">Abilities</div>
+    <ul>${r.abil.map((a) => `<li><b>${esc(tx(a.name))}</b>${a.random ? ' <span class="pill">rolled</span>' : ''}</li>`).join('') || '<li class="muted">none</li>'}</ul>
+    ${r.grants.length ? `<div class="small-title">Granted</div><ul>${r.grants.map((g) => `<li>${esc(g)}</li>`).join('')}</ul>` : ''}
+    <div class="small-title">Origin</div><p style="margin:0">${esc(tx(r.origin)) || '<span class="muted">none</span>'}</p>
+  </div>`;
+}
+
+/* ---------- shared sections ---------- */
+function numbersBlock() {
+  return `<div class="stack">
+    ${STATS.map((s) => `<div class="row"><div class="inline" style="justify-content:space-between;margin-bottom:6px"><span class="chip ${s.cls}">${s.short}</span><span class="micro" data-derived="spec-${s.key}">${diceSpec(state.stats[s.key])}</span></div>${statDice(s.key)}</div>`).join('')}
+    <div class="grid2">${dieSelect('hpDie', 'HP die', [2, 4, 6, 8, 10, 12])}${dieSelect('omenDie', 'Omen die', [2, 4, 6])}${dieSelect('weaponDie', 'Starting weapon die', [4, 6, 8, 10])}${dieSelect('armorDie', 'Starting armor die', [2, 3, 4])}</div>
+    <div class="grid2">${num('silver.count', 'Silver dice', { min: 1, max: 6 })}${dieSelect('silver.faces', 'Silver sides', [4, 6])}${num('silver.mult', 'Silver ×', { min: 1, max: 100 })}</div>
+  </div>`;
+}
+function abilitiesBlock(mode) {
+  const pool = state.abilities.filter((a) => a.random).length;
+  return `<div class="stack">
+    <div class="row inline" style="justify-content:space-between">
+      <div class="inline"><span class="label" style="margin:0">Roll</span><div style="width:80px">${`<input type="number" id="f-randomCount" data-path="randomCount" data-num="1" min="0" max="20" value="${state.randomCount}">`}</div><span class="label" style="margin:0">of ${pool} random abilities</span></div>
+      ${counter(state.abilities.length, 'abilities')}
+    </div>
+    ${state.abilities.map((a, i) => abilityCard(a, i, mode)).join('')}
+    <div><button type="button" class="btn" data-act="add-ability">+ Ability</button></div>
+  </div>`;
+}
+function itemsBlock(mode) {
+  return `<div class="stack">
+    <div class="inline" style="justify-content:space-between"><span class="micro muted">Only this class's abilities can grant these. They never show in item search.</span>${counter(state.items.length, 'Class Items')}</div>
+    ${state.items.map((it, i) => itemCard(it, i, mode)).join('')}
+    <div class="inline">${['weapon', 'armor', 'equipment', 'pet'].map((t) => `<button type="button" class="act" data-act="add-item" data-v="${t}">+ ${t}</button>`).join('')}</div>
+  </div>`;
+}
+function originsBlock(mode) {
+  return `<div class="stack">
+    <div class="inline" style="justify-content:space-between"><span class="micro muted">One is picked at random for each scvm.</span>${counter(state.origins.length, 'origins')}</div>
+    ${state.origins.map((o, k) => `<div class="row inline" style="align-items:flex-end"><div style="flex:1;min-width:0">${lfield(`origins.${k}`, `Origin ${k + 1}`, { mode })}</div><button type="button" class="act kill" data-act="rm-origin" data-i="${k}">✕</button></div>`).join('')}
+    <div><button type="button" class="act" data-act="add-origin">+ Origin</button></div>
+  </div>`;
+}
+function gbBlock(mode) {
+  return `<div class="stack">
+    <label class="check"><input type="radio" name="gb" id="gb-book" data-path="gettingBetter" value="book" ${state.gettingBetter === 'book' ? 'checked' : ''}>Book default: HP, abilities, debris</label>
+    <label class="check"><input type="radio" name="gb" id="gb-extra" data-path="gettingBetter" value="extra-ability" ${state.gettingBetter === 'extra-ability' ? 'checked' : ''}>Book default + gain a random class ability you don't have yet</label>
+    ${lfield('gbNote', 'Rules note (optional, shown to the player)', { multiline: true, mode })}
+  </div>`;
+}
+
+/* ---------- Variant A: Grimoire scroll ---------- */
+function renderA() {
+  return `<div class="a-layout">
+    <div>
+      <section class="a-section"><h2 class="stamp">Identity</h2><div class="paper stack">${langToggles()}${lfield('name', 'Class name')}${lfield('description', 'Description', { multiline: true })}</div></section>
+      <section class="a-section"><h2 class="stamp r">Stats &amp; dice</h2><div class="paper">${numbersBlock()}</div></section>
+      <section class="a-section"><h2 class="stamp">Abilities</h2><div class="paper">${abilitiesBlock('pair')}</div></section>
+      <section class="a-section"><h2 class="stamp r">Class Items</h2><div class="paper">${itemsBlock('pair')}</div></section>
+      <section class="a-section"><h2 class="stamp">Origins</h2><div class="paper">${originsBlock('pair')}</div></section>
+      <section class="a-section"><h2 class="stamp r">Getting Better</h2><div class="paper">${gbBlock('pair')}</div></section>
+    </div>
+    <aside class="a-side stack">
+      <div class="inline"><button type="button" class="btn" data-act="roll">Test roll</button><button type="button" class="btn save" data-act="save">Save class</button></div>
+      <div data-derived="sheet">${rollSheet()}</div>
+      <div data-derived="issues">${issuesHtml()}</div>
+    </aside>
+  </div>`;
+}
+
+/* ---------- Variant B: Forge steps ---------- */
+const B_STEPS = [
+  { key: 'identity', label: 'Identity' }, { key: 'numbers', label: 'Stats & dice' }, { key: 'abilities', label: 'Abilities' },
+  { key: 'items', label: 'Class Items' }, { key: 'origins', label: 'Origins' }, { key: 'gb', label: 'Getting Better' }, { key: 'review', label: 'Test roll & save' },
+];
+function bRail() {
+  const { byStep, issues } = validate();
+  return B_STEPS.map((s, i) => {
+    const n = s.key === 'review' ? issues.length : byStep[s.key] || 0;
+    return `<button type="button" class="b-step ${i === bStep ? 'cur' : ''}" data-act="step" data-v="${i}"><span>${i + 1}. ${s.label}</span>${n ? `<span class="chip warn">${n}</span>` : `<span class="chip ok">OK</span>`}</button>`;
+  }).join('');
+}
+function renderB() {
+  const s = B_STEPS[bStep];
+  let body = '';
+  if (s.key === 'identity') body = `<div class="stack">${langToggles()}${lfield('name', 'Class name', { mode: 'one' })}${lfield('description', 'Description', { multiline: true, mode: 'one' })}</div>`;
+  if (s.key === 'numbers') body = numbersBlock();
+  if (s.key === 'abilities') body = abilitiesBlock('one');
+  if (s.key === 'items') body = itemsBlock('one');
+  if (s.key === 'origins') body = originsBlock('one');
+  if (s.key === 'gb') body = gbBlock('one');
+  if (s.key === 'review') body = `<div class="stack"><div style="text-align:center"><button type="button" class="btn bigroll" data-act="roll">Roll a test scvm</button></div><div data-derived="sheet">${rollSheet()}</div><div data-derived="issues">${issuesHtml()}</div><div style="text-align:right"><button type="button" class="btn save" data-act="save">Save class</button></div></div>`;
+  const multi = state.languages.length > 1;
+  return `<div class="b-layout">
+    <nav class="b-rail" data-derived="rail" aria-label="Creator steps">${bRail()}</nav>
+    <section>
+      <div class="b-langbar"><h2 class="stamp" style="margin:0">${s.label}</h2>
+        ${multi ? `<div class="inline"><span class="label" style="margin:0;color:var(--black)">Writing in</span>${state.languages.map((l) => `<button type="button" class="act ink ${viewLang === l ? 'on' : ''}" data-act="view-lang" data-v="${l}">${langName[l]}</button>`).join('')}</div>` : ''}</div>
+      <div class="paper">${body}</div>
+      <div class="b-nav"><button type="button" class="btn" data-act="step" data-v="${Math.max(0, bStep - 1)}" ${bStep === 0 ? 'disabled style="opacity:.4"' : ''}>← Back</button>
+        ${bStep < B_STEPS.length - 1 ? `<button type="button" class="btn save" data-act="step" data-v="${bStep + 1}">Next: ${B_STEPS[bStep + 1].label} →</button>` : ''}</div>
+    </section>
+  </div>`;
+}
+
+/* ---------- Variant C: Sheet mirror ---------- */
+function renderC() {
+  const r = lastRoll;
+  const multi = state.languages.length > 1;
+  return `<div class="c-top">
+      <div style="flex:1;min-width:240px"><span class="label">Class name <span class="lang-tag">${langName[viewLang]}</span></span>${textInput(`name.${viewLang}`, { lang: viewLang, cls: 'c-name' })}</div>
+      <div class="inline">${multi ? state.languages.map((l) => `<button type="button" class="act ink ${viewLang === l ? 'on' : ''}" data-act="view-lang" data-v="${l}">View ${langName[l]}</button>`).join('') : ''}
+        <button type="button" class="btn" data-act="roll">Test roll</button><button type="button" class="btn save" data-act="save">Save class</button></div>
+    </div>
+    <div class="paper stack" style="margin-bottom:18px">${langToggles()}<div><span class="label">Description <span class="lang-tag">${langName[viewLang]}</span></span>${textInput(`description.${viewLang}`, { multiline: true, lang: viewLang })}</div></div>
+    <div class="c-stats">${STATS.map((s) => `<div class="c-stat"><h4><span>${s.short}</span><span data-derived="spec-${s.key}">${diceSpec(state.stats[s.key])}</span></h4>
+        <div class="dice">${num(`stats.${s.key}.count`, 'Dice', { min: 1, max: 6 })}${dieSelect(`stats.${s.key}.faces`, 'd', [4, 6, 8, 10, 12])}${num(`stats.${s.key}.mod`, 'Mod', { min: -6, max: 6 })}</div>
+        <label class="check" style="color:var(--black);margin-top:4px"><input type="checkbox" id="c-${s.key}-drop" data-path="stats.${s.key}.dropLowest" ${state.stats[s.key].dropLowest ? 'checked' : ''}>Drop lowest</label>
+        <div class="rolled">${r ? `rolled ${r.stats[s.key].total} → ${r.stats[s.key].mod >= 0 ? '+' : ''}${r.stats[s.key].mod}` : ''}</div></div>`).join('')}</div>
+    <div class="c-res">
+      <div class="c-resbox">${dieSelect('hpDie', 'HP die', [2, 4, 6, 8, 10, 12])}<div class="micro">${r ? `rolled <b>${r.hp}</b> HP` : '+ TOU'}</div></div>
+      <div class="c-resbox">${dieSelect('omenDie', 'Omens', [2, 4, 6])}<div class="micro">${r ? `rolled <b>${r.omens}</b>` : ''}</div></div>
+      <div class="c-resbox"><div class="dice" style="grid-template-columns:1fr 1fr 1fr">${num('silver.count', 'Silver', { min: 1, max: 6 })}${dieSelect('silver.faces', 'd', [4, 6])}${num('silver.mult', '×', { min: 1, max: 100 })}</div><div class="micro">${r ? `rolled <b>${r.silver}s</b>` : ''}</div></div>
+      <div class="c-resbox">${dieSelect('weaponDie', 'Weapon die', [4, 6, 8, 10])}</div>
+      <div class="c-resbox">${dieSelect('armorDie', 'Armor die', [2, 3, 4])}</div>
+    </div>
+    <div class="c-grid gap-top">
+      <section><h2 class="stamp">Abilities</h2><div class="paper">${abilitiesBlock('one')}</div></section>
+      <section>
+        <h2 class="stamp r">Inventory · Class Items</h2><div class="paper">${itemsBlock('one')}</div>
+        <h2 class="stamp gap-top">Origin</h2><div class="paper">${originsBlock('one')}</div>
+        <h2 class="stamp r gap-top">Getting Better</h2><div class="paper">${gbBlock('one')}</div>
+        <div class="gap-top" data-derived="issues">${issuesHtml()}</div>
+      </section>
+    </div>`;
+}
+
+/* ---------- render + events ---------- */
+const root = document.getElementById('root');
+function render() {
+  if (!state.languages.includes(viewLang)) viewLang = state.languages[0];
+  const v = VARIANTS.find((x) => x.key === variant);
+  document.getElementById('vlabel').textContent = `${v.key} · ${v.name}`;
+  const html = variant === 'A' ? renderA() : variant === 'B' ? renderB() : renderC();
+  root.innerHTML = html + `<details class="statebox"><summary>Draft state (what would be saved)</summary><pre class="state" data-derived="state"></pre></details>`;
+  refreshDerived();
+}
+function refreshDerived() {
+  root.querySelectorAll('[data-derived="issues"]').forEach((el) => { el.innerHTML = issuesHtml(); });
+  root.querySelectorAll('[data-derived="rail"]').forEach((el) => { el.innerHTML = bRail(); });
+  STATS.forEach((s) => root.querySelectorAll(`[data-derived="spec-${s.key}"]`).forEach((el) => { el.textContent = diceSpec(state.stats[s.key]); }));
+  const st = root.querySelector('[data-derived="state"]');
+  if (st) st.textContent = JSON.stringify(state, null, 2);
+  root.querySelectorAll('[data-path]').forEach((el) => {
+    const m = el.dataset.path.match(/\.(en|pl)$/);
+    if (m) el.classList.toggle('missing', state.languages.includes(m[1]) && !String(el.value).trim());
+  });
+}
+function onValue(e) {
+  const el = e.target;
+  if (!el.dataset || !el.dataset.path) return;
+  let v = el.type === 'checkbox' ? el.checked : el.value;
+  if (el.type === 'radio') { if (!el.checked) return; v = el.value; }
+  if (el.dataset.num) v = Number(v) || 0;
+  setPath(el.dataset.path, v);
+  refreshDerived();
+}
+root.addEventListener('input', onValue);
+root.addEventListener('change', (e) => { onValue(e); if (e.target.tagName === 'SELECT' && /grant|type|reach/.test(e.target.dataset.path || '')) render(); });
+root.addEventListener('click', (e) => {
+  const b = e.target.closest('[data-act]');
+  if (!b) return;
+  const i = Number(b.dataset.i), j = Number(b.dataset.j), v = b.dataset.v;
+  const blank = () => L('', '');
+  switch (b.dataset.act) {
+    case 'add-ability': state.abilities.push({ id: ++uid, random: true, name: blank(), text: blank(), grantItem: '', grantPet: '', mods: [], table: null }); break;
+    case 'rm-ability': state.abilities.splice(i, 1); break;
+    case 'kind': state.abilities[i].random = v === 'random'; break;
+    case 'add-mod': state.abilities[i].mods.push({ stat: 'strength', value: 1, scope: 'all' }); break;
+    case 'rm-mod': state.abilities[i].mods.splice(j, 1); break;
+    case 'scope': state.abilities[i].mods[j].scope = v; break;
+    case 'add-table': state.abilities[i].table = { die: 6, rows: Array.from({ length: 6 }, blank) }; break;
+    case 'rm-table': state.abilities[i].table = null; break;
+    case 'add-item': {
+      const base = { id: ++uid, type: v, name: blank(), value: 0 };
+      if (v === 'weapon') Object.assign(base, { dice: '1d6', dmgMod: 0, reach: 'melee', effect: null });
+      if (v === 'pet') Object.assign(base, { hp: 4, actionDie: 4, actionType: 'attack', humanoid: false });
+      if (v === 'armor') Object.assign(base, { tier: 1 });
+      if (v === 'equipment') Object.assign(base, { kind: 'gear', uses: 0 });
+      state.items.push(base); break;
+    }
+    case 'rm-item': state.items.splice(i, 1); break;
+    case 'add-origin': state.origins.push(blank()); break;
+    case 'rm-origin': state.origins.splice(i, 1); break;
+    case 'toggle-lang': {
+      const has = state.languages.includes(v);
+      if (has && state.languages.length === 1) return;
+      state.languages = has ? state.languages.filter((l) => l !== v) : ['en', 'pl'].filter((l) => l === v || state.languages.includes(l));
+      break;
+    }
+    case 'view-lang': viewLang = v; break;
+    case 'step': bStep = Number(v); break;
+    case 'roll': testRoll(); break;
+    case 'save': {
+      const n = validate().issues.length;
+      b.textContent = n ? `${n} to fix first` : 'Saved (not really)';
+      setTimeout(() => { b.textContent = 'Save class'; }, 1800);
+      return;
+    }
+    default: return;
+  }
+  render();
+});
+
+/* ---------- switcher ---------- */
+function setVariant(k) {
+  variant = k;
+  try { history.replaceState(null, '', `#${k}`); } catch (_) { /* ignore */ }
+  render();
+  window.scrollTo(0, 0);
+}
+const cycle = (dir) => {
+  const idx = VARIANTS.findIndex((x) => x.key === variant);
+  setVariant(VARIANTS[(idx + dir + VARIANTS.length) % VARIANTS.length].key);
+};
+document.getElementById('prev').addEventListener('click', () => cycle(-1));
+document.getElementById('next').addEventListener('click', () => cycle(1));
+document.addEventListener('keydown', (e) => {
+  const t = e.target;
+  if (t && (t.matches('input, textarea, select') || t.isContentEditable)) return;
+  if (e.key === 'ArrowLeft') cycle(-1);
+  if (e.key === 'ArrowRight') cycle(1);
+});
+const fromHash = (location.hash || '').replace('#', '').toUpperCase();
+variant = VARIANTS.some((x) => x.key === fromHash) ? fromHash : 'A';
+render();
+})();
+</script>

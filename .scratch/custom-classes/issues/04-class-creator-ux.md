@@ -1,0 +1,52 @@
+# How should the class creator look and flow?
+
+Type: prototype
+Status: resolved
+Blocked by: 03
+
+## Question
+
+Rough prototype of the creator: sections (identity, stats dice, HP/weapon/armor/silver, abilities, Class Items, origins, Getting Better, language), how dual-language entry works, validation, and whether a GM can test-roll a scvm from the draft before saving. Field set, limits and the reused modifier component are fixed by ticket 03.
+
+## Assets
+
+- Prototype, all three variants (primary source, A/B/C switchable with ← →): [prototypes/class-creator-prototype.html](../prototypes/class-creator-prototype.html)
+- Chosen variant B, polished with impeccable: [prototypes/class-creator-b-polished.html](../prototypes/class-creator-b-polished.html); live copy: https://claude.ai/artifact/NJJSRnu4YCx4pYNuD1DCZU
+
+## Answer
+
+**Variant B, "Forge steps", wins** over A (one long scroll with side-by-side languages) and C (editing on a mock character sheet). Refined with impeccable `polish` (its detector found no issues); the build must follow these:
+
+- **Seven steps in a rail**: Identity, Stats & dice, **Class Items, Abilities** (items come first so abilities can grant them), Origins, Getting Better, Test roll & save. Each step shows `OK` or its count of problems; the rail is a sticky column on desktop and a horizontal strip on phones that keeps the current step in view. Back/Next buttons name the next step.
+- **One language at a time**: a "Writing in English / Polish" switch, each language showing how many of its fields are missing on the current step. The class's languages are picked on Identity as English only / Polish only / Both.
+- **Validation lives on the field**: a missing translation marks the field `aria-invalid` with inline "Polish text missing" text. The final step lists every problem with a **Fix** button that jumps to the right step, switches language and focuses the field. Save stays available but explains exactly what blocks it.
+- **Test roll on the final step**: rolls a scvm from the draft as it stands (stats with modifiers, HP, omens, silver, weapon/armor dice, fixed + rolled abilities, what it starts with, origin) and keeps nothing.
+- **Empty states and limits**: empty abilities / Class Items / origins explain what to add; add buttons disable at the 20-item caps; counters read "5 of 20 abilities".
+- **Class Items ↔ Abilities** (impeccable `critique`, 22/40 before this pass; decisions by the product owner):
+  - The Class Items step opens with the question "Does this class carry its own gear or beasts?" as its empty state. Yes → forge an item; No → one collapsed line with Change, rail chip `None`. The answer is derived from whether items exist, never stored separately.
+  - **One granter per Class Item**: exactly one ability slot (item or pet) or one reference-table row. Grant menus show items taken by another ability as disabled "(granted by X)". Table-row links count as the grant (Herbmaster decoctions).
+  - **Two-way links**: each item card shows "Granted by · Ability · every scvm / if rolled N of M" with Go to ability, or "Not granted yet" with Grant from a new ability. Abilities opens with a tray of Class Items waiting for an ability. An item nobody grants blocks saving.
+  - **Create from the ability**: the grant menu has "+ New Class Item named after this ability", which creates and links it; the grant shows the item's type and stats with Edit stats. When an ability and its item share a name the header reads "Reliquary Flail → grants weapon" and the test roll shows one line.
+  - **Safe removal**: removing a granted item or an ability that is an item's only granter asks inline and names the dependent ("Remove both / Keep the item, ungranted / Cancel"); every removal offers Undo (10 s snackbar). No dangling references.
+  - **Keyboard**: focus stays on (or next to) the control after every change; grant and removal changes are announced in a polite live region.
+- **Abilities collapse** (impeccable `distill`; the step went from 3,349px to 1,180px on desktop, 4,607px to 1,708px on mobile): each ability is a summary row (Fixed/Random tag, name, chips for what it carries such as `→ weapon`, `+2 PRE tests`, `d4 table`, a missing-text count, Edit). One ability is open at a time; an open card shows name + rules text, then only the extras it actually has, with the rest behind one "Extras" row (Add a grant · Add modifier · Add reference table). One Remove per screen, on the open card, next to Done. Fix jumps, Go to ability, Grant from a new ability and Add ability open the right card.
+- **Class Items carry a free-text Description** instead of structured effect tables (see ticket 03).
+- **One control grammar for every Class Item** (impeccable `polish`, matching the Stats step): numbers are steppers (damage dice count, modifier, HP, uses, value); dice are die buttons (damage sides d2–d12, pet action die, armor tier); choices are segmented buttons, never dropdowns (Reach Melee|Ranged, pet Action Attacks|Buffs allies, pet Kind Beast|Humanoid, gear Kind Consumable|Wearable|Gear). Damage is stored structured (`diceCount`, `diceFaces`, `dmgMod`), not as free text. Each item ends in a result stamp (`2d4 +1 · melee`, `3 HP · d4 attack · humanoid`, `armor tier 2`, `consumable · 3 uses`).
+- **Number controls use the sheet's own vocabulary** (impeccable `bolder`): every number is a − [value] + stepper whose value is a yellow resource stamp (typeable, arrow keys work, buttons disable at min/max); every die choice is a row of die buttons (d4…d12, the chosen one stamped yellow and tilted), keyboard-navigable as a radio group. Each stat is one line: stat block, dice / sides / modifier / lowest-die kept-or-dropped, and the result stamped large in book notation (`3d6 −1`, `best 3 of 4d6`) with its score and modifier range (`score 3–18`, `mod −3 to +3`).
+- **Four title levels on DESIGN.md's ramp** (impeccable `polish`): step title = headline 2rem; card titles (item/ability names, collapsed rows, tray items) = title 1.5rem, with their type/kind badges at 0.75rem; group headings inside cards (Modifiers, Extras, Reference table, Before you save, Class Items waiting…, Languages, Rule, Forge a) = subtitle 1.2rem Bebas in bone white; field labels = label 0.75rem pink Antonio; rail step names = gothic 1.2rem. Secondary names (the ability in "Granted by") stay at subtitle size so they never rival the card title.
+- **Cards lift, fields sink** (impeccable `polish`, only DESIGN.md's own tonal layers): item cards, ability rows and stat lines are Carbon Grey `#1a1a1a` with a 2px Iron Grey `#2a2a2a` border on the Pitch Black paper; text fields and selects inside them drop to Pitch Black `#0a0a0a`; each card header (badge, name, Remove) sits above a 2px rule; 20px between cards.
+- **Motion** (impeccable `animate`; Operate surface, so motion explains state and continuity). **No opacity animation anywhere**: fades read soft, MÖRK BORG is hard cuts and stamps.
+  - Ability open/close is a View Transition with each ability as a shared element: content swaps instantly (no cross-fade) while the card's frame unfolds downward from the row in place (clip, 320 ms, `cubic-bezier(0.16,1,0.3,1)`); cards below slide instead of jumping; closing folds back faster (220 ms). The page does not scroll during open/close.
+  - Step changes are a hard cut; the new step-title stamp thumps down (260 ms scale-and-tilt settle, fully opaque from frame one).
+  - Undo snackbar snaps up 14 px; inline "Remove?" confirmations reveal top-down by clip (200 ms).
+  - Rapid clicks skip the running transition; `prefers-reduced-motion` makes everything instant.
+- **Link safety** (impeccable `critique` #2 scored 27/40, up from 22, then `harden`):
+  - Creating an item from an ability is an explicit action, never a menu option: "Forge a Class Item for this ability" opens a Weapon / Armor / Gear / Pet choice (types whose slot is taken are disabled). If an ungranted item with the ability's name exists, the ability offers "Grant the waiting …" instead, so no duplicates.
+  - Item cards have a Type control; changing type keeps name, description and value and moves the grant between item/pet slots (or leaves it waiting if the other slot is taken), undoable.
+  - Undo reverses exactly one operation (re-insert at its old position, restore the grants it cleared, never create a second granter), keeps later edits, stays on the current step, focuses the restored element, and pauses its 10 s window while hovered or focused. Repeated changes to the same menu collapse into one undo back to the original value.
+  - Every way of ungranting is safe: removing a reference table whose rows grant items asks first and names them; changing/clearing a grant or table-row link is undoable and announced ("X now waits for an ability"); grant menus stay visible until Done so focus never drops.
+- **No starting from an existing class (owner decision, 2026-09-27)**: the creator always starts from a blank class; there is no "copy a Book or Custom Class" template.
+- **Zine authors (owner decision, 2026-09-27)**: the Identity step and the class list carry a quiet line, "Zine author? Want to add your class to the roster? Get in touch (contact@rpgtools.co)". Custom Classes never carry a zine Credit (ticket 02).
+- **Still open from the critique experiment**: known defects (ticket 15), reordering (ticket 16), draft autosave (ticket 17), catalog grant search (ticket 18).
+- **After saving (owner decision, 2026-09-27)**: a successful save shows the FORGED stamp and a "Go to my classes" action. It opens the GM's class list, where the new class sits first (private by default, with Edit and, once ticket 07 lands, Make public). Save then reads "Saved" until the next edit. Not "roll a scvm with it", and not staying on the page.
+- **Design-system fixes the build should keep**: black focus rings on the yellow page (yellow disappears there), one pink interrupt per area (warnings only), 44px touch targets on touch devices, themed selection/caret/scrollbar, square SVG arrows and die icon instead of Unicode glyphs.
