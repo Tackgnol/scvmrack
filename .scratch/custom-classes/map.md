@@ -44,7 +44,7 @@ An implementation-ready spec for GM-authored Custom Classes (creator, Party Clas
 
 ## Build breakdown
 
-- [build-breakdown.md](build-breakdown.md): 31 tracer-bullet build tickets from `/to-tickets` (2026-10-01). The owner approved the granularity and edges. They wait to be published to Linear (`RPG`) from a session with the Linear connector.
+- [build-breakdown.md](build-breakdown.md): 31 tracer-bullet build tickets from `/to-tickets` (2026-10-01), published to Linear as RPG-257 to RPG-287 in project [SCVMRACK 0.7.0](https://linear.app/rpgtoolsco/project/scvmrack-070-4264b39ffbc0).
 
 ## Not yet specified
 
