@@ -1,8 +1,8 @@
 # Terms of service
 
 <!-- DRAFT for the owner's review and a lawyer's glance before public Custom Classes ship (ticket 21).
-     Not legal advice. [OWNER] marks a point the decisions so far don't settle. The Polish version
-     (terms.pl.md) is the UŚUDE Art. 8 regulamin; if the two differ, say which one governs (§14). -->
+     Not legal advice. Owner decisions 2026-10-01: Polish binds, minimum age 16, 14-day complaint answers,
+     14-day notice for significant changes, suspension after repeated breaches. -->
 
 Last updated: [date of publication]
 
@@ -26,7 +26,7 @@ Scvm Rack is an independent production published under the MÖRK BORG Third Part
 - The service is free. There is no paid tier.
 - You can start as a guest. A guest keeps one character for 7 days. Signing up keeps characters permanently and unlocks the GM tools, including Custom Classes.
 - You need a current web browser with JavaScript and browser storage turned on, and an internet connection. The Owlbear Rodeo extension also needs an Owlbear Rodeo room.
-- [OWNER] Minimum age: suggested "You must be at least 16, or have a parent's or guardian's consent" (the Polish GDPR consent age).
+- You must be at least 16, or have a parent's or guardian's consent.
 - These terms form an agreement between you and the operator when you first use the service. You can end it at any time by stopping using the service and, if you have an account, asking for its removal (§11).
 
 ## 4. Your content stays yours
@@ -105,11 +105,11 @@ When you reach a limit, the app tells you which one and what to do. The operator
 
 - You can delete your own Custom Classes. A class that characters were already rolled from is archived rather than deleted, so those characters keep working (§4).
 - To remove your account and your content, write to contact@rpgtools.co from your account's email. Content that other users' characters already rely on stays in those characters (§4), without your name.
-- [OWNER] Suggested: the operator may suspend an account that repeatedly breaks §5, after telling its owner why.
+- The operator may suspend an account that repeatedly posts content §5 prohibits, after telling its owner why.
 
 ## 12. Complaints about the service
 
-If something in the service doesn't work as these terms describe, write to contact@rpgtools.co with a description of the problem. [OWNER] You will receive an answer within 14 days (suggested).
+If something in the service doesn't work as these terms describe, write to contact@rpgtools.co with a description of the problem. You will receive an answer within 14 days.
 
 ## 13. Availability and liability
 
@@ -119,12 +119,12 @@ Nothing in these terms limits rights you have as a consumer under the law of the
 
 ## 14. Changes to these terms
 
-The date at the top shows the last change. When a change is significant, signed-in users see a notice on their next visit saying what changed. GMs with public classes are also told by email. [OWNER] Suggested: significant changes take effect 14 days after the notice.
+The date at the top shows the last change. When a change is significant, signed-in users see a notice on their next visit saying what changed. GMs with public classes are also told by email. Significant changes take effect 14 days after the notice.
 
-[OWNER] The Polish version is the binding one; this English version is a translation. (Or the other way round. Pick one.)
+The Polish version of these terms is the binding one; this English version is a translation.
 
 Polish law governs these terms. If you are a consumer, you can also bring a dispute before the courts where you live.
 
 ## 15. Privacy
 
-How your data is handled is described in the [privacy notice](/privacy). [OWNER] See ticket 22: the current notice covers storage and analytics consent only.
+How your data is handled is described in the [privacy notice](/privacy).

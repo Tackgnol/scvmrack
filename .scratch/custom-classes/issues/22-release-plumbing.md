@@ -1,7 +1,7 @@
 # Prepare the Custom Classes release: translations, release notes, FAQ
 
 Type: task
-Status: open
+Status: resolved
 Blocked by: 04, 06, 07, 21
 
 ## Question
@@ -74,3 +74,12 @@ Most of this lands with the build, because the strings, routes and version don't
    - Links from the publish confirmation, the report form and every statement of reasons to the right `/terms` section. That needs stable heading anchors: `#publishing`, `#reporting`, `#moderation` and `#disputes`.
    - The one-time "Our terms changed" banner for signed-in users, keyed on the terms' date.
 6. **FAQ:** add the seven entries from the draft to `FaqPage.tsx`, after "Can I have multiple characters?".
+
+### Owner decisions (2026-10-01), applied to the drafts
+
+- **The Polish terms bind**; the English version is a translation.
+- **Minimum age**: 16, or a parent's or guardian's consent.
+- **Complaints** are answered within 14 days.
+- **Significant terms changes** take effect 14 days after the notice.
+- **Suspension**: an account that repeatedly posts prohibited content can be suspended after being told why.
+- **Privacy**: today's notice lacks the GDPR Art. 13 information that reports and SES email now require. It moves to its own ticket, [23](23-privacy-notice.md).

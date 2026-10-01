@@ -1,7 +1,8 @@
 # Regulamin
 
 <!-- PROJEKT do przeglądu przez właściciela i rzut oka prawnika przed uruchomieniem publicznych Klas Własnych (ticket 21).
-     To nie jest porada prawna. [WŁAŚCICIEL] oznacza punkt, którego dotychczasowe decyzje nie rozstrzygają.
+     To nie jest porada prawna. Decyzje właściciela z 2026-10-01: wiąże wersja polska, wiek 16 lat, reklamacje w 14 dni,
+     istotne zmiany po 14 dniach, zawieszenie konta po powtarzających się naruszeniach.
      Ta wersja pełni funkcję regulaminu w rozumieniu art. 8 ustawy o świadczeniu usług drogą elektroniczną (UŚUDE). -->
 
 Ostatnia zmiana: [data publikacji]
@@ -26,7 +27,7 @@ Scvm Rack to niezależna produkcja wydana na podstawie MÖRK BORG Third Party Li
 - Serwis jest bezpłatny. Nie ma wersji płatnej.
 - Możesz zacząć jako gość. Gość ma jedną postać, przechowywaną przez 7 dni. Założenie konta pozwala trzymać postacie bezterminowo i odblokowuje narzędzia MG, w tym Klasy Własne.
 - Potrzebujesz aktualnej przeglądarki internetowej z włączonym JavaScriptem i pamięcią przeglądarki oraz dostępu do internetu. Rozszerzenie do Owlbear Rodeo wymaga też pokoju w Owlbear Rodeo.
-- [WŁAŚCICIEL] Minimalny wiek: proponowane „Musisz mieć co najmniej 16 lat albo zgodę rodzica lub opiekuna” (polski wiek zgody w RODO).
+- Musisz mieć co najmniej 16 lat albo zgodę rodzica lub opiekuna.
 - Umowa o świadczenie usług drogą elektroniczną zostaje zawarta z chwilą pierwszego skorzystania z serwisu. Możesz ją rozwiązać w każdej chwili, przestając korzystać z serwisu i, jeśli masz konto, prosząc o jego usunięcie (§11).
 
 ## 4. Twoje treści pozostają Twoje
@@ -105,11 +106,11 @@ Gdy osiągniesz limit, aplikacja powie Ci, który to limit i co możesz zrobić.
 
 - Możesz usuwać swoje Klasy Własne. Klasa, z której wylosowano już postacie, zostaje zarchiwizowana zamiast usunięta, aby te postacie nadal działały (§4).
 - Aby usunąć konto i swoje treści, napisz na contact@rpgtools.co z adresu e-mail przypisanego do konta. Treści, na których opierają się już postacie innych użytkowników, pozostają w tych postaciach (§4), bez Twojego imienia.
-- [WŁAŚCICIEL] Proponowane: prowadzący może zawiesić konto, które wielokrotnie narusza §5, po poinformowaniu jego właściciela o powodzie.
+- Prowadzący może zawiesić konto, z którego wielokrotnie publikowano treści zakazane w §5, po poinformowaniu jego właściciela o powodzie.
 
 ## 12. Reklamacje
 
-Jeśli serwis nie działa tak, jak opisuje to regulamin, napisz na contact@rpgtools.co z opisem problemu. [WŁAŚCICIEL] Odpowiedź otrzymasz w ciągu 14 dni (proponowane).
+Jeśli serwis nie działa tak, jak opisuje to regulamin, napisz na contact@rpgtools.co z opisem problemu. Odpowiedź otrzymasz w ciągu 14 dni.
 
 ## 13. Dostępność i odpowiedzialność
 
@@ -119,12 +120,12 @@ Nic w tym regulaminie nie ogranicza praw, które przysługują Ci jako konsument
 
 ## 14. Zmiany regulaminu
 
-Data na górze pokazuje ostatnią zmianę. O istotnej zmianie zalogowani użytkownicy dowiedzą się z komunikatu przy następnej wizycie, z opisem tego, co się zmieniło. MG z klasami publicznymi dostaną też e-mail. [WŁAŚCICIEL] Proponowane: istotne zmiany wchodzą w życie 14 dni po ogłoszeniu.
+Data na górze pokazuje ostatnią zmianę. O istotnej zmianie zalogowani użytkownicy dowiedzą się z komunikatu przy następnej wizycie, z opisem tego, co się zmieniło. MG z klasami publicznymi dostaną też e-mail. Istotne zmiany wchodzą w życie 14 dni po ogłoszeniu.
 
-[WŁAŚCICIEL] Wersja polska jest wiążąca; wersja angielska jest tłumaczeniem (albo odwrotnie, do wyboru).
+Wiążąca jest polska wersja regulaminu; wersja angielska jest tłumaczeniem.
 
 Regulamin podlega prawu polskiemu. Konsument może także dochodzić roszczeń przed sądem właściwym dla swojego miejsca zamieszkania.
 
 ## 15. Prywatność
 
-Sposób przetwarzania danych opisuje [informacja o prywatności](/privacy). [WŁAŚCICIEL] Zobacz ticket 22: obecna informacja obejmuje tylko pamięć przeglądarki i zgodę na analitykę.
+Sposób przetwarzania danych opisuje [informacja o prywatności](/privacy).
