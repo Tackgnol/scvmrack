@@ -270,7 +270,7 @@ function ModifierList({
     const { t } = useTranslation();
     const rows = [
         ...computed.map((item) => ({
-            name: item.originName ?? item.source ?? item.originKey ?? 'Modifier',
+            name: item.originName ?? item.source ?? item.originKey ?? t('modifiers.computed.unknownOrigin'),
             value: item.value,
             statistic: item.statistic,
             note: item.exclude?.length
@@ -282,7 +282,7 @@ function ModifierList({
                 : undefined,
         })),
         ...custom.map((item) => ({
-            name: item.name ?? item.source ?? 'Modifier',
+            name: item.name ?? item.source ?? t('modifiers.name'),
             value: item.value,
             statistic: item.statistic,
             note: item.comment,
@@ -294,21 +294,21 @@ function ModifierList({
     }
 
     return (
-        <PrintSection title="Modifiers">
+        <PrintSection title={t('modifiers.title')}>
             <table className="print-native-table">
                 <thead>
                 <tr>
-                    <th>Name</th>
-                    <th>Stat</th>
-                    <th>Value</th>
-                    <th>Note</th>
+                    <th>{t('modifiers.name')}</th>
+                    <th>{t('modifiers.statistic')}</th>
+                    <th>{t('modifiers.value')}</th>
+                    <th>{t('modifiers.comment')}</th>
                 </tr>
                 </thead>
                 <tbody>
                 {rows.map((row, index) => (
                     <tr key={`${row.name}-${index}`}>
                         <td>{row.name}</td>
-                        <td>{row.statistic ?? '-'}</td>
+                        <td>{row.statistic ? t(`attributes.${row.statistic}`, row.statistic) : '-'}</td>
                         <td>{modifier(row.value)}</td>
                         <td>{row.note ?? '-'}</td>
                     </tr>
