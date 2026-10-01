@@ -18,7 +18,7 @@ import {
   type CharacterImprovementRow,
   type ImprovementCharacterRow,
   type ScrollCatalogRow,
-  type ScumSpecialtyRow,
+  type ClassAbilityRow,
 } from '../repositories/character-improvement-repository.js';
 import { catalogRepository } from '../repositories/catalog-repository.js';
 
@@ -45,6 +45,7 @@ export type ImprovementRerollSection =
 export type CatalogBundle = {
   catalog: GettingBetterCatalog;
   scumSpecialtyKeys: string[];
+  classAbilities: ClassAbilityRow[];
 };
 
 export async function toPreviewResponse(
@@ -122,6 +123,7 @@ export async function loadCatalog(
       scumFixedAbilityKeys: () => fixedAbilityKeys(classAbilities),
     },
     scumSpecialtyKeys: scumSpecialties.map((specialty) => specialty.key),
+    classAbilities,
   };
 }
 
@@ -224,17 +226,17 @@ function scrollKeys(rows: ScrollCatalogRow[]): string[] {
     .map((row) => row.key);
 }
 
-function specialtyRows(rows: ScumSpecialtyRow[]): SpecialtySlot[] {
+function specialtyRows(rows: ClassAbilityRow[]): SpecialtySlot[] {
   return rows
     .filter(
-      (row): row is ScumSpecialtyRow & { rollValue: number } =>
+      (row): row is ClassAbilityRow & { rollValue: number } =>
         row.isRandom === true && Number.isInteger(row.rollValue)
     )
     .sort((left, right) => left.rollValue - right.rollValue)
     .map((row) => ({ key: row.key, rollValue: row.rollValue }));
 }
 
-function fixedAbilityKeys(rows: ScumSpecialtyRow[]): string[] {
+function fixedAbilityKeys(rows: ClassAbilityRow[]): string[] {
   return rows
     .filter((row) => row.isRandom !== true)
     .map((row) => row.key)

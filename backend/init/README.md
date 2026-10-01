@@ -22,10 +22,14 @@ The Prisma migration `prisma/migrations/20260603000000_init_full` owns the
   were in `init/03-functions/`.
 
 Nothing invokes the old custom runner (`scripts/migrate.js`) on any live path,
-so `init/01-extensions`, `init/02-schema`, `init/03-functions`, `init/04-views`,
-and `init/05-seed` are all **off the live path**. (`00-init.sh` was the Postgres
+so `init/01-extensions`, `init/02-schema`, `init/03-functions` and `init/04-views`
+are all **off the live path**. (`00-init.sh` was the Postgres
 `docker-entrypoint-initdb.d` bootstrap; the current dev/canary/prod flows apply
 the Prisma migration instead.)
+
+The exception is `init/05-seed`: `prisma/seed.ts` runs the files listed in its
+`SEED_FILES` on an empty database, after the migrations. A data migration that
+must also reach fresh databases therefore adds a matching seed file there.
 
 ## Where things go now
 

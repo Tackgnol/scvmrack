@@ -1,15 +1,43 @@
 import { Prisma } from '@prisma/client';
+import { Roller, OSRandomEngine } from '@tackgnol/rpg-tools-roller';
+import { abilityGrantedItems } from '../lib/class-grants.js';
+import { hydrateInventoryUses } from '../lib/inventory.js';
 import {
   ABILITY_STATS,
   buildAppliedImprovement,
   type ImprovementDraft,
 } from '../lib/getting-better.js';
-import type { ImprovementCharacterRow } from '../repositories/character-improvement-repository.js';
+import type {
+  ImprovementCharacterRow,
+  ClassAbilityRow,
+} from '../repositories/character-improvement-repository.js';
+
+/** Inventory entries granted by the abilities an improvement adds; tags come from the catalog at read time. */
+export async function gainedAbilityItems(
+  row: ImprovementCharacterRow,
+  classAbilities: ClassAbilityRow[],
+  applied: ReturnType<typeof buildAppliedImprovement>
+): Promise<unknown[]> {
+  const change = applied.changes.abilityKeys;
+  if (!change) return [];
+  const gained = new Set(change.to.filter((key) => !change.from.includes(key)));
+  const items = classAbilities
+    .filter((ability) => gained.has(ability.key))
+    .flatMap((ability) => abilityGrantedItems(ability, () => []));
+  if (items.length === 0) return [];
+  return hydrateInventoryUses(
+    items,
+    row.presence,
+    false,
+    new Roller({ engine: new OSRandomEngine() })
+  );
+}
 
 export function characterUpdateFromApplied(
   row: ImprovementCharacterRow,
   draft: ImprovementDraft,
-  applied: ReturnType<typeof buildAppliedImprovement>
+  applied: ReturnType<typeof buildAppliedImprovement>,
+  grantedItems: unknown[]
 ): Prisma.CharacterUpdateInput {
   const data: Prisma.CharacterUpdateInput = {};
 
@@ -21,8 +49,10 @@ export function characterUpdateFromApplied(
     if (next !== row[stat]) data[stat] = next;
   }
 
-  const equipment = equipmentWithAppliedDebris(row, draft);
-  if (equipment) data.equipment = equipment as Prisma.InputJsonValue;
+  const added = [...appliedDebrisItems(draft), ...grantedItems];
+  if (added.length > 0) {
+    data.equipment = [...asObjectArray(row.equipment), ...added] as Prisma.InputJsonValue;
+  }
 
   if (applied.changes.abilityKeys) {
     data.abilities = abilityJsonFromKeys(
@@ -34,20 +64,14 @@ export function characterUpdateFromApplied(
   return data;
 }
 
-function equipmentWithAppliedDebris(
-  row: ImprovementCharacterRow,
-  draft: ImprovementDraft
-): unknown[] | undefined {
+function appliedDebrisItems(draft: ImprovementDraft): unknown[] {
   if (
     draft.debris.kind !== 'uncleanScroll' &&
     draft.debris.kind !== 'sacredScroll'
   ) {
-    return undefined;
+    return [];
   }
-  return [
-    ...asObjectArray(row.equipment),
-    { key: draft.debris.itemKey, uses: [false, false, false, false] },
-  ];
+  return [{ key: draft.debris.itemKey, uses: [false, false, false, false] }];
 }
 
 function abilityJsonFromKeys(

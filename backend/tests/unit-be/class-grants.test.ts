@@ -3,9 +3,30 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { grantedItemKeyForName, grantedPetKeyForName } from '../../src/lib/class-grants.js';
+import { abilityGrantedItems } from '../../src/lib/class-grants.js';
 
 const SEED_DIR = fileURLToPath(new URL('../../init/05-seed/', import.meta.url));
+const MIGRATION = fileURLToPath(
+  new URL('../../prisma/migrations/20261001130000_ability_grants/migration.sql', import.meta.url)
+);
+
+// What the Book Classes granted through the retired name maps and positional
+// `random_abilities` JSON, captured from a seeded database before the switch.
+const GOLDEN_GRANTS = [
+  ['abilities.esoteric_hermit.hawk', null, 'pets.hawk'],
+  ['abilities.fanged_deserter.hound', null, 'pets.gore-hound'],
+  ['abilities.fanged_deserter.mask', 'equipment.crumpled-monster-mask', null],
+  ['abilities.fanged_deserter.scimitar', 'weapons.brown-scimitar', null],
+  ['abilities.fanged_deserter.shoe', 'weapons.shoe-of-death', null],
+  ['abilities.fanged_deserter.sling', 'weapons.sigurd-sling', null],
+  ['abilities.fanged_deserter.teeth', 'equipment.wizard-teeth', null],
+  ['abilities.gutterborn_scum.fingersmith', 'equipment.lockpicks', null],
+  ['abilities.heretical_priest.crook', 'weapons.sacred-shepherds-crook', null],
+  ['abilities.wretched_royalty.barbarister', null, 'pets.barbarister'],
+  ['abilities.wretched_royalty.blade', 'weapons.blade-of-ancestors', null],
+  ['abilities.wretched_royalty.gift', 'weapons.snake-skin-gift', null],
+  ['abilities.wretched_royalty.hamfund', null, 'pets.hamfund'],
+];
 
 function readSeeds(): string {
   return readdirSync(SEED_DIR)
@@ -15,14 +36,12 @@ function readSeeds(): string {
     .join('\n');
 }
 
-// JSON inside SQL string literals escapes apostrophes as ''.
-function seededGrantNames(sql: string, field: 'gainItem' | 'gainPet'): string[] {
-  const pattern = new RegExp(`"${field}": "((?:[^"\\\\]|\\\\.)*)"`, 'g');
-  const names = new Set<string>();
-  for (const match of sql.matchAll(pattern)) {
-    names.add(match[1].replace(/''/g, "'"));
-  }
-  return [...names].sort();
+function grantRows(sql: string): Array<[string, string | null, string | null]> {
+  const literal = (value: string) => (value === 'NULL' ? null : value.slice(1, -1));
+  const pattern = /\('(abilities\.[a-z_]+\.[a-z_]+)', (NULL|'[^']+'), (NULL|'[^']+')\)/g;
+  return [...sql.matchAll(pattern)]
+    .map((m): [string, string | null, string | null] => [m[1], literal(m[2]), literal(m[3])])
+    .sort((a, b) => a[0].localeCompare(b[0]));
 }
 
 // Catalog rows start their tuple with the key (optionally after a numeric id);
@@ -33,30 +52,48 @@ function seededCatalogKeys(sql: string): Set<string> {
 }
 
 const seeds = readSeeds();
-const catalogKeys = seededCatalogKeys(seeds);
 
-test('every seeded class gainItem resolves to a seeded catalog item', () => {
-  const names = seededGrantNames(seeds, 'gainItem');
-  assert.ok(names.length > 0, 'expected seeded gainItem entries');
-  for (const name of names) {
-    const key = catalogKeys.has(name) ? name : grantedItemKeyForName(name);
-    assert.ok(key, `gainItem "${name}" has no catalog key`);
-    assert.ok(catalogKeys.has(key), `gainItem "${name}" maps to missing catalog row ${key}`);
+test('seeded Book Class grants match what the old name maps granted', () => {
+  assert.deepEqual(grantRows(seeds), GOLDEN_GRANTS);
+});
+
+test('the migration grants the same as the seed', () => {
+  assert.deepEqual(grantRows(readFileSync(MIGRATION, 'utf8')), GOLDEN_GRANTS);
+});
+
+test('every seeded grant points at a seeded catalog row', () => {
+  const catalogKeys = seededCatalogKeys(seeds);
+  for (const [ability, item, pet] of GOLDEN_GRANTS) {
+    if (item) assert.ok(catalogKeys.has(item), `${ability} grants missing item ${item}`);
+    if (pet) assert.ok(catalogKeys.has(pet), `${ability} grants missing pet ${pet}`);
   }
 });
 
-test('every seeded class gainPet resolves to a seeded pet', () => {
-  const names = seededGrantNames(seeds, 'gainPet');
-  assert.ok(names.length > 0, 'expected seeded gainPet entries');
-  for (const name of names) {
-    const key = catalogKeys.has(name) ? name : grantedPetKeyForName(name);
-    assert.ok(key, `gainPet "${name}" has no pet key`);
-    assert.ok(catalogKeys.has(key), `gainPet "${name}" maps to missing pet row ${key}`);
-  }
+const tagsFor = (key: string) => [`tag:${key}`];
+
+test('an ability grants its item, then its pet, with catalog tags', () => {
+  assert.deepEqual(
+    abilityGrantedItems({ grantItemKey: 'weapons.brown-scimitar', grantPetKey: 'pets.hawk' }, tagsFor),
+    [
+      { key: 'weapons.brown-scimitar', tags: ['tag:weapons.brown-scimitar'] },
+      { key: 'pets.hawk', tags: ['tag:pets.hawk'] },
+    ]
+  );
 });
 
-test('granted names resolve regardless of apostrophe style', () => {
-  assert.equal(grantedItemKeyForName('Sacred Shepherd’s Crook'), 'weapons.sacred-shepherds-crook');
-  assert.equal(grantedItemKeyForName("Sacred Shepherd's Crook"), 'weapons.sacred-shepherds-crook');
-  assert.equal(grantedPetKeyForName('Poltroon the Court Jester'), 'pets.poltroon');
+test('an ability without grants grants nothing', () => {
+  assert.deepEqual(abilityGrantedItems({ grantItemKey: null, grantPetKey: null }, tagsFor), []);
+});
+
+test('granted Wizard Teeth carry four use pips', () => {
+  assert.deepEqual(
+    abilityGrantedItems({ grantItemKey: 'equipment.wizard-teeth', grantPetKey: null }, tagsFor),
+    [
+      {
+        key: 'equipment.wizard-teeth',
+        tags: ['tag:equipment.wizard-teeth'],
+        uses: [false, false, false, false],
+      },
+    ]
+  );
 });

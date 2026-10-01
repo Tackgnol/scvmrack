@@ -73,6 +73,8 @@ let classAbilities: Array<{
   key: string;
   rollValue: number | null;
   isRandom: boolean | null;
+  grantItemKey?: string | null;
+  grantPetKey?: string | null;
 }> = [];
 let rollQueue: RollResult[] = [];
 let rollCalls: string[] = [];
@@ -209,6 +211,9 @@ mock.module('../../src/repositories/catalog-repository.js', {
           value: `${locale}:${key}`,
         }));
       },
+      findPetsByKeys: async (keys: string[]) =>
+        keys.filter((key) => key === 'pets.rat').map((key) => ({ key, hp: 2 })),
+      findEquipmentByKeys: async () => [],
     },
   },
 });
@@ -429,4 +434,45 @@ test('getOrCreatePreview builds Scum first and later specialty drafts', async ()
     assert.equal(laterDraft.scumSpecialties.secondary.key, 'scum.two');
     assert.equal(laterDraft.scumSpecialties.rerollMode, 'none');
   }
+});
+
+test('apply grants the item and pet of an ability gained through Getting Better', async () => {
+  resetState();
+  assert.ok(characterRow);
+  characterRow = {
+    ...characterRow,
+    classId: 2,
+    abilities: [{ key: 'scum.one' }],
+    equipment: [{ key: 'equipment.rope' }],
+  };
+  classAbilities = [
+    { key: 'scum.one', rollValue: 1, isRandom: true, grantItemKey: 'equipment.mask' },
+    {
+      key: 'scum.two',
+      rollValue: 2,
+      isRandom: true,
+      grantItemKey: 'equipment.lockpicks',
+      grantPetKey: 'pets.rat',
+    },
+  ];
+  enqueuePreviewRolls();
+  rollQueue.push({ total: 2 });
+  const service = createCharacterImprovementService(log);
+
+  await service.getOrCreatePreview({ id: characterId, session });
+  const draft = activeImprovement?.rolledDraft as ImprovementDraft;
+  const applied = await service.apply({
+    id: characterId,
+    improvementId,
+    draft,
+    session,
+    rawLocale: 'en',
+  });
+
+  assert.equal(applied.ok, true);
+  assert.deepEqual(applyCalls[0].characterData.equipment, [
+    { key: 'equipment.rope' },
+    { key: 'equipment.lockpicks', tags: [] },
+    { key: 'pets.rat', tags: [], uses: [true, true] },
+  ]);
 });

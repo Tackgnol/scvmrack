@@ -37,7 +37,6 @@ type ClassRow = {
   armorDie: number;
   statModifiers: Record<string, number>;
   randomAbilityCount: number;
-  randomAbilities: Array<{ gainItem?: string; gainPet?: string }>;
   source?: string;
 };
 
@@ -46,6 +45,8 @@ type AbilityRow = {
   key: string;
   isRandom: boolean;
   rollValue: number | null;
+  grantItemKey?: string | null;
+  grantPetKey?: string | null;
 };
 
 type OriginRow = {
@@ -116,12 +117,17 @@ function baseFixture(): Fixture {
           toughness: 0,
         },
         randomAbilityCount: 1,
-        randomAbilities: [{ gainItem: 'Lockpicks' }],
       },
     ],
     abilities: [
       { classId: 1, key: 'abilities.fixed', isRandom: false, rollValue: null },
-      { classId: 1, key: 'abilities.random-lockpicks', isRandom: true, rollValue: 1 },
+      {
+        classId: 1,
+        key: 'abilities.random-lockpicks',
+        isRandom: true,
+        rollValue: 1,
+        grantItemKey: 'equipment.lockpicks',
+      },
     ],
     names: [{ name: 'Ash' }, { name: 'Bora' }],
     origins: [
@@ -385,7 +391,6 @@ test('generateCharacter lets rolled scrolls reduce starting weapon and armor dic
     silverDice: [6],
     statModifiers: {},
     randomAbilityCount: 0,
-    randomAbilities: [],
   };
   next.abilities = [];
   next.names = [{ name: 'Ash' }];
@@ -459,11 +464,16 @@ test('generateCharacter can pick a random class and grant a pet from a random ab
       armorDie: 2,
       statModifiers: {},
       randomAbilityCount: 1,
-      randomAbilities: [{ gainPet: 'Hawk' }],
     },
   ];
   next.abilities = [
-    { classId: 2, key: 'abilities.random-hawk', isRandom: true, rollValue: 1 },
+    {
+      classId: 2,
+      key: 'abilities.random-hawk',
+      isRandom: true,
+      rollValue: 1,
+      grantPetKey: 'pets.hawk',
+    },
   ];
   next.names = [{ name: 'Carrion' }];
   next.origins = [{ classId: 2, key: 'origin.random' }];
@@ -555,6 +565,29 @@ test('generateCharacter never rolls a Custom Class as the random class', async (
     () => generateCharacter(null, roller as unknown as Roller),
     /No classes found in database/,
   );
+});
+
+test('a fixed ability grants its item and pet to every character of the class', async () => {
+  const next = baseFixture();
+  next.classes[0] = { ...next.classes[0], randomAbilityCount: 0 };
+  next.abilities = [
+    {
+      classId: 1,
+      key: 'abilities.fixed',
+      isRandom: false,
+      rollValue: null,
+      grantItemKey: 'equipment.lockpicks',
+      grantPetKey: 'pets.hawk',
+    },
+  ];
+  next.pets = [{ key: 'pets.hawk', tags: ['pet', 'companion'] }];
+  resetFixture(next);
+
+  const data = await buildCharacterData(1, seededRollerFor(randomSectionSeeds()));
+
+  const keys = (data.equipment as Array<{ key: string }>).map((item) => item.key);
+  assert.ok(keys.includes('equipment.lockpicks'), `expected lockpicks in ${keys.join(', ')}`);
+  assert.ok(keys.includes('pets.hawk'), `expected hawk in ${keys.join(', ')}`);
 });
 
 test('buildCharacterData is deterministic for identical seeds', async () => {

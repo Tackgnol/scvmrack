@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import test from 'node:test';
 
 const baseUrl = process.env.E2E_BASE_URL ?? 'http://localhost:3000';
@@ -207,3 +208,61 @@ for (const bookClass of bookClasses) {
     }
   });
 }
+
+// What each Book ability grants (RPG-258); mirrors the unit golden table.
+const bookGrants: Record<string, string[]> = {
+  'abilities.esoteric_hermit.hawk': ['pets.hawk'],
+  'abilities.fanged_deserter.hound': ['pets.gore-hound'],
+  'abilities.fanged_deserter.mask': ['equipment.crumpled-monster-mask'],
+  'abilities.fanged_deserter.scimitar': ['weapons.brown-scimitar'],
+  'abilities.fanged_deserter.shoe': ['weapons.shoe-of-death'],
+  'abilities.fanged_deserter.sling': ['weapons.sigurd-sling'],
+  'abilities.fanged_deserter.teeth': ['equipment.wizard-teeth'],
+  'abilities.gutterborn_scum.fingersmith': ['equipment.lockpicks'],
+  'abilities.heretical_priest.crook': ['weapons.sacred-shepherds-crook'],
+  'abilities.wretched_royalty.barbarister': ['pets.barbarister'],
+  'abilities.wretched_royalty.blade': ['weapons.blade-of-ancestors'],
+  'abilities.wretched_royalty.gift': ['weapons.snake-skin-gift'],
+  'abilities.wretched_royalty.hamfund': ['pets.hamfund'],
+};
+
+const draftSections = ['name', 'stats', 'omens', 'silver', 'origin', 'abilities', 'gear', 'personality'];
+
+function fixedSeeds(label: string): Record<string, string> {
+  return Object.fromEntries(
+    draftSections.map((section) => [
+      section,
+      createHash('sha256').update(`${label}:${section}`).digest('hex'),
+    ])
+  );
+}
+
+test('every Book Class grant reaches the rolled inventory', async () => {
+  const jar = await bootstrapAnonymousSession();
+  const unseen = new Set(Object.keys(bookGrants));
+
+  for (const { id: classId } of bookClasses) {
+    for (let i = 0; i < 60; i++) {
+      const csrf = await fetchCsrfToken(jar);
+      const response = await request('/api/characters/draft', {
+        method: 'POST',
+        json: { classId, classless: false, seeds: fixedSeeds(`grants:${classId}:${i}`) },
+        headers: { 'x-csrf-token': csrf },
+        jar,
+      });
+      assert.equal(response.status, 200, 'draft should roll');
+      const { preview } = (await response.json()) as {
+        preview: { abilities: Array<{ key?: string }>; equipment: Array<{ key?: string }> };
+      };
+      const inventory = new Set(preview.equipment.map((item) => item.key));
+      for (const { key } of preview.abilities) {
+        for (const granted of (key && bookGrants[key]) || []) {
+          assert.ok(inventory.has(granted), `${key} should grant ${granted}`);
+        }
+        if (key) unseen.delete(key);
+      }
+    }
+  }
+
+  assert.deepEqual([...unseen], [], 'every granting ability should be rolled at least once');
+});

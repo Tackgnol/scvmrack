@@ -1,5 +1,6 @@
 import { Prisma } from '@prisma/client';
 import prisma from '../lib/prisma.js';
+import type { AbilityGrants } from '../lib/class-grants.js';
 
 export type ImprovementCharacterRow = {
   id: string;
@@ -30,7 +31,7 @@ export type CharacterImprovementRow = {
   appliedAt: Date | null;
 };
 
-export type ScumSpecialtyRow = {
+export type ClassAbilityRow = AbilityGrants & {
   key: string;
   rollValue: number | null;
   isRandom: boolean | null;
@@ -138,12 +139,12 @@ export const characterImprovementRepository = {
     }) as Promise<ScrollCatalogRow[]>;
   },
 
-  findClassAbilities(classId: number): Promise<ScumSpecialtyRow[]> {
+  findClassAbilities(classId: number): Promise<ClassAbilityRow[]> {
     return prisma.ability.findMany({
       where: { classId },
-      select: { key: true, rollValue: true, isRandom: true },
+      select: { key: true, rollValue: true, isRandom: true, grantItemKey: true, grantPetKey: true },
       orderBy: [{ isRandom: 'asc' }, { rollValue: 'asc' }, { key: 'asc' }],
-    }) as Promise<ScumSpecialtyRow[]>;
+    }) as Promise<ClassAbilityRow[]>;
   },
 
   async applyInTransaction(input: ApplyImprovementInput): Promise<

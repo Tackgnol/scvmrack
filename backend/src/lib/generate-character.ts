@@ -23,7 +23,7 @@ import { Prisma } from '@prisma/client';
 import type { Roller } from '@tackgnol/rpg-tools-roller';
 import { sanitizeString } from '../utils.js';
 import { statToModifier } from './ability-modifiers.js';
-import { grantedItemKeyForName, grantedPetKeyForName } from './class-grants.js';
+import { abilityGrantedItems } from './class-grants.js';
 import { builtInClasses } from './class-scope.js';
 import { hydrateInventoryUses } from './inventory.js';
 import type {
@@ -239,34 +239,6 @@ function buildPoolItem(
   const p = catalog.petMap.get(key);
   const tags = w?.tags ?? a?.tags ?? e?.tags ?? p?.tags ?? [];
   return { key, tags, ...extra };
-}
-
-// ── Granted items from random abilities ───────────────────────────────────────
-
-// Per-item extras (e.g. tracked uses) keyed by catalog key.
-const GRANTED_ITEM_EXTRAS: Record<string, Partial<PoolItem>> = {
-  'equipment.wizard-teeth': { uses: [false, false, false, false] },
-};
-
-function buildGrantedClassItem(value: string | undefined, catalog: CatalogCache): PoolItem | null {
-  if (!value) return null;
-  // Prefer a stable catalog key if the seed already provides one.
-  if (catalog.weaponMap.has(value) || catalog.equipMap.has(value) || catalog.armorMap.has(value)) {
-    return buildPoolItem(value, catalog, GRANTED_ITEM_EXTRAS[value]);
-  }
-  const key = grantedItemKeyForName(value);
-  if (!key) return null;
-  return buildPoolItem(key, catalog, GRANTED_ITEM_EXTRAS[key]);
-}
-
-function buildGrantedClassPet(value: string | undefined, catalog: CatalogCache): PoolItem | null {
-  if (!value) return null;
-  if (catalog.petMap.has(value)) {
-    return buildPoolItem(value, catalog);
-  }
-  const key = grantedPetKeyForName(value);
-  if (!key) return null;
-  return buildPoolItem(key, catalog);
 }
 
 // ── Starting item tables ───────────────────────────────────────────────────────
@@ -525,38 +497,17 @@ async function buildAbilityBundle(
     prisma.ability.findMany({ where: { classId } }),
   ]);
 
-  const fixedAbilities = allAbilities
-    .filter(a => !a.isRandom)
-    .map(a => ({ key: a.key }));
-
-  const randomAbilityCount = classRow?.randomAbilityCount ?? 0;
-  const classRandomAbilities = (classRow?.randomAbilities ?? []) as Array<{
-    gainItem?: string;
-    gainPet?: string;
-  }>;
-
+  const fixedAbilities = allAbilities.filter(a => !a.isRandom);
   const randomCandidates = allAbilities.filter(a => a.isRandom);
   const shuffled = await shuffle(randomCandidates, roller);
-  const picked = shuffled.slice(0, randomAbilityCount);
+  const picked = shuffled.slice(0, classRow?.randomAbilityCount ?? 0);
 
-  const randomAbilities: AbilityEntry[] = [];
-  const grantedItems: PoolItem[] = [];
-
-  for (const ability of picked) {
-    randomAbilities.push({ key: ability.key });
-    const rollIdx = (ability.rollValue ?? 1) - 1;
-    const config = classRandomAbilities[rollIdx];
-    if (config) {
-      const item = buildGrantedClassItem(config.gainItem, catalog);
-      if (item) grantedItems.push(item);
-      else {
-        const pet = buildGrantedClassPet(config.gainPet, catalog);
-        if (pet) grantedItems.push(pet);
-      }
-    }
-  }
-
-  return { abilities: [...fixedAbilities, ...randomAbilities], grantedItems };
+  const gained = [...fixedAbilities, ...picked];
+  const tagsFor = (key: string) => buildPoolItem(key, catalog).tags;
+  return {
+    abilities: gained.map(a => ({ key: a.key })),
+    grantedItems: gained.flatMap(a => abilityGrantedItems(a, tagsFor)),
+  };
 }
 
 // ── pick_character_personality ────────────────────────────────────────────────

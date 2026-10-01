@@ -17,7 +17,7 @@ import { characterImprovementRepository } from '../repositories/character-improv
 import type { ImprovementCharacterRow } from '../repositories/character-improvement-repository.js';
 import { isValidLocale, isValidUUID } from '../utils.js';
 import type { PartyEventBus } from '../plugins/party-bus.js';
-import { characterUpdateFromApplied } from './character-improvement-apply.js';
+import { characterUpdateFromApplied, gainedAbilityItems } from './character-improvement-apply.js';
 import {
   buildDraft,
   loadCatalog,
@@ -223,7 +223,7 @@ export function createCharacterImprovementService(
         }
 
         const persistedDraft = active.rolledDraft as ImprovementDraft;
-        const { catalog, scumSpecialtyKeys } = await loadCatalog(owned.row);
+        const { catalog, scumSpecialtyKeys, classAbilities } = await loadCatalog(owned.row);
         const normalizedDraft = normalizeSubmittedImprovementDraft(
           input.draft,
           persistedDraft.snapshot,
@@ -252,7 +252,8 @@ export function createCharacterImprovementService(
         const data = characterUpdateFromApplied(
           owned.row,
           normalizedDraft,
-          applied
+          applied,
+          await gainedAbilityItems(owned.row, classAbilities, applied)
         );
         const result = await characterImprovementRepository.applyInTransaction({
           characterId: input.id,

@@ -313,6 +313,8 @@ model Ability {
   key       String   @unique @db.VarChar(255)
   isRandom  Boolean? @default(false) @map("is_random")
   rollValue Int?     @map("roll_value")
+  grantItemKey String? @db.VarChar(255) @map("grant_item_key")
+  grantPetKey  String? @db.VarChar(255) @map("grant_pet_key")
 
   @@map("abilities")
 }
