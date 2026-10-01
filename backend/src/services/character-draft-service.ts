@@ -81,7 +81,7 @@ export function createCharacterDraftService(log: ServiceLogger) {
   }
 
   async function classNotFound(classId: number): Promise<boolean> {
-    return !(await characterRepository.classExists(classId));
+    return !(await characterRepository.builtInClassExists(classId));
   }
 
   return {

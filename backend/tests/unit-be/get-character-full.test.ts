@@ -44,6 +44,7 @@ type ClassRow = {
   appendix: string;
   nameKey: string | null;
   descriptionKey: string | null;
+  languages: string[];
 };
 
 type TranslationRow = {
@@ -213,6 +214,7 @@ function baseFixture(): Fixture {
         appendix: 'Fallback class text',
         nameKey: 'classes.fanged.name',
         descriptionKey: 'classes.fanged.description',
+        languages: ['en', 'pl'],
       },
     ],
     translations: [
@@ -519,4 +521,35 @@ test('getCharacterFull localizes computed modifier source labels', async () => {
   assert.equal(computedModifiers[3].originName, 'Jastrzab');
   assert.equal(computedModifiers[4].source, 'Stala zdolnosc');
   assert.equal(computedModifiers[4].originName, 'Stala zdolnosc');
+});
+
+test("getCharacterFull falls back to a class's authored language when the reader's locale has no row", async () => {
+  const next = baseFixture();
+  next.classes = [{ ...next.classes[0], languages: ['en'] }];
+  next.translations.push(
+    { locale: 'pl', key: 'abilities.fixed', value: 'Zdolnosc po polsku' },
+    { locale: 'pl', key: 'pets.hawk', value: 'Jastrzab PL' },
+  );
+  resetFixture(next);
+
+  const result = await getCharacterFull('character-1', 'pl');
+
+  assert.ok(result);
+  assert.equal(result.className, 'Klowy dezerter');
+  assert.equal(result.origin, 'Z rowu');
+  const [ability] = result.abilities as Array<Record<string, unknown>>;
+  assert.equal(ability.name, 'Zdolnosc po polsku', 'reader locale wins when it has a row');
+  assert.equal(ability.description, 'Zawsze dziala');
+  const pet = (result.equipment as Array<Record<string, unknown>>).find((i) => i.key === 'pets.hawk');
+  assert.equal(pet?.name, 'Jastrzab PL');
+});
+
+test("getCharacterFull does not fall back for a class written in the reader's locale", async () => {
+  resetFixture();
+
+  const result = await getCharacterFull('character-1', 'pl');
+
+  assert.ok(result);
+  assert.equal(result.className, 'Fanged Deserter');
+  assert.equal(result.origin, 'origin.one');
 });

@@ -3,7 +3,7 @@ import { beforeEach, mock, test } from 'node:test';
 
 const buildCalls: Array<{ classId: number | null; rollerFor: unknown; options: unknown }> = [];
 const hydrateCalls: Array<{ row: Record<string, unknown>; locale: string }> = [];
-let classExistsResult = true;
+let builtInClassExistsResult = true;
 let listClassesResult: Array<{ id: number; name: string | null; description: string | null }> = [];
 let buildError: unknown = null;
 
@@ -93,7 +93,7 @@ mock.module('../../src/lib/get-character-full.js', {
 mock.module('../../src/repositories/character-repository.js', {
   namedExports: {
     characterRepository: {
-      classExists: async () => classExistsResult,
+      builtInClassExists: async () => builtInClassExistsResult,
       listClasses: async () => listClassesResult,
     },
   },
@@ -108,7 +108,7 @@ const session = { user: { id: 'user-1' } };
 function reset(): void {
   buildCalls.length = 0;
   hydrateCalls.length = 0;
-  classExistsResult = true;
+  builtInClassExistsResult = true;
   listClassesResult = [];
   buildError = null;
 }
@@ -149,7 +149,7 @@ test('createDraft with explicit classId validates the class and returns draft + 
 });
 
 test('createDraft rejects an unknown classId with 404', async () => {
-  classExistsResult = false;
+  builtInClassExistsResult = false;
 
   const result = await createCharacterDraftService(log).createDraft({
     session,
@@ -327,7 +327,7 @@ test('rerollSection preserves typed names except when rerolling the name section
 });
 
 test('rerollSection validates the class still exists', async () => {
-  classExistsResult = false;
+  builtInClassExistsResult = false;
 
   const result = await createCharacterDraftService(log).rerollSection({
     session,

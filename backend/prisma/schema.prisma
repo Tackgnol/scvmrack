@@ -22,6 +22,7 @@ model User {
   accounts   Account[]
   characters Character[]
   parties    Party[]
+  classes    Class[]
 
   @@map("user")
 }
@@ -245,9 +246,35 @@ model Enemy {
   @@map("enemies")
 }
 
+enum ClassSource {
+  main_book
+  zine
+  the_rack
+  user
+
+  @@map("class_source")
+}
+
+enum ClassVisibility {
+  private
+  public
+
+  @@map("class_visibility")
+}
+
+enum ClassStatus {
+  draft
+  active
+  archived
+
+  @@map("class_status")
+}
+
+/// One immutable Class Version (ADR 0001). Names are unique per owner via the
+/// `classes_name_per_owner` exclusion constraint, which Prisma cannot express.
 model Class {
   id                  Int      @id @default(autoincrement())
-  name                String   @unique @db.VarChar(255)
+  name                String   @db.VarChar(255)
   roll                Int?
   appendix            String?
   hpDie               Int?     @default(8) @map("hp_die")
@@ -261,7 +288,22 @@ model Class {
   randomAbilityCount  Int?     @default(1) @map("random_ability_count")
   nameKey             String?  @db.VarChar(255) @map("name_key")
   descriptionKey      String?  @db.VarChar(255) @map("description_key")
+  source              ClassSource     @default(main_book)
+  creditWork          String?         @map("credit_work")
+  creditAuthor        String?         @map("credit_author")
+  creditUrl           String?         @map("credit_url")
+  ownerUserId         String?         @map("owner_user_id")
+  owner               User?           @relation(fields: [ownerUserId], references: [id], onDelete: SetNull)
+  languages           String[]        @default(["en", "pl"]) @db.VarChar(2)
+  visibility          ClassVisibility @default(public)
+  status              ClassStatus     @default(active)
+  takenDownAt         DateTime?       @map("taken_down_at")
+  takedownReason      String?         @map("takedown_reason")
+  lineageId           String          @default(dbgenerated("gen_random_uuid()")) @map("lineage_id") @db.Uuid
+  version             Int             @default(1)
 
+  @@unique([lineageId, version])
+  @@index([ownerUserId])
   @@map("classes")
 }
 

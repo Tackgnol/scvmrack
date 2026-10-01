@@ -163,3 +163,47 @@ test('GET /api/characters returns localized className via Accept-Language header
     'locale query should override Accept-Language for list className'
   );
 });
+
+const bookClasses = [
+  { id: 1, name: 'Fanged Deserter' },
+  { id: 2, name: 'Gutterborn Scum' },
+  { id: 3, name: 'Esoteric Hermit' },
+  { id: 4, name: 'Wretched Royalty' },
+  { id: 5, name: 'Heretical Priest' },
+  { id: 6, name: 'Occult Herbmaster' },
+];
+
+test('GET /api/characters/classes lists exactly the six Book Classes', async () => {
+  const response = await request('/api/characters/classes?locale=en');
+  assert.equal(response.status, 200);
+  const classes = (await response.json()) as Array<{ id: number; name: string }>;
+  assert.deepEqual(
+    classes.map(({ id, name }) => ({ id, name })),
+    bookClasses,
+  );
+});
+
+for (const bookClass of bookClasses) {
+  test(`${bookClass.name} generates and loads in both locales`, async () => {
+    const jar = await bootstrapAnonymousSession();
+    const id = await createCharacterWithClass(jar, bookClass.id);
+
+    for (const locale of ['en', 'pl']) {
+      const response = await request(`/api/characters/${id}?locale=${locale}`, { jar });
+      assert.equal(response.status, 200, `${locale} fetch should succeed`);
+      const character = (await response.json()) as {
+        classId: number;
+        className: string;
+        classDescription: string;
+        abilities: Array<{ key?: string; name: string }>;
+      };
+      assert.equal(character.classId, bookClass.id);
+      if (locale === 'en') assert.equal(character.className, bookClass.name);
+      assert.ok(character.classDescription.length > 0, `${locale} classDescription`);
+      for (const ability of character.abilities) {
+        assert.ok(ability.key, `${locale} ability should keep its key`);
+        assert.notEqual(ability.name, ability.key, `${locale} ability ${ability.key} should be translated`);
+      }
+    }
+  });
+}

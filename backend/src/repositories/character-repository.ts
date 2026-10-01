@@ -1,4 +1,5 @@
 import prisma from '../lib/prisma.js';
+import { builtInClasses } from '../lib/class-scope.js';
 import { Prisma } from '@prisma/client';
 
 /**
@@ -131,9 +132,9 @@ export const characterRepository = {
     return prisma.character.count();
   },
 
-  async classExists(id: number): Promise<boolean> {
-    const row = await prisma.class.findUnique({
-      where: { id },
+  async builtInClassExists(id: number): Promise<boolean> {
+    const row = await prisma.class.findFirst({
+      where: { id, ...builtInClasses },
       select: { id: true },
     });
     return row !== null;
@@ -147,6 +148,7 @@ export const characterRepository = {
     locale: string
   ): Promise<Array<{ id: number; name: string | null; description: string | null }>> {
     const classes = await prisma.class.findMany({
+      where: builtInClasses,
       select: { id: true, nameKey: true, descriptionKey: true },
       orderBy: { id: 'asc' },
     });

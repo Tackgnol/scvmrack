@@ -40,6 +40,7 @@ export type ClassCatalogRow = {
   appendix: string | null;
   nameKey: string | null;
   descriptionKey: string | null;
+  languages: string[];
 };
 
 export type TranslationRow = {
@@ -105,7 +106,7 @@ export const catalogRepository = {
   findClassById(classId: number): Promise<ClassCatalogRow | null> {
     return prisma.class.findUnique({
       where: { id: classId },
-      select: { id: true, name: true, appendix: true, nameKey: true, descriptionKey: true },
+      select: { id: true, name: true, appendix: true, nameKey: true, descriptionKey: true, languages: true },
     }) as Promise<ClassCatalogRow | null>;
   },
 

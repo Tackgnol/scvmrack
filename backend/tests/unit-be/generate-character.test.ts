@@ -38,6 +38,7 @@ type ClassRow = {
   statModifiers: Record<string, number>;
   randomAbilityCount: number;
   randomAbilities: Array<{ gainItem?: string; gainPet?: string }>;
+  source?: string;
 };
 
 type AbilityRow = {
@@ -186,7 +187,10 @@ function resetFixture(next: Fixture = baseFixture()): void {
 
 const prismaMock = {
   class: {
-    findMany: async () => fixture.classes.map(({ id }) => ({ id })),
+    findMany: async ({ where }: { where?: { source?: { not?: string } } } = {}) =>
+      fixture.classes
+        .filter((cls) => (cls.source ?? 'main_book') !== where?.source?.not)
+        .map(({ id }) => ({ id })),
     findUnique: async ({ where }: { where: { id: number } }) =>
       fixture.classes.find((row) => row.id === where.id) ?? null,
     findUniqueOrThrow: async ({ where }: { where: { id: number } }) => {
@@ -538,6 +542,19 @@ test('generateCharacter fails clearly when random class generation has no classe
   );
   assert.deepEqual(roller.calls, []);
   assert.deepEqual(fixture.createdCharacters, []);
+});
+
+test('generateCharacter never rolls a Custom Class as the random class', async () => {
+  const next = baseFixture();
+  next.classes = [{ ...next.classes[0], source: 'user' }];
+  resetFixture(next);
+
+  const roller = new ScriptedRoller([]);
+
+  await assert.rejects(
+    () => generateCharacter(null, roller as unknown as Roller),
+    /No classes found in database/,
+  );
 });
 
 test('buildCharacterData is deterministic for identical seeds', async () => {

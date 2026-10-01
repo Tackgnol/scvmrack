@@ -24,6 +24,7 @@ import type { Roller } from '@tackgnol/rpg-tools-roller';
 import { sanitizeString } from '../utils.js';
 import { statToModifier } from './ability-modifiers.js';
 import { grantedItemKeyForName, grantedPetKeyForName } from './class-grants.js';
+import { builtInClasses } from './class-scope.js';
 import { hydrateInventoryUses } from './inventory.js';
 import type {
   AbilityStat,
@@ -604,7 +605,7 @@ export async function generateCharacter(
   if (classId !== null) {
     resolvedClassId = classId;
   } else {
-    const classes = await prisma.class.findMany({ select: { id: true } });
+    const classes = await prisma.class.findMany({ where: builtInClasses, select: { id: true } });
     const picked = await pickRandom(classes, roller);
     if (!picked) throw new Error('No classes found in database');
     resolvedClassId = picked.id;

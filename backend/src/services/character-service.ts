@@ -222,7 +222,7 @@ export function createCharacterService(
           if (
             !input.draft.classless &&
             input.draft.classId !== null &&
-            !(await characterRepository.classExists(input.draft.classId))
+            !(await characterRepository.builtInClassExists(input.draft.classId))
           ) {
             return fail(notFound('CLASS_NOT_FOUND', 'Class not found'));
           }

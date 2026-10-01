@@ -736,6 +736,12 @@ export async function hydrateCharacterRow(
   const transKeys = [...transKeySet];
   const translationRows = await catalogRepository.findTranslations(locale, transKeys);
   const translations: TranslationMap = new Map(translationRows.map(t => [t.key, t.value]));
+  // A class written in one language reads in that language when the reader's has no row.
+  if (cls && !cls.languages.includes(locale)) {
+    const missingKeys = transKeys.filter(key => !translations.has(key));
+    const authored = await catalogRepository.findTranslations(cls.languages[0], missingKeys);
+    for (const t of authored) translations.set(t.key, t.value);
+  }
 
   // 6. Resolve each inventory section
   const resolvedEquipment = equipment.map(item =>

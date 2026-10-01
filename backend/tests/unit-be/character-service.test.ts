@@ -19,7 +19,7 @@ const state = {
   listRows: [] as Array<Record<string, unknown>>,
   classNameMap: new Map<number, string>(),
   classNameMapCalls: [] as Array<{ classIds: number[]; locale: string }>,
-  classExistsResult: true,
+  builtInClassExistsResult: true,
   updateError: null as unknown,
   generateError: null as unknown,
   createFromDraftError: null as unknown,
@@ -54,7 +54,7 @@ function resetState(): void {
   state.listRows = [];
   state.classNameMap = new Map();
   state.classNameMapCalls = [];
-  state.classExistsResult = true;
+  state.builtInClassExistsResult = true;
   state.updateError = null;
   state.generateError = null;
   state.createFromDraftError = null;
@@ -123,7 +123,7 @@ mock.module('../../src/repositories/character-repository.js', {
         state.classNameMapCalls.push({ classIds, locale });
         return state.classNameMap;
       },
-      classExists: async () => state.classExistsResult,
+      builtInClassExists: async () => state.builtInClassExistsResult,
     },
   },
 });
@@ -269,7 +269,7 @@ test('generate with a complete classless draft persists via createCharacterFromD
 });
 
 test('generate with a draft rejects an unknown class with 404', async () => {
-  state.classExistsResult = false;
+  state.builtInClassExistsResult = false;
 
   const result = await service().generate({
     session: session('user-1'),
