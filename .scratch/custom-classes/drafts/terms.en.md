@@ -2,13 +2,16 @@
 
 <!-- DRAFT for the owner's review and a lawyer's glance before public Custom Classes ship (ticket 21).
      Not legal advice. Owner decisions 2026-10-01: Polish binds, minimum age 16, 14-day complaint answers,
-     14-day notice for significant changes, suspension after repeated breaches. -->
+     14-day notice for significant changes, suspension after repeated breaches.
+     Legal review 2026-10-01 (legal-review.md): domain corrected; §4 licence lists the uses and lets users use public
+     classes; §7, §9 name redress incl. courts; §8 reporting to authorities made mandatory (DSA Art. 18); §11 suspension
+     gets reasons and a dispute; §13 adds the e-services risk notice. -->
 
 Last updated: [date of publication]
 
 ## 1. Who runs Scvm Rack
 
-Scvm Rack (scvmrack.com, "the service") is a free character sheet and toolset for MÖRK BORG, run by Adam Kościelniak as a non-commercial hobby project within the rpgtools.co suite. Contact: contact@rpgtools.co. Contact points and legal details are on the [Contact](/legal) page.
+Scvm Rack (scvmrack.rpgtools.co, "the service") is a free character sheet and toolset for MÖRK BORG, run by Adam Kościelniak as a non-commercial hobby project within the rpgtools.co suite. Contact: contact@rpgtools.co. Contact points and legal details are on the [Contact](/legal) page.
 
 Scvm Rack is an independent production published under the MÖRK BORG Third Party License. It is not affiliated with Ockult Örtmästare Games or Stockholm Kartell, who own MÖRK BORG.
 
@@ -31,7 +34,14 @@ Scvm Rack is an independent production published under the MÖRK BORG Third Part
 
 ## 4. Your content stays yours
 
-You keep every right you have in your content. To run the service, you give the operator a free, non-exclusive, worldwide licence to store, copy, show and adapt your content (for example, to translate the interface around it or fit it on a phone screen), for as long as the service holds it.
+You keep every right you have in your content. To run the service, you give the operator a free, non-exclusive, worldwide licence, for as long as the service holds your content, to:
+
+- record and store it, including in computer memory and backups;
+- copy it as the service needs to work;
+- make it available to the users who may see it, at a time and place they choose;
+- format and lay it out for the screen, print page and Owlbear Rodeo, without changing its meaning.
+
+The operator may let other users use your content within the service as these terms describe (a sublicence).
 
 For a **public class**, the licence also covers:
 
@@ -70,7 +80,7 @@ Anyone can report a public class, signed in or not, through the "Report" link on
 - your name and email (optional for reports of child sexual abuse material), and
 - a statement that you are reporting in good faith.
 
-You receive a receipt by email and a message when the report is decided.
+You receive a receipt by email and a message when the report is decided, saying how you can challenge the decision.
 
 ## 8. How we moderate
 
@@ -83,13 +93,15 @@ Reports are reviewed by a person, not an algorithm. The operator may:
 
 When a class is taken down or its content removed, the author is told why. A notice in the app and an email give the rule broken, what was done, and how to dispute it. While a class is taken down, its author can't republish it or save changes to it.
 
-Reports of child sexual abuse material, threats to life or safety, or terrorist content may be passed to the police or the public prosecutor. The operator complies with removal orders from competent authorities, including the one-hour orders for terrorist content.
+When a report or a class suggests a crime that threatens someone's life or safety, such as child sexual abuse material, threats or terrorist content, the operator informs the police or the public prosecutor and gives them the information needed, as the law requires. The operator complies with removal orders from competent authorities, including the one-hour orders for terrorist content.
 
 Records of moderation decisions and moderated content are kept as evidence. Reporters' names, emails and identifying details are removed 2 years after their report is resolved.
 
 ## 9. Disputing a decision
 
 If you disagree with a decision about your class, use the "Dispute this decision" button on the notice in the app, or write to scvmrack-appeal@rpgtools.co. You can dispute a decision up to 3 times. A dispute is reviewed by a person, and you get an answer by email.
+
+You can also take the decision to court, or complain to the Digital Services Coordinator. Disputing a decision with us first is not required. Someone who reported a class can challenge its decision the same ways.
 
 ## 10. Limits
 
@@ -105,7 +117,7 @@ When you reach a limit, the app tells you which one and what to do. The operator
 
 - You can delete your own Custom Classes. A class that characters were already rolled from is archived rather than deleted, so those characters keep working (§4).
 - To remove your account and your content, write to contact@rpgtools.co from your account's email. Content that other users' characters already rely on stays in those characters (§4), without your name.
-- The operator may suspend an account that repeatedly posts content §5 prohibits, after telling its owner why.
+- The operator may suspend an account that repeatedly posts content §5 prohibits, after telling its owner why. The owner gets a statement of reasons and can dispute it as in §9.
 
 ## 12. Complaints about the service
 
@@ -114,6 +126,8 @@ If something in the service doesn't work as these terms describe, write to conta
 ## 13. Availability and liability
 
 The service is provided free and as it is. The operator works to keep it running and your data safe, but can't promise it will always be available or free of errors, and may change or end features. Keep your own copy of anything you can't afford to lose; characters can be printed from the sheet.
+
+Using any online service carries risks, such as malware, phishing or someone taking over your account. Keep your browser up to date, and only sign in through the rpgtools.co sign-in page.
 
 Nothing in these terms limits rights you have as a consumer under the law of the country you live in.
 

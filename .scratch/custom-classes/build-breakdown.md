@@ -153,8 +153,9 @@ Each groundwork ticket leaves existing Book characters and generation unchanged.
     - `/terms`, with the Polish version binding, and `/legal`.
     - Footer links "Terms" and "Contact", and anchored sections.
     - A one-time banner when the terms change.
-30. **Privacy notice page.** Blocked by: wayfinder ticket 23. [23]
-    - `/privacy` in EN and PL, linked from the consent drawer and the footer.
+30. **Privacy notice page.** Blocked by: none (wayfinder ticket 23 is resolved; in practice, the lawyer's review). [23]
+    - `/privacy` in EN and PL, from `drafts/privacy.*.md`, linked from the consent drawer and the footer.
+    - If the owner approves the `[OWNER]` items from ticket 23: the analytics switch defaults to off, and Google Fonts are self-hosted.
 31. **Release 0.7.0.** Blocked by: all of the above. [22]
     - en.json and pl.json in sync, and the FAQ entries.
     - The release notes and the ReleasePage card.

@@ -3,13 +3,16 @@
 <!-- PROJEKT do przeglądu przez właściciela i rzut oka prawnika przed uruchomieniem publicznych Klas Własnych (ticket 21).
      To nie jest porada prawna. Decyzje właściciela z 2026-10-01: wiąże wersja polska, wiek 16 lat, reklamacje w 14 dni,
      istotne zmiany po 14 dniach, zawieszenie konta po powtarzających się naruszeniach.
-     Ta wersja pełni funkcję regulaminu w rozumieniu art. 8 ustawy o świadczeniu usług drogą elektroniczną (UŚUDE). -->
+     Ta wersja pełni funkcję regulaminu w rozumieniu art. 8 ustawy o świadczeniu usług drogą elektroniczną (UŚUDE).
+     Przegląd prawny 2026-10-01 (legal-review.md): poprawiona domena; §4 wymienia pola eksploatacji (art. 41 ust. 2
+     i art. 50 pr. aut.) i sublicencję (art. 67 ust. 3); §7 i §9 wskazują środki odwoławcze, w tym sąd; §8 zawiadamianie
+     organów jako obowiązek (art. 18 DSA); §11 uzasadnienie i odwołanie przy zawieszeniu; §13 informacja z art. 6 UŚUDE. -->
 
 Ostatnia zmiana: [data publikacji]
 
 ## 1. Kto prowadzi Scvm Rack
 
-Scvm Rack (scvmrack.com, „serwis”) to darmowa karta postaci i zestaw narzędzi do MÖRK BORG, prowadzony przez Adama Kościelniaka jako niekomercyjny projekt hobbystyczny w ramach rpgtools.co. Kontakt: contact@rpgtools.co. Punkty kontaktowe i informacje prawne znajdziesz na stronie [Kontakt](/legal).
+Scvm Rack (scvmrack.rpgtools.co, „serwis”) to darmowa karta postaci i zestaw narzędzi do MÖRK BORG, prowadzony przez Adama Kościelniaka jako niekomercyjny projekt hobbystyczny w ramach rpgtools.co. Kontakt: contact@rpgtools.co. Punkty kontaktowe i informacje prawne znajdziesz na stronie [Kontakt](/legal).
 
 Scvm Rack to niezależna produkcja wydana na podstawie MÖRK BORG Third Party License. Nie jest powiązana z Ockult Örtmästare Games ani Stockholm Kartell, do których należy MÖRK BORG.
 
@@ -32,7 +35,14 @@ Scvm Rack to niezależna produkcja wydana na podstawie MÖRK BORG Third Party Li
 
 ## 4. Twoje treści pozostają Twoje
 
-Zachowujesz wszystkie prawa, jakie masz do swoich treści. Aby serwis mógł działać, udzielasz prowadzącemu nieodpłatnej, niewyłącznej licencji, bez ograniczeń terytorialnych, na przechowywanie, zwielokrotnianie, wyświetlanie i dostosowywanie Twoich treści (na przykład do ekranu telefonu), na czas, w którym serwis je przechowuje.
+Zachowujesz wszystkie prawa, jakie masz do swoich treści. Aby serwis mógł działać, udzielasz prowadzącemu nieodpłatnej, niewyłącznej licencji, bez ograniczeń terytorialnych, na czas, w którym serwis przechowuje Twoje treści, na następujących polach eksploatacji:
+
+- utrwalanie i zwielokrotnianie techniką cyfrową, w tym wprowadzanie do pamięci komputera i kopii zapasowych;
+- publiczne udostępnianie w taki sposób, aby użytkownicy, którzy mogą je oglądać, mieli do nich dostęp w miejscu i czasie przez siebie wybranym;
+- wyświetlanie;
+- formatowanie i układ na ekranie, na stronie do druku i w Owlbear Rodeo, bez zmiany sensu treści.
+
+Prowadzący może upoważnić innych użytkowników do korzystania z Twoich treści w serwisie w zakresie opisanym w regulaminie (sublicencja).
 
 Dla **klasy publicznej** licencja obejmuje także:
 
@@ -71,7 +81,7 @@ Każdy może zgłosić klasę publiczną, zalogowany lub nie, przez link „Zgł
 - imienia i nazwiska oraz adresu e-mail (opcjonalnych przy zgłoszeniu materiałów przedstawiających seksualne wykorzystywanie dzieci),
 - oświadczenia, że zgłoszenie jest dokonywane w dobrej wierze.
 
-Otrzymasz e-mailem potwierdzenie przyjęcia zgłoszenia i informację o decyzji.
+Otrzymasz e-mailem potwierdzenie przyjęcia zgłoszenia i informację o decyzji wraz z informacją, jak można ją zakwestionować.
 
 ## 8. Jak moderujemy
 
@@ -84,13 +94,15 @@ Zgłoszenia rozpatruje człowiek, nie algorytm. Prowadzący może:
 
 Gdy klasa zostaje zdjęta lub jej treść usunięta, autor dostaje uzasadnienie. Komunikat w aplikacji i e-mail wskazują naruszoną zasadę, podjęte działanie i sposób odwołania. Dopóki klasa jest zdjęta, autor nie może jej ponownie opublikować ani zapisać w niej zmian.
 
-Zgłoszenia materiałów przedstawiających seksualne wykorzystywanie dzieci, gróźb wobec życia lub bezpieczeństwa oraz treści terrorystycznych mogą zostać przekazane policji lub prokuraturze. Prowadzący wykonuje nakazy usunięcia treści wydane przez właściwe organy, w tym godzinne nakazy dotyczące treści terrorystycznych.
+Gdy zgłoszenie lub klasa wskazuje na przestępstwo zagrażające czyjemuś życiu lub bezpieczeństwu, na przykład materiały przedstawiające seksualne wykorzystywanie dzieci, groźby lub treści terrorystyczne, prowadzący zawiadamia policję lub prokuraturę i przekazuje potrzebne informacje, zgodnie z przepisami. Prowadzący wykonuje nakazy usunięcia treści wydane przez właściwe organy, w tym godzinne nakazy dotyczące treści terrorystycznych.
 
 Zapisy decyzji moderacyjnych i moderowane treści są przechowywane jako dowód. Imiona, nazwiska, adresy e-mail i dane identyfikujące zgłaszających są usuwane 2 lata po rozpatrzeniu zgłoszenia.
 
 ## 9. Odwołanie od decyzji
 
 Jeśli nie zgadzasz się z decyzją dotyczącą Twojej klasy, użyj przycisku „Odwołaj się od decyzji” w komunikacie w aplikacji albo napisz na scvmrack-appeal@rpgtools.co. Od jednej decyzji możesz odwołać się do 3 razy. Odwołanie rozpatruje człowiek, a odpowiedź otrzymasz e-mailem.
+
+Możesz też skierować sprawę do sądu albo złożyć skargę do koordynatora do spraw usług cyfrowych. Wcześniejsze odwołanie do nas nie jest do tego wymagane. Osoba, która zgłosiła klasę, może zakwestionować decyzję w ten sam sposób.
 
 ## 10. Limity
 
@@ -106,7 +118,7 @@ Gdy osiągniesz limit, aplikacja powie Ci, który to limit i co możesz zrobić.
 
 - Możesz usuwać swoje Klasy Własne. Klasa, z której wylosowano już postacie, zostaje zarchiwizowana zamiast usunięta, aby te postacie nadal działały (§4).
 - Aby usunąć konto i swoje treści, napisz na contact@rpgtools.co z adresu e-mail przypisanego do konta. Treści, na których opierają się już postacie innych użytkowników, pozostają w tych postaciach (§4), bez Twojego imienia.
-- Prowadzący może zawiesić konto, z którego wielokrotnie publikowano treści zakazane w §5, po poinformowaniu jego właściciela o powodzie.
+- Prowadzący może zawiesić konto, z którego wielokrotnie publikowano treści zakazane w §5, po poinformowaniu jego właściciela o powodzie. Właściciel otrzymuje uzasadnienie i może się od niego odwołać jak w §9.
 
 ## 12. Reklamacje
 
@@ -115,6 +127,8 @@ Jeśli serwis nie działa tak, jak opisuje to regulamin, napisz na contact@rpgto
 ## 13. Dostępność i odpowiedzialność
 
 Serwis jest udostępniany bezpłatnie i w takim stanie, w jakim jest. Prowadzący dba o jego działanie i bezpieczeństwo Twoich danych, ale nie gwarantuje stałej dostępności ani braku błędów i może zmieniać lub wycofywać funkcje. Zachowaj własną kopię tego, czego nie możesz stracić; postacie można wydrukować z karty.
+
+Korzystanie z usług internetowych wiąże się z ryzykiem, takim jak złośliwe oprogramowanie, phishing czy przejęcie konta przez osobę trzecią. Aktualizuj przeglądarkę i loguj się wyłącznie przez stronę logowania rpgtools.co.
 
 Nic w tym regulaminie nie ogranicza praw, które przysługują Ci jako konsumentowi na podstawie przepisów kraju, w którym mieszkasz.
 

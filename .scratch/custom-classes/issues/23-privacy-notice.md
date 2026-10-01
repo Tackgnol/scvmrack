@@ -1,7 +1,7 @@
 # What must the privacy notice say once Custom Classes and reporting ship?
 
 Type: task
-Status: open
+Status: resolved
 Blocked by: 07, 21
 
 ## Question
@@ -37,3 +37,39 @@ The terms (`drafts/terms.*.md` §15) link to `/privacy`. The owner chose a separ
 - **how the consent drawer and `/privacy` relate**: the drawer keeps the analytics choice and links here
 
 Check every processor and region against the real deployment, plus the SES region from roster (ticket 07), before the text goes to the lawyer with the terms.
+
+## Answer (drafted 2026-10-01)
+
+- **Drafts**: [drafts/privacy.pl.md](../drafts/privacy.pl.md), which binds, and [drafts/privacy.en.md](../drafts/privacy.en.md). They cover:
+  - the controller (as on `/legal`)
+  - every processing purpose with its GDPR basis
+  - browser storage
+  - retention
+  - processors and transfers
+  - rights and the PUODO complaint
+  - age
+  - changes
+- **Processors checked against the deployment**:
+  - Cloudflare fronts all traffic.
+  - Logto is at `auth.rpgtools.co`.
+  - GlitchTip is self-hosted and reached through `/api/tunnel`, with no client IP.
+  - GA4 loads only after consent.
+  - Google Fonts are loaded from Google on every page.
+  - Amazon SES is planned (ticket 07).
+- **Marked `[CONFIRM]`, not readable from this repo**:
+  - the hosting provider and country
+  - whether Logto is self-hosted or cloud
+  - the SES region (roster couldn't be read)
+  - the guest 7-day deletion job
+  - retention for expired sessions, GlitchTip, GA4 and access logs
+  - whether Cloudflare Web Analytics is on
+- **The consent drawer and `/privacy`**: the drawer keeps only the analytics choice and links to `/privacy`.
+- **Found, left for the owner (`[OWNER]` in the drafts)**:
+  - the analytics switch defaults to ON, which isn't valid consent; default it to OFF
+  - Google Fonts load without consent; self-host them
+  - whether a copyright reporter's identity goes to the class author
+  - how long emails to contact@ and scvmrack-appeal@ are kept
+- **Legal review and cover memo**:
+  - [drafts/legal-review.md](../drafts/legal-review.md): GDPR, DSA, TCO, IP and UŚUDE findings, with fixes applied to the terms
+  - [drafts/counsel-memo.md](../drafts/counsel-memo.md): PL with an English summary, 10 questions for counsel
+  - [drafts/review-pack.md](../drafts/review-pack.md): everything in one document for the lawyer

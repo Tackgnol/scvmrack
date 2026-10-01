@@ -40,6 +40,7 @@ An implementation-ready spec for GM-authored Custom Classes (creator, Party Clas
 - [How does a GM reorder abilities (and the other lists) in the creator?](issues/16-reordering-abilities.md): abilities, Class Items, origins and table rows reorder (not modifiers) by dragging a grip, a Move menu on tap, or Alt+↑/↓; one order everywhere, with Random abilities and origins numbered but still picked evenly, and a table row's number as its die result; one undo per move; a `position` column (Book Classes backfilled fixed-first, then by `roll_value`).
 - [Fix the class creator prototype's remaining known issues](issues/15-class-creator-known-issues.md): every listed defect fixed with a scripted repro across three rounds (undo coverage, focus by path, Save seals history, visible refusals, whole snackbar messages, contrast, phone hover, one pink interrupt); typed text joins undo per field and creator labels go bone white (owner); 21 acceptance criteria plus a carried-to-build list for the real creator.
 - [Prepare the Custom Classes release: translations, release notes, FAQ](issues/22-release-plumbing.md): build checklist (i18n namespaces, 0.7.0 release steps, the exact `CLAUDE.md` security and env-var text, `CUSTOM_CLASS_MAX_PER_GM` through compose and Woodpecker, legal routes and links); drafts of `/terms` (PL binding), `/legal`, seven FAQ entries and the release note in `drafts/`; age 16, 14-day complaints and change notice.
+- [What must the privacy notice say once Custom Classes and reporting ship?](issues/23-privacy-notice.md): `/privacy` drafted in PL (binding) and EN against the real deployment (Cloudflare, Logto, self-hosted GlitchTip, consent-gated GA4, Google Fonts, SES); unconfirmed facts marked `[CONFIRM]`; the analytics default-on switch and Google Fonts flagged for the owner; a legal review and a PL cover memo with 10 questions make up the lawyer's review pack.
 
 ## Build breakdown
 
@@ -47,7 +48,7 @@ An implementation-ready spec for GM-authored Custom Classes (creator, Party Clas
 
 ## Not yet specified
 
-- **Privacy notice**: ticket 23 (GDPR Art. 13 information for accounts, reports, SES email and moderation records).
+- Nothing. Every ticket is resolved. The lawyer reviews `drafts/review-pack.md` before build tickets 29 and 30 ship.
 
 ## Out of scope
 
