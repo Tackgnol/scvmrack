@@ -226,7 +226,7 @@ mock.module('../../src/lib/generate-character.js', {
 mock.module('../../src/repositories/character-repository.js', {
   namedExports: {
     characterRepository: {
-      classExists: async () => true,
+      builtInClassExists: async () => true,
     },
   },
 });
