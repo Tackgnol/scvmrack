@@ -98,8 +98,11 @@ const CLASSLESS_DEFAULTS = {
   silverModifier: 10,
   weaponDie: 10,
   armorDie: 4,
-  statModifiers: {} as Record<string, number>,
+  omenDie: 2,
 };
+
+/** How one stat is rolled: `count`d`faces` + `modifier`, optionally dropping the lowest die. */
+export type StatDice = { count: number; faces: number; modifier: number; dropLowest: boolean };
 
 // ── Roller helpers ─────────────────────────────────────────────────────────────
 
@@ -107,8 +110,14 @@ async function rollDie(faces: number, roller: Roller): Promise<number> {
   return (await roller.roll(`1d${faces}`)).total;
 }
 
-async function roll3d6(roller: Roller): Promise<number> {
-  return (await roller.roll('3d6')).total;
+async function rollStat(spec: StatDice, roller: Roller): Promise<number> {
+  if (!spec.dropLowest) {
+    return (await roller.roll(`${spec.count}d${spec.faces}`)).total + spec.modifier;
+  }
+  const dice: number[] = [];
+  for (let i = 0; i < spec.count; i++) dice.push(await rollDie(spec.faces, roller));
+  const total = dice.reduce((sum, die) => sum + die, 0) - Math.min(...dice);
+  return total + spec.modifier;
 }
 
 async function rollClasslessStatOptions(
@@ -656,7 +665,7 @@ export async function buildCharacterData(
   const silverModifier = cls?.silverModifier ?? CLASSLESS_DEFAULTS.silverModifier;
   const weaponDie = cls?.weaponDie ?? CLASSLESS_DEFAULTS.weaponDie;
   const armorDie = cls?.armorDie ?? CLASSLESS_DEFAULTS.armorDie;
-  const statModifiers = (cls?.statModifiers ?? CLASSLESS_DEFAULTS.statModifiers) as Record<string, number>;
+  const omenDie = cls?.omenDie ?? CLASSLESS_DEFAULTS.omenDie;
 
   // ── Section: stats (4 stats + HP) ────────────────────────────────────────
   const statsRoller = rollerFor('stats');
@@ -666,7 +675,7 @@ export async function buildCharacterData(
   let presence: number;
   let toughness: number;
 
-  if (classId === null) {
+  if (!cls) {
     const result = await rollClasslessStatOptions(
       statsRoller,
       options.dropLowestAbilities ?? [],
@@ -677,16 +686,16 @@ export async function buildCharacterData(
     presence = result.values.presence;
     toughness = result.values.toughness;
   } else {
-    strength  = (await roll3d6(statsRoller)) + (statModifiers.strength  ?? 0);
-    agility   = (await roll3d6(statsRoller)) + (statModifiers.agility   ?? 0);
-    presence  = (await roll3d6(statsRoller)) + (statModifiers.presence  ?? 0);
-    toughness = (await roll3d6(statsRoller)) + (statModifiers.toughness ?? 0);
+    const statDice = cls.statDice as Record<AbilityStat, StatDice>;
+    const rolled = {} as Record<AbilityStat, number>;
+    for (const stat of ABILITY_STATS) rolled[stat] = await rollStat(statDice[stat], statsRoller);
+    ({ strength, agility, presence, toughness } = rolled);
   }
   const hpRoll = await rollDie(hpDie, statsRoller);
   const maxHp = Math.max(1, hpRoll + statToModifier(toughness));
 
   // ── Section: omens ───────────────────────────────────────────────────────
-  const omens = await rollDie(2, rollerFor('omens'));
+  const omens = await rollDie(omenDie, rollerFor('omens'));
 
   // ── Section: silver ──────────────────────────────────────────────────────
   const silverRoller = rollerFor('silver');

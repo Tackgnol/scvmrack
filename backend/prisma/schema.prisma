@@ -282,7 +282,7 @@ model Class {
   armorDie            Int?     @default(4) @map("armor_die")
   silverDice          Int[]    @default([6, 6]) @map("silver_dice")
   silverModifier      Int?     @default(10) @map("silver_modifier")
-  statModifiers       Json?    @default("{}") @map("stat_modifiers")
+  statDice            Json     @default("{\"strength\": {\"count\": 3, \"faces\": 6, \"modifier\": 0, \"dropLowest\": false}, \"agility\": {\"count\": 3, \"faces\": 6, \"modifier\": 0, \"dropLowest\": false}, \"presence\": {\"count\": 3, \"faces\": 6, \"modifier\": 0, \"dropLowest\": false}, \"toughness\": {\"count\": 3, \"faces\": 6, \"modifier\": 0, \"dropLowest\": false}}") @map("stat_dice")
   classAbilities      Json?    @default("[]") @map("class_abilities")
   randomAbilities     Json?    @default("[]") @map("random_abilities")
   randomAbilityCount  Int?     @default(1) @map("random_ability_count")
@@ -301,6 +301,7 @@ model Class {
   takedownReason      String?         @map("takedown_reason")
   lineageId           String          @default(dbgenerated("gen_random_uuid()")) @map("lineage_id") @db.Uuid
   version             Int             @default(1)
+  omenDie             Int             @default(2) @map("omen_die")
 
   @@unique([lineageId, version])
   @@index([ownerUserId])

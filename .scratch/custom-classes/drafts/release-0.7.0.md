@@ -34,3 +34,4 @@ GMs can now write their own character classes, with everything a Book Class has.
 - **Reorder** abilities, Class Items, origins and table rows by dragging, from a Move menu, or with Alt+↑/↓.
 - **New pages**: Terms, Contact and a report page, linked from the footer.
 - **The GM tab** now shows for everyone; signed-out visitors see what the GM tools do.
+- **Omen dice match the book**: the Esoteric Hermit and Heretical Priest now roll a d4 for Omens, as printed in MÖRK BORG. Every other class still rolls a d2, and existing characters keep their Omens.

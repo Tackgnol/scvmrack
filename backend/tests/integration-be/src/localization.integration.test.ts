@@ -166,12 +166,12 @@ test('GET /api/characters returns localized className via Accept-Language header
 });
 
 const bookClasses = [
-  { id: 1, name: 'Fanged Deserter' },
-  { id: 2, name: 'Gutterborn Scum' },
-  { id: 3, name: 'Esoteric Hermit' },
-  { id: 4, name: 'Wretched Royalty' },
-  { id: 5, name: 'Heretical Priest' },
-  { id: 6, name: 'Occult Herbmaster' },
+  { id: 1, name: 'Fanged Deserter', omenDie: 2 },
+  { id: 2, name: 'Gutterborn Scum', omenDie: 2 },
+  { id: 3, name: 'Esoteric Hermit', omenDie: 4 },
+  { id: 4, name: 'Wretched Royalty', omenDie: 2 },
+  { id: 5, name: 'Heretical Priest', omenDie: 4 },
+  { id: 6, name: 'Occult Herbmaster', omenDie: 2 },
 ];
 
 test('GET /api/characters/classes lists exactly the six Book Classes', async () => {
@@ -180,7 +180,7 @@ test('GET /api/characters/classes lists exactly the six Book Classes', async () 
   const classes = (await response.json()) as Array<{ id: number; name: string }>;
   assert.deepEqual(
     classes.map(({ id, name }) => ({ id, name })),
-    bookClasses,
+    bookClasses.map(({ id, name }) => ({ id, name })),
   );
 });
 
@@ -196,9 +196,14 @@ for (const bookClass of bookClasses) {
         classId: number;
         className: string;
         classDescription: string;
+        omens: number;
         abilities: Array<{ key?: string; name: string }>;
       };
       assert.equal(character.classId, bookClass.id);
+      assert.ok(
+        character.omens >= 1 && character.omens <= bookClass.omenDie,
+        `${bookClass.name} omens ${character.omens} should come from a d${bookClass.omenDie}`,
+      );
       if (locale === 'en') assert.equal(character.className, bookClass.name);
       assert.ok(character.classDescription.length > 0, `${locale} classDescription`);
       for (const ability of character.abilities) {

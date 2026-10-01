@@ -3,7 +3,9 @@ import { mock, test } from 'node:test';
 
 import { Prisma } from '@prisma/client';
 import type { Roller } from '@tackgnol/rpg-tools-roller';
-import { randomSectionSeeds, seededRollerFor } from '../../src/lib/draft-seeds.js';
+import { randomSectionSeeds, seededRollerFor, type RollerFor } from '../../src/lib/draft-seeds.js';
+import { ABILITY_STATS } from '../../src/lib/ability-modifiers.js';
+import type { StatDice } from '../../src/lib/generate-character.js';
 
 type RollExpectation = {
   notation: string;
@@ -35,7 +37,8 @@ type ClassRow = {
   silverModifier: number;
   weaponDie: number;
   armorDie: number;
-  statModifiers: Record<string, number>;
+  statDice: Record<string, StatDice>;
+  omenDie: number;
   randomAbilityCount: number;
   source?: string;
 };
@@ -100,6 +103,15 @@ type Fixture = {
   createdCharacters: CharacterCreateData[];
 };
 
+function bookStatDice(modifiers: Record<string, number> = {}): ClassRow['statDice'] {
+  return Object.fromEntries(
+    ABILITY_STATS.map((stat) => [
+      stat,
+      { count: 3, faces: 6, modifier: modifiers[stat] ?? 0, dropLowest: false },
+    ])
+  );
+}
+
 function baseFixture(): Fixture {
   return {
     classes: [
@@ -110,12 +122,8 @@ function baseFixture(): Fixture {
         silverModifier: 10,
         weaponDie: 10,
         armorDie: 4,
-        statModifiers: {
-          strength: 2,
-          agility: -1,
-          presence: 0,
-          toughness: 0,
-        },
+        statDice: bookStatDice({ strength: 2, agility: -1 }),
+        omenDie: 2,
         randomAbilityCount: 1,
       },
     ],
@@ -389,7 +397,7 @@ test('generateCharacter lets rolled scrolls reduce starting weapon and armor dic
   next.classes[0] = {
     ...next.classes[0],
     silverDice: [6],
-    statModifiers: {},
+    statDice: bookStatDice(),
     randomAbilityCount: 0,
   };
   next.abilities = [];
@@ -462,7 +470,8 @@ test('generateCharacter can pick a random class and grant a pet from a random ab
       silverModifier: 10,
       weaponDie: 4,
       armorDie: 2,
-      statModifiers: {},
+      statDice: bookStatDice(),
+      omenDie: 2,
       randomAbilityCount: 1,
     },
   ];
@@ -588,6 +597,94 @@ test('a fixed ability grants its item and pet to every character of the class', 
   const keys = (data.equipment as Array<{ key: string }>).map((item) => item.key);
   assert.ok(keys.includes('equipment.lockpicks'), `expected lockpicks in ${keys.join(', ')}`);
   assert.ok(keys.includes('pets.hawk'), `expected hawk in ${keys.join(', ')}`);
+});
+
+const seedsRolledBeforeStatDice = {
+  name: '1'.repeat(64),
+  stats: '2'.repeat(64),
+  omens: '3'.repeat(64),
+  silver: '4'.repeat(64),
+  origin: '5'.repeat(64),
+  abilities: '6'.repeat(64),
+  gear: '7'.repeat(64),
+  personality: '8'.repeat(64),
+};
+
+test('a Book Class rolls the same stats and omens from the same seeds as plain 3d6 + modifier did', async () => {
+  resetFixture();
+
+  const data = await buildCharacterData(1, seededRollerFor(seedsRolledBeforeStatDice));
+
+  assert.deepEqual(
+    {
+      strength: data.strength,
+      agility: data.agility,
+      presence: data.presence,
+      toughness: data.toughness,
+      maxHp: data.maxHp,
+      omens: data.omens,
+    },
+    { strength: 16, agility: 8, presence: 10, toughness: 9, maxHp: 7, omens: 1 },
+  );
+});
+
+function recordingRollerFor(calls: string[], total = 1): RollerFor {
+  return (section) =>
+    ({
+      roll: async (notation: string) => {
+        calls.push(`${section}:${notation}`);
+        return { total };
+      },
+    }) as unknown as Roller;
+}
+
+test('stats roll from the class dice spec, dropping the lowest die when set', async () => {
+  const next = baseFixture();
+  next.classes[0] = {
+    ...next.classes[0],
+    statDice: {
+      ...bookStatDice(),
+      strength: { count: 4, faces: 6, modifier: 1, dropLowest: true },
+      agility: { count: 2, faces: 10, modifier: -3, dropLowest: false },
+    },
+  };
+  resetFixture(next);
+  const calls: string[] = [];
+
+  const data = await buildCharacterData(1, recordingRollerFor(calls));
+
+  const statCalls = calls.filter((call) => call.startsWith('stats:'));
+  assert.deepEqual(statCalls.slice(0, 7), [
+    'stats:1d6',
+    'stats:1d6',
+    'stats:1d6',
+    'stats:1d6',
+    'stats:2d10',
+    'stats:3d6',
+    'stats:3d6',
+  ]);
+  assert.equal(data.strength, 3 + 1, 'three kept dice of 1 plus the modifier');
+  assert.equal(data.agility, 1 - 3);
+});
+
+test('omens roll the class omen die', async () => {
+  const next = baseFixture();
+  next.classes[0] = { ...next.classes[0], omenDie: 4 };
+  resetFixture(next);
+  const calls: string[] = [];
+
+  await buildCharacterData(1, recordingRollerFor(calls));
+
+  assert.deepEqual(calls.filter((call) => call.startsWith('omens:')), ['omens:1d4']);
+});
+
+test('classless scvm keep the d2 omen die', async () => {
+  resetFixture();
+  const calls: string[] = [];
+
+  await buildCharacterData(null, recordingRollerFor(calls));
+
+  assert.deepEqual(calls.filter((call) => call.startsWith('omens:')), ['omens:1d2']);
 });
 
 test('buildCharacterData is deterministic for identical seeds', async () => {
