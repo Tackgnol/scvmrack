@@ -41,6 +41,10 @@ An implementation-ready spec for GM-authored Custom Classes (creator, Party Clas
 - [Fix the class creator prototype's remaining known issues](issues/15-class-creator-known-issues.md): every listed defect fixed with a scripted repro across three rounds (undo coverage, focus by path, Save seals history, visible refusals, whole snackbar messages, contrast, phone hover, one pink interrupt); typed text joins undo per field and creator labels go bone white (owner); 21 acceptance criteria plus a carried-to-build list for the real creator.
 - [Prepare the Custom Classes release: translations, release notes, FAQ](issues/22-release-plumbing.md): build checklist (i18n namespaces, 0.7.0 release steps, the exact `CLAUDE.md` security and env-var text, `CUSTOM_CLASS_MAX_PER_GM` through compose and Woodpecker, legal routes and links); drafts of `/terms` (PL binding), `/legal`, seven FAQ entries and the release note in `drafts/`; age 16, 14-day complaints and change notice.
 
+## Build breakdown
+
+- [build-breakdown.md](build-breakdown.md): 31 tracer-bullet build tickets from `/to-tickets` (2026-10-01). The owner approved the granularity and edges. They wait to be published to Linear (`RPG`) from a session with the Linear connector.
+
 ## Not yet specified
 
 - **Privacy notice**: ticket 23 (GDPR Art. 13 information for accounts, reports, SES email and moderation records).
