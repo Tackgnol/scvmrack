@@ -3,8 +3,12 @@ import { beforeEach, mock, test } from 'node:test';
 
 const buildCalls: Array<{ classId: number | null; rollerFor: unknown; options: unknown }> = [];
 const hydrateCalls: Array<{ row: Record<string, unknown>; locale: string }> = [];
-let builtInClassExistsResult = true;
+type Scope = { classIds: number[]; acceptedClassIds: number[]; classlessEnabled: boolean; party: null | { id: string; ownerUserId: string } };
+const allowAll = (): Scope => ({ classIds: [1, 2, 3, 4, 5, 6], acceptedClassIds: [1, 2, 3, 4, 5, 6], classlessEnabled: true, party: null });
+let scope: Scope | { gone: true } = allowAll();
+const scopeCalls: Array<string | null | undefined> = [];
 let listClassesResult: Array<{ id: number; name: string | null; description: string | null }> = [];
+const listedIds: number[][] = [];
 let buildError: unknown = null;
 
 const fakeCharacterData = {
@@ -93,8 +97,25 @@ mock.module('../../src/lib/get-character-full.js', {
 mock.module('../../src/repositories/character-repository.js', {
   namedExports: {
     characterRepository: {
-      builtInClassExists: async () => builtInClassExistsResult,
-      listClasses: async () => listClassesResult,
+      listClassesByIds: async (ids: number[]) => {
+        listedIds.push(ids);
+        return listClassesResult;
+      },
+    },
+  },
+});
+
+mock.module('../../src/services/class-scope-service.js', {
+  namedExports: {
+    resolveClassScope: async (token: string | null | undefined) => {
+      scopeCalls.push(token);
+      if ('gone' in scope) {
+        return {
+          ok: false,
+          error: { statusCode: 410, code: 'PARTY_INVITE_INVALID', message: 'gone' },
+        };
+      }
+      return { ok: true, value: scope };
     },
   },
 });
@@ -108,8 +129,10 @@ const session = { user: { id: 'user-1' } };
 function reset(): void {
   buildCalls.length = 0;
   hydrateCalls.length = 0;
-  builtInClassExistsResult = true;
+  scope = allowAll();
+  scopeCalls.length = 0;
   listClassesResult = [];
+  listedIds.length = 0;
   buildError = null;
 }
 
@@ -148,9 +171,7 @@ test('createDraft with explicit classId validates the class and returns draft + 
   assert.equal(hydrateCalls[0].row.id, null);
 });
 
-test('createDraft rejects an unknown classId with 404', async () => {
-  builtInClassExistsResult = false;
-
+test('createDraft rejects a class outside the scope with 409', async () => {
   const result = await createCharacterDraftService(log).createDraft({
     session,
     classId: 99,
@@ -159,9 +180,39 @@ test('createDraft rejects an unknown classId with 404', async () => {
 
   assert.equal(result.ok, false);
   if (!result.ok) {
-    assert.equal(result.error.statusCode, 404);
-    assert.equal(result.error.code, 'CLASS_NOT_FOUND');
+    assert.equal(result.error.statusCode, 409);
+    assert.equal(result.error.code, 'CLASS_NOT_AVAILABLE');
   }
+});
+
+test('createDraft resolves the invite to its pool and rejects classless when the pool disables it', async () => {
+  scope = { classIds: [2], acceptedClassIds: [2], classlessEnabled: false, party: { id: 'party-1', ownerUserId: 'gm-1' } };
+
+  const result = await createCharacterDraftService(log).createDraft({
+    session,
+    classless: true,
+    inviteToken: 'invite-1',
+    locale: 'en',
+  });
+
+  assert.deepEqual(scopeCalls, ['invite-1']);
+  assert.equal(result.ok, false);
+  if (!result.ok) assert.equal(result.error.code, 'CLASSLESS_NOT_AVAILABLE');
+});
+
+test('createDraft passes a dead invite through as 410', async () => {
+  scope = { gone: true };
+
+  const result = await createCharacterDraftService(log).createDraft({
+    session,
+    classId: 1,
+    inviteToken: 'rotated',
+    locale: 'en',
+  });
+
+  assert.equal(result.ok, false);
+  if (!result.ok) assert.equal(result.error.statusCode, 410);
+  assert.equal(buildCalls.length, 0);
 });
 
 test('createDraft classless skips class validation and builds with null', async () => {
@@ -242,8 +293,8 @@ test('createDraft applies a sanitized name override to draft previews', async ()
   assert.equal(hydrateCalls[0].row.name, 'Rotmaw');
 });
 
-test('createDraft picks and records a random class when no class is supplied', async () => {
-  listClassesResult = [{ id: 4, name: 'Wretched Royalty', description: null }];
+test('createDraft picks and records a random class from the scope when no class is supplied', async () => {
+  scope = { classIds: [4], acceptedClassIds: [4], classlessEnabled: true, party: null };
 
   const result = await createCharacterDraftService(log).createDraft({
     session,
@@ -326,8 +377,8 @@ test('rerollSection preserves typed names except when rerolling the name section
   assert.equal((nameResult.value.preview as Record<string, unknown>).name, fakeCharacterData.name);
 });
 
-test('rerollSection validates the class still exists', async () => {
-  builtInClassExistsResult = false;
+test('rerollSection rejects a class that left the scope', async () => {
+  scope = { classIds: [2], acceptedClassIds: [2], classlessEnabled: true, party: null };
 
   const result = await createCharacterDraftService(log).rerollSection({
     session,
@@ -337,16 +388,19 @@ test('rerollSection validates the class still exists', async () => {
   });
 
   assert.equal(result.ok, false);
-  if (!result.ok) assert.equal(result.error.statusCode, 404);
+  if (!result.ok) assert.equal(result.error.code, 'CLASS_NOT_AVAILABLE');
 });
 
-test('listClasses returns repository class summaries', async () => {
+test('listClasses lists the classes of the scope behind the invite', async () => {
+  scope = { classIds: [1, 7], acceptedClassIds: [1, 7], classlessEnabled: true, party: null };
   listClassesResult = [{ id: 1, name: 'Gutterborn Scvm', description: null }];
 
-  const result = await createCharacterDraftService(log).listClasses({ locale: 'en' });
+  const result = await createCharacterDraftService(log).listClasses({ locale: 'en', inviteToken: 'invite-1' });
 
   assert.equal(result.ok, true);
   if (result.ok) assert.deepEqual(result.value, listClassesResult);
+  assert.deepEqual(scopeCalls, ['invite-1']);
+  assert.deepEqual(listedIds, [[1, 7]]);
 });
 
 test('createDraft maps unexpected failures to DRAFT_CREATE_FAILED', async () => {

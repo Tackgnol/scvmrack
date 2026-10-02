@@ -221,13 +221,22 @@ mock.module('../../src/lib/generate-character.js', {
       createFromDraftCalls.push({ draft, userId });
       return generatedCharacterId;
     },
+    characterCreateDataFromDraft: async () => ({}),
   },
 });
 
 mock.module('../../src/repositories/character-repository.js', {
   namedExports: {
-    characterRepository: {
-      builtInClassExists: async () => true,
+    characterRepository: {},
+  },
+});
+
+const scopeTokens: Array<string | null | undefined> = [];
+mock.module('../../src/services/class-scope-service.js', {
+  namedExports: {
+    resolveClassScope: async (token: string | null | undefined) => {
+      scopeTokens.push(token);
+      return { ok: true, value: { classIds: [1, 2, 3, 4, 5, 6], acceptedClassIds: [1, 2, 3, 4, 5, 6], classlessEnabled: true, party: null } };
     },
   },
 });
@@ -430,6 +439,24 @@ test('POST /draft forwards classless drop-lowest choices', async () => {
   await app.close();
 });
 
+test('POST /new hands the invite to the class scope', async () => {
+  resetState();
+  scopeTokens.length = 0;
+  currentSession = { user: { id: 'user-1' } };
+  const app = await buildApp();
+
+  const response = await app.inject({
+    method: 'POST',
+    url: '/new?locale=en&invite=invite-token-1',
+    payload: { classId: 2 },
+  });
+
+  assert.equal(response.statusCode, 201);
+  assert.deepEqual(scopeTokens, ['invite-token-1']);
+
+  await app.close();
+});
+
 test('POST /draft/reroll/:section rejects unknown sections with 400', async () => {
   resetState();
   currentSession = { user: { id: 'user-1' } };
@@ -476,7 +503,7 @@ test('GET /classes returns the localized class list', async () => {
 
   assert.equal(response.statusCode, 200);
   assert.deepEqual(response.json(), [{ id: 1, name: 'Gutterborn Scvm', description: null }]);
-  assert.deepEqual(listClassCalls, [{ locale: 'en' }]);
+  assert.deepEqual(listClassCalls, [{ locale: 'en', inviteToken: undefined }]);
 
   await app.close();
 });

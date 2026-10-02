@@ -5,7 +5,15 @@ import {
   type CharacterPartyAccessRow,
   type CharacterSummaryRow,
 } from '../repositories/character-repository.js';
-import { createCharacterFromDraft, generateCharacter } from '../lib/generate-character.js';
+import {
+  characterCreateDataFromDraft,
+  createCharacterFromDraft,
+  generateCharacter,
+} from '../lib/generate-character.js';
+import { PARTY_MAX_MEMBERS } from '../lib/party-limits.js';
+import { PartyFullError, partyRepository } from '../repositories/party-repository.js';
+import { classChoiceError } from './class-choice.js';
+import { resolveClassScope } from './class-scope-service.js';
 import { getCharacterFull } from '../lib/get-character-full.js';
 import { hydrateInventoryUses } from '../lib/inventory.js';
 import {
@@ -178,6 +186,8 @@ export function createCharacterService(
   return {
     async generate(input: {
       session: AppSession;
+      /** A party invite: the scvm is forged from its pool and joins it in the same transaction. */
+      inviteToken?: string | null;
       classId?: number | null;
       draft?: CharacterDraft | null;
       replace?: boolean;
@@ -189,6 +199,18 @@ export function createCharacterService(
       }
 
       try {
+        const scope = await resolveClassScope(input.inviteToken);
+        if (!scope.ok) return fail(scope.error);
+        const party = scope.value.party;
+        if (party && !input.draft) {
+          return fail(badRequest('DRAFT_REQUIRED', 'Forge a scvm to join a party'));
+        }
+        if (party && party.ownerUserId === userId) {
+          return fail(
+            apiError(403, 'PARTY_OWNER_CANNOT_JOIN', 'A game master cannot join their own party')
+          );
+        }
+
         // One scvm per guest. An anonymous session may hold only a single
         // character, so creating another is a 409 unless the caller opts into
         // replacing — a plain create can never silently destroy an existing
@@ -219,15 +241,28 @@ export function createCharacterService(
               )
             );
           }
-          if (
-            !input.draft.classless &&
-            input.draft.classId !== null &&
-            !(await characterRepository.builtInClassExists(input.draft.classId))
-          ) {
-            return fail(notFound('CLASS_NOT_FOUND', 'Class not found'));
+          // A draft without a class rolls classless, so it needs Classless allowed.
+          const classless = input.draft.classless || input.draft.classId === null;
+          const unavailable = classChoiceError(
+            scope.value,
+            classless,
+            classless ? null : input.draft.classId
+          );
+          if (unavailable) return fail(unavailable);
+
+          if (party) {
+            characterId = await partyRepository.createMemberInTransaction({
+              partyId: party.id,
+              cap: PARTY_MAX_MEMBERS,
+              data: await characterCreateDataFromDraft(input.draft, userId),
+            });
+            partyBus?.publish(party.id, { type: 'character.joined', characterId });
+          } else {
+            characterId = await createCharacterFromDraft(input.draft, userId);
           }
-          characterId = await createCharacterFromDraft(input.draft, userId);
         } else {
+          const unavailable = classChoiceError(scope.value, false, input.classId ?? null);
+          if (unavailable) return fail(unavailable);
           const roller = new Roller({ engine: new OSRandomEngine() });
           // Bind ownership at creation so a failure can never leave an orphaned,
           // unowned (and thus unreachable) character row.
@@ -263,6 +298,9 @@ export function createCharacterService(
 
         return ok(character);
       } catch (err) {
+        if (err instanceof PartyFullError) {
+          return fail(apiError(409, 'PARTY_FULL', 'This party is full'));
+        }
         return fail(
           unexpected(log, err,'CHARACTER_GENERATION_FAILED', 'Failed to generate character')
         );

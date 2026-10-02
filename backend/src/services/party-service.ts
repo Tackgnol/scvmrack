@@ -29,23 +29,11 @@ import {
 } from './session.js';
 
 export type { AppSession } from './session.js';
+import { PARTY_MAX_MEMBERS } from '../lib/party-limits.js';
 
-const DEFAULT_PARTY_MAX_MEMBERS = 10;
 const OBR_ROOM_SYSTEM_OWNER_ID = 'system:obr-room';
 const OBR_ROOM_SYSTEM_OWNER_EMAIL = 'obr-room@system.scvmrack.local';
 
-/** Read the cap once at module load; clamp to a sane positive integer. */
-const PARTY_MAX_MEMBERS = (() => {
-  const raw = process.env.PARTY_MAX_MEMBERS;
-  if (!raw) {
-    return DEFAULT_PARTY_MAX_MEMBERS;
-  }
-  const parsed = Number.parseInt(raw, 10);
-  if (!Number.isInteger(parsed) || parsed < 1) {
-    return DEFAULT_PARTY_MAX_MEMBERS;
-  }
-  return parsed;
-})();
 
 function newInviteToken(): string {
   return crypto.randomBytes(16).toString('base64url');

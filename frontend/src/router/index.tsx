@@ -1,4 +1,4 @@
-import { createRouter, createRootRoute, createRoute, lazyRouteComponent } from '@tanstack/react-router';
+import { createRouter, createRootRoute, createRoute, lazyRouteComponent, redirect } from '@tanstack/react-router';
 import { appHistory } from '@/router/history';
 import { RootLayout } from '@/router/layout';
 import { CharacterCreatePage } from '@/pages/CharacterCreatePage';
@@ -85,10 +85,14 @@ const joinForgeRoute = createRoute({
     component: lazyRouteComponent(() => import('@/pages/JoinForgePage').then(m => ({ default: m.JoinForgePage }))),
 });
 
+// The blind roll is gone (every party scvm goes through the class screen);
+// old shared /roll links land on the forge.
 const joinRollRoute = createRoute({
     getParentRoute: () => rootRoute,
     path: '/join/$token/roll',
-    component: lazyRouteComponent(() => import('@/pages/JoinRollPage').then(m => ({ default: m.JoinRollPage }))),
+    beforeLoad: ({ params }) => {
+        throw redirect({ to: '/join/$token/forge', params: { token: params.token } });
+    },
 });
 
 const printRoute = createRoute({

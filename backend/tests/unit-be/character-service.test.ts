@@ -19,7 +19,12 @@ const state = {
   listRows: [] as Array<Record<string, unknown>>,
   classNameMap: new Map<number, string>(),
   classNameMapCalls: [] as Array<{ classIds: number[]; locale: string }>,
-  builtInClassExistsResult: true,
+  scope: { classIds: [1, 2, 3, 4, 5, 6], acceptedClassIds: [1, 2, 3, 4, 5, 6], classlessEnabled: true, party: null } as
+    | { classIds: number[]; acceptedClassIds: number[]; classlessEnabled: boolean; party: null | { id: string; ownerUserId: string } }
+    | { gone: true },
+  scopeCalls: [] as Array<string | null | undefined>,
+  memberCalls: [] as Array<{ partyId: string; cap: number; data: unknown }>,
+  partyFull: false,
   updateError: null as unknown,
   generateError: null as unknown,
   createFromDraftError: null as unknown,
@@ -54,7 +59,10 @@ function resetState(): void {
   state.listRows = [];
   state.classNameMap = new Map();
   state.classNameMapCalls = [];
-  state.builtInClassExistsResult = true;
+  state.scope = { classIds: [1, 2, 3, 4, 5, 6], acceptedClassIds: [1, 2, 3, 4, 5, 6], classlessEnabled: true, party: null };
+  state.scopeCalls = [];
+  state.memberCalls = [];
+  state.partyFull = false;
   state.updateError = null;
   state.generateError = null;
   state.createFromDraftError = null;
@@ -123,7 +131,33 @@ mock.module('../../src/repositories/character-repository.js', {
         state.classNameMapCalls.push({ classIds, locale });
         return state.classNameMap;
       },
-      builtInClassExists: async () => state.builtInClassExistsResult,
+    },
+  },
+});
+
+mock.module('../../src/services/class-scope-service.js', {
+  namedExports: {
+    resolveClassScope: async (token: string | null | undefined) => {
+      state.scopeCalls.push(token);
+      if ('gone' in state.scope) {
+        return { ok: false, error: { statusCode: 410, code: 'PARTY_INVITE_INVALID', message: 'gone' } };
+      }
+      return { ok: true, value: state.scope };
+    },
+  },
+});
+
+class FakePartyFullError extends Error {}
+
+mock.module('../../src/repositories/party-repository.js', {
+  namedExports: {
+    PartyFullError: FakePartyFullError,
+    partyRepository: {
+      createMemberInTransaction: async (input: { partyId: string; cap: number; data: unknown }) => {
+        state.memberCalls.push(input);
+        if (state.partyFull) throw new FakePartyFullError('full');
+        return 'member-id';
+      },
     },
   },
 });
@@ -135,6 +169,7 @@ mock.module('../../src/lib/generate-character.js', {
       if (state.generateError) throw state.generateError;
       return state.generatedId;
     },
+    characterCreateDataFromDraft: async (draft: unknown, userId: string) => ({ fromDraft: draft, userId }),
     createCharacterFromDraft: async (draft: unknown, userId: string) => {
       state.createFromDraftCalls.push({ draft, userId });
       if (state.createFromDraftError) throw state.createFromDraftError;
@@ -268,9 +303,7 @@ test('generate with a complete classless draft persists via createCharacterFromD
   assert.deepEqual(state.createFromDraftCalls, [{ draft, userId: 'user-1' }]);
 });
 
-test('generate with a draft rejects an unknown class with 404', async () => {
-  state.builtInClassExistsResult = false;
-
+test('generate with a draft rejects a class outside the scope with 409', async () => {
   const result = await service().generate({
     session: session('user-1'),
     draft: { classId: 42, classless: false, seeds: randomSectionSeeds() },
@@ -278,8 +311,132 @@ test('generate with a draft rejects an unknown class with 404', async () => {
   });
 
   assert.equal(result.ok, false);
-  assert.equal((result as any).error.code, 'CLASS_NOT_FOUND');
+  assert.equal((result as any).error.code, 'CLASS_NOT_AVAILABLE');
   assert.deepEqual(state.createFromDraftCalls, []);
+});
+
+const partyScope = () => ({
+  classIds: [1, 7], acceptedClassIds: [1, 7],
+  classlessEnabled: true,
+  party: { id: 'party-1', ownerUserId: 'gm-1' },
+});
+
+test('generate with an invite creates the scvm inside its party in one step', async () => {
+  state.scope = partyScope();
+  const draft = { classId: 7, classless: false, seeds: randomSectionSeeds() };
+
+  const result = await serviceWithBus().generate({
+    session: session('user-1'),
+    inviteToken: 'invite-1',
+    draft,
+    locale: 'en',
+  });
+
+  assert.equal(result.ok, true);
+  assert.deepEqual(state.scopeCalls, ['invite-1']);
+  assert.deepEqual(state.memberCalls, [
+    { partyId: 'party-1', cap: 10, data: { fromDraft: draft, userId: 'user-1' } },
+  ]);
+  assert.deepEqual(state.createFromDraftCalls, []);
+  assert.deepEqual(publishedEvents, [
+    { partyId: 'party-1', event: { type: 'character.joined', characterId: 'member-id' } },
+  ]);
+});
+
+test('a draft rolled on a version the GM has since replaced still joins on that version', async () => {
+  state.scope = {
+    classIds: [11],
+    acceptedClassIds: [10, 11],
+    classlessEnabled: true,
+    party: { id: 'party-1', ownerUserId: 'gm-1' },
+  };
+  const draft = { classId: 10, classless: false, seeds: randomSectionSeeds() };
+
+  const result = await service().generate({
+    session: session('user-1'),
+    inviteToken: 'invite-1',
+    draft,
+    locale: 'en',
+  });
+
+  assert.equal(result.ok, true);
+  assert.deepEqual(state.memberCalls.map((call) => call.data), [{ fromDraft: draft, userId: 'user-1' }]);
+});
+
+test('a full party creates nothing', async () => {
+  state.scope = partyScope();
+  state.partyFull = true;
+
+  const result = await service().generate({
+    session: session('user-1'),
+    inviteToken: 'invite-1',
+    draft: { classId: 1, classless: false, seeds: randomSectionSeeds() },
+    locale: 'en',
+  });
+
+  assert.equal(result.ok, false);
+  assert.equal((result as any).error.code, 'PARTY_FULL');
+  assert.deepEqual(state.createFromDraftCalls, []);
+});
+
+test('a rotated invite creates nothing', async () => {
+  state.scope = { gone: true };
+
+  const result = await service().generate({
+    session: session('user-1'),
+    inviteToken: 'rotated',
+    draft: { classId: 1, classless: false, seeds: randomSectionSeeds() },
+    locale: 'en',
+  });
+
+  assert.equal(result.ok, false);
+  assert.equal((result as any).error.statusCode, 410);
+  assert.deepEqual(state.memberCalls, []);
+});
+
+test('a class switched off mid-forge is re-checked on confirm and creates nothing', async () => {
+  state.scope = partyScope();
+
+  const result = await service().generate({
+    session: session('user-1'),
+    inviteToken: 'invite-1',
+    draft: { classId: 3, classless: false, seeds: randomSectionSeeds() },
+    locale: 'en',
+  });
+
+  assert.equal(result.ok, false);
+  assert.equal((result as any).error.code, 'CLASS_NOT_AVAILABLE');
+  assert.deepEqual(state.memberCalls, []);
+});
+
+test('a GM cannot forge into their own party', async () => {
+  state.scope = partyScope();
+
+  const result = await service().generate({
+    session: session('gm-1'),
+    inviteToken: 'invite-1',
+    draft: { classId: 1, classless: false, seeds: randomSectionSeeds() },
+    locale: 'en',
+  });
+
+  assert.equal(result.ok, false);
+  assert.equal((result as any).error.code, 'PARTY_OWNER_CANNOT_JOIN');
+  assert.deepEqual(state.memberCalls, []);
+});
+
+test('joining a party needs a forged draft, not a blind roll', async () => {
+  state.scope = partyScope();
+
+  const result = await service().generate({
+    session: session('user-1'),
+    inviteToken: 'invite-1',
+    locale: 'en',
+  });
+
+  assert.equal(result.ok, false);
+  assert.equal((result as any).error.statusCode, 400);
+  assert.deepEqual(state.generateCalls, []);
+  assert.deepEqual(state.memberCalls, []);
 });
 
 test('generate returns 409 when a guest already owns a scvm and did not opt into replacing', async () => {

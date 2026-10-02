@@ -75,6 +75,12 @@ async function unwrap<T>(
   return data as T;
 }
 
+/** Query string for a creation call: the locale, plus the party invite whose pool scopes it. */
+function creationQuery(locale: string, inviteToken?: string): string {
+  const invite = inviteToken ? `&invite=${encodeURIComponent(inviteToken)}` : "";
+  return `?locale=${encodeURIComponent(locale)}${invite}`;
+}
+
 export function createDraft(
   input: {
     classId?: number | null;
@@ -85,9 +91,10 @@ export function createDraft(
   },
   locale: string,
   signal?: AbortSignal,
+  inviteToken?: string,
 ): Promise<DraftResponse> {
   return unwrap<DraftResponse>(
-    loose.POST(`/api/characters/draft?locale=${encodeURIComponent(locale)}`, {
+    loose.POST(`/api/characters/draft${creationQuery(locale, inviteToken)}`, {
       body: input,
       signal,
     }),
@@ -101,12 +108,11 @@ export function rerollDraftSection(
   section: DraftSection,
   locale: string,
   signal?: AbortSignal,
+  inviteToken?: string,
 ): Promise<DraftResponse> {
   return unwrap<DraftResponse>(
     loose.POST(
-      `/api/characters/draft/reroll/${section}?locale=${encodeURIComponent(
-        locale,
-      )}`,
+      `/api/characters/draft/reroll/${section}${creationQuery(locale, inviteToken)}`,
       { body: { draft }, signal },
     ),
     "Failed to re-roll",
@@ -119,9 +125,10 @@ export function confirmDraft(
   locale: string,
   signal?: AbortSignal,
   replace = false,
+  inviteToken?: string,
 ): Promise<CharacterResponse> {
   return unwrap<CharacterResponse>(
-    loose.POST(`/api/characters/new?locale=${encodeURIComponent(locale)}`, {
+    loose.POST(`/api/characters/new${creationQuery(locale, inviteToken)}`, {
       body: replace ? { draft, replace: true } : { draft },
       signal,
     }),
@@ -130,28 +137,13 @@ export function confirmDraft(
   );
 }
 
-// Roll-and-keep: create a fully random character in one shot (no draft preview).
-// Used by the "roll and join" flow so it can create + join imperatively.
-export function createRandomCharacter(
-  locale: string,
-  signal?: AbortSignal,
-): Promise<CharacterResponse> {
-  return unwrap<CharacterResponse>(
-    loose.POST(`/api/characters/new?locale=${encodeURIComponent(locale)}`, {
-      body: {},
-      signal,
-    }),
-    "Failed to roll a character",
-    signal,
-  );
-}
-
 export function fetchClasses(
   locale: string,
   signal?: AbortSignal,
+  inviteToken?: string,
 ): Promise<ClassSummary[]> {
   return unwrap<ClassSummary[]>(
-    loose.GET(`/api/characters/classes?locale=${encodeURIComponent(locale)}`, {
+    loose.GET(`/api/characters/classes${creationQuery(locale, inviteToken)}`, {
       signal,
     }),
     "Failed to load classes",

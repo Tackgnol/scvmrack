@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import prisma from '../lib/prisma.js';
 
 /**
@@ -29,6 +30,13 @@ export type PartyMemberRow = {
 
 export type PartyWithMembers = PartyRow & { members: PartyMemberRow[] };
 
+export type PartyInviteRow = {
+  id: string;
+  ownerUserId: string;
+  classlessEnabled: boolean;
+  poolLineageIds: string[];
+};
+
 /** Minimal character shape the join/leave/kick flows reason about. */
 export type CharacterForJoinRow = {
   id: string;
@@ -38,6 +46,22 @@ export type CharacterForJoinRow = {
 };
 
 /** Thrown by {@link joinInTransaction} when the cap is hit inside the tx. */
+/**
+ * Serializes all joins to one party (a transaction-scoped advisory lock keyed on
+ * its id, held until commit) and throws {@link PartyFullError} at the cap.
+ */
+async function lockPartyBelowCap(
+  tx: Prisma.TransactionClient,
+  partyId: string,
+  cap: number
+): Promise<void> {
+  await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${partyId}, 0))`;
+  const count = await tx.character.count({ where: { partyId } });
+  if (count >= cap) {
+    throw new PartyFullError();
+  }
+}
+
 export class PartyFullError extends Error {
   constructor() {
     super('Party is full');
@@ -75,28 +99,37 @@ export const partyRepository = {
     });
   },
 
+  /** Creates a party with the default Party Class Pool: every Book Class lineage. */
   createParty(input: {
     ownerUserId: string;
     name: string;
     inviteToken: string;
     obrRoomId?: string | null;
   }): Promise<PartyRow> {
-    return prisma.party.create({
-      data: {
-        ownerUserId: input.ownerUserId,
-        name: input.name,
-        inviteToken: input.inviteToken,
-        obrRoomId: input.obrRoomId ?? undefined,
-      },
-      select: {
-        id: true,
-        name: true,
-        ownerUserId: true,
-        inviteToken: true,
-        obrRoomId: true,
-        createdAt: true,
-        updatedAt: true,
-      },
+    return prisma.$transaction(async (tx) => {
+      const bookLineages = await tx.class.findMany({
+        where: { source: 'main_book' },
+        select: { lineageId: true },
+        distinct: ['lineageId'],
+      });
+      return tx.party.create({
+        data: {
+          ownerUserId: input.ownerUserId,
+          name: input.name,
+          inviteToken: input.inviteToken,
+          obrRoomId: input.obrRoomId ?? undefined,
+          classPool: { create: bookLineages.map(({ lineageId }) => ({ lineageId })) },
+        },
+        select: {
+          id: true,
+          name: true,
+          ownerUserId: true,
+          inviteToken: true,
+          obrRoomId: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      });
     });
   },
 
@@ -143,6 +176,22 @@ export const partyRepository = {
         },
       },
     });
+  },
+
+  /** The party behind an invite link, with its Party Class Pool. */
+  async findPartyForInvite(token: string): Promise<PartyInviteRow | null> {
+    const party = await prisma.party.findUnique({
+      where: { inviteToken: token },
+      select: {
+        id: true,
+        ownerUserId: true,
+        classlessEnabled: true,
+        classPool: { select: { lineageId: true } },
+      },
+    });
+    if (!party) return null;
+    const { classPool, ...rest } = party;
+    return { ...rest, poolLineageIds: classPool.map((row) => row.lineageId) };
   },
 
   getPartyByInviteToken(token: string): Promise<PartyRow | null> {
@@ -224,19 +273,31 @@ export const partyRepository = {
     cap: number;
   }): Promise<void> {
     await prisma.$transaction(async (tx) => {
-      // Serialize all joins to THIS party. hashtextextended → a stable bigint
-      // key from the party UUID; the lock is held until the tx commits.
-      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${input.partyId}, 0))`;
-      const count = await tx.character.count({
-        where: { partyId: input.partyId },
-      });
-      if (count >= input.cap) {
-        throw new PartyFullError();
-      }
+      await lockPartyBelowCap(tx, input.partyId, input.cap);
       await tx.character.update({
         where: { id: input.characterId },
         data: { partyId: input.partyId, joinedAt: new Date() },
       });
+    });
+  },
+
+  /**
+   * Creates a character already bound to the party, under the same advisory
+   * lock and cap check as {@link joinInTransaction}: a full party creates
+   * nothing. Throws {@link PartyFullError} at the cap.
+   */
+  async createMemberInTransaction(input: {
+    partyId: string;
+    cap: number;
+    data: Prisma.CharacterUncheckedCreateInput;
+  }): Promise<string> {
+    return prisma.$transaction(async (tx) => {
+      await lockPartyBelowCap(tx, input.partyId, input.cap);
+      const character = await tx.character.create({
+        data: { ...input.data, partyId: input.partyId, joinedAt: new Date() },
+        select: { id: true },
+      });
+      return character.id;
     });
   },
 

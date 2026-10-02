@@ -17,9 +17,13 @@ All application routes are mounted under the `/api` prefix.
 ### Characters (`/api/characters`)
 
 - `POST /new` — generate a new random character or confirm a seeded creation
-  draft (TypeScript generator)
-- `GET /classes` — localized class list for the creation gate
+  draft (TypeScript generator); with `?invite=` the draft is forged into that
+  party in one transaction (a full party, rotated invite or class gone from the
+  pool creates nothing)
+- `GET /classes` — the classes a roll may use: the `?invite=` party's Party
+  Class Pool, or Book Classes without one
 - `POST /draft` — build or rehydrate a stateless draft preview without a DB write
+  (scoped by `?invite=` like `/classes`; Random picks evenly, never Classless)
 - `POST /draft/reroll/:section` — replace one draft section seed and rebuild the
   preview
 - `GET /` — list characters owned by the current session user (optional `locale` query param; falls back to `Accept-Language`)

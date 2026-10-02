@@ -1,5 +1,5 @@
 import prisma from '../lib/prisma.js';
-import { builtInClasses } from '../lib/class-scope.js';
+import { findTranslationsWithAuthoredFallback } from '../lib/class-translations.js';
 import { Prisma } from '@prisma/client';
 
 /**
@@ -31,6 +31,28 @@ export type CharacterPartyAccessRow = {
     }>;
   } | null;
 };
+
+export type ScopeClassRow = {
+  id: number;
+  lineageId: string;
+  version: number;
+  source: 'main_book' | 'zine' | 'the_rack' | 'user';
+  status: 'draft' | 'active' | 'archived';
+  visibility: 'private' | 'public';
+  ownerUserId: string | null;
+  takenDownAt: Date | null;
+};
+
+const scopeClassSelect = {
+  id: true,
+  lineageId: true,
+  version: true,
+  source: true,
+  status: true,
+  visibility: true,
+  ownerUserId: true,
+  takenDownAt: true,
+} as const;
 
 export const characterRepository = {
   /** Owner lookup for ownership checks. `null` when the row does not exist. */
@@ -132,44 +154,43 @@ export const characterRepository = {
     return prisma.character.count();
   },
 
-  async builtInClassExists(id: number): Promise<boolean> {
-    const row = await prisma.class.findFirst({
-      where: { id, ...builtInClasses },
-      select: { id: true },
-    });
-    return row !== null;
+  /** Every Book Class row, for the solo (no-party) class scope. */
+  findBookClassRows(): Promise<ScopeClassRow[]> {
+    return prisma.class.findMany({ where: { source: 'main_book' }, select: scopeClassSelect });
+  },
+
+  /** Every version of the given class lineages, for a Party Class Pool. */
+  findClassRowsByLineage(lineageIds: string[]): Promise<ScopeClassRow[]> {
+    if (lineageIds.length === 0) return Promise.resolve([]);
+    return prisma.class.findMany({ where: { lineageId: { in: lineageIds } }, select: scopeClassSelect });
   },
 
   /**
-   * Classes for the creation gate: id + localized name/description.
-   * Mirrors getClassNameMap's translation lookup.
+   * Classes for the creation gate: id + localized name/description, in id order.
+   * One-language classes fall back to their authored language.
    */
-  async listClasses(
+  async listClassesByIds(
+    ids: number[],
     locale: string
   ): Promise<Array<{ id: number; name: string | null; description: string | null }>> {
+    if (ids.length === 0) return [];
     const classes = await prisma.class.findMany({
-      where: builtInClasses,
-      select: { id: true, nameKey: true, descriptionKey: true },
+      where: { id: { in: ids } },
+      select: { id: true, name: true, nameKey: true, descriptionKey: true, languages: true },
       orderBy: { id: 'asc' },
     });
 
-    const keys = classes.flatMap((c) =>
-      [c.nameKey, c.descriptionKey].filter((k): k is string => k !== null)
+    return Promise.all(
+      classes.map(async (c) => {
+        const keys = [c.nameKey, c.descriptionKey].filter((k): k is string => k !== null);
+        const translations = await findTranslationsWithAuthoredFallback(locale, c.languages, keys);
+        return {
+          id: c.id,
+          name: (c.nameKey ? translations.get(c.nameKey) : undefined) ?? c.name,
+          description: c.descriptionKey ? (translations.get(c.descriptionKey) ?? null) : null,
+        };
+      })
     );
-    const translations =
-      keys.length > 0
-        ? await prisma.translation.findMany({
-            where: { locale, key: { in: keys } },
-            select: { key: true, value: true },
-          })
-        : [];
-    const map = new Map(translations.map((t) => [t.key, t.value]));
-
-    return classes.map((c) => ({
-      id: c.id,
-      name: c.nameKey ? (map.get(c.nameKey) ?? null) : null,
-      description: c.descriptionKey ? (map.get(c.descriptionKey) ?? null) : null,
-    }));
   },
 
   listSummariesByUser(userId: string): Promise<CharacterSummaryRow[]> {

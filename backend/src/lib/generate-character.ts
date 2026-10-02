@@ -24,7 +24,7 @@ import type { Roller } from '@tackgnol/rpg-tools-roller';
 import { sanitizeString } from '../utils.js';
 import { statToModifier } from './ability-modifiers.js';
 import { abilityGrantedItems } from './class-grants.js';
-import { builtInClasses } from './class-scope.js';
+import { bookClasses } from './class-scope.js';
 import { byClassOrder } from './ability-order.js';
 import { hydrateInventoryUses } from './inventory.js';
 import type {
@@ -566,7 +566,7 @@ export async function generateCharacter(
   if (classId !== null) {
     resolvedClassId = classId;
   } else {
-    const classes = await prisma.class.findMany({ where: builtInClasses, select: { id: true } });
+    const classes = await prisma.class.findMany({ where: bookClasses, select: { id: true } });
     const picked = await pickRandom(classes, roller);
     if (!picked) throw new Error('No classes found in database');
     resolvedClassId = picked.id;
@@ -600,6 +600,18 @@ export async function createCharacterFromDraft(
   draft: CharacterDraft,
   userId: string,
 ): Promise<string> {
+  const character = await prisma.character.create({
+    data: await characterCreateDataFromDraft(draft, userId),
+    select: { id: true },
+  });
+  return character.id;
+}
+
+/** The row a confirmed draft rebuilds to, ready to insert (alone or as a party member). */
+export async function characterCreateDataFromDraft(
+  draft: CharacterDraft,
+  userId: string,
+): Promise<Prisma.CharacterUncheckedCreateInput> {
   const classId = draft.classless ? null : draft.classId;
   const data = await buildCharacterData(
     classId,
@@ -612,19 +624,14 @@ export async function createCharacterFromDraft(
     persistedData.name = nameOverride;
   }
 
-  const character = await prisma.character.create({
-    data: {
-      userId,
-      ...persistedData,
-      abilities: persistedData.abilities as object[],
-      equipment: persistedData.equipment as object[],
-      equippedWeapons: persistedData.equippedWeapons as object[],
-      equippedArmor: (persistedData.equippedArmor as object | null) ?? Prisma.DbNull,
-    },
-    select: { id: true },
-  });
-
-  return character.id;
+  return {
+    userId,
+    ...persistedData,
+    abilities: persistedData.abilities as object[],
+    equipment: persistedData.equipment as object[],
+    equippedWeapons: persistedData.equippedWeapons as object[],
+    equippedArmor: (persistedData.equippedArmor as object | null) ?? Prisma.DbNull,
+  };
 }
 
 /**

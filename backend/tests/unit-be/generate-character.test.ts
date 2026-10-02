@@ -201,9 +201,9 @@ function resetFixture(next: Fixture = baseFixture()): void {
 
 const prismaMock = {
   class: {
-    findMany: async ({ where }: { where?: { source?: { not?: string } } } = {}) =>
+    findMany: async ({ where }: { where?: { source?: string } } = {}) =>
       fixture.classes
-        .filter((cls) => (cls.source ?? 'main_book') !== where?.source?.not)
+        .filter((cls) => !where?.source || (cls.source ?? 'main_book') === where.source)
         .map(({ id }) => ({ id })),
     findUnique: async ({ where }: { where: { id: number } }) =>
       fixture.classes.find((row) => row.id === where.id) ?? null,

@@ -29,6 +29,17 @@ describe('ClassGate', () => {
     vi.mocked(fetchClasses).mockResolvedValue(classes);
   });
 
+  it("lists the classes of a party's pool when given its invite", async () => {
+    render(
+      <BrowserTestProvider>
+        <ClassGate onPick={onPick} busy={false} inviteToken="tok-1" />
+      </BrowserTestProvider>
+    );
+
+    await expect.element(page.getByText('Esoteric Hermit')).toBeVisible();
+    expect(fetchClasses).toHaveBeenCalledWith('en', expect.anything(), 'tok-1');
+  });
+
   it('renders a card per class plus Classless and Random', async () => {
     render(
       <BrowserTestProvider>

@@ -1,4 +1,8 @@
 import type { Prisma } from '@prisma/client';
 
-/** Classes open to every roll and picker: Built-in Classes. Custom Classes reach rolls only through Party Class Pools. */
-export const builtInClasses = { source: { not: 'user' } } satisfies Prisma.ClassWhereInput;
+/** Classes a roll may use outside a party: active Book Classes. Everything else needs a Party Class Pool. */
+export const bookClasses = {
+  source: 'main_book',
+  status: 'active',
+  takenDownAt: null,
+} satisfies Prisma.ClassWhereInput;

@@ -26,8 +26,10 @@
   then apply it to the character
 - **Party** — GM party control (`/party/<id>`) with invite link, live warband
   vital strip, and member kick; player party view binds a scvm via an invite link
-  (`/join/<token>`, with `/forge` and `/roll` sub-routes) and shows a live,
-  read-only warband
+  (`/join/<token>`) or forges a new one from the party's class pool
+  (`/join/<token>/forge`, through the class screen; old `/roll` links redirect
+  there), which creates and joins in one step, and shows a live, read-only
+  warband
 - **Owlbear Rodeo extension** — `/obr.html` embeds the in-room scvmrack
   experience: players see their own editable sheet, GMs see a live roster built
   from bound scene tokens, bound tokens expose a compact read-only card peek from

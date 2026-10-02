@@ -5,6 +5,7 @@ import {
     CharacterSchema,
     ErrorSchema,
     GenerateBodySchema,
+    InviteLocaleQuerySchema,
     LocaleQuerySchema,
     LocaleQueryNoDefaultSchema,
     UpdateBodySchema,
@@ -56,15 +57,17 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
                 },
             },
             schema: {
-                description: 'Generate a new random character',
+                description: 'Generate a new random character, or forge one into a party through its invite',
                 tags: ['characters'],
-                querystring: LocaleQuerySchema,
+                querystring: InviteLocaleQuerySchema,
                 body: GenerateBodySchema,
                 response: {
                     201: CharacterSchema,
                     400: ErrorSchema,
                     401: ErrorSchema,
+                    403: ErrorSchema,
                     409: ErrorSchema,
+                    410: ErrorSchema,
                     429: ErrorSchema,
                     500: ErrorSchema,
                 },
@@ -76,6 +79,7 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
                 request.server.partyBus
             ).generate({
                 session: request.appSession,
+                inviteToken: request.query.invite,
                 classId: request.body?.classId,
                 draft: request.body?.draft ?? null,
                 replace: request.body?.replace ?? false,
@@ -96,13 +100,15 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
             schema: {
                 description: 'Generate a character draft preview (not persisted)',
                 tags: ['characters'],
-                querystring: LocaleQuerySchema,
+                querystring: InviteLocaleQuerySchema,
                 body: DraftBodySchema,
                 response: {
                     200: DraftResponseSchema,
                     400: ErrorSchema,
                     401: ErrorSchema,
                     404: ErrorSchema,
+                    409: ErrorSchema,
+                    410: ErrorSchema,
                     429: ErrorSchema,
                     500: ErrorSchema,
                 },
@@ -111,6 +117,7 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
         async (request, reply) => {
             const result = await createCharacterDraftService(request.log).createDraft({
                 session: request.appSession,
+                inviteToken: request.query.invite,
                 classId: request.body?.classId ?? null,
                 classless: request.body?.classless,
                 seeds: request.body?.seeds,
@@ -134,13 +141,15 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
                 description: 'Re-roll a single section of a character draft',
                 tags: ['characters'],
                 params: RerollParamsSchema,
-                querystring: LocaleQuerySchema,
+                querystring: InviteLocaleQuerySchema,
                 body: RerollBodySchema,
                 response: {
                     200: DraftResponseSchema,
                     400: ErrorSchema,
                     401: ErrorSchema,
                     404: ErrorSchema,
+                    409: ErrorSchema,
+                    410: ErrorSchema,
                     429: ErrorSchema,
                     500: ErrorSchema,
                 },
@@ -149,6 +158,7 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
         async (request, reply) => {
             const result = await createCharacterDraftService(request.log).rerollSection({
                 session: request.appSession,
+                inviteToken: request.query.invite,
                 draft: request.body.draft,
                 section: request.params.section,
                 locale: request.query.locale ?? 'en',
@@ -166,11 +176,12 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
         '/classes',
         {
             schema: {
-                description: 'List character classes with localized names',
+                description: 'List the classes a roll may use: the invite\'s Party Class Pool, or Book Classes',
                 tags: ['characters'],
-                querystring: LocaleQuerySchema,
+                querystring: InviteLocaleQuerySchema,
                 response: {
                     200: ClassListResponseSchema,
+                    410: ErrorSchema,
                     500: ErrorSchema,
                 },
             },
@@ -178,6 +189,7 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
         async (request, reply) => {
             const result = await createCharacterDraftService(request.log).listClasses({
                 locale: request.query.locale ?? 'en',
+                inviteToken: request.query.invite,
             });
 
             if (!result.ok) {

@@ -18,18 +18,20 @@ const CLASS_LOAD_TIMEOUT_MS = 10_000;
 type ClassGateProps = {
   onPick: (choice: StartChoice) => void;
   busy: boolean;
+  /** Lists the classes of this party's pool instead of the Book Classes. */
+  inviteToken?: string;
 };
 
 type ClassLoadState =
   | { key: string; status: 'loaded'; classes: ClassSummary[] }
   | { key: string; status: 'failed' };
 
-export function ClassGate({ onPick, busy }: ClassGateProps) {
+export function ClassGate({ onPick, busy, inviteToken }: ClassGateProps) {
   const { t, i18n } = useTranslation();
   const locale = (i18n.language ?? 'en').split('-')[0];
   const [loadAttempt, setLoadAttempt] = useState(0);
   const [loadState, setLoadState] = useState<ClassLoadState | null>(null);
-  const requestKey = `${locale}:${loadAttempt}`;
+  const requestKey = `${locale}:${inviteToken ?? ''}:${loadAttempt}`;
   const classes = loadState?.key === requestKey && loadState.status === 'loaded'
     ? loadState.classes
     : null;
@@ -48,7 +50,7 @@ export function ClassGate({ onPick, busy }: ClassGateProps) {
       controller.abort();
     }, CLASS_LOAD_TIMEOUT_MS);
 
-    fetchClasses(locale, controller.signal)
+    fetchClasses(locale, controller.signal, inviteToken)
       .then((result) => {
         setLoadState({ key: requestKey, status: 'loaded', classes: result });
       })
@@ -80,7 +82,7 @@ export function ClassGate({ onPick, busy }: ClassGateProps) {
       window.clearTimeout(timeout);
       controller.abort();
     };
-  }, [locale, requestKey]);
+  }, [locale, inviteToken, requestKey]);
 
   return (
     <Box sx={styles.root}>

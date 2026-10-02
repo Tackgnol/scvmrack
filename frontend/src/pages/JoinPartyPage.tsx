@@ -318,14 +318,11 @@ export function JoinPartyPage() {
           )}
 
           {/* Always offer a fresh scvm — a player whose only character is bound
-              elsewhere can still roll/forge a new one for this table. */}
+              elsewhere can still forge a new one from this table's class pool. */}
           {invite && !charactersLoading && (
             <ForgeRow>
               <JoinButton component={Link} to={`/join/${token}/forge`}>
                 {t('create.entry', 'Forge a Scvm')}
-              </JoinButton>
-              <JoinButton component={Link} to={`/join/${token}/roll`}>
-                {t('party.rollAndJoin', 'Roll and join')}
               </JoinButton>
             </ForgeRow>
           )}

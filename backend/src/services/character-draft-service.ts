@@ -12,7 +12,9 @@ import {
   seededRollerFor,
 } from '../lib/draft-seeds.js';
 import { characterRepository } from '../repositories/character-repository.js';
-import { notFound, unauthorized } from '../errors.js';
+import { apiError, unauthorized } from '../errors.js';
+import { classChoiceError } from './class-choice.js';
+import { resolveClassScope } from './class-scope-service.js';
 import {
   fail,
   ok,
@@ -80,13 +82,11 @@ export function createCharacterDraftService(log: ServiceLogger) {
     };
   }
 
-  async function classNotFound(classId: number): Promise<boolean> {
-    return !(await characterRepository.builtInClassExists(classId));
-  }
 
   return {
     async createDraft(input: {
       session: AppSession;
+      inviteToken?: string | null;
       classId?: number | null;
       classless?: boolean;
       seeds?: SectionSeeds;
@@ -99,21 +99,22 @@ export function createCharacterDraftService(log: ServiceLogger) {
       }
 
       try {
+        const scope = await resolveClassScope(input.inviteToken);
+        if (!scope.ok) return fail(scope.error);
         const classless = input.classless === true;
         let classId: number | null = classless ? null : (input.classId ?? null);
 
-        if (classId !== null && (await classNotFound(classId))) {
-          return fail(notFound('CLASS_NOT_FOUND', 'Class not found'));
-        }
+        const unavailable = classChoiceError(scope.value, classless, classId);
+        if (unavailable) return fail(unavailable);
 
         // Random class is a one-time choice recorded in the draft, not a
         // seeded section. Rehydrating the same draft keeps the chosen class.
         if (classId === null && !classless) {
-          const classes = await characterRepository.listClasses('en');
-          if (classes.length === 0) {
-            return fail(notFound('CLASS_NOT_FOUND', 'No classes available'));
+          const { classIds } = scope.value;
+          if (classIds.length === 0) {
+            return fail(apiError(409, 'CLASS_NOT_AVAILABLE', 'No classes are available here'));
           }
-          classId = classes[Math.floor(Math.random() * classes.length)].id;
+          classId = classIds[Math.floor(Math.random() * classIds.length)];
         }
 
         const name = normalizedDraftName(input.name);
@@ -137,6 +138,7 @@ export function createCharacterDraftService(log: ServiceLogger) {
 
     async rerollSection(input: {
       session: AppSession;
+      inviteToken?: string | null;
       draft: CharacterDraft;
       section: DraftSection;
       locale: string;
@@ -146,16 +148,15 @@ export function createCharacterDraftService(log: ServiceLogger) {
       }
 
       try {
+        const scope = await resolveClassScope(input.inviteToken);
+        if (!scope.ok) return fail(scope.error);
+        // A draft without a class rolls classless, so it needs Classless allowed.
+        const classless = input.draft.classless || input.draft.classId === null;
+        const unavailable = classChoiceError(scope.value, classless, classless ? null : input.draft.classId);
+        if (unavailable) return fail(unavailable);
         const dropLowestAbilities = input.draft.classless
           ? normalizeDropLowestAbilities(input.draft.dropLowestAbilities)
           : undefined;
-        if (
-          !input.draft.classless &&
-          input.draft.classId !== null &&
-          (await classNotFound(input.draft.classId))
-        ) {
-          return fail(notFound('CLASS_NOT_FOUND', 'Class not found'));
-        }
 
         const name = input.section === 'name'
           ? undefined
@@ -177,9 +178,12 @@ export function createCharacterDraftService(log: ServiceLogger) {
 
     async listClasses(input: {
       locale: string;
+      inviteToken?: string | null;
     }): Promise<ServiceResult<ClassSummary[]>> {
       try {
-        return ok(await characterRepository.listClasses(input.locale));
+        const scope = await resolveClassScope(input.inviteToken);
+        if (!scope.ok) return fail(scope.error);
+        return ok(await characterRepository.listClassesByIds(scope.value.classIds, input.locale));
       } catch (err) {
         return fail(
           unexpected(log, err, 'CLASS_LIST_FAILED', 'Failed to list classes')
