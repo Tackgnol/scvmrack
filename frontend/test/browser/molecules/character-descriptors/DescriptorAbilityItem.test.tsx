@@ -4,10 +4,9 @@ import { page, userEvent } from "vitest/browser";
 import DescriptorAbilityItem from "@/components/molecules/character-descriptors/DescriptorAbilityItem";
 import BrowserTestProvider from "../../BrowserTestProvider";
 
-describe("DescriptorAbilityItem Browser", () => {
-  const occultHerbmasterDecoctionsKey =
-    "abilities.occult_herbmaster.decoctions";
+vi.mock("@/utils/rollDie", () => ({ rollDie: vi.fn(async () => 2) }));
 
+describe("DescriptorAbilityItem Browser", () => {
   const defaultProps = {
     ability: {
       name: "Test Ability",
@@ -62,62 +61,62 @@ describe("DescriptorAbilityItem Browser", () => {
       .toBeVisible();
   });
 
-  it("shows decoctions button for Occult Herbmaster with decoctions key", async () => {
+  const tableAbility = {
+    key: "abilities.occult_herbmaster.decoctions",
+    name: "Portable Laboratory",
+    description: "Brew decoctions.",
+    comment: "",
+    table: {
+      die: 2,
+      rows: [
+        { roll: 1, text: "Red Poison: DR12 or -D10 HP.", itemKey: "equipment.red-poison", itemName: "Red Poison" },
+        { roll: 2, text: "Elixir Vitalis: Heals D6 HP.", itemKey: null, itemName: null },
+      ],
+    },
+  };
+
+  it("keeps a reference table closed until it is opened", async () => {
     await render(
       <BrowserTestProvider>
-        <DescriptorAbilityItem
-          {...defaultProps}
-          isOccultHerbmaster={true}
-          ability={{
-            key: occultHerbmasterDecoctionsKey,
-            name: "Portable Laboratory",
-            description: "desc",
-            comment: "",
-          }}
-        />
+        <DescriptorAbilityItem {...defaultProps} ability={tableAbility} />
       </BrowserTestProvider>,
     );
 
-    const button = page.getByRole("button", { name: /view decoctions/i });
-    await expect.element(button).toBeVisible();
+    const toggle = page.getByRole("button", { name: "d2 table" });
+    await expect.element(toggle).toHaveAttribute("aria-expanded", "false");
+    await expect.element(page.getByText("Red Poison: DR12 or -D10 HP.")).not.toBeVisible();
+
+    await userEvent.click(toggle);
+
+    await expect.element(toggle).toHaveAttribute("aria-expanded", "true");
+    await expect.element(page.getByText("Red Poison: DR12 or -D10 HP.")).toBeVisible();
+    await expect.element(page.getByText("Gives Red Poison")).toBeVisible();
+    await expect.element(page.getByTestId("ability-comment-0-input")).not.toBeVisible();
   });
 
-  it("shows decoctions button for keyed Polish Portable Laboratory ability", async () => {
+  it("rolls the table, marks the rolled row and changes nothing on the character", async () => {
+    const onUpdateComment = vi.fn();
     await render(
       <BrowserTestProvider>
-        <DescriptorAbilityItem
-          {...defaultProps}
-          isOccultHerbmaster={true}
-          ability={{
-            key: occultHerbmasterDecoctionsKey,
-            name: "Przenośne laboratorium",
-            description: "opis",
-            comment: "",
-          }}
-        />
+        <DescriptorAbilityItem {...defaultProps} onUpdateComment={onUpdateComment} ability={tableAbility} />
       </BrowserTestProvider>,
     );
 
-    const button = page.getByRole("button", { name: /view decoctions/i });
-    await expect.element(button).toBeVisible();
+    await userEvent.click(page.getByRole("button", { name: "Roll d2" }));
+
+    await expect.element(page.getByRole("status")).toHaveTextContent("Rolled 2");
+    const rolledRow = page.getByText("Elixir Vitalis: Heals D6 HP.").element().closest("li");
+    expect(rolledRow?.getAttribute("aria-current")).toBe("true");
+    expect(onUpdateComment).not.toHaveBeenCalled();
   });
 
-  it("does not show decoctions button for matching text without decoctions key", async () => {
+  it("shows no table controls for an ability without a table", async () => {
     await render(
       <BrowserTestProvider>
-        <DescriptorAbilityItem
-          {...defaultProps}
-          isOccultHerbmaster={true}
-          ability={{
-            name: "Portable Laboratory",
-            description: "desc",
-            comment: "",
-          }}
-        />
+        <DescriptorAbilityItem {...defaultProps} />
       </BrowserTestProvider>,
     );
 
-    const button = page.getByRole("button", { name: /view decoctions/i });
-    await expect.element(button).not.toBeInTheDocument();
+    await expect.element(page.getByRole("button", { name: /table/i })).not.toBeInTheDocument();
   });
 });

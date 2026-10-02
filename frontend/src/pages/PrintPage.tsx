@@ -397,7 +397,10 @@ function PrintSheet({ character }: { character: Character }) {
                         </dl>
                     </PrintSection>
 
-                    <PrintSection title={t('character.classAbilities', 'Class Abilities')}>
+                    <PrintSection
+                        title={t('character.classAbilities', 'Class Abilities')}
+                        className="print-native-breakable"
+                    >
                         <ol className="print-native-list print-native-numbered">
                             {withOccurrenceKeys(
                                 character.abilities ?? [],
@@ -407,6 +410,23 @@ function PrintSheet({ character }: { character: Character }) {
                                     <strong>{ability.name ?? '-'}</strong>
                                     {ability.description && <span>{ability.description}</span>}
                                     {ability.comment && <span>{ability.comment}</span>}
+                                    {ability.table && (
+                                        <ol
+                                            className="print-native-ability-table"
+                                            aria-label={t('abilityTable.toggle', 'd{{die}} table', { die: ability.table.die })}
+                                        >
+                                            {ability.table.rows.map((row) => (
+                                                <li key={row.roll}>
+                                                    <b>{row.roll}</b>
+                                                    <span>
+                                                        {row.text}
+                                                        {row.itemName &&
+                                                            ` (${t('abilityTable.gives', 'Gives {{item}}', { item: row.itemName })})`}
+                                                    </span>
+                                                </li>
+                                            ))}
+                                        </ol>
+                                    )}
                                 </li>
                             ))}
                         </ol>

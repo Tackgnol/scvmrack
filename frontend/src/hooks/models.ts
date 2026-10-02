@@ -21,11 +21,25 @@ export type SimpleField =
 
 export type Statistic = 'agility' | 'strength' | 'presence' | 'toughness';
 
+export type AbilityTableRow = {
+    roll: number;
+    text: string;
+    itemKey: string | null;
+    itemName: string | null;
+};
+
+/** An ability's dN reference table, read-only on the sheet. */
+export type AbilityTable = {
+    die: number;
+    rows: AbilityTableRow[];
+};
+
 export type Ability = {
     key?: string;
     name?: string;
     description?: string;
     comment?: string;
+    table?: AbilityTable;
 };
 
 export type CustomItemCategory =

@@ -145,6 +145,30 @@ describe('PrintPage', () => {
     await expect.element(page.getByText(/owes silver/i)).toBeVisible();
   });
 
+  it('prints every row of a reference table in a section that may flow onto the next page', async () => {
+    const rows = Array.from({ length: 12 }, (_, index) => ({
+      roll: index + 1,
+      text: `Table row ${index + 1}`,
+      itemKey: index === 0 ? 'equipment.red-poison' : null,
+      itemName: index === 0 ? 'Red Poison' : null,
+    }));
+    await renderPrintPage({
+      character: {
+        ...printableCharacter,
+        abilities: [{ key: 'ability.table', name: 'Laboratory', description: 'Brew.', table: { die: 12, rows } }],
+      },
+    } as Partial<ReturnType<typeof useCharacter>>);
+
+    const table = page.getByRole('list', { name: 'd12 table' });
+    await expect.element(table).toBeInTheDocument();
+    for (const row of rows.slice(1)) {
+      await expect.element(table.getByText(row.text, { exact: true })).toBeInTheDocument();
+    }
+    await expect.element(table.getByText('Table row 1 (Gives Red Poison)')).toBeInTheDocument();
+    const section = table.element().closest('section');
+    expect(section && getComputedStyle(section).breakInside).toBe('auto');
+  });
+
   it('redirects print URLs to the remembered character when needed', async () => {
     await renderPrintPage({
       character: undefined,

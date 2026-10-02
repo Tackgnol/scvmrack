@@ -12,7 +12,6 @@ vi.mock('@/hooks/useCharacterDescriptors', () => ({
 const baseReturn = {
   character: null,
   isLoading: false,
-  isOccultHerbmaster: false,
   abilities: [],
   updateAbilityComment: vi.fn(),
   updateDescriptorField: vi.fn(),
@@ -122,7 +121,6 @@ describe('CharacterDescriptors Browser', () => {
         abilities: [],
       },
       isLoading: false,
-      isOccultHerbmaster: true,
     } as any);
 
     await render(
@@ -131,7 +129,6 @@ describe('CharacterDescriptors Browser', () => {
       </BrowserTestProvider>
     );
 
-    // Just verify the component renders without error in occult herbmaster mode
     await expect.element(page.getByTestId('trait1-input')).toHaveValue('cursed');
   });
 });

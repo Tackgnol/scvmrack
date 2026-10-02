@@ -6,13 +6,11 @@ import DescriptorAbilityItem from './DescriptorAbilityItem';
 
 interface ClassAbilitiesSectionProps {
   abilities: Ability[];
-  isOccultHerbmaster: boolean;
   onUpdateComment: (index: number, ability: Ability, comment: string) => void;
 }
 
 export default function ClassAbilitiesSection({
   abilities,
-  isOccultHerbmaster,
   onUpdateComment,
 }: ClassAbilitiesSectionProps) {
   const { t } = useTranslation();
@@ -30,7 +28,6 @@ export default function ClassAbilitiesSection({
                 key={ability.key ?? ability.name ?? `ability-${index}`}
                 ability={ability}
                 index={index}
-                isOccultHerbmaster={isOccultHerbmaster}
                 onUpdateComment={(comment) => onUpdateComment(index, ability, comment)}
               />
             ))}

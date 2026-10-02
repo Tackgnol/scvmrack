@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { mock, test } from 'node:test';
+import type { AbilityTable } from '../../src/repositories/catalog-repository.js';
 
 type CharacterRow = Record<string, unknown> & {
   id: string;
@@ -72,6 +73,7 @@ type Fixture = {
   translations: TranslationRow[];
   classAbilityModifiers: ClassAbilityModifierRow[];
   abilityOrder?: Array<{ key: string; position: number | null; id: number }>;
+  abilityTables?: AbilityTable[];
 };
 
 function baseFixture(): Fixture {
@@ -283,6 +285,8 @@ const catalogRepositoryMock = {
     fixture.classes.find((row) => row.id === id) ?? null,
   findTranslations: async (locale: string, keys: string[]) =>
     fixture.translations.filter((row) => row.locale === locale && keys.includes(row.key)),
+  findAbilityTables: async (keys: string[]) =>
+    (fixture.abilityTables ?? []).filter((table) => keys.includes(table.abilityKey)),
   findAbilityOrder: async (keys: string[]) =>
     (fixture.abilityOrder ?? []).filter((row) => keys.includes(row.key)),
   findClassAbilityModifiers: async (classId: number, abilityKeys: string[]) =>
@@ -576,4 +580,36 @@ test('getCharacterFull lists abilities in the class order, with entries outside 
     (result.abilities as Array<Record<string, unknown>>).map((ability) => ability.key ?? ability.custom),
     ['abilities.a', 'abilities.b', 'loose-note'],
   );
+});
+
+test("getCharacterFull attaches an ability's reference table with translated rows and linked item names", async () => {
+  const next = baseFixture();
+  next.abilityTables = [
+    {
+      abilityKey: 'abilities.fixed',
+      die: 2,
+      rows: [
+        { roll: 1, textKey: 'table.row.one', itemKey: 'equipment.rope' },
+        { roll: 2, textKey: 'table.row.two', itemKey: null },
+      ],
+    },
+  ];
+  next.translations.push(
+    { locale: 'en', key: 'table.row.one', value: 'Jeden' },
+    { locale: 'en', key: 'table.row.two', value: 'Dwa' },
+  );
+  resetFixture(next);
+
+  const result = await getCharacterFull('character-1', 'en');
+
+  assert.ok(result);
+  const [ability, loose] = result.abilities as Array<Record<string, unknown>>;
+  assert.deepEqual(ability.table, {
+    die: 2,
+    rows: [
+      { roll: 1, text: 'Jeden', itemKey: 'equipment.rope', itemName: 'Lina' },
+      { roll: 2, text: 'Dwa', itemKey: null, itemName: null },
+    ],
+  });
+  assert.equal('table' in loose, false);
 });

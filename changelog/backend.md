@@ -158,7 +158,10 @@ Centralized, structured error pipeline (`src/errors.ts` + `plugins/error-handler
   lifecycle and Class Version lineage; per-stat dice (`count`d`faces` ±
   modifier, optional drop-lowest) and an omen die; and abilities name the item
   and pet they grant. Generation and Getting Better read these instead of
-  hardcoded 3d6, d2 omens and name-to-key grant maps.
+  hardcoded 3d6, d2 omens and name-to-key grant maps. Abilities keep an
+  explicit order and may carry a dN reference table (rows with text and an
+  optional item link), returned with the character; the Occult Herbmaster's
+  decoctions are one.
 - **Structured error logging.** The `unexpected()` helper in `src/services/result.ts` logs unexpected errors via `{ err: error }` so Pino's error serializer captures the full stack trace.
 - **SSE half-open socket fix.** The party stream route (`GET /api/parties/:id/stream`) calls `reply.raw.end()` in its cleanup path to close the socket when a write error fires before the client disconnects.
 

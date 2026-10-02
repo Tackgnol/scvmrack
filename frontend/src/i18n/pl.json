@@ -1,4 +1,10 @@
 {
+  "abilityTable": {
+    "toggle": "Tabela k{{die}}",
+    "roll": "Rzuć k{{die}}",
+    "rolled": "Wyrzucono {{roll}}",
+    "gives": "Daje: {{item}}"
+  },
   "app": {
     "title": "Scvmrack",
     "betaBadge": "Beta",
@@ -400,19 +406,7 @@
     }
   },
   "abilities": {
-    "ability": "Zdolność",
-    "occult_herbmaster": {
-      "view_decoctions": "Pokaż wywary",
-      "decoctions_title": "Wywary okultystycznego zielarza (k8)",
-      "red_poison": "czerwona trucizna: Wytrzymałość ST12 lub -k10 PŻ.",
-      "ezumiel": "Inhalacje Ezumielskie: Zdaj test o ST14 lub doświadczasz poważnych (i nawet zabawnych) halucynacji przez k4 godziny.",
-      "frog": "Potrawka z Żaby Południowej: Rzygasz przez k4 godziny. Zdaj test o DR14 albo nie możesz robić nic innego.",
-      "vitalis": "Eliksir Życia: Leczy k6 PŻ i usuwa infekcję. Potencjalnie uzależniający.",
-      "soup": "Rosół z Sowopająka: Widzisz w ciemności i możesz łazić po ścianach przez pół godziny.",
-      "philtre": "Ekstrakt Fernora: Bezbarwny olejek aplikowany bezpośrednio na oko. Leczy infekcję i dodaje +2 do rzutów na Opanowanie przez k4 godziny.",
-      "hyphos": "Ożywcza Tabaka Hyphosa: Furia! Dwa ataki na rundę, ale bronisz się na ST14. Trwa jedną walkę. Wciągana nosem, powoduje kichanie.",
-      "black_poison": "Czarna Trucizna: Wytrzymałość ST14 lub -k6 PŻ i ślepota przez godzinę."
-    }
+    "ability": "Zdolność"
   },
   "modifiers": {
     "title": "Modyfikatory",

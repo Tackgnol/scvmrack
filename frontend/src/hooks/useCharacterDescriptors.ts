@@ -20,7 +20,6 @@ export function useCharacterDescriptors() {
   return {
     character,
     isLoading,
-    isOccultHerbmaster: character?.classId === 6,
     abilities: character?.abilities ?? [],
     updateAbilityComment,
     updateDescriptorField,

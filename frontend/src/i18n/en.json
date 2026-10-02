@@ -1,4 +1,10 @@
 {
+  "abilityTable": {
+    "toggle": "d{{die}} table",
+    "roll": "Roll d{{die}}",
+    "rolled": "Rolled {{roll}}",
+    "gives": "Gives {{item}}"
+  },
   "app": {
     "title": "Scvmrack",
     "betaBadge": "Beta",
@@ -403,19 +409,7 @@
     }
   },
   "abilities": {
-    "ability": "Ability",
-    "occult_herbmaster": {
-      "view_decoctions": "View decoctions",
-      "decoctions_title": "Occult Herbmaster Decoctions (d8)",
-      "red_poison": "Red Poison: Toughness DR12 or -D10 HP.",
-      "ezumiel": "Ezumiel's Vapor: Pass a DR14 test or severe (and arguably fun) hallucinations for D4 hours.",
-      "frog": "Southern Frog Stew: Vomit for D4 hours, pass a DR14 test or you can do nothing else.",
-      "vitalis": "Elixir Vitalis: Heals D6 HP and stops infection. Can be habit-forming.",
-      "soup": "Spider-Owl Soup: See in darkness, climb on walls for 30 minutes.",
-      "philtre": "Fernor's Philtre: Translucent oil, must be dabbed right into the eye. Heals infection and gives +2 on Presence tests for D4 hours.",
-      "hyphos": "Hyphos' Enervating Snuff: Berserk! Two attacks per round but defend with DR14. Lasts one fight. Must be snorted, causes sneezing.",
-      "black_poison": "Black Poison: Toughness DR14 or -D6 HP and blinded for one hour."
-    }
+    "ability": "Ability"
   },
   "modifiers": {
     "title": "Modifiers",

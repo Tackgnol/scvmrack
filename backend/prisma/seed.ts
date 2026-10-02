@@ -24,6 +24,7 @@ const SEED_FILES = [
   '015_class_stat_dice_and_omen_die.sql',
   '016_class_getting_better_rule.sql',
   '017_ability_position.sql',
+  '018_ability_reference_tables.sql',
 ];
 
 const SEED_DIR = join(__dirname, '..', 'init', '05-seed');

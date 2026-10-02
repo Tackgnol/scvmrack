@@ -327,8 +327,23 @@ model Ability {
   position  Int?
   grantItemKey String? @db.VarChar(255) @map("grant_item_key")
   grantPetKey  String? @db.VarChar(255) @map("grant_pet_key")
+  tableDie     Int?    @map("table_die")
+  tableRows    AbilityTableRow[]
 
   @@map("abilities")
+}
+
+/// One row of an ability's dN reference table; `roll` is the die result that gives it.
+model AbilityTableRow {
+  id        Int     @id @default(autoincrement())
+  abilityId Int     @map("ability_id")
+  ability   Ability @relation(fields: [abilityId], references: [id], onDelete: Cascade)
+  roll      Int
+  textKey   String  @db.VarChar(255) @map("text_key")
+  itemKey   String? @db.VarChar(255) @map("item_key")
+
+  @@unique([abilityId, roll])
+  @@map("ability_table_rows")
 }
 
 model Origin {

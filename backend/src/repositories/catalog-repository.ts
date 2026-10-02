@@ -46,6 +46,12 @@ export type ClassCatalogRow = {
 
 export type AbilityOrderRow = AbilityOrder & { key: string };
 
+export type AbilityTable = {
+  abilityKey: string;
+  die: number;
+  rows: Array<{ roll: number; textKey: string; itemKey: string | null }>;
+};
+
 export type TranslationRow = {
   key: string;
   value: string;
@@ -127,6 +133,23 @@ export const catalogRepository = {
       where: { key: { in: keys }, locale: { in: locales } },
       select: { locale: true, key: true, value: true },
     });
+  },
+
+  async findAbilityTables(keys: string[]): Promise<AbilityTable[]> {
+    if (keys.length === 0) return [];
+    const abilities = await prisma.ability.findMany({
+      where: { key: { in: keys }, tableDie: { not: null } },
+      select: {
+        key: true,
+        tableDie: true,
+        tableRows: { select: { roll: true, textKey: true, itemKey: true }, orderBy: { roll: 'asc' } },
+      },
+    });
+    return abilities.map((ability) => ({
+      abilityKey: ability.key,
+      die: ability.tableDie!,
+      rows: ability.tableRows,
+    }));
   },
 
   findAbilityOrder(keys: string[]): Promise<AbilityOrderRow[]> {

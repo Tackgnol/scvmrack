@@ -123,6 +123,35 @@ const AbilitySchema = {
   },
 } as const;
 
+const AbilityResponseSchema = {
+  ...AbilitySchema,
+  properties: {
+    ...AbilitySchema.properties,
+    table: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['die', 'rows'],
+      properties: {
+        die: { type: 'integer' },
+        rows: {
+          type: 'array',
+          items: {
+            type: 'object',
+            additionalProperties: false,
+            required: ['roll', 'text', 'itemKey', 'itemName'],
+            properties: {
+              roll: { type: 'integer' },
+              text: { type: 'string' },
+              itemKey: { type: ['string', 'null'] },
+              itemName: { type: ['string', 'null'] },
+            },
+          },
+        },
+      },
+    },
+  },
+} as const;
+
 const WeaponSchema = {
   type: 'object',
   additionalProperties: false,
@@ -310,7 +339,7 @@ export const CharacterSchema = {
     trait2: { type: ['string', 'null'] },
     notes: { type: 'string' },
     miseryCount: { type: 'integer' },
-    abilities: { type: 'array', items: AbilitySchema },
+    abilities: { type: 'array', items: AbilityResponseSchema },
     equipment: { type: 'array', items: EquipmentItemSchema },
     storage: { type: 'array', items: EquipmentItemSchema },
     equippedWeapons: { type: 'array', items: WeaponSchema },

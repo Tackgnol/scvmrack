@@ -599,6 +599,33 @@ input[type='number'] {
   padding-left: 6mm;
 }
 
+/* Sections that may hold long reference tables flow onto the next A4 page instead of being clipped. */
+.print-native-section.print-native-breakable {
+  break-inside: auto;
+  page-break-inside: auto;
+}
+
+.print-native-list .print-native-ability-table {
+  margin: 0.6mm 0 0;
+  padding: 0;
+  list-style: none;
+  border: 0;
+}
+
+.print-native-list .print-native-ability-table li {
+  grid-template-columns: 5mm minmax(0, 1fr);
+  gap: 1mm;
+  padding: 0.4mm 0;
+  border-bottom: 0;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.print-native-ability-table b {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 8pt;
+}
+
 .print-native-uses li {
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;

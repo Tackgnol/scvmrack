@@ -197,7 +197,11 @@ for (const bookClass of bookClasses) {
         className: string;
         classDescription: string;
         omens: number;
-        abilities: Array<{ key?: string; name: string }>;
+        abilities: Array<{
+          key?: string;
+          name: string;
+          table?: { die: number; rows: Array<{ roll: number; text: string; itemKey: string | null }> };
+        }>;
       };
       assert.equal(character.classId, bookClass.id);
       assert.ok(
@@ -206,6 +210,18 @@ for (const bookClass of bookClasses) {
       );
       if (locale === 'en') assert.equal(character.className, bookClass.name);
       assert.ok(character.classDescription.length > 0, `${locale} classDescription`);
+      if (bookClass.id === 6) {
+        const laboratory = character.abilities.find(
+          (ability) => ability.key === 'abilities.occult_herbmaster.decoctions',
+        );
+        assert.equal(laboratory?.table?.die, 8, `${locale} decoctions table`);
+        assert.deepEqual(laboratory?.table?.rows.map((row) => row.roll), [1, 2, 3, 4, 5, 6, 7, 8]);
+        for (const row of laboratory?.table?.rows ?? []) {
+          assert.notEqual(row.text, '', `${locale} decoction ${row.roll} text`);
+          assert.ok(!row.text.startsWith('abilities.'), `${locale} decoction ${row.roll} translated`);
+          assert.ok(row.itemKey?.startsWith('equipment.'), `${locale} decoction ${row.roll} item`);
+        }
+      }
       for (const ability of character.abilities) {
         assert.ok(ability.key, `${locale} ability should keep its key`);
         assert.notEqual(ability.name, ability.key, `${locale} ability ${ability.key} should be translated`);

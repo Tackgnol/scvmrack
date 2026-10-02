@@ -11,7 +11,6 @@ export const CharacterDescriptors = () => {
   const {
     character,
     isLoading,
-    isOccultHerbmaster,
     abilities,
     updateAbilityComment,
     updateDescriptorField,
@@ -37,7 +36,6 @@ export const CharacterDescriptors = () => {
     <>
       <ClassAbilitiesSection
         abilities={abilities}
-        isOccultHerbmaster={isOccultHerbmaster}
         onUpdateComment={updateAbilityComment}
       />
 

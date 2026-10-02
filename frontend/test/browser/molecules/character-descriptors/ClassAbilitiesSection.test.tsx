@@ -15,8 +15,7 @@ describe('ClassAbilitiesSection Browser', () => {
       <BrowserTestProvider>
         <ClassAbilitiesSection 
           abilities={abilities} 
-          isOccultHerbmaster={false} 
-          onUpdateComment={vi.fn()} 
+          onUpdateComment={vi.fn()}
         />
       </BrowserTestProvider>
     );
@@ -31,8 +30,7 @@ describe('ClassAbilitiesSection Browser', () => {
       <BrowserTestProvider>
         <ClassAbilitiesSection 
           abilities={[]} 
-          isOccultHerbmaster={false} 
-          onUpdateComment={vi.fn()} 
+          onUpdateComment={vi.fn()}
         />
       </BrowserTestProvider>
     );

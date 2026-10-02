@@ -13,7 +13,11 @@
  *
  * Output is camelCase — callers must NOT apply camelCaseJsonbFields.
  */
-import { catalogRepository, type AbilityOrderRow } from '../repositories/catalog-repository.js';
+import {
+  catalogRepository,
+  type AbilityOrderRow,
+  type AbilityTable,
+} from '../repositories/catalog-repository.js';
 import { characterRepository } from '../repositories/character-repository.js';
 import { snakeToCamel } from '../utils.js';
 import { statToModifier } from './ability-modifiers.js';
@@ -337,7 +341,12 @@ function resolveEquippedArmor(
 
 // ── Ability resolution (mirrors resolve_character_abilities) ──────────────────
 
-function resolveAbilities(abilities: Item[], translations: TranslationMap): Record<string, unknown>[] {
+function resolveAbilities(
+  abilities: Item[],
+  translations: TranslationMap,
+  tables: AbilityTable[],
+): Record<string, unknown>[] {
+  const tableByKey = new Map(tables.map(table => [table.abilityKey, table]));
   return abilities.map(ab => {
     const key = typeof ab.key === 'string' ? ab.key : null;
     if (!key) return { ...ab };
@@ -346,8 +355,23 @@ function resolveAbilities(abilities: Item[], translations: TranslationMap): Reco
     const description = translate(translations, `${key}.description`) ?? '';
     const result: Record<string, unknown> = { key, name, description };
     if (typeof ab.comment === 'string') result.comment = ab.comment;
+    const table = tableByKey.get(key);
+    if (table) result.table = resolveAbilityTable(table, translations);
     return result;
   });
+}
+
+/** A reference table for display: each row's text and linked item named. */
+function resolveAbilityTable(table: AbilityTable, translations: TranslationMap) {
+  return {
+    die: table.die,
+    rows: table.rows.map(row => ({
+      roll: row.roll,
+      text: translate(translations, row.textKey) ?? row.textKey,
+      itemKey: row.itemKey,
+      itemName: row.itemKey ? (translate(translations, row.itemKey) ?? row.itemKey) : null,
+    })),
+  };
 }
 
 /** Sorts a character's abilities as their class lists them; entries outside the catalog keep their order, last. */
@@ -708,7 +732,7 @@ export async function hydrateCharacterRow(
     .filter((k): k is string => k !== null);
 
   // 4. Bulk fetch catalog entries + class in parallel
-  const [weapons, armors, equips, pets, cls, abilityOrder] = await Promise.all([
+  const [weapons, armors, equips, pets, cls, abilityOrder, abilityTables] = await Promise.all([
     catalogRepository.findWeaponsByKeys(allItemKeys),
     catalogRepository.findArmorsByKeys(allItemKeys),
     catalogRepository.findEquipmentByKeys(allItemKeys),
@@ -717,6 +741,7 @@ export async function hydrateCharacterRow(
       ? catalogRepository.findClassById(row.classId)
       : Promise.resolve(null),
     catalogRepository.findAbilityOrder(abilityKeys),
+    catalogRepository.findAbilityTables(abilityKeys),
   ]);
 
   const weaponMap = new Map(weapons.map(w => [w.key, w as WeaponCatalog]));
@@ -743,6 +768,10 @@ export async function hydrateCharacterRow(
     transKeySet.add(key);
     transKeySet.add(`${key}.description`);
   }
+  for (const row of abilityTables.flatMap(table => table.rows)) {
+    transKeySet.add(row.textKey);
+    if (row.itemKey) transKeySet.add(row.itemKey);
+  }
 
   const transKeys = [...transKeySet];
   const translations: TranslationMap = await findTranslationsWithAuthoredFallback(
@@ -765,7 +794,7 @@ export async function hydrateCharacterRow(
   // (with an empty item if null) to match the SQL function behavior for JSON null
   // values stored by generate_character.sql.
   const resolvedArmor = resolveEquippedArmor(equippedArmor ?? {}, armorMap, translations);
-  const resolvedAbilities = resolveAbilities(inClassOrder(abilities, abilityOrder), translations);
+  const resolvedAbilities = resolveAbilities(inClassOrder(abilities, abilityOrder), translations, abilityTables);
 
   // 7. Encumbrance and derived values — counted from the resolved items so the
   // catalog-merged tags + ammoType drive the same exemptions the UI uses.

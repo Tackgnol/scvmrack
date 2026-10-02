@@ -64,6 +64,9 @@
   explicit apply that refreshes the hydrated character cache; the class's rules
   note leads the panel, and a class-ability section shows a gained ability or a
   Keep / Reroll toggle per specialty (Reroll disabled when nothing is free)
+- Abilities with a reference table show a collapsible "dN table" (closed by
+  default) with a Roll button that marks the rolled row without applying it;
+  print lists the whole table and lets the section flow onto the next page
 - Inventory with equipped bar, on-hand vs. storage sections, ammo tracking,
   consumables, pets, and custom-item creation
 - Equipment lookup/add-item flow keeps the add controls stable while search and
