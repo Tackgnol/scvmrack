@@ -17,6 +17,7 @@
 #   auth_base_url
 #   vite_backend_url
 #   vite_logto_endpoint
+#   ses_region, ses_access_key_id, ses_secret_access_key  (email via SES)
 
 when:
   - event: [push]
@@ -51,6 +52,12 @@ steps:
         from_secret: glitchtip_dsn
       VITE_GLITCHTIP_DSN:
         from_secret: vite_glitchtip_dsn
+      SES_REGION:
+        from_secret: ses_region
+      SES_ACCESS_KEY_ID:
+        from_secret: ses_access_key_id
+      SES_SECRET_ACCESS_KEY:
+        from_secret: ses_secret_access_key
       CLIENT_ORIGIN:
         from_secret: client_origin
       CLIENT_GATEWAY:

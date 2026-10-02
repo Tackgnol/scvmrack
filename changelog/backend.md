@@ -162,6 +162,12 @@ Centralized, structured error pipeline (`src/errors.ts` + `plugins/error-handler
   explicit order and may carry a dN reference table (rows with text and an
   optional item link), returned with the character; the Occult Herbmaster's
   decoctions are one.
+- **Transactional email.** `mail-repository` is the only code that calls
+  Amazon SES (v2 API, as in roster); `mail-service` renders the moderation
+  emails (reporter receipt, decision, statement of reasons, dispute copy) in
+  English or Polish, from `scvmrack@rpgtools.co` with Reply-To
+  `contact@rpgtools.co`. Without `SES_REGION`, `SES_ACCESS_KEY_ID` and
+  `SES_SECRET_ACCESS_KEY` nothing is sent and callers get "not sent".
 - **Structured error logging.** The `unexpected()` helper in `src/services/result.ts` logs unexpected errors via `{ err: error }` so Pino's error serializer captures the full stack trace.
 - **SSE half-open socket fix.** The party stream route (`GET /api/parties/:id/stream`) calls `reply.raw.end()` in its cleanup path to close the socket when a write error fires before the client disconnects.
 

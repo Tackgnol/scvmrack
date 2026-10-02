@@ -44,6 +44,7 @@
   "author": "Adam Kościelniak",
   "license": "MIT",
   "dependencies": {
+    "@aws-sdk/client-sesv2": "^3.1146.0",
     "@fastify/autoload": "^6.0.0",
     "@fastify/sensible": "^6.0.0",
     "@fastify/swagger": "^9.0.0",
