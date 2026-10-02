@@ -74,7 +74,7 @@ export function useGettingBetterPreview(input: {
       hp: sectionIsDirty(rolledDraft, workingDraft, "hp"),
       debris: sectionIsDirty(rolledDraft, workingDraft, "debris"),
       abilities: sectionIsDirty(rolledDraft, workingDraft, "abilities"),
-      scumSpecialties: sectionIsDirty(rolledDraft, workingDraft, "scumSpecialties"),
+      classAbility: sectionIsDirty(rolledDraft, workingDraft, "classAbility"),
     };
   }, [preview, workingDraft]);
 

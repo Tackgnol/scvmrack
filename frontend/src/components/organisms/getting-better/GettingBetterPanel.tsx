@@ -16,8 +16,9 @@ export function GettingBetterPanel({ controller }: PanelProps) {
     controller.isLoadingPreview ||
     controller.isRerolling ||
     controller.isApplying;
-  const specialtyName = (key: string) =>
-    controller.preview?.scumSpecialtyNames?.[key] ?? key;
+  const abilityName = (key: string) =>
+    controller.preview?.abilityNames?.[key] ?? key;
+  const rulesNote = controller.preview?.rulesNote;
   const updateDraft = (
     updater: (draft: ImprovementDraft) => ImprovementDraft,
   ) => {
@@ -50,10 +51,16 @@ export function GettingBetterPanel({ controller }: PanelProps) {
         {t("gettingBetter.title", "Get better")}
       </Typography>
 
+      {rulesNote && (
+        <Typography sx={styles.muted} data-testid="getting-better-rules-note">
+          {rulesNote}
+        </Typography>
+      )}
+
       <GettingBetterPanelSections
         draft={draft}
         busy={busy}
-        specialtyName={specialtyName}
+        abilityName={abilityName}
         updateDraft={updateDraft}
         rerollSection={controller.rerollSection}
       />

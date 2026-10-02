@@ -17,6 +17,7 @@ import { catalogRepository } from '../repositories/catalog-repository.js';
 import { characterRepository } from '../repositories/character-repository.js';
 import { snakeToCamel } from '../utils.js';
 import { statToModifier } from './ability-modifiers.js';
+import { findTranslationsWithAuthoredFallback } from './class-translations.js';
 
 // ── Internal types ─────────────────────────────────────────────────────────────
 
@@ -734,14 +735,11 @@ export async function hydrateCharacterRow(
   }
 
   const transKeys = [...transKeySet];
-  const translationRows = await catalogRepository.findTranslations(locale, transKeys);
-  const translations: TranslationMap = new Map(translationRows.map(t => [t.key, t.value]));
-  // A class written in one language reads in that language when the reader's has no row.
-  if (cls && !cls.languages.includes(locale)) {
-    const missingKeys = transKeys.filter(key => !translations.has(key));
-    const authored = await catalogRepository.findTranslations(cls.languages[0], missingKeys);
-    for (const t of authored) translations.set(t.key, t.value);
-  }
+  const translations: TranslationMap = await findTranslationsWithAuthoredFallback(
+    locale,
+    cls?.languages ?? [],
+    transKeys,
+  );
 
   // 6. Resolve each inventory section
   const resolvedEquipment = equipment.map(item =>

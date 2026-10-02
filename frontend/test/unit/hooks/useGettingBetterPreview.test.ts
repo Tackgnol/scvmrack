@@ -114,7 +114,7 @@ function draft(overrides: Partial<ImprovementDraft> = {}): ImprovementDraft {
       presence: abilityRoll(),
       toughness: abilityRoll(),
     },
-    scumSpecialties: { kind: 'notScum' },
+    classAbility: { kind: 'none' },
     ...overrides,
   };
 }
@@ -126,7 +126,8 @@ function preview(overrides: Partial<ImprovementPreview> = {}): ImprovementPrevie
     characterId: 'char-1',
     sequence: rolledDraft.sequence,
     rolledDraft,
-    scumSpecialtyNames: {},
+    abilityNames: {},
+    rulesNote: null,
     snapshotHash: rolledDraft.snapshot.snapshotHash,
     createdAt: '2026-07-07T10:00:00.000Z',
     updatedAt: '2026-07-07T10:00:00.000Z',

@@ -138,27 +138,26 @@ type ImprovementDraft = {
     | { roll: RollValue; kind: 'uncleanScroll'; scroll: RollValue; itemKey: string }
     | { roll: RollValue; kind: 'sacredScroll'; scroll: RollValue; itemKey: string };
   abilities: Record<AbilityStat, ImprovementAbilityRoll>;
-  scumSpecialties:
-    | { kind: 'notScum' }
+  classAbility:
+    | { kind: 'none' }
+    | { kind: 'newAbility'; added: SpecialtyRoll | null }
+    | { kind: 'firstSpecialty'; existing: SpecialtySlot[]; added: SpecialtyRoll | null }
     | {
-        kind: 'firstImprovement';
-        existing: { key: string; rollValue: number };
-        added: { key: string; rollValue: number; roll: RollValue };
-      }
-    | {
-        kind: 'laterImprovement';
-        primary: { key: string; rollValue: number };
-        secondary: { key: string; rollValue: number };
-        rerollMode: 'none' | 'primary' | 'secondary' | 'both';
+        kind: 'specialties';
+        specialties: Array<{ current: SpecialtySlot; replacement: SpecialtyRoll | null; reroll: boolean }>;
       };
 };
+
+type SpecialtySlot = { key: string; rollValue: number };
+type SpecialtyRoll = SpecialtySlot & { roll: RollValue };
 
 type ImprovementPreview = {
   id: string;
   characterId: string;
   sequence: number;
   rolledDraft: ImprovementDraft;
-  scumSpecialtyNames: Record<string, string>;
+  abilityNames: Record<string, string>;
+  rulesNote: string | null;
   snapshotHash: string;
   createdAt: string;
   updatedAt: string;
@@ -516,7 +515,7 @@ function buildTableEditedImprovement(preview: ImprovementPreview): {
         amount: 3,
       },
       abilities,
-      scumSpecialties: { kind: 'notScum' },
+      classAbility: { kind: 'none' },
     },
     expected: {
       maxHp: snapshot.maxHp + 1,
@@ -592,7 +591,7 @@ test('POST /api/characters/:id/improvements/:improvementId/apply applies a full 
   const preview = (await previewResponse.json()) as ImprovementPreview;
   assert.equal(preview.characterId, id);
   assert.equal(preview.sequence, 1);
-  assert.equal(preview.rolledDraft.scumSpecialties.kind, 'notScum');
+  assert.equal(preview.rolledDraft.classAbility.kind, 'none');
 
   const reopenCsrf = await fetchCsrfToken(jar);
   const reopenResponse = await request(`/api/characters/${id}/improvements/preview`, {
@@ -653,7 +652,7 @@ test('POST /api/characters/:id/improvements/:improvementId/apply applies a full 
   }
 });
 
-test('POST /api/characters/:id/improvements/preview resolves Scum specialties from database translations', async () => {
+test('Gutterborn Scum is a Specialist: specialties resolve from translations, then turn into toggles', async () => {
   const jar = await bootstrapAnonymousSession();
   const id = await createCharacterWithBody(jar, { classId: 2 });
 
@@ -665,16 +664,15 @@ test('POST /api/characters/:id/improvements/preview resolves Scum specialties fr
   });
   await expectStatus(plResponse, 200);
   const plPreview = (await plResponse.json()) as ImprovementPreview;
-  assert.equal(plPreview.rolledDraft.scumSpecialties.kind, 'firstImprovement');
-  if (plPreview.rolledDraft.scumSpecialties.kind !== 'firstImprovement') return;
+  const first = plPreview.rolledDraft.classAbility;
+  assert.equal(first.kind, 'firstSpecialty');
+  if (first.kind !== 'firstSpecialty' || !first.added) return;
+  assert.equal(first.existing.length, 1);
 
-  const keys = [
-    plPreview.rolledDraft.scumSpecialties.existing.key,
-    plPreview.rolledDraft.scumSpecialties.added.key,
-  ];
+  const keys = [first.existing[0].key, first.added.key];
   for (const key of keys) {
-    assert.ok(plPreview.scumSpecialtyNames[key]);
-    assert.notEqual(plPreview.scumSpecialtyNames[key], key);
+    assert.ok(plPreview.abilityNames[key]);
+    assert.notEqual(plPreview.abilityNames[key], key);
   }
 
   const enCsrf = await fetchCsrfToken(jar);
@@ -687,9 +685,36 @@ test('POST /api/characters/:id/improvements/preview resolves Scum specialties fr
   const enPreview = (await enResponse.json()) as ImprovementPreview;
   assert.equal(enPreview.id, plPreview.id);
   for (const key of keys) {
-    assert.ok(enPreview.scumSpecialtyNames[key]);
-    assert.notEqual(enPreview.scumSpecialtyNames[key], plPreview.scumSpecialtyNames[key]);
+    assert.ok(enPreview.abilityNames[key]);
+    assert.notEqual(enPreview.abilityNames[key], plPreview.abilityNames[key]);
   }
+
+  const applyCsrf = await fetchCsrfToken(jar);
+  const applyResponse = await request(
+    `/api/characters/${id}/improvements/${enPreview.id}/apply?locale=en`,
+    {
+      method: 'POST',
+      json: { draft: enPreview.rolledDraft },
+      headers: { 'x-csrf-token': applyCsrf },
+      jar,
+    }
+  );
+  await expectStatus(applyResponse, 200);
+
+  const laterCsrf = await fetchCsrfToken(jar);
+  const laterResponse = await request(`/api/characters/${id}/improvements/preview?locale=en`, {
+    method: 'POST',
+    headers: { 'x-csrf-token': laterCsrf },
+    jar,
+  });
+  await expectStatus(laterResponse, 200);
+  const later = ((await laterResponse.json()) as ImprovementPreview).rolledDraft.classAbility;
+  assert.equal(later.kind, 'specialties');
+  if (later.kind !== 'specialties') return;
+  assert.deepEqual(
+    later.specialties.map((choice) => [choice.current.key, choice.reroll]),
+    keys.map((key) => [key, false]),
+  );
 });
 
 // ── Ownership enforcement ─────────────────────────────────────────────────────

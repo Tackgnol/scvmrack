@@ -1,6 +1,7 @@
 import { Prisma } from '@prisma/client';
 import prisma from '../lib/prisma.js';
 import type { AbilityGrants } from '../lib/class-grants.js';
+import type { GettingBetterRule } from '../lib/getting-better-types.js';
 
 export type ImprovementCharacterRow = {
   id: string;
@@ -35,6 +36,12 @@ export type ClassAbilityRow = AbilityGrants & {
   key: string;
   rollValue: number | null;
   isRandom: boolean | null;
+};
+
+export type ClassGettingBetterRow = {
+  gettingBetterRule: GettingBetterRule;
+  gettingBetterNoteKey: string | null;
+  languages: string[];
 };
 
 export type ScrollCatalogRow = {
@@ -137,6 +144,13 @@ export const characterImprovementRepository = {
       select: { key: true, roll: true, tags: true },
       orderBy: { roll: 'asc' },
     }) as Promise<ScrollCatalogRow[]>;
+  },
+
+  findClassGettingBetter(classId: number): Promise<ClassGettingBetterRow | null> {
+    return prisma.class.findUnique({
+      where: { id: classId },
+      select: { gettingBetterRule: true, gettingBetterNoteKey: true, languages: true },
+    });
   },
 
   findClassAbilities(classId: number): Promise<ClassAbilityRow[]> {

@@ -24,6 +24,7 @@ import {
   rerollDraftSection,
   sameSnapshot,
   toPreviewResponse,
+  upgradeActiveDraft,
   type ImprovementRerollSection,
   type PreviewResponse,
 } from './character-improvement-preview.js';
@@ -97,15 +98,18 @@ export function createCharacterImprovementService(
         const owned = await loadOwnedCharacter(input.id, input.session);
         if (!owned.ok) return fail(owned.error);
 
+        const { catalog, classSettings } = await loadCatalog(owned.row);
         const active = await characterImprovementRepository.findActive(
           input.id
         );
-        if (active) return ok(await toPreviewResponse(active, locale));
+        if (active) {
+          const current = await upgradeActiveDraft(active, catalog);
+          return ok(await toPreviewResponse(current, locale, classSettings));
+        }
 
         const appliedCount = await characterImprovementRepository.countApplied(
           input.id
         );
-        const { catalog } = await loadCatalog(owned.row);
         const draft = await buildDraft(
           owned.row,
           appliedCount + 1,
@@ -118,7 +122,7 @@ export function createCharacterImprovementService(
           draft as unknown as Prisma.InputJsonValue,
           draft.snapshot.snapshotHash
         );
-        return ok(await toPreviewResponse(created, locale));
+        return ok(await toPreviewResponse(created, locale, classSettings));
       } catch (err) {
         const ruleError = mapRuleError(err);
         if (ruleError) return fail(ruleError);
@@ -162,9 +166,10 @@ export function createCharacterImprovementService(
         const appliedCount = await characterImprovementRepository.countApplied(
           input.id
         );
-        const { catalog } = await loadCatalog(owned.row);
+        const { catalog, classSettings } = await loadCatalog(owned.row);
+        const current = await upgradeActiveDraft(active, catalog);
         const draft = await rerollDraftSection({
-          activeDraft: active.rolledDraft as ImprovementDraft,
+          activeDraft: current.rolledDraft as ImprovementDraft,
           section: input.section,
           row: owned.row,
           appliedCount,
@@ -181,7 +186,7 @@ export function createCharacterImprovementService(
             notFound('IMPROVEMENT_NOT_FOUND', 'Improvement preview not found')
           );
         }
-        return ok(await toPreviewResponse(updated, locale));
+        return ok(await toPreviewResponse(updated, locale, classSettings));
       } catch (err) {
         const ruleError = mapRuleError(err);
         if (ruleError) return fail(ruleError);
@@ -223,10 +228,14 @@ export function createCharacterImprovementService(
         }
 
         const persistedDraft = active.rolledDraft as ImprovementDraft;
-        const { catalog, scumSpecialtyKeys, classAbilities } = await loadCatalog(owned.row);
+        const { catalog, classAbilities } = await loadCatalog(owned.row);
+        const appliedCount = await characterImprovementRepository.countApplied(
+          input.id
+        );
         const normalizedDraft = normalizeSubmittedImprovementDraft(
           input.draft,
           persistedDraft.snapshot,
+          appliedCount,
           catalog
         );
         if (!sameSnapshot(owned.row, normalizedDraft.snapshot)) {
@@ -245,7 +254,6 @@ export function createCharacterImprovementService(
             silver: owned.row.silver ?? 0,
             abilities: normalizedDraft.snapshot.abilities,
             abilityKeys: normalizedDraft.snapshot.abilityKeys,
-            scumSpecialtyKeys,
           },
           { draftId: active.id, appliedAt: new Date().toISOString() }
         );

@@ -262,6 +262,14 @@ enum ClassVisibility {
   @@map("class_visibility")
 }
 
+enum GettingBetterRule {
+  book
+  book_plus_ability
+  specialist
+
+  @@map("getting_better_rule")
+}
+
 enum ClassStatus {
   draft
   active
@@ -302,6 +310,8 @@ model Class {
   lineageId           String          @default(dbgenerated("gen_random_uuid()")) @map("lineage_id") @db.Uuid
   version             Int             @default(1)
   omenDie             Int             @default(2) @map("omen_die")
+  gettingBetterRule   GettingBetterRule @default(book) @map("getting_better_rule")
+  gettingBetterNoteKey String?        @db.VarChar(255) @map("getting_better_note_key")
 
   @@unique([lineageId, version])
   @@index([ownerUserId])

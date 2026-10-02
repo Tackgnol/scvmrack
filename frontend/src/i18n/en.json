@@ -717,19 +717,15 @@
       "title": "Abilities",
       "from": "From {{value}}"
     },
-    "scum": {
-      "title": "Scum specialty",
-      "existing": "Existing",
-      "added": "Added",
-      "primary": "Primary",
-      "secondary": "Secondary",
-      "rerollMode": "Mode",
-      "modes": {
-        "none": "Keep both",
-        "primary": "Reroll primary",
-        "secondary": "Reroll secondary",
-        "both": "Reroll both"
-      }
+    "classAbility": {
+      "newTitle": "New ability",
+      "specialtiesTitle": "Specialties",
+      "existing": "Your specialties",
+      "added": "Gained",
+      "keep": "Keep",
+      "reroll": "Reroll",
+      "becomes": "Reroll gives {{name}}",
+      "noneLeft": "No ability left to gain"
     }
   },
   "powers": {

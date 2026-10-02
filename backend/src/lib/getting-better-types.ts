@@ -68,15 +68,20 @@ export type SpecialtyRoll = SpecialtySlot & {
   roll: RollValue;
 };
 
-export type ScumSpecialtyDraft =
-  | { kind: 'notScum' }
-  | { kind: 'firstImprovement'; existing: SpecialtySlot; added: SpecialtyRoll }
-  | {
-      kind: 'laterImprovement';
-      primary: SpecialtySlot;
-      secondary: SpecialtySlot;
-      rerollMode: 'none' | 'primary' | 'secondary' | 'both';
-    };
+export type GettingBetterRule = 'book' | 'book_plus_ability' | 'specialist';
+
+/** One held specialty: keep it, or swap it for the pre-rolled replacement (null when none is free). */
+export type SpecialtyChoice = {
+  current: SpecialtySlot;
+  replacement: SpecialtyRoll | null;
+  reroll: boolean;
+};
+
+export type ClassAbilityDraft =
+  | { kind: 'none' }
+  | { kind: 'newAbility'; added: SpecialtyRoll | null }
+  | { kind: 'firstSpecialty'; existing: SpecialtySlot[]; added: SpecialtyRoll | null }
+  | { kind: 'specialties'; specialties: SpecialtyChoice[] };
 
 export type ImprovementDraft = {
   sequence: number;
@@ -84,7 +89,7 @@ export type ImprovementDraft = {
   hp: ImprovementHpRoll;
   debris: ImprovementDebrisRoll;
   abilities: Record<AbilityStat, ImprovementAbilityRoll>;
-  scumSpecialties: ScumSpecialtyDraft;
+  classAbility: ClassAbilityDraft;
 };
 
 export type AppliedImprovement = {
@@ -116,17 +121,12 @@ export type ScrollFamily = 'unclean' | 'sacred';
 
 export type GettingBetterCatalog = {
   scrollKeys(family: ScrollFamily): readonly string[];
-  scumSpecialties?(): readonly SpecialtySlot[];
-  scumFixedAbilityKeys?(): readonly string[];
+  classRule?(): GettingBetterRule;
+  classPool?(): readonly SpecialtySlot[];
 };
 
 export type HpImprovementCharacter = {
   maxHp: number;
-};
-
-export type ScumSpecialtyCharacter = {
-  isGutterbornScum: boolean;
-  abilityKeys: readonly string[];
 };
 
 export type AppliedImprovementCharacter = {
@@ -134,7 +134,6 @@ export type AppliedImprovementCharacter = {
   silver: number;
   abilities: Record<AbilityStat, number>;
   abilityKeys: readonly string[];
-  scumSpecialtyKeys?: readonly string[];
 };
 
 export type BuildAppliedImprovementOptions = {

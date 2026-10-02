@@ -19,7 +19,6 @@ import {
   rollAbilityImprovement,
   rollDebris,
   rollHpImprovement,
-  rollScumSpecialties,
   type RollResult,
   type RollValue,
   scoreToModifierExtended,
@@ -52,7 +51,7 @@ class ScriptedRoller implements GettingBetterRoller {
   }
 }
 
-const scumSpecialties = [
+const classPool = [
   { key: 'abilities.gutterborn_scum.jab', rollValue: 1 },
   { key: 'abilities.gutterborn_scum.fingersmith', rollValue: 2 },
   { key: 'abilities.gutterborn_scum.gob_lobber', rollValue: 3 },
@@ -66,8 +65,12 @@ const catalog: GettingBetterCatalog = {
     family === 'unclean'
       ? ['scroll.unclean.first', 'scroll.unclean.second']
       : ['scroll.sacred.first', 'scroll.sacred.second', 'scroll.sacred.third'],
-  scumSpecialties: () => scumSpecialties,
-  scumFixedAbilityKeys: () => ['abilities.gutterborn_scum.stealthy'],
+};
+
+const specialistCatalog: GettingBetterCatalog = {
+  ...catalog,
+  classRule: () => 'specialist',
+  classPool: () => classPool,
 };
 
 function rv(total: number, source: RollValue['source'] = 'table', dice?: number[]): RollValue {
@@ -131,7 +134,7 @@ function baseDraft(snapshot = baseSnapshot()): ImprovementDraft {
       kind: 'nothing',
     },
     abilities: submittedAbilities(),
-    scumSpecialties: { kind: 'notScum' },
+    classAbility: { kind: 'none' },
   };
 }
 
@@ -297,7 +300,7 @@ test('normalizeSubmittedImprovementDraft recomputes derived fields from submitte
   const snapshot = baseSnapshot();
   const draft = baseDraft(snapshot);
 
-  const normalized = normalizeSubmittedImprovementDraft(draft, snapshot, catalog);
+  const normalized = normalizeSubmittedImprovementDraft(draft, snapshot, 0, catalog);
 
   assert.equal(normalized.hp.fromMaxHp, 10);
   assert.equal(normalized.hp.succeeds, true);
@@ -325,7 +328,7 @@ test('normalizeSubmittedImprovementDraft rejects stale snapshot hashes and impos
   const wrongSnapshot = { ...snapshot, snapshotHash: 'wrong' };
 
   assert.throws(
-    () => normalizeSubmittedImprovementDraft(baseDraft(wrongSnapshot), snapshot, catalog),
+    () => normalizeSubmittedImprovementDraft(baseDraft(wrongSnapshot), snapshot, 0, catalog),
     /submitted improvement draft/,
   );
 
@@ -339,7 +342,7 @@ test('normalizeSubmittedImprovementDraft rejects stale snapshot hashes and impos
   };
 
   assert.throws(
-    () => normalizeSubmittedImprovementDraft(failedHpWithIncrease, snapshot, catalog),
+    () => normalizeSubmittedImprovementDraft(failedHpWithIncrease, snapshot, 0, catalog),
     /failed HP improvement/,
   );
 });
@@ -354,7 +357,7 @@ test('normalizeSubmittedImprovementDraft derives debris scroll item keys and rej
     itemKey: 'client.supplied.wrong-key',
   };
 
-  const normalized = normalizeSubmittedImprovementDraft(draft, snapshot, catalog);
+  const normalized = normalizeSubmittedImprovementDraft(draft, snapshot, 0, catalog);
 
   assert.deepEqual(normalized.debris, {
     roll: rv(5),
@@ -372,136 +375,8 @@ test('normalizeSubmittedImprovementDraft derives debris scroll item keys and rej
   };
 
   assert.throws(
-    () => normalizeSubmittedImprovementDraft(invalid, snapshot, catalog),
+    () => normalizeSubmittedImprovementDraft(invalid, snapshot, 0, catalog),
     /1d3 total 4 is outside 1-3/,
-  );
-});
-
-test('rollScumSpecialties returns non-Scum, first improvement, and later improvement drafts', async () => {
-  assert.deepEqual(
-    await rollScumSpecialties({ isGutterbornScum: false, abilityKeys: [] }, 0, new ScriptedRoller([]), catalog),
-    { kind: 'notScum' },
-  );
-
-  const firstRoller = new ScriptedRoller([
-    { notation: '1d6', total: 1 },
-    { notation: '1d6', total: 2 },
-  ]);
-  const first = await rollScumSpecialties(
-    {
-      isGutterbornScum: true,
-      abilityKeys: ['abilities.gutterborn_scum.stealthy', 'abilities.gutterborn_scum.jab'],
-    },
-    0,
-    firstRoller,
-    catalog,
-  );
-  assert.deepEqual(first, {
-    kind: 'firstImprovement',
-    existing: { key: 'abilities.gutterborn_scum.jab', rollValue: 1 },
-    added: {
-      key: 'abilities.gutterborn_scum.fingersmith',
-      rollValue: 2,
-      roll: { source: 'server', total: 2 },
-    },
-  });
-  assert.deepEqual(firstRoller.calls, ['1d6', '1d6']);
-
-  const later = await rollScumSpecialties(
-    {
-      isGutterbornScum: true,
-      abilityKeys: [
-        'abilities.gutterborn_scum.stealthy',
-        'abilities.gutterborn_scum.jab',
-        'abilities.gutterborn_scum.fate',
-      ],
-    },
-    1,
-    new ScriptedRoller([]),
-    catalog,
-  );
-  assert.deepEqual(later, {
-    kind: 'laterImprovement',
-    primary: { key: 'abilities.gutterborn_scum.jab', rollValue: 1 },
-    secondary: { key: 'abilities.gutterborn_scum.fate', rollValue: 4 },
-    rerollMode: 'none',
-  });
-});
-
-test('normalizeSubmittedImprovementDraft enforces distinct Scum specialties', () => {
-  const snapshot = baseSnapshot({
-    abilityKeys: ['abilities.gutterborn_scum.stealthy', 'abilities.gutterborn_scum.jab'],
-  });
-  const draft = baseDraft(snapshot);
-  draft.scumSpecialties = {
-    kind: 'firstImprovement',
-    existing: { key: 'abilities.gutterborn_scum.jab', rollValue: 1 },
-    added: {
-      key: 'abilities.gutterborn_scum.jab',
-      rollValue: 1,
-      roll: rv(1),
-    },
-  };
-
-  assert.throws(
-    () => normalizeSubmittedImprovementDraft(draft, snapshot, catalog),
-    /Scum specialties must be distinct/,
-  );
-
-  draft.scumSpecialties = {
-    kind: 'firstImprovement',
-    existing: { key: 'abilities.gutterborn_scum.jab', rollValue: 1 },
-    added: {
-      key: 'client.wrong-key',
-      rollValue: 999,
-      roll: rv(2),
-    },
-  };
-
-  const normalized = normalizeSubmittedImprovementDraft(draft, snapshot, catalog);
-  assert.deepEqual(normalized.scumSpecialties, {
-    kind: 'firstImprovement',
-    existing: { key: 'abilities.gutterborn_scum.jab', rollValue: 1 },
-    added: {
-      key: 'abilities.gutterborn_scum.fingersmith',
-      rollValue: 2,
-      roll: rv(2),
-    },
-  });
-});
-
-test('normalizeSubmittedImprovementDraft enforces later Scum reroll modes', () => {
-  const snapshot = baseSnapshot({
-    abilityKeys: [
-      'abilities.gutterborn_scum.stealthy',
-      'abilities.gutterborn_scum.jab',
-      'abilities.gutterborn_scum.fate',
-    ],
-  });
-  const draft = baseDraft(snapshot);
-  draft.scumSpecialties = {
-    kind: 'laterImprovement',
-    primary: { key: 'abilities.gutterborn_scum.fingersmith', rollValue: 2 },
-    secondary: { key: 'abilities.gutterborn_scum.fate', rollValue: 4 },
-    rerollMode: 'primary',
-  };
-
-  assert.deepEqual(
-    normalizeSubmittedImprovementDraft(draft, snapshot, catalog).scumSpecialties,
-    draft.scumSpecialties,
-  );
-
-  const invalid = baseDraft(snapshot);
-  invalid.scumSpecialties = {
-    kind: 'laterImprovement',
-    primary: { key: 'abilities.gutterborn_scum.fingersmith', rollValue: 2 },
-    secondary: { key: 'abilities.gutterborn_scum.fate', rollValue: 4 },
-    rerollMode: 'none',
-  };
-
-  assert.throws(
-    () => normalizeSubmittedImprovementDraft(invalid, snapshot, catalog),
-    /cannot change when reroll mode is none/,
   );
 });
 
@@ -518,9 +393,9 @@ test('buildAppliedImprovement reports normalized character changes', () => {
         silver: rv(12),
         amount: 999,
       },
-      scumSpecialties: {
-        kind: 'firstImprovement',
-        existing: { key: 'abilities.gutterborn_scum.jab', rollValue: 1 },
+      classAbility: {
+        kind: 'firstSpecialty',
+        existing: [{ key: 'abilities.gutterborn_scum.jab', rollValue: 1 }],
         added: {
           key: 'abilities.gutterborn_scum.fingersmith',
           rollValue: 2,
@@ -529,7 +404,8 @@ test('buildAppliedImprovement reports normalized character changes', () => {
       },
     },
     snapshot,
-    catalog,
+    0,
+    specialistCatalog,
   );
   const character: AppliedImprovementCharacter = {
     maxHp: 10,

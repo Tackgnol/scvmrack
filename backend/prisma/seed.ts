@@ -22,6 +22,7 @@ const SEED_FILES = [
   '012_clear_lantern_torch_ammo_type.sql',
   '014_ability_grants.sql',
   '015_class_stat_dice_and_omen_die.sql',
+  '016_class_getting_better_rule.sql',
 ];
 
 const SEED_DIR = join(__dirname, '..', 'init', '05-seed');

@@ -31,7 +31,8 @@ All application routes are mounted under the `/api` prefix.
   Better preview section or the full preview without applying character changes
 - `POST /:id/improvements/:improvementId/apply` — validate a submitted Getting
   Better draft, reject stale snapshots, and atomically apply max HP, silver,
-  ability, equipment, and Scum specialty changes
+  ability, equipment, and class-ability changes (gained abilities bring their
+  item and pet grants)
 - `PATCH /:id` — update a character (plain-text sanitization, length limits, bounds clamping)
 - `DELETE /:id` — delete a character (ownership-enforced)
 - `POST /:id/improvements/preview` — roll a Getting Better preview (pure rule
@@ -148,9 +149,11 @@ Centralized, structured error pipeline (`src/errors.ts` + `plugins/error-handler
 - **Repository-only Prisma access.** All direct Prisma calls have been removed from `src/lib/`. A new `catalog-repository.ts` centralises catalog reads (weapons, armors, equipment, pets, classes, translations, class ability modifiers). Library files (`inventory.ts`, `get-character-full.ts`, `item-search-service.ts`) now call the repository layer, restoring the Repository → Service → Controller invariant.
 - **Getting Better command drafts.** Character improvements are stored as typed
   active/applied `CharacterImprovement` rows with one active preview per
-  character. Pure rule functions compute HP, debris, ability, and Gutterborn
-  Scum specialty outcomes; the service normalizes submitted table values before
-  writing through the repository transaction.
+  character. Pure rule functions compute HP, debris, ability, and class-ability
+  outcomes from each class's Getting Better rule (book, book plus a new
+  ability, or Specialist with per-specialty Keep/Reroll); the service
+  normalizes submitted table values before writing through the repository
+  transaction. Previews saved in the old two-slot Scum shape upgrade on load.
 - **Class rules are data.** Each class row carries its source, Credit, owner,
   lifecycle and Class Version lineage; per-stat dice (`count`d`faces` ±
   modifier, optional drop-lowest) and an omen die; and abilities name the item

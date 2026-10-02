@@ -6,7 +6,7 @@ export type ImprovementRerollSection =
   | "hp"
   | "debris"
   | "abilities"
-  | "scumSpecialties"
+  | "classAbility"
   | "all";
 
 export type RollValue = {
@@ -67,15 +67,17 @@ export type SpecialtyRoll = SpecialtySlot & {
   roll: RollValue;
 };
 
-export type ScumSpecialtyDraft =
-  | { kind: "notScum" }
-  | { kind: "firstImprovement"; existing: SpecialtySlot; added: SpecialtyRoll }
-  | {
-      kind: "laterImprovement";
-      primary: SpecialtySlot;
-      secondary: SpecialtySlot;
-      rerollMode: "none" | "primary" | "secondary" | "both";
-    };
+export type SpecialtyChoice = {
+  current: SpecialtySlot;
+  replacement: SpecialtyRoll | null;
+  reroll: boolean;
+};
+
+export type ClassAbilityDraft =
+  | { kind: "none" }
+  | { kind: "newAbility"; added: SpecialtyRoll | null }
+  | { kind: "firstSpecialty"; existing: SpecialtySlot[]; added: SpecialtyRoll | null }
+  | { kind: "specialties"; specialties: SpecialtyChoice[] };
 
 export type ImprovementDraft = {
   sequence: number;
@@ -83,7 +85,7 @@ export type ImprovementDraft = {
   hp: ImprovementHpRoll;
   debris: ImprovementDebrisRoll;
   abilities: Record<AbilityStat, ImprovementAbilityRoll>;
-  scumSpecialties: ScumSpecialtyDraft;
+  classAbility: ClassAbilityDraft;
 };
 
 export type ImprovementPreview = {
@@ -91,7 +93,8 @@ export type ImprovementPreview = {
   characterId: string;
   sequence: number;
   rolledDraft: ImprovementDraft;
-  scumSpecialtyNames: Record<string, string>;
+  abilityNames: Record<string, string>;
+  rulesNote: string | null;
   snapshotHash: string;
   createdAt: string;
   updatedAt: string;

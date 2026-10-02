@@ -714,19 +714,15 @@
       "title": "Cechy",
       "from": "Z {{value}}"
     },
-    "scum": {
-      "title": "Specjalność Scvma",
-      "existing": "Obecna",
-      "added": "Dodana",
-      "primary": "Pierwsza",
-      "secondary": "Druga",
-      "rerollMode": "Tryb",
-      "modes": {
-        "none": "Zachowaj obie",
-        "primary": "Przerzuć pierwszą",
-        "secondary": "Przerzuć drugą",
-        "both": "Przerzuć obie"
-      }
+    "classAbility": {
+      "newTitle": "Nowa zdolność",
+      "specialtiesTitle": "Specjalności",
+      "existing": "Twoje specjalności",
+      "added": "Zyskana",
+      "keep": "Zachowaj",
+      "reroll": "Przerzuć",
+      "becomes": "Przerzut daje: {{name}}",
+      "noneLeft": "Brak zdolności do zdobycia"
     }
   },
   "powers": {

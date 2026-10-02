@@ -168,7 +168,7 @@ function defaultImprovementDraft() {
       presence: defaultAbilityImprovement(),
       toughness: defaultAbilityImprovement(),
     },
-    scumSpecialties: { kind: 'notScum' },
+    classAbility: { kind: 'none' },
   };
 }
 
@@ -178,7 +178,8 @@ function defaultImprovementPreview() {
     characterId: generatedCharacterId,
     sequence: 1,
     rolledDraft: defaultImprovementDraft(),
-    scumSpecialtyNames: {},
+    abilityNames: {},
+    rulesNote: null,
     snapshotHash: 'snapshot-hash',
     createdAt: '2026-03-01T10:00:00.000Z',
     updatedAt: '2026-03-01T10:00:00.000Z',
@@ -552,7 +553,7 @@ test('POST /:id/improvements/preview forwards character id and session', async (
     ok: true,
     value: {
       ...defaultImprovementPreview(),
-      scumSpecialtyNames: { 'abilities.gutterborn_scum.jab': 'Frajerskie Dźgnięcie' },
+      abilityNames: { 'abilities.gutterborn_scum.jab': 'Frajerskie Dźgnięcie' },
     },
   };
   const app = await buildApp();
@@ -565,7 +566,7 @@ test('POST /:id/improvements/preview forwards character id and session', async (
   assert.equal(response.statusCode, 200);
   assert.equal(response.json().id, 'd24ac091-af57-47b8-9a1f-003cf4f274b9');
   assert.equal(
-    response.json().scumSpecialtyNames['abilities.gutterborn_scum.jab'],
+    response.json().abilityNames['abilities.gutterborn_scum.jab'],
     'Frajerskie Dźgnięcie'
   );
   assert.equal(improvementCalls[0].method, 'preview');
@@ -652,14 +653,45 @@ test('POST /:id/improvements/:improvementId/apply accepts populated improvement 
       silver: { source: 'table', total: 3 },
       amount: 3,
     },
-    scumSpecialties: {
-      kind: 'firstImprovement',
-      existing: { key: 'old-specialty', rollValue: 1 },
+    classAbility: {
+      kind: 'firstSpecialty',
+      existing: [{ key: 'old-specialty', rollValue: 1 }],
       added: {
         key: 'new-specialty',
         rollValue: 2,
         roll: { source: 'table', total: 2 },
       },
+    },
+  };
+
+  const response = await app.inject({
+    method: 'POST',
+    url: `/${generatedCharacterId}/improvements/d24ac091-af57-47b8-9a1f-003cf4f274b9/apply?locale=en`,
+    payload: { draft },
+  });
+
+  assert.equal(response.statusCode, 200);
+  assert.deepEqual(improvementCalls[0].input.draft, draft);
+
+  await app.close();
+});
+
+test('POST /:id/improvements/:improvementId/apply accepts per-specialty toggles', async () => {
+  resetState();
+  currentSession = { user: { id: 'user-1' } };
+  const app = await buildApp();
+  const draft = {
+    ...defaultImprovementDraft(),
+    classAbility: {
+      kind: 'specialties',
+      specialties: [
+        {
+          current: { key: 'held-one', rollValue: 1 },
+          replacement: { key: 'free-one', rollValue: 3, roll: { source: 'server', total: 3 } },
+          reroll: true,
+        },
+        { current: { key: 'held-two', rollValue: 2 }, replacement: null, reroll: false },
+      ],
     },
   };
 

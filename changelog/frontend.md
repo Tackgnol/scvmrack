@@ -61,7 +61,9 @@
 - Owner-only Getting Better workflow: a footer action opens a MÖRK BORG-styled
   inline panel with persistent preview rolls, local table-value edits, undo,
   per-section rerolls, reroll-all conflict prompts, stale-preview messaging, and
-  explicit apply that refreshes the hydrated character cache
+  explicit apply that refreshes the hydrated character cache; the class's rules
+  note leads the panel, and a class-ability section shows a gained ability or a
+  Keep / Reroll toggle per specialty (Reroll disabled when nothing is free)
 - Inventory with equipped bar, on-hand vs. storage sections, ammo tracking,
   consumables, pets, and custom-item creation
 - Equipment lookup/add-item flow keeps the add controls stable while search and
