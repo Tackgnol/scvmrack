@@ -71,7 +71,8 @@ let applyCalls: Array<{
 }> = [];
 let classAbilities: Array<{
   key: string;
-  rollValue: number | null;
+  id: number;
+  position: number | null;
   isRandom: boolean | null;
   grantItemKey?: string | null;
   grantPetKey?: string | null;
@@ -375,9 +376,9 @@ test('getOrCreatePreview builds Scum first and later specialty drafts', async ()
   };
   classRule = 'specialist';
   classAbilities = [
-    { key: 'scum.fixed', rollValue: null, isRandom: false },
-    { key: 'scum.one', rollValue: 1, isRandom: true },
-    { key: 'scum.two', rollValue: 2, isRandom: true },
+    { key: 'scum.fixed', id: 1, position: 1, isRandom: false },
+    { key: 'scum.one', id: 2, position: 2, isRandom: true },
+    { key: 'scum.two', id: 3, position: 3, isRandom: true },
   ];
   enqueuePreviewRolls();
   rollQueue.push({ total: 2 });
@@ -458,10 +459,11 @@ test('apply grants the item and pet of an ability gained through Getting Better'
   };
   classRule = 'specialist';
   classAbilities = [
-    { key: 'scum.one', rollValue: 1, isRandom: true, grantItemKey: 'equipment.mask' },
+    { key: 'scum.one', id: 4, position: 1, isRandom: true, grantItemKey: 'equipment.mask' },
     {
       key: 'scum.two',
-      rollValue: 2,
+      id: 99,
+      position: 2,
       isRandom: true,
       grantItemKey: 'equipment.lockpicks',
       grantPetKey: 'pets.rat',
@@ -507,9 +509,9 @@ test('an active preview saved in the old two-slot shape upgrades to per-specialt
   characterRow = { ...characterRow, classId: 2, abilities: [{ key: 'scum.one' }, { key: 'scum.two' }] };
   classRule = 'specialist';
   classAbilities = [
-    { key: 'scum.one', rollValue: 1, isRandom: true },
-    { key: 'scum.two', rollValue: 2, isRandom: true },
-    { key: 'scum.three', rollValue: 3, isRandom: true },
+    { key: 'scum.one', id: 5, position: 1, isRandom: true },
+    { key: 'scum.two', id: 6, position: 2, isRandom: true },
+    { key: 'scum.three', id: 7, position: 3, isRandom: true },
   ];
   appliedCount = 1;
   enqueuePreviewRolls();
@@ -552,4 +554,28 @@ test('an active preview saved in the old two-slot shape upgrades to per-specialt
     ],
   });
   assert.equal('scumSpecialties' in (activeImprovement?.rolledDraft as object), false);
+});
+
+test('random abilities are numbered by their place in the pool, fixed ones never', async () => {
+  resetState();
+  assert.ok(characterRow);
+  characterRow = { ...characterRow, classId: 2, abilities: [{ key: 'pool.c' }] };
+  classRule = 'specialist';
+  classAbilities = [
+    { key: 'pool.c', id: 8, position: 7, isRandom: true },
+    { key: 'fixed.a', id: 9, position: 1, isRandom: false },
+    { key: 'pool.b', id: 10, position: 4, isRandom: true },
+  ];
+  enqueuePreviewRolls();
+  rollQueue.push({ total: 1 });
+  const service = createCharacterImprovementService(log);
+
+  await service.getOrCreatePreview({ id: characterId, session });
+
+  assert.deepEqual((activeImprovement?.rolledDraft as ImprovementDraft).classAbility, {
+    kind: 'firstSpecialty',
+    existing: [{ key: 'pool.c', rollValue: 2 }],
+    added: { key: 'pool.b', rollValue: 1, roll: { source: 'server', total: 1 } },
+  });
+  assert.equal(rollCalls.at(-1), '1d2');
 });

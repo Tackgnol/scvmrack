@@ -17,6 +17,7 @@ import {
 } from '../lib/getting-better.js';
 import { stableStringify } from '../lib/stable-json.js';
 import { findTranslationsWithAuthoredFallback } from '../lib/class-translations.js';
+import { byClassOrder } from '../lib/ability-order.js';
 import {
   characterImprovementRepository,
   type CharacterImprovementRow,
@@ -272,12 +273,10 @@ function scrollKeys(rows: ScrollCatalogRow[]): string[] {
     .map((row) => row.key);
 }
 
+/** The class's random abilities in pool order, numbered 1..N as a zine prints its list. */
 function poolRows(rows: ClassAbilityRow[]): SpecialtySlot[] {
   return rows
-    .filter(
-      (row): row is ClassAbilityRow & { rollValue: number } =>
-        row.isRandom === true && Number.isInteger(row.rollValue)
-    )
-    .sort((left, right) => left.rollValue - right.rollValue)
-    .map((row) => ({ key: row.key, rollValue: row.rollValue }));
+    .filter((row) => row.isRandom === true)
+    .sort(byClassOrder)
+    .map((row, index) => ({ key: row.key, rollValue: index + 1 }));
 }

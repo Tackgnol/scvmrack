@@ -1,6 +1,7 @@
 import { Prisma } from '@prisma/client';
 import prisma from '../lib/prisma.js';
 import type { AbilityGrants } from '../lib/class-grants.js';
+import type { AbilityOrder } from '../lib/ability-order.js';
 import type { GettingBetterRule } from '../lib/getting-better-types.js';
 
 export type ImprovementCharacterRow = {
@@ -32,9 +33,8 @@ export type CharacterImprovementRow = {
   appliedAt: Date | null;
 };
 
-export type ClassAbilityRow = AbilityGrants & {
+export type ClassAbilityRow = AbilityGrants & AbilityOrder & {
   key: string;
-  rollValue: number | null;
   isRandom: boolean | null;
 };
 
@@ -156,8 +156,8 @@ export const characterImprovementRepository = {
   findClassAbilities(classId: number): Promise<ClassAbilityRow[]> {
     return prisma.ability.findMany({
       where: { classId },
-      select: { key: true, rollValue: true, isRandom: true, grantItemKey: true, grantPetKey: true },
-      orderBy: [{ isRandom: 'asc' }, { rollValue: 'asc' }, { key: 'asc' }],
+      select: { key: true, position: true, id: true, isRandom: true, grantItemKey: true, grantPetKey: true },
+      orderBy: [{ position: 'asc' }, { id: 'asc' }],
     }) as Promise<ClassAbilityRow[]>;
   },
 

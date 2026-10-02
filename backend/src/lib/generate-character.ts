@@ -25,6 +25,7 @@ import { sanitizeString } from '../utils.js';
 import { statToModifier } from './ability-modifiers.js';
 import { abilityGrantedItems } from './class-grants.js';
 import { builtInClasses } from './class-scope.js';
+import { byClassOrder } from './ability-order.js';
 import { hydrateInventoryUses } from './inventory.js';
 import type {
   AbilityStat,
@@ -503,7 +504,7 @@ async function buildAbilityBundle(
 ): Promise<{ abilities: AbilityEntry[]; grantedItems: PoolItem[] }> {
   const [classRow, allAbilities] = await Promise.all([
     prisma.class.findUnique({ where: { id: classId } }),
-    prisma.ability.findMany({ where: { classId } }),
+    prisma.ability.findMany({ where: { classId }, orderBy: [{ position: 'asc' }, { id: 'asc' }] }),
   ]);
 
   const fixedAbilities = allAbilities.filter(a => !a.isRandom);
@@ -511,7 +512,7 @@ async function buildAbilityBundle(
   const shuffled = await shuffle(randomCandidates, roller);
   const picked = shuffled.slice(0, classRow?.randomAbilityCount ?? 0);
 
-  const gained = [...fixedAbilities, ...picked];
+  const gained = [...fixedAbilities, ...picked].sort(byClassOrder);
   const tagsFor = (key: string) => buildPoolItem(key, catalog).tags;
   return {
     abilities: gained.map(a => ({ key: a.key })),

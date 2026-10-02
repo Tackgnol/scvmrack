@@ -71,7 +71,7 @@ UPDATE public.classes SET random_abilities = '[]' WHERE id = 6;
 -- 2. Update/Insert into abilities table (to fix hallucinated keys and order)
 -- Use ON CONFLICT (key) to handle existing keys, as 'key' has a unique constraint.
 -- This ensures we don't have duplicates and syncs them to the correct classes.
-INSERT INTO public.abilities (class_id, key, is_random, roll_value) VALUES
+INSERT INTO public.abilities (class_id, key, is_random, position) VALUES
 (1, 'abilities.fanged_deserter.clumsy', false, NULL),
 (1, 'abilities.fanged_deserter.bite', false, NULL),
 (1, 'abilities.fanged_deserter.mask', true, 1),
@@ -117,7 +117,7 @@ INSERT INTO public.abilities (class_id, key, is_random, roll_value) VALUES
 ON CONFLICT (key) DO UPDATE SET
     class_id = EXCLUDED.class_id,
     is_random = EXCLUDED.is_random,
-    roll_value = EXCLUDED.roll_value;
+    position = EXCLUDED.position;
 
 
 -- 3. Update/Insert translations for the abilities

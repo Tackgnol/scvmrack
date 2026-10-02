@@ -323,7 +323,8 @@ model Ability {
   classId   Int?     @map("class_id")
   key       String   @unique @db.VarChar(255)
   isRandom  Boolean? @default(false) @map("is_random")
-  rollValue Int?     @map("roll_value")
+  /// Order within the class; read by (position, id). Nullable only because the positional seed INSERTs write it before seed 017 backfills.
+  position  Int?
   grantItemKey String? @db.VarChar(255) @map("grant_item_key")
   grantPetKey  String? @db.VarChar(255) @map("grant_pet_key")
 

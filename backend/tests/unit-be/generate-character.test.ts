@@ -47,7 +47,7 @@ type AbilityRow = {
   classId: number;
   key: string;
   isRandom: boolean;
-  rollValue: number | null;
+  position: number | null;
   grantItemKey?: string | null;
   grantPetKey?: string | null;
 };
@@ -128,12 +128,12 @@ function baseFixture(): Fixture {
       },
     ],
     abilities: [
-      { classId: 1, key: 'abilities.fixed', isRandom: false, rollValue: null },
+      { classId: 1, key: 'abilities.fixed', isRandom: false, position: 1 },
       {
         classId: 1,
         key: 'abilities.random-lockpicks',
         isRandom: true,
-        rollValue: 1,
+        position: 2,
         grantItemKey: 'equipment.lockpicks',
       },
     ],
@@ -480,7 +480,7 @@ test('generateCharacter can pick a random class and grant a pet from a random ab
       classId: 2,
       key: 'abilities.random-hawk',
       isRandom: true,
-      rollValue: 1,
+      position: 1,
       grantPetKey: 'pets.hawk',
     },
   ];
@@ -584,7 +584,7 @@ test('a fixed ability grants its item and pet to every character of the class', 
       classId: 1,
       key: 'abilities.fixed',
       isRandom: false,
-      rollValue: null,
+      position: 1,
       grantItemKey: 'equipment.lockpicks',
       grantPetKey: 'pets.hawk',
     },
@@ -685,6 +685,25 @@ test('classless scvm keep the d2 omen die', async () => {
   await buildCharacterData(null, recordingRollerFor(calls));
 
   assert.deepEqual(calls.filter((call) => call.startsWith('omens:')), ['omens:1d2']);
+});
+
+test('generated abilities follow the class order, whatever order the random ones were picked in', async () => {
+  const next = baseFixture();
+  next.classes[0] = { ...next.classes[0], randomAbilityCount: 2 };
+  next.abilities = [
+    { classId: 1, key: 'abilities.last-fixed', isRandom: false, position: 3 },
+    { classId: 1, key: 'abilities.second', isRandom: true, position: 2 },
+    { classId: 1, key: 'abilities.first', isRandom: true, position: 1 },
+  ];
+  resetFixture(next);
+
+  for (const seed of ['1', '2', '3', '4']) {
+    const data = await buildCharacterData(1, seededRollerFor({ ...randomSectionSeeds(), abilities: seed.repeat(64) }));
+    assert.deepEqual(
+      (data.abilities as Array<{ key: string }>).map((ability) => ability.key),
+      ['abilities.first', 'abilities.second', 'abilities.last-fixed'],
+    );
+  }
 });
 
 test('buildCharacterData is deterministic for identical seeds', async () => {

@@ -61,6 +61,7 @@ export type ImprovementAbilityRoll = {
 
 export type SpecialtySlot = {
   key: string;
+  /** The die result that selects this ability on the class's numbered random list (its 1-based place in pool order); server picks stay uniform. */
   rollValue: number;
 };
 
