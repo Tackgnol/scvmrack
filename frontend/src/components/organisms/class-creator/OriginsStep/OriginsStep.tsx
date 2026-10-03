@@ -49,7 +49,7 @@ export function OriginsStep({ draft, language, update, showMissing, touch, focus
         const path = `origins.${index}.${language}`;
         return (
           <LocalizedField
-            key={ids[index] ?? index}
+            key={ids[index]}
             id={fieldId(path)}
             label={t("creator.origins.label", "Origin {{n}}", { n: index + 1 })}
             value={origin[language]}
