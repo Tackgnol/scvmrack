@@ -214,6 +214,7 @@ const scopeOptionSchema = z.enum([
   'all',
   'combat',
   'defence',
+  'tests',
   'melee',
   'ranged',
   'powers',

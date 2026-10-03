@@ -1,5 +1,5 @@
 import { LocalizedField } from "@/components/molecules/LocalizedField/LocalizedField";
-import { useState } from "react";
+import { useStableIds } from "@/hooks/useStableIds";
 import { useTranslation } from "react-i18next";
 import type { StepProps } from "../classCreator.models";
 import { Counter, Empty, InkButton, SmallAction, Spread, Stack } from "../classCreator.styles";
@@ -9,18 +9,14 @@ import { fieldId, LIMIT_LIST, LIMIT_TEXT } from "../classCreator.utils";
 export function OriginsStep({ draft, language, update, showMissing, touch, focus }: StepProps) {
   const { t } = useTranslation();
   const full = draft.origins.length >= LIMIT_LIST;
-  // Origins carry no id of their own; these keep each field's identity across removals.
-  const [ids, setIds] = useState(() => draft.origins.map(() => crypto.randomUUID()));
-  if (ids.length !== draft.origins.length) {
-    setIds(draft.origins.map((_, i) => ids[i] ?? crypto.randomUUID()));
-  }
+  const { ids, insert, remove: forget } = useStableIds(draft.origins.length);
   const add = () => {
-    setIds((current) => [...current, crypto.randomUUID()]);
+    insert(draft.origins.length);
     update((d) => ({ ...d, origins: [...d.origins, { en: "", pl: "" }] }));
     focus(`origins.${draft.origins.length}.${language}`);
   };
   const remove = (index: number) => {
-    setIds((current) => current.filter((_, i) => i !== index));
+    forget(index);
     update((d) => ({ ...d, origins: d.origins.filter((_, i) => i !== index) }));
     const remaining = draft.origins.length - 1;
     focus(remaining === 0 ? "origins.add" : `origins.${Math.min(index, remaining - 1)}.${language}`);

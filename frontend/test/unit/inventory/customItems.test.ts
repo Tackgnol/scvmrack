@@ -65,7 +65,7 @@ describe('custom item factory', () => {
         {
           value: -1,
           statistic: 'presence',
-          exclude: ['melee', 'defence', 'cast', 'ability'],
+          exclude: ['melee', 'defence', 'cast', 'ability', 'test', 'heal', 'buff', 'item'],
         },
       ],
     });

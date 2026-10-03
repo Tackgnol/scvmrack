@@ -47,10 +47,10 @@ describe('ClassCreator', () => {
     await expect.element(title()).toHaveTextContent('Identity');
     await page.getByRole('button', { name: 'Stats & dice' }).last().click();
     await expect.element(title()).toHaveTextContent('Stats & dice');
-    await expect.element(page.getByRole('button', { name: 'Origins' }).last()).toBeVisible();
+    await expect.element(page.getByRole('button', { name: 'Abilities' }).last()).toBeVisible();
 
     await userEvent.keyboard('{Alt>}{ArrowRight}{/Alt}');
-    await expect.element(title()).toHaveTextContent('Origins');
+    await expect.element(title()).toHaveTextContent('Abilities');
     await userEvent.keyboard('{Alt>}{ArrowLeft}{/Alt}');
     await expect.element(title()).toHaveTextContent('Stats & dice');
   });
@@ -96,7 +96,7 @@ describe('ClassCreator', () => {
   });
 
   it('saves a complete class, stamps it FORGED and offers the way to my classes', async () => {
-    vi.mocked(saveClass).mockResolvedValue({ id: 12 });
+    vi.mocked(saveClass).mockResolvedValue({ id: 12, draft: complete() });
     renderCreator(complete());
     await page.getByRole('button', { name: /Test roll & save/ }).first().click();
 
@@ -120,6 +120,7 @@ describe('ClassCreator', () => {
       silver: 70,
       origin: 'A drowned village',
       equippedWeapons: [{ name: 'Femur' }],
+      abilities: [{ key: 'Bone-Reader', name: 'Bone-Reader' }],
     });
     renderCreator(complete());
     await page.getByRole('button', { name: /Test roll & save/ }).first().click();
@@ -127,6 +128,7 @@ describe('ClassCreator', () => {
     await page.getByRole('button', { name: 'Roll a test scvm' }).click();
     await expect.element(page.getByText('Nameless Wretch')).toBeVisible();
     await expect.element(page.getByText('Femur')).toBeVisible();
+    await expect.element(page.getByText('Bone-Reader')).toBeVisible();
 
     await page.getByRole('button', { name: /Origins/ }).first().click();
     await page.getByRole('button', { name: 'Add origin' }).click();
@@ -143,7 +145,7 @@ describe('ClassCreator', () => {
         payload: { message: 'You have 50 classes, the most one account can hold.', code: 'CLASS_LIMIT_REACHED', statusCode: 409 },
       }),
     );
-    vi.mocked(saveClass).mockResolvedValueOnce({ id: 7 });
+    vi.mocked(saveClass).mockResolvedValueOnce({ id: 7, draft: complete() });
     renderCreator(complete(), 7);
     await page.getByRole('button', { name: /Test roll & save/ }).first().click();
 
@@ -166,6 +168,64 @@ describe('ClassCreator', () => {
 
     await expect.element(strength.getByRole('radio', { name: 'Dropped' })).toBeDisabled();
     await expect.element(strength.getByText('1d6', { exact: true })).toBeVisible();
+  });
+
+  it('writes an ability with a tests-only modifier, and the closed card shows it', async () => {
+    renderCreator(complete());
+    await page.getByRole('button', { name: /Abilities/ }).first().click();
+
+    await page.getByRole('button', { name: 'Add ability' }).click();
+    await expect.element(page.getByLabelText('Name', { exact: true })).toHaveFocus();
+    await userEvent.keyboard('Grave Sense');
+    await page.getByLabelText('Rules text').fill('Smell the dead through walls.');
+    await page.getByRole('radio', { name: 'Random' }).click();
+    await page.getByRole('button', { name: 'Add modifier' }).click();
+    await page.getByRole('radio', { name: 'PRE' }).click();
+    await page.getByRole('spinbutton', { name: 'Value' }).fill('2');
+    await userEvent.keyboard('{Enter}');
+    await page.getByRole('radio', { name: 'Tests only' }).click();
+    await page.getByRole('button', { name: 'Done' }).click();
+
+    const card = page.getByRole('button', { name: /Grave Sense/ });
+    await expect.element(card).toHaveTextContent('Random 1');
+    await expect.element(card).toHaveTextContent('+2 PRE tests');
+    await expect.element(card).toHaveFocus();
+    await expect.element(page.getByText('1 of 20 abilities')).toBeVisible();
+  });
+
+  it('rolls no more random abilities than the pool holds, and Fix opens the card with the gap', async () => {
+    renderCreator({
+      ...complete(),
+      abilities: [{ random: true, name: { en: 'Grave Sense', pl: '' }, text: { en: '', pl: '' }, modifiers: [] }],
+    });
+    await page.getByRole('button', { name: /Abilities/ }).first().click();
+
+    const rolled = page.getByRole('spinbutton', { name: 'Random abilities rolled' });
+    await rolled.click();
+    await userEvent.keyboard('{ArrowUp}{ArrowUp}');
+    await expect.element(rolled).toHaveAttribute('aria-valuenow', '1');
+
+    await page.getByRole('button', { name: /Test roll & save/ }).first().click();
+    await page.getByRole('button', { name: /English missing: “Grave Sense” rules text/ }).click();
+
+    await expect.element(page.getByLabelText('Rules text')).toHaveFocus();
+    await expect.element(page.getByLabelText('Rules text')).toHaveAttribute('aria-invalid', 'true');
+  });
+
+  it('duplicates and removes abilities from the open card', async () => {
+    renderCreator({
+      ...complete(),
+      abilities: [{ random: false, name: { en: 'Bone-Reader', pl: '' }, text: { en: 'Ask a skull.', pl: '' }, modifiers: [] }],
+    });
+    await page.getByRole('button', { name: /Abilities/ }).first().click();
+    await page.getByRole('button', { name: /Bone-Reader/ }).click();
+
+    await page.getByRole('button', { name: 'Duplicate' }).click();
+    await expect.element(page.getByText('2 of 20 abilities')).toBeVisible();
+    await page.getByRole('button', { name: 'Remove' }).click();
+
+    await expect.element(page.getByText('1 of 20 abilities')).toBeVisible();
+    await expect.element(page.getByRole('button', { name: /Bone-Reader/ })).toHaveFocus();
   });
 
   it('adds origins up to the cap and focuses the new one', async () => {

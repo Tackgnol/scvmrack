@@ -1,7 +1,8 @@
 import type { Prisma } from '@prisma/client';
 import prisma from '../lib/prisma.js';
 import { findTranslationsWithAuthoredFallback } from '../lib/class-translations.js';
-import type { ClassDraft, ClassLanguage, Localized } from '../lib/class-draft.js';
+import { stableKeys } from '../lib/stable-keys.js';
+import type { AbilityModifierDraft, ClassDraft, ClassLanguage, ClassStat, Localized } from '../lib/class-draft.js';
 
 type Tx = Prisma.TransactionClient;
 
@@ -30,7 +31,9 @@ const keysFor = (id: number) => ({
   description: `cc.${id}.description`,
   note: `cc.${id}.getting_better_note`,
   origin: (n: number) => `cc.${id}.origin.${n}`,
+  ability: (n: number) => `cc.${id}.ability.${n}`,
 });
+
 
 function classColumns(draft: ClassDraft) {
   return {
@@ -43,29 +46,37 @@ function classColumns(draft: ClassDraft) {
     armorDie: draft.armorDie,
     silverDice: Array.from({ length: draft.silver.count }, () => draft.silver.faces),
     silverModifier: draft.silver.multiplier,
-    randomAbilityCount: 0,
+    randomAbilityCount: draft.randomAbilityCount,
     gettingBetterRule: draft.gettingBetterRule,
   };
 }
 
 /**
- * Writes a class's text and origins under its `cc.<id>.*` keys. Origins keep the
- * key they were saved with, so characters that rolled one keep its text; a
- * removed origin's text stays for them, only its row (what new scvm roll) goes.
+ * Writes a class's text, origins and abilities under its `cc.<id>.*` keys.
+ * Origins and abilities keep the key they were saved with, so characters that
+ * rolled one keep its text and modifiers; a removed one's text and modifiers
+ * stay for them, only its row (what new scvm roll) goes.
  */
 async function writeText(tx: Tx, id: number, draft: ClassDraft): Promise<void> {
   const keys = keysFor(id);
-  const prefix = `cc.${id}.origin.`;
-  const numberOf = (key: string) => Number(key.slice(prefix.length)) || 0;
-  const existing = await tx.origin.findMany({ where: { classId: id }, select: { key: true } });
-  const own = (key?: string): key is string => !!key && key.startsWith(prefix);
-  let next = Math.max(0, ...existing.map((o) => numberOf(o.key)), ...draft.origins.map((o) => (own(o.key) ? numberOf(o.key) : 0))) + 1;
-  const used = new Set<string>();
-  const originKeys = draft.origins.map((origin) => {
-    const key = own(origin.key) && !used.has(origin.key) ? origin.key : keys.origin(next++);
-    used.add(key);
-    return key;
-  });
+  // Every key this class ever gave out: removed entries leave their text and modifiers behind.
+  const [texts, modifierRows] = await Promise.all([
+    tx.translation.findMany({ where: { key: { startsWith: `cc.${id}.` } }, select: { key: true } }),
+    tx.classAbilityModifier.findMany({ where: { classId: id }, select: { abilityKey: true } }),
+  ]);
+  const inUse = [...texts.map((t) => t.key), ...modifierRows.map((m) => m.abilityKey)];
+  const originKeys = stableKeys(
+    `cc.${id}.origin.`,
+    inUse,
+    draft.origins.map((o) => o.key),
+    keys.origin
+  );
+  const abilityKeys = stableKeys(
+    `cc.${id}.ability.`,
+    inUse,
+    draft.abilities.map((a) => a.key),
+    keys.ability
+  );
 
   const hasNote = draft.languages.some((l) => draft.gettingBetterNote[l].trim());
   const entries: Array<[string, Localized]> = [
@@ -73,8 +84,12 @@ async function writeText(tx: Tx, id: number, draft: ClassDraft): Promise<void> {
     [keys.description, draft.description],
     ...(hasNote ? [[keys.note, draft.gettingBetterNote] as [string, Localized]] : []),
     ...draft.origins.map((origin, i): [string, Localized] => [originKeys[i], origin]),
+    ...draft.abilities.flatMap((ability, i): Array<[string, Localized]> => [
+      [abilityKeys[i], ability.name],
+      [`${abilityKeys[i]}.description`, ability.text],
+    ]),
   ];
-  await tx.translation.deleteMany({ where: { key: { in: [keys.name, keys.description, keys.note, ...originKeys] } } });
+  await tx.translation.deleteMany({ where: { key: { in: entries.map(([key]) => key).concat(keys.note) } } });
   await tx.translation.createMany({
     data: entries.flatMap(([key, text]) =>
       draft.languages
@@ -82,10 +97,33 @@ async function writeText(tx: Tx, id: number, draft: ClassDraft): Promise<void> {
         .map((locale) => ({ locale, key, value: text[locale].trim() }))
     ),
   });
+
   await tx.origin.deleteMany({ where: { classId: id } });
-  await tx.origin.createMany({
-    data: originKeys.map((key, i) => ({ classId: id, roll: i + 1, key })),
+  await tx.origin.createMany({ data: originKeys.map((key, i) => ({ classId: id, roll: i + 1, key })) });
+
+  await tx.ability.deleteMany({ where: { classId: id } });
+  await tx.ability.createMany({
+    data: draft.abilities.map((ability, i) => ({
+      classId: id,
+      key: abilityKeys[i],
+      isRandom: ability.random,
+      position: i,
+    })),
   });
+  await tx.classAbilityModifier.deleteMany({ where: { classId: id, abilityKey: { in: abilityKeys } } });
+  await tx.classAbilityModifier.createMany({
+    data: draft.abilities.flatMap((ability, i) =>
+      ability.modifiers.map((modifier) => ({
+        classId: id,
+        abilityKey: abilityKeys[i],
+        statistic: modifier.statistic,
+        value: modifier.value,
+        exclude: modifier.exclude,
+        source: ability.name[draft.languages[0]].trim(),
+      }))
+    ),
+  });
+
   await tx.class.update({
     where: { id },
     data: {
@@ -136,11 +174,25 @@ export const customClassRepository = {
   async findWithText(id: number): Promise<CustomClassRows | null> {
     const cls = await prisma.class.findFirst({ where: { id, source: 'user' } });
     if (!cls) return null;
-    const [latest, origins, translations] = await Promise.all([
+    const [latest, origins, abilities, modifiers, translations] = await Promise.all([
       prisma.class.aggregate({ where: { lineageId: cls.lineageId }, _max: { version: true } }),
       prisma.origin.findMany({ where: { classId: id }, orderBy: { roll: 'asc' }, select: { key: true } }),
+      prisma.ability.findMany({
+        where: { classId: id },
+        orderBy: [{ position: 'asc' }, { id: 'asc' }],
+        select: { key: true, isRandom: true },
+      }),
+      prisma.classAbilityModifier.findMany({ where: { classId: id }, orderBy: { id: 'asc' } }),
       prisma.translation.findMany({ where: { key: { startsWith: `cc.${id}.` } } }),
     ]);
+    const modifiersOf = (key: string): AbilityModifierDraft[] =>
+      modifiers
+        .filter((m) => m.abilityKey === key)
+        .map((m) => ({
+          statistic: m.statistic as ClassStat,
+          value: m.value,
+          exclude: Array.isArray(m.exclude) ? (m.exclude as string[]) : [],
+        }));
     const text = (key: string | null): Localized => ({
       en: translations.find((t) => t.key === key && t.locale === 'en')?.value ?? '',
       pl: translations.find((t) => t.key === key && t.locale === 'pl')?.value ?? '',
@@ -166,6 +218,14 @@ export const customClassRepository = {
           multiplier: cls.silverModifier ?? 10,
         },
         origins: origins.map((o) => ({ ...text(o.key), key: o.key })),
+        abilities: abilities.map((a) => ({
+          key: a.key,
+          random: a.isRandom === true,
+          name: text(a.key),
+          text: text(`${a.key}.description`),
+          modifiers: modifiersOf(a.key),
+        })),
+        randomAbilityCount: cls.randomAbilityCount ?? 0,
         gettingBetterRule: cls.gettingBetterRule,
         gettingBetterNote: text(cls.gettingBetterNoteKey),
       },

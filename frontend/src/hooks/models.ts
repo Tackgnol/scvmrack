@@ -88,7 +88,7 @@ export type CustomModifier = {
     // Source-of-truth scope tag for modifiers authored via the custom-item form.
     // `exclude` is the derived form used at calculation time; `scope` lets us
     // recover the original intent if the scope→exclude mapping ever changes.
-    scope?: 'all' | 'combat' | 'defence' | 'melee' | 'ranged' | 'powers';
+    scope?: 'all' | 'combat' | 'defence' | 'tests' | 'melee' | 'ranged' | 'powers';
     comment?: string;
 };
 

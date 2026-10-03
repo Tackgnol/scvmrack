@@ -1,0 +1,124 @@
+import type { AbilityDraft } from "@/api/classes";
+import { NumberStepper } from "@/components/atoms/NumberStepper/NumberStepper";
+import { useStableIds } from "@/hooks/useStableIds";
+import { useTranslation } from "react-i18next";
+import { AbilityEditor } from "../AbilityEditor/AbilityEditor";
+import { withCardTransition } from "../cardTransition";
+import { AbilitySummary } from "../AbilitySummary/AbilitySummary";
+import { Counter, Empty, InkButton, Spread, Stack } from "../classCreator.styles";
+import { blankAbility, fieldId, LIMIT_LIST, randomNumber, randomPoolSize } from "../classCreator.utils";
+import type { AbilitiesStepProps } from "./AbilitiesStep.models";
+
+/** Step 3: fixed abilities every scvm gets, and the random pool with how many each scvm rolls. */
+export function AbilitiesStep({
+  issues,
+  openAbility,
+  onOpenAbility,
+  ...stepProps
+}: AbilitiesStepProps) {
+  const { t } = useTranslation();
+  const { draft, update, focus } = stepProps;
+  const { ids, insert, remove } = useStableIds(draft.abilities.length);
+  const pool = randomPoolSize(draft);
+  const full = draft.abilities.length >= LIMIT_LIST;
+  const cardId = (index: number) => fieldId(`abilities.${index}`);
+
+  const setAbility = (index: number, recipe: (ability: AbilityDraft) => AbilityDraft) =>
+    update((d) => ({ ...d, abilities: d.abilities.map((a, i) => (i === index ? recipe(a) : a)) }));
+  const open = (index: number | null, focusPath: string) =>
+    withCardTransition(index === null, () => onOpenAbility(index), () => focus(focusPath));
+  const add = () => {
+    const index = draft.abilities.length;
+    insert(index);
+    update((d) => ({ ...d, abilities: [...d.abilities, blankAbility()] }));
+    open(index, `abilities.${index}.name.${stepProps.language}`);
+  };
+  const duplicate = (index: number) => {
+    insert(index + 1);
+    update((d) => {
+      // A copy is a new ability: it gets its own key on save.
+      const copy = { ...structuredClone(d.abilities[index]), key: undefined };
+      return { ...d, abilities: [...d.abilities.slice(0, index + 1), copy, ...d.abilities.slice(index + 1)] };
+    });
+    open(index + 1, `abilities.${index + 1}.name.${stepProps.language}`);
+  };
+  const removeAt = (index: number) => {
+    remove(index);
+    update((d) => {
+      const abilities = d.abilities.filter((_, i) => i !== index);
+      const stillRandom = abilities.filter((a) => a.random).length;
+      return { ...d, abilities, randomAbilityCount: Math.min(d.randomAbilityCount, stillRandom) };
+    });
+    onOpenAbility(null);
+    focus(draft.abilities.length > 1 ? `abilities.${Math.min(index, draft.abilities.length - 2)}` : "abilities.add");
+  };
+
+  return (
+    <Stack>
+      <Spread>
+        <NumberStepper
+          id={fieldId("randomAbilityCount")}
+          label={t("creator.abilities.rolled", "Random abilities rolled")}
+          value={draft.randomAbilityCount}
+          min={0}
+          max={Math.max(pool, draft.randomAbilityCount)}
+          hint={t(
+            "creator.abilities.rolledHint",
+            "Every scvm gets all Fixed abilities, plus this many from the Random pool ({{pool}} in it). A zine's “roll d6 for your ability” is a pool of 6 with 1 rolled.",
+            { pool },
+          )}
+          onChange={(randomAbilityCount) => update((d) => ({ ...d, randomAbilityCount }))}
+        />
+        <Counter>
+          {t("creator.abilities.count", "{{count}} of {{max}} abilities", {
+            count: draft.abilities.length,
+            max: LIMIT_LIST,
+          })}
+        </Counter>
+      </Spread>
+      {draft.abilities.length === 0 && (
+        <Empty>
+          {t("creator.abilities.empty", "No abilities yet. Add a fixed one every scvm gets, or build a random pool.")}
+        </Empty>
+      )}
+      {draft.abilities.map((ability, index) =>
+        openAbility === index ? (
+          <AbilityEditor
+            key={ids[index]}
+            transitionName={`ability-${ids[index]}`}
+            {...stepProps}
+            index={index}
+            randomNumber={randomNumber(draft, index)}
+            full={full}
+            onChange={(recipe) => setAbility(index, recipe)}
+            onDone={() => open(null, `abilities.${index}`)}
+            onRemove={() => removeAt(index)}
+            onDuplicate={() => duplicate(index)}
+          />
+        ) : (
+          <AbilitySummary
+            key={ids[index]}
+            transitionName={`ability-${ids[index]}`}
+            id={cardId(index)}
+            ability={ability}
+            language={stepProps.language}
+            randomNumber={randomNumber(draft, index)}
+            missing={issues.filter((issue) => issue.path.startsWith(`abilities.${index}.`)).length}
+            onOpen={() => open(index, `abilities.${index}.random`)}
+          />
+        ),
+      )}
+      <div style={{ viewTransitionName: "abilities-add" }}>
+        <InkButton
+          id={fieldId("abilities.add")}
+          type="button"
+          disabled={full}
+          title={full ? t("creator.abilities.full", "A class holds at most {{max}} abilities.", { max: LIMIT_LIST }) : undefined}
+          onClick={add}
+        >
+          {t("creator.abilities.add", "Add ability")}
+        </InkButton>
+      </div>
+    </Stack>
+  );
+}

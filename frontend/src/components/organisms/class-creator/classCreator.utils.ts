@@ -1,4 +1,6 @@
-import type { ClassDraft, ClassLanguage, Localized, StatDice } from "@/api/classes";
+import type { AbilityDraft, AbilityModifierDraft, ClassDraft, ClassLanguage, Localized, StatDice } from "@/api/classes";
+import type { ScopeOption } from "@/components/modifiers/types";
+import { scopeOfExclude, scopeToExclude } from "@/components/modifiers/utils";
 import { signed } from "@/utils/signed";
 import { statToModifier } from "@/utils/stats";
 import type { CreatorIssue, CreatorStep } from "./classCreator.models";
@@ -7,8 +9,8 @@ export const LIMIT_LIST = 20;
 export const LIMIT_TEXT = 1500;
 export const LIMIT_NAME = 100;
 
-/** The creator's steps in order; Class Items and Abilities join with their own tickets. */
-export const STEPS: CreatorStep[] = ["identity", "stats", "origins", "gettingBetter", "review"];
+/** The creator's steps in order; Class Items joins with its own ticket. */
+export const STEPS: CreatorStep[] = ["identity", "stats", "abilities", "origins", "gettingBetter", "review"];
 
 const empty = (): Localized => ({ en: "", pl: "" });
 const bookStat = (): StatDice => ({ count: 3, faces: 6, modifier: 0, dropLowest: false });
@@ -26,6 +28,8 @@ export function blankDraft(): ClassDraft {
     armorDie: 4,
     silver: { count: 2, faces: 6, multiplier: 10 },
     origins: [],
+    abilities: [],
+    randomAbilityCount: 0,
     gettingBetterRule: "book",
     gettingBetterNote: empty(),
   };
@@ -69,14 +73,47 @@ export function draftIssues(draft: ClassDraft): CreatorIssue[] {
   };
   text(draft.name, "name", "identity", "creator.issues.missingName");
   text(draft.description, "description", "identity", "creator.issues.missingDescription");
+  draft.abilities.forEach((ability, i) => {
+    const named = ability.name[draft.languages[0]].trim();
+    const params = { n: i + 1, name: named };
+    text(ability.name, `abilities.${i}.name`, "abilities", "creator.issues.missingAbilityName", params);
+    text(
+      ability.text,
+      `abilities.${i}.text`,
+      "abilities",
+      named ? "creator.issues.missingAbilityText" : "creator.issues.missingAbilityTextUnnamed",
+      params,
+    );
+    const seen = new Set<string>();
+    ability.modifiers.forEach((modifier, m) => {
+      const id = JSON.stringify([modifier.statistic, modifier.value, [...modifier.exclude].sort()]);
+      if (seen.has(id)) {
+        issues.push({
+          key: "creator.issues.duplicateModifier",
+          params: { n: i + 1, name: named || i + 1 },
+          step: "abilities",
+          path: `abilities.${i}.modifiers.${m}.statistic`,
+        });
+      }
+      seen.add(id);
+    });
+  });
+  const pool = randomPoolSize(draft);
+  if (draft.randomAbilityCount > pool) {
+    issues.push({
+      key: "creator.issues.poolTooSmall",
+      params: { count: draft.randomAbilityCount, pool },
+      step: "abilities",
+      path: "randomAbilityCount",
+    });
+  }
   draft.origins.forEach((origin, i) =>
     text(origin, `origins.${i}`, "origins", "creator.issues.missingOrigin", { n: i + 1 }),
   );
   if (draft.origins.length === 0) {
     issues.push({ key: "creator.issues.noOrigin", params: {}, step: "origins", path: "origins.add" });
   }
-  // The random pool arrives with the Abilities step (RPG-268); until then it is empty.
-  if (draft.gettingBetterRule === "specialist") {
+  if (draft.gettingBetterRule === "specialist" && !specialistAllowed(draft)) {
     issues.push({
       key: "creator.issues.specialistPool",
       params: {},
@@ -116,4 +153,48 @@ export function missingCount(
   step?: CreatorStep,
 ): number {
   return issues.filter((i) => i.language === language && (!step || i.step === step)).length;
+}
+
+/** How many abilities are in the random pool. */
+export function randomPoolSize(draft: ClassDraft): number {
+  return draft.abilities.filter((a) => a.random).length;
+}
+
+/** Specialist rerolls specialties from the pool, so it needs one more random ability than each scvm rolls. */
+export function specialistAllowed(draft: ClassDraft): boolean {
+  return randomPoolSize(draft) >= draft.randomAbilityCount + 1;
+}
+
+/** A random ability's number in the pool (1-based, in list order); null for a fixed one. */
+export function randomNumber(draft: ClassDraft, index: number): number | null {
+  if (!draft.abilities[index]?.random) return null;
+  return draft.abilities.slice(0, index + 1).filter((a) => a.random).length;
+}
+
+/** The ability card a draft path points into, e.g. `abilities.3.name.pl` → 3. */
+export function abilityIndexOf(path: string): number | null {
+  const match = /^abilities\.(\d+)\./.exec(path);
+  return match ? Number(match[1]) : null;
+}
+
+/** Which preset a modifier's exclusions match, as the sheet reads it. */
+export function modifierScope(modifier: AbilityModifierDraft): ScopeOption {
+  return scopeOfExclude(modifier.exclude);
+}
+
+export { scopeToExclude as scopeExclude };
+
+/** A new ability, fixed unless said otherwise, with no text yet. */
+export function blankAbility(random = false): AbilityDraft {
+  return { random, name: { en: "", pl: "" }, text: { en: "", pl: "" }, modifiers: [] };
+}
+
+/**
+ * The draft with the keys the save gave its new origins and abilities, matched by
+ * position; an entry already keyed, or moved since, keeps what it has.
+ */
+export function withSavedKeys(current: ClassDraft, saved: ClassDraft): ClassDraft {
+  const fill = <T extends { key?: string }>(list: T[], keyed: Array<{ key?: string }>): T[] =>
+    list.map((entry, i) => (entry.key || !keyed[i]?.key ? entry : { ...entry, key: keyed[i].key }));
+  return { ...current, origins: fill(current.origins, saved.origins), abilities: fill(current.abilities, saved.abilities) };
 }

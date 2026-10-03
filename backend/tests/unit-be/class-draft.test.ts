@@ -5,6 +5,7 @@ import {
   blankClassDraft,
   classDraftProblems,
   classSpecFromDraft,
+  type AbilityDraft,
   type ClassDraft,
 } from '../../src/lib/class-draft.ts';
 
@@ -40,7 +41,7 @@ test('every text field needs each of the class languages', () => {
   ]);
 });
 
-test('a class needs an origin, and Specialist needs a bigger random pool than it rolls', () => {
+test('a class needs an origin, and Specialist needs a random pool', () => {
   assert.deepEqual(classDraftProblems(ready({ origins: [], gettingBetterRule: 'specialist' })), [
     'Add at least one origin',
     'Specialist needs at least one more random ability than each scvm rolls',
@@ -67,4 +68,54 @@ test('whitespace is not text, and a single die cannot drop its lowest', () => {
     'English missing: origin 1',
     'agility can drop its lowest die only when it rolls two or more',
   ]);
+});
+
+const ability = (name: string, random: boolean, overrides: Partial<AbilityDraft> = {}): AbilityDraft => ({
+  random,
+  name: { en: name, pl: '' },
+  text: { en: `${name} rules.`, pl: '' },
+  modifiers: [],
+  ...overrides,
+});
+
+test('abilities need their name and rules text in each language, and the rolled count fits the pool', () => {
+  const draft = ready({
+    abilities: [ability('Bone-Reader', false), ability('', true, { text: { en: '', pl: '' } })],
+    randomAbilityCount: 2,
+  });
+  assert.deepEqual(classDraftProblems(draft), [
+    'English missing: ability 2 name',
+    'English missing: ability 2 rules text',
+    'Rolls 2 random abilities, but the pool has 1',
+  ]);
+});
+
+test('Specialist needs one more random ability than each scvm rolls', () => {
+  const pool = [ability('A', true), ability('B', true)];
+  assert.deepEqual(classDraftProblems(ready({ abilities: pool, randomAbilityCount: 1, gettingBetterRule: 'specialist' })), []);
+  assert.deepEqual(classDraftProblems(ready({ abilities: pool, randomAbilityCount: 2, gettingBetterRule: 'specialist' })), [
+    'Specialist needs at least one more random ability than each scvm rolls',
+  ]);
+});
+
+test('an ability cannot carry the same modifier twice', () => {
+  const twice = { statistic: 'presence' as const, value: 2, exclude: ['melee'] };
+  assert.deepEqual(classDraftProblems(ready({ abilities: [ability('Grave Sense', false, { modifiers: [twice, { ...twice, exclude: ['melee'] }] })] })), [
+    'Ability “Grave Sense” has the same modifier twice',
+  ]);
+});
+
+test('the spec rolls fixed and random abilities by their text, in order', () => {
+  const spec = classSpecFromDraft(
+    ready({ abilities: [ability('Bone-Reader', false), ability('Grave Sense', true)], randomAbilityCount: 1 }),
+    'en'
+  );
+  assert.deepEqual(
+    spec.abilities.map((a) => [a.key, a.isRandom, a.position]),
+    [
+      ['Bone-Reader', false, 0],
+      ['Grave Sense', true, 1],
+    ]
+  );
+  assert.equal(spec.randomAbilityCount, 1);
 });

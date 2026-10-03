@@ -425,11 +425,14 @@
       "all": "Wszystkie testy",
       "combat": "Tylko walka",
       "defence": "Tylko obrona",
+      "tests": "Tylko testy",
       "melee": "Tylko walka wręcz",
       "ranged": "Tylko dystansowe",
       "powers": "Tylko Moce"
     },
     "excludes": "Nie dotyczy: {{list}}",
+    "more": "Więcej",
+    "fewer": "Mniej",
     "exclude": {
       "title": "Zastosowanie",
       "description": "Gdzie ten modyfikator ma zastosowanie:",
@@ -1256,6 +1259,10 @@
         "label": "Cechy i kości",
         "hint": "Jak rzuca się na każdą cechę, do tego PŻ, omeny, srebro i kości startowego ekwipunku. Podręcznik rzuca każdą cechę 3k6, a klasy z podręcznika przesuwają niektóre o −1 do +2. „Najniższa kość: Odrzucona” wyrzuca najniższą kość, więc 4 kości to „najlepsze 3 z 4k6”."
       },
+      "abilities": {
+        "label": "Zdolności",
+        "hint": "Stałe zdolności, które dostaje każdy scvm, i pula, z której losuje się pozostałe."
+      },
       "origins": {
         "label": "Pochodzenie",
         "hint": "Skąd pochodzi ten nędznik. Każdy scvm dostaje jedno losowo."
@@ -1385,14 +1392,55 @@
       "missingDescription": "Brak tekstu po {{language}}: opis klasy",
       "missingOrigin": "Brak tekstu po {{language}}: pochodzenie {{n}}",
       "noOrigin": "Dodaj co najmniej jedno pochodzenie",
-      "specialistPool": "Specjalista potrzebuje co najmniej jednej losowej zdolności więcej, niż losuje każdy scvm"
+      "specialistPool": "Specjalista potrzebuje co najmniej jednej losowej zdolności więcej, niż losuje każdy scvm",
+      "missingAbilityName": "Brak tekstu po {{language}}: nazwa zdolności {{n}}",
+      "missingAbilityTextUnnamed": "Brak tekstu po {{language}}: treść zdolności {{n}}",
+      "duplicateModifier": "„{{name}}” ma dwa razy ten sam modyfikator",
+      "missingAbilityText": "Brak tekstu po {{language}}: treść „{{name}}”",
+      "poolTooSmall_one": "Losuje {{count}} zdolność, a w puli jest {{pool}}",
+      "poolTooSmall_few": "Losuje {{count}} zdolności, a w puli jest {{pool}}",
+      "poolTooSmall_many": "Losuje {{count}} zdolności, a w puli jest {{pool}}",
+      "poolTooSmall_other": "Losuje {{count}} zdolności, a w puli jest {{pool}}"
     },
     "blocked_one": "Zapis zablokowany: {{count}} rzecz do poprawy. Ma przycisk Popraw poniżej.",
     "blocked_few": "Zapis zablokowany: {{count}} rzeczy do poprawy. Każda ma przycisk Popraw poniżej.",
     "blocked_many": "Zapis zablokowany: {{count}} rzeczy do poprawy. Każda ma przycisk Popraw poniżej.",
     "blocked_other": "Zapis zablokowany: {{count}} rzeczy do poprawy. Każda ma przycisk Popraw poniżej.",
     "saveFailed": "Klasa się nie zapisała. Spróbuj ponownie.",
-    "saveRateLimited": "Zapisano 10 razy w tej minucie. Odczekaj minutę i zapisz ponownie."
+    "saveRateLimited": "Zapisano 10 razy w tej minucie. Odczekaj minutę i zapisz ponownie.",
+    "abilities": {
+      "rolled": "Losowane zdolności",
+      "rolledHint": "Każdy scvm dostaje wszystkie Stałe zdolności i tyle z puli Losowych (jest w niej {{pool}}). „Rzuć k6 na zdolność” z zina to pula 6 z 1 losowaną.",
+      "count": "{{count}} z {{max}} zdolności",
+      "empty": "Brak zdolności. Dodaj stałą, którą dostaje każdy scvm, albo zbuduj pulę losowych.",
+      "add": "Dodaj zdolność",
+      "full": "Klasa ma najwyżej {{max}} zdolności.",
+      "fixed": "Stała",
+      "random": "Losowa",
+      "randomN": "Losowa {{n}}",
+      "untitled": "Zdolność bez nazwy",
+      "edit": "Edytuj",
+      "kind": "Dostaje ją każdy scvm albo jest w puli losowych",
+      "name": "Nazwa",
+      "text": "Treść zasady",
+      "modifiers": "Modyfikatory",
+      "modifierN": "Modyfikator {{n}}",
+      "stat": "Cecha",
+      "value": "Wartość",
+      "appliesTo": "Dotyczy",
+      "extras": "Dodatki",
+      "addModifier": "Dodaj modyfikator",
+      "duplicate": "Powiel",
+      "done": "Gotowe",
+      "scopeWord": {
+        "combat": "walka",
+        "defence": "obrona",
+        "tests": "testy",
+        "melee": "wręcz",
+        "ranged": "dystans",
+        "powers": "moce"
+      }
+    }
   },
   "classes": {
     "title": "Moje klasy",

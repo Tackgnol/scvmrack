@@ -1,14 +1,8 @@
 import {
-  scopeIncludeOptions,
-} from '@components/modifiers/config';
-import {
   createModifierId,
-  includesToExclude,
+  scopeToExclude,
 } from '@components/modifiers/utils';
-import {
-  type IncludeContext,
-  type ScopeOption,
-} from '@components/modifiers/types';
+import { type ScopeOption } from '@components/modifiers/types';
 import {
   type Character,
   type CustomItemCategory,
@@ -79,13 +73,6 @@ export const buildCustomItemKey = (
   kind: CustomItemKind,
   id = createModifierId(),
 ): string => `custom.${kind}.${id}`;
-
-const scopeToExclude = (scope: ScopeOption): string[] => {
-  const includes =
-    scopeIncludeOptions.find((option) => option.value === scope)?.include ??
-    [];
-  return includesToExclude(includes as IncludeContext[]);
-};
 
 export const createUsePips = (
   rule: UseCountRule | undefined,

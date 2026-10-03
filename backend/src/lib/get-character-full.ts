@@ -548,14 +548,18 @@ async function resolveComputedModifiers(
     if (abilityKeys.length > 0) {
       const cams = await catalogRepository.findClassAbilityModifiers(classId, abilityKeys);
       for (const cam of cams) {
+        // A Custom Class ability is named in the reader's language; Book sources are translated below.
+        const label = cam.abilityKey.startsWith('cc.')
+          ? (translate(translations, cam.abilityKey) ?? cam.source)
+          : cam.source;
         result.push({
           value: cam.value,
-          source: cam.source,
+          source: label,
           statistic: cam.statistic,
           exclude: Array.isArray(cam.exclude) ? (cam.exclude as string[]) : [],
           origin: 'system',
           originKey: `class_ability.${cam.abilityKey}`,
-          originName: cam.source,
+          originName: label,
         });
       }
     }
@@ -614,7 +618,7 @@ async function resolveComputedModifiers(
       : translations;
 
   for (const m of result) {
-    if (!m.source) continue;
+    if (!m.source || m.originKey?.startsWith('class_ability.cc.')) continue;
     const translated = translate(modifierTranslations, modifierSourceTranslationKey(m.source));
     if (!translated) continue;
     if (m.originName === m.source) m.originName = translated;

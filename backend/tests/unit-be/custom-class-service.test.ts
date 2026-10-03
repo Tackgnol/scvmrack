@@ -27,7 +27,8 @@ mock.module('../../src/repositories/custom-class-repository.js', {
       update: async (id: number, draft: ClassDraft) => {
         repo.updated.push({ id, draft });
       },
-      findWithText: async () => repo.found,
+      findWithText: async (id: number) =>
+        repo.found ?? { id, lineageId: 'l', ownerUserId: 'gm-1', isLatest: true, draft: repo.created.at(-1)?.draft },
       listOwned: async () => [],
     },
   },
@@ -66,7 +67,9 @@ beforeEach(() => {
 test('a GM saves a complete class as their own', async () => {
   const result = await service.create({ session: GM, draft: ready() });
 
-  assert.deepEqual(result, { ok: true, value: { id: 42 } });
+  assert.equal(result.ok, true);
+  assert.equal(result.ok && result.value.id, 42);
+  assert.equal(result.ok && result.value.draft.name.en, 'Bog Witch');
   assert.equal(repo.created[0].owner, 'gm-1');
 });
 
@@ -114,7 +117,8 @@ test("only the owner can load or edit a class, and only its latest version", asy
   assert.equal(!stale.ok && stale.error.code, 'CLASS_NOT_LATEST');
 
   repo.found = { id: 7, lineageId: 'l', ownerUserId: 'gm-1', isLatest: true, draft: ready() };
-  assert.deepEqual(await service.update({ session: GM, id: 7, draft: ready() }), { ok: true, value: { id: 7 } });
+  const edited = await service.update({ session: GM, id: 7, draft: ready() });
+  assert.equal(edited.ok && edited.value.id, 7);
   assert.equal(repo.updated.length, 1);
 });
 

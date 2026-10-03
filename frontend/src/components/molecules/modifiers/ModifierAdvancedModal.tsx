@@ -17,7 +17,7 @@ import {
   Typography,
   type SelectChangeEvent,
 } from '@mui/material';
-import { type ChangeEvent } from 'react';
+import { type ChangeEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { MODIFIER_VALUE_MAX, MODIFIER_VALUE_MIN } from '@/validation/characterUpdate';
 
@@ -67,6 +67,17 @@ export default function ModifierAdvancedModal({
   onCommentChange,
 }: ModifierAdvancedModalProps) {
   const { t } = useTranslation();
+  const [showMore, setShowMore] = useState(false);
+  const [openedFor, setOpenedFor] = useState(open);
+  if (openedFor !== open) {
+    setOpenedFor(open);
+    setShowMore(false);
+  }
+  // Healing, buffs and item use are rare: listed only on request, or when a narrowed modifier still names one.
+  const moreInUse =
+    includes.length < allIncludeOptions.length &&
+    allIncludeOptions.some((option) => option.more && includes.includes(option.value));
+  const moreShown = showMore || moreInUse;
 
   return (
     <MorkBorgModal
@@ -205,7 +216,7 @@ export default function ModifierAdvancedModal({
           {t('modifiers.exclude.description')}
         </Typography>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-          {allIncludeOptions.map((option) => (
+          {allIncludeOptions.filter((option) => moreShown || !option.more).map((option) => (
             <FormControlLabel
               key={option.value}
               control={
@@ -231,6 +242,14 @@ export default function ModifierAdvancedModal({
               }}
             />
           ))}
+          <Button
+            size="small"
+            onClick={() => setShowMore(!moreShown)}
+            aria-expanded={moreShown}
+            sx={{ alignSelf: 'flex-start', color: morkBorgColors.yellow, fontFamily: "'Antonio', sans-serif" }}
+          >
+            {moreShown ? t('modifiers.fewer', 'Fewer') : t('modifiers.more', 'More')}
+          </Button>
         </Box>
       </Box>
 

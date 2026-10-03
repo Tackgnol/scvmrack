@@ -25,7 +25,40 @@ const OriginSchema = {
   ...LocalizedSchema,
   properties: {
     ...LocalizedSchema.properties,
-    key: { type: 'string', pattern: '^cc\.[0-9]+\.origin\.[0-9]+$' },
+    key: { type: 'string', pattern: '^cc\\.[0-9]{1,9}\\.origin\\.[0-9]{1,9}$' },
+  },
+} as const;
+
+const MODIFIER_CONTEXTS = ['melee', 'ranged', 'defence', 'cast', 'ability', 'test', 'heal', 'buff', 'item'] as const;
+
+const AbilitySchema = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['random', 'name', 'text', 'modifiers'],
+  properties: {
+    key: { type: 'string', pattern: '^cc\\.[0-9]{1,9}\\.ability\\.[0-9]{1,9}$' },
+    random: { type: 'boolean' },
+    name: NameSchema,
+    text: LocalizedSchema,
+    modifiers: {
+      type: 'array',
+      maxItems: 6,
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['statistic', 'value', 'exclude'],
+        properties: {
+          statistic: { type: 'string', enum: ['strength', 'agility', 'presence', 'toughness'] },
+          value: { type: 'integer', minimum: -10, maximum: 10 },
+          exclude: {
+            type: 'array',
+            uniqueItems: true,
+            maxItems: MODIFIER_CONTEXTS.length,
+            items: { type: 'string', enum: [...MODIFIER_CONTEXTS] },
+          },
+        },
+      },
+    },
   },
 } as const;
 
@@ -46,7 +79,7 @@ export const ClassDraftSchema = {
   additionalProperties: false,
   required: [
     'languages', 'name', 'description', 'stats', 'hpDie', 'omenDie', 'weaponDie', 'armorDie',
-    'silver', 'origins', 'gettingBetterRule', 'gettingBetterNote',
+    'silver', 'origins', 'abilities', 'randomAbilityCount', 'gettingBetterRule', 'gettingBetterNote',
   ],
   properties: {
     languages: {
@@ -84,6 +117,8 @@ export const ClassDraftSchema = {
       },
     },
     origins: { type: 'array', maxItems: LIMIT_LIST, items: OriginSchema },
+    abilities: { type: 'array', maxItems: LIMIT_LIST, items: AbilitySchema },
+    randomAbilityCount: { type: 'integer', minimum: 0, maximum: LIMIT_LIST },
     gettingBetterRule: { type: 'string', enum: ['book', 'book_plus_ability', 'specialist'] },
     gettingBetterNote: LocalizedSchema,
   },
@@ -115,13 +150,6 @@ export const ClassIdParamsSchema = {
 export const ClassLocaleQuerySchema = {
   type: 'object',
   properties: { locale: { type: 'string', enum: ['en', 'pl'], default: 'en' } },
-} as const;
-
-export const SavedClassSchema = {
-  type: 'object',
-  additionalProperties: false,
-  required: ['id'],
-  properties: { id: { type: 'integer' } },
 } as const;
 
 export const ClassWithDraftSchema = {

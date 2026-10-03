@@ -1,6 +1,6 @@
 import type { ClassDraft, ClassLanguage } from "@/api/classes";
 
-export type CreatorStep = "identity" | "stats" | "origins" | "gettingBetter" | "review";
+export type CreatorStep = "identity" | "stats" | "abilities" | "origins" | "gettingBetter" | "review";
 
 /** Something that blocks saving, with where to fix it. */
 export type CreatorIssue = {

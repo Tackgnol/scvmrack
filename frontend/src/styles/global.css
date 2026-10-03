@@ -986,3 +986,30 @@ input[type='number'] {
     display: none !important;
   }
 }
+
+/* Creator cards open and close as one shared element each: the frame unfolds (or folds back)
+   in place while its content swaps at once, and the cards below slide. Hard cuts, no fades. */
+html:active-view-transition-type(card-open, card-close)::view-transition-group(*) {
+  animation-duration: 320ms;
+  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+html:active-view-transition-type(card-close)::view-transition-group(*) {
+  animation-duration: 220ms;
+}
+
+html:active-view-transition-type(card-open, card-close)::view-transition-image-pair(*) {
+  overflow: clip;
+}
+
+html:active-view-transition-type(card-open, card-close)::view-transition-old(*) {
+  animation: none;
+  display: none;
+}
+
+html:active-view-transition-type(card-open, card-close)::view-transition-new(*) {
+  animation: none;
+  height: 100%;
+  object-fit: none;
+  object-position: top;
+}

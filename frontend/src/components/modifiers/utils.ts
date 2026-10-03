@@ -7,14 +7,32 @@ const hasSameValues = (a: IncludeContext[], b: IncludeContext[]): boolean =>
 export const includesToExclude = (includes: IncludeContext[]): IncludeContext[] =>
   ALL_CONTEXTS.filter((context) => !includes.includes(context));
 
-export const excludeToIncludes = (exclude: string[]): IncludeContext[] =>
-  ALL_CONTEXTS.filter((context) => !exclude.includes(context));
+const ADDED_CONTEXTS: string[] = ['test', 'heal', 'buff', 'item'];
+
+/**
+ * The contexts a modifier applies to. A narrowed list saved before test, heal,
+ * buff and item existed names none of them, and never meant to include them.
+ */
+export const excludeToIncludes = (exclude: string[]): IncludeContext[] => {
+  const legacy = exclude.length > 0 && !exclude.some((context) => ADDED_CONTEXTS.includes(context));
+  return ALL_CONTEXTS.filter(
+    (context) => !exclude.includes(context) && !(legacy && ADDED_CONTEXTS.includes(context)),
+  );
+};
 
 export const resolveScopeFromIncludes = (
   includes: IncludeContext[],
 ): ScopeOption =>
   scopeIncludeOptions.find((option) => hasSameValues(option.include, includes))
     ?.value ?? 'all';
+
+/** The exclusions a scope preset stores. */
+export const scopeToExclude = (scope: ScopeOption): IncludeContext[] =>
+  includesToExclude(scopeIncludeOptions.find((option) => option.value === scope)?.include ?? []);
+
+/** Which preset a stored exclusion list matches. */
+export const scopeOfExclude = (exclude: string[]): ScopeOption =>
+  resolveScopeFromIncludes(excludeToIncludes(exclude));
 
 let fallbackModifierIdSequence = 0;
 

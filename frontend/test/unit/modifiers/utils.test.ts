@@ -23,9 +23,13 @@ describe('modifiers utils', () => {
 
   describe('excludeToIncludes', () => {
     it('should return contexts not excluded in the input', () => {
-      const exclude = ['melee', 'ranged'];
+      const exclude = ['melee', 'ranged', 'heal'];
       const result = excludeToIncludes(exclude);
       expect(result).toEqual(ALL_CONTEXTS.filter(c => !exclude.includes(c)));
+    });
+
+    it('reads a narrowed list saved before test/heal/buff/item as not meaning them', () => {
+      expect(excludeToIncludes(['melee', 'ranged'])).toEqual(['defence', 'cast', 'ability']);
     });
   });
 

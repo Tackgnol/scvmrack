@@ -1,7 +1,7 @@
 import { classKeys, saveClass, testRollClass, type ClassDraft, type ClassLanguage } from "@/api/classes";
 import { getApiLocale } from "@/hooks/utils";
 import type { CreatorIssue, CreatorStep } from "../classCreator.models";
-import { draftIssues, STEPS } from "../classCreator.utils";
+import { abilityIndexOf, draftIssues, STEPS, withSavedKeys } from "../classCreator.utils";
 import { getApiErrorStatus, getUserFacingApiErrorMessage } from "@/utils/errorUtils";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -23,6 +23,8 @@ export function useClassCreator(classId: number | null, initialDraft: ClassDraft
   const [touched, setTouched] = useState<ReadonlySet<string>>(() => new Set());
   const [attempted, setAttempted] = useState(false);
   const [blocked, setBlocked] = useState<string | null>(null);
+  /** The one ability card that is open, by position. */
+  const [openAbility, setOpenAbility] = useState<number | null>(null);
 
   const language = draft.languages.includes(chosenLanguage) ? chosenLanguage : draft.languages[0];
   const issues = draftIssues(draft);
@@ -33,8 +35,9 @@ export function useClassCreator(classId: number | null, initialDraft: ClassDraft
     onSuccess: (result, input) => {
       setSavedId(result.id);
       setSavedRevision(input.revision);
+      setDraft((current) => withSavedKeys(current, result.draft));
       void queryClient.invalidateQueries({ queryKey: ["classes"] });
-      queryClient.setQueryData(classKeys.one(result.id), { id: result.id, draft: input.draft });
+      queryClient.setQueryData(classKeys.one(result.id), result);
     },
     onError: (error) =>
       setBlocked(
@@ -80,6 +83,8 @@ export function useClassCreator(classId: number | null, initialDraft: ClassDraft
     showMissing: (path: string) => attempted || step === "review" || touched.has(path),
     setStep,
     setLanguage,
+    openAbility,
+    setOpenAbility,
     /** Steps by `delta` (−1 back, +1 next) when there is one that way. */
     move: (delta: number) => {
       const next = STEPS[STEPS.indexOf(step) + delta];
@@ -90,6 +95,8 @@ export function useClassCreator(classId: number | null, initialDraft: ClassDraft
       setAttempted(true);
       setStep(issue.step);
       if (issue.language) setLanguage(issue.language);
+      const ability = abilityIndexOf(issue.path);
+      if (ability !== null) setOpenAbility(ability);
     },
     save: () => {
       setAttempted(true);

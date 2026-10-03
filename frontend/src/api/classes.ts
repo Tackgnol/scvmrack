@@ -16,6 +16,18 @@ export type StatDice = {
   dropLowest: boolean;
 };
 
+/** A stat modifier an ability carries; `exclude` names the rolls it doesn't apply to, as the sheet stores it. */
+export type AbilityModifierDraft = { statistic: ClassStat; value: number; exclude: string[] };
+
+/** An ability as the creator edits it; a saved one carries its key, which the creator passes back untouched. */
+export type AbilityDraft = {
+  key?: string;
+  random: boolean;
+  name: Localized;
+  text: Localized;
+  modifiers: AbilityModifierDraft[];
+};
+
 /** A Custom Class as the creator edits it; the same shape is saved and test-rolled. */
 export type ClassDraft = {
   languages: ClassLanguage[];
@@ -28,6 +40,8 @@ export type ClassDraft = {
   armorDie: number;
   silver: { count: number; faces: number; multiplier: number };
   origins: OriginText[];
+  abilities: AbilityDraft[];
+  randomAbilityCount: number;
   gettingBetterRule: GettingBetterRule;
   gettingBetterNote: Localized;
 };
@@ -70,12 +84,12 @@ export async function getClass(id: number): Promise<{ id: number; draft: ClassDr
 export async function saveClass(input: {
   id: number | null;
   draft: ClassDraft;
-}): Promise<{ id: number }> {
+}): Promise<{ id: number; draft: ClassDraft }> {
   const body = { draft: input.draft };
   return unwrapApiResult(
     input.id === null
-      ? await classClient.POST<{ id: number }>("/api/classes", { body })
-      : await classClient.PUT<{ id: number }>(`/api/classes/${input.id}`, { body }),
+      ? await classClient.POST<{ id: number; draft: ClassDraft }>("/api/classes", { body })
+      : await classClient.PUT<{ id: number; draft: ClassDraft }>(`/api/classes/${input.id}`, { body }),
     "Failed to save the class",
   );
 }

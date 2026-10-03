@@ -11,11 +11,11 @@ mock.module('../../src/services/custom-class-service.js', {
     createCustomClassService: () => ({
       create: async (input: { draft: ClassDraft }) => {
         created.push(input.draft);
-        return { ok: true, value: { id: 9 } };
+        return { ok: true, value: { id: 9, draft: input.draft } };
       },
       listMine: async () => ({ ok: true, value: [] }),
       get: async () => ({ ok: true, value: { id: 9, draft: blankClassDraft() } }),
-      update: async () => ({ ok: true, value: { id: 9 } }),
+      update: async () => ({ ok: true, value: { id: 9, draft: blankClassDraft() } }),
       testRoll: async () => ({ ok: true, value: {} }),
     }),
   },
@@ -40,7 +40,7 @@ test('POST / saves a draft and answers 201 with its id', async () => {
   const response = await app.inject({ method: 'POST', url: '/', payload: { draft: blankClassDraft() } });
 
   assert.equal(response.statusCode, 201);
-  assert.deepEqual(response.json(), { id: 9 });
+  assert.equal(response.json().id, 9);
   assert.equal(created.length, 1);
   await app.close();
 });

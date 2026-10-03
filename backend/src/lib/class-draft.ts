@@ -14,6 +14,18 @@ export const LIMIT_LIST = 20;
 export const LIMIT_TEXT = 1500;
 export const LIMIT_NAME = 100;
 
+/** A stat modifier an ability carries; `exclude` names the rolls it doesn't apply to, as the sheet stores it. */
+export type AbilityModifierDraft = { statistic: ClassStat; value: number; exclude: string[] };
+
+/** An ability as the creator edits it; a saved one carries its key, kept stable across edits. */
+export type AbilityDraft = {
+  key?: string;
+  random: boolean;
+  name: Localized;
+  text: Localized;
+  modifiers: AbilityModifierDraft[];
+};
+
 /** A Custom Class as the creator edits it, and as it is sent to save or test-roll. */
 export type ClassDraft = {
   languages: ClassLanguage[];
@@ -26,6 +38,8 @@ export type ClassDraft = {
   armorDie: number;
   silver: { count: number; faces: number; multiplier: number };
   origins: OriginText[];
+  abilities: AbilityDraft[];
+  randomAbilityCount: number;
   gettingBetterRule: GettingBetterRule;
   gettingBetterNote: Localized;
 };
@@ -47,6 +61,8 @@ export function blankClassDraft(): ClassDraft {
     armorDie: 4,
     silver: { count: 2, faces: 6, multiplier: 10 },
     origins: [],
+    abilities: [],
+    randomAbilityCount: 0,
     gettingBetterRule: 'book',
     gettingBetterNote: empty(),
   };
@@ -68,14 +84,30 @@ export function classDraftProblems(draft: ClassDraft): string[] {
     const dice = draft.stats[stat];
     if (dice.dropLowest && dice.count < 2) problems.push(`${stat} can drop its lowest die only when it rolls two or more`);
   }
-  // Abilities arrive with the creator's Abilities step (RPG-268); until then the random pool is empty.
-  if (draft.gettingBetterRule === 'specialist') {
+  draft.abilities.forEach((ability, i) => {
+    text(ability.name, `ability ${i + 1} name`);
+    text(ability.text, `ability ${i + 1} rules text`);
+    const seen = new Set<string>();
+    for (const modifier of ability.modifiers) {
+      const id = JSON.stringify([modifier.statistic, modifier.value, [...modifier.exclude].sort()]);
+      if (seen.has(id)) {
+        problems.push(`Ability “${ability.name[draft.languages[0]] || i + 1}” has the same modifier twice`);
+        break;
+      }
+      seen.add(id);
+    }
+  });
+  const pool = draft.abilities.filter((a) => a.random).length;
+  if (draft.randomAbilityCount > pool) {
+    problems.push(`Rolls ${draft.randomAbilityCount} random abilities, but the pool has ${pool}`);
+  }
+  if (draft.gettingBetterRule === 'specialist' && pool < draft.randomAbilityCount + 1) {
     problems.push('Specialist needs at least one more random ability than each scvm rolls');
   }
   return problems;
 }
 
-/** The generator's view of a draft. Origins are their text in `language`, standing in for keys. */
+/** The generator's view of a draft. Origins and abilities are their text in `language`, standing in for keys. */
 export function classSpecFromDraft(draft: ClassDraft, language: ClassLanguage): ClassSpec {
   const textIn = (value: Localized) => value[language] || value[draft.languages[0]];
   return {
@@ -87,7 +119,14 @@ export function classSpecFromDraft(draft: ClassDraft, language: ClassLanguage): 
     silverModifier: draft.silver.multiplier,
     statDice: draft.stats,
     originKeys: draft.origins.map(textIn),
-    abilities: [],
-    randomAbilityCount: 0,
+    abilities: draft.abilities.map((ability, i) => ({
+      id: i,
+      key: textIn(ability.name),
+      isRandom: ability.random,
+      position: i,
+      grantItemKey: null,
+      grantPetKey: null,
+    })),
+    randomAbilityCount: draft.randomAbilityCount,
   };
 }

@@ -31,6 +31,15 @@ function nameTaken(draft: ClassDraft) {
   );
 }
 
+type SavedClass = { id: number; draft: ClassDraft };
+
+/** The class as stored, so new origins and abilities come back with their keys. */
+async function saved(id: number): Promise<SavedClass> {
+  const found = await customClassRepository.findWithText(id);
+  if (!found) throw new Error(`Class ${id} vanished right after saving`);
+  return { id: found.id, draft: found.draft };
+}
+
 const isNameClash = (err: unknown) => String((err as Error)?.message ?? err).includes(NAME_CONSTRAINT);
 
 /** The class creator and the GM's own class list. Custom Classes are owned by signed-in GMs. */
@@ -56,7 +65,7 @@ export function createCustomClassService(log: ServiceLogger) {
       }
     },
 
-    async create(input: { session: AppSession; draft: ClassDraft }): Promise<ServiceResult<{ id: number }>> {
+    async create(input: { session: AppSession; draft: ClassDraft }): Promise<ServiceResult<SavedClass>> {
       if (!isGm(input.session)) return fail(unauthorized());
       const ownerUserId = sessionUserId(input.session)!;
       const problems = classDraftProblems(input.draft);
@@ -72,14 +81,15 @@ export function createCustomClassService(log: ServiceLogger) {
             )
           );
         }
-        return ok({ id: await customClassRepository.create(ownerUserId, input.draft) });
+        const id = await customClassRepository.create(ownerUserId, input.draft);
+        return ok(await saved(id));
       } catch (err) {
         if (isNameClash(err)) return fail(nameTaken(input.draft));
         return fail(unexpected(log, err, 'CLASS_SAVE_FAILED', 'Failed to save the class'));
       }
     },
 
-    async update(input: { session: AppSession; id: number; draft: ClassDraft }): Promise<ServiceResult<{ id: number }>> {
+    async update(input: { session: AppSession; id: number; draft: ClassDraft }): Promise<ServiceResult<SavedClass>> {
       if (!isGm(input.session)) return fail(unauthorized());
       const problems = classDraftProblems(input.draft);
       if (problems.length > 0) return fail(draftInvalid(problems));
@@ -90,7 +100,7 @@ export function createCustomClassService(log: ServiceLogger) {
           return fail(apiError(409, 'CLASS_NOT_LATEST', 'A newer version of this class exists. Edit that one.'));
         }
         await customClassRepository.update(input.id, input.draft);
-        return ok({ id: input.id });
+        return ok(await saved(input.id));
       } catch (err) {
         if (isNameClash(err)) return fail(nameTaken(input.draft));
         return fail(unexpected(log, err, 'CLASS_SAVE_FAILED', 'Failed to save the class'));

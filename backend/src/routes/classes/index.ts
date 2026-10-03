@@ -8,7 +8,6 @@ import {
   ClassWithDraftSchema,
   ErrorSchema,
   OwnClassListSchema,
-  SavedClassSchema,
   TestRollBodySchema,
   TestRollResponseSchema,
 } from '../../schemas/custom-class.js';
@@ -55,7 +54,7 @@ const classes: FastifyPluginAsync = async (fastify): Promise<void> => {
         tags: ['classes'],
         body: ClassDraftBodySchema,
         response: {
-          201: SavedClassSchema,
+          201: ClassWithDraftSchema,
           400: ErrorSchema,
           401: ErrorSchema,
           409: ErrorSchema,
@@ -70,7 +69,7 @@ const classes: FastifyPluginAsync = async (fastify): Promise<void> => {
         draft: request.body.draft as ClassDraft,
       });
       if (!result.ok) return sendServiceError(reply, request, result.error);
-      return reply.code(201).send(result.value);
+      return reply.code(201).send(result.value as never);
     }
   );
 
@@ -131,7 +130,7 @@ const classes: FastifyPluginAsync = async (fastify): Promise<void> => {
         params: ClassIdParamsSchema,
         body: ClassDraftBodySchema,
         response: {
-          200: SavedClassSchema,
+          200: ClassWithDraftSchema,
           400: ErrorSchema,
           401: ErrorSchema,
           404: ErrorSchema,
@@ -148,7 +147,7 @@ const classes: FastifyPluginAsync = async (fastify): Promise<void> => {
         draft: request.body.draft as ClassDraft,
       });
       if (!result.ok) return sendServiceError(reply, request, result.error);
-      return result.value;
+      return reply.send(result.value as never);
     }
   );
 };

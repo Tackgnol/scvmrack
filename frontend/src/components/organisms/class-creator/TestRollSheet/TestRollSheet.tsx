@@ -2,7 +2,7 @@ import { ABILITY_STATS, statToModifier } from "@/utils/stats";
 import { signed } from "@/utils/signed";
 import { useTranslation } from "react-i18next";
 import { Interrupt } from "../classCreator.styles";
-import { gearCounts } from "./TestRollSheet.utils";
+import { gearCounts, namedCounts } from "./TestRollSheet.utils";
 import type { TestRollSheetProps } from "./TestRollSheet.models";
 import { Chip, Chips, Micro, Muted, Origin, Sheet, SmallTitle, StatBox, StatRow } from "./TestRollSheet.styles";
 
@@ -10,6 +10,7 @@ import { Chip, Chips, Micro, Muted, Origin, Sheet, SmallTitle, StatBox, StatRow 
 export function TestRollSheet({ scvm, className, stale, quiet }: TestRollSheetProps) {
   const { t } = useTranslation();
   const gear = gearCounts(scvm);
+  const abilities = namedCounts((scvm.abilities ?? []).map((ability) => ability.name));
 
   return (
     <Sheet data-testid="test-roll-sheet">
@@ -33,6 +34,17 @@ export function TestRollSheet({ scvm, className, stale, quiet }: TestRollSheetPr
         <Chip>{t("creator.review.omens", "Omens {{omens}}", { omens: scvm.omens })}</Chip>
         <Chip>{t("creator.review.silver", "{{silver}} silver", { silver: scvm.silver })}</Chip>
       </Chips>
+      <SmallTitle>{t("creator.steps.abilities.label", "Abilities")}</SmallTitle>
+      <ul>
+        {abilities.length === 0 && (
+          <li>
+            <Muted>{t("creator.review.none", "Nothing")}</Muted>
+          </li>
+        )}
+        {abilities.map(([name, count]) => (
+          <li key={name}>{count > 1 ? `${name} ×${count}` : name}</li>
+        ))}
+      </ul>
       <SmallTitle>{t("creator.review.gear", "Starts with")}</SmallTitle>
       <ul>
         {gear.length === 0 && (

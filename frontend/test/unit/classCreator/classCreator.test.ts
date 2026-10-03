@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
+import { scopeOfExclude, scopeToExclude } from '@/components/modifiers/utils';
 import {
+  abilityIndexOf,
+  scopeExclude,
+  withSavedKeys,
   blankDraft,
+  randomNumber,
+  specialistAllowed,
+  STEPS,
   draftIssues,
   fieldId,
   formulaText,
@@ -8,7 +15,7 @@ import {
   statRange,
 } from '@/components/organisms/class-creator/classCreator.utils';
 import { signed } from '@/utils/signed';
-import type { ClassDraft } from '@/api/classes';
+import type { AbilityDraft, ClassDraft } from '@/api/classes';
 
 const ready = (overrides: Partial<ClassDraft> = {}): ClassDraft => ({
   ...blankDraft(),
@@ -81,5 +88,77 @@ describe('draftIssues', () => {
 describe('fieldId', () => {
   it('turns a draft path into an element id', () => {
     expect(fieldId('origins.2.pl')).toBe('cc-origins-2-pl');
+  });
+});
+
+describe('abilities in the draft', () => {
+  const ability = (name: string, random: boolean): AbilityDraft => ({
+    random,
+    name: { en: name, pl: '' },
+    text: { en: `${name} rules.`, pl: '' },
+    modifiers: [],
+  });
+
+  it('puts the Abilities step between Stats & dice and Origins', () => {
+    expect(STEPS).toEqual(['identity', 'stats', 'abilities', 'origins', 'gettingBetter', 'review']);
+  });
+
+  it('finds missing ability text by field, and a rolled count bigger than the pool', () => {
+    const issues = draftIssues(
+      ready({ abilities: [ability('Bone-Reader', false), { ...ability('', true), text: { en: '', pl: '' } }], randomAbilityCount: 2 }),
+    );
+    expect(issues.map((i) => [i.key, i.step, i.path])).toEqual([
+      ['creator.issues.missingAbilityName', 'abilities', 'abilities.1.name.en'],
+      ['creator.issues.missingAbilityTextUnnamed', 'abilities', 'abilities.1.text.en'],
+      ['creator.issues.poolTooSmall', 'abilities', 'randomAbilityCount'],
+    ]);
+  });
+
+  it('lets Specialist through once the pool beats the rolled count', () => {
+    const pool = [ability('A', true), ability('B', true)];
+    expect(draftIssues(ready({ abilities: pool, randomAbilityCount: 1, gettingBetterRule: 'specialist' }))).toEqual([]);
+    expect(specialistAllowed(ready({ abilities: pool, randomAbilityCount: 2 }))).toBe(false);
+  });
+
+  it('numbers random abilities in pool order', () => {
+    const draft = ready({ abilities: [ability('A', true), ability('B', false), ability('C', true)] });
+    expect(draft.abilities.map((_, i) => randomNumber(draft, i))).toEqual([1, null, 2]);
+  });
+
+  it('turns an ability path into the card that holds it', () => {
+    expect(abilityIndexOf('abilities.3.name.pl')).toBe(3);
+    expect(abilityIndexOf('origins.0.en')).toBeNull();
+  });
+});
+
+describe('review fixes', () => {
+  const tests = { statistic: 'presence' as const, value: 2, exclude: scopeExclude('tests') };
+
+  it('flags the same modifier twice on one ability, at the second one', () => {
+    const issues = draftIssues(
+      ready({
+        abilities: [{ random: false, name: { en: 'Grave Sense', pl: '' }, text: { en: 'x', pl: '' }, modifiers: [tests, { ...tests }] }],
+      }),
+    );
+    expect(issues.map((i) => [i.key, i.path])).toEqual([['creator.issues.duplicateModifier', 'abilities.0.modifiers.1.statistic']]);
+  });
+
+  it('takes the keys a save gave new entries, without touching keyed ones', () => {
+    const current = ready({
+      origins: [{ en: 'Pit', pl: '' }, { en: 'Bog', pl: '', key: 'cc.1.origin.9' }],
+    });
+    const saved = ready({
+      origins: [{ en: 'Pit', pl: '', key: 'cc.1.origin.1' }, { en: 'Bog', pl: '', key: 'cc.1.origin.2' }],
+    });
+    expect(withSavedKeys(current, saved).origins.map((o) => o.key)).toEqual(['cc.1.origin.1', 'cc.1.origin.9']);
+  });
+});
+
+describe('modifier scopes saved before tests, healing, buffs and item use existed', () => {
+  it('still read as the preset they were saved with', () => {
+    expect(scopeOfExclude(['ranged', 'defence', 'cast', 'ability'])).toBe('melee');
+    expect(scopeOfExclude(['defence', 'ability'])).toBe('combat');
+    expect(scopeOfExclude([])).toBe('all');
+    expect(scopeOfExclude(scopeToExclude('tests'))).toBe('tests');
   });
 });

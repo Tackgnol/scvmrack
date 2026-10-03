@@ -115,7 +115,7 @@ const EquipmentItemSchema = {
           },
           scope: {
             type: 'string',
-            enum: ['all', 'combat', 'defence', 'melee', 'ranged', 'powers'],
+            enum: ['all', 'combat', 'defence', 'tests', 'melee', 'ranged', 'powers'],
           },
           comment: { type: 'string', maxLength: 500 },
         },
@@ -237,7 +237,7 @@ const ModifierSchemaDefs = {
     },
     scope: {
       type: 'string',
-      enum: ['all', 'combat', 'defence', 'melee', 'ranged', 'powers'],
+      enum: ['all', 'combat', 'defence', 'tests', 'melee', 'ranged', 'powers'],
     },
     comment: { type: 'string', maxLength: 500 },
   },

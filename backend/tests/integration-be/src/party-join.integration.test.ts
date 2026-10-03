@@ -284,6 +284,17 @@ function customClassDraft(name: string) {
     armorDie: 2,
     silver: { count: 2, faces: 6, multiplier: 10 },
     origins: [{ en: 'A drowned village', pl: '' }],
+    abilities: [
+      {
+        random: false,
+        name: { en: 'Bone-Reader', pl: '' },
+        text: { en: 'Ask a skull one question a day.', pl: '' },
+        modifiers: [{ statistic: 'presence', value: 2, exclude: ['melee', 'ranged', 'defence', 'cast', 'heal', 'buff', 'item'] }],
+      },
+      { random: true, name: { en: 'Grave Sense', pl: '' }, text: { en: 'Smell the dead.', pl: '' }, modifiers: [] },
+      { random: true, name: { en: 'Mire Walk', pl: '' }, text: { en: 'Never sink.', pl: '' }, modifiers: [] },
+    ],
+    randomAbilityCount: 1,
     gettingBetterRule: 'book',
     gettingBetterNote: { en: '', pl: '' },
   };
@@ -300,7 +311,10 @@ test('a forged class shows under My classes, joins the pool and a player rolls i
     csrf: true,
   });
   await expectStatus(rolled, 200);
-  assert.equal(((await rolled.json()) as { origin: string }).origin, 'A drowned village');
+  const testScvm = (await rolled.json()) as { origin: string; abilities: Array<{ name: string }> };
+  assert.equal(testScvm.origin, 'A drowned village');
+  assert.equal(testScvm.abilities.length, 2);
+  assert.equal(testScvm.abilities[0].name, 'Bone-Reader');
 
   const saved = await request('/api/classes', {
     method: 'POST',
@@ -368,14 +382,27 @@ test('a forged class shows under My classes, joins the pool and a player rolls i
   });
   await expectStatus(edited, 200);
   const reloaded = await request(`/api/classes/${id}`, { jar: party.jar });
-  const origins = ((await reloaded.json()) as { draft: { origins: Array<{ en: string; key: string }> } }).draft.origins;
+  const reloadedDraft = ((await reloaded.json()) as {
+    draft: { origins: Array<{ en: string; key: string }>; abilities: Array<{ key: string; random: boolean; modifiers: unknown[] }>; randomAbilityCount: number };
+  }).draft;
+  const origins = reloadedDraft.origins;
+  assert.deepEqual(reloadedDraft.abilities.map((a) => [a.random, a.modifiers.length]), [[false, 1], [true, 0], [true, 0]]);
+  assert.equal(reloadedDraft.randomAbilityCount, 1);
   assert.deepEqual(origins.map((o) => o.en), ['The peat bog', 'A gibbet']);
   assert.ok(origins.every((o) => /^cc\.\d+\.origin\.\d+$/.test(o.key)));
 
   // The GM removed the origin this scvm rolled; the scvm keeps its text.
   const sheet = await request(`/api/characters/${scvm.id}?locale=en`, { jar: player.jar });
   await expectStatus(sheet, 200);
-  assert.equal(((await sheet.json()) as { origin: string }).origin, 'A drowned village');
+  const sheetBody = (await sheet.json()) as {
+    origin: string;
+    abilities: Array<{ name: string; description: string }>;
+    computedModifiers: Array<{ source: string; statistic: string; value: number }>;
+  };
+  assert.equal(sheetBody.origin, 'A drowned village');
+  assert.equal(sheetBody.abilities.length, 2);
+  assert.deepEqual(sheetBody.abilities[0], { ...sheetBody.abilities[0], name: 'Bone-Reader', description: 'Ask a skull one question a day.' });
+  assert.ok(sheetBody.computedModifiers.some((m) => m.source === 'Bone-Reader' && m.statistic === 'presence' && m.value === 2));
 });
 
 test("a guest can't forge a class", async () => {

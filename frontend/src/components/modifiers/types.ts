@@ -2,12 +2,22 @@ import { type ComputedModifier, type CustomModifier, type Statistic } from '@/ho
 
 export type LocalStatistic = Statistic;
 
-export type IncludeContext = 'melee' | 'ranged' | 'defence' | 'cast' | 'ability';
+export type IncludeContext =
+  | 'melee'
+  | 'ranged'
+  | 'defence'
+  | 'cast'
+  | 'ability'
+  | 'test'
+  | 'heal'
+  | 'buff'
+  | 'item';
 
 export type ScopeOption =
   | 'all'
   | 'combat'
   | 'defence'
+  | 'tests'
   | 'melee'
   | 'ranged'
   | 'powers';
@@ -20,12 +30,16 @@ export interface StatOption {
 export interface IncludeOption {
   value: IncludeContext;
   labelKey: string;
+  /** Rarely needed; shown behind More. */
+  more?: boolean;
 }
 
 export interface ScopeIncludeOption {
   value: ScopeOption;
   labelKey: string;
   include: IncludeContext[];
+  /** A narrower preset, shown behind More where space is tight. */
+  more?: boolean;
 }
 
 export interface ModifierTileSpan {

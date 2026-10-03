@@ -366,6 +366,10 @@ test('useModifiersPanel handles modal scope changes and computed modifier detail
     'defence',
     'cast',
     'ability',
+    'test',
+    'heal',
+    'buff',
+    'item',
   ]);
 
   act(() => {

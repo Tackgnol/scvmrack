@@ -2,6 +2,7 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
+import { AbilitiesStep } from "../AbilitiesStep/AbilitiesStep";
 import { CreatorRail } from "../CreatorRail/CreatorRail";
 import { GettingBetterStep } from "../GettingBetterStep/GettingBetterStep";
 import { IdentityStep } from "../IdentityStep/IdentityStep";
@@ -88,6 +89,14 @@ export function ClassCreator({ classId, initialDraft }: ClassCreatorProps) {
           <Hint>{t(`creator.steps.${creator.step}.hint`)}</Hint>
           {creator.step === "identity" && <IdentityStep {...stepProps} />}
           {creator.step === "stats" && <StatsStep {...stepProps} />}
+          {creator.step === "abilities" && (
+            <AbilitiesStep
+              {...stepProps}
+              issues={creator.issues}
+              openAbility={creator.openAbility}
+              onOpenAbility={creator.setOpenAbility}
+            />
+          )}
           {creator.step === "origins" && <OriginsStep {...stepProps} />}
           {creator.step === "gettingBetter" && <GettingBetterStep {...stepProps} />}
           {creator.step === "review" && (

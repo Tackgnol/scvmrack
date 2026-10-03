@@ -428,11 +428,14 @@
       "all": "All tests",
       "combat": "Combat only",
       "defence": "Defence only",
+      "tests": "Tests only",
       "melee": "Melee only",
       "ranged": "Ranged only",
       "powers": "Powers only"
     },
     "excludes": "Excludes: {{list}}",
+    "more": "More",
+    "fewer": "Fewer",
     "exclude": {
       "title": "Applies To",
       "description": "This modifier applies to:",
@@ -1243,6 +1246,10 @@
         "label": "Stats & dice",
         "hint": "How each stat is rolled, plus HP, omens, silver and starting gear dice. The book rolls every score on 3d6, and book classes shift some by −1 to +2. “Lowest die: Dropped” throws the lowest die away, so 4 dice read “best 3 of 4d6”."
       },
+      "abilities": {
+        "label": "Abilities",
+        "hint": "Fixed abilities every scvm gets, and the pool random ones are rolled from."
+      },
       "origins": {
         "label": "Origins",
         "hint": "Where this wretch came from. One is picked at random for each scvm."
@@ -1368,12 +1375,51 @@
       "missingDescription": "{{language}} missing: class description",
       "missingOrigin": "{{language}} missing: origin {{n}}",
       "noOrigin": "Add at least one origin",
-      "specialistPool": "Specialist needs at least one more random ability than each scvm rolls"
+      "specialistPool": "Specialist needs at least one more random ability than each scvm rolls",
+      "missingAbilityName": "{{language}} missing: ability {{n}} name",
+      "missingAbilityTextUnnamed": "{{language}} missing: ability {{n}} rules text",
+      "duplicateModifier": "“{{name}}” carries the same modifier twice",
+      "missingAbilityText": "{{language}} missing: “{{name}}” rules text",
+      "poolTooSmall_one": "Rolls {{count}} random ability, but the pool has {{pool}}",
+      "poolTooSmall_other": "Rolls {{count}} random abilities, but the pool has {{pool}}"
     },
     "blocked_one": "Save is blocked: {{count}} thing to fix. It has a Fix button below.",
     "blocked_other": "Save is blocked: {{count}} things to fix. Each has a Fix button below.",
     "saveFailed": "The class didn't save. Try again.",
-    "saveRateLimited": "You've saved 10 times this minute. Wait a minute, then save again."
+    "saveRateLimited": "You've saved 10 times this minute. Wait a minute, then save again.",
+    "abilities": {
+      "rolled": "Random abilities rolled",
+      "rolledHint": "Every scvm gets all Fixed abilities, plus this many from the Random pool ({{pool}} in it). A zine's “roll d6 for your ability” is a pool of 6 with 1 rolled.",
+      "count": "{{count}} of {{max}} abilities",
+      "empty": "No abilities yet. Add a fixed one every scvm gets, or build a random pool.",
+      "add": "Add ability",
+      "full": "A class holds at most {{max}} abilities.",
+      "fixed": "Fixed",
+      "random": "Random",
+      "randomN": "Random {{n}}",
+      "untitled": "Unnamed ability",
+      "edit": "Edit",
+      "kind": "Every scvm gets it, or it is in the random pool",
+      "name": "Name",
+      "text": "Rules text",
+      "modifiers": "Modifiers",
+      "modifierN": "Modifier {{n}}",
+      "stat": "Stat",
+      "value": "Value",
+      "appliesTo": "Applies to",
+      "extras": "Extras",
+      "addModifier": "Add modifier",
+      "duplicate": "Duplicate",
+      "done": "Done",
+      "scopeWord": {
+        "combat": "combat",
+        "defence": "defence",
+        "tests": "tests",
+        "melee": "melee",
+        "ranged": "ranged",
+        "powers": "powers"
+      }
+    }
   },
   "classes": {
     "title": "My classes",
