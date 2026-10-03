@@ -10,14 +10,14 @@ import {
   EmptyText,
   Meta,
   Page,
-  PartyActionButton,
-  PartyCard,
-  PartyGrid,
-  PartyName,
+  CardAction,
+  Card,
+  CardGrid,
+  CardName,
   Spinner,
   Stamp,
   Title,
-} from '@/pages/GmOverviewPage.styles';
+} from '@/pages/gmPages.styles';
 import {
   Alert,
   Box,
@@ -87,6 +87,12 @@ export function GmOverviewPage() {
         <Stamp>{t('gm.stamp', 'Game Master')}</Stamp>
         <Title component="h1">{t('gm.dashboardTitle', 'Party control')}</Title>
 
+        <Box>
+          <CardAction component={Link} to="/gm/classes">
+            {t('gm.myClasses', 'My classes')}
+          </CardAction>
+        </Box>
+
         <PartyCreateForm
           isAuthLoading={authLoading}
           isCreating={createMutation.isPending}
@@ -126,11 +132,11 @@ export function GmOverviewPage() {
           </EmptyText>
         )}
 
-        <PartyGrid>
+        <CardGrid>
           {(partiesQuery.data ?? []).map((party) => (
-            <PartyCard key={party.id}>
+            <Card key={party.id}>
               <Box>
-                <PartyName>{party.name}</PartyName>
+                <CardName>{party.name}</CardName>
                 <Meta>
                   {t('gm.partyCardMeta', '{{count}}/{{max}} scvms', {
                     count: party.memberCount,
@@ -138,12 +144,12 @@ export function GmOverviewPage() {
                   })}
                 </Meta>
               </Box>
-              <PartyActionButton component={Link} to={`/party/${party.id}`}>
+              <CardAction component={Link} to={`/party/${party.id}`}>
                 {t('gm.manageParty', 'Manage')}
-              </PartyActionButton>
-            </PartyCard>
+              </CardAction>
+            </Card>
           ))}
-        </PartyGrid>
+        </CardGrid>
       </Page>
     </>
   );

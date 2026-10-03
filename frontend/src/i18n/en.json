@@ -1229,6 +1229,167 @@
     "footerClassless_one": "Players see {{count}} class and Classless. Random picks the class; it never picks Classless.",
     "footerClassless_other": "Players see {{count}} classes and Classless. Random picks evenly among the classes; it never picks Classless."
   },
+  "creator": {
+    "titleNew": "Forge a class",
+    "titleEdit": "Edit a class",
+    "untitled": "Untitled class",
+    "rail": "Class creator steps",
+    "steps": {
+      "identity": {
+        "label": "Identity",
+        "hint": "What the class is called and how a player first meets it."
+      },
+      "stats": {
+        "label": "Stats & dice",
+        "hint": "How each stat is rolled, plus HP, omens, silver and starting gear dice. The book rolls every score on 3d6, and book classes shift some by −1 to +2. “Lowest die: Dropped” throws the lowest die away, so 4 dice read “best 3 of 4d6”."
+      },
+      "origins": {
+        "label": "Origins",
+        "hint": "Where this wretch came from. One is picked at random for each scvm."
+      },
+      "gettingBetter": {
+        "label": "Getting Better",
+        "hint": "What happens when a scvm of this class gets better."
+      },
+      "review": {
+        "label": "Test roll & save",
+        "hint": "Roll a scvm from the draft as it stands, then save the class."
+      }
+    },
+    "stepCount": "Step {{n}} of {{total}}",
+    "back": "Back",
+    "ok": "OK",
+    "complete": "Complete",
+    "toFix_one": "{{count}} to fix",
+    "toFix_other": "{{count}} to fix",
+    "writingIn": "Writing in",
+    "missingCount_one": "{{count}} missing",
+    "missingCount_other": "{{count}} missing",
+    "languageNames": {
+      "en": "English",
+      "pl": "Polish"
+    },
+    "onlyLanguage": {
+      "en": "English only",
+      "pl": "Polish only"
+    },
+    "missingText": {
+      "en": "English text missing",
+      "pl": "Polish text missing"
+    },
+    "charCount": "{{count}} of {{max}} characters",
+    "remove": "Remove",
+    "stepper": {
+      "decrease": "Decrease {{label}}",
+      "increase": "Increase {{label}}"
+    },
+    "zineContact": "Zine author? Want to add your class to the roster? <mail>Get in touch (contact@rpgtools.co)</mail>",
+    "identity": {
+      "languages": "Languages this class is written in",
+      "englishOnly": "English only",
+      "polishOnly": "Polish only",
+      "both": "Both",
+      "bothHint": "Every text field needs both languages. Players see their own. “Writing in” at the top only switches which one you are editing.",
+      "oneHint": "Players in either language see the {{language}} text. Text you wrote in the other language is kept, only hidden.",
+      "name": "Class name",
+      "description": "Description"
+    },
+    "stats": {
+      "short": {
+        "strength": "STR",
+        "agility": "AGI",
+        "presence": "PRE",
+        "toughness": "TOU"
+      },
+      "lineLabel": "{{stat}} dice",
+      "dice": "Dice",
+      "sides": "Sides",
+      "modifier": "Modifier",
+      "lowestDie": "Lowest die",
+      "kept": "Kept",
+      "dropped": "Dropped",
+      "dropNeedsTwo": "Dropping the lowest die needs at least two dice.",
+      "scoreRange": "score {{low}}–{{high}}",
+      "modRange": "mod {{low}} to {{high}}",
+      "hpDie": "HP die (+ TOU)",
+      "hpHint": "Starting HP is this die plus Toughness, at least 1. Book classes use d4 to d10.",
+      "omenDie": "Omen die",
+      "omenHint": "Omens the scvm starts with. Book classes use d2 or d4.",
+      "weaponDie": "Starting weapon die",
+      "weaponHint": "Rolls on the book’s starting weapon table (d10: femur to zweihänder).",
+      "armorDie": "Starting armor die",
+      "armorHint": "Rolls on the book’s starting armor table (d4: none to heavy armor).",
+      "silverDice": "Silver dice",
+      "silverSides": "Silver sides",
+      "silverMultiplier": "Silver multiplier",
+      "silverHint": "Silver is the dice total times this. The book default is 2d6 × 10."
+    },
+    "origins": {
+      "add": "Add origin",
+      "count": "{{count}} of {{max}} origins",
+      "empty": "No origins yet. Add the places this class’s wretches crawl out of.",
+      "full": "A class holds at most {{max}} origins.",
+      "label": "Origin {{n}}",
+      "removeLabel": "Remove origin {{n}}"
+    },
+    "gettingBetter": {
+      "rule": "Rule",
+      "note": "Rules note for the player (optional)",
+      "specialistDisabled": "Specialist needs a random ability pool with at least one more ability than each scvm rolls. Add random abilities first.",
+      "explain": {
+        "book": "Book rules: max HP may grow, each ability score may rise or fall, and the scvm searches the debris for silver or scrolls.",
+        "book_plus_ability": "Book rules, and every improvement also rolls one random ability from this class’s pool that the scvm doesn’t have yet, with anything it grants.",
+        "specialist": "Book rules. The scvm’s random abilities are its specialties: the first improvement adds one more, and each later improvement may reroll any of them."
+      }
+    },
+    "review": {
+      "roll": "Roll a test scvm",
+      "rollAgain": "Roll again",
+      "noRoll": "No test roll yet. A test roll uses the draft exactly as it is and keeps nothing.",
+      "testScvm": "Test scvm · {{name}}",
+      "stale": "The draft changed since this roll. Roll again to see it.",
+      "hp": "HP {{hp}}",
+      "omens": "Omens {{omens}}",
+      "silver": "{{silver}} silver",
+      "gear": "Starts with",
+      "origin": "Origin",
+      "none": "Nothing",
+      "beforeSave": "Before you save",
+      "ready": "Nothing missing. This class is ready to save.",
+      "fix": "Fix",
+      "save": "Save class",
+      "saved": "Saved",
+      "forged": "Forged",
+      "forgedNote": "“{{name}}” is saved to your classes. Any edit here re-arms Save.",
+      "goToClasses": "Go to my classes"
+    },
+    "issues": {
+      "missingName": "{{language}} missing: class name",
+      "missingDescription": "{{language}} missing: class description",
+      "missingOrigin": "{{language}} missing: origin {{n}}",
+      "noOrigin": "Add at least one origin",
+      "specialistPool": "Specialist needs at least one more random ability than each scvm rolls"
+    },
+    "blocked_one": "Save is blocked: {{count}} thing to fix. It has a Fix button below.",
+    "blocked_other": "Save is blocked: {{count}} things to fix. Each has a Fix button below.",
+    "saveFailed": "The class didn't save. Try again.",
+    "saveRateLimited": "You've saved 10 times this minute. Wait a minute, then save again."
+  },
+  "classes": {
+    "title": "My classes",
+    "forge": "Forge a class",
+    "loginRequired": "You need to be logged in to forge classes.",
+    "empty": "No classes yet. Forge one, then switch it on in a party's pool.",
+    "languages": {"en": "English", "pl": "Polish"},
+    "visibility": {
+      "private": "Private",
+      "public": "Public"
+    },
+    "origins_one": "{{count}} origin",
+    "origins_other": "{{count}} origins",
+    "edit": "Edit",
+    "editLabel": "Edit {{name}}"
+  },
   "party": {
     "pill": "Party",
     "looks": "Looks",
@@ -1325,6 +1486,7 @@
     "morkBorgCredit": "MÖRK BORG is copyright Ockult Örtmästare Games and Stockholm Kartell. This is an independent fan project."
   },
   "gm": {
+    "myClasses": "My classes",
     "stamp": "Game Master · Overview",
     "dashboardTitle": "Party control",
     "partyNameLabel": "Party name",

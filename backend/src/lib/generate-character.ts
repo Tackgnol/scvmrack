@@ -23,7 +23,7 @@ import { Prisma } from '@prisma/client';
 import type { Roller } from '@tackgnol/rpg-tools-roller';
 import { sanitizeString } from '../utils.js';
 import { statToModifier } from './ability-modifiers.js';
-import { abilityGrantedItems } from './class-grants.js';
+import { abilityGrantedItems, type AbilityGrants } from './class-grants.js';
 import { bookClasses } from './class-scope.js';
 import { byClassOrder } from './ability-order.js';
 import { hydrateInventoryUses } from './inventory.js';
@@ -498,19 +498,14 @@ function autoEquipItems(pool: PoolItem[], catalog: CatalogCache): EquipBundle {
 // ── build_character_ability_bundle ────────────────────────────────────────────
 
 async function buildAbilityBundle(
-  classId: number,
+  spec: ClassSpec,
   roller: Roller,
   catalog: CatalogCache,
 ): Promise<{ abilities: AbilityEntry[]; grantedItems: PoolItem[] }> {
-  const [classRow, allAbilities] = await Promise.all([
-    prisma.class.findUnique({ where: { id: classId } }),
-    prisma.ability.findMany({ where: { classId }, orderBy: [{ position: 'asc' }, { id: 'asc' }] }),
-  ]);
-
-  const fixedAbilities = allAbilities.filter(a => !a.isRandom);
-  const randomCandidates = allAbilities.filter(a => a.isRandom);
+  const fixedAbilities = spec.abilities.filter(a => !a.isRandom);
+  const randomCandidates = spec.abilities.filter(a => a.isRandom);
   const shuffled = await shuffle(randomCandidates, roller);
-  const picked = shuffled.slice(0, classRow?.randomAbilityCount ?? 0);
+  const picked = shuffled.slice(0, spec.randomAbilityCount);
 
   const gained = [...fixedAbilities, ...picked].sort(byClassOrder);
   const tagsFor = (key: string) => buildPoolItem(key, catalog).tags;
@@ -650,16 +645,59 @@ export async function buildCharacterData(
   rollerFor: RollerFor,
   options: BuildCharacterOptions = {},
 ): Promise<CharacterData> {
-  const cls = classId !== null
-    ? await prisma.class.findUniqueOrThrow({ where: { id: classId } })
-    : null;
+  const spec = classId !== null ? await loadClassSpec(classId) : null;
+  return buildCharacterDataFromSpec(classId, spec, rollerFor, options);
+}
 
-  // Pre-load all catalog data in parallel (origins only exist for classes).
-  const [names, origins, weapons, armors, equips, pets] = await Promise.all([
+/** A class as the generator rolls it, from the database or from a creator draft. */
+export type ClassSpec = {
+  hpDie: number;
+  omenDie: number;
+  weaponDie: number;
+  armorDie: number;
+  silverDice: number[];
+  silverModifier: number;
+  statDice: Record<AbilityStat, StatDice>;
+  /** Origin translation keys; a draft passes the text itself, which hydration shows as is. */
+  originKeys: string[];
+  /** In class order. */
+  abilities: Array<AbilityGrants & { id: number; key: string; isRandom: boolean | null; position: number | null }>;
+  randomAbilityCount: number;
+};
+
+async function loadClassSpec(classId: number): Promise<ClassSpec> {
+  const [cls, origins, abilities] = await Promise.all([
+    prisma.class.findUniqueOrThrow({ where: { id: classId } }),
+    prisma.origin.findMany({ where: { classId }, select: { key: true } }),
+    prisma.ability.findMany({ where: { classId }, orderBy: [{ position: 'asc' }, { id: 'asc' }] }),
+  ]);
+  return {
+    hpDie: cls.hpDie ?? CLASSLESS_DEFAULTS.hpDie,
+    omenDie: cls.omenDie,
+    weaponDie: cls.weaponDie ?? CLASSLESS_DEFAULTS.weaponDie,
+    armorDie: cls.armorDie ?? CLASSLESS_DEFAULTS.armorDie,
+    silverDice: cls.silverDice,
+    silverModifier: cls.silverModifier ?? CLASSLESS_DEFAULTS.silverModifier,
+    statDice: cls.statDice as Record<AbilityStat, StatDice>,
+    originKeys: origins.map((o) => o.key),
+    abilities,
+    randomAbilityCount: cls.randomAbilityCount ?? 0,
+  };
+}
+
+/**
+ * The generator proper. `spec === null` rolls a classless scvm; `classId` is
+ * only recorded on the result (a test roll from a draft passes null with a spec).
+ */
+export async function buildCharacterDataFromSpec(
+  classId: number | null,
+  cls: ClassSpec | null,
+  rollerFor: RollerFor,
+  options: BuildCharacterOptions = {},
+): Promise<CharacterData> {
+  // Pre-load all catalog data in parallel.
+  const [names, weapons, armors, equips, pets] = await Promise.all([
     prisma.name.findMany({ select: { name: true } }),
-    classId !== null
-      ? prisma.origin.findMany({ where: { classId }, select: { key: true } })
-      : Promise.resolve([] as Array<{ key: string }>),
     prisma.weapon.findMany({ orderBy: { id: 'asc' } }),
     prisma.armor.findMany(),
     prisma.equipment.findMany(),
@@ -694,7 +732,7 @@ export async function buildCharacterData(
     presence = result.values.presence;
     toughness = result.values.toughness;
   } else {
-    const statDice = cls.statDice as Record<AbilityStat, StatDice>;
+    const statDice = cls.statDice;
     const rolled = {} as Record<AbilityStat, number>;
     for (const stat of ABILITY_STATS) rolled[stat] = await rollStat(statDice[stat], statsRoller);
     ({ strength, agility, presence, toughness } = rolled);
@@ -717,11 +755,11 @@ export async function buildCharacterData(
   const name = (await pickRandom(names, rollerFor('name')))?.name ?? 'Unknown';
 
   // ── Section: origin (classless has none; empty list rolls nothing) ──────
-  const origin = (await pickRandom(origins, rollerFor('origin')))?.key ?? null;
+  const origin = (await pickRandom(cls?.originKeys ?? [], rollerFor('origin'))) ?? null;
 
   // ── Section: abilities + granted items ──────────────────────────────────
-  const { abilities, grantedItems } = classId !== null
-    ? await buildAbilityBundle(classId, rollerFor('abilities'), catalog)
+  const { abilities, grantedItems } = cls
+    ? await buildAbilityBundle(cls, rollerFor('abilities'), catalog)
     : { abilities: [] as AbilityEntry[], grantedItems: [] as PoolItem[] };
 
   // ── Section: gear (item pool, auto-equip, uses hydration) ───────────────

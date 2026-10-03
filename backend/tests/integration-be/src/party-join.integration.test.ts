@@ -270,3 +270,123 @@ test("someone else's party pool is not found", async () => {
 
   await expectStatus(response, 404);
 });
+
+function customClassDraft(name: string) {
+  const stat = { count: 3, faces: 6, modifier: 0, dropLowest: false };
+  return {
+    languages: ['en'],
+    name: { en: name, pl: '' },
+    description: { en: 'The mire keeps what you give it.', pl: '' },
+    stats: { strength: stat, agility: stat, presence: { ...stat, count: 4, dropLowest: true }, toughness: stat },
+    hpDie: 6,
+    omenDie: 4,
+    weaponDie: 8,
+    armorDie: 2,
+    silver: { count: 2, faces: 6, multiplier: 10 },
+    origins: [{ en: 'A drowned village', pl: '' }],
+    gettingBetterRule: 'book',
+    gettingBetterNote: { en: '', pl: '' },
+  };
+}
+
+test('a forged class shows under My classes, joins the pool and a player rolls it through the invite', async () => {
+  const party = await gmParty();
+  const name = `Bog Witch ${Date.now()}`;
+
+  const rolled = await request('/api/classes/test-roll?locale=en', {
+    method: 'POST',
+    json: { draft: customClassDraft(name), language: 'en' },
+    jar: party.jar,
+    csrf: true,
+  });
+  await expectStatus(rolled, 200);
+  assert.equal(((await rolled.json()) as { origin: string }).origin, 'A drowned village');
+
+  const saved = await request('/api/classes', {
+    method: 'POST',
+    json: { draft: customClassDraft(name) },
+    jar: party.jar,
+    csrf: true,
+  });
+  await expectStatus(saved, 201);
+  const { id } = (await saved.json()) as { id: number };
+
+  const clash = await request('/api/classes', {
+    method: 'POST',
+    json: { draft: customClassDraft(name) },
+    jar: party.jar,
+    csrf: true,
+  });
+  await expectStatus(clash, 409);
+  assert.equal(((await clash.json()) as { code: string }).code, 'CLASS_NAME_TAKEN');
+
+  const mine = await request('/api/classes/mine?locale=en', { jar: party.jar });
+  await expectStatus(mine, 200);
+  const list = (await mine.json()) as Array<{ id: number; name: string; visibility: string }>;
+  assert.deepEqual(list[0], { ...list[0], id, name, visibility: 'private' });
+
+  const pool = await request(`/api/parties/${party.id}/class-pool?locale=en`, { jar: party.jar });
+  const own = ((await pool.json()) as PoolView).classes.find((c) => c.classId === id)!;
+  assert.equal(own.group, 'mine');
+  const enabled = await request(`/api/parties/${party.id}/class-pool/lineages/${own.lineageId}?locale=en`, {
+    method: 'PUT',
+    json: { enabled: true },
+    jar: party.jar,
+    csrf: true,
+  });
+  await expectStatus(enabled, 200);
+
+  const player = await anonymousSession();
+  const offered = await request(`/api/characters/classes?locale=en&invite=${party.inviteToken}`, { jar: player.jar });
+  const offeredClasses = (await offered.json()) as Array<{ id: number; name: string }>;
+  assert.equal(offeredClasses.find((c) => c.id === id)?.name, name);
+
+  const draftResponse = await request(`/api/characters/draft?locale=en&invite=${party.inviteToken}`, {
+    method: 'POST',
+    json: { classId: id, seeds },
+    jar: player.jar,
+    csrf: true,
+  });
+  await expectStatus(draftResponse, 200);
+  const { draft, preview } = (await draftResponse.json()) as { draft: unknown; preview: { origin: string } };
+  assert.equal(preview.origin, 'A drowned village');
+  const created = await request(`/api/characters/new?locale=en&invite=${party.inviteToken}`, {
+    method: 'POST',
+    json: { draft },
+    jar: player.jar,
+    csrf: true,
+  });
+  await expectStatus(created, 201);
+  const scvm = (await created.json()) as { id: string; classId: number };
+  assert.equal(scvm.classId, id);
+
+  const edited = await request(`/api/classes/${id}`, {
+    method: 'PUT',
+    json: { draft: { ...customClassDraft(name), origins: [{ en: 'The peat bog', pl: '' }, { en: 'A gibbet', pl: '' }] } },
+    jar: party.jar,
+    csrf: true,
+  });
+  await expectStatus(edited, 200);
+  const reloaded = await request(`/api/classes/${id}`, { jar: party.jar });
+  const origins = ((await reloaded.json()) as { draft: { origins: Array<{ en: string; key: string }> } }).draft.origins;
+  assert.deepEqual(origins.map((o) => o.en), ['The peat bog', 'A gibbet']);
+  assert.ok(origins.every((o) => /^cc\.\d+\.origin\.\d+$/.test(o.key)));
+
+  // The GM removed the origin this scvm rolled; the scvm keeps its text.
+  const sheet = await request(`/api/characters/${scvm.id}?locale=en`, { jar: player.jar });
+  await expectStatus(sheet, 200);
+  assert.equal(((await sheet.json()) as { origin: string }).origin, 'A drowned village');
+});
+
+test("a guest can't forge a class", async () => {
+  const guest = await anonymousSession();
+
+  const response = await request('/api/classes', {
+    method: 'POST',
+    json: { draft: customClassDraft('Guest class') },
+    jar: guest.jar,
+    csrf: true,
+  });
+
+  await expectStatus(response, 401);
+});

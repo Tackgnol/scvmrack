@@ -28,6 +28,8 @@ export const partyColors = {
   blurbText: '#bbbbbb',
   offText: '#9a9a9a',
   offBlurb: '#777777',
+  // Form field edge: 3:1 on cards (#1a1a1a) and on the black paper (WCAG 1.4.11).
+  fieldEdge: '#6e6e6e',
   // Aged-parchment tan for affliction lines on dark surfaces.
   afflictionText: '#c9b27a',
 } as const;

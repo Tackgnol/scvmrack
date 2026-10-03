@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { clamp } from "@/utils/clamp";
 import { type CharacterUpdateRequest, type SimpleField } from '@/hooks/models';
 
 export const MODIFIER_VALUE_MIN = -20;
@@ -35,8 +36,6 @@ export type FieldLimitIssue =
       message: ValidationMessage;
     };
 
-const clamp = (value: number, min: number, max: number): number =>
-  Math.max(min, Math.min(max, value));
 
 const simpleNumberLimits: Partial<
   Record<SimpleField, { min: number; max: number }>

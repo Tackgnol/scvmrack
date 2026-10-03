@@ -1242,6 +1242,175 @@
     "footerClassless_many": "Gracze widzą {{count}} klas i Bez klasy. Losowanie wybiera równo spośród klas; nigdy Bez klasy.",
     "footerClassless_other": "Gracze widzą {{count}} klas i Bez klasy. Losowanie wybiera równo spośród klas; nigdy Bez klasy."
   },
+  "creator": {
+    "titleNew": "Wykuj klasę",
+    "titleEdit": "Edytuj klasę",
+    "untitled": "Klasa bez nazwy",
+    "rail": "Kroki kreatora klasy",
+    "steps": {
+      "identity": {
+        "label": "Tożsamość",
+        "hint": "Jak nazywa się klasa i jak gracz ją poznaje."
+      },
+      "stats": {
+        "label": "Cechy i kości",
+        "hint": "Jak rzuca się na każdą cechę, do tego PŻ, omeny, srebro i kości startowego ekwipunku. Podręcznik rzuca każdą cechę 3k6, a klasy z podręcznika przesuwają niektóre o −1 do +2. „Najniższa kość: Odrzucona” wyrzuca najniższą kość, więc 4 kości to „najlepsze 3 z 4k6”."
+      },
+      "origins": {
+        "label": "Pochodzenie",
+        "hint": "Skąd pochodzi ten nędznik. Każdy scvm dostaje jedno losowo."
+      },
+      "gettingBetter": {
+        "label": "Rozwój",
+        "hint": "Co się dzieje, gdy scvm tej klasy staje się lepszy."
+      },
+      "review": {
+        "label": "Próbny rzut i zapis",
+        "hint": "Wylosuj scvm z obecnego szkicu, potem zapisz klasę."
+      }
+    },
+    "stepCount": "Krok {{n}} z {{total}}",
+    "back": "Wstecz",
+    "ok": "OK",
+    "complete": "Gotowe",
+    "toFix_one": "{{count}} do poprawy",
+    "toFix_few": "{{count}} do poprawy",
+    "toFix_many": "{{count}} do poprawy",
+    "toFix_other": "{{count}} do poprawy",
+    "writingIn": "Piszesz po",
+    "missingCount_one": "brak {{count}}",
+    "missingCount_few": "brak {{count}}",
+    "missingCount_many": "brak {{count}}",
+    "missingCount_other": "brak {{count}}",
+    "languageNames": {
+      "en": "angielsku",
+      "pl": "polsku"
+    },
+    "onlyLanguage": {
+      "en": "Tylko po angielsku",
+      "pl": "Tylko po polsku"
+    },
+    "missingText": {
+      "en": "Brak tekstu po angielsku",
+      "pl": "Brak tekstu po polsku"
+    },
+    "charCount": "{{count}} z {{max}} znaków",
+    "remove": "Usuń",
+    "stepper": {
+      "decrease": "Zmniejsz: {{label}}",
+      "increase": "Zwiększ: {{label}}"
+    },
+    "zineContact": "Autor zina? Chcesz dodać swoją klasę do listy? <mail>Napisz do nas (contact@rpgtools.co)</mail>",
+    "identity": {
+      "languages": "Języki, w których napisano klasę",
+      "englishOnly": "Tylko angielski",
+      "polishOnly": "Tylko polski",
+      "both": "Oba",
+      "bothHint": "Każde pole tekstowe potrzebuje obu języków. Gracze widzą swój. „Piszesz po” na górze przełącza tylko to, który edytujesz.",
+      "oneHint": "Gracze w obu językach widzą tekst po {{language}}. Tekst napisany w drugim języku zostaje, tylko jest ukryty.",
+      "name": "Nazwa klasy",
+      "description": "Opis"
+    },
+    "stats": {
+      "short": {
+        "strength": "SIŁ",
+        "agility": "ZRĘ",
+        "presence": "PRE",
+        "toughness": "WYT"
+      },
+      "lineLabel": "Kości: {{stat}}",
+      "dice": "Kości",
+      "sides": "Ścianki",
+      "modifier": "Modyfikator",
+      "lowestDie": "Najniższa kość",
+      "kept": "Zostaje",
+      "dropped": "Odrzucona",
+      "dropNeedsTwo": "Odrzucenie najniższej kości wymaga co najmniej dwóch kości.",
+      "scoreRange": "wynik {{low}}–{{high}}",
+      "modRange": "mod. od {{low}} do {{high}}",
+      "hpDie": "Kość PŻ (+ WYT)",
+      "hpHint": "Startowe PŻ to ta kość plus Wytrzymałość, co najmniej 1. Klasy z podręcznika używają k4 do k10.",
+      "omenDie": "Kość omenów",
+      "omenHint": "Omeny, z którymi scvm zaczyna. Klasy z podręcznika używają k2 lub k4.",
+      "weaponDie": "Kość startowej broni",
+      "weaponHint": "Rzut na tabelę startowej broni z podręcznika (k10: od kości udowej po zweihänder).",
+      "armorDie": "Kość startowego pancerza",
+      "armorHint": "Rzut na tabelę startowego pancerza z podręcznika (k4: od braku po ciężki pancerz).",
+      "silverDice": "Kości srebra",
+      "silverSides": "Ścianki srebra",
+      "silverMultiplier": "Mnożnik srebra",
+      "silverHint": "Srebro to suma kości razy ta liczba. Domyślnie w podręczniku 2k6 × 10."
+    },
+    "origins": {
+      "add": "Dodaj pochodzenie",
+      "count": "{{count}} z {{max}} pochodzeń",
+      "empty": "Brak pochodzeń. Dodaj miejsca, z których wypełzają nędznicy tej klasy.",
+      "full": "Klasa ma najwyżej {{max}} pochodzeń.",
+      "label": "Pochodzenie {{n}}",
+      "removeLabel": "Usuń pochodzenie {{n}}"
+    },
+    "gettingBetter": {
+      "rule": "Zasada",
+      "note": "Notatka o zasadach dla gracza (opcjonalna)",
+      "specialistDisabled": "Specjalista potrzebuje puli losowych zdolności większej o co najmniej jedną od liczby losowanych. Najpierw dodaj losowe zdolności.",
+      "explain": {
+        "book": "Zasady z podręcznika: maks. PŻ może wzrosnąć, każda cecha może wzrosnąć lub spaść, a scvm przeszukuje gruzy w poszukiwaniu srebra lub zwojów.",
+        "book_plus_ability": "Zasady z podręcznika, a każde ulepszenie losuje też jedną zdolność z puli tej klasy, której scvm jeszcze nie ma, razem z tym, co daje.",
+        "specialist": "Zasady z podręcznika. Losowe zdolności scvm to jego specjalności: pierwsze ulepszenie dodaje jedną, a każde kolejne może przelosować dowolną z nich."
+      }
+    },
+    "review": {
+      "roll": "Wylosuj próbnego scvm",
+      "rollAgain": "Rzuć ponownie",
+      "noRoll": "Jeszcze bez próbnego rzutu. Próbny rzut używa szkicu dokładnie takim, jaki jest, i niczego nie zapisuje.",
+      "testScvm": "Próbny scvm · {{name}}",
+      "stale": "Szkic zmienił się od tego rzutu. Rzuć ponownie, żeby go zobaczyć.",
+      "hp": "PŻ {{hp}}",
+      "omens": "Omeny {{omens}}",
+      "silver": "{{silver}} srebra",
+      "gear": "Zaczyna z",
+      "origin": "Pochodzenie",
+      "none": "Nic",
+      "beforeSave": "Zanim zapiszesz",
+      "ready": "Niczego nie brakuje. Ta klasa jest gotowa do zapisu.",
+      "fix": "Popraw",
+      "save": "Zapisz klasę",
+      "saved": "Zapisano",
+      "forged": "Wykuta",
+      "forgedNote": "„{{name}}” jest zapisana w twoich klasach. Każda zmiana tutaj znów odblokuje zapis.",
+      "goToClasses": "Przejdź do moich klas"
+    },
+    "issues": {
+      "missingName": "Brak tekstu po {{language}}: nazwa klasy",
+      "missingDescription": "Brak tekstu po {{language}}: opis klasy",
+      "missingOrigin": "Brak tekstu po {{language}}: pochodzenie {{n}}",
+      "noOrigin": "Dodaj co najmniej jedno pochodzenie",
+      "specialistPool": "Specjalista potrzebuje co najmniej jednej losowej zdolności więcej, niż losuje każdy scvm"
+    },
+    "blocked_one": "Zapis zablokowany: {{count}} rzecz do poprawy. Ma przycisk Popraw poniżej.",
+    "blocked_few": "Zapis zablokowany: {{count}} rzeczy do poprawy. Każda ma przycisk Popraw poniżej.",
+    "blocked_many": "Zapis zablokowany: {{count}} rzeczy do poprawy. Każda ma przycisk Popraw poniżej.",
+    "blocked_other": "Zapis zablokowany: {{count}} rzeczy do poprawy. Każda ma przycisk Popraw poniżej.",
+    "saveFailed": "Klasa się nie zapisała. Spróbuj ponownie.",
+    "saveRateLimited": "Zapisano 10 razy w tej minucie. Odczekaj minutę i zapisz ponownie."
+  },
+  "classes": {
+    "title": "Moje klasy",
+    "forge": "Wykuj klasę",
+    "loginRequired": "Musisz być zalogowany, żeby wykuwać klasy.",
+    "empty": "Brak klas. Wykuj jedną, a potem włącz ją w puli drużyny.",
+    "languages": {"en": "angielski", "pl": "polski"},
+    "visibility": {
+      "private": "Prywatna",
+      "public": "Publiczna"
+    },
+    "origins_one": "{{count}} pochodzenie",
+    "origins_few": "{{count}} pochodzenia",
+    "origins_many": "{{count}} pochodzeń",
+    "origins_other": "{{count}} pochodzeń",
+    "edit": "Edytuj",
+    "editLabel": "Edytuj {{name}}"
+  },
   "party": {
     "pill": "Drużyna",
     "looks": "Wygląd",
@@ -1338,6 +1507,7 @@
     "morkBorgCredit": "MÖRK BORG jest chroniony prawem autorskim Ockult Örtmästare Games oraz Stockholm Kartell. To jest niezależny projekt fanowski."
   },
   "gm": {
+    "myClasses": "Moje klasy",
     "stamp": "Mistrz Gry · Przegląd",
     "dashboardTitle": "Kontrola kompanii",
     "partyNameLabel": "Nazwa kompanii",

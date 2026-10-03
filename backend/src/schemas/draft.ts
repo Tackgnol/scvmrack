@@ -65,7 +65,7 @@ export const RerollParamsSchema = {
   },
 } as const;
 
-const DraftPreviewSchema = {
+export const DraftPreviewSchema = {
   ...CharacterSchema,
   properties: {
     ...CharacterSchema.properties,

@@ -126,6 +126,26 @@ const gmRoute = createRoute({
     component: lazyRouteComponent(() => import('@/pages/GmOverviewPage').then(m => ({ default: m.GmOverviewPage }))),
 });
 
+const classesRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: '/gm/classes',
+    component: lazyRouteComponent(() => import('@/pages/ClassesPage').then(m => ({ default: m.ClassesPage }))),
+});
+
+const loadClassCreatorPage = () => import('@/pages/ClassCreatorPage').then(m => ({ default: m.ClassCreatorPage }));
+
+const classNewRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: '/gm/classes/new',
+    component: lazyRouteComponent(loadClassCreatorPage),
+});
+
+const classEditRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: '/gm/classes/$classId',
+    component: lazyRouteComponent(loadClassCreatorPage),
+});
+
 // Carries the OBR iframe's session into a new first-party character tab.
 const obrOpenRoute = createRoute({
     getParentRoute: () => rootRoute,
@@ -159,6 +179,9 @@ const routeTree = rootRoute.addChildren([
     releaseRoute,
     owlbearRoute,
     gmRoute,
+    classesRoute,
+    classNewRoute,
+    classEditRoute,
     obrAuthDoneRoute,
     obrOpenRoute,
 ]);

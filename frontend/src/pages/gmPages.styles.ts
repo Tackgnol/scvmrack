@@ -55,12 +55,12 @@ export const EmptyText = styled(Box)({
   transform: 'rotate(-0.5deg)',
 });
 
-export const PartyGrid = styled(Box)({
+export const CardGrid = styled(Box)({
   display: 'grid',
   gap: 12,
 });
 
-export const PartyCard = styled(Box)(({ theme }) => ({
+export const Card = styled(Box)(({ theme }) => ({
   backgroundColor: partyColors.black,
   color: partyColors.white,
   border: `3px solid ${partyColors.black}`,
@@ -73,7 +73,7 @@ export const PartyCard = styled(Box)(({ theme }) => ({
   alignItems: 'center',
 }));
 
-export const PartyName = styled(Typography)({
+export const CardName = styled(Typography)({
   fontFamily: partyFonts.gothic,
   color: partyColors.yellow,
   fontSize: '1.55rem',
@@ -90,7 +90,7 @@ export const Meta = styled(Typography)({
   textTransform: 'uppercase',
 });
 
-export const PartyActionButton = styled(Button)({
+export const CardAction = styled(Button)({
   backgroundColor: partyColors.pink,
   color: partyColors.black,
   border: `2px solid ${partyColors.yellow}`,

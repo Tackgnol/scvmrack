@@ -1,0 +1,180 @@
+import { render } from 'vitest-browser-react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { page, userEvent } from 'vitest/browser';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import BrowserTestProvider from '../BrowserTestProvider';
+import { ClassCreator } from '@/components/organisms/class-creator/ClassCreator/ClassCreator';
+import { blankDraft } from '@/components/organisms/class-creator/classCreator.utils';
+import { saveClass, testRollClass, type ClassDraft } from '@/api/classes';
+
+vi.mock('@/api/classes', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/api/classes')>()),
+  saveClass: vi.fn(),
+  testRollClass: vi.fn(),
+}));
+vi.mock('@tanstack/react-router', () => ({
+  Link: ({ children, to }: { children: React.ReactNode; to: string }) => <a href={to}>{children}</a>,
+}));
+
+const complete = (): ClassDraft => ({
+  ...blankDraft(),
+  name: { en: 'Bog Witch', pl: '' },
+  description: { en: 'The mire keeps what you give it.', pl: '' },
+  origins: [{ en: 'A drowned village', pl: '' }],
+});
+
+function renderCreator(draft: ClassDraft = blankDraft(), classId: number | null = null) {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <BrowserTestProvider>
+        <ClassCreator classId={classId} initialDraft={draft} />
+      </BrowserTestProvider>
+    </QueryClientProvider>
+  );
+}
+
+const title = () => page.getByRole('heading', { level: 2 });
+
+describe('ClassCreator', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('walks the steps with named Back and Next buttons, and Alt+arrows', async () => {
+    renderCreator();
+
+    await expect.element(title()).toHaveTextContent('Identity');
+    await page.getByRole('button', { name: 'Stats & dice' }).last().click();
+    await expect.element(title()).toHaveTextContent('Stats & dice');
+    await expect.element(page.getByRole('button', { name: 'Origins' }).last()).toBeVisible();
+
+    await userEvent.keyboard('{Alt>}{ArrowRight}{/Alt}');
+    await expect.element(title()).toHaveTextContent('Origins');
+    await userEvent.keyboard('{Alt>}{ArrowLeft}{/Alt}');
+    await expect.element(title()).toHaveTextContent('Stats & dice');
+  });
+
+  it('stamps a stat in book notation as its dice change', async () => {
+    renderCreator();
+    await page.getByRole('button', { name: /Stats & dice/ }).first().click();
+
+    const strength = page.getByRole('region', { name: 'STR dice' });
+    await strength.getByRole('radio', { name: 'Dropped' }).click();
+    await strength.getByRole('spinbutton', { name: 'Dice' }).click();
+    await userEvent.keyboard('{ArrowUp}');
+    await strength.getByRole('spinbutton', { name: 'Modifier' }).click();
+    await userEvent.keyboard('{ArrowDown}');
+
+    await expect.element(strength.getByText('best 3 of 4d6 −1')).toBeVisible();
+    await expect.element(strength.getByText('score 2–17')).toBeVisible();
+  });
+
+  it('shows what each language misses, and a Fix jumps there and focuses the field', async () => {
+    renderCreator({ ...complete(), languages: ['en', 'pl'] });
+
+    await expect.element(page.getByRole('radio', { name: /Polish 2 missing/ })).toBeVisible();
+    await page.getByRole('button', { name: /Test roll & save/ }).first().click();
+    await page.getByRole('button', { name: /Polish missing: class description/ }).click();
+
+    await expect.element(title()).toHaveTextContent('Identity');
+    await expect
+      .element(page.getByRole('radiogroup', { name: 'Writing in' }).getByRole('radio', { name: /Polish/ }))
+      .toHaveAttribute('aria-checked', 'true');
+    await expect.element(page.getByLabelText('Description')).toHaveFocus();
+    await expect.element(page.getByLabelText('Description')).toHaveAttribute('aria-invalid', 'true');
+  });
+
+  it('explains a blocked save as one pink interrupt', async () => {
+    renderCreator();
+    await page.getByRole('button', { name: /Test roll & save/ }).first().click();
+
+    await page.getByRole('button', { name: 'Save class' }).click();
+
+    await expect.element(page.getByText(/Save is blocked: 3 things to fix/)).toBeVisible();
+    expect(saveClass).not.toHaveBeenCalled();
+  });
+
+  it('saves a complete class, stamps it FORGED and offers the way to my classes', async () => {
+    vi.mocked(saveClass).mockResolvedValue({ id: 12 });
+    renderCreator(complete());
+    await page.getByRole('button', { name: /Test roll & save/ }).first().click();
+
+    await page.getByRole('button', { name: 'Save class' }).click();
+
+    await expect.element(page.getByText('Forged')).toBeVisible();
+    await expect.element(page.getByRole('link', { name: /Go to my classes/ })).toHaveAttribute('href', '/gm/classes');
+    await expect.element(page.getByRole('button', { name: 'Saved' })).toBeDisabled();
+    expect(saveClass).toHaveBeenCalledWith({ id: null, draft: complete() });
+  });
+
+  it('says when the draft changed since the test roll', async () => {
+    vi.mocked(testRollClass).mockResolvedValue({
+      name: 'Nameless Wretch',
+      strength: 10,
+      agility: 10,
+      presence: 10,
+      toughness: 10,
+      maxHp: 6,
+      omens: 2,
+      silver: 70,
+      origin: 'A drowned village',
+      equippedWeapons: [{ name: 'Femur' }],
+    });
+    renderCreator(complete());
+    await page.getByRole('button', { name: /Test roll & save/ }).first().click();
+
+    await page.getByRole('button', { name: 'Roll a test scvm' }).click();
+    await expect.element(page.getByText('Nameless Wretch')).toBeVisible();
+    await expect.element(page.getByText('Femur')).toBeVisible();
+
+    await page.getByRole('button', { name: /Origins/ }).first().click();
+    await page.getByRole('button', { name: 'Add origin' }).click();
+    await page.getByRole('button', { name: /Test roll & save/ }).first().click();
+
+    await expect.element(page.getByText('The draft changed since this roll. Roll again to see it.')).toBeVisible();
+    expect(testRollClass).toHaveBeenCalledWith({ draft: complete(), language: 'en', locale: 'en' });
+  });
+
+  it('shows a server refusal as the blocked-save message, and saves edits to the class', async () => {
+    vi.mocked(saveClass).mockRejectedValueOnce(
+      Object.assign(new Error('You have 50 classes, the most one account can hold.'), {
+        status: 409,
+        payload: { message: 'You have 50 classes, the most one account can hold.', code: 'CLASS_LIMIT_REACHED', statusCode: 409 },
+      }),
+    );
+    vi.mocked(saveClass).mockResolvedValueOnce({ id: 7 });
+    renderCreator(complete(), 7);
+    await page.getByRole('button', { name: /Test roll & save/ }).first().click();
+
+    await page.getByRole('button', { name: 'Save class' }).click();
+    await expect.element(page.getByText(/You have 50 classes/)).toBeVisible();
+    await page.getByRole('button', { name: 'Save class' }).click();
+
+    await expect.element(page.getByText('Forged')).toBeVisible();
+    expect(vi.mocked(saveClass).mock.calls.map(([input]) => input.id)).toEqual([7, 7]);
+  });
+
+  it('only lets a stat drop its lowest die when it rolls two or more', async () => {
+    renderCreator();
+    await page.getByRole('button', { name: /Stats & dice/ }).first().click();
+    const strength = page.getByRole('region', { name: 'STR dice' });
+
+    await strength.getByRole('radio', { name: 'Dropped' }).click();
+    await strength.getByRole('button', { name: 'Decrease Dice' }).click();
+    await strength.getByRole('button', { name: 'Decrease Dice' }).click();
+
+    await expect.element(strength.getByRole('radio', { name: 'Dropped' })).toBeDisabled();
+    await expect.element(strength.getByText('1d6', { exact: true })).toBeVisible();
+  });
+
+  it('adds origins up to the cap and focuses the new one', async () => {
+    renderCreator();
+    await page.getByRole('button', { name: /Origins/ }).first().click();
+
+    await page.getByRole('button', { name: 'Add origin' }).click();
+
+    await expect.element(page.getByLabelText('Origin 1', { exact: true })).toHaveFocus();
+    await expect.element(page.getByText('1 of 20 origins')).toBeVisible();
+  });
+});
