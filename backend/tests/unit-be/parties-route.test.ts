@@ -99,6 +99,30 @@ function resetState(): void {
   };
 }
 
+const poolCalls: Array<{ method: string; input: Record<string, unknown> }> = [];
+const poolView = {
+  classlessEnabled: true,
+  classes: [
+    {
+      lineageId: '33333333-3333-4333-8333-333333333333',
+      classId: 1,
+      group: 'book',
+      name: 'Fanged Deserter',
+      blurb: 'Teeth.',
+      languages: ['en', 'pl'],
+      attribution: null,
+      abilityCount: 8,
+      randomAbilityCount: 1,
+      classItemCount: 0,
+      gettingBetterRule: 'book',
+      version: 1,
+      playingHere: 0,
+      enabled: true,
+    },
+  ],
+  removed: [],
+};
+
 mock.module('../../src/services/party-service.js', {
   namedExports: {
     createPartyService: () => ({
@@ -122,6 +146,18 @@ mock.module('../../src/services/party-service.js', {
       detachRoom: async (input: { session: AppSession; id: string }) => {
         detachRoomCalls.push(input);
         return detachRoomResult;
+      },
+      getClassPool: async (input: Record<string, unknown>) => {
+        poolCalls.push({ method: 'get', input });
+        return { ok: true, value: poolView };
+      },
+      setPoolClass: async (input: Record<string, unknown>) => {
+        poolCalls.push({ method: 'class', input });
+        return { ok: true, value: poolView };
+      },
+      setPoolClassless: async (input: Record<string, unknown>) => {
+        poolCalls.push({ method: 'classless', input });
+        return { ok: true, value: poolView };
       },
       setMiseries: async (input: {
         session: AppSession;
@@ -341,6 +377,63 @@ test('POST /:id/detach-room forwards to the party service and returns 200 for th
   assert.equal(response.statusCode, 200);
   assert.deepEqual(response.json(), { id: PARTY_ID, obrRoomId: null });
   assert.deepEqual(detachRoomCalls, [{ session: currentSession, id: PARTY_ID }]);
+
+  await app.close();
+});
+
+test('the class pool routes forward to the party service', async () => {
+  resetState();
+  poolCalls.length = 0;
+  const app = await buildApp();
+  const lineageId = '33333333-3333-4333-8333-333333333333';
+
+  const read = await app.inject({ method: 'GET', url: `/${PARTY_ID}/class-pool?locale=pl` });
+  const toggle = await app.inject({
+    method: 'PUT',
+    url: `/${PARTY_ID}/class-pool/lineages/${lineageId}`,
+    payload: { enabled: false },
+  });
+  const classless = await app.inject({
+    method: 'PUT',
+    url: `/${PARTY_ID}/class-pool/classless`,
+    payload: { enabled: true },
+  });
+
+  assert.equal(read.statusCode, 200);
+  assert.deepEqual(read.json(), poolView);
+  assert.equal(toggle.statusCode, 200);
+  assert.equal(classless.statusCode, 200);
+  assert.deepEqual(
+    poolCalls.map(({ method, input }) => [method, input.locale, input.lineageId, input.enabled]),
+    [
+      ['get', 'pl', undefined, undefined],
+      ['class', 'en', lineageId, false],
+      ['classless', 'en', undefined, true],
+    ],
+  );
+
+  await app.close();
+});
+
+test('a pool switch needs a class lineage id and a boolean', async () => {
+  resetState();
+  poolCalls.length = 0;
+  const app = await buildApp();
+
+  const badLineage = await app.inject({
+    method: 'PUT',
+    url: `/${PARTY_ID}/class-pool/lineages/not-a-uuid`,
+    payload: { enabled: true },
+  });
+  const badBody = await app.inject({
+    method: 'PUT',
+    url: `/${PARTY_ID}/class-pool/classless`,
+    payload: { enabled: 'yes' },
+  });
+
+  assert.equal(badLineage.statusCode, 400);
+  assert.equal(badBody.statusCode, 400);
+  assert.equal(poolCalls.length, 0);
 
   await app.close();
 });

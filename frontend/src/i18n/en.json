@@ -1091,6 +1091,144 @@
   "header": {
     "scvmCount": "{{count}} scvms... and counting"
   },
+  "classPool": {
+    "title": "Classes this warband can roll",
+    "hint": "Players who join through the invite link or this Owlbear room pick from this pool. Changes save at once; scvm already playing a class keep it. Hover or focus a class for details.",
+    "loadError": "The class pool wouldn't load.",
+    "tally": {
+      "summary_one": "Pool summary: {{count}} class on",
+      "summary_other": "Pool summary: {{count}} classes on",
+      "plusClasslessSummary": ", plus Classless",
+      "lead_one": "class on",
+      "lead_other": "classes on"
+    },
+    "short": {
+      "book": "Book",
+      "zine": "Zine",
+      "rack": "Rack",
+      "mine": "mine",
+      "public": "public"
+    },
+    "groups": {
+      "book": {
+        "title": "Book Classes",
+        "desc": "The six from the MÖRK BORG book."
+      },
+      "zine": {
+        "title": "Zine Classes",
+        "desc": "From third-party zines, credited to their authors."
+      },
+      "rack": {
+        "title": "Rack Classes",
+        "desc": "Made by scvmrack for the community."
+      },
+      "mine": {
+        "title": "My classes",
+        "desc": "Forged by you. Private ones only reach your own warbands."
+      },
+      "public": {
+        "title": "Other GMs' public classes",
+        "desc": "Shared by other GMs; they always use the latest version."
+      },
+      "fraction": "{{on}} of {{total}} on",
+      "on": "on"
+    },
+    "search": {
+      "placeholder": "Search classes, authors or blurbs",
+      "label": "Search classes"
+    },
+    "filters": {
+      "label": "Show",
+      "all": "All",
+      "book": "Book",
+      "zr": "Zine & Rack",
+      "mine": "My classes only",
+      "public": "Public"
+    },
+    "languages": {
+      "label": "Language",
+      "any": "Any language",
+      "en": "EN",
+      "pl": "PL"
+    },
+    "languageNames": {
+      "en": "English",
+      "pl": "Polish"
+    },
+    "languageJoin": " and ",
+    "attribution": {
+      "credit": "from {{work}} by {{author}}",
+      "mine": "created by you",
+      "minePrivate": "created by you · private",
+      "owner": "created by {{name}}",
+      "ownerUnknown": "created by another GM"
+    },
+    "stats": {
+      "abilities_one": "ability",
+      "abilities_other": "abilities",
+      "classItems_one": "Class Item",
+      "classItems_other": "Class Items"
+    },
+    "gettingBetter": "Getting Better: {{rule}}",
+    "rules": {
+      "book": "Book rules",
+      "book_plus_ability": "Book rules + a new ability",
+      "specialist": "Specialist"
+    },
+    "playing_one": "{{count}} scvm plays it here",
+    "playing_other": "{{count}} scvm play it here",
+    "switchLabel": "{{name}} in the pool",
+    "classless": {
+      "name": "Classless",
+      "blurb": "Plain scvm: no class, no abilities. Players can pick it; Random never does.",
+      "switchLabel": "Classless scvm in the pool"
+    },
+    "info": {
+      "source": {
+        "book": "Book class",
+        "zine": "Zine class",
+        "rack": "Rack class",
+        "mine": "Your class",
+        "public": "Public class"
+      },
+      "abilities": "Abilities",
+      "abilitiesRandom": "{{count}}, {{random}} rolled from the random pool",
+      "classItems": "Class Items",
+      "none": "none",
+      "gettingBetter": "Getting Better",
+      "writtenIn": "Written in",
+      "version": "Version",
+      "versionLatest": "{{version}} (you always get the latest)",
+      "here": "Here",
+      "playing_one": "{{count}} scvm in this warband plays it",
+      "playing_other": "{{count}} scvm in this warband play it",
+      "nobody": "nobody in this warband plays it"
+    },
+    "status": {
+      "added": "{{name}} added to the pool. Saved.",
+      "removed": "{{name}} removed from the pool. Saved.",
+      "classlessOn": "Classless on. Saved.",
+      "classlessOff": "Classless off. Saved.",
+      "failed": "That change didn't save. Try again."
+    },
+    "removed": {
+      "byAuthor": "“{{name}}” has been removed by {{by}} ({{why}}). It's no longer in this pool; scvm already playing it keep it.",
+      "byUnknown": "“{{name}}” has been removed by its author ({{why}}). It's no longer in this pool; scvm already playing it keep it.",
+      "takenDown": "“{{name}}” has been taken down. It's no longer in this pool; scvm already playing it keep it.",
+      "why": {
+        "archived": "archived by its author",
+        "unpublished": "made private by its author",
+        "taken_down": "taken down"
+      },
+      "dismiss": "Got it"
+    },
+    "empty": "Nobody can roll a scvm with an empty pool. Keep at least one class or Classless on.",
+    "noMatch": "Nothing matches that search.",
+    "footer_one": "Players see {{count}} class. Random picks it.",
+    "footer_other": "Players see {{count}} classes. Random picks evenly among them.",
+    "footerClassless_one": "Players see {{count}} class and Classless. Random picks the class; it never picks Classless.",
+    "footerClassless_other": "Players see {{count}} classes and Classless. Random picks evenly among the classes; it never picks Classless."
+  },
   "party": {
     "pill": "Party",
     "looks": "Looks",
@@ -1127,6 +1265,8 @@
     "scrollPrev": "Previous scvm",
     "scrollNext": "Next scvm",
     "guildTitle": "Guild",
+    "olderRules": "Older rules",
+    "olderRulesHint": "Rolled with an older version of this class; the pool now offers a newer one.",
     "guildInvite": "Invite guild members",
     "guildWhat": "What are guilds?",
     "guildComingSoon": "Guild invites are coming soon — summon a fellow guild member straight into your warband.",

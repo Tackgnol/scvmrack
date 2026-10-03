@@ -1088,6 +1088,160 @@
   "header": {
     "scvmCount": "{{count}} scvmów... i wciąż przybywa"
   },
+  "classPool": {
+    "title": "Klasy, które ta banda może wylosować",
+    "hint": "Gracze dołączający przez link zaproszenia lub ten pokój Owlbear wybierają z tej puli. Zmiany zapisują się od razu; scvm, które już grają daną klasą, zachowują ją. Najedź lub ustaw fokus na klasie, by zobaczyć szczegóły.",
+    "loadError": "Nie udało się wczytać puli klas.",
+    "tally": {
+      "summary_one": "Podsumowanie puli: {{count}} klasa włączona",
+      "summary_few": "Podsumowanie puli: {{count}} klasy włączone",
+      "summary_many": "Podsumowanie puli: {{count}} klas włączonych",
+      "summary_other": "Podsumowanie puli: {{count}} klas włączonych",
+      "plusClasslessSummary": ", plus Bez klasy",
+      "lead_one": "klasa włączona",
+      "lead_few": "klasy włączone",
+      "lead_many": "klas włączonych",
+      "lead_other": "klas włączonych"
+    },
+    "short": {
+      "book": "Podręcznik",
+      "zine": "Zin",
+      "rack": "Rack",
+      "mine": "moje",
+      "public": "publiczne"
+    },
+    "groups": {
+      "book": {
+        "title": "Klasy z podręcznika",
+        "desc": "Szóstka z podręcznika MÖRK BORG."
+      },
+      "zine": {
+        "title": "Klasy z zinów",
+        "desc": "Z zinów innych wydawców, z podaniem autorów."
+      },
+      "rack": {
+        "title": "Klasy z Racka",
+        "desc": "Stworzone przez scvmrack dla społeczności."
+      },
+      "mine": {
+        "title": "Moje klasy",
+        "desc": "Wykute przez ciebie. Prywatne trafiają tylko do twoich band."
+      },
+      "public": {
+        "title": "Publiczne klasy innych MG",
+        "desc": "Udostępnione przez innych MG; zawsze w najnowszej wersji."
+      },
+      "fraction": "{{on}} z {{total}} włączonych",
+      "on": "wł."
+    },
+    "search": {
+      "placeholder": "Szukaj klas, autorów lub opisów",
+      "label": "Szukaj klas"
+    },
+    "filters": {
+      "label": "Pokaż",
+      "all": "Wszystkie",
+      "book": "Podręcznik",
+      "zr": "Ziny i Rack",
+      "mine": "Tylko moje",
+      "public": "Publiczne"
+    },
+    "languages": {
+      "label": "Język",
+      "any": "Dowolny język",
+      "en": "EN",
+      "pl": "PL"
+    },
+    "languageNames": {
+      "en": "angielski",
+      "pl": "polski"
+    },
+    "languageJoin": " i ",
+    "attribution": {
+      "credit": "z {{work}}, autor: {{author}}",
+      "mine": "stworzona przez ciebie",
+      "minePrivate": "stworzona przez ciebie · prywatna",
+      "owner": "stworzona przez {{name}}",
+      "ownerUnknown": "stworzona przez innego MG"
+    },
+    "stats": {
+      "abilities_one": "zdolność",
+      "abilities_few": "zdolności",
+      "abilities_many": "zdolności",
+      "abilities_other": "zdolności",
+      "classItems_one": "przedmiot klasowy",
+      "classItems_few": "przedmioty klasowe",
+      "classItems_many": "przedmiotów klasowych",
+      "classItems_other": "przedmiotów klasowych"
+    },
+    "gettingBetter": "Rozwój: {{rule}}",
+    "rules": {
+      "book": "Zasady z podręcznika",
+      "book_plus_ability": "Zasady z podręcznika + nowa zdolność",
+      "specialist": "Specjalista"
+    },
+    "playing_one": "{{count}} scvm gra nią tutaj",
+    "playing_few": "{{count}} scvm grają nią tutaj",
+    "playing_many": "{{count}} scvm gra nią tutaj",
+    "playing_other": "{{count}} scvm gra nią tutaj",
+    "switchLabel": "{{name}} w puli",
+    "classless": {
+      "name": "Bez klasy",
+      "blurb": "Zwykły scvm: bez klasy, bez zdolności. Gracze mogą go wybrać; Losowanie nigdy.",
+      "switchLabel": "Scvm bez klasy w puli"
+    },
+    "info": {
+      "source": {
+        "book": "Klasa z podręcznika",
+        "zine": "Klasa z zina",
+        "rack": "Klasa z Racka",
+        "mine": "Twoja klasa",
+        "public": "Klasa publiczna"
+      },
+      "abilities": "Zdolności",
+      "abilitiesRandom": "{{count}}, {{random}} losowane z puli losowej",
+      "classItems": "Przedmioty klasowe",
+      "none": "brak",
+      "gettingBetter": "Rozwój",
+      "writtenIn": "Język",
+      "version": "Wersja",
+      "versionLatest": "{{version}} (zawsze dostajesz najnowszą)",
+      "here": "Tutaj",
+      "playing_one": "{{count}} scvm z tej bandy gra nią",
+      "playing_few": "{{count}} scvm z tej bandy grają nią",
+      "playing_many": "{{count}} scvm z tej bandy gra nią",
+      "playing_other": "{{count}} scvm z tej bandy gra nią",
+      "nobody": "nikt z tej bandy nią nie gra"
+    },
+    "status": {
+      "added": "{{name}} dodana do puli. Zapisano.",
+      "removed": "{{name}} usunięta z puli. Zapisano.",
+      "classlessOn": "Bez klasy włączone. Zapisano.",
+      "classlessOff": "Bez klasy wyłączone. Zapisano.",
+      "failed": "Ta zmiana się nie zapisała. Spróbuj ponownie."
+    },
+    "removed": {
+      "byAuthor": "„{{name}}” usunął(-ęła) {{by}} ({{why}}). Nie ma jej już w tej puli; scvm, które nią grają, zachowują ją.",
+      "byUnknown": "„{{name}}” została usunięta przez autora ({{why}}). Nie ma jej już w tej puli; scvm, które nią grają, zachowują ją.",
+      "takenDown": "„{{name}}” została zdjęta. Nie ma jej już w tej puli; scvm, które nią grają, zachowują ją.",
+      "why": {
+        "archived": "zarchiwizowana przez autora",
+        "unpublished": "ukryta przez autora",
+        "taken_down": "zdjęta"
+      },
+      "dismiss": "Rozumiem"
+    },
+    "empty": "Z pustej puli nikt nie wylosuje scvm. Zostaw włączoną co najmniej jedną klasę lub Bez klasy.",
+    "noMatch": "Nic nie pasuje do wyszukiwania.",
+    "footer_one": "Gracze widzą {{count}} klasę. Losowanie wybiera ją.",
+    "footer_few": "Gracze widzą {{count}} klasy. Losowanie wybiera równo spośród nich.",
+    "footer_many": "Gracze widzą {{count}} klas. Losowanie wybiera równo spośród nich.",
+    "footer_other": "Gracze widzą {{count}} klas. Losowanie wybiera równo spośród nich.",
+    "footerClassless_one": "Gracze widzą {{count}} klasę i Bez klasy. Losowanie wybiera klasę; nigdy Bez klasy.",
+    "footerClassless_few": "Gracze widzą {{count}} klasy i Bez klasy. Losowanie wybiera równo spośród klas; nigdy Bez klasy.",
+    "footerClassless_many": "Gracze widzą {{count}} klas i Bez klasy. Losowanie wybiera równo spośród klas; nigdy Bez klasy.",
+    "footerClassless_other": "Gracze widzą {{count}} klas i Bez klasy. Losowanie wybiera równo spośród klas; nigdy Bez klasy."
+  },
   "party": {
     "pill": "Drużyna",
     "looks": "Wygląd",
@@ -1124,6 +1278,8 @@
     "scrollPrev": "Poprzedni scvm",
     "scrollNext": "Następny scvm",
     "guildTitle": "Gildia",
+    "olderRules": "Starsze zasady",
+    "olderRulesHint": "Wylosowany na starszej wersji tej klasy; pula oferuje już nowszą.",
     "guildInvite": "Zaproś członków gildii",
     "guildWhat": "Czym są gildie?",
     "guildComingSoon": "Zaproszenia do gildii już wkrótce — przywołaj towarzysza z gildii prosto do swojej kompanii.",

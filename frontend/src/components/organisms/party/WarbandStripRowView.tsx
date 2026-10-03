@@ -17,6 +17,8 @@ type WarbandStripRowViewProps = {
   disconnected?: boolean;
   /** A recent SSE event touched this member — flashes the quiet "changed" pulse. */
   changed?: boolean;
+  /** Rolled with an older version of their class than the one now offered. */
+  olderRules?: boolean;
   actions?: ReactNode;
 };
 
@@ -302,6 +304,11 @@ const renderCombatTip = (name: string, rows: WarbandContribRow[]) => (
   </Box>
 );
 
+const OlderRulesTag = styled(DisconnectedTag)({
+  background: partyColors.pink,
+  borderColor: partyColors.black,
+});
+
 // One member as a full-width Vital Strip: identity, big HP, ability + combat tiles,
 // a modifier count, and a caret. The stats own their tooltips; the caret toggles
 // the detail panel so touch users get the same information without nested controls.
@@ -311,6 +318,7 @@ export function WarbandStripRowView({
   onToggle,
   disconnected = false,
   changed = false,
+  olderRules = false,
   actions,
 }: WarbandStripRowViewProps) {
   const { t } = useTranslation();
@@ -332,6 +340,16 @@ export function WarbandStripRowView({
               <DisconnectedTag>
                 {t("gm.disconnected", "Disconnected")}
               </DisconnectedTag>
+            )}
+            {olderRules && (
+              <OlderRulesTag
+                title={t(
+                  "party.olderRulesHint",
+                  "Rolled with an older version of this class; the pool now offers a newer one.",
+                )}
+              >
+                {t("party.olderRules", "Older rules")}
+              </OlderRulesTag>
             )}
           </NameRow>
           <ClassLine>{member.cls}</ClassLine>

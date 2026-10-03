@@ -110,3 +110,106 @@ export const ReplaceMemberBodySchema = {
     newCharacterId: { type: 'string', format: 'uuid' },
   },
 } as const;
+
+export const ClassPoolLineageParamsSchema = {
+  type: 'object',
+  required: ['id', 'lineageId'],
+  properties: {
+    id: { type: 'string', format: 'uuid' },
+    lineageId: { type: 'string', format: 'uuid' },
+  },
+} as const;
+
+export const ClassPoolLocaleQuerySchema = {
+  type: 'object',
+  properties: {
+    locale: { type: 'string', enum: ['en', 'pl'], default: 'en' },
+  },
+} as const;
+
+export const SetPoolSwitchBodySchema = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['enabled'],
+  properties: {
+    enabled: { type: 'boolean' },
+  },
+} as const;
+
+const PoolAttributionSchema = {
+  anyOf: [
+    {
+      type: 'object',
+      additionalProperties: false,
+      required: ['kind', 'work', 'author', 'url'],
+      properties: {
+        kind: { const: 'credit' },
+        work: { type: 'string' },
+        author: { type: 'string' },
+        url: { type: ['string', 'null'] },
+      },
+    },
+    {
+      type: 'object',
+      additionalProperties: false,
+      required: ['kind', 'name', 'private'],
+      properties: {
+        kind: { const: 'owner' },
+        name: { type: ['string', 'null'] },
+        private: { type: 'boolean' },
+      },
+    },
+    { type: 'null' },
+  ],
+} as const;
+
+export const ClassPoolViewSchema = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['classlessEnabled', 'classes', 'removed'],
+  properties: {
+    classlessEnabled: { type: 'boolean' },
+    classes: {
+      type: 'array',
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        required: [
+          'lineageId', 'classId', 'group', 'name', 'blurb', 'languages', 'attribution',
+          'abilityCount', 'randomAbilityCount', 'classItemCount', 'gettingBetterRule',
+          'version', 'playingHere', 'enabled',
+        ],
+        properties: {
+          lineageId: { type: 'string' },
+          classId: { type: 'integer' },
+          group: { type: 'string', enum: ['book', 'zine', 'rack', 'mine', 'public'] },
+          name: { type: 'string' },
+          blurb: { type: ['string', 'null'] },
+          languages: { type: 'array', items: { type: 'string' } },
+          attribution: PoolAttributionSchema,
+          abilityCount: { type: 'integer' },
+          randomAbilityCount: { type: 'integer' },
+          classItemCount: { type: 'integer' },
+          gettingBetterRule: { type: 'string', enum: ['book', 'book_plus_ability', 'specialist'] },
+          version: { type: 'integer' },
+          playingHere: { type: 'integer' },
+          enabled: { type: 'boolean' },
+        },
+      },
+    },
+    removed: {
+      type: 'array',
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['lineageId', 'name', 'by', 'reason'],
+        properties: {
+          lineageId: { type: 'string' },
+          name: { type: 'string' },
+          by: { type: ['string', 'null'] },
+          reason: { type: 'string', enum: ['archived', 'unpublished', 'taken_down'] },
+        },
+      },
+    },
+  },
+} as const;

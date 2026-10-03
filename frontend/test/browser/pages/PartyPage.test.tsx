@@ -36,6 +36,12 @@ vi.mock("@/utils/errorUtils", () => ({
   getUserFacingApiErrorMessage: vi.fn(() => "error message"),
 }));
 vi.mock("@/hooks/usePartyStream", () => ({ usePartyStream: vi.fn() }));
+vi.mock(
+  "@/components/organisms/class-pool/ClassPoolPanel/ClassPoolPanel",
+  () => ({
+    ClassPoolPanel: () => <div data-testid="class-pool-panel" />,
+  }),
+);
 vi.mock("@/components/organisms/party/WarbandVitalStrip", () => ({
   WarbandVitalStrip: ({
     members,

@@ -30,6 +30,8 @@ import {
 
 export type { AppSession } from './session.js';
 import { PARTY_MAX_MEMBERS } from '../lib/party-limits.js';
+import { classPoolRepository } from '../repositories/class-pool-repository.js';
+import { buildClassPoolView, type ClassPoolView } from './class-pool-view.js';
 
 const OBR_ROOM_SYSTEM_OWNER_ID = 'system:obr-room';
 const OBR_ROOM_SYSTEM_OWNER_EMAIL = 'obr-room@system.scvmrack.local';
@@ -166,6 +168,19 @@ export function createPartyService(
       return notFound('PARTY_NOT_FOUND', 'Party not found');
     }
     return null;
+  }
+
+  async function loadClassPool(partyId: string, locale: string): Promise<ClassPoolView> {
+    const pool = await classPoolRepository.findPartyPool(partyId);
+    if (!pool) throw new Error(`Party ${partyId} vanished while loading its class pool`);
+    const rows = await classPoolRepository.findCatalogRows(pool.ownerUserId, pool.poolLineageIds, locale);
+    return buildClassPoolView({
+      rows,
+      poolLineageIds: pool.poolLineageIds,
+      classlessEnabled: pool.classlessEnabled,
+      partyOwnerId: pool.ownerUserId,
+      memberClassIds: pool.memberClassIds,
+    });
   }
 
   return {
@@ -490,6 +505,66 @@ export function createPartyService(
         return fail(
           unexpected(log, err, 'PARTY_RENAME_FAILED', 'Failed to rename party')
         );
+      }
+    },
+
+    async getClassPool(input: {
+      session: AppSession;
+      id: string;
+      locale: string;
+    }): Promise<ServiceResult<ClassPoolView>> {
+      const denied = await ensureOwner(input.session, input.id);
+      if (denied) return fail(denied);
+      try {
+        return ok(await loadClassPool(input.id, input.locale));
+      } catch (err) {
+        return fail(unexpected(log, err, 'CLASS_POOL_LOAD_FAILED', 'Failed to load the class pool'));
+      }
+    },
+
+    async setPoolClass(input: {
+      session: AppSession;
+      id: string;
+      lineageId: string;
+      enabled: boolean;
+      locale: string;
+    }): Promise<ServiceResult<ClassPoolView>> {
+      const denied = await ensureOwner(input.session, input.id);
+      if (denied) return fail(denied);
+      try {
+        if (!input.enabled) {
+          await classPoolRepository.setLineage(input.id, input.lineageId, false);
+          return ok(await loadClassPool(input.id, input.locale));
+        }
+        const view = await loadClassPool(input.id, input.locale);
+        if (!view.classes.some((c) => c.lineageId === input.lineageId)) {
+          return fail(apiError(409, 'CLASS_NOT_AVAILABLE', 'This class cannot be added to the pool'));
+        }
+        await classPoolRepository.setLineage(input.id, input.lineageId, true);
+        return ok({
+          ...view,
+          classes: view.classes.map((c) =>
+            c.lineageId === input.lineageId ? { ...c, enabled: true } : c
+          ),
+        });
+      } catch (err) {
+        return fail(unexpected(log, err, 'CLASS_POOL_UPDATE_FAILED', 'Failed to update the class pool'));
+      }
+    },
+
+    async setPoolClassless(input: {
+      session: AppSession;
+      id: string;
+      enabled: boolean;
+      locale: string;
+    }): Promise<ServiceResult<ClassPoolView>> {
+      const denied = await ensureOwner(input.session, input.id);
+      if (denied) return fail(denied);
+      try {
+        await classPoolRepository.setClassless(input.id, input.enabled);
+        return ok(await loadClassPool(input.id, input.locale));
+      } catch (err) {
+        return fail(unexpected(log, err, 'CLASS_POOL_UPDATE_FAILED', 'Failed to update the class pool'));
       }
     },
 

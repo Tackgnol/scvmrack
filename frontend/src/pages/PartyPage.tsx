@@ -7,6 +7,7 @@ import {
 import { usePartyStream } from "@/hooks/usePartyStream";
 import { WarbandVitalStrip } from "@/components/organisms/party/WarbandVitalStrip";
 import GmMiseryControl from "@/components/molecules/party/GmMiseryControl";
+import { ClassPoolPanel } from "@/components/organisms/class-pool/ClassPoolPanel/ClassPoolPanel";
 import { appHistory } from "@/router/history";
 import { buildPartyCharacterPath } from "@/router/navigation";
 import { Seo } from "@/seo/Seo";
@@ -610,6 +611,10 @@ export function PartyPage() {
             </Reveal>
 
             <Reveal step={4}>
+              <ClassPoolPanel partyId={party.id} />
+            </Reveal>
+
+            <Reveal step={5}>
               <DarkPanel>
                 <Label>{t("party.guildTitle", "Guild")}</Label>
                 <GuildRow>

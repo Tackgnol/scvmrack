@@ -2,6 +2,9 @@ import type { FastifyPluginAsync } from 'fastify';
 import type { JsonSchemaToTsProvider } from '@fastify/type-provider-json-schema-to-ts';
 import {
   AttachRoomBodySchema,
+  ClassPoolLineageParamsSchema,
+  ClassPoolLocaleQuerySchema,
+  ClassPoolViewSchema,
   CreatePartyBodySchema,
   ErrorSchema,
   InviteTokenParamsSchema,
@@ -14,6 +17,7 @@ import {
   RenamePartyBodySchema,
   ReplaceMemberBodySchema,
   SetPartyMiseriesBodySchema,
+  SetPoolSwitchBodySchema,
 } from '../../schemas/party.js';
 import { sendServiceError } from '../../errors.js';
 import { createPartyService } from '../../services/party-service.js';
@@ -432,6 +436,119 @@ const parties: FastifyPluginAsync = async (fastify): Promise<void> => {
         name: request.body.name,
       });
 
+      if (!result.ok) {
+        return sendServiceError(reply, request, result.error);
+      }
+      return result.value;
+    }
+  );
+
+  // GET /api/parties/:id/class-pool - the Party Class Pool panel (GM only)
+  app.get(
+    '/:id/class-pool',
+    {
+      schema: {
+        description: "The classes this party's players can roll, as the GM's pool panel shows them",
+        tags: ['parties'],
+        params: PartyIdParamsSchema,
+        querystring: ClassPoolLocaleQuerySchema,
+        response: {
+          200: ClassPoolViewSchema,
+          400: ErrorSchema,
+          401: ErrorSchema,
+          404: ErrorSchema,
+          500: ErrorSchema,
+        },
+      },
+    },
+    async (request, reply) => {
+      const result = await partyService(request).getClassPool({
+        session: request.appSession,
+        id: request.params.id,
+        locale: request.query.locale ?? 'en',
+      });
+      if (!result.ok) {
+        return sendServiceError(reply, request, result.error);
+      }
+      return result.value;
+    }
+  );
+
+  // PUT /api/parties/:id/class-pool/lineages/:lineageId - switch one class (GM only)
+  app.put(
+    '/:id/class-pool/lineages/:lineageId',
+    {
+      config: {
+        rateLimit: {
+          max: process.env.NODE_ENV === 'test' ? 10000 : 60,
+          timeWindow: '1 minute',
+        },
+      },
+      schema: {
+        description: "Switch a class on or off in the party's pool (GM only)",
+        tags: ['parties'],
+        params: ClassPoolLineageParamsSchema,
+        querystring: ClassPoolLocaleQuerySchema,
+        body: SetPoolSwitchBodySchema,
+        response: {
+          200: ClassPoolViewSchema,
+          400: ErrorSchema,
+          401: ErrorSchema,
+          404: ErrorSchema,
+          409: ErrorSchema,
+          429: ErrorSchema,
+          500: ErrorSchema,
+        },
+      },
+    },
+    async (request, reply) => {
+      const result = await partyService(request).setPoolClass({
+        session: request.appSession,
+        id: request.params.id,
+        lineageId: request.params.lineageId,
+        enabled: request.body.enabled,
+        locale: request.query.locale ?? 'en',
+      });
+      if (!result.ok) {
+        return sendServiceError(reply, request, result.error);
+      }
+      return result.value;
+    }
+  );
+
+  // PUT /api/parties/:id/class-pool/classless - switch Classless (GM only)
+  app.put(
+    '/:id/class-pool/classless',
+    {
+      config: {
+        rateLimit: {
+          max: process.env.NODE_ENV === 'test' ? 10000 : 60,
+          timeWindow: '1 minute',
+        },
+      },
+      schema: {
+        description: "Switch Classless scvm on or off for the party (GM only)",
+        tags: ['parties'],
+        params: PartyIdParamsSchema,
+        querystring: ClassPoolLocaleQuerySchema,
+        body: SetPoolSwitchBodySchema,
+        response: {
+          200: ClassPoolViewSchema,
+          400: ErrorSchema,
+          401: ErrorSchema,
+          404: ErrorSchema,
+          429: ErrorSchema,
+          500: ErrorSchema,
+        },
+      },
+    },
+    async (request, reply) => {
+      const result = await partyService(request).setPoolClassless({
+        session: request.appSession,
+        id: request.params.id,
+        enabled: request.body.enabled,
+        locale: request.query.locale ?? 'en',
+      });
       if (!result.ok) {
         return sendServiceError(reply, request, result.error);
       }

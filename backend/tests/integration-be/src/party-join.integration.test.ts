@@ -216,3 +216,57 @@ test('a rotated invite creates nothing', async () => {
   await expectStatus(created, 410);
   assert.equal(await characterCount(player.userId), 0);
 });
+
+type PoolView = {
+  classlessEnabled: boolean;
+  classes: Array<{ lineageId: string; classId: number; group: string; enabled: boolean }>;
+  removed: unknown[];
+};
+
+test("the GM's pool panel switches classes and Classless, and invites follow it", async () => {
+  const party = await gmParty();
+
+  const initial = await request(`/api/parties/${party.id}/class-pool?locale=en`, { jar: party.jar });
+  await expectStatus(initial, 200);
+  const view = (await initial.json()) as PoolView;
+  assert.equal(view.classlessEnabled, true);
+  assert.deepEqual(
+    view.classes.filter((c) => c.enabled).map((c) => [c.classId, c.group]),
+    [1, 2, 3, 4, 5, 6].map((id) => [id, 'book'])
+  );
+
+  const hermit = view.classes.find((c) => c.classId === 3)!;
+  const switched = await request(`/api/parties/${party.id}/class-pool/lineages/${hermit.lineageId}?locale=en`, {
+    method: 'PUT',
+    json: { enabled: false },
+    jar: party.jar,
+    csrf: true,
+  });
+  await expectStatus(switched, 200);
+  assert.equal(((await switched.json()) as PoolView).classes.find((c) => c.classId === 3)!.enabled, false);
+
+  const classless = await request(`/api/parties/${party.id}/class-pool/classless?locale=en`, {
+    method: 'PUT',
+    json: { enabled: false },
+    jar: party.jar,
+    csrf: true,
+  });
+  await expectStatus(classless, 200);
+  assert.equal(((await classless.json()) as PoolView).classlessEnabled, false);
+
+  const player = await anonymousSession();
+  const offered = await request(`/api/characters/classes?locale=en&invite=${party.inviteToken}`, {
+    jar: player.jar,
+  });
+  await expectStatus(offered, 200);
+  assert.deepEqual(((await offered.json()) as Array<{ id: number }>).map((c) => c.id), [1, 2, 4, 5, 6]);
+});
+
+test("someone else's party pool is not found", async () => {
+  const party = await gmParty();
+  const stranger = await anonymousSession();
+
+  const response = await request(`/api/parties/${party.id}/class-pool?locale=en`, { jar: stranger.jar });
+
+  await expectStatus(response, 404);
+});

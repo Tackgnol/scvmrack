@@ -175,6 +175,57 @@ mock.module('../../src/repositories/party-repository.js', {
   },
 });
 
+const pool = {
+  party: null as null | {
+    ownerUserId: string;
+    classlessEnabled: boolean;
+    poolLineageIds: string[];
+    memberClassIds: Array<number | null>;
+  },
+  rows: [] as Array<Record<string, unknown>>,
+  setLineageCalls: [] as Array<{ partyId: string; lineageId: string; enabled: boolean }>,
+  setClasslessCalls: [] as Array<{ partyId: string; enabled: boolean }>,
+};
+const poolRow = (id: number, overrides: Record<string, unknown> = {}) => ({
+  id,
+  lineageId: `lineage-${id}`,
+  version: 1,
+  source: 'main_book',
+  status: 'active',
+  visibility: 'public',
+  ownerUserId: null,
+  ownerName: null,
+  takenDownAt: null,
+  name: `Class ${id}`,
+  blurb: null,
+  languages: ['en'],
+  credit: null,
+  abilityCount: 6,
+  randomAbilityCount: 1,
+  gettingBetterRule: 'book',
+  ...overrides,
+});
+
+mock.module('../../src/repositories/class-pool-repository.js', {
+  namedExports: {
+    classPoolRepository: {
+      findPartyPool: async () => pool.party,
+      findCatalogRows: async () => pool.rows,
+      setLineage: async (partyId: string, lineageId: string, enabled: boolean) => {
+        pool.setLineageCalls.push({ partyId, lineageId, enabled });
+        if (!pool.party) return;
+        pool.party.poolLineageIds = enabled
+          ? [...new Set([...pool.party.poolLineageIds, lineageId])]
+          : pool.party.poolLineageIds.filter((id) => id !== lineageId);
+      },
+      setClassless: async (partyId: string, enabled: boolean) => {
+        pool.setClasslessCalls.push({ partyId, enabled });
+        if (pool.party) pool.party.classlessEnabled = enabled;
+      },
+    },
+  },
+});
+
 const { createPartyService } = await import('../../src/services/party-service.js');
 
 const noopLog = { error: () => {} };
@@ -1045,4 +1096,108 @@ test('detachRoom clears the pointer', async () => {
   const r = await service().detachRoom({ session: gm('gm-1'), id: PARTY_ID });
   assert.equal(r.ok, true);
   assert.deepEqual(state.setObrRoomCalls, [{ id: PARTY_ID, obrRoomId: null }]);
+});
+
+function resetPool(): void {
+  state.party = partyWith([], 'gm-1');
+  pool.party = { ownerUserId: 'gm-1', classlessEnabled: true, poolLineageIds: ['lineage-1'], memberClassIds: [1] };
+  pool.rows = [
+    poolRow(1),
+    poolRow(2),
+    poolRow(300, { source: 'user', ownerUserId: 'gm-2', ownerName: 'Marta', visibility: 'private' }),
+  ];
+  pool.setLineageCalls = [];
+  pool.setClasslessCalls = [];
+}
+
+test('getClassPool shows the owner every class they can offer, with what is on', async () => {
+  resetPool();
+
+  const r = await service().getClassPool({ session: gm('gm-1'), id: PARTY_ID, locale: 'en' });
+
+  assert.equal(r.ok, true);
+  const view = (r as any).value;
+  assert.deepEqual(
+    view.classes.map((c: { classId: number; enabled: boolean; playingHere: number }) => [c.classId, c.enabled, c.playingHere]),
+    [
+      [1, true, 1],
+      [2, false, 0],
+    ],
+  );
+  assert.equal(view.classlessEnabled, true);
+});
+
+test('only the party owner sees or changes its pool', async () => {
+  resetPool();
+
+  const read = await service().getClassPool({ session: gm('gm-2'), id: PARTY_ID, locale: 'en' });
+  const write = await service().setPoolClass({
+    session: gm('gm-2'),
+    id: PARTY_ID,
+    lineageId: 'lineage-2',
+    enabled: true,
+    locale: 'en',
+  });
+
+  assert.equal((read as any).error.statusCode, 404);
+  assert.equal((write as any).error.statusCode, 404);
+  assert.deepEqual(pool.setLineageCalls, []);
+});
+
+test('setPoolClass switches a class on or off and returns the fresh pool', async () => {
+  resetPool();
+
+  const on = await service().setPoolClass({
+    session: gm('gm-1'),
+    id: PARTY_ID,
+    lineageId: 'lineage-2',
+    enabled: true,
+    locale: 'en',
+  });
+  const off = await service().setPoolClass({
+    session: gm('gm-1'),
+    id: PARTY_ID,
+    lineageId: 'lineage-1',
+    enabled: false,
+    locale: 'en',
+  });
+
+  assert.equal(on.ok && off.ok, true);
+  assert.deepEqual(pool.setLineageCalls, [
+    { partyId: PARTY_ID, lineageId: 'lineage-2', enabled: true },
+    { partyId: PARTY_ID, lineageId: 'lineage-1', enabled: false },
+  ]);
+  assert.deepEqual(
+    (off as any).value.classes.map((c: { classId: number; enabled: boolean }) => [c.classId, c.enabled]),
+    [
+      [1, false],
+      [2, true],
+    ],
+  );
+});
+
+test("setPoolClass refuses a class the GM can't offer", async () => {
+  resetPool();
+
+  const r = await service().setPoolClass({
+    session: gm('gm-1'),
+    id: PARTY_ID,
+    lineageId: 'lineage-300',
+    enabled: true,
+    locale: 'en',
+  });
+
+  assert.equal((r as any).error.statusCode, 409);
+  assert.equal((r as any).error.code, 'CLASS_NOT_AVAILABLE');
+  assert.deepEqual(pool.setLineageCalls, []);
+});
+
+test('setPoolClassless switches Classless and returns the fresh pool', async () => {
+  resetPool();
+
+  const r = await service().setPoolClassless({ session: gm('gm-1'), id: PARTY_ID, enabled: false, locale: 'en' });
+
+  assert.equal(r.ok, true);
+  assert.equal((r as any).value.classlessEnabled, false);
+  assert.deepEqual(pool.setClasslessCalls, [{ partyId: PARTY_ID, enabled: false }]);
 });
