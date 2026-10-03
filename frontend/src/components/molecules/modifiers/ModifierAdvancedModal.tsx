@@ -74,9 +74,10 @@ export default function ModifierAdvancedModal({
     setShowMore(false);
   }
   // Healing, buffs and item use are rare: listed only on request, or when a narrowed modifier still names one.
+  const included = new Set(includes);
   const moreInUse =
-    includes.length < allIncludeOptions.length &&
-    allIncludeOptions.some((option) => option.more && includes.includes(option.value));
+    included.size < allIncludeOptions.length &&
+    allIncludeOptions.some((option) => option.more && included.has(option.value));
   const moreShown = showMore || moreInUse;
 
   return (
