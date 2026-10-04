@@ -223,6 +223,22 @@ test('GET /api/health returns service status for proxied checks', async () => {
   assert.ok(!Number.isNaN(Date.parse(payload.timestamp)));
 });
 
+test('cookie-less bearer session can create and edit its character without CSRF', async () => {
+  const signIn = await request('/api/auth/sign-in/anonymous', { method: 'POST', json: {} });
+  await expectStatus(signIn, 200);
+  const token = signIn.headers.get('set-auth-token');
+  assert.ok(token);
+  const headers = { Authorization: 'Bearer ' + token };
+  const created = await request('/api/characters/new', { method: 'POST', json: {}, headers });
+  await expectStatus(created, 201);
+  const character = await created.json() as { id: string };
+  const updated = await request('/api/characters/' + character.id, {
+    method: 'PATCH', json: { name: 'Tab-only scvm' }, headers,
+  });
+  await expectStatus(updated, 200);
+  assert.equal((await updated.json() as { name: string }).name, 'Tab-only scvm');
+});
+
 test('CSRF protection rejects state-changing requests without token', async () => {
   const jar = new CookieJar();
 

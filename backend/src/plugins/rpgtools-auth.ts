@@ -25,6 +25,8 @@ export default fp(async function rpgtoolsAuthPlugin(fastify: FastifyInstance) {
     // itch.io embed support: requests marked with x-embedded-session get
     // SameSite=None; Partitioned cookies so the iframe can hold a session.
     embeddedSessions: true,
+    // In-app browsers that drop cookies fall back to a tab-only bearer token (RPG-288).
+    bearerSessions: true,
     // shared-auth keys limits on the real visitor IP by default (clientIp:
     // CF-Connecting-IP from our Caddy hop). The shared-auth default (100/min) is
     // tight for a page load that makes 15-30 calls; 300/min per visitor is still
