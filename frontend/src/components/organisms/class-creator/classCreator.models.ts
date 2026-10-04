@@ -1,6 +1,18 @@
 import type { ClassDraft, ClassItemDraft, ClassLanguage } from "@/api/classes";
 
-export type CreatorStep = "identity" | "stats" | "items" | "abilities" | "origins" | "gettingBetter" | "review";
+/** Changes one Class Item while preserving the rest of the draft. */
+export type ClassItemChange = (
+  recipe: (item: ClassItemDraft) => ClassItemDraft,
+) => void;
+
+export type CreatorStep =
+  | "identity"
+  | "stats"
+  | "items"
+  | "abilities"
+  | "origins"
+  | "gettingBetter"
+  | "review";
 
 /** Something that blocks saving, with where to fix it. */
 export type CreatorIssue = {

@@ -1,11 +1,11 @@
-import type { ClassItemDraft, ClassItemType } from "@/api/classes";
-import type { StepProps } from "../classCreator.models";
+import type { ClassItemType } from "@/api/classes";
+import type { ClassItemChange, StepProps } from "../classCreator.models";
 
 export type ItemEditorProps = Omit<StepProps, "update" | "jump"> & {
   index: number;
   /** Shared with the closed card, so opening and closing morph one frame. */
   transitionName: string;
-  onChange: (recipe: (item: ClassItemDraft) => ClassItemDraft) => void;
+  onChange: ClassItemChange;
   onChangeType: (type: ClassItemType) => void;
   onGoToAbility: (abilityIndex: number) => void;
   onGrantFromNewAbility: () => void;

@@ -1,22 +1,14 @@
-import {
-  CLASS_ITEM_TYPES,
-  type AbilityModifierDraft,
-  type ClassItemType,
-} from "@/api/classes";
+import { CLASS_ITEM_TYPES, type ClassItemType } from "@/api/classes";
 import { NumberStepper } from "@/components/atoms/NumberStepper/NumberStepper";
 import { SegmentedChoice } from "@/components/atoms/SegmentedChoice/SegmentedChoice";
 import { LocalizedField } from "@/components/molecules/LocalizedField/LocalizedField";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ArmorFields } from "../ArmorFields/ArmorFields";
-import { GearFields } from "../GearFields/GearFields";
 import { GrantedByLine } from "../GrantedByLine/GrantedByLine";
-import { ModifierList } from "../ModifierList/ModifierList";
-import { PetFields } from "../PetFields/PetFields";
+import { ItemModifiers } from "../ItemModifiers/ItemModifiers";
+import { ItemTypeFields } from "../ItemTypeFields/ItemTypeFields";
 import { RemoveConfirm } from "../RemoveConfirm/RemoveConfirm";
-import { WeaponFields } from "../WeaponFields/WeaponFields";
 import {
-  Extras,
   Foot,
   Formula,
   GroupHeading,
@@ -31,8 +23,6 @@ import {
   LIMIT_LIST,
   LIMIT_NAME,
   LIMIT_TEXT,
-  MAX_MODIFIERS,
-  scopeExclude,
 } from "../classCreator.utils";
 import type { ItemEditorProps } from "./ItemEditor.models";
 
@@ -63,45 +53,6 @@ export function ItemEditor({
   const name =
     item.name[language] || t("creator.items.untitled", "Unnamed Class Item");
   const granter = granterOf(draft, item.ref);
-  // Which modifier list this type carries: wielded, worn, temporary, or a pet's buffs.
-  const mods: {
-    list: AbilityModifierDraft[];
-    title: string;
-    set: (list: AbilityModifierDraft[]) => void;
-  } | null =
-    item.type === "weapon"
-      ? {
-          list: item.weapon.modifiers,
-          title: t("creator.items.whileWielded", "Modifiers while wielded"),
-          set: (modifiers) =>
-            onChange((it) => ({ ...it, weapon: { ...it.weapon, modifiers } })),
-        }
-      : item.type === "armor"
-        ? {
-            list: item.armor.modifiers,
-            title: t("creator.items.whileWorn", "Modifiers while worn"),
-            set: (modifiers) =>
-              onChange((it) => ({ ...it, armor: { ...it.armor, modifiers } })),
-          }
-        : item.type === "gear"
-          ? {
-              list: item.gear.statuses,
-              title: t(
-                "creator.items.temporaryStatuses",
-                "Temporary status effects",
-              ),
-              set: (statuses) =>
-                onChange((it) => ({ ...it, gear: { ...it.gear, statuses } })),
-            }
-          : item.type === "pet" && item.pet.action === "buff"
-            ? {
-                list: item.pet.buffs,
-                title: t("creator.items.buffsGiven", "Buffs it gives"),
-                set: (buffs) =>
-                  onChange((it) => ({ ...it, pet: { ...it.pet, buffs } })),
-              }
-            : null;
-  const modsPath = `${path}.${item.type}.${item.type === "pet" ? "buffs" : item.type === "gear" ? "statuses" : "modifiers"}`;
 
   return (
     <OpenCard
@@ -184,38 +135,12 @@ export function ItemEditor({
         }))}
         onChange={onChangeType}
       />
-      {item.type === "weapon" && (
-        <WeaponFields
-          path={path}
-          item={item}
-          language={language}
-          onChange={(weapon) => onChange((it) => ({ ...it, weapon }))}
-        />
-      )}
-      {item.type === "armor" && (
-        <ArmorFields
-          path={path}
-          item={item}
-          language={language}
-          onChange={(armor) => onChange((it) => ({ ...it, armor }))}
-        />
-      )}
-      {item.type === "gear" && (
-        <GearFields
-          path={path}
-          item={item}
-          language={language}
-          onChange={(gear) => onChange((it) => ({ ...it, gear }))}
-        />
-      )}
-      {item.type === "pet" && (
-        <PetFields
-          path={path}
-          item={item}
-          language={language}
-          onChange={(pet) => onChange((it) => ({ ...it, pet }))}
-        />
-      )}
+      <ItemTypeFields
+        path={path}
+        item={item}
+        language={language}
+        onChange={onChange}
+      />
       <NumberStepper
         id={fieldId(`${path}.value`)}
         label={t("creator.items.value", "Value in silver")}
@@ -227,38 +152,12 @@ export function ItemEditor({
       <Formula className="wrap" aria-live="polite">
         {itemStamp(item, t)}
       </Formula>
-      {mods && (
-        <ModifierList
-          path={modsPath}
-          title={mods.title}
-          modifiers={mods.list}
-          onChange={mods.set}
-          focus={focus}
-          focusAfterRemove={`${path}.addModifier`}
-        />
-      )}
-      {mods && (
-        <Extras>
-          <SmallAction
-            id={fieldId(`${path}.addModifier`)}
-            type="button"
-            disabled={mods.list.length >= MAX_MODIFIERS}
-            onClick={() => {
-              mods.set([
-                ...mods.list,
-                {
-                  statistic: "presence",
-                  value: 1,
-                  exclude: scopeExclude("all"),
-                },
-              ]);
-              focus(`${modsPath}.${mods.list.length}.statistic`);
-            }}
-          >
-            {t("creator.abilities.addModifier", "Add modifier")}
-          </SmallAction>
-        </Extras>
-      )}
+      <ItemModifiers
+        path={path}
+        item={item}
+        focus={focus}
+        onChange={onChange}
+      />
       <Foot>
         {!confirming && (
           <SmallAction
