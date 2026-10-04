@@ -3,6 +3,7 @@ import { AppFooter } from '@/components/molecules/AppFooter';
 import { NetworkActivityIndicator } from '@/components/atoms/NetworkActivityIndicator';
 import { CharacterSheetSkeleton } from '@/components/molecules/character/CharacterSheetSkeleton';
 import Header from '@/components/organisms/Header';
+import { TabSessionBanner } from '@/components/organisms/TabSessionBanner/TabSessionBanner';
 import { PartyHost } from '@/components/organisms/party/PartyHost';
 import { SessionExpiredGate } from '@components/molecules/session/SessionExpiredGate';
 import { Outlet, useRouterState } from '@tanstack/react-router';
@@ -62,6 +63,7 @@ export function RootLayout() {
                     {!isPrintRoute && (
                         <Box className="print-hidden">
                             <Header />
+                            <TabSessionBanner />
                         </Box>
                     )}
                     <Box

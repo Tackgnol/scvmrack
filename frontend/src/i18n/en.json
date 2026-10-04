@@ -1,4 +1,10 @@
 {
+  "tabSession": {
+    "warning": "This app’s built-in browser won’t save your session. Your scvm will be lost when you close it. Open scvmrack in Safari or Chrome to keep it.",
+    "copyLink": "Copy link",
+    "copied": "Copied",
+    "copyFailed": "Copy the address from your browser’s address bar."
+  },
   "app": {
     "title": "Scvmrack",
     "betaBadge": "Beta",
@@ -966,6 +972,14 @@
     "typeMinor": "Minor",
     "typePatch": "Patch",
     "moreUpdates": "More updates coming soon. The world is ending, but we keep shipping.",
+    "v063": {
+      "tabSession": "Opening scvmrack from inside Reddit or Facebook now works for that visit, with a warning and a link to open in your browser to keep your scvm",
+      "classGrants": "The Heretical Priest now gets the Shepherd's Crook and Poltroon the Court Jester gets his pet, as their class abilities say",
+      "printModifiers": "The Modifiers section of the print sheet is now translated",
+      "printStats": "Long ability labels such as Wytrzymałość no longer overflow on the print sheet",
+      "freshShell": "Returning visitors always get the latest version of the app instead of a stale cached copy",
+      "monitoring": "Quieter monitoring: dropped-connection errors from flaky networks are no longer reported"
+    },
     "v062": {
       "guestSignIn": "Guest sign-in on phones and in-app browsers now recovers on its own instead of showing an error",
       "noStale": "Session and security-token responses are never cached, so a stale \"not signed in\" answer is no longer reused",

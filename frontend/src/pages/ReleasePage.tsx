@@ -35,6 +35,19 @@ const buildReleaseNotes = (t: TFunction): ReleaseNote[] => {
     // newest-first and in sync with that folder when cutting a release.
     return [
         {
+            version: '0.6.3',
+            date: '2026-10-04',
+            type: 'patch',
+            changes: [
+                t('release.v063.tabSession', 'Opening scvmrack from inside Reddit or Facebook now works for that visit, with a warning and a link to open in your browser to keep your scvm'),
+                t('release.v063.classGrants', "The Heretical Priest now gets the Shepherd's Crook and Poltroon the Court Jester gets his pet, as their class abilities say"),
+                t('release.v063.printModifiers', 'The Modifiers section of the print sheet is now translated'),
+                t('release.v063.printStats', 'Long ability labels such as Wytrzymałość no longer overflow on the print sheet'),
+                t('release.v063.freshShell', 'Returning visitors always get the latest version of the app instead of a stale cached copy'),
+                t('release.v063.monitoring', 'Quieter monitoring: dropped-connection errors from flaky networks are no longer reported'),
+            ],
+        },
+        {
             version: '0.6.2',
             date: '2026-09-19',
             type: 'patch',
