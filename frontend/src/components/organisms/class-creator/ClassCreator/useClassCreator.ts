@@ -1,7 +1,7 @@
 import { classKeys, saveClass, testRollClass, type ClassDraft, type ClassLanguage } from "@/api/classes";
 import { getApiLocale } from "@/hooks/utils";
 import type { CreatorIssue, CreatorStep } from "../classCreator.models";
-import { abilityIndexOf, draftIssues, STEPS, withSavedKeys } from "../classCreator.utils";
+import { abilityIndexOf, draftIssues, itemIndexOf, STEPS, withSavedKeys } from "../classCreator.utils";
 import { getApiErrorStatus, getUserFacingApiErrorMessage } from "@/utils/errorUtils";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -25,6 +25,17 @@ export function useClassCreator(classId: number | null, initialDraft: ClassDraft
   const [blocked, setBlocked] = useState<string | null>(null);
   /** The one ability card that is open, by position. */
   const [openAbility, setOpenAbility] = useState<number | null>(null);
+  /** The one Class Item card that is open, by position. */
+  const [openItem, setOpenItem] = useState<number | null>(null);
+  const jump = (to: CreatorStep, path: string, toLanguage?: ClassLanguage) => {
+    setStep(to);
+    if (toLanguage) setLanguage(toLanguage);
+    const ability = abilityIndexOf(path);
+    if (ability !== null) setOpenAbility(ability);
+    const item = itemIndexOf(path);
+    // The waiting-items tray on Abilities points at items without opening them.
+    if (item !== null && to === "items") setOpenItem(item);
+  };
 
   const language = draft.languages.includes(chosenLanguage) ? chosenLanguage : draft.languages[0];
   const issues = draftIssues(draft);
@@ -85,6 +96,9 @@ export function useClassCreator(classId: number | null, initialDraft: ClassDraft
     setLanguage,
     openAbility,
     setOpenAbility,
+    openItem,
+    setOpenItem,
+    jump,
     /** Steps by `delta` (−1 back, +1 next) when there is one that way. */
     move: (delta: number) => {
       const next = STEPS[STEPS.indexOf(step) + delta];
@@ -93,10 +107,7 @@ export function useClassCreator(classId: number | null, initialDraft: ClassDraft
     },
     fix: (issue: CreatorIssue) => {
       setAttempted(true);
-      setStep(issue.step);
-      if (issue.language) setLanguage(issue.language);
-      const ability = abilityIndexOf(issue.path);
-      if (ability !== null) setOpenAbility(ability);
+      jump(issue.step, issue.path, issue.language);
     },
     save: () => {
       setAttempted(true);

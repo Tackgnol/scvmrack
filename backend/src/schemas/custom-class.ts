@@ -29,36 +29,141 @@ const OriginSchema = {
   },
 } as const;
 
-const MODIFIER_CONTEXTS = ['melee', 'ranged', 'defence', 'cast', 'ability', 'test', 'heal', 'buff', 'item'] as const;
+const ITEM_REF =
+  '^(new:[A-Za-z0-9-]{1,64}|(weapons|armor|equipment|pets).cc-[0-9]{1,9}-[0-9]{1,9})$';
+const GrantSchema = { type: ['string', 'null'], pattern: ITEM_REF } as const;
+
+const ModifiersSchema = {
+  type: 'array',
+  maxItems: 6,
+  items: {
+    type: 'object',
+    additionalProperties: false,
+    required: ['statistic', 'value', 'exclude'],
+    properties: {
+      statistic: {
+        type: 'string',
+        enum: ['strength', 'agility', 'presence', 'toughness'],
+      },
+      value: { type: 'integer', minimum: -10, maximum: 10 },
+      exclude: {
+        type: 'array',
+        uniqueItems: true,
+        maxItems: 9,
+        items: {
+          type: 'string',
+          enum: [
+            'melee',
+            'ranged',
+            'defence',
+            'cast',
+            'ability',
+            'test',
+            'heal',
+            'buff',
+            'item',
+          ],
+        },
+      },
+    },
+  },
+} as const;
+
+const ClassItemSchema = {
+  type: 'object',
+  additionalProperties: false,
+  required: [
+    'ref',
+    'type',
+    'name',
+    'description',
+    'value',
+    'weapon',
+    'armor',
+    'gear',
+    'pet',
+  ],
+  properties: {
+    ref: { type: 'string', pattern: ITEM_REF },
+    type: { type: 'string', enum: ['weapon', 'armor', 'gear', 'pet'] },
+    name: NameSchema,
+    description: LocalizedSchema,
+    value: { type: 'integer', minimum: 0, maximum: 9999 },
+    weapon: {
+      type: 'object',
+      additionalProperties: false,
+      required: [
+        'diceCount',
+        'diceFaces',
+        'damageModifier',
+        'reach',
+        'ammo',
+        'ammoCount',
+        'ammoName',
+        'modifiers',
+      ],
+      properties: {
+        diceCount: { type: 'integer', minimum: 1, maximum: 6 },
+        diceFaces: { type: 'integer', enum: [2, 4, 6, 8, 10, 12] },
+        damageModifier: { type: 'integer', minimum: -6, maximum: 6 },
+        reach: { type: 'string', enum: ['melee', 'ranged'] },
+        ammo: { type: 'string', enum: ['none', 'counted', 'endless'] },
+        ammoCount: { type: 'integer', minimum: 1, maximum: 99 },
+        ammoName: { type: 'string', maxLength: 50 },
+        modifiers: ModifiersSchema,
+      },
+    },
+    armor: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['tier', 'modifiers'],
+      properties: {
+        tier: { type: 'integer', enum: [1, 2, 3] },
+        modifiers: ModifiersSchema,
+      },
+    },
+    gear: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['kind', 'uses', 'effect', 'effectDie', 'statuses'],
+      properties: {
+        kind: { type: 'string', enum: ['consumable', 'wearable', 'carried'] },
+        uses: { type: 'integer', minimum: 0, maximum: 99 },
+        effect: { type: 'string', enum: ['text', 'damage', 'die'] },
+        effectDie: { type: 'integer', enum: [2, 4, 6, 8, 10, 12] },
+        statuses: ModifiersSchema,
+      },
+    },
+    pet: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['hp', 'actionDie', 'action', 'humanoid', 'buffs'],
+      properties: {
+        hp: { type: 'integer', minimum: 1, maximum: 99 },
+        actionDie: { type: 'integer', enum: [2, 4, 6, 8, 10] },
+        action: { type: 'string', enum: ['attack', 'buff'] },
+        humanoid: { type: 'boolean' },
+        buffs: ModifiersSchema,
+      },
+    },
+  },
+} as const;
 
 const AbilitySchema = {
   type: 'object',
   additionalProperties: false,
-  required: ['random', 'name', 'text', 'modifiers'],
+  required: ['random', 'name', 'text', 'modifiers', 'grantItem', 'grantPet'],
   properties: {
-    key: { type: 'string', pattern: '^cc\\.[0-9]{1,9}\\.ability\\.[0-9]{1,9}$' },
+    key: {
+      type: 'string',
+      pattern: '^cc\\.[0-9]{1,9}\\.ability\\.[0-9]{1,9}$',
+    },
     random: { type: 'boolean' },
     name: NameSchema,
     text: LocalizedSchema,
-    modifiers: {
-      type: 'array',
-      maxItems: 6,
-      items: {
-        type: 'object',
-        additionalProperties: false,
-        required: ['statistic', 'value', 'exclude'],
-        properties: {
-          statistic: { type: 'string', enum: ['strength', 'agility', 'presence', 'toughness'] },
-          value: { type: 'integer', minimum: -10, maximum: 10 },
-          exclude: {
-            type: 'array',
-            uniqueItems: true,
-            maxItems: MODIFIER_CONTEXTS.length,
-            items: { type: 'string', enum: [...MODIFIER_CONTEXTS] },
-          },
-        },
-      },
-    },
+    modifiers: ModifiersSchema,
+    grantItem: GrantSchema,
+    grantPet: GrantSchema,
   },
 } as const;
 
@@ -78,8 +183,21 @@ export const ClassDraftSchema = {
   type: 'object',
   additionalProperties: false,
   required: [
-    'languages', 'name', 'description', 'stats', 'hpDie', 'omenDie', 'weaponDie', 'armorDie',
-    'silver', 'origins', 'abilities', 'randomAbilityCount', 'gettingBetterRule', 'gettingBetterNote',
+    'languages',
+    'name',
+    'description',
+    'stats',
+    'hpDie',
+    'omenDie',
+    'weaponDie',
+    'armorDie',
+    'silver',
+    'origins',
+    'abilities',
+    'randomAbilityCount',
+    'items',
+    'gettingBetterRule',
+    'gettingBetterNote',
   ],
   properties: {
     languages: {
@@ -119,7 +237,11 @@ export const ClassDraftSchema = {
     origins: { type: 'array', maxItems: LIMIT_LIST, items: OriginSchema },
     abilities: { type: 'array', maxItems: LIMIT_LIST, items: AbilitySchema },
     randomAbilityCount: { type: 'integer', minimum: 0, maximum: LIMIT_LIST },
-    gettingBetterRule: { type: 'string', enum: ['book', 'book_plus_ability', 'specialist'] },
+    items: { type: 'array', maxItems: LIMIT_LIST, items: ClassItemSchema },
+    gettingBetterRule: {
+      type: 'string',
+      enum: ['book', 'book_plus_ability', 'specialist'],
+    },
     gettingBetterNote: LocalizedSchema,
   },
 } as const;
@@ -164,7 +286,16 @@ export const OwnClassListSchema = {
   items: {
     type: 'object',
     additionalProperties: false,
-    required: ['id', 'lineageId', 'name', 'description', 'languages', 'visibility', 'status', 'originCount'],
+    required: [
+      'id',
+      'lineageId',
+      'name',
+      'description',
+      'languages',
+      'visibility',
+      'status',
+      'originCount',
+    ],
     properties: {
       id: { type: 'integer' },
       lineageId: { type: 'string' },

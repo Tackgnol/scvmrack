@@ -11,7 +11,9 @@ class CookieJar {
 
   capture(response: Response): void {
     const setCookies =
-      typeof response.headers.getSetCookie === 'function' ? response.headers.getSetCookie() : [];
+      typeof response.headers.getSetCookie === 'function'
+        ? response.headers.getSetCookie()
+        : [];
     if (setCookies.length === 0) {
       const single = response.headers.get('set-cookie');
       if (single) setCookies.push(single);
@@ -27,13 +29,20 @@ class CookieJar {
   }
 
   header(): string {
-    return [...this.cookies.entries()].map(([key, value]) => `${key}=${value}`).join('; ');
+    return [...this.cookies.entries()]
+      .map(([key, value]) => `${key}=${value}`)
+      .join('; ');
   }
 }
 
 async function request(
   path: string,
-  options: { method?: string; json?: unknown; jar?: CookieJar; csrf?: boolean } = {}
+  options: {
+    method?: string;
+    json?: unknown;
+    jar?: CookieJar;
+    csrf?: boolean;
+  } = {}
 ): Promise<Response> {
   const { method = 'GET', json, jar } = options;
   const headers: Record<string, string> = {};
@@ -48,7 +57,11 @@ async function request(
     headers['content-type'] = 'application/json';
     body = JSON.stringify(json);
   }
-  const response = await fetch(new URL(path, baseUrl), { method, headers, body });
+  const response = await fetch(new URL(path, baseUrl), {
+    method,
+    headers,
+    body,
+  });
   if (jar) jar.capture(response);
   return response;
 }
@@ -62,12 +75,21 @@ async function fetchCsrfToken(jar: CookieJar): Promise<string> {
   return ((await response.json()) as { token: string }).token;
 }
 
-async function expectStatus(response: Response, expected: number): Promise<void> {
+async function expectStatus(
+  response: Response,
+  expected: number
+): Promise<void> {
   if (response.status === expected) return;
-  assert.fail(`${response.url} returned ${response.status}, expected ${expected}: ${await response.text()}`);
+  assert.fail(
+    `${response.url} returned ${
+      response.status
+    }, expected ${expected}: ${await response.text()}`
+  );
 }
 
-async function withDatabase<T>(callback: (client: Client) => Promise<T>): Promise<T> {
+async function withDatabase<T>(
+  callback: (client: Client) => Promise<T>
+): Promise<T> {
   assert.ok(databaseUrl, 'DATABASE_URL is required for integration fixtures');
   const client = new Client({ connectionString: databaseUrl });
   await client.connect();
@@ -80,22 +102,37 @@ async function withDatabase<T>(callback: (client: Client) => Promise<T>): Promis
 
 async function anonymousSession(): Promise<{ jar: CookieJar; userId: string }> {
   const jar = new CookieJar();
-  const response = await request('/api/auth/sign-in/anonymous', { method: 'POST', json: {}, jar });
+  const response = await request('/api/auth/sign-in/anonymous', {
+    method: 'POST',
+    json: {},
+    jar,
+  });
   await expectStatus(response, 200);
-  const userId = ((await response.json()) as { user?: { id?: string } }).user?.id;
+  const userId = ((await response.json()) as { user?: { id?: string } }).user
+    ?.id;
   assert.equal(typeof userId, 'string');
   return { jar, userId: userId! };
 }
 
-async function gmParty(): Promise<{ jar: CookieJar; id: string; inviteToken: string }> {
+async function gmParty(): Promise<{
+  jar: CookieJar;
+  id: string;
+  inviteToken: string;
+}> {
   const gm = await anonymousSession();
   await withDatabase((client) =>
     client.query(
       'UPDATE "user" SET name = $2, email = $3, "emailVerified" = true, "isAnonymous" = false WHERE id = $1',
-      [gm.userId, 'GM join test', `gm.${Date.now()}.${Math.random().toString(36).slice(2)}@example.test`]
+      [
+        gm.userId,
+        'GM join test',
+        `gm.${Date.now()}.${Math.random().toString(36).slice(2)}@example.test`,
+      ]
     )
   );
-  const roomId = `join-room-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const roomId = `join-room-${Date.now()}-${Math.random()
+    .toString(36)
+    .slice(2)}`;
   const response = await request('/api/parties/promote', {
     method: 'POST',
     json: { obrRoomId: roomId, name: `Room ${roomId}` },
@@ -107,14 +144,29 @@ async function gmParty(): Promise<{ jar: CookieJar; id: string; inviteToken: str
   return { jar: gm.jar, ...party };
 }
 
-const sections = ['name', 'stats', 'omens', 'silver', 'origin', 'abilities', 'gear', 'personality'];
+const sections = [
+  'name',
+  'stats',
+  'omens',
+  'silver',
+  'origin',
+  'abilities',
+  'gear',
+  'personality',
+];
 const seeds = Object.fromEntries(
-  sections.map((section) => [section, createHash('sha256').update(`join:${section}`).digest('hex')])
+  sections.map((section) => [
+    section,
+    createHash('sha256').update(`join:${section}`).digest('hex'),
+  ])
 );
 
 async function characterCount(userId: string): Promise<number> {
   return withDatabase(async (client) => {
-    const result = await client.query('SELECT count(*)::int AS n FROM characters WHERE user_id = $1', [userId]);
+    const result = await client.query(
+      'SELECT count(*)::int AS n FROM characters WHERE user_id = $1',
+      [userId]
+    );
     return result.rows[0].n as number;
   });
 }
@@ -123,37 +175,53 @@ test("an invite's class list is the party's default pool: the six Book Classes",
   const party = await gmParty();
   const player = await anonymousSession();
 
-  const response = await request(`/api/characters/classes?locale=en&invite=${party.inviteToken}`, {
-    jar: player.jar,
-  });
+  const response = await request(
+    `/api/characters/classes?locale=en&invite=${party.inviteToken}`,
+    {
+      jar: player.jar,
+    }
+  );
 
   await expectStatus(response, 200);
   const classes = (await response.json()) as Array<{ id: number }>;
-  assert.deepEqual(classes.map((cls) => cls.id), [1, 2, 3, 4, 5, 6]);
+  assert.deepEqual(
+    classes.map((cls) => cls.id),
+    [1, 2, 3, 4, 5, 6]
+  );
 });
 
 test('forging through an invite creates the scvm already in the party', async () => {
   const party = await gmParty();
   const player = await anonymousSession();
 
-  const draftResponse = await request(`/api/characters/draft?locale=en&invite=${party.inviteToken}`, {
-    method: 'POST',
-    json: { classId: 3, seeds },
-    jar: player.jar,
-    csrf: true,
-  });
+  const draftResponse = await request(
+    `/api/characters/draft?locale=en&invite=${party.inviteToken}`,
+    {
+      method: 'POST',
+      json: { classId: 3, seeds },
+      jar: player.jar,
+      csrf: true,
+    }
+  );
   await expectStatus(draftResponse, 200);
   const { draft } = (await draftResponse.json()) as { draft: unknown };
 
-  const created = await request(`/api/characters/new?locale=en&invite=${party.inviteToken}`, {
-    method: 'POST',
-    json: { draft },
-    jar: player.jar,
-    csrf: true,
-  });
+  const created = await request(
+    `/api/characters/new?locale=en&invite=${party.inviteToken}`,
+    {
+      method: 'POST',
+      json: { draft },
+      jar: player.jar,
+      csrf: true,
+    }
+  );
 
   await expectStatus(created, 201);
-  const character = (await created.json()) as { id: string; partyId: string | null; classId: number };
+  const character = (await created.json()) as {
+    id: string;
+    partyId: string | null;
+    classId: number;
+  };
   assert.equal(character.partyId, party.id);
   assert.equal(character.classId, 3);
 });
@@ -161,12 +229,15 @@ test('forging through an invite creates the scvm already in the party', async ()
 test('a class taken out of the pool mid-forge is refused on confirm and nothing is created', async () => {
   const party = await gmParty();
   const player = await anonymousSession();
-  const draftResponse = await request(`/api/characters/draft?locale=en&invite=${party.inviteToken}`, {
-    method: 'POST',
-    json: { classId: 2, seeds },
-    jar: player.jar,
-    csrf: true,
-  });
+  const draftResponse = await request(
+    `/api/characters/draft?locale=en&invite=${party.inviteToken}`,
+    {
+      method: 'POST',
+      json: { classId: 2, seeds },
+      jar: player.jar,
+      csrf: true,
+    }
+  );
   await expectStatus(draftResponse, 200);
   const { draft } = (await draftResponse.json()) as { draft: unknown };
 
@@ -176,27 +247,36 @@ test('a class taken out of the pool mid-forge is refused on confirm and nothing 
       [party.id]
     )
   );
-  const created = await request(`/api/characters/new?locale=en&invite=${party.inviteToken}`, {
-    method: 'POST',
-    json: { draft },
-    jar: player.jar,
-    csrf: true,
-  });
+  const created = await request(
+    `/api/characters/new?locale=en&invite=${party.inviteToken}`,
+    {
+      method: 'POST',
+      json: { draft },
+      jar: player.jar,
+      csrf: true,
+    }
+  );
 
   await expectStatus(created, 409);
-  assert.equal(((await created.json()) as { code: string }).code, 'CLASS_NOT_AVAILABLE');
+  assert.equal(
+    ((await created.json()) as { code: string }).code,
+    'CLASS_NOT_AVAILABLE'
+  );
   assert.equal(await characterCount(player.userId), 0);
 });
 
 test('a rotated invite creates nothing', async () => {
   const party = await gmParty();
   const player = await anonymousSession();
-  const draftResponse = await request(`/api/characters/draft?locale=en&invite=${party.inviteToken}`, {
-    method: 'POST',
-    json: { classId: 1, seeds },
-    jar: player.jar,
-    csrf: true,
-  });
+  const draftResponse = await request(
+    `/api/characters/draft?locale=en&invite=${party.inviteToken}`,
+    {
+      method: 'POST',
+      json: { classId: 1, seeds },
+      jar: player.jar,
+      csrf: true,
+    }
+  );
   await expectStatus(draftResponse, 200);
   const { draft } = (await draftResponse.json()) as { draft: unknown };
 
@@ -206,12 +286,15 @@ test('a rotated invite creates nothing', async () => {
     csrf: true,
   });
   await expectStatus(rotated, 200);
-  const created = await request(`/api/characters/new?locale=en&invite=${party.inviteToken}`, {
-    method: 'POST',
-    json: { draft },
-    jar: player.jar,
-    csrf: true,
-  });
+  const created = await request(
+    `/api/characters/new?locale=en&invite=${party.inviteToken}`,
+    {
+      method: 'POST',
+      json: { draft },
+      jar: player.jar,
+      csrf: true,
+    }
+  );
 
   await expectStatus(created, 410);
   assert.equal(await characterCount(player.userId), 0);
@@ -219,14 +302,22 @@ test('a rotated invite creates nothing', async () => {
 
 type PoolView = {
   classlessEnabled: boolean;
-  classes: Array<{ lineageId: string; classId: number; group: string; enabled: boolean }>;
+  classes: Array<{
+    lineageId: string;
+    classId: number;
+    group: string;
+    enabled: boolean;
+  }>;
   removed: unknown[];
 };
 
 test("the GM's pool panel switches classes and Classless, and invites follow it", async () => {
   const party = await gmParty();
 
-  const initial = await request(`/api/parties/${party.id}/class-pool?locale=en`, { jar: party.jar });
+  const initial = await request(
+    `/api/parties/${party.id}/class-pool?locale=en`,
+    { jar: party.jar }
+  );
   await expectStatus(initial, 200);
   const view = (await initial.json()) as PoolView;
   assert.equal(view.classlessEnabled, true);
@@ -236,37 +327,56 @@ test("the GM's pool panel switches classes and Classless, and invites follow it"
   );
 
   const hermit = view.classes.find((c) => c.classId === 3)!;
-  const switched = await request(`/api/parties/${party.id}/class-pool/lineages/${hermit.lineageId}?locale=en`, {
-    method: 'PUT',
-    json: { enabled: false },
-    jar: party.jar,
-    csrf: true,
-  });
+  const switched = await request(
+    `/api/parties/${party.id}/class-pool/lineages/${hermit.lineageId}?locale=en`,
+    {
+      method: 'PUT',
+      json: { enabled: false },
+      jar: party.jar,
+      csrf: true,
+    }
+  );
   await expectStatus(switched, 200);
-  assert.equal(((await switched.json()) as PoolView).classes.find((c) => c.classId === 3)!.enabled, false);
+  assert.equal(
+    ((await switched.json()) as PoolView).classes.find((c) => c.classId === 3)!
+      .enabled,
+    false
+  );
 
-  const classless = await request(`/api/parties/${party.id}/class-pool/classless?locale=en`, {
-    method: 'PUT',
-    json: { enabled: false },
-    jar: party.jar,
-    csrf: true,
-  });
+  const classless = await request(
+    `/api/parties/${party.id}/class-pool/classless?locale=en`,
+    {
+      method: 'PUT',
+      json: { enabled: false },
+      jar: party.jar,
+      csrf: true,
+    }
+  );
   await expectStatus(classless, 200);
   assert.equal(((await classless.json()) as PoolView).classlessEnabled, false);
 
   const player = await anonymousSession();
-  const offered = await request(`/api/characters/classes?locale=en&invite=${party.inviteToken}`, {
-    jar: player.jar,
-  });
+  const offered = await request(
+    `/api/characters/classes?locale=en&invite=${party.inviteToken}`,
+    {
+      jar: player.jar,
+    }
+  );
   await expectStatus(offered, 200);
-  assert.deepEqual(((await offered.json()) as Array<{ id: number }>).map((c) => c.id), [1, 2, 4, 5, 6]);
+  assert.deepEqual(
+    ((await offered.json()) as Array<{ id: number }>).map((c) => c.id),
+    [1, 2, 4, 5, 6]
+  );
 });
 
 test("someone else's party pool is not found", async () => {
   const party = await gmParty();
   const stranger = await anonymousSession();
 
-  const response = await request(`/api/parties/${party.id}/class-pool?locale=en`, { jar: stranger.jar });
+  const response = await request(
+    `/api/parties/${party.id}/class-pool?locale=en`,
+    { jar: stranger.jar }
+  );
 
   await expectStatus(response, 404);
 });
@@ -277,7 +387,12 @@ function customClassDraft(name: string) {
     languages: ['en'],
     name: { en: name, pl: '' },
     description: { en: 'The mire keeps what you give it.', pl: '' },
-    stats: { strength: stat, agility: stat, presence: { ...stat, count: 4, dropLowest: true }, toughness: stat },
+    stats: {
+      strength: stat,
+      agility: stat,
+      presence: { ...stat, count: 4, dropLowest: true },
+      toughness: stat,
+    },
     hpDie: 6,
     omenDie: 4,
     weaponDie: 8,
@@ -289,12 +404,76 @@ function customClassDraft(name: string) {
         random: false,
         name: { en: 'Bone-Reader', pl: '' },
         text: { en: 'Ask a skull one question a day.', pl: '' },
-        modifiers: [{ statistic: 'presence', value: 2, exclude: ['melee', 'ranged', 'defence', 'cast', 'heal', 'buff', 'item'] }],
+        modifiers: [
+          {
+            statistic: 'presence',
+            value: 2,
+            exclude: [
+              'melee',
+              'ranged',
+              'defence',
+              'cast',
+              'heal',
+              'buff',
+              'item',
+            ],
+          },
+        ],
+        grantItem: 'new:flail',
+        grantPet: null,
       },
-      { random: true, name: { en: 'Grave Sense', pl: '' }, text: { en: 'Smell the dead.', pl: '' }, modifiers: [] },
-      { random: true, name: { en: 'Mire Walk', pl: '' }, text: { en: 'Never sink.', pl: '' }, modifiers: [] },
+      {
+        random: true,
+        name: { en: 'Grave Sense', pl: '' },
+        text: { en: 'Smell the dead.', pl: '' },
+        modifiers: [],
+        grantItem: null,
+        grantPet: null,
+      },
+      {
+        random: true,
+        name: { en: 'Mire Walk', pl: '' },
+        text: { en: 'Never sink.', pl: '' },
+        modifiers: [],
+        grantItem: null,
+        grantPet: null,
+      },
     ],
     randomAbilityCount: 1,
+    items: [
+      {
+        ref: 'new:flail',
+        type: 'weapon',
+        name: { en: `Reliquary Flail ${name}`, pl: '' },
+        description: { en: 'A chain of saint knuckles.', pl: '' },
+        value: 30,
+        weapon: {
+          diceCount: 2,
+          diceFaces: 4,
+          damageModifier: 1,
+          reach: 'melee',
+          ammo: 'none',
+          ammoCount: 10,
+          ammoName: '',
+          modifiers: [],
+        },
+        armor: { tier: 1, modifiers: [] },
+        gear: {
+          kind: 'carried',
+          uses: 0,
+          effect: 'text',
+          effectDie: 6,
+          statuses: [],
+        },
+        pet: {
+          hp: 4,
+          actionDie: 4,
+          action: 'attack',
+          humanoid: false,
+          buffs: [],
+        },
+      },
+    ],
     gettingBetterRule: 'book',
     gettingBetterNote: { en: '', pl: '' },
   };
@@ -311,10 +490,14 @@ test('a forged class shows under My classes, joins the pool and a player rolls i
     csrf: true,
   });
   await expectStatus(rolled, 200);
-  const testScvm = (await rolled.json()) as { origin: string; abilities: Array<{ name: string }> };
+  const testScvm = (await rolled.json()) as {
+    origin: string;
+    abilities: Array<{ name: string }>;
+  };
   assert.equal(testScvm.origin, 'A drowned village');
   assert.equal(testScvm.abilities.length, 2);
   assert.equal(testScvm.abilities[0].name, 'Bone-Reader');
+  assert.ok(JSON.stringify(testScvm).includes(`Reliquary Flail ${name}`));
 
   const saved = await request('/api/classes', {
     method: 'POST',
@@ -332,77 +515,171 @@ test('a forged class shows under My classes, joins the pool and a player rolls i
     csrf: true,
   });
   await expectStatus(clash, 409);
-  assert.equal(((await clash.json()) as { code: string }).code, 'CLASS_NAME_TAKEN');
+  assert.equal(
+    ((await clash.json()) as { code: string }).code,
+    'CLASS_NAME_TAKEN'
+  );
 
   const mine = await request('/api/classes/mine?locale=en', { jar: party.jar });
   await expectStatus(mine, 200);
-  const list = (await mine.json()) as Array<{ id: number; name: string; visibility: string }>;
+  const list = (await mine.json()) as Array<{
+    id: number;
+    name: string;
+    visibility: string;
+  }>;
   assert.deepEqual(list[0], { ...list[0], id, name, visibility: 'private' });
 
-  const pool = await request(`/api/parties/${party.id}/class-pool?locale=en`, { jar: party.jar });
-  const own = ((await pool.json()) as PoolView).classes.find((c) => c.classId === id)!;
-  assert.equal(own.group, 'mine');
-  const enabled = await request(`/api/parties/${party.id}/class-pool/lineages/${own.lineageId}?locale=en`, {
-    method: 'PUT',
-    json: { enabled: true },
+  const pool = await request(`/api/parties/${party.id}/class-pool?locale=en`, {
     jar: party.jar,
-    csrf: true,
   });
+  const own = ((await pool.json()) as PoolView).classes.find(
+    (c) => c.classId === id
+  )!;
+  assert.equal(own.group, 'mine');
+  const enabled = await request(
+    `/api/parties/${party.id}/class-pool/lineages/${own.lineageId}?locale=en`,
+    {
+      method: 'PUT',
+      json: { enabled: true },
+      jar: party.jar,
+      csrf: true,
+    }
+  );
   await expectStatus(enabled, 200);
 
   const player = await anonymousSession();
-  const offered = await request(`/api/characters/classes?locale=en&invite=${party.inviteToken}`, { jar: player.jar });
-  const offeredClasses = (await offered.json()) as Array<{ id: number; name: string }>;
+  const offered = await request(
+    `/api/characters/classes?locale=en&invite=${party.inviteToken}`,
+    { jar: player.jar }
+  );
+  const offeredClasses = (await offered.json()) as Array<{
+    id: number;
+    name: string;
+  }>;
   assert.equal(offeredClasses.find((c) => c.id === id)?.name, name);
 
-  const draftResponse = await request(`/api/characters/draft?locale=en&invite=${party.inviteToken}`, {
-    method: 'POST',
-    json: { classId: id, seeds },
-    jar: player.jar,
-    csrf: true,
-  });
+  const draftResponse = await request(
+    `/api/characters/draft?locale=en&invite=${party.inviteToken}`,
+    {
+      method: 'POST',
+      json: { classId: id, seeds },
+      jar: player.jar,
+      csrf: true,
+    }
+  );
   await expectStatus(draftResponse, 200);
-  const { draft, preview } = (await draftResponse.json()) as { draft: unknown; preview: { origin: string } };
+  const { draft, preview } = (await draftResponse.json()) as {
+    draft: unknown;
+    preview: { origin: string };
+  };
   assert.equal(preview.origin, 'A drowned village');
-  const created = await request(`/api/characters/new?locale=en&invite=${party.inviteToken}`, {
-    method: 'POST',
-    json: { draft },
-    jar: player.jar,
-    csrf: true,
-  });
+  const created = await request(
+    `/api/characters/new?locale=en&invite=${party.inviteToken}`,
+    {
+      method: 'POST',
+      json: { draft },
+      jar: player.jar,
+      csrf: true,
+    }
+  );
   await expectStatus(created, 201);
   const scvm = (await created.json()) as { id: string; classId: number };
   assert.equal(scvm.classId, id);
 
   const edited = await request(`/api/classes/${id}`, {
     method: 'PUT',
-    json: { draft: { ...customClassDraft(name), origins: [{ en: 'The peat bog', pl: '' }, { en: 'A gibbet', pl: '' }] } },
+    json: {
+      draft: {
+        ...customClassDraft(name),
+        origins: [
+          { en: 'The peat bog', pl: '' },
+          { en: 'A gibbet', pl: '' },
+        ],
+      },
+    },
     jar: party.jar,
     csrf: true,
   });
   await expectStatus(edited, 200);
   const reloaded = await request(`/api/classes/${id}`, { jar: party.jar });
-  const reloadedDraft = ((await reloaded.json()) as {
-    draft: { origins: Array<{ en: string; key: string }>; abilities: Array<{ key: string; random: boolean; modifiers: unknown[] }>; randomAbilityCount: number };
-  }).draft;
+  const reloadedDraft = (
+    (await reloaded.json()) as {
+      draft: {
+        origins: Array<{ en: string; key: string }>;
+        abilities: Array<{
+          key: string;
+          random: boolean;
+          modifiers: unknown[];
+        }>;
+        randomAbilityCount: number;
+      };
+    }
+  ).draft;
   const origins = reloadedDraft.origins;
-  assert.deepEqual(reloadedDraft.abilities.map((a) => [a.random, a.modifiers.length]), [[false, 1], [true, 0], [true, 0]]);
+  assert.deepEqual(
+    reloadedDraft.abilities.map((a) => [a.random, a.modifiers.length]),
+    [
+      [false, 1],
+      [true, 0],
+      [true, 0],
+    ]
+  );
+  const reloadedItems = (
+    reloadedDraft as unknown as {
+      items: Array<{ ref: string; weapon: { diceCount: number } }>;
+    }
+  ).items;
+  assert.equal(reloadedItems.length, 1);
+  assert.match(reloadedItems[0].ref, /^weapons\.cc-\d+-\d+$/);
+  assert.equal(reloadedItems[0].weapon.diceCount, 2);
   assert.equal(reloadedDraft.randomAbilityCount, 1);
-  assert.deepEqual(origins.map((o) => o.en), ['The peat bog', 'A gibbet']);
+  assert.deepEqual(
+    origins.map((o) => o.en),
+    ['The peat bog', 'A gibbet']
+  );
   assert.ok(origins.every((o) => /^cc\.\d+\.origin\.\d+$/.test(o.key)));
 
   // The GM removed the origin this scvm rolled; the scvm keeps its text.
-  const sheet = await request(`/api/characters/${scvm.id}?locale=en`, { jar: player.jar });
+  const sheet = await request(`/api/characters/${scvm.id}?locale=en`, {
+    jar: player.jar,
+  });
   await expectStatus(sheet, 200);
   const sheetBody = (await sheet.json()) as {
     origin: string;
     abilities: Array<{ name: string; description: string }>;
-    computedModifiers: Array<{ source: string; statistic: string; value: number }>;
+    computedModifiers: Array<{
+      source: string;
+      statistic: string;
+      value: number;
+    }>;
   };
   assert.equal(sheetBody.origin, 'A drowned village');
   assert.equal(sheetBody.abilities.length, 2);
-  assert.deepEqual(sheetBody.abilities[0], { ...sheetBody.abilities[0], name: 'Bone-Reader', description: 'Ask a skull one question a day.' });
-  assert.ok(sheetBody.computedModifiers.some((m) => m.source === 'Bone-Reader' && m.statistic === 'presence' && m.value === 2));
+  assert.deepEqual(sheetBody.abilities[0], {
+    ...sheetBody.abilities[0],
+    name: 'Bone-Reader',
+    description: 'Ask a skull one question a day.',
+  });
+  assert.ok(
+    sheetBody.computedModifiers.some(
+      (m) =>
+        m.source === 'Bone-Reader' &&
+        m.statistic === 'presence' &&
+        m.value === 2
+    )
+  );
+  // The fixed ability granted its Class Item, by its own name, with its dice.
+  assert.ok(JSON.stringify(sheetBody).includes(`Reliquary Flail ${name}`));
+
+  // Class Items stay out of item search.
+  const search = await request(
+    `/api/equipment/search?q=${encodeURIComponent(
+      'Reliquary Flail'
+    )}&locale=en`,
+    { jar: party.jar }
+  );
+  await expectStatus(search, 200);
+  assert.ok(!JSON.stringify(await search.json()).includes(name));
 });
 
 test("a guest can't forge a class", async () => {

@@ -1,12 +1,21 @@
-import type { AbilityDraft } from "@/api/classes";
+import type { AbilityDraft, ClassItemType } from "@/api/classes";
 import { NumberStepper } from "@/components/atoms/NumberStepper/NumberStepper";
 import { useStableIds } from "@/hooks/useStableIds";
 import { useTranslation } from "react-i18next";
 import { AbilityEditor } from "../AbilityEditor/AbilityEditor";
 import { withCardTransition } from "../cardTransition";
 import { AbilitySummary } from "../AbilitySummary/AbilitySummary";
+import { WaitingItemsTray } from "../WaitingItemsTray/WaitingItemsTray";
 import { Counter, Empty, InkButton, Spread, Stack } from "../classCreator.styles";
-import { blankAbility, fieldId, LIMIT_LIST, randomNumber, randomPoolSize } from "../classCreator.utils";
+import {
+  blankAbility,
+  blankClassItem,
+  fieldId,
+  LIMIT_LIST,
+  randomNumber,
+  randomPoolSize,
+  slotFor,
+} from "../classCreator.utils";
 import type { AbilitiesStepProps } from "./AbilitiesStep.models";
 
 /** Step 3: fixed abilities every scvm gets, and the random pool with how many each scvm rolls. */
@@ -17,7 +26,7 @@ export function AbilitiesStep({
   ...stepProps
 }: AbilitiesStepProps) {
   const { t } = useTranslation();
-  const { draft, update, focus } = stepProps;
+  const { draft, update, focus, jump, language } = stepProps;
   const { ids, insert, remove } = useStableIds(draft.abilities.length);
   const pool = randomPoolSize(draft);
   const full = draft.abilities.length >= LIMIT_LIST;
@@ -36,18 +45,40 @@ export function AbilitiesStep({
   const duplicate = (index: number) => {
     insert(index + 1);
     update((d) => {
-      // A copy is a new ability: it gets its own key on save.
-      const copy = { ...structuredClone(d.abilities[index]), key: undefined };
+      // A copy is a new ability with its own key on save; an item has one granter, so the copy grants none.
+      const copy = { ...structuredClone(d.abilities[index]), key: undefined, grantItem: null, grantPet: null };
       return { ...d, abilities: [...d.abilities.slice(0, index + 1), copy, ...d.abilities.slice(index + 1)] };
     });
     open(index + 1, `abilities.${index + 1}.name.${stepProps.language}`);
   };
-  const removeAt = (index: number) => {
+  const grantFromNewAbility = (itemIndex: number) => {
+    const item = draft.items[itemIndex];
+    const index = draft.abilities.length;
+    insert(index);
+    update((d) => ({
+      ...d,
+      abilities: [...d.abilities, { ...blankAbility(), name: { ...item.name }, [slotFor(item.type)]: item.ref }],
+    }));
+    open(index, `abilities.${index}.text.${language}`);
+  };
+  const forge = (index: number, type: ClassItemType) => {
+    const ability = draft.abilities[index];
+    const item = { ...blankClassItem(type), name: { ...ability.name } };
+    update((d) => ({
+      ...d,
+      items: [...d.items, item],
+      abilities: d.abilities.map((a, i) => (i === index ? { ...a, [slotFor(type)]: item.ref } : a)),
+    }));
+    focus(`abilities.${index}.${slotFor(type)}`);
+  };
+  const removeAt = (index: number, withItems: boolean) => {
+    const granted = [draft.abilities[index].grantItem, draft.abilities[index].grantPet];
     remove(index);
     update((d) => {
+      const items = withItems ? d.items.filter((item) => !granted.includes(item.ref)) : d.items;
       const abilities = d.abilities.filter((_, i) => i !== index);
       const stillRandom = abilities.filter((a) => a.random).length;
-      return { ...d, abilities, randomAbilityCount: Math.min(d.randomAbilityCount, stillRandom) };
+      return { ...d, items, abilities, randomAbilityCount: Math.min(d.randomAbilityCount, stillRandom) };
     });
     onOpenAbility(null);
     focus(draft.abilities.length > 1 ? `abilities.${Math.min(index, draft.abilities.length - 2)}` : "abilities.add");
@@ -55,6 +86,7 @@ export function AbilitiesStep({
 
   return (
     <Stack>
+      <WaitingItemsTray draft={draft} language={language} onGrantFromNewAbility={grantFromNewAbility} />
       <Spread>
         <NumberStepper
           id={fieldId("randomAbilityCount")}
@@ -92,7 +124,10 @@ export function AbilitiesStep({
             full={full}
             onChange={(recipe) => setAbility(index, recipe)}
             onDone={() => open(null, `abilities.${index}`)}
-            onRemove={() => removeAt(index)}
+            onRemove={(withItems) => removeAt(index, withItems)}
+            onGrant={(slot, ref) => setAbility(index, (a) => ({ ...a, [slot]: ref }))}
+            onForge={(type) => forge(index, type)}
+            onEditItem={(itemIndex) => jump("items", `items.${itemIndex}.name.${language}`)}
             onDuplicate={() => duplicate(index)}
           />
         ) : (

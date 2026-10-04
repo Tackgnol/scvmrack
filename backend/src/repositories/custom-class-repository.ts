@@ -2,7 +2,15 @@ import type { Prisma } from '@prisma/client';
 import prisma from '../lib/prisma.js';
 import { findTranslationsWithAuthoredFallback } from '../lib/class-translations.js';
 import { stableKeys } from '../lib/stable-keys.js';
-import type { AbilityModifierDraft, ClassDraft, ClassLanguage, ClassStat, Localized } from '../lib/class-draft.js';
+import { itemFromRow, itemRow, itemTypeOf, stableItemKeys, type ItemRowRead } from '../lib/class-items.js';
+import type {
+  AbilityModifierDraft,
+  ClassDraft,
+  ClassItemDraft,
+  ClassLanguage,
+  ClassStat,
+  Localized,
+} from '../lib/class-draft.js';
 
 type Tx = Prisma.TransactionClient;
 
@@ -51,6 +59,26 @@ function classColumns(draft: ClassDraft) {
   };
 }
 
+/** Writes one Class Item's catalog row; a retyped item gets a row under its new key. */
+async function upsertItem(tx: Tx, key: string, item: ClassItemDraft, classId: number, source: string): Promise<void> {
+  const row = itemRow(item, classId, source);
+  const args = { where: { key }, create: { key, ...row.data }, update: row.data };
+  switch (row.table) {
+    case 'weapon':
+      await tx.weapon.upsert(args as Prisma.WeaponUpsertArgs);
+      break;
+    case 'armor':
+      await tx.armor.upsert(args as Prisma.ArmorUpsertArgs);
+      break;
+    case 'equipment':
+      await tx.equipment.upsert(args as Prisma.EquipmentUpsertArgs);
+      break;
+    case 'pet':
+      await tx.pet.upsert(args as Prisma.PetUpsertArgs);
+      break;
+  }
+}
+
 /**
  * Writes a class's text, origins and abilities under its `cc.<id>.*` keys.
  * Origins and abilities keep the key they were saved with, so characters that
@@ -60,10 +88,21 @@ function classColumns(draft: ClassDraft) {
 async function writeText(tx: Tx, id: number, draft: ClassDraft): Promise<void> {
   const keys = keysFor(id);
   // Every key this class ever gave out: removed entries leave their text and modifiers behind.
-  const [texts, modifierRows] = await Promise.all([
+  const owned = { where: { classId: id }, select: { key: true } };
+  const [texts, modifierRows, weapons, armors, equipment, pets] = await Promise.all([
     tx.translation.findMany({ where: { key: { startsWith: `cc.${id}.` } }, select: { key: true } }),
     tx.classAbilityModifier.findMany({ where: { classId: id }, select: { abilityKey: true } }),
+    tx.weapon.findMany(owned),
+    tx.armor.findMany(owned),
+    tx.equipment.findMany(owned),
+    tx.pet.findMany(owned),
   ]);
+  const itemKeys = stableItemKeys(
+    id,
+    draft.items,
+    [...weapons, ...armors, ...equipment, ...pets].map((row) => row.key)
+  );
+  const keyOfRef = new Map(draft.items.map((item, i) => [item.ref, itemKeys[i]]));
   const inUse = [...texts.map((t) => t.key), ...modifierRows.map((m) => m.abilityKey)];
   const originKeys = stableKeys(
     `cc.${id}.origin.`,
@@ -88,6 +127,10 @@ async function writeText(tx: Tx, id: number, draft: ClassDraft): Promise<void> {
       [abilityKeys[i], ability.name],
       [`${abilityKeys[i]}.description`, ability.text],
     ]),
+    ...draft.items.flatMap((item, i): Array<[string, Localized]> => [
+      [itemKeys[i], item.name],
+      [`${itemKeys[i]}.description`, item.description],
+    ]),
   ];
   await tx.translation.deleteMany({ where: { key: { in: entries.map(([key]) => key).concat(keys.note) } } });
   await tx.translation.createMany({
@@ -101,6 +144,10 @@ async function writeText(tx: Tx, id: number, draft: ClassDraft): Promise<void> {
   await tx.origin.deleteMany({ where: { classId: id } });
   await tx.origin.createMany({ data: originKeys.map((key, i) => ({ classId: id, roll: i + 1, key })) });
 
+  for (const [i, item] of draft.items.entries()) {
+    await upsertItem(tx, itemKeys[i], item, id, item.name[draft.languages[0]].trim());
+  }
+
   await tx.ability.deleteMany({ where: { classId: id } });
   await tx.ability.createMany({
     data: draft.abilities.map((ability, i) => ({
@@ -108,6 +155,8 @@ async function writeText(tx: Tx, id: number, draft: ClassDraft): Promise<void> {
       key: abilityKeys[i],
       isRandom: ability.random,
       position: i,
+      grantItemKey: (ability.grantItem && keyOfRef.get(ability.grantItem)) || null,
+      grantPetKey: (ability.grantPet && keyOfRef.get(ability.grantPet)) || null,
     })),
   });
   await tx.classAbilityModifier.deleteMany({ where: { classId: id, abilityKey: { in: abilityKeys } } });
@@ -132,6 +181,28 @@ async function writeText(tx: Tx, id: number, draft: ClassDraft): Promise<void> {
       gettingBetterNoteKey: hasNote ? keys.note : null,
     },
   });
+}
+
+/** A class's granted Class Items, as the creator edits them, in the order they were made. */
+async function loadItems(classId: number, keys: string[]): Promise<ClassItemDraft[]> {
+  if (keys.length === 0) return [];
+  const where = { classId, key: { in: keys } };
+  const [weapons, armors, equipment, pets, texts] = await Promise.all([
+    prisma.weapon.findMany({ where }),
+    prisma.armor.findMany({ where }),
+    prisma.equipment.findMany({ where }),
+    prisma.pet.findMany({ where }),
+    prisma.translation.findMany({ where: { key: { in: keys.flatMap((k) => [k, `${k}.description`]) } } }),
+  ]);
+  const text = (key: string): Localized => ({
+    en: texts.find((t) => t.key === key && t.locale === 'en')?.value ?? '',
+    pl: texts.find((t) => t.key === key && t.locale === 'pl')?.value ?? '',
+  });
+  const rows: ItemRowRead[] = [...weapons, ...armors, ...equipment, ...pets];
+  const numberOf = (key: string) => Number(key.split('-').at(-1));
+  return rows
+    .sort((a, b) => numberOf(a.key) - numberOf(b.key))
+    .map((row) => itemFromRow(itemTypeOf(row.key)!, row, text(row.key), text(`${row.key}.description`)));
 }
 
 /** Custom Class data access: the GM's own classes and the creator's saves. */
@@ -180,11 +251,15 @@ export const customClassRepository = {
       prisma.ability.findMany({
         where: { classId: id },
         orderBy: [{ position: 'asc' }, { id: 'asc' }],
-        select: { key: true, isRandom: true },
+        select: { key: true, isRandom: true, grantItemKey: true, grantPetKey: true },
       }),
       prisma.classAbilityModifier.findMany({ where: { classId: id }, orderBy: { id: 'asc' } }),
       prisma.translation.findMany({ where: { key: { startsWith: `cc.${id}.` } } }),
     ]);
+    const grantKeys = abilities
+      .flatMap((a) => [a.grantItemKey, a.grantPetKey])
+      .filter((key): key is string => !!key && itemTypeOf(key) !== null);
+    const items = await loadItems(id, grantKeys);
     const modifiersOf = (key: string): AbilityModifierDraft[] =>
       modifiers
         .filter((m) => m.abilityKey === key)
@@ -224,7 +299,10 @@ export const customClassRepository = {
           name: text(a.key),
           text: text(`${a.key}.description`),
           modifiers: modifiersOf(a.key),
+          grantItem: a.grantItemKey,
+          grantPet: a.grantPetKey,
         })),
+        items,
         randomAbilityCount: cls.randomAbilityCount ?? 0,
         gettingBetterRule: cls.gettingBetterRule,
         gettingBetterNote: text(cls.gettingBetterNoteKey),

@@ -17,7 +17,11 @@ export type StatDice = {
 };
 
 /** A stat modifier an ability carries; `exclude` names the rolls it doesn't apply to, as the sheet stores it. */
-export type AbilityModifierDraft = { statistic: ClassStat; value: number; exclude: string[] };
+export type AbilityModifierDraft = {
+  statistic: ClassStat;
+  value: number;
+  exclude: string[];
+};
 
 /** An ability as the creator edits it; a saved one carries its key, which the creator passes back untouched. */
 export type AbilityDraft = {
@@ -26,6 +30,50 @@ export type AbilityDraft = {
   name: Localized;
   text: Localized;
   modifiers: AbilityModifierDraft[];
+  /** The Class Item (not a pet) it grants, by the item's `ref`. */
+  grantItem: string | null;
+  /** The pet Class Item it grants, by the item's `ref`. */
+  grantPet: string | null;
+};
+
+export const CLASS_ITEM_TYPES = ["weapon", "armor", "gear", "pet"] as const;
+export type ClassItemType = (typeof CLASS_ITEM_TYPES)[number];
+
+/**
+ * A Class Item as the creator edits it. `ref` is its saved key, or a `new:` id
+ * until saved. Every type's fields are kept, so changing type loses nothing.
+ */
+export type ClassItemDraft = {
+  ref: string;
+  type: ClassItemType;
+  name: Localized;
+  description: Localized;
+  value: number;
+  weapon: {
+    diceCount: number;
+    diceFaces: number;
+    damageModifier: number;
+    reach: "melee" | "ranged";
+    ammo: "none" | "counted" | "endless";
+    ammoCount: number;
+    ammoName: string;
+    modifiers: AbilityModifierDraft[];
+  };
+  armor: { tier: number; modifiers: AbilityModifierDraft[] };
+  gear: {
+    kind: "consumable" | "wearable" | "carried";
+    uses: number;
+    effect: "text" | "damage" | "die";
+    effectDie: number;
+    statuses: AbilityModifierDraft[];
+  };
+  pet: {
+    hp: number;
+    actionDie: number;
+    action: "attack" | "buff";
+    humanoid: boolean;
+    buffs: AbilityModifierDraft[];
+  };
 };
 
 /** A Custom Class as the creator edits it; the same shape is saved and test-rolled. */
@@ -42,6 +90,7 @@ export type ClassDraft = {
   origins: OriginText[];
   abilities: AbilityDraft[];
   randomAbilityCount: number;
+  items: ClassItemDraft[];
   gettingBetterRule: GettingBetterRule;
   gettingBetterNote: Localized;
 };
@@ -64,7 +113,9 @@ export const classKeys = {
   one: (id: number) => ["classes", id] as const,
 };
 
-export async function listMyClasses(locale: string): Promise<OwnClassSummary[]> {
+export async function listMyClasses(
+  locale: string,
+): Promise<OwnClassSummary[]> {
   return unwrapApiResult(
     await classClient.GET<OwnClassSummary[]>("/api/classes/mine", {
       params: { query: { locale } },
@@ -73,9 +124,13 @@ export async function listMyClasses(locale: string): Promise<OwnClassSummary[]> 
   );
 }
 
-export async function getClass(id: number): Promise<{ id: number; draft: ClassDraft }> {
+export async function getClass(
+  id: number,
+): Promise<{ id: number; draft: ClassDraft }> {
   return unwrapApiResult(
-    await classClient.GET<{ id: number; draft: ClassDraft }>(`/api/classes/${id}`),
+    await classClient.GET<{ id: number; draft: ClassDraft }>(
+      `/api/classes/${id}`,
+    ),
     "Failed to load the class",
   );
 }
@@ -88,8 +143,14 @@ export async function saveClass(input: {
   const body = { draft: input.draft };
   return unwrapApiResult(
     input.id === null
-      ? await classClient.POST<{ id: number; draft: ClassDraft }>("/api/classes", { body })
-      : await classClient.PUT<{ id: number; draft: ClassDraft }>(`/api/classes/${input.id}`, { body }),
+      ? await classClient.POST<{ id: number; draft: ClassDraft }>(
+          "/api/classes",
+          { body },
+        )
+      : await classClient.PUT<{ id: number; draft: ClassDraft }>(
+          `/api/classes/${input.id}`,
+          { body },
+        ),
     "Failed to save the class",
   );
 }

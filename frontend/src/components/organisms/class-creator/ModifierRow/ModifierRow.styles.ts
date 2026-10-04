@@ -9,10 +9,3 @@ export const Row = styled("div")({
   flexDirection: "column",
   gap: 12,
 });
-
-export const Controls = styled("div")({
-  display: "flex",
-  flexWrap: "wrap",
-  gap: "14px 20px",
-  alignItems: "flex-end",
-});

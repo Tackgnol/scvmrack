@@ -3,6 +3,7 @@ import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { AbilitiesStep } from "../AbilitiesStep/AbilitiesStep";
+import { ItemsStep } from "../ItemsStep/ItemsStep";
 import { CreatorRail } from "../CreatorRail/CreatorRail";
 import { GettingBetterStep } from "../GettingBetterStep/GettingBetterStep";
 import { IdentityStep } from "../IdentityStep/IdentityStep";
@@ -58,12 +59,22 @@ export function ClassCreator({ classId, initialDraft }: ClassCreatorProps) {
     showMissing: creator.showMissing,
     touch: creator.touch,
     focus: focusAfterRender,
+    jump: (step, path) => {
+      creator.jump(step, path);
+      focusAfterRender(path);
+    },
   };
   const quiet = creator.blocked !== null;
 
   return (
     <Layout>
-      <CreatorRail current={creator.step} issues={creator.issues} quiet={quiet} onStep={goTo} />
+      <CreatorRail
+        current={creator.step}
+        issues={creator.issues}
+        quiet={quiet}
+        noItems={creator.draft.items.length === 0}
+        onStep={goTo}
+      />
       <section aria-labelledby={STEP_TITLE_ID}>
         <Head>
           <div>
@@ -89,6 +100,14 @@ export function ClassCreator({ classId, initialDraft }: ClassCreatorProps) {
           <Hint>{t(`creator.steps.${creator.step}.hint`)}</Hint>
           {creator.step === "identity" && <IdentityStep {...stepProps} />}
           {creator.step === "stats" && <StatsStep {...stepProps} />}
+          {creator.step === "items" && (
+            <ItemsStep
+              {...stepProps}
+              issues={creator.issues}
+              openItem={creator.openItem}
+              onOpenItem={creator.setOpenItem}
+            />
+          )}
           {creator.step === "abilities" && (
             <AbilitiesStep
               {...stepProps}

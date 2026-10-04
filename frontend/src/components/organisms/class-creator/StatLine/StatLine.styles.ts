@@ -2,7 +2,7 @@ import { partyColors, partyFonts } from "@/theme/partyTokens";
 import { statColors } from "@/theme/morkBorgTheme";
 import { styled } from "@mui/material";
 
-const { yellow, black, white, grey, darkGrey, mutedText } = partyColors;
+const { white, grey, darkGrey, mutedText } = partyColors;
 
 export const Line = styled("section")({
   display: "grid",
@@ -49,19 +49,6 @@ export const Result = styled("div")({
   "@media (min-width: 1080px)": { alignItems: "flex-end", textAlign: "right" },
 });
 
-export const Formula = styled("div")({
-  background: yellow,
-  color: black,
-  fontFamily: partyFonts.headline,
-  fontSize: "2rem",
-  lineHeight: 1,
-  padding: "6px 12px 4px",
-  transform: "rotate(.6deg)",
-  whiteSpace: "nowrap",
-  fontVariantNumeric: "tabular-nums",
-  "@media (max-width: 520px)": { fontSize: "1.5rem" },
-  "@media (prefers-reduced-motion: reduce)": { transform: "none" },
-});
 
 export const Range = styled("div")({
   display: "flex",

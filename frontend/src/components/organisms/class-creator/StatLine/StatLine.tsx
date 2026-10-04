@@ -5,7 +5,8 @@ import { signed } from "@/utils/signed";
 import { useTranslation } from "react-i18next";
 import { fieldId, formulaText, statRange } from "../classCreator.utils";
 import type { StatLineProps } from "./StatLine.models";
-import { Controls, Formula, Line, Range, Result, StatName } from "./StatLine.styles";
+import { Formula } from "../classCreator.styles";
+import { Controls, Line, Range, Result, StatName } from "./StatLine.styles";
 
 /** One stat on one line: dice, sides, modifier, lowest die, and its result stamped in book notation. */
 export function StatLine({ stat, dice, onChange }: StatLineProps) {

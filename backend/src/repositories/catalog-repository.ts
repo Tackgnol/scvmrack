@@ -169,10 +169,11 @@ export const catalogRepository = {
 
   async findAllItemsForSearch(): Promise<SearchCatalogResult> {
     const [weapons, armors, equipment, pets] = await Promise.all([
-      prisma.weapon.findMany({ select: { id: true, key: true, tags: true } }),
-      prisma.armor.findMany({ select: { id: true, key: true, tags: true } }),
-      prisma.equipment.findMany({ select: { id: true, key: true, tags: true } }),
-      prisma.pet.findMany({ select: { id: true, key: true, tags: true } }),
+      // Class Items belong to their class; search offers only the shared catalog.
+      prisma.weapon.findMany({ where: { classId: null }, select: { id: true, key: true, tags: true } }),
+      prisma.armor.findMany({ where: { classId: null }, select: { id: true, key: true, tags: true } }),
+      prisma.equipment.findMany({ where: { classId: null }, select: { id: true, key: true, tags: true } }),
+      prisma.pet.findMany({ where: { classId: null }, select: { id: true, key: true, tags: true } }),
     ]);
     return { weapons, armors, equipment, pets };
   },

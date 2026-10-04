@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import type { AbilitySummaryProps } from "./AbilitySummary.models";
-import { Chip, Chips, Edit, Kind, Name, Summary } from "./AbilitySummary.styles";
+import { Chip, Chips, Edit, Kind, Name, Summary } from "../classCreator.styles";
 import { modifierChip } from "./AbilitySummary.utils";
 
 /** A closed ability card: Fixed or Random N, its name, what it carries, what it still misses, and Edit. */

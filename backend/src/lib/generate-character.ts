@@ -188,12 +188,14 @@ interface ArmorRow {
   key: string;
   tags: string[];
   maxTier: number | null;
+  classId?: number | null;
 }
 
 interface EquipRow {
   id: number;
   key: string;
   tags: string[];
+  classId?: number | null;
 }
 
 interface PetRow {
@@ -226,7 +228,8 @@ function buildCatalogCache(
   const armorMap = new Map(armors.map(a => [a.key, a]));
   const armorsByMaxTier = new Map<number, ArmorRow[]>();
   for (const a of armors) {
-    if (a.maxTier !== null) {
+    // Class Items only reach a scvm through their ability, never the starting tables.
+    if (a.maxTier !== null && !a.classId) {
       const existing = armorsByMaxTier.get(a.maxTier) ?? [];
       armorsByMaxTier.set(a.maxTier, [...existing, a]);
     }
@@ -770,7 +773,7 @@ export async function buildCharacterDataFromSpec(
     presence,
     gearRoller,
     catalog,
-    equips,
+    equips.filter(e => !e.classId),
     grantedItems,
   );
   const bundle = autoEquipItems(pool, catalog);

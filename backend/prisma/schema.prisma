@@ -385,6 +385,10 @@ model Weapon {
   ammoType       String? @db.VarChar(50) @map("ammo_type")
   defaultAmount  Int?    @map("default_amount")
 
+  /// The Custom Class that owns this Class Item; null for the shared catalog.
+  classId        Int?     @map("class_id")
+
+  @@index([classId])
   @@map("weapons")
 }
 
@@ -399,6 +403,10 @@ model Armor {
   maxTier   Int?     @default(1) @map("max_tier")
   modifiers Json?    @default("[]")
 
+  /// The Custom Class that owns this Class Item; null for the shared catalog.
+  classId        Int?     @map("class_id")
+
+  @@index([classId])
   @@map("armors")
 }
 
@@ -420,6 +428,10 @@ model Equipment {
   defaultAmount Int?     @map("default_amount")
   useEffect     Json?    @map("use_effect")
 
+  /// The Custom Class that owns this Class Item; null for the shared catalog.
+  classId        Int?     @map("class_id")
+
+  @@index([classId])
   @@map("equipment")
 }
 
@@ -436,6 +448,10 @@ model Pet {
   buff       Json?    @default("[]")
   value      Int?     @default(0)
 
+  /// The Custom Class that owns this Class Item; null for the shared catalog.
+  classId        Int?     @map("class_id")
+
+  @@index([classId])
   @@map("pets")
 }
 

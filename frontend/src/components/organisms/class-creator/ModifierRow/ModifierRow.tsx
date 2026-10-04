@@ -5,10 +5,10 @@ import { scopeIncludeOptions, statOptions } from "@/components/modifiers/config"
 import type { ScopeOption } from "@/components/modifiers/types";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { GroupHeading, SmallAction, Spread } from "../classCreator.styles";
+import { Controls, GroupHeading, SmallAction, Spread } from "../classCreator.styles";
 import { fieldId, modifierScope, scopeExclude } from "../classCreator.utils";
 import type { ModifierRowProps } from "./ModifierRow.models";
-import { Controls, Row } from "./ModifierRow.styles";
+import { Row } from "./ModifierRow.styles";
 
 /** One modifier an ability carries: the stat, the value, and which rolls it applies to. */
 export function ModifierRow({ path, index, modifier, onChange, onRemove }: ModifierRowProps) {

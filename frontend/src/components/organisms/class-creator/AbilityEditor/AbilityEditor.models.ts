@@ -1,4 +1,5 @@
-import type { AbilityDraft } from "@/api/classes";
+import type { AbilityDraft, ClassItemType } from "@/api/classes";
+import type { GrantSlot } from "../classCreator.models";
 import type { StepProps } from "../classCreator.models";
 
 export type AbilityEditorProps = Omit<StepProps, "update"> & {
@@ -7,8 +8,12 @@ export type AbilityEditorProps = Omit<StepProps, "update"> & {
   transitionName: string;
   randomNumber: number | null;
   onChange: (recipe: (ability: AbilityDraft) => AbilityDraft) => void;
+  onGrant: (slot: GrantSlot, ref: string | null) => void;
+  onForge: (type: ClassItemType) => void;
+  onEditItem: (itemIndex: number) => void;
   onDone: () => void;
-  onRemove: () => void;
+  /** Removes the ability; with `withItems`, also the Class Items only it grants. */
+  onRemove: (withItems: boolean) => void;
   onDuplicate: () => void;
   /** At the 20-ability cap, Duplicate is off. */
   full: boolean;
