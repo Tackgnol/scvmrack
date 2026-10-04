@@ -970,7 +970,12 @@
     "typePatch": "Poprawka",
     "moreUpdates": "Więcej aktualizacji wkrótce. Świat się kończy, ale my dalej dostarczamy.",
     "v063": {
-      "tabSession": "Scvmrack otwarty w aplikacji Reddit lub Facebook działa podczas tej wizyty i wyświetla ostrzeżenie oraz link do otwarcia w przeglądarce, aby zachować scvma"
+      "tabSession": "Scvmrack otwarty w aplikacji Reddit lub Facebook działa podczas tej wizyty i wyświetla ostrzeżenie oraz link do otwarcia w przeglądarce, aby zachować scvma",
+      "classGrants": "Heretycki Kapłan dostaje teraz Pasterską Laskę, a Poltroon Błazen Dworski swojego zwierzaka, zgodnie z opisem zdolności klasowych",
+      "printModifiers": "Sekcja Modyfikatorów na karcie do druku jest teraz przetłumaczona",
+      "printStats": "Długie nazwy cech, takie jak Wytrzymałość, nie wychodzą już poza ramkę na karcie do druku",
+      "freshShell": "Wracający użytkownicy zawsze dostają najnowszą wersję aplikacji zamiast nieaktualnej kopii z pamięci podręcznej",
+      "monitoring": "Cichszy monitoring: błędy zerwanego połączenia przy niestabilnej sieci nie są już zgłaszane"
     },
     "v062": {
       "guestSignIn": "Logowanie gościa na telefonach i w przeglądarkach wbudowanych w aplikacje odzyskuje się teraz samo, zamiast pokazywać błąd",
