@@ -45,6 +45,8 @@ npm run format       # Format code with Prettier
 npm run doctor       # React health check (react-doctor) — run after touching hooks/components
 ```
 
+React Doctor baseline before RPG-288 (2026-10-04): **61** on current master. Preserve or improve this score; raising it to 80 remains a priority.
+
 ### Validation checklist (run before committing frontend changes)
 | Step | Command | When |
 |---|---|---|

@@ -35,6 +35,14 @@ const buildReleaseNotes = (t: TFunction): ReleaseNote[] => {
     // newest-first and in sync with that folder when cutting a release.
     return [
         {
+            version: '0.6.3',
+            date: '2026-10-04',
+            type: 'patch',
+            changes: [
+                t('release.v063.tabSession', 'Opening scvmrack from inside Reddit or Facebook now works for that visit, with a warning and a link to open in your browser to keep your scvm'),
+            ],
+        },
+        {
             version: '0.6.2',
             date: '2026-09-19',
             type: 'patch',

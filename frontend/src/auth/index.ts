@@ -1,4 +1,5 @@
 import * as Sentry from '@sentry/react';
+import { authHeaders, setTabSession } from '@/utils/tabSession';
 import { embeddedSessionHeaders } from '@/utils/embed';
 
 export interface AuthSessionUser {
@@ -23,7 +24,7 @@ export async function fetchSession(): Promise<AuthSession | null> {
   const res = await fetch(`${apiBaseUrl()}/api/auth/get-session`, {
     credentials: 'include',
     cache: 'no-store',
-    headers: embeddedSessionHeaders(),
+    headers: { ...embeddedSessionHeaders(), ...authHeaders() },
   });
 
   if (res.status === 401 || res.status === 204) {
@@ -49,7 +50,7 @@ export class AnonymousSignInError extends Error {
   }
 }
 
-export async function signInAnonymous(): Promise<void> {
+export async function signInAnonymous(): Promise<string | null> {
   const res = await fetch(`${apiBaseUrl()}/api/auth/sign-in/anonymous`, {
     method: 'POST',
     credentials: 'include',
@@ -63,6 +64,7 @@ export async function signInAnonymous(): Promise<void> {
   if (!res.ok) {
     throw new AnonymousSignInError(res.status);
   }
+  return res.headers.get('set-auth-token');
 }
 
 const RETRY_DELAYS_MS = [400, 1200];
@@ -113,10 +115,11 @@ function reportRecovered(
 export async function bootstrapAnonymousSession(): Promise<AuthSession> {
   let firstFailure: unknown;
   let attempts = 0;
+  let token: string | null = null;
 
   for (;;) {
     try {
-      await signInAnonymous();
+      token = await signInAnonymous();
     } catch (error) {
       firstFailure ??= error;
       const existing = await fetchSessionQuietly();
@@ -146,6 +149,18 @@ export async function bootstrapAnonymousSession(): Promise<AuthSession> {
         return created;
       }
       if (poll >= RETRY_DELAYS_MS.length) {
+        if (token && setTabSession(token)) {
+          const session = await fetchSessionQuietly();
+          if (session) {
+            Sentry.captureMessage('Anonymous session fell back to tab-only token', {
+              level: 'warning',
+              fingerprint: ['anonymous-bootstrap-tab-session'],
+              tags: { source: 'auth', anonymous_bootstrap: 'tab-session' },
+            });
+            return session;
+          }
+          setTabSession(null);
+        }
         throw new Error('Anonymous session did not start');
       }
       await sleep(RETRY_DELAYS_MS[poll]);
@@ -170,12 +185,13 @@ export async function signOut(): Promise<void> {
   const res = await fetch(`${apiBaseUrl()}/api/auth/sign-out`, {
     method: 'POST',
     credentials: 'include',
-    headers: embeddedSessionHeaders(),
+    headers: { ...embeddedSessionHeaders(), ...authHeaders() },
   });
 
   if (!res.ok) {
     throw new Error('Failed to sign out');
   }
+  setTabSession(null);
 }
 
 export function loginUrl(): string {

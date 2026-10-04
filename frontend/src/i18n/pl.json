@@ -1,4 +1,10 @@
 {
+  "tabSession": {
+    "warning": "Wbudowana przeglądarka tej aplikacji nie zapisze Twojej sesji. Twój scvm przepadnie po jej zamknięciu. Otwórz scvmrack w Safari lub Chrome, aby go zachować.",
+    "copyLink": "Kopiuj link",
+    "copied": "Skopiowano",
+    "copyFailed": "Skopiuj adres z paska adresu przeglądarki."
+  },
   "app": {
     "title": "Scvmrack",
     "betaBadge": "Beta",
@@ -963,6 +969,9 @@
     "typeMinor": "Mała",
     "typePatch": "Poprawka",
     "moreUpdates": "Więcej aktualizacji wkrótce. Świat się kończy, ale my dalej dostarczamy.",
+    "v063": {
+      "tabSession": "Scvmrack otwarty w aplikacji Reddit lub Facebook działa podczas tej wizyty i wyświetla ostrzeżenie oraz link do otwarcia w przeglądarce, aby zachować scvma"
+    },
     "v062": {
       "guestSignIn": "Logowanie gościa na telefonach i w przeglądarkach wbudowanych w aplikacje odzyskuje się teraz samo, zamiast pokazywać błąd",
       "noStale": "Odpowiedzi o sesji i tokenie bezpieczeństwa nie są już cache'owane, więc nieaktualna odpowiedź „niezalogowany” nie jest ponownie używana",

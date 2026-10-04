@@ -1,3 +1,4 @@
+import { authHeaders } from '@/utils/tabSession';
 import { getCsrfToken } from '@/api';
 
 const FEEDBACK_ENDPOINT = '/api/feedback';
@@ -55,6 +56,7 @@ export async function sendFeedbackReport(report: FeedbackReport): Promise<string
     credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
+      ...authHeaders(),
       ...(token ? { 'x-csrf-token': token } : {}),
     },
     body: JSON.stringify(report),

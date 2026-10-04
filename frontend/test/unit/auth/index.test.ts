@@ -16,6 +16,7 @@ const mockFetch = vi.fn();
 describe('auth api helpers', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    sessionStorage.clear();
     vi.stubEnv('VITE_BACKEND_URL', 'https://api.example.test');
     vi.stubEnv('VITE_LOGTO_ENDPOINT', 'https://auth.example.test///');
     vi.stubGlobal('fetch', mockFetch);
@@ -69,9 +70,9 @@ describe('auth api helpers', () => {
   });
 
   it('bootstraps anonymous sessions with credentials', async () => {
-    mockFetch.mockResolvedValueOnce({ ok: true });
+    mockFetch.mockResolvedValueOnce(new Response());
 
-    await expect(signInAnonymous()).resolves.toBeUndefined();
+    await expect(signInAnonymous()).resolves.toBeNull();
     expect(mockFetch).toHaveBeenCalledWith(
       'https://api.example.test/api/auth/sign-in/anonymous',
       {
@@ -92,13 +93,21 @@ describe('auth api helpers', () => {
   });
 
   it('signs out with credentials', async () => {
-    mockFetch.mockResolvedValueOnce({ ok: true });
+    mockFetch.mockResolvedValueOnce(new Response());
 
     await expect(signOut()).resolves.toBeUndefined();
     expect(mockFetch).toHaveBeenCalledWith(
       'https://api.example.test/api/auth/sign-out',
       { method: 'POST', credentials: 'include', headers: {} }
     );
+  });
+
+  it('sends the tab token on sign-out and clears it after success', async () => {
+    sessionStorage.setItem('scvm.tabSession', 'tab-token');
+    mockFetch.mockResolvedValueOnce(new Response());
+    await signOut();
+    expect(new Headers(mockFetch.mock.calls[0][1].headers).get('Authorization')).toBe('Bearer tab-token');
+    expect(sessionStorage.getItem('scvm.tabSession')).toBeNull();
   });
 
   it('throws when sign out fails', async () => {
@@ -129,7 +138,7 @@ describe('auth api helpers', () => {
       ok: true,
       json: async () => body,
     });
-    const signInResponse = (status: number) => ({ ok: status < 400, status });
+    const signInResponse = (status: number, token?: string) => ({ ok: status < 400, status, headers: new Headers(token ? { 'set-auth-token': token } : {}) });
     const urls = () => mockFetch.mock.calls.map(([url]) => String(url));
     const run = async () => {
       const result = bootstrapAnonymousSession();
@@ -142,13 +151,39 @@ describe('auth api helpers', () => {
     beforeEach(() => vi.useFakeTimers());
     afterEach(() => vi.useRealTimers());
 
-    it('returns the session without logging when sign-in works first time', async () => {
+    it('falls back once to the sign-in token when cookies never appear', async () => {
+      mockFetch.mockImplementation(async (url: string, init?: RequestInit) => {
+        if (url.includes('sign-in')) {
+          return new Response('{}', { headers: { 'set-auth-token': 'tab-token' } });
+        }
+        return sessionResponse(new Headers(init?.headers).get('Authorization') === 'Bearer tab-token' ? user : null);
+      });
+      await expect(run()).resolves.toEqual(user);
+      expect(sessionStorage.getItem('scvm.tabSession')).toBe('tab-token');
+      expect(urls().filter((url) => url.includes('sign-in'))).toHaveLength(1);
+      expect(urls().filter((url) => url.includes('get-session'))).toHaveLength(4);
+      expect(Sentry.captureMessage).toHaveBeenCalledExactlyOnceWith(
+        'Anonymous session fell back to tab-only token', expect.objectContaining({ level: 'warning' }),
+      );
+    });
+
+    it('clears an unusable fallback token and does not repeat sign-in', async () => {
+      mockFetch.mockResolvedValueOnce(signInResponse(200, 'invalid-token'))
+        .mockResolvedValue(sessionResponse(null));
+      await expect(run()).rejects.toThrow('Anonymous session did not start');
+      expect(sessionStorage.getItem('scvm.tabSession')).toBeNull();
+      expect(urls().filter((url) => url.includes('sign-in'))).toHaveLength(1);
+      expect(urls().filter((url) => url.includes('get-session'))).toHaveLength(4);
+    });
+
+    it('returns the session without storing a token when cookies work', async () => {
       mockFetch
-        .mockResolvedValueOnce(signInResponse(200))
+        .mockResolvedValueOnce(signInResponse(200, 'unused-token'))
         .mockResolvedValueOnce(sessionResponse(user));
 
       await expect(run()).resolves.toEqual(user);
       expect(Sentry.captureMessage).not.toHaveBeenCalled();
+      expect(sessionStorage.getItem('scvm.tabSession')).toBeNull();
     });
 
     it('treats a sign-in 400 as success when a session already exists, and logs it', async () => {
