@@ -1,4 +1,5 @@
 import './instrument';
+import '@/utils/googleTranslateGuard';
 import { CoreProviders } from '@/CoreProviders';
 import { initializeAnalyticsConsent } from '@/analytics/googleAnalytics';
 import { RouterProvider } from '@tanstack/react-router';
