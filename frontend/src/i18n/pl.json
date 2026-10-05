@@ -1543,6 +1543,7 @@
       "waitingTitle": "Przedmioty klasowe czekające na zdolność",
       "grantsItem": "Daje przedmiot",
       "grantsPet": "Daje zwierzę",
+      "thisClass": "Ta klasa",
       "nothing": "Nic",
       "grantedElsewhere": "{{name}} (daje: {{by}})",
       "editStats": "Edytuj parametry",

@@ -1522,6 +1522,7 @@
       "waitingTitle": "Class Items waiting for an ability",
       "grantsItem": "Grants an item",
       "grantsPet": "Grants a pet",
+      "thisClass": "This class",
       "nothing": "Nothing",
       "grantedElsewhere": "{{name}} (granted by {{by}})",
       "editStats": "Edit stats",

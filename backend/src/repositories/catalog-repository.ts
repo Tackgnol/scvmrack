@@ -79,6 +79,11 @@ export type SearchCatalogResult = {
   pets: Array<{ id: number; key: string; tags: string[] }>;
 };
 
+export type SharedCatalogItem = {
+  key: string;
+  itemType: 'weapon' | 'armor' | 'equipment' | 'pet';
+};
+
 export const catalogRepository = {
   findPetsByKeys(keys: string[]): Promise<PetCatalogRow[]> {
     if (keys.length === 0) return Promise.resolve([]);
@@ -176,5 +181,23 @@ export const catalogRepository = {
       prisma.pet.findMany({ where: { classId: null }, select: { id: true, key: true, tags: true } }),
     ]);
     return { weapons, armors, equipment, pets };
+  },
+
+  /** Finds shared catalog items only, never Class Items owned by a Custom Class. */
+  async findSharedItemsByKeys(keys: string[]): Promise<SharedCatalogItem[]> {
+    if (keys.length === 0) return [];
+    const where = { classId: null, key: { in: keys } };
+    const [weapons, armors, equipment, pets] = await Promise.all([
+      prisma.weapon.findMany({ where, select: { key: true } }),
+      prisma.armor.findMany({ where, select: { key: true } }),
+      prisma.equipment.findMany({ where, select: { key: true } }),
+      prisma.pet.findMany({ where, select: { key: true } }),
+    ]);
+    return [
+      ...weapons.map(({ key }) => ({ key, itemType: 'weapon' as const })),
+      ...armors.map(({ key }) => ({ key, itemType: 'armor' as const })),
+      ...equipment.map(({ key }) => ({ key, itemType: 'equipment' as const })),
+      ...pets.map(({ key }) => ({ key, itemType: 'pet' as const })),
+    ];
   },
 };

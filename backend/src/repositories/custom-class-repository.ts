@@ -155,8 +155,8 @@ async function writeText(tx: Tx, id: number, draft: ClassDraft): Promise<void> {
       key: abilityKeys[i],
       isRandom: ability.random,
       position: i,
-      grantItemKey: (ability.grantItem && keyOfRef.get(ability.grantItem)) || null,
-      grantPetKey: (ability.grantPet && keyOfRef.get(ability.grantPet)) || null,
+      grantItemKey: ability.grantItem && (keyOfRef.get(ability.grantItem) ?? ability.grantItem),
+      grantPetKey: ability.grantPet && (keyOfRef.get(ability.grantPet) ?? ability.grantPet),
     })),
   });
   await tx.classAbilityModifier.deleteMany({ where: { classId: id, abilityKey: { in: abilityKeys } } });

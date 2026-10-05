@@ -8,6 +8,7 @@ import {
   customClassRepository,
   type OwnClassSummary,
 } from '../repositories/custom-class-repository.js';
+import { catalogRepository } from '../repositories/catalog-repository.js';
 import { fail, ok, unexpected, type ServiceLogger, type ServiceResult } from './result.js';
 import { isGm, sessionUserId, type AppSession } from './session.js';
 
@@ -30,6 +31,33 @@ function nameTaken(draft: ClassDraft) {
     `You already have a class called “${draft.name[draft.languages[0]].trim()}”. Give this one another name.`
   );
 }
+
+/** Checks external grant keys against the shared catalog and their appropriate slot. */
+async function catalogGrantProblems(draft: ClassDraft): Promise<string[]> {
+  const ownRefs = new Set(draft.items.map((item) => item.ref));
+  const grants = draft.abilities.flatMap((ability, i) =>
+    ([
+      ['item', ability.grantItem],
+      ['pet', ability.grantPet],
+    ] as const).flatMap(([slot, key]) =>
+      key && !ownRefs.has(key) ? [{ ability, i, key, slot }] : []
+    )
+  );
+  const found = await catalogRepository.findSharedItemsByKeys(
+    [...new Set(grants.map((grant) => grant.key))]
+  );
+  const typeByKey = new Map(found.map((item) => [item.key, item.itemType]));
+  return grants.flatMap(({ ability, i, key, slot }) => {
+    const itemType = typeByKey.get(key);
+    const who = ability.name[draft.languages[0]].trim() || `ability ${i + 1}`;
+    if (!itemType) return `Ability “${who}” grants an unavailable catalog item`;
+    if ((itemType === 'pet') !== (slot === 'pet')) {
+      return `Ability “${who}” holds a ${itemType === 'pet' ? 'pet' : 'non-pet'} catalog item in its ${slot} slot`;
+    }
+    return [];
+  });
+}
+
 
 type SavedClass = { id: number; draft: ClassDraft };
 
@@ -68,7 +96,7 @@ export function createCustomClassService(log: ServiceLogger) {
     async create(input: { session: AppSession; draft: ClassDraft }): Promise<ServiceResult<SavedClass>> {
       if (!isGm(input.session)) return fail(unauthorized());
       const ownerUserId = sessionUserId(input.session)!;
-      const problems = classDraftProblems(input.draft);
+      const problems = [...classDraftProblems(input.draft), ...(await catalogGrantProblems(input.draft))];
       if (problems.length > 0) return fail(draftInvalid(problems));
       try {
         // ponytail: count-then-insert; two saves in the same instant can overshoot the cap by one.
@@ -91,7 +119,7 @@ export function createCustomClassService(log: ServiceLogger) {
 
     async update(input: { session: AppSession; id: number; draft: ClassDraft }): Promise<ServiceResult<SavedClass>> {
       if (!isGm(input.session)) return fail(unauthorized());
-      const problems = classDraftProblems(input.draft);
+      const problems = [...classDraftProblems(input.draft), ...(await catalogGrantProblems(input.draft))];
       if (problems.length > 0) return fail(draftInvalid(problems));
       try {
         const found = await customClassRepository.findWithText(input.id);
@@ -116,6 +144,8 @@ export function createCustomClassService(log: ServiceLogger) {
     }): Promise<ServiceResult<Record<string, unknown>>> {
       if (!isGm(input.session)) return fail(unauthorized());
       try {
+        const problems = await catalogGrantProblems(input.draft);
+        if (problems.length > 0) return fail(draftInvalid(problems));
         const data = await buildCharacterDataFromSpec(
           null,
           classSpecFromDraft(input.draft, input.language),

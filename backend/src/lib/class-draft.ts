@@ -33,9 +33,9 @@ export type AbilityDraft = {
   name: Localized;
   text: Localized;
   modifiers: AbilityModifierDraft[];
-  /** The Class Item (not a pet) it grants, by the item's `ref`. */
+  /** A Class Item or shared catalog item (not a pet) it grants, by key or `ref`. */
   grantItem: string | null;
-  /** The pet Class Item it grants, by the item's `ref`. */
+  /** A pet Class Item or shared catalog pet it grants, by key or `ref`. */
   grantPet: string | null;
 };
 
@@ -231,11 +231,11 @@ export function classDraftProblems(draft: ClassDraft): string[] {
     ] as const) {
       if (!ref) continue;
       const item = items.get(ref);
-      if (!item) {
+      if (!item && ref.startsWith('new:')) {
         problems.push(
           `Ability “${who}” grants an item that is not in this class`
         );
-      } else if ((item.type === 'pet') !== (slot === 'pet')) {
+      } else if (item && (item.type === 'pet') !== (slot === 'pet')) {
         const what = item.type === 'pet' ? 'pet' : 'item';
         problems.push(
           `Ability “${who}” holds the ${what} “${nameOf(
@@ -243,7 +243,7 @@ export function classDraftProblems(draft: ClassDraft): string[] {
             'unnamed'
           )}” in its ${slot} slot`
         );
-      } else {
+      } else if (item) {
         grants.set(ref, (grants.get(ref) ?? 0) + 1);
       }
     }
@@ -284,7 +284,7 @@ export function classSpecFromDraft(
   // Unsaved Class Items have no catalog row yet; a test scvm carries them by name.
   const itemName = (ref: string | null) => {
     const item = ref ? draft.items.find((i) => i.ref === ref) : undefined;
-    return item ? textIn(item.name) : null;
+    return item ? textIn(item.name) : ref;
   };
   return {
     hpDie: draft.hpDie,

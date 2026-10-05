@@ -1,8 +1,8 @@
 import { CLASS_ITEM_TYPES, type ClassItemType } from "@/api/classes";
-import { Label } from "@/components/atoms/field.styles";
+import type { ItemSearchHit } from "@/hooks/useEquipmentSearch";
 import { useState } from "react";
-import { Select } from "@/components/atoms/Select/Select";
 import { useTranslation } from "react-i18next";
+import { CatalogGrantPicker } from "./CatalogGrantPicker";
 import { LinkLine, SmallAction, Stack } from "../classCreator.styles";
 import {
   fieldId,
@@ -60,43 +60,34 @@ export function AbilityGrants({
         const path = `${base}.${slot}`;
         const current = ability[slot];
         const granted = draft.items.findIndex((item) => item.ref === current);
-        const choices = draft.items
+        const pinnedOptions: ItemSearchHit[] = draft.items
           .map((item, i) => ({ item, i }))
-          .filter(({ item }) => slotFor(item.type) === slot);
+          .filter(({ item }) => slotFor(item.type) === slot)
+          .map(({ item, i }) => ({
+            id: -i - 1,
+            key: item.ref,
+            name: nameOf(i),
+            itemType: item.type === "gear" ? "equipment" : item.type,
+            tags: [],
+          }));
+        const disabledPinnedKeys = draft.items
+          .filter((item) => slotFor(item.type) === slot)
+          .filter((item) => {
+            const owner = granterOf(draft, item.ref);
+            return owner !== null && owner.index !== index;
+          })
+          .map((item) => item.ref);
         return (
           <div key={slot}>
-            <Label htmlFor={fieldId(path)}>
-              {slot === "grantPet"
-                ? t("creator.items.grantsPet", "Grants a pet")
-                : t("creator.items.grantsItem", "Grants an item")}
-            </Label>
-            <Select
+            <CatalogGrantPicker
               id={fieldId(path)}
-              value={current ?? ""}
-              onChange={(event) => onGrant(slot, event.target.value || null)}
-            >
-              <option value="">{t("creator.items.nothing", "Nothing")}</option>
-              {choices.map(({ item, i }) => {
-                const owner = granterOf(draft, item.ref);
-                const elsewhere = owner !== null && owner.index !== index;
-                return (
-                  <option key={item.ref} value={item.ref} disabled={elsewhere}>
-                    {elsewhere
-                      ? t(
-                          "creator.items.grantedElsewhere",
-                          "{{name}} (granted by {{by}})",
-                          {
-                            name: nameOf(i),
-                            by:
-                              draft.abilities[owner.index].name[language] ||
-                              t("creator.abilities.untitled"),
-                          },
-                        )
-                      : nameOf(i)}
-                  </option>
-                );
-              })}
-            </Select>
+              label={slot === "grantPet" ? t("creator.items.grantsPet", "Grants a pet") : t("creator.items.grantsItem", "Grants an item")}
+              pinnedOptions={pinnedOptions}
+              disabledPinnedKeys={disabledPinnedKeys}
+              pet={slot === "grantPet"}
+              onSelect={(key) => onGrant(slot, key)}
+              onClear={() => onGrant(slot, null)}
+            />
             {granted >= 0 && (
               <LinkLine>
                 <span className="badge">
