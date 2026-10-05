@@ -124,7 +124,7 @@ services:
         SENTRY_RELEASE: ${SENTRY_RELEASE:-}
         SENTRY_URL: ${SENTRY_URL:-https://glitchtip.rpgtools.co}
         SENTRY_ORG: ${SENTRY_ORG:-}
-        # Source maps must target the frontend GlitchTip project, never scvmrack_be.
+        # Prod frontend and backend share one GlitchTip project (scvmrack_be); maps go where the events land.
         SENTRY_PROJECT: ${SENTRY_FRONTEND_PROJECT:-}
         # Public GA4 measurement ID (shipped in the client bundle, not a secret).
         # Override via the runner env; defaults to the project's GA property.
