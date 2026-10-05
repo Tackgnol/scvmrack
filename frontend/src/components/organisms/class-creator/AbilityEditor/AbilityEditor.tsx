@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AbilityGrants } from "../AbilityGrants/AbilityGrants";
 import { ModifierList } from "../ModifierList/ModifierList";
+import { AbilityReferenceTableEditor } from "../AbilityReferenceTableEditor/AbilityReferenceTableEditor";
 import { RemoveConfirm } from "../RemoveConfirm/RemoveConfirm";
 import {
   Extras,
@@ -162,6 +163,7 @@ export function AbilityEditor({
         onForge={onForge}
         onEditItem={onEditItem}
       />
+      <AbilityReferenceTableEditor ability={ability} base={base} draft={draft} index={index} language={language} onChange={onChange} showMissing={showMissing} touch={touch} />
       <ModifierList
         path={`${base}.modifiers`}
         title={t("creator.abilities.modifiers", "Modifiers")}

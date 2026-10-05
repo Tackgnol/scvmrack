@@ -126,6 +126,12 @@ async function writeText(tx: Tx, id: number, draft: ClassDraft): Promise<void> {
     ...draft.abilities.flatMap((ability, i): Array<[string, Localized]> => [
       [abilityKeys[i], ability.name],
       [`${abilityKeys[i]}.description`, ability.text],
+      ...(ability.table
+        ? ability.table.rows.map((row, roll): [string, Localized] => [
+            `${abilityKeys[i]}.table.${roll + 1}`,
+            row.text,
+          ])
+        : []),
     ]),
     ...draft.items.flatMap((item, i): Array<[string, Localized]> => [
       [itemKeys[i], item.name],
@@ -152,6 +158,7 @@ async function writeText(tx: Tx, id: number, draft: ClassDraft): Promise<void> {
   await tx.ability.createMany({
     data: draft.abilities.map((ability, i) => ({
       classId: id,
+      tableDie: ability.table?.die ?? null,
       key: abilityKeys[i],
       isRandom: ability.random,
       position: i,
@@ -160,6 +167,22 @@ async function writeText(tx: Tx, id: number, draft: ClassDraft): Promise<void> {
     })),
   });
   await tx.classAbilityModifier.deleteMany({ where: { classId: id, abilityKey: { in: abilityKeys } } });
+  const savedAbilities = await tx.ability.findMany({
+    where: { key: { in: abilityKeys } },
+    select: { id: true, key: true },
+  });
+  const abilityIdByKey = new Map(savedAbilities.map((ability) => [ability.key, ability.id]));
+  await tx.abilityTableRow.createMany({
+    data: draft.abilities.flatMap((ability, i) =>
+      ability.table?.rows.map((row, roll) => ({
+        abilityId: abilityIdByKey.get(abilityKeys[i])!,
+        roll: roll + 1,
+        textKey: `${abilityKeys[i]}.table.${roll + 1}`,
+        itemKey: row.itemRef && (keyOfRef.get(row.itemRef) ?? row.itemRef),
+      })) ?? []
+    ),
+  });
+
   await tx.classAbilityModifier.createMany({
     data: draft.abilities.flatMap((ability, i) =>
       ability.modifiers.map((modifier) => ({
@@ -251,7 +274,7 @@ export const customClassRepository = {
       prisma.ability.findMany({
         where: { classId: id },
         orderBy: [{ position: 'asc' }, { id: 'asc' }],
-        select: { key: true, isRandom: true, grantItemKey: true, grantPetKey: true },
+        select: { key: true, isRandom: true, grantItemKey: true, grantPetKey: true, tableDie: true, tableRows: { orderBy: { roll: 'asc' }, select: { roll: true, textKey: true, itemKey: true } } },
       }),
       prisma.classAbilityModifier.findMany({ where: { classId: id }, orderBy: { id: 'asc' } }),
       prisma.translation.findMany({ where: { key: { startsWith: `cc.${id}.` } } }),
@@ -301,6 +324,10 @@ export const customClassRepository = {
           modifiers: modifiersOf(a.key),
           grantItem: a.grantItemKey,
           grantPet: a.grantPetKey,
+          table: a.tableDie ? {
+            die: a.tableDie as 2 | 3 | 4 | 6 | 8 | 10 | 12,
+            rows: a.tableRows.map((row) => ({ text: text(row.textKey), itemRef: row.itemKey })),
+          } : null,
         })),
         items,
         randomAbilityCount: cls.randomAbilityCount ?? 0,

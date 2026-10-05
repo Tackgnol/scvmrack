@@ -23,6 +23,16 @@ export type AbilityModifierDraft = {
   exclude: string[];
 };
 
+export type AbilityTableRowDraft = {
+  text: Localized;
+  itemRef: string | null;
+};
+
+export type AbilityTableDraft = {
+  die: 2 | 3 | 4 | 6 | 8 | 10 | 12;
+  rows: AbilityTableRowDraft[];
+};
+
 /** An ability as the creator edits it; a saved one carries its key, which the creator passes back untouched. */
 export type AbilityDraft = {
   key?: string;
@@ -34,6 +44,7 @@ export type AbilityDraft = {
   grantItem: string | null;
   /** The pet Class Item it grants, by the item's `ref`. */
   grantPet: string | null;
+  table: AbilityTableDraft | null;
 };
 
 export const CLASS_ITEM_TYPES = ["weapon", "armor", "gear", "pet"] as const;

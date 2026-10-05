@@ -26,6 +26,16 @@ export type AbilityModifierDraft = {
   exclude: string[];
 };
 
+export type AbilityTableRowDraft = {
+  text: Localized;
+  itemRef: string | null;
+};
+
+export type AbilityTableDraft = {
+  die: 2 | 3 | 4 | 6 | 8 | 10 | 12;
+  rows: AbilityTableRowDraft[];
+};
+
 /** An ability as the creator edits it; a saved one carries its key, kept stable across edits. */
 export type AbilityDraft = {
   key?: string;
@@ -37,6 +47,7 @@ export type AbilityDraft = {
   grantItem: string | null;
   /** A pet Class Item or shared catalog pet it grants, by key or `ref`. */
   grantPet: string | null;
+  table: AbilityTableDraft | null;
 };
 
 export const CLASS_ITEM_TYPES = ['weapon', 'armor', 'gear', 'pet'] as const;
@@ -190,6 +201,14 @@ export function classDraftProblems(draft: ClassDraft): string[] {
     text(ability.name, `ability ${i + 1} name`);
     text(ability.text, `ability ${i + 1} rules text`);
     const seen = new Set<string>();
+    if (ability.table) {
+      if (ability.table.rows.length !== ability.table.die) {
+        problems.push(`Ability “${ability.name[draft.languages[0]] || i + 1}” needs ${ability.table.die} table rows`);
+      }
+      ability.table.rows.forEach((row, roll) =>
+        text(row.text, `ability ${i + 1} table row ${roll + 1}`)
+      );
+    }
     for (const modifier of ability.modifiers) {
       const id = JSON.stringify([
         modifier.statistic,
@@ -245,6 +264,15 @@ export function classDraftProblems(draft: ClassDraft): string[] {
         );
       } else if (item) {
         grants.set(ref, (grants.get(ref) ?? 0) + 1);
+      }
+    }
+    for (const [roll, row] of ability.table?.rows.entries() ?? []) {
+      if (!row.itemRef) continue;
+      const item = items.get(row.itemRef);
+      if (!item) {
+        problems.push(`Ability “${who}” table row ${roll + 1} grants an item that is not in this class`);
+      } else {
+        grants.set(row.itemRef, (grants.get(row.itemRef) ?? 0) + 1);
       }
     }
   });

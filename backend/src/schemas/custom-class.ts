@@ -32,6 +32,23 @@ const OriginSchema = {
 const ITEM_REF =
   '^(new:[A-Za-z0-9-]{1,64}|(weapons|armor|equipment|pets).cc-[0-9]{1,9}-[0-9]{1,9})$';
 const GrantSchema = { type: ['string', 'null'], pattern: ITEM_REF } as const;
+const TableRowSchema = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['text', 'itemRef'],
+  properties: { text: LocalizedSchema, itemRef: GrantSchema },
+} as const;
+
+const AbilityTableSchema = {
+  type: ['object', 'null'],
+  additionalProperties: false,
+  required: ['die', 'rows'],
+  properties: {
+    die: { type: 'integer', enum: [2, 3, 4, 6, 8, 10, 12] },
+    rows: { type: 'array', minItems: 2, maxItems: 12, items: TableRowSchema },
+  },
+} as const;
+
 
 const ModifiersSchema = {
   type: 'array',
@@ -152,7 +169,7 @@ const ClassItemSchema = {
 const AbilitySchema = {
   type: 'object',
   additionalProperties: false,
-  required: ['random', 'name', 'text', 'modifiers', 'grantItem', 'grantPet'],
+  required: ['random', 'name', 'text', 'modifiers', 'grantItem', 'grantPet', 'table'],
   properties: {
     key: {
       type: 'string',
@@ -164,6 +181,7 @@ const AbilitySchema = {
     modifiers: ModifiersSchema,
     grantItem: GrantSchema,
     grantPet: GrantSchema,
+    table: AbilityTableSchema,
   },
 } as const;
 

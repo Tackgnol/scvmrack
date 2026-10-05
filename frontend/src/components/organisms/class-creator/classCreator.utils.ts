@@ -287,6 +287,7 @@ export function blankAbility(random = false): AbilityDraft {
     modifiers: [],
     grantItem: null,
     grantPet: null,
+    table: null,
   };
 }
 
