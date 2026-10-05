@@ -35,6 +35,31 @@ export const STEPS: CreatorStep[] = [
 ];
 
 export const MAX_MODIFIERS = 6;
+/** Turns a pasted zine list into clean rows, dropping common roll-table headers and numbering. */
+export function zineRows(value: string): string[] {
+  const rows = value
+    .split(/\r?\n/)
+    .map((line) =>
+      line.replace(/^\s*(?:\d+\s*(?:[.):]|-)|[-*•])\s*/, "").trim(),
+    )
+    .filter(Boolean);
+  return /^d\d+\b/i.test(rows[0] ?? "") ? rows.slice(1) : rows;
+}
+
+/** Splits zine ability lines such as `Name: rules`, preserving abbreviations like `St.` and `Mt.`. */
+export function zineAbilities(
+  value: string,
+): Array<{ name: string; text: string }> {
+  return zineRows(value).map((row) => {
+    const marked = row.match(/^(.+?)\s*(?::|—)\s*(.+)$/);
+    if (marked) return { name: marked[1].trim(), text: marked[2].trim() };
+    const sentence = row.match(/^(.+?)\.\s+(.+)$/);
+    if (sentence && !/(?:\bSt|\bMt)$/i.test(sentence[1]))
+      return { name: sentence[1].trim(), text: sentence[2].trim() };
+    return { name: row, text: "" };
+  });
+}
+
 const empty = (): Localized => ({ en: "", pl: "" });
 const bookStat = (): StatDice => ({
   count: 3,
@@ -457,7 +482,13 @@ export function changeItemType(
   const granter = granterOf(draft, item.ref);
   const to = slotFor(type);
   const abilities = draft.abilities.map((ability, i) => {
-    if (!granter || i !== granter.index || granter.slot === "table" || granter.slot === to) return ability;
+    if (
+      !granter ||
+      i !== granter.index ||
+      granter.slot === "table" ||
+      granter.slot === to
+    )
+      return ability;
     const moved = { ...ability, [granter.slot]: null };
     return moved[to] ? moved : { ...moved, [to]: item.ref };
   });
@@ -478,7 +509,12 @@ export function removeItem(draft: ClassDraft, index: number): ClassDraft {
       ...a,
       grantItem: a.grantItem === ref ? null : a.grantItem,
       grantPet: a.grantPet === ref ? null : a.grantPet,
-      table: a.table && { ...a.table, rows: a.table.rows.map((row) => row.itemRef === ref ? { ...row, itemRef: null } : row) },
+      table: a.table && {
+        ...a.table,
+        rows: a.table.rows.map((row) =>
+          row.itemRef === ref ? { ...row, itemRef: null } : row,
+        ),
+      },
     })),
   };
 }

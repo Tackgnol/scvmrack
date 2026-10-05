@@ -2,11 +2,31 @@ import { LocalizedField } from "@/components/molecules/LocalizedField/LocalizedF
 import { useStableIds } from "@/hooks/useStableIds";
 import { useTranslation } from "react-i18next";
 import type { StepProps } from "../classCreator.models";
-import { Counter, Empty, InkButton, SmallAction, Spread, Stack } from "../classCreator.styles";
-import { fieldId, LIMIT_LIST, LIMIT_TEXT } from "../classCreator.utils";
+import {
+  Counter,
+  Empty,
+  InkButton,
+  Hint,
+  SmallAction,
+  Spread,
+  Stack,
+} from "../classCreator.styles";
+import {
+  fieldId,
+  LIMIT_LIST,
+  LIMIT_TEXT,
+  zineRows,
+} from "../classCreator.utils";
 
 /** Step 3: where this wretch came from; each scvm gets one at random. */
-export function OriginsStep({ draft, language, update, showMissing, touch, focus }: StepProps) {
+export function OriginsStep({
+  draft,
+  language,
+  update,
+  showMissing,
+  touch,
+  focus,
+}: StepProps) {
   const { t } = useTranslation();
   const full = draft.origins.length >= LIMIT_LIST;
   const { ids, insert, remove: forget } = useStableIds(draft.origins.length);
@@ -19,27 +39,53 @@ export function OriginsStep({ draft, language, update, showMissing, touch, focus
     forget(index);
     update((d) => ({ ...d, origins: d.origins.filter((_, i) => i !== index) }));
     const remaining = draft.origins.length - 1;
-    focus(remaining === 0 ? "origins.add" : `origins.${Math.min(index, remaining - 1)}.${language}`);
+    focus(
+      remaining === 0
+        ? "origins.add"
+        : `origins.${Math.min(index, remaining - 1)}.${language}`,
+    );
   };
 
   return (
     <Stack>
+      <Hint>
+        {t(
+          "creator.zinePaste.origins",
+          "Porting a zine? Paste one origin per line to add them all at once.",
+        )}
+      </Hint>
       <Spread>
         <InkButton
           id={fieldId("origins.add")}
           type="button"
           disabled={full}
-          title={full ? t("creator.origins.full", "A class holds at most {{max}} origins.", { max: LIMIT_LIST }) : undefined}
+          title={
+            full
+              ? t(
+                  "creator.origins.full",
+                  "A class holds at most {{max}} origins.",
+                  { max: LIMIT_LIST },
+                )
+              : undefined
+          }
           onClick={add}
         >
           {t("creator.origins.add", "Add origin")}
         </InkButton>
         <Counter>
-          {t("creator.origins.count", "{{count}} of {{max}} origins", { count: draft.origins.length, max: LIMIT_LIST })}
+          {t("creator.origins.count", "{{count}} of {{max}} origins", {
+            count: draft.origins.length,
+            max: LIMIT_LIST,
+          })}
         </Counter>
       </Spread>
       {draft.origins.length === 0 && (
-        <Empty>{t("creator.origins.empty", "No origins yet. Add the places this class’s wretches crawl out of.")}</Empty>
+        <Empty>
+          {t(
+            "creator.origins.empty",
+            "No origins yet. Add the places this class’s wretches crawl out of.",
+          )}
+        </Empty>
       )}
       {draft.origins.map((origin, index) => {
         const path = `origins.${index}.${language}`;
@@ -55,15 +101,48 @@ export function OriginsStep({ draft, language, update, showMissing, touch, focus
             onChange={(value) =>
               update((d) => ({
                 ...d,
-                origins: d.origins.map((o, i) => (i === index ? { ...o, [language]: value } : o)),
+                origins: d.origins.map((o, i) =>
+                  i === index ? { ...o, [language]: value } : o,
+                ),
               }))
             }
             onBlur={() => touch(path)}
+            onPaste={(event) => {
+              const rows = zineRows(event.clipboardData.getData("text")).slice(
+                0,
+                LIMIT_LIST - index,
+              );
+              if (rows.length < 2) return;
+              event.preventDefault();
+              rows.slice(1).forEach((_, offset) => insert(index + offset + 1));
+              update(
+                (d) => ({
+                  ...d,
+                  origins: [
+                    ...d.origins.slice(0, index),
+                    ...rows.map((row, offset) => ({
+                      ...(d.origins[index + offset] ?? { en: "", pl: "" }),
+                      [language]: row,
+                    })),
+                    ...d.origins.slice(index + 1),
+                  ],
+                }),
+                {
+                  kind: "paste",
+                  path,
+                  label: t("creator.history.pastedOrigins", "Pasted origins"),
+                },
+              );
+            }}
             action={
               <SmallAction
                 type="button"
                 className="kill"
-                aria-label={t("creator.origins.removeLabel", "Remove origin {{n}}", { n: index + 1 })}
+                aria-label={t(
+                  "creator.origins.removeLabel",
+                  "Remove origin {{n}}",
+                  { n: index + 1 },
+                )}
                 onClick={() => remove(index)}
               >
                 {t("creator.remove", "Remove")}

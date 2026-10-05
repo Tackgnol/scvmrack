@@ -23,6 +23,12 @@ export type CreatorIssue = {
   /** Draft path of the field to focus, e.g. `origins.2.pl`. */
   path: string;
 };
+/** Context for a draft edit, used to name and coalesce creator history. */
+export type CreatorChange = {
+  label?: string;
+  path?: string;
+  kind?: "typing" | "nudge" | "paste";
+};
 
 /** An ability's two grant slots: a Class Item, and a pet. */
 export type GrantSlot = "grantItem" | "grantPet";
@@ -32,7 +38,10 @@ export type StepProps = {
   draft: ClassDraft;
   /** The language being written in. */
   language: ClassLanguage;
-  update: (recipe: (draft: ClassDraft) => ClassDraft) => void;
+  update: (
+    recipe: (draft: ClassDraft) => ClassDraft,
+    change?: CreatorChange,
+  ) => void;
   /** Whether an empty field at `path` should already show as missing. */
   showMissing: (path: string) => boolean;
   touch: (path: string) => void;

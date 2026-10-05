@@ -24,14 +24,19 @@ export function NumberStepper({
   const { t } = useTranslation();
   const [typed, setTyped] = useState<string | null>(null);
   const shown = signedValue ? signed(value) : String(value);
-  const set = (next: number) => {
+  const set = (next: number, kind: "nudge" | "typing" = "typing") => {
     const bounded = clamp(next, min, max);
-    if (bounded !== value) onChange(bounded);
+    if (bounded === value) return;
+    document.body.dataset.creatorHistorySource = id;
+    document.body.dataset.creatorHistoryKind = kind;
+    onChange(bounded);
+    delete document.body.dataset.creatorHistorySource;
+    delete document.body.dataset.creatorHistoryKind;
   };
   const commit = () => {
     if (typed !== null) {
       const parsed = parseStepperText(typed);
-      if (parsed !== null) set(parsed);
+      if (parsed !== null) set(parsed, "typing");
       setTyped(null);
     }
   };
@@ -44,9 +49,11 @@ export function NumberStepper({
         <StepButton
           type="button"
           tabIndex={-1}
-          aria-label={t("creator.stepper.decrease", "Decrease {{label}}", { label })}
+          aria-label={t("creator.stepper.decrease", "Decrease {{label}}", {
+            label,
+          })}
           disabled={value <= min}
-          onClick={() => set(value - 1)}
+          onClick={() => set(value - 1, "nudge")}
         >
           <RemoveIcon aria-hidden="true" />
         </StepButton>
@@ -64,10 +71,13 @@ export function NumberStepper({
           onChange={(event) => setTyped(event.target.value)}
           onBlur={commit}
           onKeyDown={(event) => {
-            if (!commitOnEnterOnly && (event.key === "ArrowUp" || event.key === "ArrowDown")) {
+            if (
+              !commitOnEnterOnly &&
+              (event.key === "ArrowUp" || event.key === "ArrowDown")
+            ) {
               event.preventDefault();
               setTyped(null);
-              set(value + (event.key === "ArrowUp" ? 1 : -1));
+              set(value + (event.key === "ArrowUp" ? 1 : -1), "nudge");
             } else if (event.key === "Enter") {
               commit();
             }
@@ -76,9 +86,11 @@ export function NumberStepper({
         <StepButton
           type="button"
           tabIndex={-1}
-          aria-label={t("creator.stepper.increase", "Increase {{label}}", { label })}
+          aria-label={t("creator.stepper.increase", "Increase {{label}}", {
+            label,
+          })}
           disabled={value >= max}
-          onClick={() => set(value + 1)}
+          onClick={() => set(value + 1, "nudge")}
         >
           <AddIcon aria-hidden="true" />
         </StepButton>

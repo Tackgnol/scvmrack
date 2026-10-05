@@ -1312,6 +1312,10 @@
       "increase": "Zwiększ: {{label}}"
     },
     "zineContact": "Autor zina? Chcesz dodać swoją klasę do listy? <mail>Napisz do nas (contact@rpgtools.co)</mail>",
+    "zinePaste": {
+      "abilities": "Przenosisz zina? Wklej listę zdolności w pole Nazwa: po jednym wpisie „Nazwa: zasady” w linii.",
+      "origins": "Przenosisz zina? Wklej po jednym pochodzeniu w linii, aby dodać je wszystkie naraz."
+    },
     "identity": {
       "languages": "Języki, w których napisano klasę",
       "englishOnly": "Tylko angielski",

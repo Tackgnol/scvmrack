@@ -8,6 +8,7 @@ export type AbilityEditorProps = Omit<StepProps, "update"> & {
   transitionName: string;
   randomNumber: number | null;
   onChange: (recipe: (ability: AbilityDraft) => AbilityDraft) => void;
+  onZinePaste: (value: string) => void;
   onGrant: (slot: GrantSlot, ref: string | null) => void;
   onForge: (type: ClassItemType) => void;
   onEditItem: (itemIndex: number) => void;

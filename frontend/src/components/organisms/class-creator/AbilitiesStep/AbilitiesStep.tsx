@@ -6,7 +6,14 @@ import { AbilityEditor } from "../AbilityEditor/AbilityEditor";
 import { withCardTransition } from "../cardTransition";
 import { AbilitySummary } from "../AbilitySummary/AbilitySummary";
 import { WaitingItemsTray } from "../WaitingItemsTray/WaitingItemsTray";
-import { Counter, Empty, InkButton, Spread, Stack } from "../classCreator.styles";
+import {
+  Counter,
+  Empty,
+  Hint,
+  InkButton,
+  Spread,
+  Stack,
+} from "../classCreator.styles";
 import {
   blankAbility,
   blankClassItem,
@@ -14,6 +21,7 @@ import {
   LIMIT_LIST,
   randomNumber,
   randomPoolSize,
+  zineAbilities,
   slotFor,
 } from "../classCreator.utils";
 import type { AbilitiesStepProps } from "./AbilitiesStep.models";
@@ -32,10 +40,20 @@ export function AbilitiesStep({
   const full = draft.abilities.length >= LIMIT_LIST;
   const cardId = (index: number) => fieldId(`abilities.${index}`);
 
-  const setAbility = (index: number, recipe: (ability: AbilityDraft) => AbilityDraft) =>
-    update((d) => ({ ...d, abilities: d.abilities.map((a, i) => (i === index ? recipe(a) : a)) }));
+  const setAbility = (
+    index: number,
+    recipe: (ability: AbilityDraft) => AbilityDraft,
+  ) =>
+    update((d) => ({
+      ...d,
+      abilities: d.abilities.map((a, i) => (i === index ? recipe(a) : a)),
+    }));
   const open = (index: number | null, focusPath: string) =>
-    withCardTransition(index === null, () => onOpenAbility(index), () => focus(focusPath));
+    withCardTransition(
+      index === null,
+      () => onOpenAbility(index),
+      () => focus(focusPath),
+    );
   const add = () => {
     const index = draft.abilities.length;
     insert(index);
@@ -46,18 +64,67 @@ export function AbilitiesStep({
     insert(index + 1);
     update((d) => {
       // A copy is a new ability with its own key on save; an item has one granter, so the copy grants none.
-      const copy = { ...structuredClone(d.abilities[index]), key: undefined, grantItem: null, grantPet: null };
-      return { ...d, abilities: [...d.abilities.slice(0, index + 1), copy, ...d.abilities.slice(index + 1)] };
+      const copy = {
+        ...structuredClone(d.abilities[index]),
+        key: undefined,
+        grantItem: null,
+        grantPet: null,
+      };
+      return {
+        ...d,
+        abilities: [
+          ...d.abilities.slice(0, index + 1),
+          copy,
+          ...d.abilities.slice(index + 1),
+        ],
+      };
     });
     open(index + 1, `abilities.${index + 1}.name.${stepProps.language}`);
   };
+  const pasteZineAbilities = (index: number, value: string) => {
+    const entries = zineAbilities(value).slice(0, LIMIT_LIST - index);
+    if (entries.length < 2) return;
+    entries.slice(1).forEach((_, offset) => insert(index + offset + 1));
+    update(
+      (d) => ({
+        ...d,
+        abilities: [
+          ...d.abilities.slice(0, index),
+          ...entries.map((entry, offset) => {
+            const ability =
+              d.abilities[index + offset] ??
+              blankAbility(d.abilities[index].random);
+            return {
+              ...ability,
+              name: { ...ability.name, [language]: entry.name },
+              text: { ...ability.text, [language]: entry.text },
+            };
+          }),
+          ...d.abilities.slice(index + 1),
+        ],
+      }),
+      {
+        kind: "paste",
+        path: `abilities.${index}.name.${language}`,
+        label: t("creator.history.pastedAbilities", "Pasted abilities"),
+      },
+    );
+  };
+
   const grantFromNewAbility = (itemIndex: number) => {
     const item = draft.items[itemIndex];
     const index = draft.abilities.length;
     insert(index);
     update((d) => ({
       ...d,
-      abilities: [...d.abilities, { ...blankAbility(), name: { ...item.name }, [slotFor(item.type)]: item.ref }],
+      abilities: [
+        ...d.abilities,
+        {
+          ...blankAbility(),
+          name: { ...item.name },
+          [slotFor(item.type)]: item.ref,
+        },
+      ],
     }));
     open(index, `abilities.${index}.text.${language}`);
   };
@@ -67,26 +134,52 @@ export function AbilitiesStep({
     update((d) => ({
       ...d,
       items: [...d.items, item],
-      abilities: d.abilities.map((a, i) => (i === index ? { ...a, [slotFor(type)]: item.ref } : a)),
+      abilities: d.abilities.map((a, i) =>
+        i === index ? { ...a, [slotFor(type)]: item.ref } : a,
+      ),
     }));
     focus(`abilities.${index}.${slotFor(type)}`);
   };
   const removeAt = (index: number, withItems: boolean) => {
-    const granted = [draft.abilities[index].grantItem, draft.abilities[index].grantPet];
+    const granted = [
+      draft.abilities[index].grantItem,
+      draft.abilities[index].grantPet,
+    ];
     remove(index);
     update((d) => {
-      const items = withItems ? d.items.filter((item) => !granted.includes(item.ref)) : d.items;
+      const items = withItems
+        ? d.items.filter((item) => !granted.includes(item.ref))
+        : d.items;
       const abilities = d.abilities.filter((_, i) => i !== index);
       const stillRandom = abilities.filter((a) => a.random).length;
-      return { ...d, items, abilities, randomAbilityCount: Math.min(d.randomAbilityCount, stillRandom) };
+      return {
+        ...d,
+        items,
+        abilities,
+        randomAbilityCount: Math.min(d.randomAbilityCount, stillRandom),
+      };
     });
     onOpenAbility(null);
-    focus(draft.abilities.length > 1 ? `abilities.${Math.min(index, draft.abilities.length - 2)}` : "abilities.add");
+    focus(
+      draft.abilities.length > 1
+        ? `abilities.${Math.min(index, draft.abilities.length - 2)}`
+        : "abilities.add",
+    );
   };
 
   return (
     <Stack>
-      <WaitingItemsTray draft={draft} language={language} onGrantFromNewAbility={grantFromNewAbility} />
+      <Hint>
+        {t(
+          "creator.zinePaste.abilities",
+          "Porting a zine? Paste an ability list into a Name field: one “Name: rules” entry per line.",
+        )}
+      </Hint>
+      <WaitingItemsTray
+        draft={draft}
+        language={language}
+        onGrantFromNewAbility={grantFromNewAbility}
+      />
       <Spread>
         <NumberStepper
           id={fieldId("randomAbilityCount")}
@@ -99,7 +192,9 @@ export function AbilitiesStep({
             "Every scvm gets all Fixed abilities, plus this many from the Random pool ({{pool}} in it). A zine's “roll d6 for your ability” is a pool of 6 with 1 rolled.",
             { pool },
           )}
-          onChange={(randomAbilityCount) => update((d) => ({ ...d, randomAbilityCount }))}
+          onChange={(randomAbilityCount) =>
+            update((d) => ({ ...d, randomAbilityCount }))
+          }
         />
         <Counter>
           {t("creator.abilities.count", "{{count}} of {{max}} abilities", {
@@ -110,7 +205,10 @@ export function AbilitiesStep({
       </Spread>
       {draft.abilities.length === 0 && (
         <Empty>
-          {t("creator.abilities.empty", "No abilities yet. Add a fixed one every scvm gets, or build a random pool.")}
+          {t(
+            "creator.abilities.empty",
+            "No abilities yet. Add a fixed one every scvm gets, or build a random pool.",
+          )}
         </Empty>
       )}
       {draft.abilities.map((ability, index) =>
@@ -118,6 +216,7 @@ export function AbilitiesStep({
           <AbilityEditor
             key={ids[index]}
             transitionName={`ability-${ids[index]}`}
+            onZinePaste={(value) => pasteZineAbilities(index, value)}
             {...stepProps}
             index={index}
             randomNumber={randomNumber(draft, index)}
@@ -125,9 +224,13 @@ export function AbilitiesStep({
             onChange={(recipe) => setAbility(index, recipe)}
             onDone={() => open(null, `abilities.${index}`)}
             onRemove={(withItems) => removeAt(index, withItems)}
-            onGrant={(slot, ref) => setAbility(index, (a) => ({ ...a, [slot]: ref }))}
+            onGrant={(slot, ref) =>
+              setAbility(index, (a) => ({ ...a, [slot]: ref }))
+            }
             onForge={(type) => forge(index, type)}
-            onEditItem={(itemIndex) => jump("items", `items.${itemIndex}.name.${language}`)}
+            onEditItem={(itemIndex) =>
+              jump("items", `items.${itemIndex}.name.${language}`)
+            }
             onDuplicate={() => duplicate(index)}
           />
         ) : (
@@ -138,7 +241,11 @@ export function AbilitiesStep({
             ability={ability}
             language={stepProps.language}
             randomNumber={randomNumber(draft, index)}
-            missing={issues.filter((issue) => issue.path.startsWith(`abilities.${index}.`)).length}
+            missing={
+              issues.filter((issue) =>
+                issue.path.startsWith(`abilities.${index}.`),
+              ).length
+            }
             onOpen={() => open(index, `abilities.${index}.random`)}
           />
         ),
@@ -148,7 +255,15 @@ export function AbilitiesStep({
           id={fieldId("abilities.add")}
           type="button"
           disabled={full}
-          title={full ? t("creator.abilities.full", "A class holds at most {{max}} abilities.", { max: LIMIT_LIST }) : undefined}
+          title={
+            full
+              ? t(
+                  "creator.abilities.full",
+                  "A class holds at most {{max}} abilities.",
+                  { max: LIMIT_LIST },
+                )
+              : undefined
+          }
           onClick={add}
         >
           {t("creator.abilities.add", "Add ability")}

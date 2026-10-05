@@ -18,6 +18,8 @@ import {
   formulaText,
   missingCount,
   statRange,
+  zineAbilities,
+  zineRows,
 } from "@/components/organisms/class-creator/classCreator.utils";
 import { signed } from "@/utils/signed";
 import type { AbilityDraft, ClassDraft, ClassItemDraft } from "@/api/classes";
@@ -397,5 +399,26 @@ describe("Class Items", () => {
     const after = removeItem(draft, 0);
     expect(after.items).toEqual([]);
     expect(after.abilities[0].grantItem).toBeNull();
+  });
+});
+
+describe("zine paste", () => {
+  it("removes a die header and row numbering", () => {
+    expect(zineRows("d6 DECOCTIONS\n1. Grave salt\n2) Bone broth")).toEqual([
+      "Grave salt",
+      "Bone broth",
+    ]);
+  });
+
+  it("splits zine ability entries without breaking St. or Mt. names", () => {
+    expect(
+      zineAbilities(
+        "St. Varg: Call the dead\nMt. Skull — Climb its ribs\nGrave Sense. Smell the dead",
+      ),
+    ).toEqual([
+      { name: "St. Varg", text: "Call the dead" },
+      { name: "Mt. Skull", text: "Climb its ribs" },
+      { name: "Grave Sense", text: "Smell the dead" },
+    ]);
   });
 });

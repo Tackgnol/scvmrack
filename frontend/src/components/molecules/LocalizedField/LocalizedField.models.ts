@@ -12,7 +12,9 @@ export type LocalizedFieldProps = {
   maxLength: number;
   onChange: (value: string) => void;
   onBlur: () => void;
-  onPaste?: (event: ClipboardEvent<HTMLTextAreaElement>) => void;
+  onPaste?: (
+    event: ClipboardEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => void;
   /** A control at the right of the label row, e.g. Remove. */
   action?: ReactNode;
 };

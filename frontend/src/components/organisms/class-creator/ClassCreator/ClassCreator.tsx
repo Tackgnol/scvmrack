@@ -11,12 +11,25 @@ import { OriginsStep } from "../OriginsStep/OriginsStep";
 import { ReviewStep } from "../ReviewStep/ReviewStep";
 import { StatsStep } from "../StatsStep/StatsStep";
 import { WritingInSwitch } from "../WritingInSwitch/WritingInSwitch";
-import type { CreatorIssue, CreatorStep, StepProps } from "../classCreator.models";
+import type {
+  CreatorIssue,
+  CreatorStep,
+  StepProps,
+} from "../classCreator.models";
 import { Hint } from "../classCreator.styles";
 import { focusAfterRender, STEP_TITLE_ID, STEPS } from "../classCreator.utils";
 import { isEditable, isMac } from "./ClassCreator.utils";
 import type { ClassCreatorProps } from "./ClassCreator.models";
-import { BackButton, Head, Layout, Nav, NextButton, Paper, StepCount, StepTitle } from "./ClassCreator.styles";
+import {
+  BackButton,
+  Head,
+  Layout,
+  Nav,
+  NextButton,
+  Paper,
+  StepCount,
+  StepTitle,
+} from "./ClassCreator.styles";
 import { useClassCreator } from "./useClassCreator";
 
 /** The class creator: steps in a rail, one language at a time, a test roll and a save. */
@@ -27,6 +40,61 @@ export function ClassCreator({ classId, initialDraft }: ClassCreatorProps) {
   useEffect(() => {
     moveRef.current = creator.move;
   });
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && !isEditable(event.target)) {
+        if (creator.openAbility !== null) {
+          event.preventDefault();
+          creator.setOpenAbility(null);
+          focusAfterRender(`abilities.${creator.openAbility}`);
+        } else if (creator.openItem !== null) {
+          event.preventDefault();
+          creator.setOpenItem(null);
+          focusAfterRender(`items.${creator.openItem}`);
+        }
+        return;
+      }
+      const modifier = event.ctrlKey || event.metaKey;
+      const redo =
+        event.key.toLowerCase() === "y" ||
+        (event.key.toLowerCase() === "z" && event.shiftKey);
+      const undo = event.key.toLowerCase() === "z" && !event.shiftKey;
+      const fieldHistory = redo
+        ? { source: creator.redoSource, kind: creator.redoKind }
+        : { source: creator.undoSource, kind: creator.undoKind };
+      const ownCreatorEdit =
+        event.target instanceof HTMLElement &&
+        event.target.id === fieldHistory.source &&
+        (fieldHistory.kind === "nudge" || fieldHistory.kind === "paste");
+      if (
+        !modifier ||
+        (!undo && !redo) ||
+        (isEditable(event.target) && !ownCreatorEdit)
+      )
+        return;
+      event.preventDefault();
+      if (redo) creator.redo();
+      else creator.undo();
+    };
+    window.addEventListener("keydown", onKey, { capture: true });
+    return () =>
+      window.removeEventListener("keydown", onKey, { capture: true });
+  }, [
+    creator,
+    creator.redoKind,
+    creator.redoSource,
+    creator.undoKind,
+    creator.undoSource,
+  ]);
+  useEffect(() => {
+    const warn = (event: BeforeUnloadEvent) => {
+      if (!creator.canUndo || creator.saved) return;
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [creator.canUndo, creator.saved]);
   const index = STEPS.indexOf(creator.step);
   const previous = STEPS[index - 1];
   const next = STEPS[index + 1];
@@ -34,14 +102,20 @@ export function ClassCreator({ classId, initialDraft }: ClassCreatorProps) {
   useEffect(() => {
     // Alt+←/→ moves between steps and must never reach the browser's Back/Forward.
     const onKey = (event: KeyboardEvent) => {
-      if (!event.altKey || (event.key !== "ArrowLeft" && event.key !== "ArrowRight")) return;
+      if (
+        !event.altKey ||
+        (event.key !== "ArrowLeft" && event.key !== "ArrowRight")
+      )
+        return;
       // On macOS Option+arrow jumps words in a text field and never navigates; leave it be.
       if (isMac() && isEditable(event.target)) return;
       event.preventDefault();
-      if (moveRef.current(event.key === "ArrowLeft" ? -1 : 1)) focusAfterRender(null);
+      if (moveRef.current(event.key === "ArrowLeft" ? -1 : 1))
+        focusAfterRender(null);
     };
     window.addEventListener("keydown", onKey, { capture: true });
-    return () => window.removeEventListener("keydown", onKey, { capture: true });
+    return () =>
+      window.removeEventListener("keydown", onKey, { capture: true });
   }, []);
 
   const goTo = (step: CreatorStep) => {
@@ -82,7 +156,10 @@ export function ClassCreator({ classId, initialDraft }: ClassCreatorProps) {
               {t(`creator.steps.${creator.step}.label`)}
             </StepTitle>
             <StepCount>
-              {t("creator.stepCount", "Step {{n}} of {{total}}", { n: index + 1, total: STEPS.length })}
+              {t("creator.stepCount", "Step {{n}} of {{total}}", {
+                n: index + 1,
+                total: STEPS.length,
+              })}
             </StepCount>
           </div>
           {creator.step !== "stats" && (
@@ -117,7 +194,9 @@ export function ClassCreator({ classId, initialDraft }: ClassCreatorProps) {
             />
           )}
           {creator.step === "origins" && <OriginsStep {...stepProps} />}
-          {creator.step === "gettingBetter" && <GettingBetterStep {...stepProps} />}
+          {creator.step === "gettingBetter" && (
+            <GettingBetterStep {...stepProps} />
+          )}
           {creator.step === "review" && (
             <ReviewStep
               draft={creator.draft}
@@ -132,6 +211,32 @@ export function ClassCreator({ classId, initialDraft }: ClassCreatorProps) {
             />
           )}
         </Paper>
+        <div role="status" aria-live="polite">
+          <button
+            type="button"
+            disabled={!creator.canUndo}
+            aria-keyshortcuts="Control+Z Meta+Z"
+            onClick={creator.undo}
+          >
+            {creator.undoLabel
+              ? t("creator.history.undo", "Undo {{step}}", {
+                  step: creator.undoLabel,
+                })
+              : t("creator.history.undo", "Undo")}
+          </button>
+          <button
+            type="button"
+            disabled={!creator.canRedo}
+            aria-keyshortcuts="Control+Shift+Z Control+Y Meta+Shift+Z Meta+Y"
+            onClick={creator.redo}
+          >
+            {creator.redoLabel
+              ? t("creator.history.redo", "Redo {{step}}", {
+                  step: creator.redoLabel,
+                })
+              : t("creator.history.redo", "Redo")}
+          </button>
+        </div>
         <Nav>
           <BackButton
             type="button"
@@ -140,10 +245,16 @@ export function ClassCreator({ classId, initialDraft }: ClassCreatorProps) {
             onClick={() => previous && goTo(previous)}
           >
             <ArrowBackIcon aria-hidden="true" />
-            {previous ? t(`creator.steps.${previous}.label`) : t("creator.back", "Back")}
+            {previous
+              ? t(`creator.steps.${previous}.label`)
+              : t("creator.back", "Back")}
           </BackButton>
           {next && (
-            <NextButton type="button" aria-keyshortcuts="Alt+ArrowRight" onClick={() => goTo(next)}>
+            <NextButton
+              type="button"
+              aria-keyshortcuts="Alt+ArrowRight"
+              onClick={() => goTo(next)}
+            >
               {t(`creator.steps.${next}.label`)}
               <ArrowForwardIcon aria-hidden="true" />
             </NextButton>

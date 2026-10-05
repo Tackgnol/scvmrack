@@ -1295,6 +1295,10 @@
       "increase": "Increase {{label}}"
     },
     "zineContact": "Zine author? Want to add your class to the roster? <mail>Get in touch (contact@rpgtools.co)</mail>",
+    "zinePaste": {
+      "abilities": "Porting a zine? Paste an ability list into a Name field: one “Name: rules” entry per line.",
+      "origins": "Porting a zine? Paste one origin per line to add them all at once."
+    },
     "identity": {
       "languages": "Languages this class is written in",
       "englishOnly": "English only",

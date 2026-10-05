@@ -35,6 +35,7 @@ export function AbilityEditor({
   touch,
   focus,
   onChange,
+  onZinePaste,
   onGrant,
   onForge,
   onEditItem,
@@ -141,6 +142,12 @@ export function AbilityEditor({
           onChange((a) => ({ ...a, name: { ...a.name, [language]: value } }))
         }
         onBlur={() => touch(namePath)}
+        onPaste={(event) => {
+          const value = event.clipboardData.getData("text");
+          if (value.split(/\r?\n/).filter(Boolean).length < 2) return;
+          event.preventDefault();
+          onZinePaste(value);
+        }}
       />
       <LocalizedField
         id={fieldId(textPath)}
@@ -163,7 +170,16 @@ export function AbilityEditor({
         onForge={onForge}
         onEditItem={onEditItem}
       />
-      <AbilityReferenceTableEditor ability={ability} base={base} draft={draft} index={index} language={language} onChange={onChange} showMissing={showMissing} touch={touch} />
+      <AbilityReferenceTableEditor
+        ability={ability}
+        base={base}
+        draft={draft}
+        index={index}
+        language={language}
+        onChange={onChange}
+        showMissing={showMissing}
+        touch={touch}
+      />
       <ModifierList
         path={`${base}.modifiers`}
         title={t("creator.abilities.modifiers", "Modifiers")}

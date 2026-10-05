@@ -1,5 +1,6 @@
 import { Label } from "@/components/atoms/field.styles";
 import { useTranslation } from "react-i18next";
+import type { KeyboardEvent } from "react";
 import type { LocalizedFieldProps } from "./LocalizedField.models";
 import { Count, Head, Input, Missing, TextArea } from "./LocalizedField.styles";
 
@@ -20,13 +21,21 @@ export function LocalizedField({
   const { t } = useTranslation();
   const missing = showMissing && value.trim() === "";
   const nearLimit = value.length > maxLength * 0.8;
-  const describedBy = [missing && `${id}-missing`, nearLimit && `${id}-count`].filter(Boolean).join(" ");
+  const describedBy = [missing && `${id}-missing`, nearLimit && `${id}-count`]
+    .filter(Boolean)
+    .join(" ");
   const common = {
     id,
     value,
     maxLength,
     "aria-invalid": missing,
     "aria-describedby": describedBy || undefined,
+    onKeyDown: (
+      event: KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>,
+    ) => {
+      if (event.key === "Escape") event.currentTarget.blur();
+    },
+    onPaste,
     onBlur,
   };
 
@@ -37,9 +46,16 @@ export function LocalizedField({
         {action}
       </Head>
       {multiline ? (
-        <TextArea {...common} onChange={(event) => onChange(event.target.value)} onPaste={onPaste} />
+        <TextArea
+          {...common}
+          onChange={(event) => onChange(event.target.value)}
+        />
       ) : (
-        <Input type="text" {...common} onChange={(event) => onChange(event.target.value)} />
+        <Input
+          type="text"
+          {...common}
+          onChange={(event) => onChange(event.target.value)}
+        />
       )}
       {missing && (
         <Missing id={`${id}-missing`}>
@@ -47,8 +63,14 @@ export function LocalizedField({
         </Missing>
       )}
       {nearLimit && (
-        <Count id={`${id}-count`} className={value.length >= maxLength ? "over" : undefined}>
-          {t("creator.charCount", "{{count}} of {{max}} characters", { count: value.length, max: maxLength })}
+        <Count
+          id={`${id}-count`}
+          className={value.length >= maxLength ? "over" : undefined}
+        >
+          {t("creator.charCount", "{{count}} of {{max}} characters", {
+            count: value.length,
+            max: maxLength,
+          })}
         </Count>
       )}
     </div>
