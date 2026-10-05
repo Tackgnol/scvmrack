@@ -1383,6 +1383,7 @@
       "missingAbilityName": "{{language}} missing: ability {{n}} name",
       "missingAbilityTextUnnamed": "{{language}} missing: ability {{n}} rules text",
       "duplicateModifier": "“{{name}}” carries the same modifier twice",
+      "missingTableRow": "{{language}} missing: “{{name}}” table result {{roll}}",
       "missingAbilityText": "{{language}} missing: “{{name}}” rules text",
       "poolTooSmall_one": "Rolls {{count}} random ability, but the pool has {{pool}}",
       "poolTooSmall_other": "Rolls {{count}} random abilities, but the pool has {{pool}}",

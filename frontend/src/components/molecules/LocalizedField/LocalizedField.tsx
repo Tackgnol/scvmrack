@@ -15,6 +15,7 @@ export function LocalizedField({
   onChange,
   onBlur,
   action,
+  onPaste,
 }: LocalizedFieldProps) {
   const { t } = useTranslation();
   const missing = showMissing && value.trim() === "";
@@ -36,7 +37,7 @@ export function LocalizedField({
         {action}
       </Head>
       {multiline ? (
-        <TextArea {...common} onChange={(event) => onChange(event.target.value)} />
+        <TextArea {...common} onChange={(event) => onChange(event.target.value)} onPaste={onPaste} />
       ) : (
         <Input type="text" {...common} onChange={(event) => onChange(event.target.value)} />
       )}

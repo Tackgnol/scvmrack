@@ -51,6 +51,11 @@ interface PoolItem {
 
 interface AbilityEntry {
   key: string;
+  tableResult?: {
+    roll: number;
+    text: string;
+    itemKey: string | null;
+  };
 }
 
 interface EquipBundle {
@@ -512,12 +517,37 @@ async function buildAbilityBundle(
 
   const gained = [...fixedAbilities, ...picked].sort(byClassOrder);
   const tagsFor = (key: string) => buildPoolItem(key, catalog).tags;
+  const abilities: AbilityEntry[] = [];
+  const grantedItems: PoolItem[] = [];
+
+  for (const ability of gained) {
+    grantedItems.push(...abilityGrantedItems(ability, tagsFor));
+    if (!ability.table) {
+      abilities.push({ key: ability.key });
+      continue;
+    }
+
+    const roll = await rollDie(ability.table.die, roller);
+    const row = ability.table.rows[roll - 1];
+    if (!row) {
+      abilities.push({ key: ability.key });
+      continue;
+    }
+
+    abilities.push({
+      key: ability.key,
+      tableResult: { roll, text: row.text, itemKey: row.itemKey },
+    });
+    if (row.itemKey) {
+      grantedItems.push(...abilityGrantedItems({ grantItemKey: row.itemKey, grantPetKey: null }, tagsFor));
+    }
+  }
+
   return {
-    abilities: gained.map(a => ({ key: a.key })),
-    grantedItems: gained.flatMap(a => abilityGrantedItems(a, tagsFor)),
+    abilities,
+    grantedItems,
   };
 }
-
 // ── pick_character_personality ────────────────────────────────────────────────
 
 async function pickPersonality(roller: Roller) {
@@ -664,7 +694,16 @@ export type ClassSpec = {
   /** Origin translation keys; a draft passes the text itself, which hydration shows as is. */
   originKeys: string[];
   /** In class order. */
-  abilities: Array<AbilityGrants & { id: number; key: string; isRandom: boolean | null; position: number | null }>;
+  abilities: Array<AbilityGrants & {
+    id: number;
+    key: string;
+    isRandom: boolean | null;
+    position: number | null;
+    table?: {
+      die: number;
+      rows: Array<{ text: string; itemKey: string | null }>;
+    } | null;
+  }>;
   randomAbilityCount: number;
 };
 

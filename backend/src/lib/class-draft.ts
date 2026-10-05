@@ -333,6 +333,13 @@ export function classSpecFromDraft(
       position: i,
       grantItemKey: itemName(ability.grantItem),
       grantPetKey: itemName(ability.grantPet),
+      table: ability.table && {
+        die: ability.table.die,
+        rows: ability.table.rows.map((row) => ({
+          text: textIn(row.text),
+          itemKey: itemName(row.itemRef),
+        })),
+      },
     })),
     randomAbilityCount: draft.randomAbilityCount,
   };

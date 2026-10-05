@@ -19,6 +19,7 @@ export function NumberStepper({
   onChange,
   signedValue = false,
   hint,
+  commitOnEnterOnly = false,
 }: NumberStepperProps) {
   const { t } = useTranslation();
   const [typed, setTyped] = useState<string | null>(null);
@@ -63,7 +64,7 @@ export function NumberStepper({
           onChange={(event) => setTyped(event.target.value)}
           onBlur={commit}
           onKeyDown={(event) => {
-            if (event.key === "ArrowUp" || event.key === "ArrowDown") {
+            if (!commitOnEnterOnly && (event.key === "ArrowUp" || event.key === "ArrowDown")) {
               event.preventDefault();
               setTyped(null);
               set(value + (event.key === "ArrowUp" ? 1 : -1));

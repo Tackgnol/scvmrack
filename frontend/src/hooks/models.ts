@@ -40,6 +40,11 @@ export type Ability = {
     description?: string;
     comment?: string;
     table?: AbilityTable;
+    tableResult?: {
+        roll: number;
+        text: string;
+        itemKey: string | null;
+    };
 };
 
 export type CustomItemCategory =

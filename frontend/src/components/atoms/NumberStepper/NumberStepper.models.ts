@@ -8,4 +8,6 @@ export type NumberStepperProps = {
   /** Show a sign (+1, −1), for values that can go below zero. */
   signedValue?: boolean;
   hint?: string;
+  /** Arrow keys leave the value alone; typed values commit on Enter or blur. */
+  commitOnEnterOnly?: boolean;
 };

@@ -74,7 +74,7 @@ export function AbilityGrants({
           .filter((item) => slotFor(item.type) === slot)
           .filter((item) => {
             const owner = granterOf(draft, item.ref);
-            return owner !== null && owner.index !== index;
+            return owner !== null && (owner.index !== index || owner.slot !== slot);
           })
           .map((item) => item.ref);
         return (

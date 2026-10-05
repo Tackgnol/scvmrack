@@ -101,6 +101,7 @@ const ability = (
   modifiers: [],
   grantItem: null,
   grantPet: null,
+  table: null,
   ...overrides,
 });
 

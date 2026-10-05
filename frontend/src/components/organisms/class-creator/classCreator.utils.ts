@@ -144,6 +144,15 @@ export function draftIssues(draft: ClassDraft): CreatorIssue[] {
         : "creator.issues.missingAbilityTextUnnamed",
       params,
     );
+    ability.table?.rows.forEach((row, roll) =>
+      text(
+        row.text,
+        `abilities.${i}.table.rows.${roll}.text`,
+        "abilities",
+        "creator.issues.missingTableRow",
+        { ...params, roll: roll + 1 },
+      ),
+    );
     const seen = new Set<string>();
     ability.modifiers.forEach((modifier, m) => {
       const id = JSON.stringify([
@@ -370,10 +379,12 @@ export const slotFor = (type: ClassItemType): GrantSlot =>
 export function granterOf(
   draft: ClassDraft,
   ref: string,
-): { index: number; slot: GrantSlot } | null {
+): { index: number; slot: GrantSlot | "table"; row?: number } | null {
   for (const [index, ability] of draft.abilities.entries()) {
     if (ability.grantItem === ref) return { index, slot: "grantItem" };
     if (ability.grantPet === ref) return { index, slot: "grantPet" };
+    const row = ability.table?.rows.findIndex((entry) => entry.itemRef === ref);
+    if (row !== undefined && row >= 0) return { index, slot: "table", row };
   }
   return null;
 }
@@ -446,7 +457,7 @@ export function changeItemType(
   const granter = granterOf(draft, item.ref);
   const to = slotFor(type);
   const abilities = draft.abilities.map((ability, i) => {
-    if (!granter || i !== granter.index || granter.slot === to) return ability;
+    if (!granter || i !== granter.index || granter.slot === "table" || granter.slot === to) return ability;
     const moved = { ...ability, [granter.slot]: null };
     return moved[to] ? moved : { ...moved, [to]: item.ref };
   });
@@ -467,6 +478,7 @@ export function removeItem(draft: ClassDraft, index: number): ClassDraft {
       ...a,
       grantItem: a.grantItem === ref ? null : a.grantItem,
       grantPet: a.grantPet === ref ? null : a.grantPet,
+      table: a.table && { ...a.table, rows: a.table.rows.map((row) => row.itemRef === ref ? { ...row, itemRef: null } : row) },
     })),
   };
 }

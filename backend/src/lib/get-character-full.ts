@@ -355,10 +355,17 @@ function resolveAbilities(
     const description = translate(translations, `${key}.description`) ?? '';
     const result: Record<string, unknown> = { key, name, description };
     if (typeof ab.comment === 'string') result.comment = ab.comment;
+    if (isTableResult(ab.tableResult)) result.tableResult = ab.tableResult;
     const table = tableByKey.get(key);
     if (table) result.table = resolveAbilityTable(table, translations);
     return result;
   });
+}
+function isTableResult(value: unknown): value is { roll: number; text: string; itemKey: string | null } {
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) return false;
+  const result = value as Record<string, unknown>;
+  return Number.isInteger(result.roll) && typeof result.text === 'string' &&
+    (typeof result.itemKey === 'string' || result.itemKey === null);
 }
 
 /** A reference table for display: each row's text and linked item named. */

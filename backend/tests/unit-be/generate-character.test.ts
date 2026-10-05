@@ -5,7 +5,7 @@ import { Prisma } from '@prisma/client';
 import type { Roller } from '@tackgnol/rpg-tools-roller';
 import { randomSectionSeeds, seededRollerFor, type RollerFor } from '../../src/lib/draft-seeds.js';
 import { ABILITY_STATS } from '../../src/lib/ability-modifiers.js';
-import type { StatDice } from '../../src/lib/generate-character.js';
+import type { ClassSpec, StatDice } from '../../src/lib/generate-character.js';
 
 type RollExpectation = {
   notation: string;
@@ -282,7 +282,7 @@ mock.module('../../src/lib/inventory.js', {
   },
 });
 
-const { generateCharacter, buildCharacterData } = await import('../../src/lib/generate-character.js');
+const { generateCharacter, buildCharacterData, buildCharacterDataFromSpec } = await import('../../src/lib/generate-character.js');
 
 test('generateCharacter stores the payload produced by a scripted roller', async () => {
   resetFixture();
@@ -392,6 +392,53 @@ test('generateCharacter stores the payload produced by a scripted roller', async
   });
 });
 
+test('a draft reference table carries its result and linked item into the test roll', async () => {
+  const next = baseFixture();
+  next.abilities = [];
+  resetFixture(next);
+
+  const abilityRoller = new ScriptedRoller([{ notation: '1d2', total: 2 }]);
+  const seeded = seededRollerFor(randomSectionSeeds());
+  const spec: ClassSpec = {
+    hpDie: 8,
+    omenDie: 2,
+    weaponDie: 10,
+    armorDie: 4,
+    silverDice: [6, 6],
+    silverModifier: 10,
+    statDice: bookStatDice() as ClassSpec['statDice'],
+    originKeys: [],
+    abilities: [{
+      id: 1,
+      key: 'Table Vision',
+      isRandom: false,
+      position: 0,
+      grantItemKey: null,
+      grantPetKey: null,
+      table: {
+        die: 2,
+        rows: [
+          { text: 'Ash', itemKey: null },
+          { text: 'Lock and key', itemKey: 'equipment.lockpicks' },
+        ],
+      },
+    }],
+    randomAbilityCount: 0,
+  };
+
+  const data = await buildCharacterDataFromSpec(
+    null,
+    spec,
+    (section) => section === 'abilities' ? abilityRoller as unknown as Roller : seeded(section),
+  );
+
+  assert.deepEqual(data.abilities, [{
+    key: 'Table Vision',
+    tableResult: { roll: 2, text: 'Lock and key', itemKey: 'equipment.lockpicks' },
+  }]);
+  assert.ok(data.equipment.some((item) => (item as { key?: string }).key === 'equipment.lockpicks'));
+  abilityRoller.assertComplete();
+});
 test('generateCharacter lets rolled scrolls reduce starting weapon and armor dice', async () => {
   const next = baseFixture();
   next.classes[0] = {

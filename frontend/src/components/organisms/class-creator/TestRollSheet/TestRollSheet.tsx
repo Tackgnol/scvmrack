@@ -11,6 +11,11 @@ export function TestRollSheet({ scvm, className, stale, quiet }: TestRollSheetPr
   const { t } = useTranslation();
   const gear = gearCounts(scvm);
   const abilities = namedCounts((scvm.abilities ?? []).map((ability) => ability.name));
+  const tableResults = (scvm.abilities ?? []).flatMap((ability) =>
+    ability.tableResult
+      ? [{ ability: ability.name, ...ability.tableResult }]
+      : []
+  );
 
   return (
     <Sheet data-testid="test-roll-sheet">
@@ -45,6 +50,16 @@ export function TestRollSheet({ scvm, className, stale, quiet }: TestRollSheetPr
           <li key={name}>{count > 1 ? `${name} ×${count}` : name}</li>
         ))}
       </ul>
+      {tableResults.length > 0 && (
+        <ul>
+          {tableResults.map((result) => (
+            <li key={`${result.ability}-${result.roll}`}>
+              {result.ability}: {t("creator.referenceTable.rolled", "Roll {{roll}}: {{text}}", result)}
+              {result.itemKey && ` · ${result.itemKey}`}
+            </li>
+          ))}
+        </ul>
+      )}
       <SmallTitle>{t("creator.review.gear", "Starts with")}</SmallTitle>
       <ul>
         {gear.length === 0 && (

@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { ClipboardEvent, ReactNode } from "react";
 import type { ClassLanguage } from "@/api/classes";
 
 export type LocalizedFieldProps = {
@@ -12,6 +12,7 @@ export type LocalizedFieldProps = {
   maxLength: number;
   onChange: (value: string) => void;
   onBlur: () => void;
+  onPaste?: (event: ClipboardEvent<HTMLTextAreaElement>) => void;
   /** A control at the right of the label row, e.g. Remove. */
   action?: ReactNode;
 };
