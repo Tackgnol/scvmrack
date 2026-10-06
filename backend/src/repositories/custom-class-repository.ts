@@ -25,6 +25,8 @@ export type CustomClassRows = {
   id: number;
   lineageId: string;
   ownerUserId: string | null;
+  ownerName: string | null;
+  visibility: 'private' | 'public';
   version: number;
   status: 'draft' | 'active' | 'archived';
   takenDownAt: Date | null;
@@ -537,7 +539,7 @@ export const customClassRepository = {
     return true;
   },
   async findWithText(id: number): Promise<CustomClassRows | null> {
-    const cls = await prisma.class.findFirst({ where: { id, source: 'user' } });
+    const cls = await prisma.class.findFirst({ where: { id, source: 'user' }, include: { owner: { select: { name: true } } } });
     if (!cls) return null;
     const [latest, playingCount, origins, abilities, modifiers, translations] =
       await Promise.all([
@@ -603,6 +605,8 @@ export const customClassRepository = {
       id: cls.id,
       lineageId: cls.lineageId,
       ownerUserId: cls.ownerUserId,
+      ownerName: cls.owner?.name ?? null,
+      visibility: cls.visibility,
       version: cls.version,
       status: cls.status,
       takenDownAt: cls.takenDownAt,
@@ -649,6 +653,36 @@ export const customClassRepository = {
     };
   },
 
+
+  /** Loads the latest version in a Custom Class lineage for read-only rendering. */
+  async findLatestWithText(id: number): Promise<CustomClassRows | null> {
+    const current = await prisma.class.findFirst({
+      where: { id, source: 'user' },
+      select: { lineageId: true },
+    });
+    if (!current) return null;
+    const latest = await prisma.class.findFirst({
+      where: { lineageId: current.lineageId, source: 'user' },
+      orderBy: { version: 'desc' },
+      select: { id: true },
+    });
+    return latest ? this.findWithText(latest.id) : null;
+  },
+
+  /** Whether a character owner belongs to a party where this lineage is enabled. */
+  async isVisibleToPartyMember(input: { lineageId: string; userId: string | null; sessionId: string | null }): Promise<boolean> {
+    if (!input.userId && !input.sessionId) return false;
+    return Boolean(await prisma.partyClassPool.findFirst({
+      where: {
+        lineageId: input.lineageId,
+        party: { members: { some: { OR: [
+          ...(input.userId ? [{ userId: input.userId }] : []),
+          ...(input.sessionId ? [{ sessionId: input.sessionId }] : []),
+        ] } } },
+      },
+      select: { partyId: true },
+    }));
+  },
   /** The account's Custom Classes at their latest version, newest first. */
   async listOwned(
     ownerUserId: string,

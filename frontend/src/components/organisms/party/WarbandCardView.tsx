@@ -6,7 +6,7 @@ import { WarbandLooksButton } from '@/components/molecules/party/WarbandLooksBut
 import { WarbandModifierList } from '@/components/molecules/party/WarbandModifierList';
 import { partyColors, partyFonts } from '@/theme/partyTokens';
 import type { WarbandMember } from '@/components/organisms/party/warbandMember';
-import { Box, styled } from '@mui/material';
+import { Box, styled, Tooltip } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 
 type WarbandCardViewProps = { member: WarbandMember };
@@ -144,7 +144,9 @@ export function WarbandCardView({ member }: WarbandCardViewProps) {
           <Name>{member.name}</Name>
           {member.dead && <DeadTag>† DEAD</DeadTag>}
         </NameRow>
-        <ClassLine>{member.cls}</ClassLine>
+        <Tooltip title={member.classAttribution ?? ''} disableHoverListener={!member.classAttribution}>
+          <ClassLine>{member.cls}</ClassLine>
+        </Tooltip>
       </Head>
 
       <Body>

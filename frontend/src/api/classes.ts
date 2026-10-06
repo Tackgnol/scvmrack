@@ -114,6 +114,8 @@ export type SavedClass = {
   status: "draft" | "active" | "archived";
 };
 
+export type ClassDetail = SavedClass & { attribution: string };
+
 export type StoredClassDraft = {
   id: number;
   classId: number | null;
@@ -138,6 +140,7 @@ const classClient = client as unknown as UntypedApiClient;
 export const classKeys = {
   mine: (locale: string) => ["classes", "mine", locale] as const,
   one: (id: number) => ["classes", id] as const,
+  detail: (id: number) => ["classes", "detail", id] as const,
   drafts: () => ["classes", "drafts"] as const,
   draft: (id: number) => ["classes", "drafts", id] as const,
 };
@@ -157,6 +160,13 @@ export async function getClass(id: number): Promise<SavedClass> {
   return unwrapApiResult(
     await classClient.GET<SavedClass>(`/api/classes/${id}`),
     "Failed to load the class",
+  );
+}
+
+export async function getClassDetail(id: number): Promise<ClassDetail> {
+  return unwrapApiResult(
+    await classClient.GET<ClassDetail>(`/api/classes/details/${id}`),
+    'Failed to load the class',
   );
 }
 

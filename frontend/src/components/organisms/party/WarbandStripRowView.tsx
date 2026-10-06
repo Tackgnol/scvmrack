@@ -5,7 +5,7 @@ import type {
   WarbandContribRow,
   WarbandMember,
 } from "@/components/organisms/party/warbandMember";
-import { Box, Collapse, styled, useMediaQuery } from "@mui/material";
+import { Box, Collapse, styled, Tooltip, useMediaQuery } from "@mui/material";
 import { keyframes } from "@mui/system";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
@@ -352,7 +352,9 @@ export function WarbandStripRowView({
               </OlderRulesTag>
             )}
           </NameRow>
-          <ClassLine>{member.cls}</ClassLine>
+          <Tooltip title={member.classAttribution ?? ''} disableHoverListener={!member.classAttribution}>
+            <ClassLine>{member.cls}</ClassLine>
+          </Tooltip>
         </IdentityCol>
 
         <HpCol>

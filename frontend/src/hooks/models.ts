@@ -113,6 +113,8 @@ export type Character = {
     classId?: number | null;
     className?: string | null;
     classDescription?: string | null;
+    classAttribution?: string | null;
+    classAuthoredLanguage?: 'en' | 'pl' | null;
     origin?: string | null;
     strength?: number;
     agility?: number;

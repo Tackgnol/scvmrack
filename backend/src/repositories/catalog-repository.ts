@@ -42,6 +42,10 @@ export type ClassCatalogRow = {
   nameKey: string | null;
   descriptionKey: string | null;
   languages: string[];
+  source: 'main_book' | 'zine' | 'the_rack' | 'user';
+  creditWork: string | null;
+  creditAuthor: string | null;
+  ownerName: string | null;
 };
 
 export type AbilityOrderRow = AbilityOrder & { key: string };
@@ -120,8 +124,11 @@ export const catalogRepository = {
   findClassById(classId: number): Promise<ClassCatalogRow | null> {
     return prisma.class.findUnique({
       where: { id: classId },
-      select: { id: true, name: true, appendix: true, nameKey: true, descriptionKey: true, languages: true },
-    }) as Promise<ClassCatalogRow | null>;
+      select: {
+        id: true, name: true, appendix: true, nameKey: true, descriptionKey: true, languages: true,
+        source: true, creditWork: true, creditAuthor: true, owner: { select: { name: true } },
+      },
+    }).then((row) => row && ({ ...row, ownerName: row.owner?.name ?? null })) as Promise<ClassCatalogRow | null>;
   },
 
   findTranslations(locale: string, keys: string[]): Promise<TranslationRow[]> {

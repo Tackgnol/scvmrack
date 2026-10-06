@@ -49,6 +49,7 @@ export type WarbandMember = {
   id: string;
   name: string;
   cls: string;
+  classAttribution?: string;
   dead: boolean;
 
   hpText: string;
@@ -443,6 +444,7 @@ export function toWarbandMember(
     id: character.id ?? '',
     name: character.name?.trim() || labels?.unnamedScvm || 'Unnamed scvm',
     cls: character.className?.trim() || labels?.classless || 'Classless',
+    classAttribution: character.classAttribution ?? undefined,
     dead,
 
     hpText: `${hp}/${character.maxHp ?? 0}`,

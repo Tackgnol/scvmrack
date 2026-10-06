@@ -59,6 +59,8 @@ export const CharacterNameAndClass = ({ classAction }: CharacterNameAndClassProp
         label={classLabel}
         className={character.className || fallbackClassName}
         classDescription={character.classDescription ?? undefined}
+        classAttribution={character.classAttribution ?? undefined}
+        classAuthoredLanguage={character.classAuthoredLanguage}
         action={classAction}
       />
     </Box>

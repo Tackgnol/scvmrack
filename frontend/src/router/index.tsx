@@ -126,6 +126,12 @@ const gmRoute = createRoute({
     component: lazyRouteComponent(() => import('@/pages/GmOverviewPage').then(m => ({ default: m.GmOverviewPage }))),
 });
 
+const classDetailRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: '/classes/$classId',
+    component: lazyRouteComponent(() => import('@/pages/ClassDetailPage').then(m => ({ default: m.ClassDetailPage }))),
+});
+
 const classesRoute = createRoute({
     getParentRoute: () => rootRoute,
     path: '/gm/classes',
@@ -185,6 +191,7 @@ const routeTree = rootRoute.addChildren([
     releaseRoute,
     owlbearRoute,
     gmRoute,
+    classDetailRoute,
     classesRoute,
     classNewRoute,
     classDraftRoute,

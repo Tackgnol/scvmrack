@@ -355,6 +355,15 @@ export const ClassWithDraftSchema = {
   },
 } as const;
 
+
+export const ClassDetailSchema = {
+  ...ClassWithDraftSchema,
+  required: [...ClassWithDraftSchema.required, 'attribution'],
+  properties: {
+    ...ClassWithDraftSchema.properties,
+    attribution: { type: 'string' },
+  },
+} as const;
 export const OwnClassListSchema = {
   type: 'array',
   items: {

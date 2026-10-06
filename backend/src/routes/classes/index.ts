@@ -2,6 +2,7 @@ import type { FastifyPluginAsync } from 'fastify';
 import type { JsonSchemaToTsProvider } from '@fastify/type-provider-json-schema-to-ts';
 import type { ClassDraft } from '../../lib/class-draft.js';
 import {
+  ClassDetailSchema,
   ClassDraftBodySchema,
   ClassDraftListSchema,
   ClassIdParamsSchema,
@@ -272,6 +273,24 @@ const classes: FastifyPluginAsync = async (fastify): Promise<void> => {
     }
   );
 
+
+  // GET /api/classes/details/:id - a read-only latest version for public, owner, or pooled-party readers
+  app.get(
+    '/details/:id',
+    {
+      schema: {
+        description: 'Load the latest readable Custom Class version for display',
+        tags: ['classes'],
+        params: ClassIdParamsSchema,
+        response: { 200: ClassDetailSchema, 401: ErrorSchema, 404: ErrorSchema, 500: ErrorSchema },
+      },
+    },
+    async (request, reply) => {
+      const result = await service(request).getDetail({ session: request.appSession, id: request.params.id });
+      if (!result.ok) return sendServiceError(reply, request, result.error);
+      return reply.send(result.value as never);
+    }
+  );
   // GET /api/classes/:id - one of the GM's classes, as the creator edits it
   app.get(
     '/:id',

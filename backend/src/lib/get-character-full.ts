@@ -22,6 +22,7 @@ import { characterRepository } from '../repositories/character-repository.js';
 import { snakeToCamel } from '../utils.js';
 import { statToModifier } from './ability-modifiers.js';
 import { findTranslationsWithAuthoredFallback } from './class-translations.js';
+import { classAttribution } from './class-attribution.js';
 import { byClassOrder } from './ability-order.js';
 
 // ── Internal types ─────────────────────────────────────────────────────────────
@@ -845,6 +846,9 @@ export async function hydrateCharacterRow(
   // 10. Class translations
   const className       = translate(translations, cls?.nameKey)       ?? cls?.name       ?? null;
   const classDescription = translate(translations, cls?.descriptionKey) ?? cls?.appendix  ?? null;
+  const classAuthoredLanguage = cls?.languages.length === 1 && cls.languages[0] !== locale
+    ? cls.languages[0]
+    : null;
 
   return {
     id:               row.id,
@@ -852,6 +856,8 @@ export async function hydrateCharacterRow(
     classId:          row.classId,
     className,
     classDescription,
+    classAttribution: cls ? classAttribution(cls) : null,
+    classAuthoredLanguage,
     origin:           translate(translations, row.origin)          ?? row.origin          ?? null,
     strength:         row.strength,
     agility:          row.agility,
