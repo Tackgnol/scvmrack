@@ -106,6 +106,14 @@ export type ClassDraft = {
   gettingBetterNote: Localized;
 };
 
+export type StoredClassDraft = {
+  id: number;
+  classId: number | null;
+  draft: ClassDraft;
+  revision: number;
+  updatedAt: string;
+};
+
 export type OwnClassSummary = {
   id: number;
   lineageId: string;
@@ -122,6 +130,8 @@ const classClient = client as unknown as UntypedApiClient;
 export const classKeys = {
   mine: (locale: string) => ["classes", "mine", locale] as const,
   one: (id: number) => ["classes", id] as const,
+  drafts: () => ["classes", "drafts"] as const,
+  draft: (id: number) => ["classes", "drafts", id] as const,
 };
 
 export async function listMyClasses(
@@ -146,6 +156,51 @@ export async function getClass(
   );
 }
 
+/** Lists unfinished private creator work, newest first. */
+export async function listClassDrafts(): Promise<StoredClassDraft[]> {
+  return unwrapApiResult(
+    await classClient.GET<StoredClassDraft[]>("/api/classes/drafts"),
+    "Failed to load your drafts",
+  );
+}
+
+export async function getClassDraft(id: number): Promise<StoredClassDraft> {
+  return unwrapApiResult(
+    await classClient.GET<StoredClassDraft>(`/api/classes/drafts/${id}`),
+    "Failed to load the draft",
+  );
+}
+
+export async function createClassDraft(input: {
+  classId: number | null;
+  draft: ClassDraft;
+}): Promise<StoredClassDraft> {
+  return unwrapApiResult(
+    await classClient.POST<StoredClassDraft>("/api/classes/drafts", { body: input }),
+    "Failed to save the draft",
+  );
+}
+
+export async function updateClassDraft(input: {
+  id: number;
+  draft: ClassDraft;
+  revision: number;
+  force?: boolean;
+}): Promise<StoredClassDraft> {
+  return unwrapApiResult(
+    await classClient.PUT<StoredClassDraft>(`/api/classes/drafts/${input.id}`, {
+      body: { draft: input.draft, revision: input.revision, force: input.force },
+    }),
+    "Failed to save the draft",
+  );
+}
+
+export async function deleteClassDraft(id: number): Promise<void> {
+  await unwrapApiResult(
+    await classClient.DELETE<void>(`/api/classes/drafts/${id}`),
+    "Failed to discard the draft",
+  );
+}
 /** Saves a new class, or edits `id` when given. */
 export async function saveClass(input: {
   id: number | null;

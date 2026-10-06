@@ -28,6 +28,7 @@ import {
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { readLocalDraftSnapshot, useDraftAutosave } from "./useDraftAutosave";
 
 type HistoryEntry = {
   before: ClassDraft;
@@ -48,10 +49,16 @@ const sameDraft = (left: ClassDraft, right: ClassDraft) =>
 export function useClassCreator(
   classId: number | null,
   initialDraft: ClassDraft,
+  initialDraftRecord: import("@/api/classes").StoredClassDraft | null = null,
 ) {
   const { t, i18n } = useTranslation();
   const { showInfo } = useSnackbar();
-  const draftRef = useRef(initialDraft);
+  const [localSnapshot] = useState(() =>
+    initialDraftRecord ? null : readLocalDraftSnapshot(classId),
+  );
+  const restoredDraft = initialDraftRecord?.draft ?? localSnapshot?.draft ?? initialDraft;
+  const restoredRecord = initialDraftRecord ?? (localSnapshot?.id ? localSnapshot : null);
+  const draftRef = useRef(restoredDraft);
   const historyRef = useRef<{ undo: HistoryEntry[]; redo: HistoryEntry[] }>({
     undo: [],
     redo: [],
@@ -63,13 +70,24 @@ export function useClassCreator(
       redo: [...historyRef.current.redo],
     });
   const queryClient = useQueryClient();
-  const [draft, setDraft] = useState(initialDraft);
-  const [revision, setRevision] = useState(0);
+  const [draft, setDraft] = useState(restoredDraft);
+  const replaceDraft = (nextDraft: ClassDraft) => {
+    draftRef.current = nextDraft;
+    setDraft(nextDraft);
+  };
+  const [revision, setRevision] = useState(localSnapshot ? 1 : 0);
+  const autosave = useDraftAutosave({
+    classId,
+    draft,
+    revision,
+    initialDraft: restoredRecord,
+    replaceDraft,
+  });
   const [savedId, setSavedId] = useState(classId);
   const [savedRevision, setSavedRevision] = useState<number | null>(null);
   const [step, setStep] = useState<CreatorStep>("identity");
   const [chosenLanguage, setLanguage] = useState<ClassLanguage>(
-    initialDraft.languages[0],
+    restoredDraft.languages[0],
   );
   const [touched, setTouched] = useState<ReadonlySet<string>>(() => new Set());
   const [attempted, setAttempted] = useState(false);
@@ -202,6 +220,7 @@ export function useClassCreator(
       draftRef.current = withSavedKeys(draftRef.current, result.draft);
       historyRef.current = { undo: [], redo: [] };
       publishHistory();
+      void autosave.complete();
     },
     onError: (error) =>
       setBlocked(
@@ -262,7 +281,10 @@ export function useClassCreator(
       ),
     showMissing: (path: string) =>
       attempted || step === "review" || touched.has(path),
-    setStep,
+    setStep: (nextStep: CreatorStep) => {
+      setStep(nextStep);
+      void autosave.persist();
+    },
     setLanguage,
     openAbility,
     setOpenAbility,
@@ -273,10 +295,14 @@ export function useClassCreator(
     redoKind: history.redo[history.redo.length - 1]?.kind,
     setOpenItem,
     jump,
+    draftAutosave: autosave,
     /** Steps by `delta` (−1 back, +1 next) when there is one that way. */
     move: (delta: number) => {
       const next = STEPS[STEPS.indexOf(step) + delta];
-      if (next) setStep(next);
+      if (next) {
+        setStep(next);
+        void autosave.persist();
+      }
       return next;
     },
     fix: (issue: CreatorIssue) => {

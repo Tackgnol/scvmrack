@@ -13,6 +13,7 @@ import { fail, ok, unexpected, type ServiceLogger, type ServiceResult } from './
 import { isGm, sessionUserId, type AppSession } from './session.js';
 
 const NAME_CONSTRAINT = 'classes_name_per_owner';
+const NEW_DRAFT_LIMIT = 3;
 
 const notYours = () => notFound('CLASS_NOT_FOUND', 'Class not found');
 
@@ -32,6 +33,15 @@ function nameTaken(draft: ClassDraft) {
   );
 }
 
+const draftNotYours = () => notFound('DRAFT_NOT_FOUND', 'Draft not found');
+
+function staleDraft() {
+  return apiError(
+    409,
+    'DRAFT_STALE',
+    'This draft changed on another device. Load the newer copy or keep yours to overwrite it.'
+  );
+}
 /** Checks external grant keys against the shared catalog and their appropriate slot. */
 async function catalogGrantProblems(draft: ClassDraft): Promise<string[]> {
   const ownRefs = new Set(draft.items.map((item) => item.ref));
@@ -82,6 +92,62 @@ export function createCustomClassService(log: ServiceLogger) {
       }
     },
 
+    /** Lists unfinished private drafts; invalid payloads are deliberately retained. */
+    async listDrafts(input: { session: AppSession }) {
+      if (!isGm(input.session)) return fail(unauthorized());
+      try {
+        return ok(await customClassRepository.listDrafts(sessionUserId(input.session)!));
+      } catch (err) {
+        return fail(unexpected(log, err, 'CLASS_DRAFT_LIST_FAILED', 'Failed to load your drafts'));
+      }
+    },
+
+    async getDraft(input: { session: AppSession; id: number }) {
+      if (!isGm(input.session)) return fail(unauthorized());
+      try {
+        const draft = await customClassRepository.getDraft(sessionUserId(input.session)!, input.id);
+        return draft ? ok(draft) : fail(draftNotYours());
+      } catch (err) {
+        return fail(unexpected(log, err, 'CLASS_DRAFT_LOAD_FAILED', 'Failed to load your draft'));
+      }
+    },
+
+    async saveDraft(input: {
+      session: AppSession;
+      id?: number;
+      classId: number | null;
+      draft: ClassDraft;
+      revision?: number;
+      force?: boolean;
+    }) {
+      if (!isGm(input.session)) return fail(unauthorized());
+      const ownerUserId = sessionUserId(input.session)!;
+      try {
+        if (input.classId !== null) {
+          const cls = await customClassRepository.findWithText(input.classId);
+          if (!cls || cls.ownerUserId !== ownerUserId) return fail(notYours());
+        } else if (input.id === undefined && (await customClassRepository.countNewDrafts(ownerUserId)) >= NEW_DRAFT_LIMIT) {
+          return fail(apiError(409, 'DRAFT_LIMIT_REACHED', `You can keep ${NEW_DRAFT_LIMIT} unfinished new classes at once.`));
+        }
+        const savedDraft = await customClassRepository.saveDraft({ ...input, ownerUserId });
+        return savedDraft ? ok(savedDraft) : fail(staleDraft());
+      } catch (err) {
+        if (err instanceof Error && err.message.includes('class_drafts_owner_user_id_class_id_key')) {
+          return fail(staleDraft());
+        }
+        return fail(unexpected(log, err, 'CLASS_DRAFT_SAVE_FAILED', 'Failed to save your draft'));
+      }
+    },
+
+    async deleteDraft(input: { session: AppSession; id: number }) {
+      if (!isGm(input.session)) return fail(unauthorized());
+      try {
+        const deleted = await customClassRepository.deleteDraft(sessionUserId(input.session)!, input.id);
+        return deleted ? ok({ deleted: true }) : fail(draftNotYours());
+      } catch (err) {
+        return fail(unexpected(log, err, 'CLASS_DRAFT_DELETE_FAILED', 'Failed to discard your draft'));
+      }
+    },
     async get(input: { session: AppSession; id: number }): Promise<ServiceResult<{ id: number; draft: ClassDraft }>> {
       if (!isGm(input.session)) return fail(unauthorized());
       try {

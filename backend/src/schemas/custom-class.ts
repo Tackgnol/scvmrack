@@ -286,7 +286,50 @@ export const ClassIdParamsSchema = {
   required: ['id'],
   properties: { id: { type: 'integer', minimum: 1, maximum: 2147483647 } },
 } as const;
+export const DraftIdParamsSchema = {
+  type: 'object',
+  required: ['draftId'],
+  properties: { draftId: { type: 'integer', minimum: 1, maximum: 2147483647 } },
+} as const;
 
+export const DraftCreateBodySchema = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['draft'],
+  properties: {
+    classId: { type: ['integer', 'null'], minimum: 1, maximum: 2147483647 },
+    draft: ClassDraftSchema,
+  },
+} as const;
+
+export const DraftUpdateBodySchema = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['draft', 'revision'],
+  properties: {
+    draft: ClassDraftSchema,
+    revision: { type: 'integer', minimum: 1, maximum: 2147483647 },
+    force: { type: 'boolean' },
+  },
+} as const;
+
+export const StoredClassDraftSchema = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['id', 'classId', 'draft', 'revision', 'updatedAt'],
+  properties: {
+    id: { type: 'integer' },
+    classId: { type: ['integer', 'null'] },
+    draft: ClassDraftSchema,
+    revision: { type: 'integer' },
+    updatedAt: { type: 'string', format: 'date-time' },
+  },
+} as const;
+
+export const ClassDraftListSchema = {
+  type: 'array',
+  items: StoredClassDraftSchema,
+} as const;
 export const ClassLocaleQuerySchema = {
   type: 'object',
   properties: { locale: { type: 'string', enum: ['en', 'pl'], default: 'en' } },

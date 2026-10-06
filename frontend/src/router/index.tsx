@@ -140,6 +140,12 @@ const classNewRoute = createRoute({
     component: lazyRouteComponent(loadClassCreatorPage),
 });
 
+const classDraftRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: '/gm/classes/draft/$draftId',
+    component: lazyRouteComponent(loadClassCreatorPage),
+});
+
 const classEditRoute = createRoute({
     getParentRoute: () => rootRoute,
     path: '/gm/classes/$classId',
@@ -181,6 +187,7 @@ const routeTree = rootRoute.addChildren([
     gmRoute,
     classesRoute,
     classNewRoute,
+    classDraftRoute,
     classEditRoute,
     obrAuthDoneRoute,
     obrOpenRoute,

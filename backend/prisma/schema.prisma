@@ -23,6 +23,7 @@ model User {
   characters Character[]
   parties    Party[]
   classes    Class[]
+  classDrafts ClassDraftRecord[]
 
   @@map("user")
 }
@@ -324,12 +325,31 @@ model Class {
   omenDie             Int             @default(2) @map("omen_die")
   gettingBetterRule   GettingBetterRule @default(book) @map("getting_better_rule")
   gettingBetterNoteKey String?        @db.VarChar(255) @map("getting_better_note_key")
+  drafts              ClassDraftRecord[]
 
   @@unique([lineageId, version])
   @@index([ownerUserId])
   @@map("classes")
 }
 
+/// An unvalidated, private Custom Class work-in-progress. Drafts never feed class rows or pools.
+model ClassDraftRecord {
+  id          Int      @id @default(autoincrement())
+  ownerUserId String   @map("owner_user_id")
+  classId     Int?     @map("class_id")
+  payload     Json
+  revision    Int      @default(1)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  owner User   @relation(fields: [ownerUserId], references: [id], onDelete: Cascade)
+  class Class? @relation(fields: [classId], references: [id], onDelete: SetNull)
+
+  @@unique([ownerUserId, classId])
+  @@index([ownerUserId, updatedAt])
+  @@index([classId])
+  @@map("class_drafts")
+}
 model Ability {
   id        Int      @id @default(autoincrement())
   classId   Int?     @map("class_id")

@@ -1,5 +1,6 @@
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
+import { Alert, Button } from "@mui/material";
 import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { AbilitiesStep } from "../AbilitiesStep/AbilitiesStep";
@@ -33,9 +34,9 @@ import {
 import { useClassCreator } from "./useClassCreator";
 
 /** The class creator: steps in a rail, one language at a time, a test roll and a save. */
-export function ClassCreator({ classId, initialDraft }: ClassCreatorProps) {
+export function ClassCreator({ classId, initialDraft, initialDraftRecord = null }: ClassCreatorProps) {
   const { t } = useTranslation();
-  const creator = useClassCreator(classId, initialDraft);
+  const creator = useClassCreator(classId, initialDraft, initialDraftRecord);
   const moveRef = useRef(creator.move);
   useEffect(() => {
     moveRef.current = creator.move;
@@ -161,6 +162,14 @@ export function ClassCreator({ classId, initialDraft }: ClassCreatorProps) {
                 total: STEPS.length,
               })}
             </StepCount>
+            {creator.draftAutosave.state !== "idle" && (
+              <StepCount data-testid="draft-save-state">
+                {creator.draftAutosave.state === "saving" && t("creator.draftSaving", "Saving…")}
+                {creator.draftAutosave.state === "saved" && t("creator.draftSaved", "Draft saved · kept 90 days after your last edit")}
+                {creator.draftAutosave.state === "offline" && t("creator.draftOffline", "Offline, will retry")}
+                {creator.draftAutosave.state === "conflict" && t("creator.draftConflict", "Draft changed elsewhere")}
+              </StepCount>
+            )}
           </div>
           {creator.step !== "stats" && (
             <WritingInSwitch
@@ -173,6 +182,33 @@ export function ClassCreator({ classId, initialDraft }: ClassCreatorProps) {
             />
           )}
         </Head>
+        {creator.draftAutosave.record && (
+          <Alert
+            severity={creator.draftAutosave.state === "conflict" ? "warning" : "info"}
+            action={
+              creator.draftAutosave.state === "conflict" ? (
+                <>
+                  <Button color="inherit" size="small" onClick={() => void creator.draftAutosave.loadNewer()}>
+                    {t("creator.draftLoadNewer", "Load newer one")}
+                  </Button>
+                  <Button color="inherit" size="small" onClick={() => void creator.draftAutosave.keepMine()}>
+                    {t("creator.draftKeepMine", "Keep mine")}
+                  </Button>
+                </>
+              ) : (
+                <Button color="inherit" size="small" onClick={() => {
+                  if (window.confirm(t("creator.draftDiscardConfirm", "Discard this unfinished draft?"))) void creator.draftAutosave.discard();
+                }}>
+                  {t("creator.draftDiscard", "Discard")}
+                </Button>
+              )
+            }
+          >
+            {creator.draftAutosave.state === "conflict"
+              ? t("creator.draftConflictBody", "This draft changed on another device.")
+              : t("creator.draftResumed", "Unsaved changes are being kept as a private draft.")} {t("creator.draftRetention", "Unfinished drafts are deleted after 90 days.")}
+          </Alert>
+        )}
         <Paper>
           <Hint>{t(`creator.steps.${creator.step}.hint`)}</Hint>
           {creator.step === "identity" && <IdentityStep {...stepProps} />}

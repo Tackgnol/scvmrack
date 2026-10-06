@@ -5,6 +5,7 @@ import Fastify from 'fastify';
 import { blankClassDraft, type ClassDraft } from '../../src/lib/class-draft.ts';
 
 const created: ClassDraft[] = [];
+const drafts: Array<{ id: number; classId: number | null; draft: ClassDraft; revision: number; updatedAt: Date }> = [];
 
 mock.module('../../src/services/custom-class-service.js', {
   namedExports: {
@@ -17,6 +18,20 @@ mock.module('../../src/services/custom-class-service.js', {
       get: async () => ({ ok: true, value: { id: 9, draft: blankClassDraft() } }),
       update: async () => ({ ok: true, value: { id: 9, draft: blankClassDraft() } }),
       testRoll: async () => ({ ok: true, value: {} }),
+      listDrafts: async () => ({ ok: true, value: drafts }),
+      getDraft: async (input: { id: number }) => ({ ok: true, value: drafts.find((draft) => draft.id === input.id) }),
+      saveDraft: async (input: { id?: number; classId: number | null; draft: ClassDraft; revision?: number }) => {
+        const existing = input.id === undefined ? undefined : drafts.find((draft) => draft.id === input.id);
+        if (existing) {
+          existing.draft = input.draft;
+          existing.revision += 1;
+          return { ok: true, value: existing };
+        }
+        const draft = { id: drafts.length + 1, classId: input.classId, draft: input.draft, revision: 1, updatedAt: new Date() };
+        drafts.push(draft);
+        return { ok: true, value: draft };
+      },
+      deleteDraft: async () => ({ ok: true, value: { deleted: true } }),
     }),
   },
 });
@@ -56,5 +71,22 @@ test('the schema refuses dice off the book, more than 20 origins and text over 1
 
   assert.deepEqual([odd.statusCode, many.statusCode, long.statusCode], [400, 400, 400]);
   assert.equal(created.length, 0);
+  await app.close();
+});
+
+test('draft routes keep incomplete work and require a revision for updates', async () => {
+  drafts.length = 0;
+  const app = await buildApp();
+
+  const createdDraft = await app.inject({ method: 'POST', url: '/drafts', payload: { draft: blankClassDraft() } });
+  assert.equal(createdDraft.statusCode, 201);
+  assert.equal(createdDraft.json().revision, 1);
+
+  const missingRevision = await app.inject({ method: 'PUT', url: '/drafts/1', payload: { draft: blankClassDraft() } });
+  assert.equal(missingRevision.statusCode, 400);
+
+  const updated = await app.inject({ method: 'PUT', url: '/drafts/1', payload: { draft: blankClassDraft(), revision: 1 } });
+  assert.equal(updated.statusCode, 200);
+  assert.equal(updated.json().revision, 2);
   await app.close();
 });

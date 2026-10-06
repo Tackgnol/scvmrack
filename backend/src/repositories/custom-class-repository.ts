@@ -34,6 +34,27 @@ export type OwnClassSummary = {
   originCount: number;
 };
 
+export type StoredClassDraft = {
+  id: number;
+  classId: number | null;
+  draft: ClassDraft;
+  revision: number;
+  updatedAt: Date;
+};
+
+const asStoredDraft = (row: {
+  id: number;
+  classId: number | null;
+  payload: Prisma.JsonValue;
+  revision: number;
+  updatedAt: Date;
+}): StoredClassDraft => ({
+  id: row.id,
+  classId: row.classId,
+  draft: row.payload as unknown as ClassDraft,
+  revision: row.revision,
+  updatedAt: row.updatedAt,
+});
 const keysFor = (id: number) => ({
   name: `cc.${id}.name`,
   description: `cc.${id}.description`,
@@ -239,6 +260,58 @@ export const customClassRepository = {
     return rows.length;
   },
 
+  /** The server copy of unfinished creator work, newest first; abandoned drafts expire after 90 days. */
+  async listDrafts(ownerUserId: string): Promise<StoredClassDraft[]> {
+    await prisma.classDraftRecord.deleteMany({
+      where: { ownerUserId, updatedAt: { lt: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000) } },
+    });
+    const rows = await prisma.classDraftRecord.findMany({
+      where: { ownerUserId },
+      orderBy: { updatedAt: 'desc' },
+    });
+    return rows.map(asStoredDraft);
+  },
+
+  async getDraft(ownerUserId: string, id: number): Promise<StoredClassDraft | null> {
+    const row = await prisma.classDraftRecord.findFirst({ where: { id, ownerUserId } });
+    return row ? asStoredDraft(row) : null;
+  },
+
+  async countNewDrafts(ownerUserId: string): Promise<number> {
+    return prisma.classDraftRecord.count({ where: { ownerUserId, classId: null } });
+  },
+
+  /** Creates a draft or advances its revision only when the caller still holds the current revision. */
+  async saveDraft(input: {
+    id?: number;
+    ownerUserId: string;
+    classId: number | null;
+    draft: ClassDraft;
+    revision?: number;
+    force?: boolean;
+  }): Promise<StoredClassDraft | null> {
+    if (input.id === undefined) {
+      const row = await prisma.classDraftRecord.create({
+        data: { ownerUserId: input.ownerUserId, classId: input.classId, payload: input.draft },
+      });
+      return asStoredDraft(row);
+    }
+    const where = input.force
+      ? { id: input.id, ownerUserId: input.ownerUserId }
+      : { id: input.id, ownerUserId: input.ownerUserId, revision: input.revision };
+    const updated = await prisma.classDraftRecord.updateMany({
+      where,
+      data: { payload: input.draft, revision: { increment: 1 } },
+    });
+    if (updated.count === 0) return null;
+    const row = await prisma.classDraftRecord.findUniqueOrThrow({ where: { id: input.id } });
+    return asStoredDraft(row);
+  },
+
+  async deleteDraft(ownerUserId: string, id: number): Promise<boolean> {
+    const deleted = await prisma.classDraftRecord.deleteMany({ where: { id, ownerUserId } });
+    return deleted.count > 0;
+  },
   async create(ownerUserId: string, draft: ClassDraft): Promise<number> {
     return prisma.$transaction(async (tx) => {
       const { id } = await tx.class.create({

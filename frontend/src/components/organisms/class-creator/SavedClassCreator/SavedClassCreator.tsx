@@ -1,4 +1,4 @@
-import { classKeys, getClass } from "@/api/classes";
+import { classKeys, getClass, listClassDrafts } from "@/api/classes";
 import { CenterRow, Spinner } from "@/pages/gmPages.styles";
 import { getUserFacingApiErrorMessage } from "@/utils/errorUtils";
 import { Alert } from "@mui/material";
@@ -11,6 +11,7 @@ import type { SavedClassCreatorProps } from "./SavedClassCreator.models";
 export function SavedClassCreator({ classId }: SavedClassCreatorProps) {
   const { t } = useTranslation();
   const classQuery = useQuery({ queryKey: classKeys.one(classId), queryFn: () => getClass(classId) });
+  const draftsQuery = useQuery({ queryKey: classKeys.drafts(), queryFn: listClassDrafts });
 
   if (classQuery.error) {
     return <Alert severity="error">{getUserFacingApiErrorMessage(classQuery.error, t, "This class wouldn't load.")}</Alert>;
@@ -22,5 +23,6 @@ export function SavedClassCreator({ classId }: SavedClassCreatorProps) {
       </CenterRow>
     );
   }
-  return <ClassCreator key={classQuery.data.id} classId={classQuery.data.id} initialDraft={classQuery.data.draft} />;
+  const savedDraft = draftsQuery.data?.find((draft) => draft.classId === classId) ?? null;
+  return <ClassCreator key={`${classQuery.data.id}:${savedDraft?.id ?? "saved"}`} classId={classQuery.data.id} initialDraft={savedDraft?.draft ?? classQuery.data.draft} initialDraftRecord={savedDraft} />;
 }

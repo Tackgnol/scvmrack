@@ -1,4 +1,4 @@
-import { classKeys, listMyClasses, type ClassLanguage } from "@/api/classes";
+import { classKeys, deleteClassDraft, listClassDrafts, listMyClasses, type ClassLanguage } from "@/api/classes";
 import { useAuth } from "@/hooks/useAuth";
 import { getApiLocale } from "@/hooks/utils";
 import {
@@ -17,10 +17,18 @@ import {
 import { Seo } from "@/seo/Seo";
 import { getUserFacingApiErrorMessage } from "@/utils/errorUtils";
 import { Alert, Box, Button } from "@mui/material";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { Trans, useTranslation } from "react-i18next";
 import { ClassDescription, ZineLine } from "./ClassesPage.styles";
+
+function draftName(draft: { name: { en: string; pl: string } }, locale: ClassLanguage) {
+  return draft.name[locale] || draft.name.en || draft.name.pl || "Untitled class";
+}
+
+function expiryDays(updatedAt: string) {
+  return Math.max(0, Math.ceil(90 - (Date.now() - new Date(updatedAt).getTime()) / 86_400_000));
+}
 
 /** The GM's own Custom Classes, newest first, with the way into the creator. */
 export function ClassesPage() {
@@ -28,6 +36,12 @@ export function ClassesPage() {
   const { isAuthenticated, isLoading } = useAuth();
   const signedOut = !isLoading && !isAuthenticated;
   const locale = getApiLocale<ClassLanguage>(i18n.language);
+  const queryClient = useQueryClient();
+  const draftsQuery = useQuery({ queryKey: classKeys.drafts(), queryFn: listClassDrafts, enabled: isAuthenticated });
+  const discardDraft = useMutation({
+    mutationFn: deleteClassDraft,
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: classKeys.drafts() }),
+  });
   const classesQuery = useQuery({
     queryKey: classKeys.mine(locale),
     queryFn: () => listMyClasses(locale),
@@ -77,6 +91,34 @@ export function ClassesPage() {
         )}
 
         <CardGrid>
+          {(draftsQuery.data ?? []).map((draft) => {
+            const days = expiryDays(draft.updatedAt);
+            const name = draftName(draft.draft, locale);
+            return (
+              <Card key={`draft-${draft.id}`} data-testid="class-draft">
+                <Box>
+                  <CardName>{name}</CardName>
+                  <Meta>{t("classes.draft", "Unfinished draft")} · {t("classes.lastEdited", "Last edited {{date}}", { date: new Date(draft.updatedAt).toLocaleDateString() })}</Meta>
+                  {days < 14 && <Meta sx={{ color: "#ff4d7d" }}>{t("classes.expiresIn", "Expires in {{count}} days", { count: days })}</Meta>}
+                </Box>
+                <Box>
+                  <CardAction component={Link} to={`/gm/classes/draft/${draft.id}`}>
+                    {t("classes.resume", "Resume")}
+                  </CardAction>
+                  <Button
+                    color="inherit"
+                    size="small"
+                    disabled={discardDraft.isPending}
+                    onClick={() => {
+                      if (window.confirm(t("classes.discardConfirm", "Discard this unfinished draft?"))) discardDraft.mutate(draft.id);
+                    }}
+                  >
+                    {t("classes.discard", "Discard")}
+                  </Button>
+                </Box>
+              </Card>
+            );
+          })}
           {(classesQuery.data ?? []).map((cls) => (
             <Card key={cls.id} data-testid="own-class">
               <Box>
