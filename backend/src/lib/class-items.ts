@@ -78,8 +78,13 @@ const fromCatalog = (raw: unknown): AbilityModifierDraft[] =>
   }));
 
 /** The catalog row a Class Item is stored as. `source` labels its modifiers on the sheet. */
-export function itemRow(item: ClassItemDraft, classId: number, source: string) {
-  const common = { classId, value: item.value };
+export function itemRow(
+  item: ClassItemDraft,
+  classId: number,
+  source: string,
+  position: number
+) {
+  const common = { classId, value: item.value, position };
   switch (item.type) {
     case 'weapon': {
       const w = item.weapon;
@@ -159,7 +164,9 @@ export function itemRow(item: ClassItemDraft, classId: number, source: string) {
 
 /** A stored catalog row of any type, as far as reading a Class Item back needs. */
 export type ItemRowRead = {
+  id: number;
   key: string;
+  position: number | null;
   tags: string[];
   value: number | null;
   dice?: number[];

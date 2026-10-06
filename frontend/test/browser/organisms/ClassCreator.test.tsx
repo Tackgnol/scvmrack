@@ -320,6 +320,41 @@ describe("ClassCreator", () => {
       .toHaveAttribute("aria-invalid", "true");
   });
 
+  it("reorders abilities with Alt+Up", async () => {
+    renderCreator({
+      ...complete(),
+      abilities: [
+        {
+          random: true,
+          name: { en: "Bone-Reader", pl: "" },
+          text: { en: "Ask a skull.", pl: "" },
+          modifiers: [],
+          grantItem: null,
+          grantPet: null,
+        },
+        {
+          random: true,
+          name: { en: "Grave Sense", pl: "" },
+          text: { en: "Smell the dead.", pl: "" },
+          modifiers: [],
+          grantItem: null,
+          grantPet: null,
+        },
+      ],
+    });
+    await userEvent.click(
+      page.getByRole("button", { name: /Abilities/ }).first(),
+    );
+
+    const grip = page.getByRole("button", { name: "Move Grave Sense" });
+    await userEvent.click(grip);
+    await userEvent.keyboard("{Escape}");
+    await userEvent.keyboard("{Alt>}{ArrowUp}{/Alt}");
+
+    await expect
+      .element(page.getByTestId("reorder-abilities-0"))
+      .toHaveTextContent("Grave Sense");
+  });
   it("duplicates and removes abilities from the open card", async () => {
     renderCreator({
       ...complete(),

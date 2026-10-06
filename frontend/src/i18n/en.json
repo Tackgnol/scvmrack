@@ -1299,6 +1299,21 @@
       "abilities": "Porting a zine? Paste an ability list into a Name field: one “Name: rules” entry per line.",
       "origins": "Porting a zine? Paste one origin per line to add them all at once."
     },
+    "reorder": {
+      "grip": "Move {{label}}",
+      "up": "Move up",
+      "down": "Move down",
+      "top": "To the top",
+      "bottom": "To the bottom",
+      "abilitiesHint": "This is the order on the sheet, in print, and in the random pool.",
+      "itemsHint": "This is the order Class Items appear wherever this class lists them.",
+      "originsHint": "Order is the numbered origin list used when a scvm is created.",
+      "reorderedAbilities": "Reordered abilities",
+      "reorderedItems": "Reordered Class Items",
+      "reorderedOrigins": "Reordered origins",
+      "reorderedTableRows": "Reordered table rows",
+      "shortcut": "Alt+↑/↓ moves the focused card or table row."
+    },
     "identity": {
       "languages": "Languages this class is written in",
       "englishOnly": "English only",

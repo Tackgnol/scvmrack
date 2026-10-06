@@ -387,8 +387,10 @@ model Weapon {
 
   /// The Custom Class that owns this Class Item; null for the shared catalog.
   classId        Int?     @map("class_id")
+  position       Int?
 
   @@index([classId])
+  @@index([classId, position])
   @@map("weapons")
 }
 
@@ -405,8 +407,10 @@ model Armor {
 
   /// The Custom Class that owns this Class Item; null for the shared catalog.
   classId        Int?     @map("class_id")
+  position       Int?
 
   @@index([classId])
+  @@index([classId, position])
   @@map("armors")
 }
 
@@ -430,8 +434,10 @@ model Equipment {
 
   /// The Custom Class that owns this Class Item; null for the shared catalog.
   classId        Int?     @map("class_id")
+  position       Int?
 
   @@index([classId])
+  @@index([classId, position])
   @@map("equipment")
 }
 
@@ -450,8 +456,10 @@ model Pet {
 
   /// The Custom Class that owns this Class Item; null for the shared catalog.
   classId        Int?     @map("class_id")
+  position       Int?
 
   @@index([classId])
+  @@index([classId, position])
   @@map("pets")
 }
 

@@ -22,6 +22,10 @@ import {
   zineRows,
 } from "@/components/organisms/class-creator/classCreator.utils";
 import { signed } from "@/utils/signed";
+import {
+  movedIndex,
+  moveEntry,
+} from "@/components/organisms/class-creator/reorder.utils";
 import type { AbilityDraft, ClassDraft, ClassItemDraft } from "@/api/classes";
 
 const ready = (overrides: Partial<ClassDraft> = {}): ClassDraft => ({
@@ -420,5 +424,21 @@ describe("zine paste", () => {
       { name: "Mt. Skull", text: "Climb its ribs" },
       { name: "Grave Sense", text: "Smell the dead" },
     ]);
+  });
+});
+
+describe("creator reordering", () => {
+  it("moves a complete entry without losing the linked data", () => {
+    const rows = [
+      { text: { en: "One", pl: "Jeden" }, itemRef: "new:one" },
+      { text: { en: "Two", pl: "Dwa" }, itemRef: "new:two" },
+    ];
+    expect(moveEntry(rows, 1, 0)).toEqual([rows[1], rows[0]]);
+  });
+
+  it("keeps the open card's index attached to its entry", () => {
+    expect(movedIndex(1, 1, 3)).toBe(3);
+    expect(movedIndex(2, 1, 3)).toBe(1);
+    expect(movedIndex(0, 3, 1)).toBe(0);
   });
 });

@@ -60,8 +60,8 @@ function classColumns(draft: ClassDraft) {
 }
 
 /** Writes one Class Item's catalog row; a retyped item gets a row under its new key. */
-async function upsertItem(tx: Tx, key: string, item: ClassItemDraft, classId: number, source: string): Promise<void> {
-  const row = itemRow(item, classId, source);
+async function upsertItem(tx: Tx, key: string, item: ClassItemDraft, classId: number, source: string, position: number): Promise<void> {
+  const row = itemRow(item, classId, source, position);
   const args = { where: { key }, create: { key, ...row.data }, update: row.data };
   switch (row.table) {
     case 'weapon':
@@ -151,7 +151,7 @@ async function writeText(tx: Tx, id: number, draft: ClassDraft): Promise<void> {
   await tx.origin.createMany({ data: originKeys.map((key, i) => ({ classId: id, roll: i + 1, key })) });
 
   for (const [i, item] of draft.items.entries()) {
-    await upsertItem(tx, itemKeys[i], item, id, item.name[draft.languages[0]].trim());
+    await upsertItem(tx, itemKeys[i], item, id, item.name[draft.languages[0]].trim(), i + 1);
   }
 
   await tx.ability.deleteMany({ where: { classId: id } });
@@ -161,7 +161,7 @@ async function writeText(tx: Tx, id: number, draft: ClassDraft): Promise<void> {
       tableDie: ability.table?.die ?? null,
       key: abilityKeys[i],
       isRandom: ability.random,
-      position: i,
+      position: i + 1,
       grantItemKey: ability.grantItem && (keyOfRef.get(ability.grantItem) ?? ability.grantItem),
       grantPetKey: ability.grantPet && (keyOfRef.get(ability.grantPet) ?? ability.grantPet),
     })),
@@ -222,9 +222,8 @@ async function loadItems(classId: number, keys: string[]): Promise<ClassItemDraf
     pl: texts.find((t) => t.key === key && t.locale === 'pl')?.value ?? '',
   });
   const rows: ItemRowRead[] = [...weapons, ...armors, ...equipment, ...pets];
-  const numberOf = (key: string) => Number(key.split('-').at(-1));
   return rows
-    .sort((a, b) => numberOf(a.key) - numberOf(b.key))
+    .sort((a, b) => (a.position ?? Infinity) - (b.position ?? Infinity) || a.id - b.id)
     .map((row) => itemFromRow(itemTypeOf(row.key)!, row, text(row.key), text(`${row.key}.description`)));
 }
 
@@ -280,7 +279,7 @@ export const customClassRepository = {
       prisma.translation.findMany({ where: { key: { startsWith: `cc.${id}.` } } }),
     ]);
     const grantKeys = abilities
-      .flatMap((a) => [a.grantItemKey, a.grantPetKey])
+      .flatMap((a) => [a.grantItemKey, a.grantPetKey, ...a.tableRows.map((row) => row.itemKey)])
       .filter((key): key is string => !!key && itemTypeOf(key) !== null);
     const items = await loadItems(id, grantKeys);
     const modifiersOf = (key: string): AbilityModifierDraft[] =>

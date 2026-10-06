@@ -74,7 +74,7 @@ test('every type survives a save and a reload', () => {
   };
 
   for (const item of [weapon, armor, gear, pet]) {
-    const { data } = itemRow({ ...item, value: 15 }, 7, 'X');
+    const { data } = itemRow({ ...item, value: 15 }, 7, 'X', 1);
     const back = itemFromRow(
       item.type,
       { key: 'k', ...data } as never,
@@ -92,12 +92,13 @@ test('every type survives a save and a reload', () => {
 test('stored rows read the way the sheet and generator expect', () => {
   const sword = named(blankClassItem('weapon'));
   sword.weapon = { ...sword.weapon, diceCount: 2, diceFaces: 4 };
-  assert.deepEqual(itemRow(sword, 7, 'X').data.dice, [4, 4]);
+  assert.deepEqual(itemRow(sword, 7, 'X', 1).data.dice, [4, 4]);
   const plate = named(blankClassItem('armor'));
   plate.armor = { tier: 2, modifiers: [] };
-  assert.deepEqual(itemRow(plate, 7, 'X').data, {
+  assert.deepEqual(itemRow(plate, 7, 'X', 1).data, {
     classId: 7,
     value: 0,
+    position: 1,
     tags: ['armor', 'medium-armor'],
     dice: [4],
     maxTier: 2,

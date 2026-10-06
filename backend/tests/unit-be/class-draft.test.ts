@@ -175,8 +175,8 @@ test('the spec rolls fixed and random abilities by their text, in order', () => 
   assert.deepEqual(
     spec.abilities.map((a) => [a.key, a.isRandom, a.position]),
     [
-      ['Bone-Reader', false, 0],
-      ['Grave Sense', true, 1],
+      ['Bone-Reader', false, 1],
+      ['Grave Sense', true, 2],
     ]
   );
   assert.equal(spec.randomAbilityCount, 1);

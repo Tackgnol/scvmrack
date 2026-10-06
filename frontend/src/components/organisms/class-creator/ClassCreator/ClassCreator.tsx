@@ -237,6 +237,7 @@ export function ClassCreator({ classId, initialDraft }: ClassCreatorProps) {
               : t("creator.history.redo", "Redo")}
           </button>
         </div>
+        <Hint aria-label={t("creator.reorder.shortcut", "Alt+↑/↓ moves the focused card or table row.")}>{t("creator.reorder.shortcut", "Alt+↑/↓ moves the focused card or table row.")}</Hint>
         <Nav>
           <BackButton
             type="button"

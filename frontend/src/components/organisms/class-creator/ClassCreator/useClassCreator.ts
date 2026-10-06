@@ -108,9 +108,9 @@ export function useClassCreator(
     const hintedKind = document.body.dataset.creatorHistoryKind as
       | CreatorChange["kind"]
       | undefined;
-    const source = change?.path
+    const source = change?.source ?? (change?.path
       ? fieldId(change.path)
-      : hintedSource || active?.id || null;
+      : hintedSource || active?.id || null);
     const kind =
       change?.kind ??
       hintedKind ??
@@ -136,7 +136,7 @@ export function useClassCreator(
       last &&
       last.source === source &&
       last.kind === kind &&
-      ((kind === "typing" && entry.at - last.at <= 1000) || kind === "nudge"),
+      ((kind === "typing" && entry.at - last.at <= 1000) || kind === "nudge" || kind === "move"),
     );
     if (coalesce && last) {
       last.after = entry.after;
@@ -168,9 +168,10 @@ export function useClassCreator(
     setRevision((current) => current + 1);
     setBlocked(null);
     publishHistory();
-    showInfo(
+    if (entry.kind !== "move" && entry.kind !== "drag")
+      showInfo(
       t("creator.history.undid", "Undid: {{step}}", { step: entry.label }),
-    );
+      );
     restoreFocus(entry.source);
   };
   const redo = () => {
@@ -182,9 +183,10 @@ export function useClassCreator(
     setRevision((current) => current + 1);
     setBlocked(null);
     publishHistory();
-    showInfo(
+    if (entry.kind !== "move" && entry.kind !== "drag")
+      showInfo(
       t("creator.history.redid", "Redid: {{step}}", { step: entry.label }),
-    );
+      );
     restoreFocus(entry.source);
   };
 

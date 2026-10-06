@@ -1,5 +1,5 @@
 import type { AbilityDraft, ClassItemType } from "@/api/classes";
-import type { GrantSlot } from "../classCreator.models";
+import type { CreatorChange, GrantSlot } from "../classCreator.models";
 import type { StepProps } from "../classCreator.models";
 
 export type AbilityEditorProps = Omit<StepProps, "update"> & {
@@ -7,7 +7,7 @@ export type AbilityEditorProps = Omit<StepProps, "update"> & {
   /** Shared with the closed card, so opening and closing morph one frame. */
   transitionName: string;
   randomNumber: number | null;
-  onChange: (recipe: (ability: AbilityDraft) => AbilityDraft) => void;
+  onChange: (recipe: (ability: AbilityDraft) => AbilityDraft, change?: CreatorChange) => void;
   onZinePaste: (value: string) => void;
   onGrant: (slot: GrantSlot, ref: string | null) => void;
   onForge: (type: ClassItemType) => void;

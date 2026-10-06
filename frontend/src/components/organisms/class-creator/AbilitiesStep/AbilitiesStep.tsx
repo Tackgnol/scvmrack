@@ -2,6 +2,7 @@ import type { AbilityDraft, ClassItemType } from "@/api/classes";
 import { NumberStepper } from "@/components/atoms/NumberStepper/NumberStepper";
 import { useStableIds } from "@/hooks/useStableIds";
 import { useTranslation } from "react-i18next";
+import { Reorderable } from "../Reorderable/Reorderable";
 import { AbilityEditor } from "../AbilityEditor/AbilityEditor";
 import { withCardTransition } from "../cardTransition";
 import { AbilitySummary } from "../AbilitySummary/AbilitySummary";
@@ -24,6 +25,8 @@ import {
   zineAbilities,
   slotFor,
 } from "../classCreator.utils";
+import type { CreatorChange } from "../classCreator.models";
+import { movedIndex, moveEntry } from "../reorder.utils";
 import type { AbilitiesStepProps } from "./AbilitiesStep.models";
 
 /** Step 3: fixed abilities every scvm gets, and the random pool with how many each scvm rolls. */
@@ -35,7 +38,7 @@ export function AbilitiesStep({
 }: AbilitiesStepProps) {
   const { t } = useTranslation();
   const { draft, update, focus, jump, language } = stepProps;
-  const { ids, insert, remove } = useStableIds(draft.abilities.length);
+  const { ids, insert, remove, move } = useStableIds(draft.abilities.length);
   const pool = randomPoolSize(draft);
   const full = draft.abilities.length >= LIMIT_LIST;
   const cardId = (index: number) => fieldId(`abilities.${index}`);
@@ -43,11 +46,15 @@ export function AbilitiesStep({
   const setAbility = (
     index: number,
     recipe: (ability: AbilityDraft) => AbilityDraft,
+    change?: CreatorChange,
   ) =>
-    update((d) => ({
-      ...d,
-      abilities: d.abilities.map((a, i) => (i === index ? recipe(a) : a)),
-    }));
+    update(
+      (d) => ({
+        ...d,
+        abilities: d.abilities.map((a, i) => (i === index ? recipe(a) : a)),
+      }),
+      change,
+    );
   const open = (index: number | null, focusPath: string) =>
     withCardTransition(
       index === null,
@@ -167,12 +174,33 @@ export function AbilitiesStep({
     );
   };
 
+  const reorder = (
+    from: number,
+    to: number,
+    kind: "move" | "drag",
+    source: string,
+  ) => {
+    move(from, to);
+    onOpenAbility(movedIndex(openAbility, from, to));
+    update((d) => ({ ...d, abilities: moveEntry(d.abilities, from, to) }), {
+      kind,
+      source,
+      label: t("creator.reorder.reorderedAbilities", "Reordered abilities"),
+    });
+  };
+
   return (
     <Stack>
       <Hint>
         {t(
           "creator.zinePaste.abilities",
           "Porting a zine? Paste an ability list into a Name field: one “Name: rules” entry per line.",
+        )}
+      </Hint>
+      <Hint>
+        {t(
+          "creator.reorder.abilitiesHint",
+          "This is the order on the sheet, in print, and in the random pool.",
         )}
       </Hint>
       <WaitingItemsTray
@@ -211,45 +239,56 @@ export function AbilitiesStep({
           )}
         </Empty>
       )}
-      {draft.abilities.map((ability, index) =>
-        openAbility === index ? (
-          <AbilityEditor
-            key={ids[index]}
-            transitionName={`ability-${ids[index]}`}
-            onZinePaste={(value) => pasteZineAbilities(index, value)}
-            {...stepProps}
-            index={index}
-            randomNumber={randomNumber(draft, index)}
-            full={full}
-            onChange={(recipe) => setAbility(index, recipe)}
-            onDone={() => open(null, `abilities.${index}`)}
-            onRemove={(withItems) => removeAt(index, withItems)}
-            onGrant={(slot, ref) =>
-              setAbility(index, (a) => ({ ...a, [slot]: ref }))
-            }
-            onForge={(type) => forge(index, type)}
-            onEditItem={(itemIndex) =>
-              jump("items", `items.${itemIndex}.name.${language}`)
-            }
-            onDuplicate={() => duplicate(index)}
-          />
-        ) : (
-          <AbilitySummary
-            key={ids[index]}
-            transitionName={`ability-${ids[index]}`}
-            id={cardId(index)}
-            ability={ability}
-            language={stepProps.language}
-            randomNumber={randomNumber(draft, index)}
-            missing={
-              issues.filter((issue) =>
-                issue.path.startsWith(`abilities.${index}.`),
-              ).length
-            }
-            onOpen={() => open(index, `abilities.${index}.random`)}
-          />
-        ),
-      )}
+      {draft.abilities.map((ability, index) => (
+        <Reorderable
+          key={ids[index]}
+          count={draft.abilities.length}
+          index={index}
+          itemId={ids[index]}
+          label={
+            ability.name[language] ||
+            t("creator.abilities.untitled", "Unnamed ability")
+          }
+          listId="abilities"
+          onMove={reorder}
+        >
+          {openAbility === index ? (
+            <AbilityEditor
+              transitionName={`ability-${ids[index]}`}
+              onZinePaste={(value) => pasteZineAbilities(index, value)}
+              {...stepProps}
+              index={index}
+              randomNumber={randomNumber(draft, index)}
+              full={full}
+              onChange={(recipe, change) => setAbility(index, recipe, change)}
+              onDone={() => open(null, `abilities.${index}`)}
+              onRemove={(withItems) => removeAt(index, withItems)}
+              onGrant={(slot, ref) =>
+                setAbility(index, (a) => ({ ...a, [slot]: ref }))
+              }
+              onForge={(type) => forge(index, type)}
+              onEditItem={(itemIndex) =>
+                jump("items", `items.${itemIndex}.name.${language}`)
+              }
+              onDuplicate={() => duplicate(index)}
+            />
+          ) : (
+            <AbilitySummary
+              transitionName={`ability-${ids[index]}`}
+              id={cardId(index)}
+              ability={ability}
+              language={stepProps.language}
+              randomNumber={randomNumber(draft, index)}
+              missing={
+                issues.filter((issue) =>
+                  issue.path.startsWith(`abilities.${index}.`),
+                ).length
+              }
+              onOpen={() => open(index, `abilities.${index}.random`)}
+            />
+          )}
+        </Reorderable>
+      ))}
       <div style={{ viewTransitionName: "abilities-add" }}>
         <InkButton
           id={fieldId("abilities.add")}

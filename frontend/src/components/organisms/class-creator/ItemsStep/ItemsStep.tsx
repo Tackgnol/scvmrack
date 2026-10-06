@@ -6,13 +6,16 @@ import {
 import { useStableIds } from "@/hooks/useStableIds";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Reorderable } from "../Reorderable/Reorderable";
 import { ItemEditor } from "../ItemEditor/ItemEditor";
 import { ItemSummary } from "../ItemSummary/ItemSummary";
 import { withCardTransition } from "../cardTransition";
+import { movedIndex, moveEntry } from "../reorder.utils";
 import {
   Counter,
   Empty,
   GroupHeading,
+  Hint,
   InkButton,
   SmallAction,
   Spread,
@@ -42,7 +45,7 @@ export function ItemsStep({
   const { draft, update, focus, jump, language } = stepProps;
   // Not stored: whether the class carries items is whether it has any.
   const [answer, setAnswer] = useState<GateAnswer>("unasked");
-  const { ids, insert, remove } = useStableIds(draft.items.length);
+  const { ids, insert, remove, move } = useStableIds(draft.items.length);
   const full = draft.items.length >= LIMIT_LIST;
 
   const open = (index: number | null, focusPath: string) =>
@@ -111,6 +114,21 @@ export function ItemsStep({
     jump("abilities", `abilities.${abilityIndex}.text.${language}`);
   };
 
+  const reorder = (
+    from: number,
+    to: number,
+    kind: "move" | "drag",
+    source: string,
+  ) => {
+    move(from, to);
+    onOpenItem(movedIndex(openItem, from, to));
+    update((d) => ({ ...d, items: moveEntry(d.items, from, to) }), {
+      kind,
+      source,
+      label: t("creator.reorder.reorderedItems", "Reordered Class Items"),
+    });
+  };
+
   if (draft.items.length === 0 && answer === "no") {
     return (
       <GateNo>
@@ -155,6 +173,12 @@ export function ItemsStep({
 
   return (
     <Stack>
+      <Hint>
+        {t(
+          "creator.reorder.itemsHint",
+          "This is the order Class Items appear wherever this class lists them.",
+        )}
+      </Hint>
       <Spread>
         <Spread id={fieldId("items.forge")} tabIndex={-1}>
           <GroupHeading>{t("creator.items.forge", "Forge")}</GroupHeading>
@@ -192,47 +216,63 @@ export function ItemsStep({
       )}
       {draft.items.map((item, index) => {
         const granter = granterOf(draft, item.ref);
-        return openItem === index ? (
-          <ItemEditor
+        return (
+          <Reorderable
             key={ids[index]}
-            {...stepProps}
+            count={draft.items.length}
             index={index}
-            transitionName={`item-${ids[index]}`}
-            full={full}
-            onChange={(recipe) => setItem(index, recipe)}
-            onChangeType={(type) =>
-              update((d) => changeItemType(d, index, type))
+            itemId={ids[index]}
+            label={
+              item.name[language] ||
+              t("creator.items.untitled", "Unnamed Class Item")
             }
-            onGoToAbility={(abilityIndex) =>
-              jump("abilities", `abilities.${abilityIndex}.name.${language}`)
-            }
-            onGrantFromNewAbility={() => grantFromNewAbility(index)}
-            onDone={() => open(null, `items.${index}`)}
-            onRemove={() => removeAt(index)}
-            onDuplicate={() => duplicate(index)}
-          />
-        ) : (
-          <ItemSummary
-            key={ids[index]}
-            id={fieldId(`items.${index}`)}
-            transitionName={`item-${ids[index]}`}
-            item={item}
-            language={language}
-            grantedBy={
-              granter
-                ? draft.abilities[granter.index].name[language] ||
-                  t("creator.abilities.untitled", "Unnamed ability")
-                : null
-            }
-            missing={
-              issues.filter(
-                (issue) =>
-                  issue.path.startsWith(`items.${index}.`) &&
-                  issue.step === "items",
-              ).length
-            }
-            onOpen={() => open(index, `items.${index}.name.${language}`)}
-          />
+            listId="items"
+            onMove={reorder}
+          >
+            {openItem === index ? (
+              <ItemEditor
+                {...stepProps}
+                index={index}
+                transitionName={`item-${ids[index]}`}
+                full={full}
+                onChange={(recipe) => setItem(index, recipe)}
+                onChangeType={(type) =>
+                  update((d) => changeItemType(d, index, type))
+                }
+                onGoToAbility={(abilityIndex) =>
+                  jump(
+                    "abilities",
+                    `abilities.${abilityIndex}.name.${language}`,
+                  )
+                }
+                onGrantFromNewAbility={() => grantFromNewAbility(index)}
+                onDone={() => open(null, `items.${index}`)}
+                onRemove={() => removeAt(index)}
+                onDuplicate={() => duplicate(index)}
+              />
+            ) : (
+              <ItemSummary
+                id={fieldId(`items.${index}`)}
+                transitionName={`item-${ids[index]}`}
+                item={item}
+                language={language}
+                grantedBy={
+                  granter
+                    ? draft.abilities[granter.index].name[language] ||
+                      t("creator.abilities.untitled", "Unnamed ability")
+                    : null
+                }
+                missing={
+                  issues.filter(
+                    (issue) =>
+                      issue.path.startsWith(`items.${index}.`) &&
+                      issue.step === "items",
+                  ).length
+                }
+                onOpen={() => open(index, `items.${index}.name.${language}`)}
+              />
+            )}
+          </Reorderable>
         );
       })}
     </Stack>

@@ -3,8 +3,12 @@ import { NumberStepper } from "@/components/atoms/NumberStepper/NumberStepper";
 import { Select } from "@/components/atoms/Select/Select";
 import { LocalizedField } from "@/components/molecules/LocalizedField/LocalizedField";
 import { useRef, useState } from "react";
+import { useStableIds } from "@/hooks/useStableIds";
 import { useTranslation } from "react-i18next";
 import { fieldId, LIMIT_TEXT } from "../classCreator.utils";
+import type { CreatorChange } from "../classCreator.models";
+import { Reorderable } from "../Reorderable/Reorderable";
+import { moveEntry } from "../reorder.utils";
 import { RemoveConfirm } from "../RemoveConfirm/RemoveConfirm";
 import { SmallAction } from "../classCreator.styles";
 
@@ -14,7 +18,7 @@ type Props = {
   draft: ClassDraft;
   index: number;
   language: ClassLanguage;
-  onChange: (recipe: (ability: AbilityDraft) => AbilityDraft) => void;
+  onChange: (recipe: (ability: AbilityDraft) => AbilityDraft, change?: CreatorChange) => void;
   showMissing: (path: string) => boolean;
   touch: (path: string) => void;
 };
@@ -36,6 +40,7 @@ export function AbilityReferenceTableEditor({ ability, base, draft, index, langu
   const [confirmingRemoval, setConfirmingRemoval] = useState(false);
   const [pendingPaste, setPendingPaste] = useState<PendingPaste | null>(null);
   const table = ability.table;
+  const { ids, move } = useStableIds(table?.rows.length ?? 0);
   const itemUsedElsewhere = (ref: string, row: number) => draft.abilities.some((candidate, abilityIndex) =>
     candidate.grantItem === ref || candidate.grantPet === ref || candidate.table?.rows.some((entry, rowIndex) => entry.itemRef === ref && (abilityIndex !== index || rowIndex !== row)),
   );
@@ -72,6 +77,14 @@ export function AbilityReferenceTableEditor({ ability, base, draft, index, langu
     });
     setPendingPaste(null);
   };
+  const reorderRows = (from: number, to: number, kind: "move" | "drag", source: string) => {
+    move(from, to);
+    onChange(
+      (entry) => entry.table ? { ...entry, table: { ...entry.table, rows: moveEntry(entry.table.rows, from, to) } } : entry,
+      { kind, source, label: t("creator.reorder.reorderedTableRows", "Reordered table rows") },
+    );
+  };
+
   return (
     <section aria-label={t("creator.abilities.referenceTable", "Reference table")}>
       {confirmingRemoval && <RemoveConfirm message={t("creator.abilities.removeTableWithItems", "This table gives {{items}}. Remove the table and its links?", { items: linkedItemNames.map((name) => `“${name}”`).join(", ") })} actions={[{ label: t("creator.abilities.removeTable", "Remove reference table"), danger: true, onClick: () => onChange((entry) => ({ ...entry, table: null })) }, { label: t("creator.cancel", "Cancel"), onClick: () => setConfirmingRemoval(false) }]} />}
@@ -79,17 +92,34 @@ export function AbilityReferenceTableEditor({ ability, base, draft, index, langu
       {!confirmingRemoval && !pendingPaste && <SmallAction type="button" className="kill" onClick={() => linkedItemNames.length > 0 ? setConfirmingRemoval(true) : onChange((entry) => ({ ...entry, table: null }))}>{t("creator.abilities.removeTable", "Remove reference table")}</SmallAction>}
       <NumberStepper id={fieldId(`${base}.table.die`)} label={t("creator.abilities.tableDie", "Table die")} value={table.die} min={2} max={12} onChange={resize} commitOnEnterOnly hint={t("creator.abilities.tableHint", "The row number is the die result.")} />
       {table.rows.map((row, roll) => (
-        <div key={roll}>
-          <LocalizedField id={fieldId(`${base}.table.rows.${roll}.text.${language}`)} label={t("creator.abilities.tableRow", "Result {{roll}}", { roll: roll + 1 })} value={row.text[language]} language={language} multiline showMissing={showMissing(`${base}.table.rows.${roll}.text.${language}`)} maxLength={LIMIT_TEXT}
-            onChange={(value) => onChange((entry) => ({ ...entry, table: entry.table && { ...entry.table, rows: entry.table.rows.map((current, currentRoll) => currentRoll === roll ? { ...current, text: { ...current.text, [language]: value } } : current) } }))}
-            onBlur={() => touch(`${base}.table.rows.${roll}.text.${language}`)}
-            onPaste={(event) => { const lines = pastedRows(event.clipboardData.getData("text")); if (lines.length < 2) return; event.preventDefault(); setPendingPaste({ roll, lines: lines.slice(0, 12 - roll) }); }}
-          />
-          <Select id={fieldId(`${base}.table.rows.${roll}.itemRef`)} value={row.itemRef ?? ""} onChange={(event) => onChange((entry) => ({ ...entry, table: entry.table && { ...entry.table, rows: entry.table.rows.map((current, currentRoll) => currentRoll === roll ? { ...current, itemRef: event.target.value || null } : current) } }))}>
-            <option value="">{t("creator.items.nothing", "Nothing")}</option>
-            {draft.items.map((item) => <option key={item.ref} value={item.ref} disabled={itemUsedElsewhere(item.ref, roll)}>{item.name[language] || t("creator.items.untitled", "Unnamed Class Item")}</option>)}
-          </Select>
-        </div>
+        <Reorderable
+          key={ids[roll]}
+          count={table.rows.length}
+          index={roll}
+          itemId={ids[roll]}
+          label={t("creator.abilities.tableRow", "Result {{roll}}", { roll: roll + 1 })}
+          listId={`${base}-table`}
+          onMove={reorderRows}
+        >
+          <div>
+            <LocalizedField
+              id={fieldId(`${base}.table.rows.${roll}.text.${language}`)}
+              label={t("creator.abilities.tableRow", "Result {{roll}}", { roll: roll + 1 })}
+              value={row.text[language]}
+              language={language}
+              multiline
+              showMissing={showMissing(`${base}.table.rows.${roll}.text.${language}`)}
+              maxLength={LIMIT_TEXT}
+              onChange={(value) => onChange((entry) => ({ ...entry, table: entry.table && { ...entry.table, rows: entry.table.rows.map((current, currentRoll) => currentRoll === roll ? { ...current, text: { ...current.text, [language]: value } } : current) } }))}
+              onBlur={() => touch(`${base}.table.rows.${roll}.text.${language}`)}
+              onPaste={(event) => { const lines = pastedRows(event.clipboardData.getData("text")); if (lines.length < 2) return; event.preventDefault(); setPendingPaste({ roll, lines: lines.slice(0, 12 - roll) }); }}
+            />
+            <Select id={fieldId(`${base}.table.rows.${roll}.itemRef`)} value={row.itemRef ?? ""} onChange={(event) => onChange((entry) => ({ ...entry, table: entry.table && { ...entry.table, rows: entry.table.rows.map((current, currentRoll) => currentRoll === roll ? { ...current, itemRef: event.target.value || null } : current) } }))}>
+              <option value="">{t("creator.items.nothing", "Nothing")}</option>
+              {draft.items.map((item) => <option key={item.ref} value={item.ref} disabled={itemUsedElsewhere(item.ref, roll)}>{item.name[language] || t("creator.items.untitled", "Unnamed Class Item")}</option>)}
+            </Select>
+          </div>
+        </Reorderable>
       ))}
     </section>
   );

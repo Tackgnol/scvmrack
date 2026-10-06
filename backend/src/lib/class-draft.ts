@@ -330,7 +330,7 @@ export function classSpecFromDraft(
       id: i,
       key: textIn(ability.name),
       isRandom: ability.random,
-      position: i,
+      position: i + 1,
       grantItemKey: itemName(ability.grantItem),
       grantPetKey: itemName(ability.grantPet),
       table: ability.table && {

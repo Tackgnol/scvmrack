@@ -27,7 +27,8 @@ export type CreatorIssue = {
 export type CreatorChange = {
   label?: string;
   path?: string;
-  kind?: "typing" | "nudge" | "paste";
+  source?: string;
+  kind?: "typing" | "nudge" | "paste" | "move" | "drag";
 };
 
 /** An ability's two grant slots: a Class Item, and a pet. */
