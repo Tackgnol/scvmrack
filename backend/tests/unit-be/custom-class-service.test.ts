@@ -8,13 +8,32 @@ const GUEST = { user: { id: 'guest-1', isAnonymous: true } };
 
 const repo = {
   owned: 0,
-  found: null as null | { id: number; lineageId: string; ownerUserId: string | null; isLatest: boolean; draft: ClassDraft },
+  found: null as null | {
+    id: number;
+    lineageId: string;
+    ownerUserId: string | null;
+    version: number;
+    status: 'active' | 'archived';
+    takenDownAt: Date | null;
+    isLatest: boolean;
+    playingCount: number;
+    draft: ClassDraft;
+  },
   createThrows: null as unknown,
   created: [] as Array<{ owner: string; draft: ClassDraft }>,
   updated: [] as Array<{ id: number; draft: ClassDraft }>,
+  versioned: [] as Array<{ id: number; draft: ClassDraft }>,
   specs: [] as unknown[],
-  drafts: [] as Array<{ id: number; classId: number | null; draft: ClassDraft; revision: number; updatedAt: Date }>,
+  drafts: [] as Array<{
+    id: number;
+    classId: number | null;
+    draft: ClassDraft;
+    revision: number;
+    updatedAt: Date;
+  }>,
   newDraftCount: 0,
+  removeResult: { archived: false },
+  restoreResult: true,
 };
 
 mock.module('../../src/repositories/custom-class-repository.js', {
@@ -29,21 +48,53 @@ mock.module('../../src/repositories/custom-class-repository.js', {
       update: async (id: number, draft: ClassDraft) => {
         repo.updated.push({ id, draft });
       },
+      createVersion: async (id: number, draft: ClassDraft) => {
+        repo.versioned.push({ id, draft });
+        return 8;
+      },
       findWithText: async (id: number) =>
-        repo.found ?? { id, lineageId: 'l', ownerUserId: 'gm-1', isLatest: true, draft: repo.created.at(-1)?.draft },
+        repo.found ?? {
+          id,
+          lineageId: 'l',
+          ownerUserId: 'gm-1',
+          version: id === 8 ? 4 : 1,
+          status: 'active',
+          takenDownAt: null,
+          isLatest: true,
+          playingCount: 0,
+          draft: repo.created.at(-1)?.draft,
+        },
       listOwned: async () => [],
+      remove: async () => repo.removeResult,
+      restore: async () => repo.restoreResult,
       listDrafts: async () => repo.drafts,
-      getDraft: async (_owner: string, id: number) => repo.drafts.find((draft) => draft.id === id) ?? null,
+      getDraft: async (_owner: string, id: number) =>
+        repo.drafts.find((draft) => draft.id === id) ?? null,
       countNewDrafts: async () => repo.newDraftCount,
-      saveDraft: async (input: { id?: number; classId: number | null; draft: ClassDraft; revision?: number; force?: boolean }) => {
-        const existing = input.id === undefined ? null : repo.drafts.find((draft) => draft.id === input.id);
+      saveDraft: async (input: {
+        id?: number;
+        classId: number | null;
+        draft: ClassDraft;
+        revision?: number;
+        force?: boolean;
+      }) => {
+        const existing =
+          input.id === undefined
+            ? null
+            : repo.drafts.find((draft) => draft.id === input.id);
         if (existing) {
           if (!input.force && existing.revision !== input.revision) return null;
           existing.draft = input.draft;
           existing.revision += 1;
           return existing;
         }
-        const draft = { id: repo.drafts.length + 1, classId: input.classId, draft: input.draft, revision: 1, updatedAt: new Date() };
+        const draft = {
+          id: repo.drafts.length + 1,
+          classId: input.classId,
+          draft: input.draft,
+          revision: 1,
+          updatedAt: new Date(),
+        };
         repo.drafts.push(draft);
         return draft;
       },
@@ -65,10 +116,17 @@ mock.module('../../src/lib/generate-character.js', {
   },
 });
 mock.module('../../src/lib/get-character-full.js', {
-  namedExports: { hydrateCharacterRow: async (row: Record<string, unknown>) => ({ ...row, hydrated: true }) },
+  namedExports: {
+    hydrateCharacterRow: async (row: Record<string, unknown>) => ({
+      ...row,
+      hydrated: true,
+    }),
+  },
 });
 
-const { createCustomClassService } = await import('../../src/services/custom-class-service.js');
+const { createCustomClassService } = await import(
+  '../../src/services/custom-class-service.js'
+);
 const service = createCustomClassService({ error: () => {} });
 
 const ready = (): ClassDraft => ({
@@ -84,9 +142,12 @@ beforeEach(() => {
   repo.createThrows = null;
   repo.created = [];
   repo.updated = [];
+  repo.versioned = [];
   repo.specs = [];
   repo.drafts = [];
   repo.newDraftCount = 0;
+  repo.removeResult = { archived: false };
+  repo.restoreResult = true;
 });
 
 test('a GM saves a complete class as their own', async () => {
@@ -106,11 +167,17 @@ test('guests and signed-out visitors cannot forge classes', async () => {
 });
 
 test('a draft with problems is refused, naming each one', async () => {
-  const result = await service.create({ session: GM, draft: { ...ready(), origins: [] } });
+  const result = await service.create({
+    session: GM,
+    draft: { ...ready(), origins: [] },
+  });
 
   assert.equal(result.ok, false);
   assert.equal(!result.ok && result.error.code, 'CLASS_DRAFT_INVALID');
-  assert.match(!result.ok ? result.error.message : '', /Add at least one origin/);
+  assert.match(
+    !result.ok ? result.error.message : '',
+    /Add at least one origin/
+  );
   assert.equal(repo.created.length, 0);
 });
 
@@ -120,33 +187,114 @@ test('the class cap refuses with a specific message', async () => {
   const result = await service.create({ session: GM, draft: ready() });
 
   assert.equal(!result.ok && result.error.code, 'CLASS_LIMIT_REACHED');
-  assert.match(!result.ok ? result.error.message : '', /You have 50 classes, the most one account can hold/);
+  assert.match(
+    !result.ok ? result.error.message : '',
+    /You have 50 classes, the most one account can hold/
+  );
 });
 
 test('a second class with the same name is a clear 409', async () => {
-  repo.createThrows = new Error('conflicting key value violates exclusion constraint "classes_name_per_owner"');
+  repo.createThrows = new Error(
+    'conflicting key value violates exclusion constraint "classes_name_per_owner"'
+  );
 
   const result = await service.create({ session: GM, draft: ready() });
 
   assert.equal(!result.ok && result.error.code, 'CLASS_NAME_TAKEN');
-  assert.match(!result.ok ? result.error.message : '', /You already have a class called “Bog Witch”/);
+  assert.match(
+    !result.ok ? result.error.message : '',
+    /You already have a class called “Bog Witch”/
+  );
 });
 
-test("only the owner can load or edit a class, and only its latest version", async () => {
-  repo.found = { id: 7, lineageId: 'l', ownerUserId: 'someone-else', isLatest: true, draft: ready() };
+test('only the owner can load or edit a class, and only its latest version', async () => {
+  repo.found = {
+    id: 7,
+    lineageId: 'l',
+    ownerUserId: 'someone-else',
+    version: 1,
+    status: 'active',
+    takenDownAt: null,
+    isLatest: true,
+    playingCount: 0,
+    draft: ready(),
+  };
   assert.equal((await service.get({ session: GM, id: 7 })).ok, false);
-  assert.equal((await service.update({ session: GM, id: 7, draft: ready() })).ok, false);
+  assert.equal(
+    (await service.update({ session: GM, id: 7, draft: ready() })).ok,
+    false
+  );
 
-  repo.found = { id: 7, lineageId: 'l', ownerUserId: 'gm-1', isLatest: false, draft: ready() };
+  repo.found = {
+    id: 7,
+    lineageId: 'l',
+    ownerUserId: 'gm-1',
+    version: 1,
+    status: 'active',
+    takenDownAt: null,
+    isLatest: false,
+    playingCount: 0,
+    draft: ready(),
+  };
   const stale = await service.update({ session: GM, id: 7, draft: ready() });
   assert.equal(!stale.ok && stale.error.code, 'CLASS_NOT_LATEST');
 
-  repo.found = { id: 7, lineageId: 'l', ownerUserId: 'gm-1', isLatest: true, draft: ready() };
+  repo.found = {
+    id: 7,
+    lineageId: 'l',
+    ownerUserId: 'gm-1',
+    version: 1,
+    status: 'active',
+    takenDownAt: null,
+    isLatest: true,
+    playingCount: 0,
+    draft: ready(),
+  };
   const edited = await service.update({ session: GM, id: 7, draft: ready() });
   assert.equal(edited.ok && edited.value.id, 7);
   assert.equal(repo.updated.length, 1);
 });
 
+test('saving a played current version forks it while an unplayed version changes in place', async () => {
+  repo.found = {
+    id: 7,
+    lineageId: 'l',
+    ownerUserId: 'gm-1',
+    version: 3,
+    status: 'active',
+    takenDownAt: null,
+    isLatest: true,
+    playingCount: 3,
+    draft: ready(),
+  };
+
+  const forked = await service.update({ session: GM, id: 7, draft: ready() });
+
+  assert.equal(forked.ok && forked.value.id, 8);
+  assert.equal(forked.ok && forked.value.version, 4);
+  assert.equal(repo.versioned.length, 1);
+  assert.equal(repo.updated.length, 0);
+});
+test('removing a played class archives it and the owner can restore it', async () => {
+  repo.found = {
+    id: 7,
+    lineageId: 'l',
+    ownerUserId: 'gm-1',
+    version: 3,
+    status: 'active',
+    takenDownAt: null,
+    isLatest: true,
+    playingCount: 1,
+    draft: ready(),
+  };
+  repo.removeResult = { archived: true };
+
+  const removed = await service.remove({ session: GM, id: 7 });
+  const restored = await service.restore({ session: GM, id: 7 });
+
+  assert.equal(removed.ok && removed.value.archived, true);
+  assert.equal(restored.ok && restored.value.restored, true);
+});
 test('a test roll rolls from the draft, keeps nothing, and ignores missing text', async () => {
   const result = await service.testRoll({
     session: GM,
@@ -164,20 +312,41 @@ test('a test roll rolls from the draft, keeps nothing, and ignores missing text'
 
 test('a GM can keep invalid work as a private draft and later resolves its revision', async () => {
   const incomplete = { ...ready(), origins: [] };
-  const created = await service.saveDraft({ session: GM, classId: null, draft: incomplete });
+  const created = await service.saveDraft({
+    session: GM,
+    classId: null,
+    draft: incomplete,
+  });
   assert.equal(created.ok, true);
   assert.equal(created.ok && created.value.revision, 1);
 
-  const stale = await service.saveDraft({ session: GM, id: 1, classId: null, draft: incomplete, revision: 0 });
+  const stale = await service.saveDraft({
+    session: GM,
+    id: 1,
+    classId: null,
+    draft: incomplete,
+    revision: 0,
+  });
   assert.equal(!stale.ok && stale.error.code, 'DRAFT_STALE');
 
-  const forced = await service.saveDraft({ session: GM, id: 1, classId: null, draft: incomplete, revision: 0, force: true });
+  const forced = await service.saveDraft({
+    session: GM,
+    id: 1,
+    classId: null,
+    draft: incomplete,
+    revision: 0,
+    force: true,
+  });
   assert.equal(forced.ok && forced.value.revision, 2);
 });
 
 test('new private drafts are capped at three and remain invisible to guests', async () => {
   repo.newDraftCount = 3;
-  const limited = await service.saveDraft({ session: GM, classId: null, draft: ready() });
+  const limited = await service.saveDraft({
+    session: GM,
+    classId: null,
+    draft: ready(),
+  });
   assert.equal(!limited.ok && limited.error.code, 'DRAFT_LIMIT_REACHED');
 
   const guest = await service.listDrafts({ session: GUEST });

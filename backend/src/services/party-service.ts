@@ -36,7 +36,6 @@ import { buildClassPoolView, type ClassPoolView } from './class-pool-view.js';
 const OBR_ROOM_SYSTEM_OWNER_ID = 'system:obr-room';
 const OBR_ROOM_SYSTEM_OWNER_EMAIL = 'obr-room@system.scvmrack.local';
 
-
 function newInviteToken(): string {
   return crypto.randomBytes(16).toString('base64url');
 }
@@ -53,6 +52,7 @@ export type PartyMemberPayload = {
   maxHp: number;
   joinedAt: Date | null;
   owned: boolean;
+  olderRules: boolean;
 };
 
 export type PartyManageViewPayload = {
@@ -85,7 +85,8 @@ export type PartyInviteSummaryPayload = {
 
 function toMemberPayload(
   member: PartyMemberRow,
-  session: AppSession
+  session: AppSession,
+  olderClassIds: ReadonlySet<number>
 ): PartyMemberPayload {
   return {
     characterId: member.id,
@@ -95,13 +96,28 @@ function toMemberPayload(
     maxHp: member.maxHp,
     joinedAt: member.joinedAt,
     owned: ownsCharacter(session, member),
+    olderRules: member.classId !== null && olderClassIds.has(member.classId),
   };
 }
 
-function manageView(
+async function memberPayloads(
   party: PartyWithMembers,
   session: AppSession
-): PartyManageViewPayload {
+): Promise<PartyMemberPayload[]> {
+  const olderClassIds = await partyRepository.findOlderClassIds(
+    party.members.flatMap((member) =>
+      member.classId === null ? [] : [member.classId]
+    )
+  );
+  return party.members.map((member) =>
+    toMemberPayload(member, session, olderClassIds)
+  );
+}
+
+async function manageView(
+  party: PartyWithMembers,
+  session: AppSession
+): Promise<PartyManageViewPayload> {
   return {
     id: party.id,
     name: party.name,
@@ -110,24 +126,23 @@ function manageView(
     invitePath: invitePathFor(party.inviteToken),
     memberCount: party.members.length,
     maxMembers: PARTY_MAX_MEMBERS,
-    members: party.members.map((member) => toMemberPayload(member, session)),
+    members: await memberPayloads(party, session),
     createdAt: party.createdAt,
     updatedAt: party.updatedAt,
   };
 }
 
-function readView(
+async function readView(
   party: PartyWithMembers,
   session: AppSession
-): PartyReadViewPayload {
-  // Members can see the roster but never the invite token.
+): Promise<PartyReadViewPayload> {
   return {
     id: party.id,
     name: party.name,
     role: 'member' as const,
     memberCount: party.members.length,
     maxMembers: PARTY_MAX_MEMBERS,
-    members: party.members.map((member) => toMemberPayload(member, session)),
+    members: await memberPayloads(party, session),
     createdAt: party.createdAt,
     updatedAt: party.updatedAt,
   };
@@ -170,10 +185,18 @@ export function createPartyService(
     return null;
   }
 
-  async function loadClassPool(partyId: string, locale: string): Promise<ClassPoolView> {
+  async function loadClassPool(
+    partyId: string,
+    locale: string
+  ): Promise<ClassPoolView> {
     const pool = await classPoolRepository.findPartyPool(partyId);
-    if (!pool) throw new Error(`Party ${partyId} vanished while loading its class pool`);
-    const rows = await classPoolRepository.findCatalogRows(pool.ownerUserId, pool.poolLineageIds, locale);
+    if (!pool)
+      throw new Error(`Party ${partyId} vanished while loading its class pool`);
+    const rows = await classPoolRepository.findCatalogRows(
+      pool.ownerUserId,
+      pool.poolLineageIds,
+      locale
+    );
     return buildClassPoolView({
       rows,
       poolLineageIds: pool.poolLineageIds,
@@ -251,18 +274,24 @@ export function createPartyService(
         if (existing) {
           const userId = sessionUserId(input.session);
           if (userId && existing.ownerUserId === userId) {
-            return ok(manageView(existing, input.session));
+            return ok(await manageView(existing, input.session));
           }
           // A signed-in GM adopts a party that was auto-created for the room
           // (system owner) so anonymous auto-setup has an upgrade path.
-          if (isGm(input.session) && existing.ownerUserId === OBR_ROOM_SYSTEM_OWNER_ID) {
+          if (
+            isGm(input.session) &&
+            existing.ownerUserId === OBR_ROOM_SYSTEM_OWNER_ID
+          ) {
             await partyRepository.setPartyOwner(existing.id, userId as string);
             return ok(
-              manageView({ ...existing, ownerUserId: userId as string }, input.session)
+              await manageView(
+                { ...existing, ownerUserId: userId as string },
+                input.session
+              )
             );
           }
           // Room-trust callers can use the board but never see the invite token.
-          return ok(readView(existing, input.session));
+          return ok(await readView(existing, input.session));
         }
 
         if (ownerUserId === OBR_ROOM_SYSTEM_OWNER_ID) {
@@ -332,7 +361,9 @@ export function createPartyService(
       const obrRoomId =
         typeof input.obrRoomId === 'string' ? input.obrRoomId.trim() : '';
       if (obrRoomId.length === 0) {
-        return fail(badRequest('INVALID_OBR_ROOM_ID', 'Owlbear room ID is required'));
+        return fail(
+          badRequest('INVALID_OBR_ROOM_ID', 'Owlbear room ID is required')
+        );
       }
 
       try {
@@ -353,7 +384,12 @@ export function createPartyService(
         return ok({ id: input.id, obrRoomId });
       } catch (err) {
         return fail(
-          unexpected(log, err, 'PARTY_ATTACH_FAILED', 'Failed to attach Owlbear room')
+          unexpected(
+            log,
+            err,
+            'PARTY_ATTACH_FAILED',
+            'Failed to attach Owlbear room'
+          )
         );
       }
     },
@@ -371,7 +407,12 @@ export function createPartyService(
         return ok({ id: input.id, obrRoomId: null });
       } catch (err) {
         return fail(
-          unexpected(log, err, 'PARTY_DETACH_FAILED', 'Failed to detach Owlbear room')
+          unexpected(
+            log,
+            err,
+            'PARTY_DETACH_FAILED',
+            'Failed to detach Owlbear room'
+          )
         );
       }
     },
@@ -423,14 +464,14 @@ export function createPartyService(
 
         const userId = sessionUserId(input.session);
         if (userId && party.ownerUserId === userId) {
-          return ok(manageView(party, input.session));
+          return ok(await manageView(party, input.session));
         }
 
         const isMember = party.members.some((member) =>
           ownsCharacter(input.session, member)
         );
         if (isMember) {
-          return ok(readView(party, input.session));
+          return ok(await readView(party, input.session));
         }
 
         return fail(notFound('PARTY_NOT_FOUND', 'Party not found'));
@@ -518,7 +559,14 @@ export function createPartyService(
       try {
         return ok(await loadClassPool(input.id, input.locale));
       } catch (err) {
-        return fail(unexpected(log, err, 'CLASS_POOL_LOAD_FAILED', 'Failed to load the class pool'));
+        return fail(
+          unexpected(
+            log,
+            err,
+            'CLASS_POOL_LOAD_FAILED',
+            'Failed to load the class pool'
+          )
+        );
       }
     },
 
@@ -533,12 +581,22 @@ export function createPartyService(
       if (denied) return fail(denied);
       try {
         if (!input.enabled) {
-          await classPoolRepository.setLineage(input.id, input.lineageId, false);
+          await classPoolRepository.setLineage(
+            input.id,
+            input.lineageId,
+            false
+          );
           return ok(await loadClassPool(input.id, input.locale));
         }
         const view = await loadClassPool(input.id, input.locale);
         if (!view.classes.some((c) => c.lineageId === input.lineageId)) {
-          return fail(apiError(409, 'CLASS_NOT_AVAILABLE', 'This class cannot be added to the pool'));
+          return fail(
+            apiError(
+              409,
+              'CLASS_NOT_AVAILABLE',
+              'This class cannot be added to the pool'
+            )
+          );
         }
         await classPoolRepository.setLineage(input.id, input.lineageId, true);
         return ok({
@@ -548,7 +606,14 @@ export function createPartyService(
           ),
         });
       } catch (err) {
-        return fail(unexpected(log, err, 'CLASS_POOL_UPDATE_FAILED', 'Failed to update the class pool'));
+        return fail(
+          unexpected(
+            log,
+            err,
+            'CLASS_POOL_UPDATE_FAILED',
+            'Failed to update the class pool'
+          )
+        );
       }
     },
 
@@ -564,7 +629,14 @@ export function createPartyService(
         await classPoolRepository.setClassless(input.id, input.enabled);
         return ok(await loadClassPool(input.id, input.locale));
       } catch (err) {
-        return fail(unexpected(log, err, 'CLASS_POOL_UPDATE_FAILED', 'Failed to update the class pool'));
+        return fail(
+          unexpected(
+            log,
+            err,
+            'CLASS_POOL_UPDATE_FAILED',
+            'Failed to update the class pool'
+          )
+        );
       }
     },
 
@@ -572,7 +644,9 @@ export function createPartyService(
       session: AppSession;
       id: string;
       miseryCount: number;
-    }): Promise<ServiceResult<{ miseryCount: number; updatedCharacters: number }>> {
+    }): Promise<
+      ServiceResult<{ miseryCount: number; updatedCharacters: number }>
+    > {
       const denied = await ensureOwner(input.session, input.id);
       if (denied) {
         return fail(denied);

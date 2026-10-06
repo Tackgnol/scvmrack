@@ -56,8 +56,10 @@ export function useClassCreator(
   const [localSnapshot] = useState(() =>
     initialDraftRecord ? null : readLocalDraftSnapshot(classId),
   );
-  const restoredDraft = initialDraftRecord?.draft ?? localSnapshot?.draft ?? initialDraft;
-  const restoredRecord = initialDraftRecord ?? (localSnapshot?.id ? localSnapshot : null);
+  const restoredDraft =
+    initialDraftRecord?.draft ?? localSnapshot?.draft ?? initialDraft;
+  const restoredRecord =
+    initialDraftRecord ?? (localSnapshot?.id ? localSnapshot : null);
   const draftRef = useRef(restoredDraft);
   const historyRef = useRef<{ undo: HistoryEntry[]; redo: HistoryEntry[] }>({
     undo: [],
@@ -76,14 +78,14 @@ export function useClassCreator(
     setDraft(nextDraft);
   };
   const [revision, setRevision] = useState(localSnapshot ? 1 : 0);
+  const [savedId, setSavedId] = useState(classId);
   const autosave = useDraftAutosave({
-    classId,
+    classId: savedId,
     draft,
     revision,
     initialDraft: restoredRecord,
     replaceDraft,
   });
-  const [savedId, setSavedId] = useState(classId);
   const [savedRevision, setSavedRevision] = useState<number | null>(null);
   const [step, setStep] = useState<CreatorStep>("identity");
   const [chosenLanguage, setLanguage] = useState<ClassLanguage>(
@@ -126,7 +128,9 @@ export function useClassCreator(
     const hintedKind = document.body.dataset.creatorHistoryKind as
       | CreatorChange["kind"]
       | undefined;
-    const source = change?.source ?? (change?.path
+    const source =
+      change?.source ??
+      (change?.path
       ? fieldId(change.path)
       : hintedSource || active?.id || null);
     const kind =
@@ -154,7 +158,9 @@ export function useClassCreator(
       last &&
       last.source === source &&
       last.kind === kind &&
-      ((kind === "typing" && entry.at - last.at <= 1000) || kind === "nudge" || kind === "move"),
+        ((kind === "typing" && entry.at - last.at <= 1000) ||
+          kind === "nudge" ||
+          kind === "move"),
     );
     if (coalesce && last) {
       last.after = entry.after;

@@ -118,7 +118,9 @@ export const partyRepository = {
           name: input.name,
           inviteToken: input.inviteToken,
           obrRoomId: input.obrRoomId ?? undefined,
-          classPool: { create: bookLineages.map(({ lineageId }) => ({ lineageId })) },
+          classPool: {
+            create: bookLineages.map(({ lineageId }) => ({ lineageId })),
+          },
         },
         select: {
           id: true,
@@ -178,6 +180,30 @@ export const partyRepository = {
     });
   },
 
+  /** Class ids whose lineage now has a newer version. */
+  async findOlderClassIds(classIds: number[]): Promise<Set<number>> {
+    if (classIds.length === 0) return new Set();
+    const rows = await prisma.class.findMany({
+      where: { id: { in: classIds } },
+      select: { id: true, lineageId: true, version: true },
+    });
+    const latest = await prisma.class.groupBy({
+      by: ['lineageId'],
+      where: { lineageId: { in: rows.map((row) => row.lineageId) } },
+      _max: { version: true },
+    });
+    const latestByLineage = new Map(
+      latest.map((row) => [row.lineageId, row._max.version])
+    );
+    return new Set(
+      rows
+        .filter(
+          (row) =>
+            row.version < (latestByLineage.get(row.lineageId) ?? row.version)
+        )
+        .map((row) => row.id)
+    );
+  },
   /** The party behind an invite link, with its Party Class Pool. */
   async findPartyForInvite(token: string): Promise<PartyInviteRow | null> {
     const party = await prisma.party.findUnique({
@@ -228,7 +254,9 @@ export const partyRepository = {
     });
   },
 
-  getCharacterForJoin(characterId: string): Promise<CharacterForJoinRow | null> {
+  getCharacterForJoin(
+    characterId: string
+  ): Promise<CharacterForJoinRow | null> {
     return prisma.character.findUnique({
       where: { id: characterId },
       select: { id: true, userId: true, sessionId: true, partyId: true },

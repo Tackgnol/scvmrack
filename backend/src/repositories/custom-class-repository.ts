@@ -2,7 +2,13 @@ import type { Prisma } from '@prisma/client';
 import prisma from '../lib/prisma.js';
 import { findTranslationsWithAuthoredFallback } from '../lib/class-translations.js';
 import { stableKeys } from '../lib/stable-keys.js';
-import { itemFromRow, itemRow, itemTypeOf, stableItemKeys, type ItemRowRead } from '../lib/class-items.js';
+import {
+  itemFromRow,
+  itemRow,
+  itemTypeOf,
+  stableItemKeys,
+  type ItemRowRead,
+} from '../lib/class-items.js';
 import type {
   AbilityModifierDraft,
   ClassDraft,
@@ -19,7 +25,11 @@ export type CustomClassRows = {
   id: number;
   lineageId: string;
   ownerUserId: string | null;
+  version: number;
+  status: 'draft' | 'active' | 'archived';
+  takenDownAt: Date | null;
   isLatest: boolean;
+  playingCount: number;
   draft: ClassDraft;
 };
 
@@ -63,7 +73,6 @@ const keysFor = (id: number) => ({
   ability: (n: number) => `cc.${id}.ability.${n}`,
 });
 
-
 function classColumns(draft: ClassDraft) {
   return {
     name: draft.name[draft.languages[0]].trim(),
@@ -73,7 +82,10 @@ function classColumns(draft: ClassDraft) {
     omenDie: draft.omenDie,
     weaponDie: draft.weaponDie,
     armorDie: draft.armorDie,
-    silverDice: Array.from({ length: draft.silver.count }, () => draft.silver.faces),
+    silverDice: Array.from(
+      { length: draft.silver.count },
+      () => draft.silver.faces
+    ),
     silverModifier: draft.silver.multiplier,
     randomAbilityCount: draft.randomAbilityCount,
     gettingBetterRule: draft.gettingBetterRule,
@@ -81,9 +93,20 @@ function classColumns(draft: ClassDraft) {
 }
 
 /** Writes one Class Item's catalog row; a retyped item gets a row under its new key. */
-async function upsertItem(tx: Tx, key: string, item: ClassItemDraft, classId: number, source: string, position: number): Promise<void> {
+async function upsertItem(
+  tx: Tx,
+  key: string,
+  item: ClassItemDraft,
+  classId: number,
+  source: string,
+  position: number
+): Promise<void> {
   const row = itemRow(item, classId, source, position);
-  const args = { where: { key }, create: { key, ...row.data }, update: row.data };
+  const args = {
+    where: { key },
+    create: { key, ...row.data },
+    update: row.data,
+  };
   switch (row.table) {
     case 'weapon':
       await tx.weapon.upsert(args as Prisma.WeaponUpsertArgs);
@@ -110,9 +133,16 @@ async function writeText(tx: Tx, id: number, draft: ClassDraft): Promise<void> {
   const keys = keysFor(id);
   // Every key this class ever gave out: removed entries leave their text and modifiers behind.
   const owned = { where: { classId: id }, select: { key: true } };
-  const [texts, modifierRows, weapons, armors, equipment, pets] = await Promise.all([
-    tx.translation.findMany({ where: { key: { startsWith: `cc.${id}.` } }, select: { key: true } }),
-    tx.classAbilityModifier.findMany({ where: { classId: id }, select: { abilityKey: true } }),
+  const [texts, modifierRows, weapons, armors, equipment, pets] =
+    await Promise.all([
+      tx.translation.findMany({
+        where: { key: { startsWith: `cc.${id}.` } },
+        select: { key: true },
+      }),
+      tx.classAbilityModifier.findMany({
+        where: { classId: id },
+        select: { abilityKey: true },
+      }),
     tx.weapon.findMany(owned),
     tx.armor.findMany(owned),
     tx.equipment.findMany(owned),
@@ -123,8 +153,13 @@ async function writeText(tx: Tx, id: number, draft: ClassDraft): Promise<void> {
     draft.items,
     [...weapons, ...armors, ...equipment, ...pets].map((row) => row.key)
   );
-  const keyOfRef = new Map(draft.items.map((item, i) => [item.ref, itemKeys[i]]));
-  const inUse = [...texts.map((t) => t.key), ...modifierRows.map((m) => m.abilityKey)];
+  const keyOfRef = new Map(
+    draft.items.map((item, i) => [item.ref, itemKeys[i]])
+  );
+  const inUse = [
+    ...texts.map((t) => t.key),
+    ...modifierRows.map((m) => m.abilityKey),
+  ];
   const originKeys = stableKeys(
     `cc.${id}.origin.`,
     inUse,
@@ -138,13 +173,21 @@ async function writeText(tx: Tx, id: number, draft: ClassDraft): Promise<void> {
     keys.ability
   );
 
-  const hasNote = draft.languages.some((l) => draft.gettingBetterNote[l].trim());
+  const hasNote = draft.languages.some((l) =>
+    draft.gettingBetterNote[l].trim()
+  );
   const entries: Array<[string, Localized]> = [
     [keys.name, draft.name],
     [keys.description, draft.description],
-    ...(hasNote ? [[keys.note, draft.gettingBetterNote] as [string, Localized]] : []),
-    ...draft.origins.map((origin, i): [string, Localized] => [originKeys[i], origin]),
-    ...draft.abilities.flatMap((ability, i): Array<[string, Localized]> => [
+    ...(hasNote
+      ? [[keys.note, draft.gettingBetterNote] as [string, Localized]]
+      : []),
+    ...draft.origins.map((origin, i): [string, Localized] => [
+      originKeys[i],
+      origin,
+    ]),
+    ...draft.abilities.flatMap(
+      (ability, i): Array<[string, Localized]> => [
       [abilityKeys[i], ability.name],
       [`${abilityKeys[i]}.description`, ability.text],
       ...(ability.table
@@ -153,13 +196,18 @@ async function writeText(tx: Tx, id: number, draft: ClassDraft): Promise<void> {
             row.text,
           ])
         : []),
-    ]),
-    ...draft.items.flatMap((item, i): Array<[string, Localized]> => [
+      ]
+    ),
+    ...draft.items.flatMap(
+      (item, i): Array<[string, Localized]> => [
       [itemKeys[i], item.name],
       [`${itemKeys[i]}.description`, item.description],
-    ]),
+      ]
+    ),
   ];
-  await tx.translation.deleteMany({ where: { key: { in: entries.map(([key]) => key).concat(keys.note) } } });
+  await tx.translation.deleteMany({
+    where: { key: { in: entries.map(([key]) => key).concat(keys.note) } },
+  });
   await tx.translation.createMany({
     data: entries.flatMap(([key, text]) =>
       draft.languages
@@ -169,10 +217,19 @@ async function writeText(tx: Tx, id: number, draft: ClassDraft): Promise<void> {
   });
 
   await tx.origin.deleteMany({ where: { classId: id } });
-  await tx.origin.createMany({ data: originKeys.map((key, i) => ({ classId: id, roll: i + 1, key })) });
+  await tx.origin.createMany({
+    data: originKeys.map((key, i) => ({ classId: id, roll: i + 1, key })),
+  });
 
   for (const [i, item] of draft.items.entries()) {
-    await upsertItem(tx, itemKeys[i], item, id, item.name[draft.languages[0]].trim(), i + 1);
+    await upsertItem(
+      tx,
+      itemKeys[i],
+      item,
+      id,
+      item.name[draft.languages[0]].trim(),
+      i + 1
+    );
   }
 
   await tx.ability.deleteMany({ where: { classId: id } });
@@ -183,18 +240,27 @@ async function writeText(tx: Tx, id: number, draft: ClassDraft): Promise<void> {
       key: abilityKeys[i],
       isRandom: ability.random,
       position: i + 1,
-      grantItemKey: ability.grantItem && (keyOfRef.get(ability.grantItem) ?? ability.grantItem),
-      grantPetKey: ability.grantPet && (keyOfRef.get(ability.grantPet) ?? ability.grantPet),
+      grantItemKey:
+        ability.grantItem &&
+        (keyOfRef.get(ability.grantItem) ?? ability.grantItem),
+      grantPetKey:
+        ability.grantPet &&
+        (keyOfRef.get(ability.grantPet) ?? ability.grantPet),
     })),
   });
-  await tx.classAbilityModifier.deleteMany({ where: { classId: id, abilityKey: { in: abilityKeys } } });
+  await tx.classAbilityModifier.deleteMany({
+    where: { classId: id, abilityKey: { in: abilityKeys } },
+  });
   const savedAbilities = await tx.ability.findMany({
     where: { key: { in: abilityKeys } },
     select: { id: true, key: true },
   });
-  const abilityIdByKey = new Map(savedAbilities.map((ability) => [ability.key, ability.id]));
+  const abilityIdByKey = new Map(
+    savedAbilities.map((ability) => [ability.key, ability.id])
+  );
   await tx.abilityTableRow.createMany({
-    data: draft.abilities.flatMap((ability, i) =>
+    data: draft.abilities.flatMap(
+      (ability, i) =>
       ability.table?.rows.map((row, roll) => ({
         abilityId: abilityIdByKey.get(abilityKeys[i])!,
         roll: roll + 1,
@@ -228,7 +294,10 @@ async function writeText(tx: Tx, id: number, draft: ClassDraft): Promise<void> {
 }
 
 /** A class's granted Class Items, as the creator edits them, in the order they were made. */
-async function loadItems(classId: number, keys: string[]): Promise<ClassItemDraft[]> {
+async function loadItems(
+  classId: number,
+  keys: string[]
+): Promise<ClassItemDraft[]> {
   if (keys.length === 0) return [];
   const where = { classId, key: { in: keys } };
   const [weapons, armors, equipment, pets, texts] = await Promise.all([
@@ -236,7 +305,9 @@ async function loadItems(classId: number, keys: string[]): Promise<ClassItemDraf
     prisma.armor.findMany({ where }),
     prisma.equipment.findMany({ where }),
     prisma.pet.findMany({ where }),
-    prisma.translation.findMany({ where: { key: { in: keys.flatMap((k) => [k, `${k}.description`]) } } }),
+    prisma.translation.findMany({
+      where: { key: { in: keys.flatMap((k) => [k, `${k}.description`]) } },
+    }),
   ]);
   const text = (key: string): Localized => ({
     en: texts.find((t) => t.key === key && t.locale === 'en')?.value ?? '',
@@ -244,10 +315,34 @@ async function loadItems(classId: number, keys: string[]): Promise<ClassItemDraf
   });
   const rows: ItemRowRead[] = [...weapons, ...armors, ...equipment, ...pets];
   return rows
-    .sort((a, b) => (a.position ?? Infinity) - (b.position ?? Infinity) || a.id - b.id)
-    .map((row) => itemFromRow(itemTypeOf(row.key)!, row, text(row.key), text(`${row.key}.description`)));
+    .sort(
+      (a, b) =>
+        (a.position ?? Infinity) - (b.position ?? Infinity) || a.id - b.id
+    )
+    .map((row) =>
+      itemFromRow(
+        itemTypeOf(row.key)!,
+        row,
+        text(row.key),
+        text(`${row.key}.description`)
+      )
+    );
 }
-
+/** Removes a version that no character references, including its private catalog rows. */
+async function deleteVersion(tx: Tx, id: number): Promise<void> {
+  await Promise.all([
+    tx.classAbilityModifier.deleteMany({ where: { classId: id } }),
+    tx.origin.deleteMany({ where: { classId: id } }),
+    tx.weapon.deleteMany({ where: { classId: id } }),
+    tx.armor.deleteMany({ where: { classId: id } }),
+    tx.equipment.deleteMany({ where: { classId: id } }),
+    tx.pet.deleteMany({ where: { classId: id } }),
+    tx.translation.deleteMany({ where: { key: { startsWith: `cc.${id}.` } } }),
+  ]);
+  // Ability table rows cascade from abilities.
+  await tx.ability.deleteMany({ where: { classId: id } });
+  await tx.class.delete({ where: { id } });
+}
 /** Custom Class data access: the GM's own classes and the creator's saves. */
 export const customClassRepository = {
   /** Custom Classes (lineages) the account holds, archived included. */
@@ -263,7 +358,10 @@ export const customClassRepository = {
   /** The server copy of unfinished creator work, newest first; abandoned drafts expire after 90 days. */
   async listDrafts(ownerUserId: string): Promise<StoredClassDraft[]> {
     await prisma.classDraftRecord.deleteMany({
-      where: { ownerUserId, updatedAt: { lt: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000) } },
+      where: {
+        ownerUserId,
+        updatedAt: { lt: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000) },
+      },
     });
     const rows = await prisma.classDraftRecord.findMany({
       where: { ownerUserId },
@@ -272,13 +370,20 @@ export const customClassRepository = {
     return rows.map(asStoredDraft);
   },
 
-  async getDraft(ownerUserId: string, id: number): Promise<StoredClassDraft | null> {
-    const row = await prisma.classDraftRecord.findFirst({ where: { id, ownerUserId } });
+  async getDraft(
+    ownerUserId: string,
+    id: number
+  ): Promise<StoredClassDraft | null> {
+    const row = await prisma.classDraftRecord.findFirst({
+      where: { id, ownerUserId },
+    });
     return row ? asStoredDraft(row) : null;
   },
 
   async countNewDrafts(ownerUserId: string): Promise<number> {
-    return prisma.classDraftRecord.count({ where: { ownerUserId, classId: null } });
+    return prisma.classDraftRecord.count({
+      where: { ownerUserId, classId: null },
+    });
   },
 
   /** Creates a draft or advances its revision only when the caller still holds the current revision. */
@@ -292,24 +397,36 @@ export const customClassRepository = {
   }): Promise<StoredClassDraft | null> {
     if (input.id === undefined) {
       const row = await prisma.classDraftRecord.create({
-        data: { ownerUserId: input.ownerUserId, classId: input.classId, payload: input.draft },
+        data: {
+          ownerUserId: input.ownerUserId,
+          classId: input.classId,
+          payload: input.draft,
+        },
       });
       return asStoredDraft(row);
     }
     const where = input.force
       ? { id: input.id, ownerUserId: input.ownerUserId }
-      : { id: input.id, ownerUserId: input.ownerUserId, revision: input.revision };
+      : {
+          id: input.id,
+          ownerUserId: input.ownerUserId,
+          revision: input.revision,
+        };
     const updated = await prisma.classDraftRecord.updateMany({
       where,
       data: { payload: input.draft, revision: { increment: 1 } },
     });
     if (updated.count === 0) return null;
-    const row = await prisma.classDraftRecord.findUniqueOrThrow({ where: { id: input.id } });
+    const row = await prisma.classDraftRecord.findUniqueOrThrow({
+      where: { id: input.id },
+    });
     return asStoredDraft(row);
   },
 
   async deleteDraft(ownerUserId: string, id: number): Promise<boolean> {
-    const deleted = await prisma.classDraftRecord.deleteMany({ where: { id, ownerUserId } });
+    const deleted = await prisma.classDraftRecord.deleteMany({
+      where: { id, ownerUserId },
+    });
     return deleted.count > 0;
   },
   async create(ownerUserId: string, draft: ClassDraft): Promise<number> {
@@ -329,7 +446,6 @@ export const customClassRepository = {
     });
   },
 
-  // ponytail: edits in place even when characters play the class; Class Versions (RPG-275) forks a new version instead.
   async update(id: number, draft: ClassDraft): Promise<void> {
     await prisma.$transaction(async (tx) => {
       await tx.class.update({ where: { id }, data: classColumns(draft) });
@@ -337,22 +453,133 @@ export const customClassRepository = {
     });
   },
 
+  /** Forks the current version, then discards superseded versions that no scvm has used. */
+  async createVersion(id: number, draft: ClassDraft): Promise<number> {
+    return prisma.$transaction(async (tx) => {
+      const current = await tx.class.findUniqueOrThrow({ where: { id } });
+      const next = await tx.class.create({
+        data: {
+          ...classColumns(draft),
+          source: current.source,
+          ownerUserId: current.ownerUserId,
+          visibility: current.visibility,
+          status: 'active',
+          lineageId: current.lineageId,
+          version: current.version + 1,
+        },
+        select: { id: true },
+      });
+      await writeText(tx, next.id, draft);
+      const older = await tx.class.findMany({
+        where: { lineageId: current.lineageId, id: { not: next.id } },
+        select: { id: true },
+      });
+      const played = await tx.character.groupBy({
+        by: ['classId'],
+        where: { classId: { in: older.map((row) => row.id) } },
+      });
+      const playedIds = new Set(played.map((row) => row.classId));
+      for (const row of older)
+        if (!playedIds.has(row.id)) await deleteVersion(tx, row.id);
+      return next.id;
+    });
+  },
+
+  /** Deletes an unused lineage, or archives it when a scvm still needs one of its versions. */
+  async remove(id: number): Promise<{ archived: boolean }> {
+    return prisma.$transaction(async (tx) => {
+      const current = await tx.class.findUniqueOrThrow({
+        where: { id },
+        select: { lineageId: true },
+      });
+      const versions = await tx.class.findMany({
+        where: { lineageId: current.lineageId },
+        select: { id: true },
+      });
+      const played = await tx.character.count({
+        where: { classId: { in: versions.map((row) => row.id) } },
+      });
+      if (played > 0) {
+        await Promise.all([
+          tx.class.updateMany({
+            where: { lineageId: current.lineageId },
+            data: { status: 'archived' },
+          }),
+          tx.partyClassPool.deleteMany({
+            where: { lineageId: current.lineageId },
+          }),
+        ]);
+        return { archived: true };
+      }
+      await tx.partyClassPool.deleteMany({
+        where: { lineageId: current.lineageId },
+      });
+      for (const version of versions) await deleteVersion(tx, version.id);
+      return { archived: false };
+    });
+  },
+
+  /** Restores an owner-archived lineage unless it has since been taken down. */
+  async restore(id: number): Promise<boolean> {
+    const restored = await prisma.class.updateMany({
+      where: { id, takenDownAt: null },
+      data: { status: 'active' },
+    });
+    if (restored.count === 0) return false;
+    const current = await prisma.class.findUniqueOrThrow({
+      where: { id },
+      select: { lineageId: true },
+    });
+    await prisma.class.updateMany({
+      where: { lineageId: current.lineageId, takenDownAt: null },
+      data: { status: 'active' },
+    });
+    return true;
+  },
   async findWithText(id: number): Promise<CustomClassRows | null> {
     const cls = await prisma.class.findFirst({ where: { id, source: 'user' } });
     if (!cls) return null;
-    const [latest, origins, abilities, modifiers, translations] = await Promise.all([
-      prisma.class.aggregate({ where: { lineageId: cls.lineageId }, _max: { version: true } }),
-      prisma.origin.findMany({ where: { classId: id }, orderBy: { roll: 'asc' }, select: { key: true } }),
+    const [latest, playingCount, origins, abilities, modifiers, translations] =
+      await Promise.all([
+        prisma.class.aggregate({
+          where: { lineageId: cls.lineageId },
+          _max: { version: true },
+        }),
+        prisma.character.count({ where: { classId: id } }),
+        prisma.origin.findMany({
+          where: { classId: id },
+          orderBy: { roll: 'asc' },
+          select: { key: true },
+        }),
       prisma.ability.findMany({
         where: { classId: id },
         orderBy: [{ position: 'asc' }, { id: 'asc' }],
-        select: { key: true, isRandom: true, grantItemKey: true, grantPetKey: true, tableDie: true, tableRows: { orderBy: { roll: 'asc' }, select: { roll: true, textKey: true, itemKey: true } } },
+          select: {
+            key: true,
+            isRandom: true,
+            grantItemKey: true,
+            grantPetKey: true,
+            tableDie: true,
+            tableRows: {
+              orderBy: { roll: 'asc' },
+              select: { roll: true, textKey: true, itemKey: true },
+            },
+          },
+        }),
+        prisma.classAbilityModifier.findMany({
+          where: { classId: id },
+          orderBy: { id: 'asc' },
+        }),
+        prisma.translation.findMany({
+          where: { key: { startsWith: `cc.${id}.` } },
       }),
-      prisma.classAbilityModifier.findMany({ where: { classId: id }, orderBy: { id: 'asc' } }),
-      prisma.translation.findMany({ where: { key: { startsWith: `cc.${id}.` } } }),
     ]);
     const grantKeys = abilities
-      .flatMap((a) => [a.grantItemKey, a.grantPetKey, ...a.tableRows.map((row) => row.itemKey)])
+      .flatMap((a) => [
+        a.grantItemKey,
+        a.grantPetKey,
+        ...a.tableRows.map((row) => row.itemKey),
+      ])
       .filter((key): key is string => !!key && itemTypeOf(key) !== null);
     const items = await loadItems(id, grantKeys);
     const modifiersOf = (key: string): AbilityModifierDraft[] =>
@@ -364,15 +591,23 @@ export const customClassRepository = {
           exclude: Array.isArray(m.exclude) ? (m.exclude as string[]) : [],
         }));
     const text = (key: string | null): Localized => ({
-      en: translations.find((t) => t.key === key && t.locale === 'en')?.value ?? '',
-      pl: translations.find((t) => t.key === key && t.locale === 'pl')?.value ?? '',
+      en:
+        translations.find((t) => t.key === key && t.locale === 'en')?.value ??
+        '',
+      pl:
+        translations.find((t) => t.key === key && t.locale === 'pl')?.value ??
+        '',
     });
     const silverDice = cls.silverDice.length > 0 ? cls.silverDice : [6];
     return {
       id: cls.id,
       lineageId: cls.lineageId,
       ownerUserId: cls.ownerUserId,
+      version: cls.version,
+      status: cls.status,
+      takenDownAt: cls.takenDownAt,
       isLatest: latest._max.version === cls.version,
+      playingCount,
       draft: {
         languages: cls.languages as ClassLanguage[],
         name: text(cls.nameKey),
@@ -396,10 +631,15 @@ export const customClassRepository = {
           modifiers: modifiersOf(a.key),
           grantItem: a.grantItemKey,
           grantPet: a.grantPetKey,
-          table: a.tableDie ? {
+          table: a.tableDie
+            ? {
             die: a.tableDie as 2 | 3 | 4 | 6 | 8 | 10 | 12,
-            rows: a.tableRows.map((row) => ({ text: text(row.textKey), itemRef: row.itemKey })),
-          } : null,
+                rows: a.tableRows.map((row) => ({
+                  text: text(row.textKey),
+                  itemRef: row.itemKey,
+                })),
+              }
+            : null,
         })),
         items,
         randomAbilityCount: cls.randomAbilityCount ?? 0,
@@ -410,7 +650,10 @@ export const customClassRepository = {
   },
 
   /** The account's Custom Classes at their latest version, newest first. */
-  async listOwned(ownerUserId: string, locale: string): Promise<OwnClassSummary[]> {
+  async listOwned(
+    ownerUserId: string,
+    locale: string
+  ): Promise<OwnClassSummary[]> {
     const rows = await prisma.class.findMany({
       where: { source: 'user', ownerUserId },
       orderBy: [{ lineageId: 'asc' }, { version: 'desc' }],
@@ -431,16 +674,26 @@ export const customClassRepository = {
       where: { classId: { in: rows.map((r) => r.id) } },
       _count: { _all: true },
     });
-    const countByClass = new Map(originCounts.map((r) => [r.classId, r._count._all]));
+    const countByClass = new Map(
+      originCounts.map((r) => [r.classId, r._count._all])
+    );
     const summaries = await Promise.all(
       rows.map(async (row) => {
-        const keys = [row.nameKey, row.descriptionKey].filter((k): k is string => k !== null);
-        const text = await findTranslationsWithAuthoredFallback(locale, row.languages, keys);
+        const keys = [row.nameKey, row.descriptionKey].filter(
+          (k): k is string => k !== null
+        );
+        const text = await findTranslationsWithAuthoredFallback(
+          locale,
+          row.languages,
+          keys
+        );
         return {
           id: row.id,
           lineageId: row.lineageId,
           name: (row.nameKey ? text.get(row.nameKey) : undefined) ?? row.name,
-          description: (row.descriptionKey ? text.get(row.descriptionKey) : undefined) ?? null,
+          description:
+            (row.descriptionKey ? text.get(row.descriptionKey) : undefined) ??
+            null,
           languages: row.languages,
           visibility: row.visibility,
           status: row.status,

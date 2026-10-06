@@ -34,7 +34,12 @@ import {
 import { useClassCreator } from "./useClassCreator";
 
 /** The class creator: steps in a rail, one language at a time, a test roll and a save. */
-export function ClassCreator({ classId, initialDraft, initialDraftRecord = null }: ClassCreatorProps) {
+export function ClassCreator({
+  classId,
+  initialDraft,
+  initialDraftRecord = null,
+  versionInfo,
+}: ClassCreatorProps) {
   const { t } = useTranslation();
   const creator = useClassCreator(classId, initialDraft, initialDraftRecord);
   const moveRef = useRef(creator.move);
@@ -140,6 +145,18 @@ export function ClassCreator({ classId, initialDraft, initialDraftRecord = null 
     },
   };
   const quiet = creator.blocked !== null;
+  const versionWarning =
+    !creator.saved && versionInfo && versionInfo.playingCount > 0
+      ? t(
+          "creator.review.versionWarning",
+          "{{count}} scvm play version {{version}}. Saving creates version {{nextVersion}}: they keep version {{version}}; new rolls use version {{nextVersion}}.",
+          {
+            count: versionInfo.playingCount,
+            version: versionInfo.version,
+            nextVersion: versionInfo.version + 1,
+          },
+        )
+      : null;
 
   return (
     <Layout>
@@ -164,10 +181,17 @@ export function ClassCreator({ classId, initialDraft, initialDraftRecord = null 
             </StepCount>
             {creator.draftAutosave.state !== "idle" && (
               <StepCount data-testid="draft-save-state">
-                {creator.draftAutosave.state === "saving" && t("creator.draftSaving", "Saving…")}
-                {creator.draftAutosave.state === "saved" && t("creator.draftSaved", "Draft saved · kept 90 days after your last edit")}
-                {creator.draftAutosave.state === "offline" && t("creator.draftOffline", "Offline, will retry")}
-                {creator.draftAutosave.state === "conflict" && t("creator.draftConflict", "Draft changed elsewhere")}
+                {creator.draftAutosave.state === "saving" &&
+                  t("creator.draftSaving", "Saving…")}
+                {creator.draftAutosave.state === "saved" &&
+                  t(
+                    "creator.draftSaved",
+                    "Draft saved · kept 90 days after your last edit",
+                  )}
+                {creator.draftAutosave.state === "offline" &&
+                  t("creator.draftOffline", "Offline, will retry")}
+                {creator.draftAutosave.state === "conflict" &&
+                  t("creator.draftConflict", "Draft changed elsewhere")}
               </StepCount>
             )}
           </div>
@@ -184,29 +208,61 @@ export function ClassCreator({ classId, initialDraft, initialDraftRecord = null 
         </Head>
         {creator.draftAutosave.record && (
           <Alert
-            severity={creator.draftAutosave.state === "conflict" ? "warning" : "info"}
+            severity={
+              creator.draftAutosave.state === "conflict" ? "warning" : "info"
+            }
             action={
               creator.draftAutosave.state === "conflict" ? (
                 <>
-                  <Button color="inherit" size="small" onClick={() => void creator.draftAutosave.loadNewer()}>
+                  <Button
+                    color="inherit"
+                    size="small"
+                    onClick={() => void creator.draftAutosave.loadNewer()}
+                  >
                     {t("creator.draftLoadNewer", "Load newer one")}
                   </Button>
-                  <Button color="inherit" size="small" onClick={() => void creator.draftAutosave.keepMine()}>
+                  <Button
+                    color="inherit"
+                    size="small"
+                    onClick={() => void creator.draftAutosave.keepMine()}
+                  >
                     {t("creator.draftKeepMine", "Keep mine")}
                   </Button>
                 </>
               ) : (
-                <Button color="inherit" size="small" onClick={() => {
-                  if (window.confirm(t("creator.draftDiscardConfirm", "Discard this unfinished draft?"))) void creator.draftAutosave.discard();
-                }}>
+                <Button
+                  color="inherit"
+                  size="small"
+                  onClick={() => {
+                    if (
+                      window.confirm(
+                        t(
+                          "creator.draftDiscardConfirm",
+                          "Discard this unfinished draft?",
+                        ),
+                      )
+                    )
+                      void creator.draftAutosave.discard();
+                  }}
+                >
                   {t("creator.draftDiscard", "Discard")}
                 </Button>
               )
             }
           >
             {creator.draftAutosave.state === "conflict"
-              ? t("creator.draftConflictBody", "This draft changed on another device.")
-              : t("creator.draftResumed", "Unsaved changes are being kept as a private draft.")} {t("creator.draftRetention", "Unfinished drafts are deleted after 90 days.")}
+              ? t(
+                  "creator.draftConflictBody",
+                  "This draft changed on another device.",
+                )
+              : t(
+                  "creator.draftResumed",
+                  "Unsaved changes are being kept as a private draft.",
+                )}{" "}
+            {t(
+              "creator.draftRetention",
+              "Unfinished drafts are deleted after 90 days.",
+            )}
           </Alert>
         )}
         <Paper>
@@ -242,6 +298,7 @@ export function ClassCreator({ classId, initialDraft, initialDraftRecord = null 
               onFix={fix}
               saving={creator.saving}
               saved={creator.saved}
+              versionWarning={versionWarning}
               blocked={creator.blocked}
               onSave={creator.save}
             />
@@ -273,7 +330,17 @@ export function ClassCreator({ classId, initialDraft, initialDraftRecord = null 
               : t("creator.history.redo", "Redo")}
           </button>
         </div>
-        <Hint aria-label={t("creator.reorder.shortcut", "Alt+↑/↓ moves the focused card or table row.")}>{t("creator.reorder.shortcut", "Alt+↑/↓ moves the focused card or table row.")}</Hint>
+        <Hint
+          aria-label={t(
+            "creator.reorder.shortcut",
+            "Alt+↑/↓ moves the focused card or table row.",
+          )}
+        >
+          {t(
+            "creator.reorder.shortcut",
+            "Alt+↑/↓ moves the focused card or table row.",
+          )}
+        </Hint>
         <Nav>
           <BackButton
             type="button"

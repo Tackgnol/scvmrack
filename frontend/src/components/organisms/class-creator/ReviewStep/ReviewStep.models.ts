@@ -18,6 +18,8 @@ export type ReviewStepProps = {
   saving: boolean;
   /** Set once the current revision is saved. */
   saved: boolean;
+  /** Explains that this save will fork a played class version. */
+  versionWarning: string | null;
   /** Why Save didn't go through, shown as the one pink interrupt. */
   blocked: string | null;
   onSave: () => void;

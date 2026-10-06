@@ -60,6 +60,7 @@ export function useParty(): {
     .map((m) => ({
       id: m.characterId,
       name: m.name?.trim() || "Unnamed scvm",
+      olderRules: m.olderRules,
     }));
 
   return {

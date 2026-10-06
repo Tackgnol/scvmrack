@@ -106,6 +106,14 @@ export type ClassDraft = {
   gettingBetterNote: Localized;
 };
 
+export type SavedClass = {
+  id: number;
+  draft: ClassDraft;
+  version: number;
+  playingCount: number;
+  status: "draft" | "active" | "archived";
+};
+
 export type StoredClassDraft = {
   id: number;
   classId: number | null;
@@ -145,13 +153,9 @@ export async function listMyClasses(
   );
 }
 
-export async function getClass(
-  id: number,
-): Promise<{ id: number; draft: ClassDraft }> {
+export async function getClass(id: number): Promise<SavedClass> {
   return unwrapApiResult(
-    await classClient.GET<{ id: number; draft: ClassDraft }>(
-      `/api/classes/${id}`,
-    ),
+    await classClient.GET<SavedClass>(`/api/classes/${id}`),
     "Failed to load the class",
   );
 }
@@ -176,7 +180,9 @@ export async function createClassDraft(input: {
   draft: ClassDraft;
 }): Promise<StoredClassDraft> {
   return unwrapApiResult(
-    await classClient.POST<StoredClassDraft>("/api/classes/drafts", { body: input }),
+    await classClient.POST<StoredClassDraft>("/api/classes/drafts", {
+      body: input,
+    }),
     "Failed to save the draft",
   );
 }
@@ -189,7 +195,11 @@ export async function updateClassDraft(input: {
 }): Promise<StoredClassDraft> {
   return unwrapApiResult(
     await classClient.PUT<StoredClassDraft>(`/api/classes/drafts/${input.id}`, {
-      body: { draft: input.draft, revision: input.revision, force: input.force },
+      body: {
+        draft: input.draft,
+        revision: input.revision,
+        force: input.force,
+      },
     }),
     "Failed to save the draft",
   );
@@ -205,22 +215,31 @@ export async function deleteClassDraft(id: number): Promise<void> {
 export async function saveClass(input: {
   id: number | null;
   draft: ClassDraft;
-}): Promise<{ id: number; draft: ClassDraft }> {
+}): Promise<SavedClass> {
   const body = { draft: input.draft };
   return unwrapApiResult(
     input.id === null
-      ? await classClient.POST<{ id: number; draft: ClassDraft }>(
-          "/api/classes",
-          { body },
-        )
-      : await classClient.PUT<{ id: number; draft: ClassDraft }>(
-          `/api/classes/${input.id}`,
-          { body },
-        ),
+      ? await classClient.POST<SavedClass>("/api/classes", { body })
+      : await classClient.PUT<SavedClass>(`/api/classes/${input.id}`, { body }),
     "Failed to save the class",
   );
 }
 
+/** Deletes an unused lineage or archives it when existing scvm still need it. */
+export async function removeClass(id: number): Promise<{ archived: boolean }> {
+  return unwrapApiResult(
+    await classClient.DELETE<{ archived: boolean }>(`/api/classes/${id}`),
+    "Failed to remove the class",
+  );
+}
+
+/** Restores a class lineage that the owner previously archived. */
+export async function restoreClass(id: number): Promise<{ restored: boolean }> {
+  return unwrapApiResult(
+    await classClient.POST<{ restored: boolean }>(`/api/classes/${id}/restore`),
+    "Failed to restore the class",
+  );
+}
 export async function testRollClass(input: {
   draft: ClassDraft;
   language: ClassLanguage;

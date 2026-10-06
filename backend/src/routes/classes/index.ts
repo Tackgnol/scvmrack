@@ -20,27 +20,39 @@ import { sendServiceError } from '../../errors.js';
 import { createCustomClassService } from '../../services/custom-class-service.js';
 
 const saveLimit = {
-  rateLimit: { max: process.env.NODE_ENV === 'test' ? 10000 : 10, timeWindow: '1 minute' },
+  rateLimit: {
+    max: process.env.NODE_ENV === 'test' ? 10000 : 10,
+    timeWindow: '1 minute',
+  },
 };
 
 const draftSaveLimit = {
-  rateLimit: { max: process.env.NODE_ENV === 'test' ? 10000 : 120, timeWindow: '1 minute' },
+  rateLimit: {
+    max: process.env.NODE_ENV === 'test' ? 10000 : 120,
+    timeWindow: '1 minute',
+  },
 };
 
 const classes: FastifyPluginAsync = async (fastify): Promise<void> => {
   const app = fastify.withTypeProvider<JsonSchemaToTsProvider>();
-  const service = (request: { log: Parameters<typeof createCustomClassService>[0] }) =>
-    createCustomClassService(request.log);
+  const service = (request: {
+    log: Parameters<typeof createCustomClassService>[0];
+  }) => createCustomClassService(request.log);
 
   // GET /api/classes/mine - the GM's own Custom Classes, newest first
   app.get(
     '/mine',
     {
       schema: {
-        description: "The signed-in GM's Custom Classes at their latest version",
+        description:
+          "The signed-in GM's Custom Classes at their latest version",
         tags: ['classes'],
         querystring: ClassLocaleQuerySchema,
-        response: { 200: OwnClassListSchema, 401: ErrorSchema, 500: ErrorSchema },
+        response: {
+          200: OwnClassListSchema,
+          401: ErrorSchema,
+          500: ErrorSchema,
+        },
       },
     },
     async (request, reply) => {
@@ -60,11 +72,17 @@ const classes: FastifyPluginAsync = async (fastify): Promise<void> => {
       schema: {
         description: "The signed-in GM's unfinished Custom Class drafts",
         tags: ['classes'],
-        response: { 200: ClassDraftListSchema, 401: ErrorSchema, 500: ErrorSchema },
+        response: {
+          200: ClassDraftListSchema,
+          401: ErrorSchema,
+          500: ErrorSchema,
+        },
       },
     },
     async (request, reply) => {
-      const result = await service(request).listDrafts({ session: request.appSession });
+      const result = await service(request).listDrafts({
+        session: request.appSession,
+      });
       if (!result.ok) return sendServiceError(reply, request, result.error);
       return reply.send(result.value as never);
     }
@@ -109,11 +127,20 @@ const classes: FastifyPluginAsync = async (fastify): Promise<void> => {
         description: 'Load one unfinished private Custom Class draft',
         tags: ['classes'],
         params: DraftIdParamsSchema,
-        response: { 200: StoredClassDraftSchema, 400: ErrorSchema, 401: ErrorSchema, 404: ErrorSchema, 500: ErrorSchema },
+        response: {
+          200: StoredClassDraftSchema,
+          400: ErrorSchema,
+          401: ErrorSchema,
+          404: ErrorSchema,
+          500: ErrorSchema,
+        },
       },
     },
     async (request, reply) => {
-      const result = await service(request).getDraft({ session: request.appSession, id: request.params.draftId });
+      const result = await service(request).getDraft({
+        session: request.appSession,
+        id: request.params.draftId,
+      });
       if (!result.ok) return sendServiceError(reply, request, result.error);
       return reply.send(result.value as never);
     }
@@ -162,11 +189,20 @@ const classes: FastifyPluginAsync = async (fastify): Promise<void> => {
         description: 'Discard one unfinished private Custom Class draft',
         tags: ['classes'],
         params: DraftIdParamsSchema,
-        response: { 204: { type: 'null' }, 400: ErrorSchema, 401: ErrorSchema, 404: ErrorSchema, 500: ErrorSchema },
+        response: {
+          204: { type: 'null' },
+          400: ErrorSchema,
+          401: ErrorSchema,
+          404: ErrorSchema,
+          500: ErrorSchema,
+        },
       },
     },
     async (request, reply) => {
-      const result = await service(request).deleteDraft({ session: request.appSession, id: request.params.draftId });
+      const result = await service(request).deleteDraft({
+        session: request.appSession,
+        id: request.params.draftId,
+      });
       if (!result.ok) return sendServiceError(reply, request, result.error);
       return reply.code(204).send(null);
     }
@@ -205,14 +241,23 @@ const classes: FastifyPluginAsync = async (fastify): Promise<void> => {
     '/test-roll',
     {
       config: {
-        rateLimit: { max: process.env.NODE_ENV === 'test' ? 10000 : 30, timeWindow: '1 minute' },
+        rateLimit: {
+          max: process.env.NODE_ENV === 'test' ? 10000 : 30,
+          timeWindow: '1 minute',
+        },
       },
       schema: {
         description: 'Roll a test scvm from a class draft (not persisted)',
         tags: ['classes'],
         body: TestRollBodySchema,
         querystring: ClassLocaleQuerySchema,
-        response: { 200: TestRollResponseSchema, 400: ErrorSchema, 401: ErrorSchema, 429: ErrorSchema, 500: ErrorSchema },
+        response: {
+          200: TestRollResponseSchema,
+          400: ErrorSchema,
+          401: ErrorSchema,
+          429: ErrorSchema,
+          500: ErrorSchema,
+        },
       },
     },
     async (request, reply) => {
@@ -235,11 +280,20 @@ const classes: FastifyPluginAsync = async (fastify): Promise<void> => {
         description: 'Load one of your Custom Classes into the creator',
         tags: ['classes'],
         params: ClassIdParamsSchema,
-        response: { 200: ClassWithDraftSchema, 400: ErrorSchema, 401: ErrorSchema, 404: ErrorSchema, 500: ErrorSchema },
+        response: {
+          200: ClassWithDraftSchema,
+          400: ErrorSchema,
+          401: ErrorSchema,
+          404: ErrorSchema,
+          500: ErrorSchema,
+        },
       },
     },
     async (request, reply) => {
-      const result = await service(request).get({ session: request.appSession, id: request.params.id });
+      const result = await service(request).get({
+        session: request.appSession,
+        id: request.params.id,
+      });
       if (!result.ok) return sendServiceError(reply, request, result.error);
       // The stored draft passed the same schema on save; its dice are plain numbers to TypeScript.
       return reply.send(result.value as never);
@@ -275,6 +329,73 @@ const classes: FastifyPluginAsync = async (fastify): Promise<void> => {
       });
       if (!result.ok) return sendServiceError(reply, request, result.error);
       return reply.send(result.value as never);
+    }
+  );
+  // DELETE /api/classes/:id - remove an unused class or archive a played lineage
+  app.delete(
+    '/:id',
+    {
+      schema: {
+        description:
+          'Remove an unused Custom Class, or archive it when scvm still use it',
+        tags: ['classes'],
+        params: ClassIdParamsSchema,
+        response: {
+          200: {
+            type: 'object',
+            additionalProperties: false,
+            required: ['archived'],
+            properties: { archived: { type: 'boolean' } },
+          },
+          400: ErrorSchema,
+          401: ErrorSchema,
+          404: ErrorSchema,
+          409: ErrorSchema,
+          410: ErrorSchema,
+          500: ErrorSchema,
+        },
+      },
+    },
+    async (request, reply) => {
+      const result = await service(request).remove({
+        session: request.appSession,
+        id: request.params.id,
+      });
+      if (!result.ok) return sendServiceError(reply, request, result.error);
+      return reply.send(result.value);
+    }
+  );
+
+  // POST /api/classes/:id/restore - make an owner-archived lineage available again
+  app.post(
+    '/:id/restore',
+    {
+      schema: {
+        description: 'Restore an owner-archived Custom Class lineage',
+        tags: ['classes'],
+        params: ClassIdParamsSchema,
+        response: {
+          200: {
+            type: 'object',
+            additionalProperties: false,
+            required: ['restored'],
+            properties: { restored: { type: 'boolean' } },
+          },
+          400: ErrorSchema,
+          401: ErrorSchema,
+          404: ErrorSchema,
+          410: ErrorSchema,
+          500: ErrorSchema,
+        },
+      },
+    },
+    async (request, reply) => {
+      const result = await service(request).restore({
+        session: request.appSession,
+        id: request.params.id,
+      });
+      if (!result.ok) return sendServiceError(reply, request, result.error);
+      return reply.send(result.value);
     }
   );
 };

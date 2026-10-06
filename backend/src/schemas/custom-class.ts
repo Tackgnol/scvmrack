@@ -49,7 +49,6 @@ const AbilityTableSchema = {
   },
 } as const;
 
-
 const ModifiersSchema = {
   type: 'array',
   maxItems: 6,
@@ -169,7 +168,15 @@ const ClassItemSchema = {
 const AbilitySchema = {
   type: 'object',
   additionalProperties: false,
-  required: ['random', 'name', 'text', 'modifiers', 'grantItem', 'grantPet', 'table'],
+  required: [
+    'random',
+    'name',
+    'text',
+    'modifiers',
+    'grantItem',
+    'grantPet',
+    'table',
+  ],
   properties: {
     key: {
       type: 'string',
@@ -338,8 +345,14 @@ export const ClassLocaleQuerySchema = {
 export const ClassWithDraftSchema = {
   type: 'object',
   additionalProperties: false,
-  required: ['id', 'draft'],
-  properties: { id: { type: 'integer' }, draft: ClassDraftSchema },
+  required: ['id', 'draft', 'version', 'playingCount', 'status'],
+  properties: {
+    id: { type: 'integer' },
+    draft: ClassDraftSchema,
+    version: { type: 'integer', minimum: 1 },
+    playingCount: { type: 'integer', minimum: 0 },
+    status: { type: 'string', enum: ['draft', 'active', 'archived'] },
+  },
 } as const;
 
 export const OwnClassListSchema = {
