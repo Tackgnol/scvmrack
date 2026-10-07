@@ -8,11 +8,13 @@ import {
   ClassIdParamsSchema,
   ClassLocaleQuerySchema,
   ClassWithDraftSchema,
+  ClassVisibilityResponseSchema,
   DraftCreateBodySchema,
   DraftIdParamsSchema,
   DraftUpdateBodySchema,
   ErrorSchema,
   OwnClassListSchema,
+  PublishClassBodySchema,
   StoredClassDraftSchema,
   TestRollBodySchema,
   TestRollResponseSchema,
@@ -289,6 +291,68 @@ const classes: FastifyPluginAsync = async (fastify): Promise<void> => {
       const result = await service(request).getDetail({ session: request.appSession, id: request.params.id });
       if (!result.ok) return sendServiceError(reply, request, result.error);
       return reply.send(result.value as never);
+    }
+  );
+  // POST /api/classes/:id/publish - make the current class version publicly readable
+  app.post(
+    '/:id/publish',
+    {
+      config: saveLimit,
+      schema: {
+        description: 'Publish a Custom Class after the creator confirms sharing rights',
+        tags: ['classes'],
+        params: ClassIdParamsSchema,
+        body: PublishClassBodySchema,
+        response: {
+          200: ClassVisibilityResponseSchema,
+          400: ErrorSchema,
+          401: ErrorSchema,
+          404: ErrorSchema,
+          409: ErrorSchema,
+          410: ErrorSchema,
+          429: ErrorSchema,
+          500: ErrorSchema,
+        },
+      },
+    },
+    async (request, reply) => {
+      const result = await service(request).setVisibility({
+        session: request.appSession,
+        id: request.params.id,
+        visibility: 'public',
+      });
+      if (!result.ok) return sendServiceError(reply, request, result.error);
+      return reply.send(result.value);
+    }
+  );
+
+  // POST /api/classes/:id/unpublish - keep the class private and remove public pools
+  app.post(
+    '/:id/unpublish',
+    {
+      schema: {
+        description: 'Unpublish a Custom Class lineage',
+        tags: ['classes'],
+        params: ClassIdParamsSchema,
+        response: {
+          200: ClassVisibilityResponseSchema,
+          400: ErrorSchema,
+          401: ErrorSchema,
+          404: ErrorSchema,
+          409: ErrorSchema,
+          410: ErrorSchema,
+          500: ErrorSchema,
+        },
+      },
+    },
+    async (request, reply) => {
+      const result = await service(request).setVisibility({
+        session: request.appSession,
+        id: request.params.id,
+        visibility: 'private',
+      });
+      if (!result.ok) return sendServiceError(reply, request, result.error);
+      return reply.send(result.value);
     }
   );
   // GET /api/classes/:id - one of the GM's classes, as the creator edits it

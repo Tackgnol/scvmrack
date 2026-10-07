@@ -342,6 +342,19 @@ export const ClassLocaleQuerySchema = {
   properties: { locale: { type: 'string', enum: ['en', 'pl'], default: 'en' } },
 } as const;
 
+export const PublishClassBodySchema = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['confirmed'],
+  properties: { confirmed: { const: true } },
+} as const;
+
+export const ClassVisibilityResponseSchema = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['visibility'],
+  properties: { visibility: { type: 'string', enum: ['private', 'public'] } },
+} as const;
 export const ClassWithDraftSchema = {
   type: 'object',
   additionalProperties: false,

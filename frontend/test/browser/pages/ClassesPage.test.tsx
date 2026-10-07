@@ -1,65 +1,165 @@
-import { render } from 'vitest-browser-react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { page } from 'vitest/browser';
-import type { AnchorHTMLAttributes, ReactNode } from 'react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import BrowserTestProvider from '../BrowserTestProvider';
-import { ClassesPage } from '@/pages/ClassesPage';
-import { listMyClasses } from '@/api/classes';
-import { useAuth } from '@/hooks/useAuth';
+import { render } from "vitest-browser-react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { page, userEvent } from "vitest/browser";
+import type {
+  AnchorHTMLAttributes,
+  ButtonHTMLAttributes,
+  ReactNode,
+} from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import BrowserTestProvider from "../BrowserTestProvider";
+import { ClassesPage } from "@/pages/ClassesPage";
+import { listMyClasses, publishClass } from "@/api/classes";
+import { useAuth } from "@/hooks/useAuth";
 
-type MockLinkProps = { children: ReactNode; to: string } & AnchorHTMLAttributes<HTMLAnchorElement>;
+type MockLinkProps = {
+  children: ReactNode;
+  to: string;
+} & AnchorHTMLAttributes<HTMLAnchorElement>;
 
-vi.mock('@/seo/Seo', () => ({ Seo: () => null }));
-vi.mock('@tanstack/react-router', () => ({
+vi.mock("@/seo/Seo", () => ({ Seo: () => null }));
+vi.mock("@/components", () => ({
+  MorkBorgModal: ({
+    open,
+    title,
+    children,
+    actions,
+  }: {
+    open: boolean;
+    title: string;
+    children: ReactNode;
+    actions: ReactNode;
+  }) =>
+    open ? (
+      <section aria-label={title}>
+        <h2>{title}</h2>
+        {children}
+        {actions}
+      </section>
+    ) : null,
+  ModalButton: ({
+    children,
+    ...props
+  }: ButtonHTMLAttributes<HTMLButtonElement>) => (
+    <button {...props}>{children}</button>
+  ),
+}));
+vi.mock("@tanstack/react-router", () => ({
   Link: ({ children, to, ...props }: MockLinkProps) => (
     <a href={to} {...props}>
       {children}
     </a>
   ),
 }));
-vi.mock('@/hooks/useAuth', () => ({ useAuth: vi.fn() }));
-vi.mock('@/api/classes', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@/api/classes')>()),
+vi.mock("@/hooks/useAuth", () => ({ useAuth: vi.fn() }));
+vi.mock("@/api/classes", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/api/classes")>()),
   listMyClasses: vi.fn(),
+  publishClass: vi.fn(),
 }));
 
 function renderPage() {
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
   return render(
     <QueryClientProvider client={queryClient}>
       <BrowserTestProvider>
         <ClassesPage />
       </BrowserTestProvider>
-    </QueryClientProvider>
+    </QueryClientProvider>,
   );
 }
 
-describe('ClassesPage', () => {
+describe("ClassesPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(useAuth).mockReturnValue({ isAuthenticated: true, isGuest: false, isLoading: false } as ReturnType<typeof useAuth>);
+    vi.mocked(useAuth).mockReturnValue({
+      isAuthenticated: true,
+      isGuest: false,
+      isLoading: false,
+    } as ReturnType<typeof useAuth>);
   });
 
-  it('lists the GM classes as the server orders them, each private one with Edit', async () => {
+  it("lists the GM classes as the server orders them, each private one with Edit", async () => {
     vi.mocked(listMyClasses).mockResolvedValue([
-      { id: 9, lineageId: 'b', name: 'Bog Witch', description: 'The mire keeps.', languages: ['en'], visibility: 'private', status: 'active', originCount: 1 },
-      { id: 4, lineageId: 'a', name: 'Chain Monk', description: null, languages: ['en', 'pl'], visibility: 'private', status: 'active', originCount: 3 },
+      {
+        id: 9,
+        lineageId: "b",
+        name: "Bog Witch",
+        description: "The mire keeps.",
+        languages: ["en"],
+        visibility: "private",
+        status: "active",
+        originCount: 1,
+      },
+      {
+        id: 4,
+        lineageId: "a",
+        name: "Chain Monk",
+        description: null,
+        languages: ["en", "pl"],
+        visibility: "private",
+        status: "active",
+        originCount: 3,
+      },
     ]);
     renderPage();
 
-    await expect.element(page.getByTestId('own-class').first()).toHaveTextContent('Bog Witch');
-    await expect.element(page.getByText('English · Private · 1 origin')).toBeVisible();
-    await expect.element(page.getByRole('link', { name: 'Edit Bog Witch' })).toHaveAttribute('href', '/gm/classes/9');
-    await expect.element(page.getByRole('link', { name: 'Forge a class' })).toHaveAttribute('href', '/gm/classes/new');
+    await expect
+      .element(page.getByTestId("own-class").first())
+      .toHaveTextContent("Bog Witch");
+    await expect
+      .element(page.getByText("English · Private · 1 origin"))
+      .toBeVisible();
+    await expect
+      .element(page.getByRole("link", { name: "Edit Bog Witch" }))
+      .toHaveAttribute("href", "/gm/classes/9");
+    await expect
+      .element(page.getByRole("link", { name: "Forge a class" }))
+      .toHaveAttribute("href", "/gm/classes/new");
   });
 
-  it('tells guests to log in instead of offering the creator', async () => {
-    vi.mocked(useAuth).mockReturnValue({ isAuthenticated: false, isGuest: true, isLoading: false } as ReturnType<typeof useAuth>);
+  it("requires sharing acknowledgement before publishing a private class", async () => {
+    vi.mocked(listMyClasses).mockResolvedValue([
+      {
+        id: 9,
+        lineageId: "b",
+        name: "Bog Witch",
+        description: null,
+        languages: ["en"],
+        visibility: "private",
+        status: "active",
+        originCount: 1,
+      },
+    ]);
+    vi.mocked(publishClass).mockResolvedValue({ visibility: "public" });
     renderPage();
 
-    await expect.element(page.getByText('You need to be logged in to forge classes.')).toBeVisible();
-    await expect.element(page.getByRole('link', { name: 'Forge a class' })).not.toBeInTheDocument();
+    await userEvent.click(page.getByRole("button", { name: "Publish" }));
+    await expect.element(page.getByText("Publish this class?")).toBeVisible();
+    await expect
+      .element(page.getByRole("button", { name: "Publish" }).last())
+      .toBeDisabled();
+    await userEvent.click(page.getByRole("checkbox"));
+    await userEvent.click(page.getByRole("button", { name: "Publish" }).last());
+
+    await expect.poll(() => vi.mocked(publishClass).mock.calls[0]?.[0]).toBe(9);
+  });
+  it("tells guests to log in instead of offering the creator", async () => {
+    vi.mocked(useAuth).mockReturnValue({
+      isAuthenticated: false,
+      isGuest: true,
+      isLoading: false,
+    } as ReturnType<typeof useAuth>);
+    renderPage();
+
+    await expect
+      .element(page.getByText("You need to be logged in to forge classes."))
+      .toBeVisible();
+    await expect
+      .element(page.getByRole("link", { name: "Forge a class" }))
+      .not.toBeInTheDocument();
     expect(listMyClasses).not.toHaveBeenCalled();
   });
 });

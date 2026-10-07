@@ -455,6 +455,30 @@ export const customClassRepository = {
     });
   },
 
+  /** Changes the visibility of every available version in a Custom Class lineage. */
+  async setVisibility(
+    id: number,
+    visibility: 'private' | 'public'
+  ): Promise<void> {
+    await prisma.$transaction(async (tx) => {
+      const current = await tx.class.findUniqueOrThrow({
+        where: { id },
+        select: { lineageId: true, ownerUserId: true },
+      });
+      await tx.class.updateMany({
+        where: { lineageId: current.lineageId, takenDownAt: null },
+        data: { visibility },
+      });
+      if (visibility === 'private' && current.ownerUserId) {
+        await tx.partyClassPool.deleteMany({
+          where: {
+            lineageId: current.lineageId,
+            party: { ownerUserId: { not: current.ownerUserId } },
+          },
+        });
+      }
+    });
+  },
   /** Forks the current version, then discards superseded versions that no scvm has used. */
   async createVersion(id: number, draft: ClassDraft): Promise<number> {
     return prisma.$transaction(async (tx) => {

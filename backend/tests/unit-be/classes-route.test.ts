@@ -84,6 +84,10 @@ mock.module('../../src/services/custom-class-service.js', {
       deleteDraft: async () => ({ ok: true, value: { deleted: true } }),
       remove: async () => ({ ok: true, value: { archived: false } }),
       restore: async () => ({ ok: true, value: { restored: true } }),
+      setVisibility: async (input: { visibility: 'private' | 'public' }) => ({
+        ok: true,
+        value: { visibility: input.visibility },
+      }),
     }),
   },
 });
@@ -144,6 +148,29 @@ test('the schema refuses dice off the book, more than 20 origins and text over 1
   await app.close();
 });
 
+test('publish requires the sharing acknowledgement and unpublish is explicit', async () => {
+  const app = await buildApp();
+
+  const missingAcknowledgement = await app.inject({
+    method: 'POST',
+    url: '/9/publish',
+    payload: { confirmed: false },
+  });
+  const published = await app.inject({
+    method: 'POST',
+    url: '/9/publish',
+    payload: { confirmed: true },
+  });
+  const unpublished = await app.inject({
+    method: 'POST',
+    url: '/9/unpublish',
+  });
+
+  assert.equal(missingAcknowledgement.statusCode, 400);
+  assert.deepEqual(published.json(), { visibility: 'public' });
+  assert.deepEqual(unpublished.json(), { visibility: 'private' });
+  await app.close();
+});
 test('draft routes keep incomplete work and require a revision for updates', async () => {
   drafts.length = 0;
   const app = await buildApp();

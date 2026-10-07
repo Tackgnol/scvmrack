@@ -1594,7 +1594,13 @@
     "origins_many": "{{count}} pochodzeń",
     "origins_other": "{{count}} pochodzeń",
     "edit": "Edytuj",
-    "editLabel": "Edytuj {{name}}"
+    "editLabel": "Edytuj {{name}}",
+    "publish": "Opublikuj",
+    "unpublish": "Cofnij publikację",
+    "publishTitle": "Opublikować tę klasę?",
+    "publishing": "Publikowanie...",
+    "publishImmediate": "„{{name}}” będzie od razu publiczna, a inni MG będą mogli dodać ją do pul swoich drużyn.",
+    "publishRights": "Stworzyłem(-am) tę klasę albo mam prawo ją udostępnić."
   },
   "party": {
     "pill": "Drużyna",

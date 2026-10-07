@@ -34,6 +34,7 @@ const repo = {
   newDraftCount: 0,
   removeResult: { archived: false },
   restoreResult: true,
+  visibilityChanges: [] as Array<{ id: number; visibility: 'private' | 'public' }>,
 };
 
 mock.module('../../src/repositories/custom-class-repository.js', {
@@ -67,6 +68,9 @@ mock.module('../../src/repositories/custom-class-repository.js', {
       listOwned: async () => [],
       remove: async () => repo.removeResult,
       restore: async () => repo.restoreResult,
+      setVisibility: async (id: number, visibility: 'private' | 'public') => {
+        repo.visibilityChanges.push({ id, visibility });
+      },
       listDrafts: async () => repo.drafts,
       getDraft: async (_owner: string, id: number) =>
         repo.drafts.find((draft) => draft.id === id) ?? null,
@@ -148,6 +152,7 @@ beforeEach(() => {
   repo.newDraftCount = 0;
   repo.removeResult = { archived: false };
   repo.restoreResult = true;
+  repo.visibilityChanges = [];
 });
 
 test('a GM saves a complete class as their own', async () => {
@@ -274,6 +279,43 @@ test('saving a played current version forks it while an unplayed version changes
   assert.equal(forked.ok && forked.value.version, 4);
   assert.equal(repo.versioned.length, 1);
   assert.equal(repo.updated.length, 0);
+});
+test('an owner can publish and unpublish only the latest active class', async () => {
+  const published = await service.setVisibility({
+    session: GM,
+    id: 7,
+    visibility: 'public',
+  });
+  const unpublished = await service.setVisibility({
+    session: GM,
+    id: 7,
+    visibility: 'private',
+  });
+
+  assert.equal(published.ok && published.value.visibility, 'public');
+  assert.equal(unpublished.ok && unpublished.value.visibility, 'private');
+  assert.deepEqual(repo.visibilityChanges, [
+    { id: 7, visibility: 'public' },
+    { id: 7, visibility: 'private' },
+  ]);
+
+  repo.found = {
+    id: 7,
+    lineageId: 'l',
+    ownerUserId: 'gm-1',
+    version: 1,
+    status: 'active',
+    takenDownAt: null,
+    isLatest: false,
+    playingCount: 0,
+    draft: ready(),
+  };
+  const stale = await service.setVisibility({
+    session: GM,
+    id: 7,
+    visibility: 'public',
+  });
+  assert.equal(!stale.ok && stale.error.code, 'CLASS_NOT_LATEST');
 });
 test('removing a played class archives it and the owner can restore it', async () => {
   repo.found = {

@@ -166,7 +166,7 @@ export async function getClass(id: number): Promise<SavedClass> {
 export async function getClassDetail(id: number): Promise<ClassDetail> {
   return unwrapApiResult(
     await classClient.GET<ClassDetail>(`/api/classes/details/${id}`),
-    'Failed to load the class',
+    "Failed to load the class",
   );
 }
 
@@ -248,6 +248,32 @@ export async function restoreClass(id: number): Promise<{ restored: boolean }> {
   return unwrapApiResult(
     await classClient.POST<{ restored: boolean }>(`/api/classes/${id}/restore`),
     "Failed to restore the class",
+  );
+}
+/** Publishes a Custom Class after its creator confirms sharing rights. */
+export async function publishClass(
+  id: number,
+): Promise<{ visibility: "public" }> {
+  return unwrapApiResult(
+    await classClient.POST<{ visibility: "public" }>(
+      `/api/classes/${id}/publish`,
+      {
+        body: { confirmed: true },
+      },
+    ),
+    "Failed to publish the class",
+  );
+}
+
+/** Removes a Custom Class from public discovery and other GMs' pools. */
+export async function unpublishClass(
+  id: number,
+): Promise<{ visibility: "private" }> {
+  return unwrapApiResult(
+    await classClient.POST<{ visibility: "private" }>(
+      `/api/classes/${id}/unpublish`,
+    ),
+    "Failed to unpublish the class",
   );
 }
 export async function testRollClass(input: {

@@ -381,6 +381,41 @@ export function createCustomClassService(log: ServiceLogger) {
       }
     },
 
+    /** Publishes or unpublishes the current Custom Class lineage. */
+    async setVisibility(input: {
+      session: AppSession;
+      id: number;
+      visibility: 'private' | 'public';
+    }): Promise<ServiceResult<{ visibility: 'private' | 'public' }>> {
+      if (!isGm(input.session)) return fail(unauthorized());
+      try {
+        const found = await customClassRepository.findWithText(input.id);
+        if (!found || found.ownerUserId !== sessionUserId(input.session))
+          return fail(notYours());
+        if (!found.isLatest) {
+          return fail(
+            apiError(
+              409,
+              'CLASS_NOT_LATEST',
+              'A newer version of this class exists. Manage that one.'
+            )
+          );
+        }
+        if (found.takenDownAt) return fail(classTakenDown());
+        if (found.status === 'archived') return fail(classArchived());
+        await customClassRepository.setVisibility(input.id, input.visibility);
+        return ok({ visibility: input.visibility });
+      } catch (err) {
+        return fail(
+          unexpected(
+            log,
+            err,
+            'CLASS_VISIBILITY_SAVE_FAILED',
+            'Failed to change the class visibility'
+          )
+        );
+      }
+    },
     async remove(input: {
       session: AppSession;
       id: number;

@@ -3,10 +3,13 @@ import {
   deleteClassDraft,
   listClassDrafts,
   listMyClasses,
+  publishClass,
   removeClass,
   restoreClass,
+  unpublishClass,
   type ClassLanguage,
 } from "@/api/classes";
+import { ModalButton, MorkBorgModal } from "@/components";
 import { useAuth } from "@/hooks/useAuth";
 import { getApiLocale } from "@/hooks/utils";
 import {
@@ -24,9 +27,17 @@ import {
 } from "@/pages/gmPages.styles";
 import { Seo } from "@/seo/Seo";
 import { getUserFacingApiErrorMessage } from "@/utils/errorUtils";
-import { Alert, Box, Button } from "@mui/material";
+import {
+  Alert,
+  Box,
+  Button,
+  Checkbox,
+  FormControlLabel,
+  Typography,
+} from "@mui/material";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
+import { useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { ClassDescription, ZineLine } from "./ClassesPage.styles";
 
@@ -52,6 +63,11 @@ export function ClassesPage() {
   const { isAuthenticated, isLoading } = useAuth();
   const signedOut = !isLoading && !isAuthenticated;
   const locale = getApiLocale<ClassLanguage>(i18n.language);
+  const [publishTarget, setPublishTarget] = useState<{
+    id: number;
+    name: string;
+  } | null>(null);
+  const [publishConfirmed, setPublishConfirmed] = useState(false);
   const queryClient = useQueryClient();
   const draftsQuery = useQuery({
     queryKey: classKeys.drafts(),
@@ -70,6 +86,19 @@ export function ClassesPage() {
   });
   const restore = useMutation({
     mutationFn: restoreClass,
+    onSuccess: () =>
+      void queryClient.invalidateQueries({ queryKey: ["classes"] }),
+  });
+  const publish = useMutation({
+    mutationFn: publishClass,
+    onSuccess: () => {
+      setPublishTarget(null);
+      setPublishConfirmed(false);
+      void queryClient.invalidateQueries({ queryKey: ["classes"] });
+    },
+  });
+  const unpublish = useMutation({
+    mutationFn: unpublishClass,
     onSuccess: () =>
       void queryClient.invalidateQueries({ queryKey: ["classes"] }),
   });
@@ -226,15 +255,37 @@ export function ClassesPage() {
                 </Button>
               ) : (
                 <Box>
-              <CardAction
-                component={Link}
-                to={`/gm/classes/${cls.id}`}
+                  <CardAction
+                    component={Link}
+                    to={`/gm/classes/${cls.id}`}
                     aria-label={t("classes.editLabel", "Edit {{name}}", {
                       name: cls.name,
                     })}
-              >
-                {t("classes.edit", "Edit")}
-              </CardAction>
+                  >
+                    {t("classes.edit", "Edit")}
+                  </CardAction>
+                  {cls.visibility === "private" ? (
+                    <Button
+                      color="inherit"
+                      size="small"
+                      disabled={publish.isPending}
+                      onClick={() => {
+                        setPublishTarget({ id: cls.id, name: cls.name });
+                        setPublishConfirmed(false);
+                      }}
+                    >
+                      {t("classes.publish", "Publish")}
+                    </Button>
+                  ) : (
+                    <Button
+                      color="inherit"
+                      size="small"
+                      disabled={unpublish.isPending}
+                      onClick={() => unpublish.mutate(cls.id)}
+                    >
+                      {t("classes.unpublish", "Unpublish")}
+                    </Button>
+                  )}
                   <Button
                     color="inherit"
                     size="small"
@@ -269,6 +320,58 @@ export function ClassesPage() {
             }}
           />
         </ZineLine>
+        <MorkBorgModal
+          open={publishTarget !== null}
+          onClose={() => setPublishTarget(null)}
+          title={t("classes.publishTitle", "Publish this class?")}
+          maxWidth="xs"
+          actions={
+            <>
+              <ModalButton
+                variant="secondary"
+                onClick={() => setPublishTarget(null)}
+              >
+                {t("actions.cancel", "Cancel")}
+              </ModalButton>
+              <ModalButton
+                variant="primary"
+                disabled={!publishConfirmed || publish.isPending}
+                onClick={() =>
+                  publishTarget && publish.mutate(publishTarget.id)
+                }
+              >
+                {publish.isPending
+                  ? t("classes.publishing", "Publishing...")
+                  : t("classes.publish", "Publish")}
+              </ModalButton>
+            </>
+          }
+        >
+          <Typography>
+            {t(
+              "classes.publishImmediate",
+              "“{{name}}” will be public immediately and other GMs can add it to their party pools.",
+              { name: publishTarget?.name ?? "" },
+            )}
+          </Typography>
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={publishConfirmed}
+                onChange={(event) => setPublishConfirmed(event.target.checked)}
+              />
+            }
+            label={
+              <>
+                {t(
+                  "classes.publishRights",
+                  "I made this class or have the right to share it.",
+                )}{" "}
+                <Link to="/terms">{t("footer.terms", "Terms")}</Link>
+              </>
+            }
+          />
+        </MorkBorgModal>
       </Page>
     </>
   );
