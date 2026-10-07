@@ -330,6 +330,7 @@ const classes: FastifyPluginAsync = async (fastify): Promise<void> => {
   app.post(
     '/:id/unpublish',
     {
+      config: saveLimit,
       schema: {
         description: 'Unpublish a Custom Class lineage',
         tags: ['classes'],
