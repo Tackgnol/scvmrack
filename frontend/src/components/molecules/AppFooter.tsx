@@ -5,6 +5,7 @@ import { morkBorgColors } from '@/theme/morkBorgTheme';
 
 const Bar = styled('footer')({
   display: 'flex',
+  flexWrap: 'wrap',
   justifyContent: 'center',
   alignItems: 'center',
   gap: '0 20px',
@@ -42,6 +43,8 @@ export function AppFooter() {
       <FooterLink to="/faq">{t('nav.faq')}</FooterLink>
       <FooterLink to="/release">{t('nav.release')}</FooterLink>
       <FooterLink to="/owlbear">{t('nav.owlbear')}</FooterLink>
+      <FooterLink to="/terms">{t('nav.terms')}</FooterLink>
+      <FooterLink to="/legal">{t('nav.legal')}</FooterLink>
     </Bar>
   );
 }

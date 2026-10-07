@@ -108,6 +108,18 @@ const faqRoute = createRoute({
 });
 
 
+const termsRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: '/terms',
+    component: lazyRouteComponent(() => import('@/pages/TermsPage').then(m => ({ default: m.TermsPage }))),
+});
+
+const legalRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: '/legal',
+    component: lazyRouteComponent(() => import('@/pages/LegalPage').then(m => ({ default: m.LegalPage }))),
+});
+
 const releaseRoute = createRoute({
     getParentRoute: () => rootRoute,
     path: '/release',
@@ -188,6 +200,8 @@ const routeTree = rootRoute.addChildren([
     joinRollRoute,
     printRoute,
     faqRoute,
+    termsRoute,
+    legalRoute,
     releaseRoute,
     owlbearRoute,
     gmRoute,
