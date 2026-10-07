@@ -151,7 +151,7 @@ Pentested with Shannon AI (2026-03-23). All findings remediated or accepted.
 | Claim signatures | Shared-auth HMAC claim flow | Verified |
 | Swagger/OpenAPI | Disabled in production (`NODE_ENV=production`) | Verified |
 | Dockerfile | Runs as `node` user, not root | Verified |
-| OBR room access | Room-scoped reads are gated by the **(roomId, characterId) binding tables** (`ObrPlayerCharacterBinding`/`ObrTokenCharacterBinding`): `GET /api/obr/rooms/:roomId/cards` returns table-visible cards only for bound ids; binding writes require a session and owner-or-already-in-room. **Accepted room-trust residual (2026-07-01):** the unguessable OBR room id is a capability — anyone holding it can list bindings/bound cards, manage that room's enemy board (`/api/parties/by-room/:roomId/*`), and read the room party roster via `POST /api/parties/promote`. The party **invite token stays owner-only** (non-owners get a token-less view); a signed-in GM can claim a system-owned (`system:obr-room`) room party; party attach/detach is owner-only. | Accepted |
+| OBR room access | Room-scoped reads are gated by the **(roomId, characterId) binding tables** (`ObrPlayerCharacterBinding`/`ObrTokenCharacterBinding`): `GET /api/obr/rooms/:roomId/cards` returns table-visible cards only for bound ids; binding writes require a session and owner-or-already-in-room. **Accepted room-trust residual (2026-07-01):** the unguessable OBR room id is a capability — anyone holding it can list bindings/bound cards, manage that room's enemy board (`/api/parties/by-room/:roomId/*`), and read the room party roster via `POST /api/parties/promote`. The party **invite token stays owner-only** (non-owners get a token-less view); Party Class Pool content is readable to room holders; a signed-in GM can claim a system-owned (`system:obr-room`) room party; party attach/detach is owner-only. | Accepted |
 
 ### Security Considerations When Modifying
 - **Never commit secrets** to version control (`.env` files are in `.gitignore`)
@@ -168,7 +168,7 @@ The project includes scripts to reapply database schema:
 
 - `.env` - Development configuration (never commit to git)
 - Required backend: `DATABASE_URL`, `BETTER_AUTH_SECRET`, `AUTH_BASE_URL`, `APP_BASE_URL`, `CLIENT_ORIGIN`, `LOGTO_ENDPOINT`, `LOGTO_APP_ID`, `LOGTO_APP_SECRET`, `LOGTO_REDIRECT_URI`, `LOGTO_POST_LOGOUT_REDIRECT_URI`
-- Optional backend: `DATABASE_USER`, `DATABASE_HOST`, `DATABASE_NAME`, `DATABASE_PASSWORD`, `DATABASE_PORT`, `CLIENT_GATEWAY`, `LOGTO_RESOURCE`, `GLITCHTIP_DSN`, `PARTY_MAX_MEMBERS` (party member cap; default 10, read once at startup by `party-service.ts`)
+- Optional backend: `DATABASE_USER`, `DATABASE_HOST`, `DATABASE_NAME`, `DATABASE_PASSWORD`, `DATABASE_PORT`, `CLIENT_GATEWAY`, `LOGTO_RESOURCE`, `GLITCHTIP_DSN`, `PARTY_MAX_MEMBERS` (party member cap; default 10), `CUSTOM_CLASS_MAX_PER_GM` (class cap; default 50), `CUSTOM_CLASS_DAILY_PUBLISH_LIMIT` (new public-class cap; default 5; all read once at startup)
 - Required frontend build: `VITE_BACKEND_URL`, `VITE_LOGTO_ENDPOINT`
 - Optional frontend build: `VITE_SITE_URL`, `VITE_GLITCHTIP_DSN`, `VITE_ALLOWED_HOSTS`, `VITE_GA_MEASUREMENT_ID` (public GA4 ID; baked into the bundle at build time — GA stays dormant if unset)
 - Production uses separate GlitchTip DSNs: `GLITCHTIP_DSN` for backend and `VITE_GLITCHTIP_DSN` for frontend.
