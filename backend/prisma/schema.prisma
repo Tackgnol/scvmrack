@@ -372,12 +372,25 @@ model ModerationReport {
 
   class Class           @relation(fields: [classId], references: [id], onDelete: Restrict)
   logs  ModerationLog[]
+  disputes ModerationDispute[]
 
   @@index([classId, status, createdAt])
   @@index([status, createdAt])
   @@map("moderation_reports")
 }
 
+model ModerationDispute {
+  id           String   @id @default(uuid()) @db.Uuid
+  reportId     String   @map("report_id") @db.Uuid
+  authorUserId String   @map("author_user_id")
+  text         String   @db.VarChar(4000)
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  report ModerationReport @relation(fields: [reportId], references: [id], onDelete: Restrict)
+
+  @@index([reportId, createdAt])
+  @@map("moderation_disputes")
+}
 model ModerationLog {
   id          String   @id @default(uuid()) @db.Uuid
   classId     Int      @map("class_id")

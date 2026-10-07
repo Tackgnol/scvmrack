@@ -5,6 +5,7 @@ const created: unknown[] = [];
 const sent: { kind: string; input: unknown }[] = [];
 let takeDownInput: unknown;
 let merge = false;
+let disputeLimited = false;
 mock.module('../../src/repositories/moderation-repository.js', {
   namedExports: {
     moderationRepository: {
@@ -14,6 +15,17 @@ mock.module('../../src/repositories/moderation-repository.js', {
         if (!merge) created.push(input);
         return { id: '550e8400-e29b-41d4-a716-446655440000', merged: merge };
       },
+      createDispute: async () =>
+        disputeLimited
+          ? { kind: 'limit' as const }
+          : {
+              kind: 'created' as const,
+              dispute: { id: '550e8400-e29b-41d4-a716-446655440001' },
+              report: {
+                id: '550e8400-e29b-41d4-a716-446655440000',
+                class: { name: 'Bog Witch', owner: { email: 'author@example.com' } },
+              },
+            },
       listOpenReports: async () => [
         {
           id: '550e8400-e29b-41d4-a716-446655440000',
@@ -46,6 +58,7 @@ mock.module('../../src/services/mail-service.js', {
   namedExports: {
     createMailService: () => ({
       sendReportReceipt: async () => ({ ok: true, value: { sent: false } }),
+      sendDisputeCopy: async () => ({ ok: true, value: { sent: false } }),
       sendReportDecision: async (input: unknown) => {
         sent.push({ kind: 'decision', input });
         return { ok: true, value: { sent: false } };
@@ -118,6 +131,23 @@ test('merges repeat reports from the same email and class', async () => {
   assert.equal(created.length, 1);
   assert.deepEqual((created[0] as { reporterEmail: string }).reporterEmail, 'reporter@example.com');
   merge = false;
+});
+test('an owner can dispute a takedown up to the cap', async () => {
+  const created = await service.dispute({
+    session: { user: { id: 'gm-1' } },
+    classId: 9,
+    text: 'I wrote this class.',
+  });
+  assert.equal(created.ok && created.value.id, '550e8400-e29b-41d4-a716-446655440001');
+
+  disputeLimited = true;
+  const limited = await service.dispute({
+    session: { user: { id: 'gm-1' } },
+    classId: 9,
+    text: 'Please review this again.',
+  });
+  assert.equal(!limited.ok && limited.error.code, 'DISPUTE_LIMIT');
+  disputeLimited = false;
 });
 test('limits review actions to allowlisted GMs and notifies both parties', async () => {
   const previous = process.env.MODERATION_ADMIN_USER_IDS;

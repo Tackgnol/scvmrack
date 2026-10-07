@@ -75,7 +75,38 @@ export function createModerationService(log: ModerationLogger) {
         );
       }
     },
-    async listOpen(input: { session: AppSession }) {
+async dispute(input: {
+      session: AppSession;
+      classId: number;
+      text: string;
+    }): Promise<ServiceResult<{ id: string }>> {
+      const authorUserId = sessionUserId(input.session);
+      if (!authorUserId) return fail(apiError(401, 'UNAUTHORIZED', 'Sign in to dispute this decision'));
+      try {
+        const result = await moderationRepository.createDispute(
+          input.classId,
+          authorUserId,
+          input.text.trim()
+        );
+        if (result.kind === 'missing')
+          return fail(notFound('TAKEDOWN_NOT_FOUND', 'No takedown decision was found for this class'));
+        if (result.kind === 'limit')
+          return fail(apiError(429, 'DISPUTE_LIMIT', 'You have already disputed this decision 3 times'));
+        const email = result.report.class.owner?.email;
+        if (email) {
+          const copy = await createMailService(log).sendDisputeCopy({
+            reportId: result.report.id,
+            className: result.report.class.name,
+            ownerEmail: email,
+            disputeText: input.text.trim(),
+          });
+          if (!copy.ok) log.warn({ err: copy.error, reportId: result.report.id }, 'Dispute copy email failed');
+        }
+        return ok({ id: result.dispute.id });
+      } catch (err) {
+        return fail(unexpected(log, err, 'MODERATION_DISPUTE_SAVE_FAILED', 'Failed to save the dispute'));
+      }
+    },    async listOpen(input: { session: AppSession }) {
       if (!isModerationAdmin(input.session)) return fail(forbidden());
       try {
         const reports = await moderationRepository.listOpenReports();

@@ -39,7 +39,31 @@ export const moderationRepository = {
       return { ...report, merged: false };
     });
   },
-  async listOpenReports() {
+async createDispute(classId: number, authorUserId: string, text: string) {
+    return prisma.$transaction(async (tx) => {
+      const cls = await tx.class.findUnique({
+        where: { id: classId },
+        select: { lineageId: true },
+      });
+      if (!cls) return { kind: 'missing' as const };
+      const report = await tx.moderationReport.findFirst({
+        where: {
+          status: 'taken_down',
+          class: { lineageId: cls.lineageId, ownerUserId: authorUserId },
+        },
+        orderBy: { resolvedAt: 'desc' },
+        include: { class: { select: { name: true, owner: { select: { email: true } } } } },
+      });
+      if (!report) return { kind: 'missing' as const };
+      const count = await tx.moderationDispute.count({ where: { reportId: report.id } });
+      if (count >= 3) return { kind: 'limit' as const };
+      const dispute = await tx.moderationDispute.create({
+        data: { reportId: report.id, authorUserId, text },
+        select: { id: true },
+      });
+      return { kind: 'created' as const, dispute, report };
+    });
+  },  async listOpenReports() {
     return prisma.moderationReport.findMany({
       where: { status: 'open' }, orderBy: { createdAt: 'desc' },
       include: { class: { select: { id: true, name: true, lineageId: true, source: true, owner: { select: { email: true } } } } },

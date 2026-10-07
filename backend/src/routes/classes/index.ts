@@ -21,6 +21,7 @@ import {
 } from '../../schemas/custom-class.js';
 import { sendServiceError } from '../../errors.js';
 import { createCustomClassService } from '../../services/custom-class-service.js';
+import { createModerationService } from '../../services/moderation-service.js';
 
 const saveLimit = {
   rateLimit: {
@@ -291,6 +292,31 @@ const classes: FastifyPluginAsync = async (fastify): Promise<void> => {
       const result = await service(request).getDetail({ session: request.appSession, id: request.params.id });
       if (!result.ok) return sendServiceError(reply, request, result.error);
       return reply.send(result.value as never);
+    }
+  );
+app.post(
+    '/:id/disputes',
+    {
+      config: saveLimit,
+      schema: {
+        params: ClassIdParamsSchema,
+        body: {
+          type: 'object',
+          additionalProperties: false,
+          required: ['text'],
+          properties: { text: { type: 'string', minLength: 1, maxLength: 4000 } },
+        },
+        response: { 201: { type: 'object', required: ['id'], properties: { id: { type: 'string', format: 'uuid' } } }, 401: ErrorSchema, 404: ErrorSchema, 429: ErrorSchema, 500: ErrorSchema },
+      },
+    },
+    async (request, reply) => {
+      const result = await createModerationService(request.log).dispute({
+        session: request.appSession,
+        classId: request.params.id,
+        text: request.body.text,
+      });
+      if (!result.ok) return sendServiceError(reply, request, result.error);
+      return reply.code(201).send(result.value);
     }
   );
   // POST /api/classes/:id/publish - make the current class version publicly readable
