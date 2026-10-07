@@ -51,4 +51,16 @@ export const moderationRepository = {
       ]);
       return report;
     });
-  },};
+  },
+  async restoreReport(id: string, actorUserId: string, reason: string) {
+    return prisma.$transaction(async (tx) => {
+      const report = await tx.moderationReport.findUnique({ where: { id }, include: { class: { select: { lineageId: true } } } });
+      if (!report || report.status !== 'taken_down') return null;
+      await Promise.all([
+        tx.class.updateMany({ where: { lineageId: report.class.lineageId }, data: { takenDownAt: null, takedownReason: null } }),
+        tx.moderationLog.create({ data: { classId: report.classId, reportId: id, actorUserId, action: 'restored', reason } }),
+      ]);
+      return report;
+    });
+  },
+};
