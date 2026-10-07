@@ -4,14 +4,15 @@ import { mock, test } from 'node:test';
 const created: unknown[] = [];
 const sent: { kind: string; input: unknown }[] = [];
 let takeDownInput: unknown;
+let merge = false;
 mock.module('../../src/repositories/moderation-repository.js', {
   namedExports: {
     moderationRepository: {
       findClass: async (id: number) =>
         id === 9 ? { id, name: 'Bog Witch' } : null,
-      createReport: async (input: unknown) => {
-        created.push(input);
-        return { id: '550e8400-e29b-41d4-a716-446655440000' };
+      createOrMergeReport: async (input: unknown) => {
+        if (!merge) created.push(input);
+        return { id: '550e8400-e29b-41d4-a716-446655440000', merged: merge };
       },
       listOpenReports: async () => [
         {
@@ -94,6 +95,30 @@ test('requires contact for ordinary reports but allows anonymous CSAM reports', 
   ]);
 });
 
+test('merges repeat reports from the same email and class', async () => {
+  created.length = 0;
+  merge = false;
+  const first = await service.submit({
+    classId: 9,
+    reason: 'copyright',
+    explanation: 'This is my work.',
+    reporterName: 'Reporter',
+    reporterEmail: 'reporter@example.com',
+  });
+  merge = true;
+  const repeated = await service.submit({
+    classId: 9,
+    reason: 'copyright',
+    explanation: 'Still copied.',
+    reporterName: 'Reporter',
+    reporterEmail: 'REPORTER@example.com',
+  });
+
+  assert.equal(first.ok && first.value.id, repeated.ok && repeated.value.id);
+  assert.equal(created.length, 1);
+  assert.deepEqual((created[0] as { reporterEmail: string }).reporterEmail, 'reporter@example.com');
+  merge = false;
+});
 test('limits review actions to allowlisted GMs and notifies both parties', async () => {
   const previous = process.env.MODERATION_ADMIN_USER_IDS;
   process.env.MODERATION_ADMIN_USER_IDS = 'admin-1';

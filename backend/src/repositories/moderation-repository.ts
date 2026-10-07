@@ -17,10 +17,26 @@ export const moderationRepository = {
       select: { id: true, name: true },
     });
   },
-  async createReport(input: CreateModerationReportInput) {
-    return prisma.moderationReport.create({
-      data: { ...input, goodFaith: true },
-      select: { id: true },
+  async createOrMergeReport(input: CreateModerationReportInput) {
+    return prisma.$transaction(async (tx) => {
+      if (input.reporterEmail) {
+        // Serialize one reporter-class pair so simultaneous retries still merge.
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`${input.classId}:${input.reporterEmail}`}))`;
+        const recent = await tx.moderationReport.findFirst({
+          where: {
+            classId: input.classId,
+            reporterEmail: input.reporterEmail,
+            createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+          },
+          select: { id: true },
+        });
+        if (recent) return { ...recent, merged: true };
+      }
+      const report = await tx.moderationReport.create({
+        data: { ...input, goodFaith: true },
+        select: { id: true },
+      });
+      return { ...report, merged: false };
     });
   },
   async listOpenReports() {

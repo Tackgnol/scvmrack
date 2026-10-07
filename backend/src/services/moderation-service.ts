@@ -27,7 +27,7 @@ export function createModerationService(log: ModerationLogger) {
       input: PublicModerationReport
     ): Promise<ServiceResult<{ id: string }>> {
       const reporterName = input.reporterName?.trim() || null;
-      const reporterEmail = input.reporterEmail?.trim() || null;
+      const reporterEmail = input.reporterEmail?.trim().toLowerCase() || null;
       if (input.reason !== CSAM && (!reporterName || !reporterEmail)) {
         return fail(
           apiError(
@@ -43,14 +43,14 @@ export function createModerationService(log: ModerationLogger) {
           return fail(
             notFound('CLASS_NOT_FOUND', 'The reported class no longer exists')
           );
-        const report = await moderationRepository.createReport({
+        const report = await moderationRepository.createOrMergeReport({
           classId: cls.id,
           reason: input.reason,
           explanation: input.explanation.trim(),
           reporterName,
           reporterEmail,
         });
-        if (reporterEmail) {
+        if (reporterEmail && !report.merged) {
           const receipt = await createMailService(log).sendReportReceipt({
             to: reporterEmail,
             locale: input.locale,
