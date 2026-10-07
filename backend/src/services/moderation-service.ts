@@ -1,8 +1,10 @@
 import type { ModerationReportReason } from '@prisma/client';
-import { apiError, notFound } from '../errors.js';
+import { apiError, forbidden, notFound } from '../errors.js';
 import { moderationRepository } from '../repositories/moderation-repository.js';
 import { createMailService } from './mail-service.js';
 import { fail, ok, unexpected, type ServiceResult } from './result.js';
+import { isModerationAdmin } from '../lib/moderation-admin.js';
+import { sessionUserId, type AppSession } from './session.js';
 
 type ModerationLogger = {
   error(obj: unknown, msg?: string): void;
@@ -73,5 +75,39 @@ export function createModerationService(log: ModerationLogger) {
         );
       }
     },
-  };
+    async listOpen(input: { session: AppSession }) {
+      if (!isModerationAdmin(input.session)) return fail(forbidden());
+      try {
+        const reports = await moderationRepository.listOpenReports();
+        return ok(reports.map((report) => ({
+          id: report.id, classId: report.classId, className: report.class.name,
+          reason: report.reason, explanation: report.explanation,
+          reporterName: report.reporterName, reporterEmail: report.reporterEmail,
+          createdAt: report.createdAt.toISOString(),
+          serious: ['child_sexual_abuse_material', 'threat_to_life_or_safety', 'terrorist_content'].includes(report.reason),
+        })));
+      } catch (err) {
+        return fail(unexpected(log, err, 'MODERATION_REPORT_LIST_FAILED', 'Failed to load moderation reports'));
+      }
+    },
+    async dismiss(input: { session: AppSession; id: string; reason: string }) {
+      const actorUserId = sessionUserId(input.session);
+      if (!isModerationAdmin(input.session) || !actorUserId) return fail(forbidden());
+      try {
+        const report = await moderationRepository.dismissReport(input.id, actorUserId, input.reason);
+        return report ? ok({ dismissed: true }) : fail(notFound('REPORT_NOT_FOUND', 'Open report not found'));
+      } catch (err) {
+        return fail(unexpected(log, err, 'MODERATION_DISMISS_FAILED', 'Failed to dismiss the report'));
+      }
+    },
+    async takeDown(input: { session: AppSession; id: string; reason: string }) {
+      const actorUserId = sessionUserId(input.session);
+      if (!isModerationAdmin(input.session) || !actorUserId) return fail(forbidden());
+      try {
+        const report = await moderationRepository.takeDownReport(input.id, actorUserId, input.reason);
+        return report ? ok({ takenDown: true }) : fail(notFound('REPORT_NOT_FOUND', 'Open report not found'));
+      } catch (err) {
+        return fail(unexpected(log, err, 'MODERATION_TAKEDOWN_FAILED', 'Failed to take down the class'));
+      }
+    },  };
 }
