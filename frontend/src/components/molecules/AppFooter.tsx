@@ -45,6 +45,7 @@ export function AppFooter() {
       <FooterLink to="/owlbear">{t('nav.owlbear')}</FooterLink>
       <FooterLink to="/terms">{t('nav.terms')}</FooterLink>
       <FooterLink to="/legal">{t('nav.legal')}</FooterLink>
+      <FooterLink to="/report">{t('report.link', 'Report a class')}</FooterLink>
     </Bar>
   );
 }

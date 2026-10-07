@@ -1579,7 +1579,31 @@
     "publishImmediate": "“{{name}}” will be public immediately and other GMs can add it to their party pools.",
     "publishRights": "I made this class or have the right to share it."
   },
-  "party": {
+  "report": {
+    "link": "Report a class",
+    "title": "Report a class",
+    "description": "Report a class for human review.",
+    "intro": "Anyone can report public content. A person reviews every report and will explain the outcome.",
+    "classId": "Class reference",
+    "reason": "Reason",
+    "explanation": "Explain what happened",
+    "name": "Your name",
+    "email": "Your email",
+    "goodFaith": "I am submitting this report in good faith.",
+    "submit": "Submit report",
+    "sending": "Sending...",
+    "sent": "Your report was recorded for human review. You can challenge the outcome at scvmrack-appeal@rpgtools.co.",
+    "appeal": "You may challenge the outcome by emailing scvmrack-appeal@rpgtools.co.",
+    "reasons": {
+      "copyright": "Copyright — I own this and do not want it on Scvm Rack",
+      "child_sexual_abuse_material": "Child sexual abuse material",
+      "threat_to_life_or_safety": "Threat to someone's life or safety",
+      "terrorist_content": "Terrorist content",
+      "other_illegal_content": "Other illegal content",
+      "abusive_or_hateful": "Abusive or hateful content",
+      "other": "Other"
+    }
+  },  "party": {
     "pill": "Party",
     "looks": "Looks",
     "kit": "Kit",

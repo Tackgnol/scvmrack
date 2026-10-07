@@ -1602,7 +1602,31 @@
     "publishImmediate": "„{{name}}” będzie od razu publiczna, a inni MG będą mogli dodać ją do pul swoich drużyn.",
     "publishRights": "Stworzyłem(-am) tę klasę albo mam prawo ją udostępnić."
   },
-  "party": {
+  "report": {
+    "link": "Zgłoś klasę",
+    "title": "Zgłoś klasę",
+    "description": "Zgłoś klasę do weryfikacji przez człowieka.",
+    "intro": "Każdy może zgłosić publiczną treść. Każde zgłoszenie sprawdza człowiek i wyjaśnia wynik.",
+    "classId": "Identyfikator klasy",
+    "reason": "Powód",
+    "explanation": "Wyjaśnij, co się stało",
+    "name": "Twoje imię i nazwisko",
+    "email": "Twój e-mail",
+    "goodFaith": "Składam to zgłoszenie w dobrej wierze.",
+    "submit": "Wyślij zgłoszenie",
+    "sending": "Wysyłanie...",
+    "sent": "Zgłoszenie zapisano do weryfikacji przez człowieka. Wynik możesz zakwestionować pod adresem scvmrack-appeal@rpgtools.co.",
+    "appeal": "Wynik możesz zakwestionować, pisząc na scvmrack-appeal@rpgtools.co.",
+    "reasons": {
+      "copyright": "Prawo autorskie — jestem właścicielem(-ką) i nie chcę tego w Scvm Rack",
+      "child_sexual_abuse_material": "Materiały przedstawiające seksualne wykorzystywanie dzieci",
+      "threat_to_life_or_safety": "Groźba dla życia lub bezpieczeństwa",
+      "terrorist_content": "Treść terrorystyczna",
+      "other_illegal_content": "Inna nielegalna treść",
+      "abusive_or_hateful": "Treść obraźliwa lub nienawistna",
+      "other": "Inne"
+    }
+  },  "party": {
     "pill": "Drużyna",
     "looks": "Wygląd",
     "kit": "Sprzęt",

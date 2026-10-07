@@ -108,6 +108,11 @@ const faqRoute = createRoute({
 });
 
 
+const reportRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: '/report',
+    component: lazyRouteComponent(() => import('@/pages/ReportPage').then(m => ({ default: m.ReportPage }))),
+});
 const termsRoute = createRoute({
     getParentRoute: () => rootRoute,
     path: '/terms',
@@ -200,6 +205,7 @@ const routeTree = rootRoute.addChildren([
     joinRollRoute,
     printRoute,
     faqRoute,
+    reportRoute,
     termsRoute,
     legalRoute,
     releaseRoute,
