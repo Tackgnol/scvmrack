@@ -15,8 +15,8 @@ const reports: FastifyPluginAsync = async (fastify) => {
     {
       config: {
         rateLimit: {
-          max: process.env.NODE_ENV === 'test' ? 10000 : 10,
-          timeWindow: '1 minute',
+          max: process.env.NODE_ENV === 'test' ? 10000 : 5,
+          timeWindow: '1 hour',
         },
       },
       schema: {
