@@ -29,6 +29,7 @@ export function ReportPage() {
   const [explanation, setExplanation] = useState("");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [website, setWebsite] = useState("");
   const [goodFaith, setGoodFaith] = useState(false);
   const report = useMutation({ mutationFn: submitPublicReport });
   const anonymousAllowed = reason === "child_sexual_abuse_material";
@@ -42,6 +43,7 @@ export function ReportPage() {
       explanation,
       reporterName: name,
       reporterEmail: email,
+      website,
       locale: i18n.language.startsWith("pl") ? "pl" : "en",
     });
   };
@@ -85,6 +87,16 @@ export function ReportPage() {
             }}
           >
             <Stack spacing={2}>
+              <input
+                aria-hidden="true"
+                autoComplete="off"
+                name="website"
+                onChange={(event) => setWebsite(event.target.value)}
+                style={{ left: "-10000px", position: "absolute" }}
+                tabIndex={-1}
+                type="text"
+                value={website}
+              />
               {report.error && (
                 <Alert severity="error">
                   {getUserFacingApiErrorMessage(

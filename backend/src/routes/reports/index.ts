@@ -1,5 +1,6 @@
 import type { FastifyPluginAsync } from 'fastify';
 import type { JsonSchemaToTsProvider } from '@fastify/type-provider-json-schema-to-ts';
+import { randomUUID } from 'node:crypto';
 import { sendServiceError } from '../../errors.js';
 import { ErrorSchema } from '../../schemas/equipment.js';
 import {
@@ -34,6 +35,8 @@ const reports: FastifyPluginAsync = async (fastify) => {
       },
     },
     async (request, reply) => {
+      if (request.body.website?.trim())
+        return reply.code(201).send({ id: randomUUID() });
       const result = await createModerationService(request.log).submit(
         request.body
       );

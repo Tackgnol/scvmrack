@@ -17,6 +17,7 @@ export type PublicReportInput = {
   explanation: string;
   reporterName?: string;
   reporterEmail?: string;
+  website?: string;
   locale: "en" | "pl";
 };
 const reportClient = client as unknown as UntypedApiClient;

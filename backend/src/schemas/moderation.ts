@@ -19,6 +19,7 @@ export const ModerationReportBodySchema = {
     explanation: { type: 'string', minLength: 1, maxLength: 4000 },
     reporterName: { type: 'string', minLength: 1, maxLength: 200 },
     reporterEmail: { type: 'string', format: 'email', maxLength: 320 },
+    website: { type: 'string', maxLength: 200 },
     locale: { type: 'string', enum: ['en', 'pl'] },
     goodFaith: { const: true },
   },
