@@ -457,6 +457,35 @@ export const customClassRepository = {
     });
   },
 
+  /** Publishes a lineage only while the owner's daily new-public-class quota remains. */
+  async publish(id: number, ownerUserId: string, dayStart: Date, limit: number): Promise<boolean> {
+    return prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${ownerUserId}))`;
+      const current = await tx.class.findUniqueOrThrow({
+        where: { id },
+        select: { lineageId: true, visibility: true, firstPublishedAt: true },
+      });
+      if (current.visibility === 'public') return true;
+      if (current.firstPublishedAt) {
+        await tx.class.updateMany({
+          where: { lineageId: current.lineageId, takenDownAt: null },
+          data: { visibility: 'public' },
+        });
+        return true;
+      }
+      const publishedToday = await tx.class.groupBy({
+        by: ['lineageId'],
+        where: { ownerUserId, firstPublishedAt: { gte: dayStart } },
+      });
+      if (publishedToday.length >= limit) return false;
+      await tx.class.updateMany({
+        where: { lineageId: current.lineageId, takenDownAt: null },
+        data: { visibility: 'public', firstPublishedAt: new Date() },
+      });
+      return true;
+    });
+  },
+
   /** Changes the visibility of every available version in a Custom Class lineage. */
   async setVisibility(
     id: number,
@@ -491,6 +520,7 @@ export const customClassRepository = {
           source: current.source,
           ownerUserId: current.ownerUserId,
           visibility: current.visibility,
+          firstPublishedAt: current.firstPublishedAt,
           status: 'active',
           lineageId: current.lineageId,
           version: current.version + 1,

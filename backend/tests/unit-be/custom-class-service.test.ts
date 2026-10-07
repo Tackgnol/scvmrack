@@ -34,6 +34,7 @@ const repo = {
   newDraftCount: 0,
   removeResult: { archived: false },
   restoreResult: true,
+  publishAllowed: true,
   visibilityChanges: [] as Array<{ id: number; visibility: 'private' | 'public' }>,
 };
 
@@ -68,6 +69,10 @@ mock.module('../../src/repositories/custom-class-repository.js', {
       listOwned: async () => [],
       remove: async () => repo.removeResult,
       restore: async () => repo.restoreResult,
+      publish: async (id: number) => {
+        repo.visibilityChanges.push({ id, visibility: 'public' });
+        return repo.publishAllowed;
+      },
       setVisibility: async (id: number, visibility: 'private' | 'public') => {
         repo.visibilityChanges.push({ id, visibility });
       },
@@ -152,6 +157,7 @@ beforeEach(() => {
   repo.newDraftCount = 0;
   repo.removeResult = { archived: false };
   repo.restoreResult = true;
+  repo.publishAllowed = true;
   repo.visibilityChanges = [];
 });
 
@@ -316,6 +322,21 @@ test('an owner can publish and unpublish only the latest active class', async ()
     visibility: 'public',
   });
   assert.equal(!stale.ok && stale.error.code, 'CLASS_NOT_LATEST');
+});
+test('a GM sees the daily publication limit', async () => {
+  repo.publishAllowed = false;
+
+  const result = await service.setVisibility({
+    session: GM,
+    id: 7,
+    visibility: 'public',
+  });
+
+  assert.equal(!result.ok && result.error.code, 'CLASS_DAILY_PUBLISH_LIMIT');
+  assert.match(
+    !result.ok ? result.error.message : '',
+    /You've published 5 classes today\. Try again tomorrow\./
+  );
 });
 test('removing a played class archives it and the owner can restore it', async () => {
   repo.found = {

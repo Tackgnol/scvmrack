@@ -62,6 +62,7 @@ steps:
       MODERATION_ADMIN_USER_IDS:
         from_secret: moderation_admin_user_ids
       CUSTOM_CLASS_MAX_PER_GM: "50"
+      CUSTOM_CLASS_DAILY_PUBLISH_LIMIT: "5"
       CLIENT_ORIGIN:
         from_secret: client_origin
       CLIENT_GATEWAY:

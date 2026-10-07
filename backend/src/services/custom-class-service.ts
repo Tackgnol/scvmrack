@@ -1,4 +1,7 @@
-import { CUSTOM_CLASS_MAX_PER_GM } from '../lib/class-limits.js';
+import {
+  CUSTOM_CLASS_DAILY_PUBLISH_LIMIT,
+  CUSTOM_CLASS_MAX_PER_GM,
+} from '../lib/class-limits.js';
 import { classAttribution } from '../lib/class-attribution.js';
 import {
   classDraftProblems,
@@ -26,6 +29,13 @@ import { isGm, sessionUserId, type AppSession } from './session.js';
 
 const NAME_CONSTRAINT = 'classes_name_per_owner';
 const NEW_DRAFT_LIMIT = 3;
+
+const dailyPublishLimitReached = () =>
+  apiError(
+    429,
+    'CLASS_DAILY_PUBLISH_LIMIT',
+    `You've published ${CUSTOM_CLASS_DAILY_PUBLISH_LIMIT} classes today. Try again tomorrow.`
+  );
 
 const notYours = () => notFound('CLASS_NOT_FOUND', 'Class not found');
 const classArchived = () =>
@@ -389,8 +399,9 @@ export function createCustomClassService(log: ServiceLogger) {
     }): Promise<ServiceResult<{ visibility: 'private' | 'public' }>> {
       if (!isGm(input.session)) return fail(unauthorized());
       try {
+        const ownerUserId = sessionUserId(input.session);
         const found = await customClassRepository.findWithText(input.id);
-        if (!found || found.ownerUserId !== sessionUserId(input.session))
+        if (!ownerUserId || !found || found.ownerUserId !== ownerUserId)
           return fail(notYours());
         if (!found.isLatest) {
           return fail(
@@ -403,7 +414,19 @@ export function createCustomClassService(log: ServiceLogger) {
         }
         if (found.takenDownAt) return fail(classTakenDown());
         if (found.status === 'archived') return fail(classArchived());
-        await customClassRepository.setVisibility(input.id, input.visibility);
+        if (input.visibility === 'public') {
+          const dayStart = new Date();
+          dayStart.setUTCHours(0, 0, 0, 0);
+          const published = await customClassRepository.publish(
+            input.id,
+            ownerUserId,
+            dayStart,
+            CUSTOM_CLASS_DAILY_PUBLISH_LIMIT
+          );
+          if (!published) return fail(dailyPublishLimitReached());
+        } else {
+          await customClassRepository.setVisibility(input.id, input.visibility);
+        }
         return ok({ visibility: input.visibility });
       } catch (err) {
         return fail(

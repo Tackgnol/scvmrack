@@ -338,6 +338,7 @@ model Class {
   owner               User?           @relation(fields: [ownerUserId], references: [id], onDelete: SetNull)
   languages           String[]        @default(["en", "pl"]) @db.VarChar(2)
   visibility          ClassVisibility @default(public)
+  firstPublishedAt    DateTime?       @map("first_published_at")
   status              ClassStatus     @default(active)
   takenDownAt         DateTime?       @map("taken_down_at")
   takedownReason      String?         @map("takedown_reason")
@@ -352,6 +353,7 @@ model Class {
 
   @@unique([lineageId, version])
   @@index([ownerUserId])
+  @@index([ownerUserId, firstPublishedAt])
   @@map("classes")
 }
 
