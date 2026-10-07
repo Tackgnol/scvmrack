@@ -93,8 +93,23 @@ export function createModerationService(log: ModerationLogger) {
     async dismiss(input: { session: AppSession; id: string; reason: string }) {
       const actorUserId = sessionUserId(input.session);
       if (!isModerationAdmin(input.session) || !actorUserId) return fail(forbidden());
+      const reason = input.reason.trim();
+      if (!reason)
+        return fail(apiError(400, 'MODERATION_REASON_REQUIRED', 'A reason is required'));
       try {
-        const report = await moderationRepository.dismissReport(input.id, actorUserId, input.reason);
+        const report = await moderationRepository.dismissReport(input.id, actorUserId, reason);
+        if (report?.reporterEmail) {
+          const decision = await createMailService(log).sendReportDecision({
+            to: report.reporterEmail,
+            locale: 'en',
+            reportId: report.id,
+            className: report.class.name,
+            outcome: 'dismissed',
+            explanation: reason,
+          });
+          if (!decision.ok)
+            log.warn({ err: decision.error, reportId: report.id }, 'Report decision email failed');
+        }
         return report ? ok({ dismissed: true }) : fail(notFound('REPORT_NOT_FOUND', 'Open report not found'));
       } catch (err) {
         return fail(unexpected(log, err, 'MODERATION_DISMISS_FAILED', 'Failed to dismiss the report'));
@@ -103,8 +118,38 @@ export function createModerationService(log: ModerationLogger) {
     async takeDown(input: { session: AppSession; id: string; reason: string }) {
       const actorUserId = sessionUserId(input.session);
       if (!isModerationAdmin(input.session) || !actorUserId) return fail(forbidden());
+      const reason = input.reason.trim();
+      if (!reason)
+        return fail(apiError(400, 'MODERATION_REASON_REQUIRED', 'A reason is required'));
       try {
-        const report = await moderationRepository.takeDownReport(input.id, actorUserId, input.reason);
+        const report = await moderationRepository.takeDownReport(input.id, actorUserId, reason);
+        const mail = createMailService(log);
+        if (report?.reporterEmail) {
+          const decision = await mail.sendReportDecision({
+            to: report.reporterEmail,
+            locale: 'en',
+            reportId: report.id,
+            className: report.class.name,
+            outcome: 'taken_down',
+            explanation: reason,
+          });
+          if (!decision.ok)
+            log.warn({ err: decision.error, reportId: report.id }, 'Report decision email failed');
+        }
+        if (report?.class.owner?.email) {
+          const statement = await mail.sendStatementOfReasons({
+            to: report.class.owner.email,
+            locale: 'en',
+            className: report.class.name,
+            measure: 'taken_down',
+            followedNotice: true,
+            ground: reason,
+            explanation: reason,
+            reportId: report.id,
+          });
+          if (!statement.ok)
+            log.warn({ err: statement.error, reportId: report.id }, 'Statement of reasons email failed');
+        }
         return report ? ok({ takenDown: true }) : fail(notFound('REPORT_NOT_FOUND', 'Open report not found'));
       } catch (err) {
         return fail(unexpected(log, err, 'MODERATION_TAKEDOWN_FAILED', 'Failed to take down the class'));

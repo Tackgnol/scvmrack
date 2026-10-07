@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import { mock, test } from 'node:test';
 
 const created: unknown[] = [];
+const sent: { kind: string; input: unknown }[] = [];
+let takeDownInput: unknown;
 mock.module('../../src/repositories/moderation-repository.js', {
   namedExports: {
     moderationRepository: {
@@ -11,6 +13,27 @@ mock.module('../../src/repositories/moderation-repository.js', {
         created.push(input);
         return { id: '550e8400-e29b-41d4-a716-446655440000' };
       },
+      listOpenReports: async () => [
+        {
+          id: '550e8400-e29b-41d4-a716-446655440000',
+          classId: 9,
+          reason: 'threat_to_life_or_safety',
+          explanation: 'Specific and credible threat.',
+          reporterName: 'Reporter',
+          reporterEmail: 'reporter@example.com',
+          createdAt: new Date('2026-10-07T12:00:00.000Z'),
+          class: { name: 'Bog Witch' },
+        },
+      ],
+      dismissReport: async () => null,
+      takeDownReport: async (id: string, actorUserId: string, reason: string) => {
+        takeDownInput = { id, actorUserId, reason };
+        return {
+          id,
+          reporterEmail: 'reporter@example.com',
+          class: { name: 'Bog Witch', owner: { email: 'author@example.com' } },
+        };
+      },
     },
   },
 });
@@ -18,6 +41,14 @@ mock.module('../../src/services/mail-service.js', {
   namedExports: {
     createMailService: () => ({
       sendReportReceipt: async () => ({ ok: true, value: { sent: false } }),
+      sendReportDecision: async (input: unknown) => {
+        sent.push({ kind: 'decision', input });
+        return { ok: true, value: { sent: false } };
+      },
+      sendStatementOfReasons: async (input: unknown) => {
+        sent.push({ kind: 'statement', input });
+        return { ok: true, value: { sent: false } };
+      },
     }),
   },
 });
@@ -57,4 +88,70 @@ test('requires contact for ordinary reports but allows anonymous CSAM reports', 
       reporterEmail: null,
     },
   ]);
+});
+
+test('limits review actions to allowlisted GMs and notifies both parties', async () => {
+  const previous = process.env.MODERATION_ADMIN_USER_IDS;
+  process.env.MODERATION_ADMIN_USER_IDS = 'admin-1';
+  sent.length = 0;
+  takeDownInput = undefined;
+  try {
+    const denied = await service.listOpen({ session: { user: { id: 'other-user' } } });
+    assert.equal(!denied.ok && denied.error.code, 'FORBIDDEN');
+
+    const reports = await service.listOpen({ session: { user: { id: 'admin-1' } } });
+    assert.deepEqual(reports.ok && reports.value, [
+      {
+        id: '550e8400-e29b-41d4-a716-446655440000',
+        classId: 9,
+        className: 'Bog Witch',
+        reason: 'threat_to_life_or_safety',
+        explanation: 'Specific and credible threat.',
+        reporterName: 'Reporter',
+        reporterEmail: 'reporter@example.com',
+        createdAt: '2026-10-07T12:00:00.000Z',
+        serious: true,
+      },
+    ]);
+
+    const result = await service.takeDown({
+      session: { user: { id: 'admin-1' } },
+      id: '550e8400-e29b-41d4-a716-446655440000',
+      reason: '  Credible threat  ',
+    });
+    assert.equal(result.ok && result.value.takenDown, true);
+    assert.deepEqual(takeDownInput, {
+      id: '550e8400-e29b-41d4-a716-446655440000',
+      actorUserId: 'admin-1',
+      reason: 'Credible threat',
+    });
+    assert.deepEqual(sent, [
+      {
+        kind: 'decision',
+        input: {
+          to: 'reporter@example.com', locale: 'en',
+          reportId: '550e8400-e29b-41d4-a716-446655440000',
+          className: 'Bog Witch', outcome: 'taken_down', explanation: 'Credible threat',
+        },
+      },
+      {
+        kind: 'statement',
+        input: {
+          to: 'author@example.com', locale: 'en', className: 'Bog Witch',
+          measure: 'taken_down', followedNotice: true, ground: 'Credible threat',
+          explanation: 'Credible threat', reportId: '550e8400-e29b-41d4-a716-446655440000',
+        },
+      },
+    ]);
+
+    const missingReason = await service.takeDown({
+      session: { user: { id: 'admin-1' } },
+      id: '550e8400-e29b-41d4-a716-446655440000',
+      reason: ' ',
+    });
+    assert.equal(!missingReason.ok && missingReason.error.code, 'MODERATION_REASON_REQUIRED');
+  } finally {
+    if (previous === undefined) delete process.env.MODERATION_ADMIN_USER_IDS;
+    else process.env.MODERATION_ADMIN_USER_IDS = previous;
+  }
 });
