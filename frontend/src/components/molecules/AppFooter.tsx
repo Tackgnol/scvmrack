@@ -43,6 +43,7 @@ export function AppFooter() {
       <FooterLink to="/faq">{t('nav.faq')}</FooterLink>
       <FooterLink to="/release">{t('nav.release')}</FooterLink>
       <FooterLink to="/owlbear">{t('nav.owlbear')}</FooterLink>
+      <FooterLink to="/privacy">{t('nav.privacy')}</FooterLink>
       <FooterLink to="/terms">{t('nav.terms')}</FooterLink>
       <FooterLink to="/legal">{t('nav.legal')}</FooterLink>
       <FooterLink to="/report">{t('report.link', 'Report a class')}</FooterLink>
