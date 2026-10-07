@@ -21,7 +21,7 @@ describe('privacySettings', () => {
     it('should return default settings', () => {
       expect(getDefaultPrivacySettings()).toEqual({
         acknowledged: false,
-        analyticsEnabled: true,
+        analyticsEnabled: false,
       });
     });
   });
