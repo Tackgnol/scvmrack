@@ -291,6 +291,27 @@ enum ClassStatus {
   @@map("class_status")
 }
 
+enum ModerationReportReason {
+  copyright
+  child_sexual_abuse_material
+  threat_to_life_or_safety
+  terrorist_content
+  other_illegal_content
+  abusive_or_hateful
+  other
+
+  @@map("moderation_report_reason")
+}
+
+enum ModerationReportStatus {
+  open
+  dismissed
+  taken_down
+  content_removed
+
+  @@map("moderation_report_status")
+}
+
 /// One immutable Class Version (ADR 0001). Names are unique per owner via the
 /// `classes_name_per_owner` exclusion constraint, which Prisma cannot express.
 model Class {
@@ -326,12 +347,51 @@ model Class {
   gettingBetterRule   GettingBetterRule @default(book) @map("getting_better_rule")
   gettingBetterNoteKey String?        @db.VarChar(255) @map("getting_better_note_key")
   drafts              ClassDraftRecord[]
+  moderationReports   ModerationReport[]
+  moderationLogs      ModerationLog[]
 
   @@unique([lineageId, version])
   @@index([ownerUserId])
   @@map("classes")
 }
 
+model ModerationReport {
+  id            String                 @id @default(uuid()) @db.Uuid
+  classId       Int                    @map("class_id")
+  reason        ModerationReportReason
+  explanation   String                 @db.VarChar(4000)
+  reporterName  String?                @map("reporter_name") @db.VarChar(200)
+  reporterEmail String?                @map("reporter_email") @db.VarChar(320)
+  goodFaith     Boolean                @map("good_faith")
+  status        ModerationReportStatus @default(open)
+  resolvedAt    DateTime?              @map("resolved_at")
+  createdAt     DateTime               @default(now()) @map("created_at")
+  updatedAt     DateTime               @updatedAt @map("updated_at")
+
+  class Class           @relation(fields: [classId], references: [id], onDelete: Restrict)
+  logs  ModerationLog[]
+
+  @@index([classId, status, createdAt])
+  @@index([status, createdAt])
+  @@map("moderation_reports")
+}
+
+model ModerationLog {
+  id          String   @id @default(uuid()) @db.Uuid
+  classId     Int      @map("class_id")
+  reportId    String?  @map("report_id") @db.Uuid
+  actorUserId String?  @map("actor_user_id")
+  action      String   @db.VarChar(40)
+  reason      String?  @db.VarChar(4000)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  class  Class             @relation(fields: [classId], references: [id], onDelete: Restrict)
+  report ModerationReport? @relation(fields: [reportId], references: [id], onDelete: SetNull)
+
+  @@index([classId, createdAt])
+  @@index([reportId])
+  @@map("moderation_log")
+}
 /// An unvalidated, private Custom Class work-in-progress. Drafts never feed class rows or pools.
 model ClassDraftRecord {
   id          Int      @id @default(autoincrement())
