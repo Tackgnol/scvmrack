@@ -118,6 +118,11 @@ const moderationRoute = createRoute({
     path: '/admin/moderation',
     component: lazyRouteComponent(() => import('@/pages/ModerationPage').then(m => ({ default: m.ModerationPage }))),
 });
+const privacyRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: '/privacy',
+    component: lazyRouteComponent(() => import('@/pages/PrivacyPage').then(m => ({ default: m.PrivacyPage }))),
+});
 const termsRoute = createRoute({
     getParentRoute: () => rootRoute,
     path: '/terms',
@@ -211,6 +216,7 @@ const routeTree = rootRoute.addChildren([
     printRoute,
     faqRoute,
     reportRoute,
+    privacyRoute,
     moderationRoute,
     termsRoute,
     legalRoute,
