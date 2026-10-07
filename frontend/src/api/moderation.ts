@@ -1,0 +1,42 @@
+import { client } from "@/api";
+import { unwrapApiResult, type UntypedApiClient } from "@/api/clientResult";
+import type { ReportReason } from "@/api/reports";
+
+export type AdminModerationReport = {
+  id: string;
+  classId: number;
+  className: string;
+  reason: ReportReason;
+  explanation: string;
+  reporterName: string | null;
+  reporterEmail: string | null;
+  createdAt: string;
+  serious: boolean;
+};
+
+const moderationClient = client as unknown as UntypedApiClient;
+
+export async function listOpenModerationReports(): Promise<AdminModerationReport[]> {
+  return unwrapApiResult(
+    await moderationClient.GET<AdminModerationReport[]>("/api/admin/reports"),
+    "Failed to load moderation reports",
+  );
+}
+
+export async function dismissModerationReport(id: string, reason: string) {
+  return unwrapApiResult(
+    await moderationClient.POST<{ dismissed: boolean }>(`/api/admin/reports/${id}/dismiss`, {
+      body: { reason },
+    }),
+    "Failed to dismiss moderation report",
+  );
+}
+
+export async function takeDownModerationReport(id: string, reason: string) {
+  return unwrapApiResult(
+    await moderationClient.POST<{ takenDown: boolean }>(`/api/admin/reports/${id}/take-down`, {
+      body: { reason },
+    }),
+    "Failed to take down class",
+  );
+}
