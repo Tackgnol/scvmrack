@@ -1,6 +1,7 @@
 import {
   classKeys,
   deleteClassDraft,
+  disputeClassDecision,
   listClassDrafts,
   listMyClasses,
   publishClass,
@@ -34,6 +35,7 @@ import {
   Checkbox,
   FormControlLabel,
   Typography,
+  TextField,
 } from "@mui/material";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
@@ -68,6 +70,8 @@ export function ClassesPage() {
     name: string;
   } | null>(null);
   const [publishConfirmed, setPublishConfirmed] = useState(false);
+  const [disputeTarget, setDisputeTarget] = useState<number | null>(null);
+  const [disputeText, setDisputeText] = useState("");
   const queryClient = useQueryClient();
   const draftsQuery = useQuery({
     queryKey: classKeys.drafts(),
@@ -79,6 +83,7 @@ export function ClassesPage() {
     onSuccess: () =>
       void queryClient.invalidateQueries({ queryKey: classKeys.drafts() }),
   });
+  const dispute = useMutation({ mutationFn: disputeClassDecision, onSuccess: () => { setDisputeTarget(null); setDisputeText(""); } });
   const remove = useMutation({
     mutationFn: removeClass,
     onSuccess: () =>
@@ -235,8 +240,7 @@ export function ClassesPage() {
                     )}
                     {cls.takedownReason && ` ${cls.takedownReason}`}
                     <Button
-                      component="a"
-                      href={`mailto:scvmrack-appeal@rpgtools.co?subject=${encodeURIComponent(`Appeal class ${cls.id}`)}`}
+                      onClick={() => setDisputeTarget(cls.id)}
                       size="small"
                     >
                       {t("classes.appeal", "Appeal this decision")}
@@ -336,6 +340,15 @@ export function ClassesPage() {
             }}
           />
         </ZineLine>
+        <MorkBorgModal
+          open={disputeTarget !== null}
+          onClose={() => setDisputeTarget(null)}
+          title={t("classes.disputeTitle", "Dispute this decision")}
+          maxWidth="xs"
+          actions={<ModalButton variant="primary" disabled={!disputeText.trim() || dispute.isPending} onClick={() => disputeTarget && dispute.mutate({ id: disputeTarget, text: disputeText })}>{t("classes.submitDispute", "Send dispute")}</ModalButton>}
+        >
+          <TextField autoFocus fullWidth label={t("classes.disputeText", "Why should we review this decision?")} multiline minRows={4} value={disputeText} onChange={(event) => setDisputeText(event.target.value)} inputProps={{ maxLength: 4000 }} />
+        </MorkBorgModal>
         <MorkBorgModal
           open={publishTarget !== null}
           onClose={() => setPublishTarget(null)}

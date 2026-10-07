@@ -291,3 +291,10 @@ export async function testRollClass(input: {
     "Failed to roll a test scvm",
   );
 }
+
+export async function disputeClassDecision(input: { id: number; text: string }): Promise<{ id: string }> {
+  return unwrapApiResult(
+    await classClient.POST<{ id: string }>(`/api/classes/${input.id}/disputes`, { body: { text: input.text } }),
+    "Failed to submit dispute",
+  );
+}
