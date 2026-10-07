@@ -913,7 +913,13 @@
       "q": "Can I have multiple characters?",
       "a": "With an account, yes — create and switch between as many characters as you like from the Scvms menu. As a guest, you get exactly one. Generating a new scvm replaces the current one."
     },
-    "mobileSupport": {
+    "customClasses": { "q": "What are Custom Classes?", "a": "Character classes you write yourself, with the same building blocks as Book Classes." },
+    "whoMakesClasses": { "q": "Who can make a Custom Class?", "a": "Anyone with a free account, from the GM tab. Drafts save as you write." },
+    "classesInParties": { "q": "Where can I use a Custom Class?", "a": "In parties. GMs choose the classes their warband can roll; characters outside a party use Book Classes." },
+    "editingClasses": { "q": "What happens when I change a class?", "a": "Existing characters keep the version they rolled. Later changes make a new version for new characters." },
+    "publicClasses": { "q": "Can I share my class with other GMs?", "a": "Yes. Publish it from My classes; other GMs can add it to their parties and you can unpublish it later." },
+    "reportClass": { "q": "I found a class that copies my work or breaks the rules. What do I do?", "a": "Use the Report link on the class or the report page in the footer. No account is needed." },
+    "zineAuthors": { "q": "I wrote a zine with classes. Can it be on Scvm Rack?", "a": "Contact contact@rpgtools.co. Zine classes are added by hand and credited to you and your zine." },    "mobileSupport": {
       "q": "Does it work on mobile?",
       "a": "Yes! Scvm Rack is designed to work on phones, tablets, and desktops. Use it at the table or on the go."
     },

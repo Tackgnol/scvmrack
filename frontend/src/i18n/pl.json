@@ -910,7 +910,13 @@
       "q": "Czy mogę mieć wiele postaci?",
       "a": "Z kontem tak — twórz dowolną liczbę postaci i przełączaj się między nimi z menu Scvmy. Jako gość masz dokładnie jedną. Wygenerowanie nowego scvma zastępuje poprzedniego."
     },
-    "mobileSupport": {
+    "customClasses": { "q": "Czym są Klasy Własne?", "a": "To klasy postaci, które piszesz sam, z tymi samymi elementami co klasy z podręcznika." },
+    "whoMakesClasses": { "q": "Kto może stworzyć Klasę Własną?", "a": "Każdy z darmowym kontem, w zakładce MG. Szkice zapisują się w trakcie pisania." },
+    "classesInParties": { "q": "Gdzie mogę użyć Klasy Własnej?", "a": "W drużynach. MG wybiera klasy dla kompanii, a postacie poza drużyną korzystają z klas z podręcznika." },
+    "editingClasses": { "q": "Co się dzieje z postaciami, gdy zmienię klasę?", "a": "Istniejące postacie zachowują wersję, z którą zostały wylosowane. Zmiany tworzą nową wersję dla nowych postaci." },
+    "publicClasses": { "q": "Czy mogę udostępnić swoją klasę innym MG?", "a": "Tak. Opublikuj ją w Moich klasach; inni MG mogą dodać ją do drużyny, a Ty możesz ją później wycofać." },
+    "reportClass": { "q": "Znalazłem klasę, która kopiuje moją pracę albo łamie zasady. Co zrobić?", "a": "Użyj linku Zgłoś przy klasie albo strony zgłoszeń w stopce. Konto nie jest potrzebne." },
+    "zineAuthors": { "q": "Napisałem zina z klasami. Czy mogą trafić do Scvm Rack?", "a": "Napisz na contact@rpgtools.co. Klasy z zinów dodajemy ręcznie, z podaniem Ciebie i zina jako źródła." },    "mobileSupport": {
       "q": "Czy działa na telefonie?",
       "a": "Tak! Scvm Rack jest zaprojektowany do działania na telefonach, tabletach i komputerach. Używaj go przy stole lub w podróży."
     },

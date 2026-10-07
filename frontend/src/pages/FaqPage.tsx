@@ -91,6 +91,33 @@ export function FaqPage() {
             answer: t('faq.multipleCharacters.a', 'Yes! With an account, you can create and switch between multiple characters. Access your character list from the menu.'),
         },
         {
+            question: t('faq.customClasses.q', 'What are Custom Classes?'),
+            answer: t('faq.customClasses.a', 'Character classes you write yourself, with the same building blocks as Book Classes.'),
+        },
+        {
+            question: t('faq.whoMakesClasses.q', 'Who can make a Custom Class?'),
+            answer: t('faq.whoMakesClasses.a', 'Anyone with a free account, from the GM tab. Drafts save as you write.'),
+        },
+        {
+            question: t('faq.classesInParties.q', 'Where can I use a Custom Class?'),
+            answer: t('faq.classesInParties.a', 'In parties. GMs choose the classes their warband can roll; characters outside a party use Book Classes.'),
+        },
+        {
+            question: t('faq.editingClasses.q', 'What happens when I change a class?'),
+            answer: t('faq.editingClasses.a', 'Existing characters keep the version they rolled. Later changes make a new version for new characters.'),
+        },
+        {
+            question: t('faq.publicClasses.q', 'Can I share my class with other GMs?'),
+            answer: t('faq.publicClasses.a', 'Yes. Publish it from My classes; other GMs can add it to their parties and you can unpublish it later.'),
+        },
+        {
+            question: t('faq.reportClass.q', 'I found a class that copies my work or breaks the rules. What do I do?'),
+            answer: t('faq.reportClass.a', 'Use the Report link on the class or the report page in the footer. No account is needed.'),
+        },
+        {
+            question: t('faq.zineAuthors.q', 'I wrote a zine with classes. Can it be on Scvm Rack?'),
+            answer: t('faq.zineAuthors.a', 'Contact contact@rpgtools.co. Zine classes are added by hand and credited to you and your zine.'),
+        },        {
             question: t('faq.mobileSupport.q', 'Does it work on mobile?'),
             answer: t('faq.mobileSupport.a', 'Yes! Scvm Rack is designed to work on phones, tablets, and desktops. Use it at the table or on the go.'),
         },
