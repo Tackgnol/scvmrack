@@ -951,6 +951,7 @@
       "analytics": "If analytics is enabled below, Google Analytics is used to process usage events and page activity. You can disable analytics at any time without losing core app functionality.",
       "sensitiveData": "Do not enter sensitive personal data in character fields. By continuing to use this app, you acknowledge and accept this notice."
     },
+    "readFull": "Read the full privacy notice",
     "analyticsToggle": "Enable Google Analytics tracking",
     "analyticsEnabledState": "Analytics is currently enabled. You may disable it now or later in this panel.",
     "analyticsDisabledState": "Analytics is currently disabled. Core app features continue to work.",

@@ -948,6 +948,7 @@
       "analytics": "Jeśli poniżej włączysz analitykę, Google Analytics będzie przetwarzać zdarzenia użycia i aktywność stron. Możesz wyłączyć analitykę w dowolnym momencie bez utraty podstawowych funkcji aplikacji.",
       "sensitiveData": "Nie wpisuj danych wrażliwych w polach postaci. Dalsze korzystanie z aplikacji oznacza potwierdzenie i akceptację tej informacji."
     },
+    "readFull": "Przeczytaj pełną informację o prywatności",
     "analyticsToggle": "Włącz śledzenie Google Analytics",
     "analyticsEnabledState": "Analityka jest obecnie włączona. Możesz ją wyłączyć teraz lub później w tym panelu.",
     "analyticsDisabledState": "Analityka jest obecnie wyłączona. Podstawowe funkcje aplikacji nadal działają.",
