@@ -34,6 +34,10 @@ mock.module('../../src/repositories/moderation-repository.js', {
           class: { name: 'Bog Witch', owner: { email: 'author@example.com' } },
         };
       },
+      restoreReport: async (id: string, actorUserId: string, reason: string) => {
+        takeDownInput = { id, actorUserId, reason };
+        return { id };
+      },
     },
   },
 });
@@ -150,6 +154,33 @@ test('limits review actions to allowlisted GMs and notifies both parties', async
       reason: ' ',
     });
     assert.equal(!missingReason.ok && missingReason.error.code, 'MODERATION_REASON_REQUIRED');
+  } finally {
+    if (previous === undefined) delete process.env.MODERATION_ADMIN_USER_IDS;
+    else process.env.MODERATION_ADMIN_USER_IDS = previous;
+  }
+});
+test('restores only a taken-down report through an allowlisted GM', async () => {
+  const previous = process.env.MODERATION_ADMIN_USER_IDS;
+  process.env.MODERATION_ADMIN_USER_IDS = 'admin-1';
+  try {
+    const denied = await service.restore({
+      session: { user: { id: 'other-user' } },
+      id: '550e8400-e29b-41d4-a716-446655440000',
+      reason: 'Correcting the decision',
+    });
+    assert.equal(!denied.ok && denied.error.code, 'FORBIDDEN');
+
+    const restored = await service.restore({
+      session: { user: { id: 'admin-1' } },
+      id: '550e8400-e29b-41d4-a716-446655440000',
+      reason: '  Correcting the decision  ',
+    });
+    assert.equal(restored.ok && restored.value.restored, true);
+    assert.deepEqual(takeDownInput, {
+      id: '550e8400-e29b-41d4-a716-446655440000',
+      actorUserId: 'admin-1',
+      reason: 'Correcting the decision',
+    });
   } finally {
     if (previous === undefined) delete process.env.MODERATION_ADMIN_USER_IDS;
     else process.env.MODERATION_ADMIN_USER_IDS = previous;
