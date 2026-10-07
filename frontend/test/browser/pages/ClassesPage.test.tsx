@@ -163,3 +163,36 @@ describe("ClassesPage", () => {
     expect(listMyClasses).not.toHaveBeenCalled();
   });
 });
+  it("shows a moderation decision and appeal link to the class owner", async () => {
+    vi.mocked(useAuth).mockReturnValue({
+      isAuthenticated: true,
+      isGuest: false,
+      isLoading: false,
+    } as ReturnType<typeof useAuth>);
+    vi.mocked(listMyClasses).mockResolvedValue([
+      {
+        id: 9,
+        lineageId: "b",
+        name: "Bog Witch",
+        description: null,
+        languages: ["en"],
+        visibility: "private",
+        status: "active",
+        originCount: 1,
+        takenDownAt: "2026-10-07T12:00:00.000Z",
+        takedownReason: "Credible threat",
+      },
+    ]);
+    renderPage();
+
+    await expect
+      .element(page.getByText("This class was taken down by moderation."))
+      .toBeVisible();
+    await expect.element(page.getByText("Credible threat")).toBeVisible();
+    await expect
+      .element(page.getByRole("link", { name: "Appeal this decision" }))
+      .toHaveAttribute(
+        "href",
+        "mailto:scvmrack-appeal@rpgtools.co?subject=Appeal%20class%209",
+      );
+  });

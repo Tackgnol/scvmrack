@@ -44,6 +44,8 @@ export type OwnClassSummary = {
   visibility: 'private' | 'public';
   status: 'draft' | 'active' | 'archived';
   originCount: number;
+  takenDownAt: string | null;
+  takedownReason: string | null;
 };
 
 export type StoredClassDraft = {
@@ -725,6 +727,8 @@ export const customClassRepository = {
         languages: true,
         visibility: true,
         status: true,
+        takenDownAt: true,
+        takedownReason: true,
       },
     });
     const originCounts = await prisma.origin.groupBy({
@@ -756,6 +760,8 @@ export const customClassRepository = {
           visibility: row.visibility,
           status: row.status,
           originCount: countByClass.get(row.id) ?? 0,
+          takenDownAt: row.takenDownAt?.toISOString() ?? null,
+          takedownReason: row.takedownReason,
         };
       })
     );

@@ -227,6 +227,22 @@ export function ClassesPage() {
                 {cls.description && (
                   <ClassDescription>{cls.description}</ClassDescription>
                 )}
+                {cls.takenDownAt && (
+                  <Alert severity="error" sx={{ mt: 1 }}>
+                    {t(
+                      "classes.moderationTakenDown",
+                      "This class was taken down by moderation.",
+                    )}
+                    {cls.takedownReason && ` ${cls.takedownReason}`}
+                    <Button
+                      component="a"
+                      href={`mailto:scvmrack-appeal@rpgtools.co?subject=${encodeURIComponent(`Appeal class ${cls.id}`)}`}
+                      size="small"
+                    >
+                      {t("classes.appeal", "Appeal this decision")}
+                    </Button>
+                  </Alert>
+                )}
                 <Meta>
                   {[
                     cls.languages

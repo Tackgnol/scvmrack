@@ -391,6 +391,8 @@ export const OwnClassListSchema = {
       'visibility',
       'status',
       'originCount',
+      'takenDownAt',
+      'takedownReason',
     ],
     properties: {
       id: { type: 'integer' },
@@ -401,6 +403,8 @@ export const OwnClassListSchema = {
       visibility: { type: 'string', enum: ['private', 'public'] },
       status: { type: 'string', enum: ['draft', 'active', 'archived'] },
       originCount: { type: 'integer' },
+      takenDownAt: { type: ['string', 'null'], format: 'date-time' },
+      takedownReason: { type: ['string', 'null'] },
     },
   },
 } as const;

@@ -133,6 +133,8 @@ export type OwnClassSummary = {
   visibility: "private" | "public";
   status: "draft" | "active" | "archived";
   originCount: number;
+  takenDownAt?: string | null;
+  takedownReason?: string | null;
 };
 
 const classClient = client as unknown as UntypedApiClient;

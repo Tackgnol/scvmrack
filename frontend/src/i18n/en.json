@@ -1577,7 +1577,9 @@
     "publishTitle": "Publish this class?",
     "publishing": "Publishing...",
     "publishImmediate": "“{{name}}” will be public immediately and other GMs can add it to their party pools.",
-    "publishRights": "I made this class or have the right to share it."
+    "publishRights": "I made this class or have the right to share it.",
+    "moderationTakenDown": "This class was taken down by moderation.",
+    "appeal": "Appeal this decision"
   },
   "report": {
     "link": "Report a class",
