@@ -10,4 +10,4 @@ try {
   console.log(`Anonymised ${count} resolved moderation report(s).`);
 } finally {
   await prisma.$disconnect();
-}
+}
