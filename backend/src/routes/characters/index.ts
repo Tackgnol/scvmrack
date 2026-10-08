@@ -80,6 +80,8 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
             ).generate({
                 session: request.appSession,
                 inviteToken: request.query.invite,
+                obrRoomId: request.query.obrRoom,
+                obrPlayerId: request.query.obrPlayer,
                 classId: request.body?.classId,
                 draft: request.body?.draft ?? null,
                 replace: request.body?.replace ?? false,
@@ -118,6 +120,7 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
             const result = await createCharacterDraftService(request.log).createDraft({
                 session: request.appSession,
                 inviteToken: request.query.invite,
+                obrRoomId: request.query.obrRoom,
                 classId: request.body?.classId ?? null,
                 classless: request.body?.classless,
                 seeds: request.body?.seeds,
@@ -159,6 +162,7 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
             const result = await createCharacterDraftService(request.log).rerollSection({
                 session: request.appSession,
                 inviteToken: request.query.invite,
+                obrRoomId: request.query.obrRoom,
                 draft: request.body.draft,
                 section: request.params.section,
                 locale: request.query.locale ?? 'en',
@@ -190,6 +194,7 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
             const result = await createCharacterDraftService(request.log).listClasses({
                 locale: request.query.locale ?? 'en',
                 inviteToken: request.query.invite,
+                obrRoomId: request.query.obrRoom,
             });
 
             if (!result.ok) {

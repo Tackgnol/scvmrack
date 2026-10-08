@@ -9,16 +9,17 @@ import {
   PickList,
 } from "./ObrCharacterRoute.styles";
 
-const FORGE_SCVM_PATH = "/character/create";
 
 export function ObrAuthedPicker({
   locale,
   onPick,
   onRollNew,
+  onForge,
 }: {
   locale: PathsApiCharactersGetParametersQueryLocale;
   onPick: (id: string) => void;
   onRollNew: () => void;
+  onForge: () => void;
 }) {
   const { t } = useTranslation();
   const charactersQuery = $api.useQuery(
@@ -52,9 +53,7 @@ export function ObrAuthedPicker({
       <Button
         fullWidth
         variant="outlined"
-        href={FORGE_SCVM_PATH}
-        target="_blank"
-        rel="noreferrer"
+        onClick={onForge}
       >
         {t("obr.player.forgeScvm", "Forge scvm")}
       </Button>

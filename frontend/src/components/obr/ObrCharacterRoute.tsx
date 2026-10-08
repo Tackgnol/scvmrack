@@ -38,8 +38,6 @@ import {
   Spinner,
 } from "./ObrCharacterRoute.styles";
 
-const FORGE_SCVM_PATH = "/character/create";
-
 // The OBR panel body. Auth-aware empty state (the detection keys off this
 // iframe's OWN partitioned session, never a silent Logto peek), then the real
 // CharacterSheet once a character is active.
@@ -83,6 +81,7 @@ function ObrPlayerCharacterRoute() {
   );
   const characterId = character?.id ?? null;
   const [signInError, setSignInError] = useState<string | null>(null);
+  const [forgeError, setForgeError] = useState<string | null>(null);
   const [isRestoringCharacter, setIsRestoringCharacter] = useState(true);
   const restoreCheckedRef = useRef(false);
   const restoreInFlightRef = useRef(false);
@@ -177,6 +176,14 @@ function ObrPlayerCharacterRoute() {
     };
   }, [characterId, locale, queryClient]);
 
+  useEffect(() => {
+    const refreshBinding = () => {
+      restoreCheckedRef.current = false;
+      void restoreAssignedCharacterRef.current(true);
+    };
+    window.addEventListener("focus", refreshBinding);
+    return () => window.removeEventListener("focus", refreshBinding);
+  }, []);
   useEffect(() => {
     let active = true;
     let unsubscribeBroadcast: (() => void) | null = null;
@@ -283,6 +290,27 @@ function ObrPlayerCharacterRoute() {
     );
   }
 
+  async function handleForge() {
+    setForgeError(null);
+    try {
+      const actor = await getCurrentObrRoomActor(OBR);
+      const token = await issueObrExchangeToken();
+      const params = new URLSearchParams({
+        token,
+        to: "forge",
+        obrRoom: actor.roomId,
+        obrPlayer: actor.playerId,
+      });
+      if (!window.open(`/obr-open?${params}`, "_blank", "noopener,noreferrer")) {
+        throw new Error("popup-blocked");
+      }
+    } catch {
+      setForgeError(
+        t("obr.player.forgeFailed", "Could not open the forge. Allow popups and try again."),
+      );
+    }
+  }
+
   async function handleSignIn() {
     setSignInError(null);
     try {
@@ -311,6 +339,7 @@ function ObrPlayerCharacterRoute() {
               locale={locale}
               onPick={(id) => void setCharacterId(id)}
               onRollNew={rollNew}
+              onForge={() => void handleForge()}
             />
           ) : (
             <>
@@ -326,9 +355,7 @@ function ObrPlayerCharacterRoute() {
               <Button
                 fullWidth
                 variant="outlined"
-                href={FORGE_SCVM_PATH}
-                target="_blank"
-                rel="noreferrer"
+                onClick={() => void handleForge()}
               >
                 {t("obr.player.forgeScvm", "Forge scvm")}
               </Button>
@@ -336,6 +363,7 @@ function ObrPlayerCharacterRoute() {
                 {t("obr.player.signIn", "Login")}
               </Button>
               {signInError && <ErrorText>{signInError}</ErrorText>}
+              {forgeError && <ErrorText>{forgeError}</ErrorText>}
             </>
           )}
         </Panel>

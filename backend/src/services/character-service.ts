@@ -188,6 +188,8 @@ export function createCharacterService(
       session: AppSession;
       /** A party invite: the scvm is forged from its pool and joins it in the same transaction. */
       inviteToken?: string | null;
+      obrRoomId?: string | null;
+      obrPlayerId?: string | null;
       classId?: number | null;
       draft?: CharacterDraft | null;
       replace?: boolean;
@@ -199,7 +201,7 @@ export function createCharacterService(
       }
 
       try {
-        const scope = await resolveClassScope(input.inviteToken);
+        const scope = await resolveClassScope(input.inviteToken, input.obrRoomId);
         if (!scope.ok) return fail(scope.error);
         const party = scope.value.party;
         if (party && !input.draft) {
@@ -255,6 +257,14 @@ export function createCharacterService(
               partyId: party.id,
               cap: PARTY_MAX_MEMBERS,
               data: await characterCreateDataFromDraft(input.draft, userId),
+              ...(!input.inviteToken && input.obrRoomId && input.obrPlayerId
+                ? {
+                    obrBinding: {
+                      roomId: input.obrRoomId,
+                      playerId: input.obrPlayerId,
+                    },
+                  }
+                : {}),
             });
             partyBus?.publish(party.id, { type: 'character.joined', characterId });
           } else {

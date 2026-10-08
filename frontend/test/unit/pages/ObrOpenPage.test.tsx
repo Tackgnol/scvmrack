@@ -40,6 +40,7 @@ beforeEach(() => {
     mocks.redeem.mockClear();
     mocks.redeem.mockResolvedValue(undefined);
     mocks.useAuth.mockClear();
+    mocks.useAuth.mockImplementation(() => ({}));
 });
 
 test('redeems the token, scrubs it, and opens the carried character', async () => {
@@ -80,6 +81,43 @@ test('does not redeem an incomplete handoff URL', async () => {
     await waitFor(() => {
         expect(
             screen.getByText('This link has expired or was already used. Go back to Owlbear and try again.')
+        ).toBeTruthy();
+    });
+    expect(mocks.redeem).not.toHaveBeenCalled();
+    expect(mocks.navigate).not.toHaveBeenCalled();
+});
+
+test('redeems a forge handoff and carries its Owlbear room context', async () => {
+    window.history.replaceState(
+        {},
+        '',
+        '/obr-open?token=exchange-token&to=forge&obrRoom=room-1&obrPlayer=player-1',
+    );
+
+    renderPage();
+
+    await waitFor(() => {
+        expect(mocks.navigate).toHaveBeenCalledWith(
+            '/character/create?obrRoom=room-1&obrPlayer=player-1',
+        );
+    });
+    expect(mocks.redeem).toHaveBeenCalledWith('exchange-token');
+});
+
+test('does not replace an account already signed into the forge tab', async () => {
+    mocks.useAuth.mockReturnValue({
+        isAnonymous: false,
+        isLoading: false,
+        user: { id: 'different-account' },
+    });
+
+    renderPage();
+
+    await waitFor(() => {
+        expect(
+            screen.getByText(
+                'This browser tab is already signed into an account. Sign out here before opening the Owlbear forge link.',
+            ),
         ).toBeTruthy();
     });
     expect(mocks.redeem).not.toHaveBeenCalled();

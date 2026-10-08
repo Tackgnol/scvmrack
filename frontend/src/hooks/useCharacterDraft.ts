@@ -23,9 +23,13 @@ export type StartChoice = {
 };
 
 type Options = {
-  onCreated?: (character: CharacterResponse) => void;
+  onCreated?: (character: CharacterResponse) => void | Promise<void>;
   /** A party invite: rolls come from its Party Class Pool and confirming joins the party. */
   inviteToken?: string;
+  /** An Owlbear room rolls from its attached party pool and joins it on confirm. */
+  obrRoomId?: string;
+  /** The Owlbear player receiving the completed scvm binding. */
+  obrPlayerId?: string;
 };
 
 const UNAVAILABLE_CLASS_CODES = new Set(['CLASS_NOT_AVAILABLE', 'CLASSLESS_NOT_AVAILABLE']);
@@ -60,9 +64,10 @@ export function useCharacterDraft(locale: string, options: Options = {}) {
   const abortRef = useRef<AbortController | null>(null);
   const onCreatedRef = useRef(options.onCreated);
   onCreatedRef.current = options.onCreated;
-  const { inviteToken } = options;
-  // A party forge keeps its own saved draft so a solo draft never leaks into it.
-  const storageKey = inviteToken ? `${DRAFT_STORAGE_KEY}:${inviteToken}` : DRAFT_STORAGE_KEY;
+  const { inviteToken, obrRoomId, obrPlayerId } = options;
+  // A scoped forge keeps its own saved draft so a solo draft never leaks into it.
+  const scopeKey = inviteToken ?? obrRoomId;
+  const storageKey = scopeKey ? `${DRAFT_STORAGE_KEY}:${scopeKey}` : DRAFT_STORAGE_KEY;
 
   // A class switched off, archived or taken down mid-forge: back to the class
   // screen, which reloads the pool. The landed roll is dropped, never swapped.
@@ -117,6 +122,8 @@ export function useCharacterDraft(locale: string, options: Options = {}) {
           locale,
           controller.signal,
           inviteToken,
+          obrRoomId,
+          obrPlayerId,
         );
         applyResponse(response);
       } catch (e) {
@@ -129,7 +136,7 @@ export function useCharacterDraft(locale: string, options: Options = {}) {
         setIsStarting(false);
       }
     },
-    [locale, inviteToken, applyResponse, clearStored],
+    [locale, inviteToken, obrRoomId, obrPlayerId, applyResponse, clearStored],
   );
 
   const reroll = useCallback(
@@ -157,6 +164,8 @@ export function useCharacterDraft(locale: string, options: Options = {}) {
           locale,
           controller.signal,
           inviteToken,
+          obrRoomId,
+          obrPlayerId,
         );
         applyResponse(response);
       } catch (e) {
@@ -171,7 +180,7 @@ export function useCharacterDraft(locale: string, options: Options = {}) {
         setRollingSection(null);
       }
     },
-    [draft, locale, inviteToken, applyResponse, backToClassGate],
+    [draft, locale, inviteToken, obrRoomId, obrPlayerId, applyResponse, backToClassGate],
   );
 
   const setName = useCallback((rawName: string) => {
@@ -208,7 +217,7 @@ export function useCharacterDraft(locale: string, options: Options = {}) {
       abortRef.current = controller;
 
       try {
-        const response = await createDraft(nextDraft, locale, controller.signal, inviteToken);
+        const response = await createDraft(nextDraft, locale, controller.signal, inviteToken, obrRoomId, obrPlayerId);
         applyResponse(response);
       } catch (e) {
         if (e instanceof DOMException && e.name === 'AbortError') return;
@@ -218,7 +227,7 @@ export function useCharacterDraft(locale: string, options: Options = {}) {
         setIsChoosingStats(false);
       }
     },
-    [draft, locale, inviteToken, applyResponse],
+    [draft, locale, inviteToken, obrRoomId, obrPlayerId, applyResponse],
   );
 
   const confirm = useCallback(async (replace = false) => {
@@ -231,10 +240,10 @@ export function useCharacterDraft(locale: string, options: Options = {}) {
     abortRef.current = controller;
 
     try {
-      const character = await confirmDraft(draft, locale, controller.signal, replace, inviteToken);
+      const character = await confirmDraft(draft, locale, controller.signal, replace, inviteToken, obrRoomId, obrPlayerId);
       clearStored();
       if (character.id) {
-        onCreatedRef.current?.(character);
+        await onCreatedRef.current?.(character);
       }
     } catch (e) {
       if (e instanceof DOMException && e.name === 'AbortError') return;
@@ -247,7 +256,7 @@ export function useCharacterDraft(locale: string, options: Options = {}) {
       busyRef.current = false;
       setIsConfirming(false);
     }
-  }, [draft, locale, inviteToken, clearStored, backToClassGate]);
+  }, [draft, locale, inviteToken, obrRoomId, obrPlayerId, clearStored, backToClassGate]);
 
   const restart = useCallback(() => {
     abortRef.current?.abort();

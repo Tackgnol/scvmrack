@@ -87,6 +87,7 @@ export function createCharacterDraftService(log: ServiceLogger) {
     async createDraft(input: {
       session: AppSession;
       inviteToken?: string | null;
+      obrRoomId?: string | null;
       classId?: number | null;
       classless?: boolean;
       seeds?: SectionSeeds;
@@ -99,7 +100,7 @@ export function createCharacterDraftService(log: ServiceLogger) {
       }
 
       try {
-        const scope = await resolveClassScope(input.inviteToken);
+        const scope = await resolveClassScope(input.inviteToken, input.obrRoomId);
         if (!scope.ok) return fail(scope.error);
         const classless = input.classless === true;
         let classId: number | null = classless ? null : (input.classId ?? null);
@@ -139,6 +140,7 @@ export function createCharacterDraftService(log: ServiceLogger) {
     async rerollSection(input: {
       session: AppSession;
       inviteToken?: string | null;
+      obrRoomId?: string | null;
       draft: CharacterDraft;
       section: DraftSection;
       locale: string;
@@ -148,7 +150,7 @@ export function createCharacterDraftService(log: ServiceLogger) {
       }
 
       try {
-        const scope = await resolveClassScope(input.inviteToken);
+        const scope = await resolveClassScope(input.inviteToken, input.obrRoomId);
         if (!scope.ok) return fail(scope.error);
         // A draft without a class rolls classless, so it needs Classless allowed.
         const classless = input.draft.classless || input.draft.classId === null;
@@ -179,9 +181,10 @@ export function createCharacterDraftService(log: ServiceLogger) {
     async listClasses(input: {
       locale: string;
       inviteToken?: string | null;
+      obrRoomId?: string | null;
     }): Promise<ServiceResult<ClassSummary[]>> {
       try {
-        const scope = await resolveClassScope(input.inviteToken);
+        const scope = await resolveClassScope(input.inviteToken, input.obrRoomId);
         if (!scope.ok) return fail(scope.error);
         return ok(await characterRepository.listClassesByIds(scope.value.classIds, input.locale));
       } catch (err) {

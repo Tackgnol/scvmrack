@@ -8,16 +8,21 @@ import { fail, ok, type ServiceResult } from './result.js';
 
 /** Resolves an invite token (or none) to the classes it may roll from. A dead token is 410. */
 export async function resolveClassScope(
-  inviteToken: string | null | undefined
+  inviteToken: string | null | undefined,
+  obrRoomId?: string | null
 ): Promise<ServiceResult<ClassScope>> {
-  if (!inviteToken) {
+  const party = inviteToken
+    ? await partyRepository.findPartyForInvite(inviteToken)
+    : obrRoomId
+      ? await partyRepository.findPartyForObrRoom(obrRoomId)
+      : null;
+
+  if (inviteToken && !party) {
+    return fail(apiError(410, 'PARTY_INVITE_INVALID', 'This invite link is no longer valid'));
+  }
+  if (!party) {
     const rows = await characterRepository.findBookClassRows();
     return ok({ ...rollable(rows, null), classlessEnabled: true, party: null });
-  }
-
-  const party = await partyRepository.findPartyForInvite(inviteToken);
-  if (!party) {
-    return fail(apiError(410, 'PARTY_INVITE_INVALID', 'This invite link is no longer valid'));
   }
   const rows = await characterRepository.findClassRowsByLineage(party.poolLineageIds);
   return ok({

@@ -3,9 +3,16 @@ import { Seo } from '@/seo/Seo';
 import { ForgeFlow } from '@/components/organisms/character-create/ForgeFlow';
 import { useCharacter } from '@/CharacterContext/CharacterContext';
 
+function readObrForgeContext(): { roomId?: string; playerId?: string } {
+  const params = new URLSearchParams(window.location.search);
+  const roomId = params.get('obrRoom')?.trim();
+  const playerId = params.get('obrPlayer')?.trim();
+  return roomId && playerId ? { roomId, playerId } : {};
+}
 export function CharacterCreatePage() {
   const { t } = useTranslation();
   const { adoptCreatedCharacter } = useCharacter();
+  const obrForge = readObrForgeContext();
 
   return (
     <>
@@ -16,7 +23,11 @@ export function CharacterCreatePage() {
         noIndex
       />
 
-      <ForgeFlow onCreated={adoptCreatedCharacter} />
+      <ForgeFlow
+        onCreated={adoptCreatedCharacter}
+        obrRoomId={obrForge.roomId}
+        obrPlayerId={obrForge.playerId}
+      />
     </>
   );
 }

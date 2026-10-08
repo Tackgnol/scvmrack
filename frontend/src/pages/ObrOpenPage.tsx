@@ -8,6 +8,8 @@ import { Message, Wrapper } from './ObrAuthDonePage.styles';
 
 const FAILURE_MESSAGE =
     'This link has expired or was already used. Go back to Owlbear and try again.';
+const ACCOUNT_MISMATCH_MESSAGE =
+    'This browser tab is already signed into an account. Sign out here before opening the Owlbear forge link.';
 
 function scrubToken(): void {
     const url = new URL(window.location.href);
@@ -16,22 +18,32 @@ function scrubToken(): void {
 }
 
 export function ObrOpenPage() {
-    useAuth({ bootstrapAnonymous: false });
+    const { isAnonymous, isLoading, user } = useAuth({ bootstrapAnonymous: false });
     const queryClient = useQueryClient();
     const started = useRef(false);
-    const [failed, setFailed] = useState(false);
+    const [failureMessage, setFailureMessage] = useState<string | null>(null);
 
     useEffect(() => {
-        if (started.current) return;
+        if (started.current || isLoading) return;
         started.current = true;
 
         const params = new URLSearchParams(window.location.search);
         const token = params.get('token')?.trim();
+        const to = params.get('to')?.trim();
         const characterId = params.get('character')?.trim();
+        const obrRoomId = params.get('obrRoom')?.trim();
+        const obrPlayerId = params.get('obrPlayer')?.trim();
+        const forge = to === 'forge';
 
-        if (!token || !characterId) {
+        if (!token || (forge ? !obrRoomId || !obrPlayerId : !characterId)) {
             if (token) scrubToken();
-            setFailed(true);
+            setFailureMessage(FAILURE_MESSAGE);
+            return;
+        }
+
+        if (user && !isAnonymous) {
+            scrubToken();
+            setFailureMessage(ACCOUNT_MISMATCH_MESSAGE);
             return;
         }
 
@@ -40,17 +52,20 @@ export function ObrOpenPage() {
                 await obrAuthClient.redeemObrExchangeToken(token);
                 scrubToken();
                 await queryClient.invalidateQueries({ queryKey: authKeys.session() });
-                await appHistory.replace(`/character/${encodeURIComponent(characterId)}`);
+                const destination = forge
+                    ? `/character/create?obrRoom=${encodeURIComponent(obrRoomId as string)}&obrPlayer=${encodeURIComponent(obrPlayerId as string)}`
+                    : `/character/${encodeURIComponent(characterId as string)}`;
+                await appHistory.replace(destination);
             } catch {
                 scrubToken();
-                setFailed(true);
+                setFailureMessage(FAILURE_MESSAGE);
             }
         })();
-    }, [queryClient]);
+    }, [isAnonymous, isLoading, queryClient, user]);
 
     return (
         <Wrapper>
-            <Message>{failed ? FAILURE_MESSAGE : 'Opening your scvm…'}</Message>
+            <Message>{failureMessage ?? 'Opening your scvm…'}</Message>
         </Wrapper>
     );
 }

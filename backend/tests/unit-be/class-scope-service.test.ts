@@ -34,6 +34,7 @@ const state = {
     poolLineageIds: string[];
   },
   poolLookups: [] as string[][],
+  roomLookups: [] as string[],
 };
 
 beforeEach(() => {
@@ -41,6 +42,7 @@ beforeEach(() => {
   state.poolRows = [];
   state.party = null;
   state.poolLookups = [];
+  state.roomLookups = [];
 });
 
 mock.module('../../src/repositories/character-repository.js', {
@@ -59,6 +61,10 @@ mock.module('../../src/repositories/party-repository.js', {
   namedExports: {
     partyRepository: {
       findPartyForInvite: async () => state.party,
+      findPartyForObrRoom: async (roomId: string) => {
+        state.roomLookups.push(roomId);
+        return state.party;
+      },
     },
   },
 });
@@ -121,4 +127,25 @@ test("an invite rolls from its party's pool: the latest rollable version, while 
     },
   });
   assert.deepEqual(state.poolLookups, [['lineage-1', 'own', 'public', 'private', 'gone', 'archived']]);
+});
+
+test('an Owlbear room rolls from its attached party pool without exposing an invite', async () => {
+  state.party = {
+    id: 'room-party',
+    ownerUserId: 'gm-1',
+    classlessEnabled: false,
+    poolLineageIds: ['lineage-1'],
+  };
+  state.poolRows = [book(1)];
+
+  assert.deepEqual(await resolveClassScope(undefined, 'obr-room-1'), {
+    ok: true,
+    value: {
+      classIds: [1],
+      acceptedClassIds: [1],
+      classlessEnabled: false,
+      party: { id: 'room-party', ownerUserId: 'gm-1' },
+    },
+  });
+  assert.deepEqual(state.roomLookups, ['obr-room-1']);
 });

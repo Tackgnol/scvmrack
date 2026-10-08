@@ -23,7 +23,7 @@ const state = {
     | { classIds: number[]; acceptedClassIds: number[]; classlessEnabled: boolean; party: null | { id: string; ownerUserId: string } }
     | { gone: true },
   scopeCalls: [] as Array<string | null | undefined>,
-  memberCalls: [] as Array<{ partyId: string; cap: number; data: unknown }>,
+  memberCalls: [] as Array<{ partyId: string; cap: number; data: unknown; obrBinding?: { roomId: string; playerId: string } }>,
   partyFull: false,
   updateError: null as unknown,
   generateError: null as unknown,
@@ -153,7 +153,7 @@ mock.module('../../src/repositories/party-repository.js', {
   namedExports: {
     PartyFullError: FakePartyFullError,
     partyRepository: {
-      createMemberInTransaction: async (input: { partyId: string; cap: number; data: unknown }) => {
+      createMemberInTransaction: async (input: { partyId: string; cap: number; data: unknown; obrBinding?: { roomId: string; playerId: string } }) => {
         state.memberCalls.push(input);
         if (state.partyFull) throw new FakePartyFullError('full');
         return 'member-id';
@@ -343,6 +343,29 @@ test('generate with an invite creates the scvm inside its party in one step', as
   ]);
 });
 
+
+test('generate binds a room-scoped forge to its Owlbear player in the party transaction', async () => {
+  state.scope = partyScope();
+  const draft = { classId: 7, classless: false, seeds: randomSectionSeeds() };
+
+  const result = await service().generate({
+    session: session('user-1'),
+    obrRoomId: 'obr-room-1',
+    obrPlayerId: 'obr-player-1',
+    draft,
+    locale: 'en',
+  });
+
+  assert.equal(result.ok, true);
+  assert.deepEqual(state.memberCalls, [
+    {
+      partyId: 'party-1',
+      cap: 10,
+      data: { fromDraft: draft, userId: 'user-1' },
+      obrBinding: { roomId: 'obr-room-1', playerId: 'obr-player-1' },
+    },
+  ]);
+});
 test('a draft rolled on a version the GM has since replaced still joins on that version', async () => {
   state.scope = {
     classIds: [11],

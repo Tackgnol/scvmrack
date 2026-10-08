@@ -34,6 +34,8 @@ export const InviteLocaleQuerySchema = {
   properties: {
     ...LocaleQuerySchema.properties,
     invite: { type: 'string', minLength: 1, maxLength: 200 },
+    obrRoom: { type: 'string', minLength: 1, maxLength: 256 },
+    obrPlayer: { type: 'string', minLength: 1, maxLength: 256 },
   },
 } as const;
 

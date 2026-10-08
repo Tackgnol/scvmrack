@@ -220,6 +220,22 @@ export const partyRepository = {
     return { ...rest, poolLineageIds: classPool.map((row) => row.lineageId) };
   },
 
+  /** The Party Class Pool attached to an Owlbear room, if that room has a party. */
+  async findPartyForObrRoom(obrRoomId: string): Promise<PartyInviteRow | null> {
+    const party = await prisma.party.findUnique({
+      where: { obrRoomId },
+      select: {
+        id: true,
+        ownerUserId: true,
+        classlessEnabled: true,
+        classPool: { select: { lineageId: true } },
+      },
+    });
+    if (!party) return null;
+    const { classPool, ...rest } = party;
+    return { ...rest, poolLineageIds: classPool.map((row) => row.lineageId) };
+  },
+
   getPartyByInviteToken(token: string): Promise<PartyRow | null> {
     return prisma.party.findUnique({
       where: { inviteToken: token },
@@ -318,6 +334,7 @@ export const partyRepository = {
     partyId: string;
     cap: number;
     data: Prisma.CharacterUncheckedCreateInput;
+    obrBinding?: { roomId: string; playerId: string };
   }): Promise<string> {
     return prisma.$transaction(async (tx) => {
       await lockPartyBelowCap(tx, input.partyId, input.cap);
@@ -325,6 +342,31 @@ export const partyRepository = {
         data: { ...input.data, partyId: input.partyId, joinedAt: new Date() },
         select: { id: true },
       });
+      if (input.obrBinding) {
+        await tx.obrRoomBinding.upsert({
+          where: { obrRoomId: input.obrBinding.roomId },
+          create: { obrRoomId: input.obrBinding.roomId },
+          update: { updatedAt: new Date() },
+        });
+        await tx.obrPlayerCharacterBinding.upsert({
+          where: {
+            obrRoomId_obrPlayerId: {
+              obrRoomId: input.obrBinding.roomId,
+              obrPlayerId: input.obrBinding.playerId,
+            },
+          },
+          create: {
+            obrRoomId: input.obrBinding.roomId,
+            obrPlayerId: input.obrBinding.playerId,
+            characterId: character.id,
+            assignedByPlayerId: input.obrBinding.playerId,
+          },
+          update: {
+            characterId: character.id,
+            assignedByPlayerId: input.obrBinding.playerId,
+          },
+        });
+      }
       return character.id;
     });
   },
