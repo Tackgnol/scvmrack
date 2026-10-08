@@ -162,7 +162,6 @@ describe("ClassesPage", () => {
       .not.toBeInTheDocument();
     expect(listMyClasses).not.toHaveBeenCalled();
   });
-});
   it("shows a moderation decision and appeal link to the class owner", async () => {
     vi.mocked(useAuth).mockReturnValue({
       isAuthenticated: true,
@@ -189,10 +188,13 @@ describe("ClassesPage", () => {
       .element(page.getByText("This class was taken down by moderation."))
       .toBeVisible();
     await expect.element(page.getByText("Credible threat")).toBeVisible();
+    await userEvent.click(page.getByRole("button", { name: "Appeal this decision" }));
+    await expect.element(page.getByRole("heading", { name: "Dispute this decision" })).toBeVisible();
     await expect
-      .element(page.getByRole("link", { name: "Appeal this decision" }))
+      .element(page.getByRole("link", { name: "Appeal by email" }))
       .toHaveAttribute(
         "href",
         "mailto:scvmrack-appeal@rpgtools.co?subject=Appeal%20class%209",
       );
   });
+});

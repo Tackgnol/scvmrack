@@ -348,6 +348,12 @@ export function ClassesPage() {
           actions={<ModalButton variant="primary" disabled={!disputeText.trim() || dispute.isPending} onClick={() => disputeTarget && dispute.mutate({ id: disputeTarget, text: disputeText })}>{t("classes.submitDispute", "Send dispute")}</ModalButton>}
         >
           <TextField autoFocus fullWidth label={t("classes.disputeText", "Why should we review this decision?")} multiline minRows={4} value={disputeText} onChange={(event) => setDisputeText(event.target.value)} inputProps={{ maxLength: 4000 }} />
+          <Typography variant="body2">
+            {t("classes.appealEmail", "Or email your appeal to")} {" "}
+            <a href={`mailto:scvmrack-appeal@rpgtools.co?subject=Appeal%20class%20${disputeTarget ?? ""}`}>
+              {t("classes.appealEmailLink", "Appeal by email")}
+            </a>
+          </Typography>
         </MorkBorgModal>
         <MorkBorgModal
           open={publishTarget !== null}

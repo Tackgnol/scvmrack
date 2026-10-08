@@ -1587,7 +1587,12 @@
     "publishImmediate": "“{{name}}” will be public immediately and other GMs can add it to their party pools.",
     "publishRights": "I made this class or have the right to share it.",
     "moderationTakenDown": "This class was taken down by moderation.",
-    "appeal": "Appeal this decision"
+    "appeal": "Appeal this decision",
+    "disputeTitle": "Dispute this decision",
+    "disputeText": "Why should we review this decision?",
+    "submitDispute": "Send dispute",
+    "appealEmail": "Or email your appeal to",
+    "appealEmailLink": "Appeal by email"
   },
   "report": {
     "link": "Report a class",

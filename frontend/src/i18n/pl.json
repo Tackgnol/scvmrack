@@ -1610,7 +1610,12 @@
     "publishImmediate": "„{{name}}” będzie od razu publiczna, a inni MG będą mogli dodać ją do pul swoich drużyn.",
     "publishRights": "Stworzyłem(-am) tę klasę albo mam prawo ją udostępnić.",
     "moderationTakenDown": "Ta klasa została zdjęta przez moderację.",
-    "appeal": "Odwołaj się od tej decyzji"
+    "appeal": "Odwołaj się od tej decyzji",
+    "disputeTitle": "Zakwestionuj tę decyzję",
+    "disputeText": "Dlaczego powinniśmy ponownie rozpatrzyć tę decyzję?",
+    "submitDispute": "Wyślij odwołanie",
+    "appealEmail": "Możesz też wysłać odwołanie na",
+    "appealEmailLink": "Odwołanie e-mailem"
   },
   "report": {
     "link": "Zgłoś klasę",
