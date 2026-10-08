@@ -369,6 +369,27 @@ export function createPartyService(
       try {
         const existing = await partyRepository.getPartyByObrRoomId(obrRoomId);
         if (existing && existing.id !== input.id) {
+          if (existing.ownerUserId === OBR_ROOM_SYSTEM_OWNER_ID) {
+            if (existing.members.length === 0) {
+              const replaced = await partyRepository.replaceEmptySystemPartyInRoom({
+                roomId: obrRoomId,
+                systemPartyId: existing.id,
+                partyId: input.id,
+                systemOwnerUserId: OBR_ROOM_SYSTEM_OWNER_ID,
+              });
+              if (replaced) {
+                return ok({ id: input.id, obrRoomId });
+              }
+            } else {
+              return fail(
+                apiError(
+                  409,
+                  'ROOM_PARTY_HAS_MEMBERS',
+                  "Players already joined this room's party. Claim it instead, from inside the room."
+                )
+              );
+            }
+          }
           return fail(
             apiError(
               409,

@@ -378,6 +378,39 @@ export const partyRepository = {
     });
   },
 
+  /** Replaces an empty system-owned room party without dropping the room's Party Class Pool on the incoming party. */
+  async replaceEmptySystemPartyInRoom(input: {
+    roomId: string;
+    systemPartyId: string;
+    partyId: string;
+    systemOwnerUserId: string;
+  }): Promise<boolean> {
+    return prisma.$transaction(async (tx) => {
+      const systemParty = await tx.party.findUnique({
+        where: { obrRoomId: input.roomId },
+        select: {
+          id: true,
+          ownerUserId: true,
+          _count: { select: { members: true } },
+        },
+      });
+      if (
+        !systemParty ||
+        systemParty.id !== input.systemPartyId ||
+        systemParty.ownerUserId !== input.systemOwnerUserId ||
+        systemParty._count.members > 0
+      ) {
+        return false;
+      }
+      await tx.party.delete({ where: { id: systemParty.id } });
+      await tx.party.update({
+        where: { id: input.partyId },
+        data: { obrRoomId: input.roomId },
+      });
+      return true;
+    });
+  },
+
   /** Transfer party ownership (used when a signed-in GM claims a system-owned room party). */
   async setPartyOwner(id: string, ownerUserId: string): Promise<void> {
     await prisma.party.update({ where: { id }, data: { ownerUserId } });

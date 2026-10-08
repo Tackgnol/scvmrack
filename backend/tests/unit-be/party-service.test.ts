@@ -73,6 +73,13 @@ const state = {
   setMiseryCalls: [] as Array<{ partyId: string; miseryCount: number }>,
   setPartyOwnerCalls: [] as Array<{ id: string; ownerUserId: string }>,
   setObrRoomCalls: [] as Array<{ id: string; obrRoomId: string | null }>,
+  replaceEmptySystemPartyCalls: [] as Array<{
+    roomId: string;
+    systemPartyId: string;
+    partyId: string;
+    systemOwnerUserId: string;
+  }>,
+  replaceEmptySystemPartyResult: true,
   createdToken: 'created-token',
 };
 
@@ -102,6 +109,8 @@ function resetState(): void {
   state.setMiseryCalls = [];
   state.setPartyOwnerCalls = [];
   state.setObrRoomCalls = [];
+  state.replaceEmptySystemPartyCalls = [];
+  state.replaceEmptySystemPartyResult = true;
   state.createdToken = 'created-token';
   publishedEvents.length = 0;
 }
@@ -178,6 +187,15 @@ mock.module('../../src/repositories/party-repository.js', {
       },
       setPartyObrRoom: async (id: string, obrRoomId: string | null) => {
         state.setObrRoomCalls.push({ id, obrRoomId });
+      },
+      replaceEmptySystemPartyInRoom: async (input: {
+        roomId: string;
+        systemPartyId: string;
+        partyId: string;
+        systemOwnerUserId: string;
+      }) => {
+        state.replaceEmptySystemPartyCalls.push(input);
+        return state.replaceEmptySystemPartyResult;
       },
     },
   },
@@ -1384,6 +1402,53 @@ test('attachRoom re-points the party room pointer for the owner', async () => {
   assert.deepEqual(state.setObrRoomCalls, [
     { id: PARTY_ID, obrRoomId: 'new-room' },
   ]);
+});
+
+test('attachRoom replaces an empty system room party with the GM warband', async () => {
+  state.party = partyWith([], 'gm-1');
+  state.partyByObrRoomId = {
+    ...partyWith([], 'system:obr-room'),
+    id: OTHER_PARTY_ID,
+    obrRoomId: 'system-room',
+  };
+
+  const r = await service().attachRoom({
+    session: gm('gm-1'),
+    id: PARTY_ID,
+    obrRoomId: 'system-room',
+  });
+
+  assert.equal(r.ok, true);
+  assert.deepEqual(state.replaceEmptySystemPartyCalls, [
+    {
+      roomId: 'system-room',
+      systemPartyId: OTHER_PARTY_ID,
+      partyId: PARTY_ID,
+      systemOwnerUserId: 'system:obr-room',
+    },
+  ]);
+  assert.deepEqual(state.setObrRoomCalls, []);
+});
+
+test('attachRoom tells the GM to claim a populated system room party', async () => {
+  state.party = partyWith([], 'gm-1');
+  state.partyByObrRoomId = {
+    ...partyWith([{ id: CHAR_ID }], 'system:obr-room'),
+    id: OTHER_PARTY_ID,
+    obrRoomId: 'system-room',
+  };
+
+  const r = await service().attachRoom({
+    session: gm('gm-1'),
+    id: PARTY_ID,
+    obrRoomId: 'system-room',
+  });
+
+  assert.equal(r.ok, false);
+  assert.equal((r as any).error.statusCode, 409);
+  assert.equal((r as any).error.code, 'ROOM_PARTY_HAS_MEMBERS');
+  assert.match((r as any).error.message, /Claim it instead/);
+  assert.deepEqual(state.replaceEmptySystemPartyCalls, []);
 });
 
 test('attachRoom rejects a room already claimed by another party with 409 ROOM_ALREADY_PROMOTED', async () => {
