@@ -1,4 +1,4 @@
-import type { ModerationReportReason } from '@prisma/client';
+import { Prisma, type ModerationReportReason } from '@prisma/client';
 import prisma from '../lib/prisma.js';
 
 export type CreateModerationReportInput = {
@@ -48,7 +48,7 @@ async createDispute(classId: number, authorUserId: string, text: string) {
       if (!cls) return { kind: 'missing' as const };
       const report = await tx.moderationReport.findFirst({
         where: {
-          status: 'taken_down',
+          status: { in: ['taken_down', 'content_removed'] },
           class: { lineageId: cls.lineageId, ownerUserId: authorUserId },
         },
         orderBy: { resolvedAt: 'desc' },
@@ -95,10 +95,87 @@ async createDispute(classId: number, authorUserId: string, text: string) {
       return report;
     });
   },
+  async removeContentReport(id: string, actorUserId: string, reason: string) {
+    return prisma.$transaction(async (tx) => {
+      const report = await tx.moderationReport.findUnique({
+        where: { id },
+        include: { class: { select: { name: true, lineageId: true, owner: { select: { email: true } } } } },
+      });
+      if (!report || report.status !== 'open') return null;
+      const versions = await tx.class.findMany({
+        where: { lineageId: report.class.lineageId },
+        select: { id: true, name: true, appendix: true },
+      });
+      const evidence = {
+        versions: await Promise.all(versions.map(async (version) => ({
+          ...version,
+          translations: await tx.translation.findMany({
+            where: { key: { startsWith: `cc.${version.id}.` } },
+            select: { locale: true, key: true, value: true },
+          }),
+          modifiers: await tx.classAbilityModifier.findMany({
+            where: { classId: version.id },
+            select: { id: true, source: true },
+          }),
+        }))),
+      } satisfies Prisma.InputJsonValue;
+      const now = new Date();
+      for (const version of versions) {
+        await Promise.all([
+          tx.translation.updateMany({
+            where: { key: { startsWith: `cc.${version.id}.` } },
+            data: { value: '[removed by moderation]' },
+          }),
+          tx.classAbilityModifier.updateMany({
+            where: { classId: version.id },
+            data: { source: '[removed by moderation]' },
+          }),
+        ]);
+      }
+      await Promise.all([
+        tx.class.updateMany({
+          where: { lineageId: report.class.lineageId },
+          data: { appendix: '[removed by moderation]', takenDownAt: now, takedownReason: reason },
+        }),
+        tx.partyClassPool.deleteMany({ where: { lineageId: report.class.lineageId } }),
+        tx.moderationReport.update({ where: { id }, data: { status: 'content_removed', resolvedAt: now } }),
+        tx.moderationLog.create({
+          data: { classId: report.classId, reportId: id, actorUserId, action: 'content_removed', reason, evidence },
+        }),
+      ]);
+      return report;
+    });
+  },
   async restoreReport(id: string, actorUserId: string, reason: string) {
     return prisma.$transaction(async (tx) => {
       const report = await tx.moderationReport.findUnique({ where: { id }, include: { class: { select: { lineageId: true } } } });
-      if (!report || report.status !== 'taken_down') return null;
+      if (!report || !['taken_down', 'content_removed'].includes(report.status)) return null;
+      if (report.status === 'content_removed') {
+        const log = await tx.moderationLog.findFirst({
+          where: { reportId: id, action: 'content_removed' },
+          orderBy: { createdAt: 'desc' },
+          select: { evidence: true },
+        });
+        const evidence = log?.evidence as { versions?: Array<{
+          id: number; name: string; appendix: string | null;
+          translations: Array<{ locale: string; key: string; value: string }>;
+          modifiers: Array<{ id: number; source: string }>;
+        }> } | null;
+        if (!evidence?.versions) throw new Error('Missing content-removal evidence');
+        for (const version of evidence.versions) {
+          await tx.class.update({ where: { id: version.id }, data: { name: version.name, appendix: version.appendix } });
+          await Promise.all([
+            ...version.translations.map((translation) => tx.translation.upsert({
+              where: { locale_key: { locale: translation.locale, key: translation.key } },
+              create: translation,
+              update: { value: translation.value },
+            })),
+            ...version.modifiers.map((modifier) => tx.classAbilityModifier.update({
+              where: { id: modifier.id }, data: { source: modifier.source },
+            })),
+          ]);
+        }
+      }
       await Promise.all([
         tx.class.updateMany({ where: { lineageId: report.class.lineageId }, data: { takenDownAt: null, takedownReason: null } }),
         tx.moderationLog.create({ data: { classId: report.classId, reportId: id, actorUserId, action: 'restored', reason } }),

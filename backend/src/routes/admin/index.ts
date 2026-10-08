@@ -52,6 +52,18 @@ const admin: FastifyPluginAsync = async (fastify) => {
     }
   );
   fastify.post(
+    '/reports/:id/remove-content',
+    { schema: { params, body: reason } },
+    async (request, reply) => {
+      const result = await service(request).removeContent({
+        session: request.appSession,
+        id: (request.params as { id: string }).id,
+        reason: (request.body as { reason: string }).reason,
+      });
+      if (!result.ok) return sendServiceError(reply, request, result.error);
+      return result.value;
+    }
+  );  fastify.post(
     '/reports/:id/restore',
     { schema: { params, body: reason } },
     async (request, reply) => {

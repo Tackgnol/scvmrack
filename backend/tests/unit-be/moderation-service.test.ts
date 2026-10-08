@@ -53,7 +53,14 @@ mock.module('../../src/repositories/moderation-repository.js', {
           class: { name: 'Bog Witch', owner: { email: 'author@example.com' } },
         };
       },
-      restoreReport: async (id: string, actorUserId: string, reason: string) => {
+      removeContentReport: async (id: string, actorUserId: string, reason: string) => {
+        takeDownInput = { id, actorUserId, reason };
+        return {
+          id,
+          reporterEmail: 'reporter@example.com',
+          class: { name: 'Bog Witch', owner: { email: 'author@example.com' } },
+        };
+      },      restoreReport: async (id: string, actorUserId: string, reason: string) => {
         takeDownInput = { id, actorUserId, reason };
         return { id };
       },
@@ -248,6 +255,46 @@ test('restores only a taken-down report through an allowlisted GM', async () => 
       actorUserId: 'admin-1',
       reason: 'Correcting the decision',
     });
+  } finally {
+    if (previous === undefined) delete process.env.MODERATION_ADMIN_USER_IDS;
+    else process.env.MODERATION_ADMIN_USER_IDS = previous;
+  }
+});
+test('removes content through an allowlisted GM and notifies both parties', async () => {
+  const previous = process.env.MODERATION_ADMIN_USER_IDS;
+  process.env.MODERATION_ADMIN_USER_IDS = 'admin-1';
+  sent.length = 0;
+  takeDownInput = undefined;
+  try {
+    const result = await service.removeContent({
+      session: { user: { id: 'admin-1' } },
+      id: '550e8400-e29b-41d4-a716-446655440000',
+      reason: '  Illegal copied text  ',
+    });
+    assert.equal(result.ok && result.value.contentRemoved, true);
+    assert.deepEqual(takeDownInput, {
+      id: '550e8400-e29b-41d4-a716-446655440000',
+      actorUserId: 'admin-1',
+      reason: 'Illegal copied text',
+    });
+    assert.deepEqual(sent, [
+      {
+        kind: 'decision',
+        input: {
+          to: 'reporter@example.com', locale: 'en',
+          reportId: '550e8400-e29b-41d4-a716-446655440000',
+          className: 'Bog Witch', outcome: 'content_removed', explanation: 'Illegal copied text',
+        },
+      },
+      {
+        kind: 'statement',
+        input: {
+          to: 'author@example.com', locale: 'en', className: 'Bog Witch',
+          measure: 'content_removed', followedNotice: true, ground: 'Illegal copied text',
+          explanation: 'Illegal copied text', reportId: '550e8400-e29b-41d4-a716-446655440000',
+        },
+      },
+    ]);
   } finally {
     if (previous === undefined) delete process.env.MODERATION_ADMIN_USER_IDS;
     else process.env.MODERATION_ADMIN_USER_IDS = previous;

@@ -400,6 +400,7 @@ model ModerationLog {
   actorUserId String?  @map("actor_user_id")
   action      String   @db.VarChar(40)
   reason      String?  @db.VarChar(4000)
+  evidence    Json?
   createdAt   DateTime @default(now()) @map("created_at")
 
   class  Class             @relation(fields: [classId], references: [id], onDelete: Restrict)

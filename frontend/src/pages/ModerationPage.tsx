@@ -1,6 +1,7 @@
 import {
   dismissModerationReport,
   listOpenModerationReports,
+  removeModerationContent,
   restoreModerationReport,
   takeDownModerationReport,
 } from "@/api/moderation";
@@ -29,15 +30,19 @@ export function ModerationPage() {
     mutationFn: ({ id, reason }: { id: string; reason: string }) => takeDownModerationReport(id, reason),
     onSuccess: refresh,
   });
+  const removeContent = useMutation({
+    mutationFn: ({ id, reason }: { id: string; reason: string }) => removeModerationContent(id, reason),
+    onSuccess: refresh,
+  });
   const restore = useMutation({
     mutationFn: ({ id, reason }: { id: string; reason: string }) => restoreModerationReport(id, reason),
     onSuccess: refresh,
   });
 
-  const act = (id: string, action: "dismiss" | "takeDown" | "restore") => {
+  const act = (id: string, action: "dismiss" | "takeDown" | "removeContent" | "restore") => {
     const reason = reasons[id]?.trim();
     if (!reason) return;
-    (action === "dismiss" ? dismiss : action === "takeDown" ? takeDown : restore).mutate({ id, reason });
+    (action === "dismiss" ? dismiss : action === "takeDown" ? takeDown : action === "removeContent" ? removeContent : restore).mutate({ id, reason });
   };
 
   return (
@@ -60,8 +65,8 @@ export function ModerationPage() {
           <Alert severity="success">{t("moderation.empty", "No open reports.")}</Alert>
         )}
         {reports.data?.map((report) => {
-          const pending = dismiss.isPending || takeDown.isPending || restore.isPending;
-          const reviewable = report.status === "open" || report.status === "taken_down";
+          const pending = dismiss.isPending || takeDown.isPending || removeContent.isPending || restore.isPending;
+          const reviewable = report.status === "open" || report.status === "taken_down" || report.status === "content_removed";
           return (
             <Paper key={report.id} elevation={0} sx={{ p: 2, border: "2px solid", borderColor: "text.primary" }}>
               <Stack spacing={1.5}>
@@ -104,6 +109,9 @@ export function ModerationPage() {
                           </Button>
                           <Button color="error" variant="contained" disabled={pending || !reasons[report.id]?.trim()} onClick={() => act(report.id, "takeDown")}>
                             {t("moderation.takeDown", "Take down")}
+                          </Button>
+                          <Button color="error" disabled={pending || !reasons[report.id]?.trim()} onClick={() => act(report.id, "removeContent")}>
+                            {t("moderation.removeContent", "Remove content")}
                           </Button>
                         </>
                       ) : (
