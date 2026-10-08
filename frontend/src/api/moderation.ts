@@ -12,6 +12,8 @@ export type AdminModerationReport = {
   reporterEmail: string | null;
   createdAt: string;
   serious: boolean;
+  status: "open" | "dismissed" | "taken_down" | "content_removed";
+  disputes: Array<{ id: string; text: string; createdAt: string }>;
 };
 
 const moderationClient = client as unknown as UntypedApiClient;

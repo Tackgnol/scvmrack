@@ -65,8 +65,11 @@ async createDispute(classId: number, authorUserId: string, text: string) {
     });
   },  async listOpenReports() {
     return prisma.moderationReport.findMany({
-      where: { status: 'open' }, orderBy: { createdAt: 'desc' },
-      include: { class: { select: { id: true, name: true, lineageId: true, source: true, owner: { select: { email: true } } } } },
+      where: { OR: [{ status: 'open' }, { disputes: { some: {} } }] }, orderBy: { createdAt: 'desc' },
+      include: {
+        class: { select: { id: true, name: true, lineageId: true, source: true, owner: { select: { email: true } } } },
+        disputes: { select: { id: true, text: true, createdAt: true }, orderBy: { createdAt: 'asc' } },
+      },
     });
   },
   async dismissReport(id: string, actorUserId: string, reason: string) {

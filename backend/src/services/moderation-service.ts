@@ -114,6 +114,10 @@ async dispute(input: {
           id: report.id, classId: report.classId, className: report.class.name,
           reason: report.reason, explanation: report.explanation,
           reporterName: report.reporterName, reporterEmail: report.reporterEmail,
+          status: report.status,
+          disputes: report.disputes.map((dispute) => ({
+            id: dispute.id, text: dispute.text, createdAt: dispute.createdAt.toISOString(),
+          })),
           createdAt: report.createdAt.toISOString(),
           serious: ['child_sexual_abuse_material', 'threat_to_life_or_safety', 'terrorist_content'].includes(report.reason),
         })));

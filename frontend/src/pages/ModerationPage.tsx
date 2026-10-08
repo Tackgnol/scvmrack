@@ -56,6 +56,7 @@ export function ModerationPage() {
         )}
         {reports.data?.map((report) => {
           const pending = dismiss.isPending || takeDown.isPending;
+          const open = report.status === "open";
           return (
             <Paper key={report.id} elevation={0} sx={{ p: 2, border: "2px solid", borderColor: "text.primary" }}>
               <Stack spacing={1.5}>
@@ -68,23 +69,38 @@ export function ModerationPage() {
                 <Typography variant="body2">
                   {report.reporterName ?? t("moderation.anonymous", "Anonymous")} · {report.reporterEmail ?? "—"}
                 </Typography>
-                <TextField
-                  label={t("moderation.decisionReason", "Decision reason")}
-                  value={reasons[report.id] ?? ""}
-                  onChange={(event) => setReasons((current) => ({ ...current, [report.id]: event.target.value }))}
-                  multiline
-                  minRows={2}
-                  inputProps={{ maxLength: 4000 }}
-                  required
-                />
-                <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
-                  <Button disabled={pending || !reasons[report.id]?.trim()} onClick={() => act(report.id, "dismiss")}>
-                    {t("moderation.dismiss", "Dismiss")}
-                  </Button>
-                  <Button color="error" variant="contained" disabled={pending || !reasons[report.id]?.trim()} onClick={() => act(report.id, "takeDown")}>
-                    {t("moderation.takeDown", "Take down")}
-                  </Button>
-                </Stack>
+                {report.disputes.length > 0 && (
+                  <Stack spacing={1} sx={{ borderLeft: 4, borderColor: "warning.main", pl: 2 }}>
+                    <Typography variant="subtitle2">{t("moderation.disputes", "Author disputes")}</Typography>
+                    {report.disputes.map((dispute) => (
+                      <Box key={dispute.id}>
+                        <Typography sx={{ whiteSpace: "pre-wrap" }}>{dispute.text}</Typography>
+                        <Typography variant="caption">{new Date(dispute.createdAt).toLocaleString()}</Typography>
+                      </Box>
+                    ))}
+                  </Stack>
+                )}
+                {open && (
+                  <>
+                    <TextField
+                      label={t("moderation.decisionReason", "Decision reason")}
+                      value={reasons[report.id] ?? ""}
+                      onChange={(event) => setReasons((current) => ({ ...current, [report.id]: event.target.value }))}
+                      multiline
+                      minRows={2}
+                      inputProps={{ maxLength: 4000 }}
+                      required
+                    />
+                    <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+                      <Button disabled={pending || !reasons[report.id]?.trim()} onClick={() => act(report.id, "dismiss")}>
+                        {t("moderation.dismiss", "Dismiss")}
+                      </Button>
+                      <Button color="error" variant="contained" disabled={pending || !reasons[report.id]?.trim()} onClick={() => act(report.id, "takeDown")}>
+                        {t("moderation.takeDown", "Take down")}
+                      </Button>
+                    </Stack>
+                  </>
+                )}
               </Stack>
             </Paper>
           );
