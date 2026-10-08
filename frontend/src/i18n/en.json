@@ -969,6 +969,14 @@
     "typeMinor": "Minor",
     "typePatch": "Patch",
     "moreUpdates": "More updates coming soon. The world is ending, but we keep shipping.",
+    "v070": {
+      "customClasses": "Forge Custom Classes with your own rules, items, abilities, reference tables, and Getting Better settings",
+      "versions": "Saving changes keeps existing scvm on their original class rules and creates a new version for future rolls",
+      "partyPools": "Party Class Pools let a GM choose the Book and Custom Classes available at their table and in Owlbear",
+      "sharing": "Publish a class for other GMs, with clear creator attribution and a report link for public content",
+      "moderation": "Reports receive human review; authors receive takedown reasons and can dispute a decision in the app or by email",
+      "legal": "Terms, contact, privacy, and report pages explain the rules and ways to reach the project"
+    },
     "v062": {
       "guestSignIn": "Guest sign-in on phones and in-app browsers now recovers on its own instead of showing an error",
       "noStale": "Session and security-token responses are never cached, so a stale \"not signed in\" answer is no longer reused",

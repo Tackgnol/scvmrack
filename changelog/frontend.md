@@ -2,6 +2,12 @@
 
 `mork-borg-character-sheet` — React 19 SPA with a neo-brutalist MÖRK BORG aesthetic.
 
+## Custom Classes (0.7.0)
+
+- Authenticated GMs can forge, autosave, version, archive, restore, publish, and unpublish Custom Classes
+- Party Class Pools, read-only public class details, authored-language and creator attribution, and character/party rendering support Custom Classes at the table
+- Signed-out reporting, owner appeals by form or email, an allowlisted moderation review page, Terms, Contact, Privacy, and report pages, plus FAQ guidance
+
 ## Stack
 
 - **UI:** React 19 + React Compiler, MUI 7 with a custom Mörk Borg theme

@@ -1,6 +1,6 @@
 export interface LegalSection {
   title: string;
-  paragraphs: string[];
+  paragraphs: readonly string[];
 }
 
 export interface LegalDocument {
@@ -8,7 +8,7 @@ export interface LegalDocument {
   description: string;
   lastUpdated?: string;
   introduction: string;
-  sections: LegalSection[];
+  sections: readonly LegalSection[];
 }
 
 type LegalLocale = "en" | "pl";

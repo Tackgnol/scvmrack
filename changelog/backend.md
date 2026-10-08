@@ -2,6 +2,12 @@
 
 `scvmgrinder_be` — Fastify 5 + TypeScript API for the MÖRK BORG character sheet.
 
+## Custom Classes (0.7.0)
+
+- Owner-only Custom Class drafts, explicit saves, immutable versions for used classes, archive/restore, and configurable account/daily-public-class limits
+- Party Class Pools drive the classes that a party and its Owlbear room can roll
+- Public class discovery and read-only details, signed-out reports, rate limits and honeypot protection, human moderation, takedown disputes, admin restoration, and two-year reporter-detail anonymization
+
 ## Stack
 
 - **Runtime:** Fastify 5.x (ESM, TypeScript), autoloaded plugins & routes

@@ -966,6 +966,14 @@
     "typeMinor": "Mała",
     "typePatch": "Poprawka",
     "moreUpdates": "Więcej aktualizacji wkrótce. Świat się kończy, ale my dalej dostarczamy.",
+    "v070": {
+      "customClasses": "Twórz własne Klasy z własnymi zasadami, przedmiotami, zdolnościami, tabelami i ustawieniami Getting Better",
+      "versions": "Zapisywanie zmian pozostawia istniejące scvmy przy ich pierwotnych zasadach klasy i tworzy nową wersję dla przyszłych rzutów",
+      "partyPools": "Pule Klas Drużyny pozwalają MG wybrać Klasy z Księgi i własne Klasy dostępne przy stole oraz w Owlbear",
+      "sharing": "Opublikuj klasę dla innych MG z jasnym oznaczeniem autora i linkiem do zgłoszenia publicznej treści",
+      "moderation": "Zgłoszenia są sprawdzane przez człowieka; autorzy dostają uzasadnienie zdjęcia treści i mogą zakwestionować decyzję w aplikacji lub e-mailem",
+      "legal": "Strony zasad, kontaktu, prywatności i zgłoszeń wyjaśniają reguły oraz sposoby kontaktu z projektem"
+    },
     "v062": {
       "guestSignIn": "Logowanie gościa na telefonach i w przeglądarkach wbudowanych w aplikacje odzyskuje się teraz samo, zamiast pokazywać błąd",
       "noStale": "Odpowiedzi o sesji i tokenie bezpieczeństwa nie są już cache'owane, więc nieaktualna odpowiedź „niezalogowany” nie jest ponownie używana",
