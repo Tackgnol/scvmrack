@@ -79,6 +79,7 @@ let classAbilities: Array<{
 }> = [];
 let classRule: 'book' | 'book_plus_ability' | 'specialist' = 'book';
 let classNoteKey: string | null = null;
+let latestClassLookup: number | null = null;
 let rollQueue: RollResult[] = [];
 let rollCalls: string[] = [];
 let getFullCalls: Array<{ id: string; locale: string }> = [];
@@ -93,6 +94,7 @@ function resetState(): void {
   classAbilities = [];
   classRule = 'book';
   classNoteKey = null;
+  latestClassLookup = null;
   rollQueue = [];
   rollCalls = [];
   getFullCalls = [];
@@ -184,12 +186,15 @@ mock.module('../../src/repositories/character-improvement-repository.js', {
         { key: `${kind}-one`, roll: 1, tags: ['scroll', kind] },
         { key: `${kind}-two`, roll: 2, tags: ['scroll', kind] },
       ],
-      findClassAbilities: async () => classAbilities,
-      findClassGettingBetter: async () => ({
-        gettingBetterRule: classRule,
-        gettingBetterNoteKey: classNoteKey,
-        languages: ['en', 'pl'],
-      }),
+      findLatestClassCatalog: async (classId: number) => {
+        latestClassLookup = classId;
+        return {
+          gettingBetterRule: classRule,
+          gettingBetterNoteKey: classNoteKey,
+          languages: ['en', 'pl'],
+          abilities: classAbilities,
+        };
+      },
       applyInTransaction: async (input: {
         characterId: string;
         improvementId: string;
@@ -361,6 +366,39 @@ test('preview creation requires ownership', async () => {
   assert.equal(result.ok, false);
   assert.equal(result.ok ? '' : result.error.code, 'FORBIDDEN_CHARACTER');
   assert.equal(createCalls, 0);
+});
+
+test('Getting Better uses the latest Custom Class settings and stable ability keys', async () => {
+  resetState();
+  assert.ok(characterRow);
+  characterRow = {
+    ...characterRow,
+    classId: 1,
+    abilities: [{ key: 'cc.lineage.ability.held' }],
+  };
+  classRule = 'specialist';
+  classNoteKey = 'cc.latest.getting_better_note';
+  classAbilities = [
+    { key: 'cc.lineage.ability.held', id: 11, position: 1, isRandom: true },
+    { key: 'cc.latest.ability.new', id: 12, position: 2, isRandom: true },
+  ];
+  enqueuePreviewRolls();
+  rollQueue.push({ total: 2 });
+  const service = createCharacterImprovementService(log);
+
+  const preview = await service.getOrCreatePreview({ id: characterId, session, rawLocale: 'en' });
+
+  assert.equal(latestClassLookup, 1);
+  assert.equal(preview.ok && preview.value.rulesNote, 'en:cc.latest.getting_better_note');
+  assert.deepEqual(preview.ok && (preview.value.rolledDraft as ImprovementDraft).classAbility, {
+    kind: 'firstSpecialty',
+    existing: [{ key: 'cc.lineage.ability.held', rollValue: 1 }],
+    added: {
+      key: 'cc.latest.ability.new',
+      rollValue: 2,
+      roll: { source: 'server', total: 2 },
+    },
+  });
 });
 
 test('getOrCreatePreview builds Scum first and later specialty drafts', async () => {

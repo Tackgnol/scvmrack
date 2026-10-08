@@ -156,16 +156,21 @@ export function sameSnapshot(
 export async function loadCatalog(
   row: ImprovementCharacterRow
 ): Promise<CatalogBundle> {
-  const [unclean, sacred, classAbilities, classSettings] = await Promise.all([
+  const [unclean, sacred, latestClass] = await Promise.all([
     characterImprovementRepository.findScrolls('unclean'),
     characterImprovementRepository.findScrolls('sacred'),
     row.classId !== null
-      ? characterImprovementRepository.findClassAbilities(row.classId)
-      : Promise.resolve([]),
-    row.classId !== null
-      ? characterImprovementRepository.findClassGettingBetter(row.classId)
+      ? characterImprovementRepository.findLatestClassCatalog(row.classId)
       : Promise.resolve(null),
   ]);
+  const classAbilities = latestClass?.abilities ?? [];
+  const classSettings = latestClass
+    ? {
+        gettingBetterRule: latestClass.gettingBetterRule,
+        gettingBetterNoteKey: latestClass.gettingBetterNoteKey,
+        languages: latestClass.languages,
+      }
+    : null;
 
   const pool = poolRows(classAbilities);
   return {

@@ -44,6 +44,10 @@ export type ClassGettingBetterRow = {
   languages: string[];
 };
 
+export type LatestClassImprovementCatalogRow = ClassGettingBetterRow & {
+  abilities: ClassAbilityRow[];
+};
+
 export type ScrollCatalogRow = {
   key: string;
   roll: number | null;
@@ -146,19 +150,28 @@ export const characterImprovementRepository = {
     }) as Promise<ScrollCatalogRow[]>;
   },
 
-  findClassGettingBetter(classId: number): Promise<ClassGettingBetterRow | null> {
-    return prisma.class.findUnique({
+  async findLatestClassCatalog(
+    classId: number
+  ): Promise<LatestClassImprovementCatalogRow | null> {
+    const current = await prisma.class.findUnique({
       where: { id: classId },
-      select: { gettingBetterRule: true, gettingBetterNoteKey: true, languages: true },
+      select: { lineageId: true },
     });
-  },
+    if (!current) return null;
 
-  findClassAbilities(classId: number): Promise<ClassAbilityRow[]> {
-    return prisma.ability.findMany({
-      where: { classId },
+    const latest = await prisma.class.findFirst({
+      where: { lineageId: current.lineageId },
+      orderBy: { version: 'desc' },
+      select: { id: true, gettingBetterRule: true, gettingBetterNoteKey: true, languages: true },
+    });
+    if (!latest) return null;
+
+    const abilities = await prisma.ability.findMany({
+      where: { classId: latest.id },
       select: { key: true, position: true, id: true, isRandom: true, grantItemKey: true, grantPetKey: true },
       orderBy: [{ position: 'asc' }, { id: 'asc' }],
-    }) as Promise<ClassAbilityRow[]>;
+    }) as ClassAbilityRow[];
+    return { ...latest, abilities };
   },
 
   async applyInTransaction(input: ApplyImprovementInput): Promise<
