@@ -42,3 +42,11 @@ export async function takeDownModerationReport(id: string, reason: string) {
     "Failed to take down class",
   );
 }
+export async function restoreModerationReport(id: string, reason: string) {
+  return unwrapApiResult(
+    await moderationClient.POST<{ restored: boolean }>(`/api/admin/reports/${id}/restore`, {
+      body: { reason },
+    }),
+    "Failed to restore class",
+  );
+}

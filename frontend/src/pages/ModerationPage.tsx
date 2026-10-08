@@ -1,6 +1,7 @@
 import {
   dismissModerationReport,
   listOpenModerationReports,
+  restoreModerationReport,
   takeDownModerationReport,
 } from "@/api/moderation";
 import { Seo } from "@/seo/Seo";
@@ -28,11 +29,15 @@ export function ModerationPage() {
     mutationFn: ({ id, reason }: { id: string; reason: string }) => takeDownModerationReport(id, reason),
     onSuccess: refresh,
   });
+  const restore = useMutation({
+    mutationFn: ({ id, reason }: { id: string; reason: string }) => restoreModerationReport(id, reason),
+    onSuccess: refresh,
+  });
 
-  const act = (id: string, action: "dismiss" | "takeDown") => {
+  const act = (id: string, action: "dismiss" | "takeDown" | "restore") => {
     const reason = reasons[id]?.trim();
     if (!reason) return;
-    (action === "dismiss" ? dismiss : takeDown).mutate({ id, reason });
+    (action === "dismiss" ? dismiss : action === "takeDown" ? takeDown : restore).mutate({ id, reason });
   };
 
   return (
@@ -55,8 +60,8 @@ export function ModerationPage() {
           <Alert severity="success">{t("moderation.empty", "No open reports.")}</Alert>
         )}
         {reports.data?.map((report) => {
-          const pending = dismiss.isPending || takeDown.isPending;
-          const open = report.status === "open";
+          const pending = dismiss.isPending || takeDown.isPending || restore.isPending;
+          const reviewable = report.status === "open" || report.status === "taken_down";
           return (
             <Paper key={report.id} elevation={0} sx={{ p: 2, border: "2px solid", borderColor: "text.primary" }}>
               <Stack spacing={1.5}>
@@ -80,7 +85,7 @@ export function ModerationPage() {
                     ))}
                   </Stack>
                 )}
-                {open && (
+                {reviewable && (
                   <>
                     <TextField
                       label={t("moderation.decisionReason", "Decision reason")}
@@ -92,12 +97,20 @@ export function ModerationPage() {
                       required
                     />
                     <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
-                      <Button disabled={pending || !reasons[report.id]?.trim()} onClick={() => act(report.id, "dismiss")}>
-                        {t("moderation.dismiss", "Dismiss")}
-                      </Button>
-                      <Button color="error" variant="contained" disabled={pending || !reasons[report.id]?.trim()} onClick={() => act(report.id, "takeDown")}>
-                        {t("moderation.takeDown", "Take down")}
-                      </Button>
+                      {report.status === "open" ? (
+                        <>
+                          <Button disabled={pending || !reasons[report.id]?.trim()} onClick={() => act(report.id, "dismiss")}>
+                            {t("moderation.dismiss", "Dismiss")}
+                          </Button>
+                          <Button color="error" variant="contained" disabled={pending || !reasons[report.id]?.trim()} onClick={() => act(report.id, "takeDown")}>
+                            {t("moderation.takeDown", "Take down")}
+                          </Button>
+                        </>
+                      ) : (
+                        <Button color="success" variant="contained" disabled={pending || !reasons[report.id]?.trim()} onClick={() => act(report.id, "restore")}>
+                          {t("moderation.restore", "Restore")}
+                        </Button>
+                      )}
                     </Stack>
                   </>
                 )}
