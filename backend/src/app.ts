@@ -5,6 +5,7 @@ import AutoLoad, { AutoloadPluginOptions } from '@fastify/autoload';
 import { FastifyPluginAsync, FastifyServerOptions } from 'fastify';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
+import { anonymizeExpiredModerationReports } from './services/moderation-service.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -27,6 +28,26 @@ const app: FastifyPluginAsync<AppOptions> = async (fastify, opts) => {
   });
 
   fastify.get('/health', healthHandler);
+
+  let moderationRetentionTimer: ReturnType<typeof setInterval> | undefined;
+  const runModerationRetention = async () => {
+    try {
+      const { count } = await anonymizeExpiredModerationReports();
+      if (count) {
+        fastify.log.info({ count }, 'Anonymised expired moderation reporter details');
+      }
+    } catch (err) {
+      fastify.log.error({ err }, 'Failed to anonymise expired moderation reporter details');
+    }
+  };
+
+  fastify.addHook('onReady', async () => {
+    await runModerationRetention();
+    moderationRetentionTimer = setInterval(() => {
+      void runModerationRetention();
+    }, 24 * 60 * 60 * 1000);
+    moderationRetentionTimer.unref();
+  });
 
   fastify.addHook('preHandler', async (request) => {
     if (!Sentry.isInitialized()) {
@@ -56,6 +77,7 @@ const app: FastifyPluginAsync<AppOptions> = async (fastify, opts) => {
   });
 
   fastify.addHook('onClose', async () => {
+    if (moderationRetentionTimer) clearInterval(moderationRetentionTimer);
     if (Sentry.isInitialized()) {
       await Sentry.close(2000);
     }

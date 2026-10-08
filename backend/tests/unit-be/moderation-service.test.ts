@@ -6,6 +6,7 @@ const sent: { kind: string; input: unknown }[] = [];
 let takeDownInput: unknown;
 let merge = false;
 let disputeLimited = false;
+let anonymizeBefore: Date | undefined;
 mock.module('../../src/repositories/moderation-repository.js', {
   namedExports: {
     moderationRepository: {
@@ -82,6 +83,10 @@ mock.module('../../src/repositories/moderation-repository.js', {
         takeDownInput = { id, actorUserId, reason };
         return { id };
       },
+      anonymizeResolvedReports: async (before: Date) => {
+        anonymizeBefore = before;
+        return { count: 2 };
+      },
     },
   },
 });
@@ -102,10 +107,19 @@ mock.module('../../src/services/mail-service.js', {
   },
 });
 
-const { createModerationService } = await import(
+const { createModerationService, anonymizeExpiredModerationReports } = await import(
   '../../src/services/moderation-service.js'
 );
 const service = createModerationService({ error: () => {}, warn: () => {} });
+
+test('anonymizes reporter details two years after resolution', async () => {
+  const result = await anonymizeExpiredModerationReports(
+    new Date('2026-10-08T12:00:00.000Z')
+  );
+
+  assert.equal(result.count, 2);
+  assert.equal(anonymizeBefore?.toISOString(), '2024-10-08T12:00:00.000Z');
+});
 
 test('requires contact for ordinary reports but allows anonymous CSAM reports', async () => {
   created.length = 0;

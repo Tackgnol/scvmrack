@@ -20,6 +20,13 @@ export type PublicModerationReport = {
 };
 const CSAM = 'child_sexual_abuse_material';
 
+/** Removes reporter details from reports resolved at least two years ago. */
+export async function anonymizeExpiredModerationReports(now = new Date()) {
+  const cutoff = new Date(now);
+  cutoff.setUTCFullYear(cutoff.getUTCFullYear() - 2);
+  return moderationRepository.anonymizeResolvedReports(cutoff);
+}
+
 /** Accepts a signed-out report and records it for human moderation. */
 export function createModerationService(log: ModerationLogger) {
   return {
