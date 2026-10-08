@@ -115,6 +115,7 @@ export type Character = {
     classDescription?: string | null;
     classAttribution?: string | null;
     classAuthoredLanguage?: 'en' | 'pl' | null;
+    classContentRemoved?: boolean;
     origin?: string | null;
     strength?: number;
     agility?: number;

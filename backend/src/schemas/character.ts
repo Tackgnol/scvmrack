@@ -336,6 +336,7 @@ export const CharacterSchema = {
     classDescription: { type: ['string', 'null'] },
     classAttribution: { type: ['string', 'null'] },
     classAuthoredLanguage: { type: ['string', 'null'], enum: ['en', 'pl', null] },
+    classContentRemoved: { type: "boolean" },
     origin: { type: ['string', 'null'] },
     strength: { type: 'integer' },
     agility: { type: 'integer' },

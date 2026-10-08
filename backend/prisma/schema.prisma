@@ -341,6 +341,7 @@ model Class {
   firstPublishedAt    DateTime?       @map("first_published_at")
   status              ClassStatus     @default(active)
   takenDownAt         DateTime?       @map("taken_down_at")
+  contentRemovedAt    DateTime?       @map("content_removed_at")
   takedownReason      String?         @map("takedown_reason")
   lineageId           String          @default(dbgenerated("gen_random_uuid()")) @map("lineage_id") @db.Uuid
   version             Int             @default(1)

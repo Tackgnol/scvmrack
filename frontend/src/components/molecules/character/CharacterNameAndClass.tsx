@@ -61,6 +61,7 @@ export const CharacterNameAndClass = ({ classAction }: CharacterNameAndClassProp
         classDescription={character.classDescription ?? undefined}
         classAttribution={character.classAttribution ?? undefined}
         classAuthoredLanguage={character.classAuthoredLanguage}
+        classContentRemoved={character.classContentRemoved}
         action={classAction}
       />
     </Box>

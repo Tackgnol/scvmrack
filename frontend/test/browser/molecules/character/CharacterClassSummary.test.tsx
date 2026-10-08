@@ -32,6 +32,19 @@ describe('CharacterClassSummary Browser', () => {
 
   });
 
+  it('shows the moderation notice when class content was removed', async () => {
+    await render(
+      <BrowserTestProvider>
+        <CharacterClassSummary
+          label="CLASS"
+          className="[removed by moderation]"
+          classContentRemoved
+        />
+      </BrowserTestProvider>
+    );
+
+    await expect.element(page.getByText("Some of this class's text was removed by moderation.")).toBeVisible();
+  });
   it('keeps the class action clickable', async () => {
     const onClick = vi.fn();
 

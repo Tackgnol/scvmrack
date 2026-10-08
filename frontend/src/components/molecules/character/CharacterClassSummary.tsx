@@ -8,6 +8,7 @@ interface CharacterClassSummaryProps {
   classDescription?: string;
   classAttribution?: string;
   classAuthoredLanguage?: 'en' | 'pl' | null;
+  classContentRemoved?: boolean;
   action?: ReactNode;
 }
 
@@ -17,6 +18,7 @@ export default function CharacterClassSummary({
   classDescription,
   classAttribution,
   classAuthoredLanguage,
+  classContentRemoved,
   action,
 }: CharacterClassSummaryProps) {
   return (
@@ -46,6 +48,11 @@ export default function CharacterClassSummary({
       {classAuthoredLanguage && (
         <Typography variant="caption" display="block" sx={{ opacity: 0.8 }}>
           This class is written in {classAuthoredLanguage === 'en' ? 'English' : 'Polish'}.
+        </Typography>
+      )}
+      {classContentRemoved && (
+        <Typography variant="caption" display="block" color="error">
+          Some of this class's text was removed by moderation.
         </Typography>
       )}
       {classDescription && (

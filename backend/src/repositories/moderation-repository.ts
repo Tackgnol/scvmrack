@@ -135,7 +135,7 @@ async createDispute(classId: number, authorUserId: string, text: string) {
       await Promise.all([
         tx.class.updateMany({
           where: { lineageId: report.class.lineageId },
-          data: { appendix: '[removed by moderation]', takenDownAt: now, takedownReason: reason },
+          data: { appendix: '[removed by moderation]', takenDownAt: now, contentRemovedAt: now, takedownReason: reason },
         }),
         tx.partyClassPool.deleteMany({ where: { lineageId: report.class.lineageId } }),
         tx.moderationReport.update({ where: { id }, data: { status: 'content_removed', resolvedAt: now } }),
@@ -177,7 +177,7 @@ async createDispute(classId: number, authorUserId: string, text: string) {
         }
       }
       await Promise.all([
-        tx.class.updateMany({ where: { lineageId: report.class.lineageId }, data: { takenDownAt: null, takedownReason: null } }),
+        tx.class.updateMany({ where: { lineageId: report.class.lineageId }, data: { takenDownAt: null, contentRemovedAt: null, takedownReason: null } }),
         tx.moderationLog.create({ data: { classId: report.classId, reportId: id, actorUserId, action: 'restored', reason } }),
       ]);
       return report;

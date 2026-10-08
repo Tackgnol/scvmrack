@@ -858,6 +858,7 @@ export async function hydrateCharacterRow(
     classDescription,
     classAttribution: cls ? classAttribution(cls) : null,
     classAuthoredLanguage,
+    classContentRemoved: Boolean(cls?.contentRemovedAt),
     origin:           translate(translations, row.origin)          ?? row.origin          ?? null,
     strength:         row.strength,
     agility:          row.agility,
