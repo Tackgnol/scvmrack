@@ -367,6 +367,7 @@ model ModerationReport {
   goodFaith     Boolean                @map("good_faith")
   status        ModerationReportStatus @default(open)
   resolvedAt    DateTime?              @map("resolved_at")
+  reporterDetailsRemovedAt DateTime?   @map("reporter_details_removed_at")
   createdAt     DateTime               @default(now()) @map("created_at")
   updatedAt     DateTime               @updatedAt @map("updated_at")
 
@@ -376,6 +377,7 @@ model ModerationReport {
 
   @@index([classId, status, createdAt])
   @@index([status, createdAt])
+  @@index([resolvedAt, reporterDetailsRemovedAt])
   @@map("moderation_reports")
 }
 

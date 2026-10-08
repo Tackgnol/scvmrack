@@ -30,6 +30,7 @@
     "deploy:env": "node scripts/parse-env.js",
     "migrate": "node scripts/migrate.js",
     "migrate:local": "node scripts/migrate-local.js",
+    "anonymize:moderation-reports": "node --import tsx scripts/anonymize-moderation-reports.ts",
     "postinstall": "prisma generate",
     "prisma:generate": "prisma generate",
     "prisma:push": "prisma db push",

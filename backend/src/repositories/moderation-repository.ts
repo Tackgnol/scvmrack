@@ -103,4 +103,19 @@ async createDispute(classId: number, authorUserId: string, text: string) {
       return report;
     });
   },
+  async anonymizeResolvedReports(before: Date) {
+    return prisma.moderationReport.updateMany({
+      where: {
+        status: { not: 'open' },
+        resolvedAt: { lt: before },
+        reporterDetailsRemovedAt: null,
+      },
+      data: {
+        reporterName: null,
+        reporterEmail: null,
+        explanation: '[reporter details removed]',
+        reporterDetailsRemovedAt: new Date(),
+      },
+    });
+  },
 };
