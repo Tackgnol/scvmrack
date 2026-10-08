@@ -624,6 +624,7 @@
     "unknown": "nieznany",
     "wretch": "nieszczęśnik",
     "classless": "Bez klasy",
+    "classContentRemoved": "Część tekstu tej klasy usunęła moderacja.",
     "noSpecialAbilities": "Brak specjalnych zdolności"
   },
   "traits": {

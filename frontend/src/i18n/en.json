@@ -627,6 +627,7 @@
     "unknown": "unknown",
     "wretch": "wretch",
     "classless": "Classless",
+    "classContentRemoved": "Some of this class's text was removed by moderation.",
     "noSpecialAbilities": "No special abilities"
   },
   "traits": {

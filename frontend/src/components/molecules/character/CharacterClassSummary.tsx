@@ -1,6 +1,7 @@
 import { Box, Paper, Typography } from '@mui/material';
 import { customStyles } from '@/theme/morkBorgTheme';
 import type { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface CharacterClassSummaryProps {
   label: string;
@@ -21,6 +22,8 @@ export default function CharacterClassSummary({
   classContentRemoved,
   action,
 }: CharacterClassSummaryProps) {
+  const { t } = useTranslation();
+
   return (
     <Paper sx={customStyles.characterClassPaper}>
       {action && (
@@ -52,7 +55,7 @@ export default function CharacterClassSummary({
       )}
       {classContentRemoved && (
         <Typography variant="caption" display="block" color="error">
-          Some of this class's text was removed by moderation.
+          {t('character.classContentRemoved')}
         </Typography>
       )}
       {classDescription && (

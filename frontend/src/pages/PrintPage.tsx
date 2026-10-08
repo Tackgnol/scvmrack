@@ -370,6 +370,7 @@ function PrintSheet({ character }: { character: Character }) {
                     <p>{t('app.subtitle')}</p>
                     <strong>{valueOrDash(character.className)}</strong>
                     {character.classAttribution && <p>{character.classAttribution}</p>}
+                    {character.classContentRemoved && <p>{t('character.classContentRemoved')}</p>}
                 </div>
             </header>
 

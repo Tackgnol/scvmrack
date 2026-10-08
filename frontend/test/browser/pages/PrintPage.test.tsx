@@ -169,6 +169,16 @@ describe('PrintPage', () => {
     expect(section && getComputedStyle(section).breakInside).toBe('auto');
   });
 
+  it('prints the moderation notice when class content was removed', async () => {
+    await renderPrintPage({
+      character: { ...printableCharacter, classContentRemoved: true },
+    } as Partial<ReturnType<typeof useCharacter>>);
+
+    await expect
+      .element(page.getByText("Some of this class's text was removed by moderation."))
+      .toBeVisible();
+  });
+
   it('redirects print URLs to the remembered character when needed', async () => {
     await renderPrintPage({
       character: undefined,
