@@ -1627,7 +1627,13 @@
       "abusive_or_hateful": "Abusive or hateful content",
       "other": "Other"
     }
-  },  "party": {
+  },
+  "moderation": {
+    "classVersions": "Class versions",
+    "previewLatest": "Preview latest version",
+    "version": "Version {{version}}"
+  },
+  "party": {
     "pill": "Party",
     "looks": "Looks",
     "kit": "Kit",

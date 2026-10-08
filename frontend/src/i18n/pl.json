@@ -1650,7 +1650,13 @@
       "abusive_or_hateful": "Treść obraźliwa lub nienawistna",
       "other": "Inne"
     }
-  },  "party": {
+  },
+  "moderation": {
+    "classVersions": "Wersje klasy",
+    "previewLatest": "Podgląd najnowszej wersji",
+    "version": "Wersja {{version}}"
+  },
+  "party": {
     "pill": "Drużyna",
     "looks": "Wygląd",
     "kit": "Sprzęt",

@@ -36,6 +36,7 @@ const repo = {
   restoreResult: true,
   publishAllowed: true,
   visibilityChanges: [] as Array<{ id: number; visibility: 'private' | 'public' }>,
+  detail: null as unknown,
 };
 
 mock.module('../../src/repositories/custom-class-repository.js', {
@@ -55,7 +56,7 @@ mock.module('../../src/repositories/custom-class-repository.js', {
         return 8;
       },
       findWithText: async (id: number) =>
-        repo.found ?? {
+        repo.detail ?? repo.found ?? {
           id,
           lineageId: 'l',
           ownerUserId: 'gm-1',
@@ -66,6 +67,8 @@ mock.module('../../src/repositories/custom-class-repository.js', {
           playingCount: 0,
           draft: repo.created.at(-1)?.draft,
         },
+      findLatestWithText: async () => repo.detail,
+      isVisibleToPartyMember: async () => false,
       listOwned: async () => [],
       remove: async () => repo.removeResult,
       restore: async () => repo.restoreResult,
@@ -159,6 +162,7 @@ beforeEach(() => {
   repo.restoreResult = true;
   repo.publishAllowed = true;
   repo.visibilityChanges = [];
+  repo.detail = null;
 });
 
 test('a GM saves a complete class as their own', async () => {
@@ -414,4 +418,32 @@ test('new private drafts are capped at three and remain invisible to guests', as
 
   const guest = await service.listDrafts({ session: GUEST });
   assert.equal(!guest.ok && guest.error.statusCode, 401);
+});
+test('an allowlisted moderator can preview the exact reported class version', async () => {
+  const previous = process.env.MODERATION_ADMIN_USER_IDS;
+  process.env.MODERATION_ADMIN_USER_IDS = 'admin-1';
+  repo.detail = {
+    id: 7,
+    lineageId: 'lineage-1',
+    ownerUserId: 'other-gm',
+    ownerName: 'Other GM',
+    visibility: 'private',
+    version: 1,
+    status: 'archived',
+    takenDownAt: new Date('2026-10-08T12:00:00.000Z'),
+    isLatest: false,
+    playingCount: 1,
+    draft: ready(),
+  };
+  try {
+    const result = await service.getDetail({
+      session: { user: { id: 'admin-1', isAnonymous: false } },
+      id: 7,
+    });
+    assert.equal(result.ok && result.value.id, 7);
+    assert.equal(result.ok && result.value.version, 1);
+  } finally {
+    if (previous === undefined) delete process.env.MODERATION_ADMIN_USER_IDS;
+    else process.env.MODERATION_ADMIN_USER_IDS = previous;
+  }
 });

@@ -106,21 +106,62 @@ async dispute(input: {
       } catch (err) {
         return fail(unexpected(log, err, 'MODERATION_DISPUTE_SAVE_FAILED', 'Failed to save the dispute'));
       }
-    },    async listOpen(input: { session: AppSession }) {
+    },
+    async listOpen(input: { session: AppSession }) {
       if (!isModerationAdmin(input.session)) return fail(forbidden());
       try {
-        const reports = await moderationRepository.listOpenReports();
-        return ok(reports.map((report) => ({
-          id: report.id, classId: report.classId, className: report.class.name,
-          reason: report.reason, explanation: report.explanation,
-          reporterName: report.reporterName, reporterEmail: report.reporterEmail,
+        const { reports, versions } = await moderationRepository.listOpenReports();
+        const versionsByLineage = new Map<string, typeof versions>();
+        for (const version of versions) {
+          const lineageVersions = versionsByLineage.get(version.lineageId) ?? [];
+          lineageVersions.push(version);
+          versionsByLineage.set(version.lineageId, lineageVersions);
+        }
+        const reportData = reports.map((report) => ({
+          id: report.id,
+          classId: report.classId,
+          className: report.class.name,
+          lineageId: report.class.lineageId,
+          classVersion: report.class.version,
+          reason: report.reason,
+          explanation: report.explanation,
+          reporterName: report.reporterName,
+          reporterEmail: report.reporterEmail,
           status: report.status,
           disputes: report.disputes.map((dispute) => ({
-            id: dispute.id, text: dispute.text, createdAt: dispute.createdAt.toISOString(),
+            id: dispute.id,
+            text: dispute.text,
+            createdAt: dispute.createdAt.toISOString(),
           })),
           createdAt: report.createdAt.toISOString(),
           serious: ['child_sexual_abuse_material', 'threat_to_life_or_safety', 'terrorist_content'].includes(report.reason),
-        })));
+        }));
+        const groups = new Map<string, {
+          lineageId: string;
+          latest: (typeof versions)[number];
+          versions: typeof versions;
+          reports: typeof reportData;
+        }>();
+        for (const report of reportData) {
+          const classVersions = versionsByLineage.get(report.lineageId) ?? [{
+            id: report.classId,
+            lineageId: report.lineageId,
+            name: report.className,
+            version: report.classVersion,
+          }];
+          const group = groups.get(report.lineageId);
+          if (group) {
+            group.reports.push(report);
+          } else {
+            groups.set(report.lineageId, {
+              lineageId: report.lineageId,
+              latest: classVersions[0],
+              versions: classVersions,
+              reports: [report],
+            });
+          }
+        }
+        return ok([...groups.values()]);
       } catch (err) {
         return fail(unexpected(log, err, 'MODERATION_REPORT_LIST_FAILED', 'Failed to load moderation reports'));
       }

@@ -277,7 +277,7 @@ const classes: FastifyPluginAsync = async (fastify): Promise<void> => {
   );
 
 
-  // GET /api/classes/details/:id - a read-only latest version for public, owner, or pooled-party readers
+  // GET /api/classes/details/:id - latest readable version, or the exact version for allowlisted moderators
   app.get(
     '/details/:id',
     {

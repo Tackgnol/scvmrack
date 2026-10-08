@@ -63,14 +63,33 @@ async createDispute(classId: number, authorUserId: string, text: string) {
       });
       return { kind: 'created' as const, dispute, report };
     });
-  },  async listOpenReports() {
-    return prisma.moderationReport.findMany({
-      where: { OR: [{ status: 'open' }, { disputes: { some: {} } }] }, orderBy: { createdAt: 'desc' },
+  },
+  async listOpenReports() {
+    const reports = await prisma.moderationReport.findMany({
+      where: { OR: [{ status: 'open' }, { disputes: { some: {} } }] },
+      orderBy: { createdAt: 'desc' },
       include: {
-        class: { select: { id: true, name: true, lineageId: true, source: true, owner: { select: { email: true } } } },
+        class: {
+          select: {
+            id: true,
+            name: true,
+            lineageId: true,
+            version: true,
+            owner: { select: { email: true } },
+          },
+        },
         disputes: { select: { id: true, text: true, createdAt: true }, orderBy: { createdAt: 'asc' } },
       },
     });
+    const lineageIds = [...new Set(reports.map((report) => report.class.lineageId))];
+    const versions = lineageIds.length === 0
+      ? []
+      : await prisma.class.findMany({
+          where: { lineageId: { in: lineageIds } },
+          select: { id: true, lineageId: true, name: true, version: true },
+          orderBy: [{ lineageId: 'asc' }, { version: 'desc' }],
+        });
+    return { reports, versions };
   },
   async dismissReport(id: string, actorUserId: string, reason: string) {
     return prisma.$transaction(async (tx) => {

@@ -6,6 +6,8 @@ export type AdminModerationReport = {
   id: string;
   classId: number;
   className: string;
+  lineageId: string;
+  classVersion: number;
   reason: ReportReason;
   explanation: string;
   reporterName: string | null;
@@ -16,11 +18,18 @@ export type AdminModerationReport = {
   disputes: Array<{ id: string; text: string; createdAt: string }>;
 };
 
+export type AdminModerationReportGroup = {
+  lineageId: string;
+  latest: { id: number; lineageId: string; name: string; version: number };
+  versions: Array<{ id: number; lineageId: string; name: string; version: number }>;
+  reports: AdminModerationReport[];
+};
+
 const moderationClient = client as unknown as UntypedApiClient;
 
-export async function listOpenModerationReports(): Promise<AdminModerationReport[]> {
+export async function listOpenModerationReports(): Promise<AdminModerationReportGroup[]> {
   return unwrapApiResult(
-    await moderationClient.GET<AdminModerationReport[]>("/api/admin/reports"),
+    await moderationClient.GET<AdminModerationReportGroup[]>("/api/admin/reports"),
     "Failed to load moderation reports",
   );
 }

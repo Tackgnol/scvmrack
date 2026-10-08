@@ -3,6 +3,7 @@ import {
   CUSTOM_CLASS_MAX_PER_GM,
 } from '../lib/class-limits.js';
 import { classAttribution } from '../lib/class-attribution.js';
+import { isModerationAdmin } from '../lib/moderation-admin.js';
 import {
   classDraftProblems,
   classSpecFromDraft,
@@ -274,12 +275,15 @@ export function createCustomClassService(log: ServiceLogger) {
       }
     },
 
-    /** Loads the latest public class version, or a private one the owner/party member may read. */
+    /** Loads the latest readable version, or the exact reported version for an allowlisted moderator. */
     async getDetail(input: { session: AppSession; id: number }): Promise<ServiceResult<SavedClass & { attribution: string }>> {
       try {
-        const found = await customClassRepository.findLatestWithText(input.id);
+        const admin = isModerationAdmin(input.session);
+        const found = admin
+          ? await customClassRepository.findWithText(input.id)
+          : await customClassRepository.findLatestWithText(input.id);
         if (!found) return fail(notYours());
-        const mayRead = (
+        const mayRead = admin || (
           found.visibility === 'public' ||
           found.ownerUserId === sessionUserId(input.session) ||
           (await customClassRepository.isVisibleToPartyMember({
@@ -288,7 +292,7 @@ export function createCustomClassService(log: ServiceLogger) {
             sessionId: input.session?.session?.id ?? null,
           }))
         );
-        if (found.status !== 'active' || !mayRead) return fail(notYours());
+        if (!mayRead || (!admin && found.status !== 'active')) return fail(notYours());
         return ok({ ...saved(found), attribution: classAttribution({ source: 'user', ownerName: found.ownerName, creditWork: null, creditAuthor: null })! });
       } catch (err) {
         return fail(unexpected(log, err, 'CLASS_DETAIL_LOAD_FAILED', 'Failed to load the class'));

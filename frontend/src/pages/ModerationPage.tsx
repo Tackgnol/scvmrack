@@ -9,6 +9,7 @@ import { Seo } from "@/seo/Seo";
 import { getUserFacingApiErrorMessage } from "@/utils/errorUtils";
 import { Alert, Box, Button, Paper, Stack, TextField, Typography } from "@mui/material";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -64,68 +65,88 @@ export function ModerationPage() {
         {reports.data?.length === 0 && (
           <Alert severity="success">{t("moderation.empty", "No open reports.")}</Alert>
         )}
-        {reports.data?.map((report) => {
-          const pending = dismiss.isPending || takeDown.isPending || removeContent.isPending || restore.isPending;
-          const reviewable = report.status === "open" || report.status === "taken_down" || report.status === "content_removed";
-          return (
-            <Paper key={report.id} elevation={0} sx={{ p: 2, border: "2px solid", borderColor: "text.primary" }}>
-              <Stack spacing={1.5}>
-                {report.serious && (
-                  <Alert severity="error">{t("moderation.authority", "Needs authority report")}</Alert>
-                )}
-                <Typography variant="h6">{report.className} · #{report.classId}</Typography>
-                <Typography>{t(`report.reasons.${report.reason}`)}</Typography>
-                <Typography sx={{ whiteSpace: "pre-wrap" }}>{report.explanation}</Typography>
-                <Typography variant="body2">
-                  {report.reporterName ?? t("moderation.anonymous", "Anonymous")} · {report.reporterEmail ?? "—"}
-                </Typography>
-                {report.disputes.length > 0 && (
-                  <Stack spacing={1} sx={{ borderLeft: 4, borderColor: "warning.main", pl: 2 }}>
-                    <Typography variant="subtitle2">{t("moderation.disputes", "Author disputes")}</Typography>
-                    {report.disputes.map((dispute) => (
-                      <Box key={dispute.id}>
-                        <Typography sx={{ whiteSpace: "pre-wrap" }}>{dispute.text}</Typography>
-                        <Typography variant="caption">{new Date(dispute.createdAt).toLocaleString()}</Typography>
-                      </Box>
-                    ))}
-                  </Stack>
-                )}
-                {reviewable && (
-                  <>
-                    <TextField
-                      label={t("moderation.decisionReason", "Decision reason")}
-                      value={reasons[report.id] ?? ""}
-                      onChange={(event) => setReasons((current) => ({ ...current, [report.id]: event.target.value }))}
-                      multiline
-                      minRows={2}
-                      inputProps={{ maxLength: 4000 }}
-                      required
-                    />
-                    <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
-                      {report.status === "open" ? (
+        {reports.data?.map((group) => (
+          <Paper key={group.lineageId} component="section" elevation={0} sx={{ p: 2, border: "2px solid", borderColor: "text.primary" }}>
+            <Stack spacing={1.5}>
+              <Box>
+                <Typography component="h2" variant="h5">{group.latest.name}</Typography>
+                <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" alignItems="center">
+                  <Button component={Link} to={`/classes/${group.latest.id}`} size="small" variant="contained">
+                    {t("moderation.previewLatest", "Preview latest version")} · {t("moderation.version", { version: group.latest.version })}
+                  </Button>
+                  {group.versions.slice(1).map((version) => (
+                    <Button key={version.id} component={Link} to={`/classes/${version.id}`} size="small">
+                      {t("moderation.version", { version: version.version })}
+                    </Button>
+                  ))}
+                </Stack>
+              </Box>
+              <Typography variant="subtitle2">{t("moderation.classVersions", "Class versions")}</Typography>
+              {group.reports.map((report) => {
+                const pending = dismiss.isPending || takeDown.isPending || removeContent.isPending || restore.isPending;
+                const reviewable = report.status === "open" || report.status === "taken_down" || report.status === "content_removed";
+                return (
+                  <Box key={report.id} component="article" sx={{ borderTop: "1px solid", borderColor: "divider", pt: 1.5 }}>
+                    <Stack spacing={1.5}>
+                      {report.serious && (
+                        <Alert severity="error">{t("moderation.authority", "Needs authority report")}</Alert>
+                      )}
+                      <Typography component="h3" variant="h6">{report.className} · {t("moderation.version", { version: report.classVersion })}</Typography>
+                      <Typography>{t(`report.reasons.${report.reason}`)}</Typography>
+                      <Typography sx={{ whiteSpace: "pre-wrap" }}>{report.explanation}</Typography>
+                      <Typography variant="body2">
+                        {report.reporterName ?? t("moderation.anonymous", "Anonymous")} · {report.reporterEmail ?? "—"}
+                      </Typography>
+                      {report.disputes.length > 0 && (
+                        <Stack spacing={1} sx={{ borderLeft: 4, borderColor: "warning.main", pl: 2 }}>
+                          <Typography variant="subtitle2">{t("moderation.disputes", "Author disputes")}</Typography>
+                          {report.disputes.map((dispute) => (
+                            <Box key={dispute.id}>
+                              <Typography sx={{ whiteSpace: "pre-wrap" }}>{dispute.text}</Typography>
+                              <Typography variant="caption">{new Date(dispute.createdAt).toLocaleString()}</Typography>
+                            </Box>
+                          ))}
+                        </Stack>
+                      )}
+                      {reviewable && (
                         <>
-                          <Button disabled={pending || !reasons[report.id]?.trim()} onClick={() => act(report.id, "dismiss")}>
-                            {t("moderation.dismiss", "Dismiss")}
-                          </Button>
-                          <Button color="error" variant="contained" disabled={pending || !reasons[report.id]?.trim()} onClick={() => act(report.id, "takeDown")}>
-                            {t("moderation.takeDown", "Take down")}
-                          </Button>
-                          <Button color="error" disabled={pending || !reasons[report.id]?.trim()} onClick={() => act(report.id, "removeContent")}>
-                            {t("moderation.removeContent", "Remove content")}
-                          </Button>
+                          <TextField
+                            label={t("moderation.decisionReason", "Decision reason")}
+                            value={reasons[report.id] ?? ""}
+                            onChange={(event) => setReasons((current) => ({ ...current, [report.id]: event.target.value }))}
+                            multiline
+                            minRows={2}
+                            inputProps={{ maxLength: 4000 }}
+                            required
+                          />
+                          <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+                            {report.status === "open" ? (
+                              <>
+                                <Button disabled={pending || !reasons[report.id]?.trim()} onClick={() => act(report.id, "dismiss")}>
+                                  {t("moderation.dismiss", "Dismiss")}
+                                </Button>
+                                <Button color="error" variant="contained" disabled={pending || !reasons[report.id]?.trim()} onClick={() => act(report.id, "takeDown")}>
+                                  {t("moderation.takeDown", "Take down")}
+                                </Button>
+                                <Button color="error" disabled={pending || !reasons[report.id]?.trim()} onClick={() => act(report.id, "removeContent")}>
+                                  {t("moderation.removeContent", "Remove content")}
+                                </Button>
+                              </>
+                            ) : (
+                              <Button color="success" variant="contained" disabled={pending || !reasons[report.id]?.trim()} onClick={() => act(report.id, "restore")}>
+                                {t("moderation.restore", "Restore")}
+                              </Button>
+                            )}
+                          </Stack>
                         </>
-                      ) : (
-                        <Button color="success" variant="contained" disabled={pending || !reasons[report.id]?.trim()} onClick={() => act(report.id, "restore")}>
-                          {t("moderation.restore", "Restore")}
-                        </Button>
                       )}
                     </Stack>
-                  </>
-                )}
-              </Stack>
-            </Paper>
-          );
-        })}
+                  </Box>
+                );
+              })}
+            </Stack>
+          </Paper>
+        ))}
       </Stack>
     </Box>
   );
