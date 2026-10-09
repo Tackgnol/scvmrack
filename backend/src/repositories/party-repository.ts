@@ -53,9 +53,13 @@ export type CharacterForJoinRow = {
 async function lockPartyBelowCap(
   tx: Prisma.TransactionClient,
   partyId: string,
-  cap: number
+  cap: number,
+  replaceUserId?: string
 ): Promise<void> {
   await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${partyId}, 0))`;
+  if (replaceUserId) {
+    await tx.character.deleteMany({ where: { userId: replaceUserId } });
+  }
   const count = await tx.character.count({ where: { partyId } });
   if (count >= cap) {
     throw new PartyFullError();
@@ -335,9 +339,10 @@ export const partyRepository = {
     cap: number;
     data: Prisma.CharacterUncheckedCreateInput;
     obrBinding?: { roomId: string; playerId: string };
+    replaceUserId?: string;
   }): Promise<string> {
     return prisma.$transaction(async (tx) => {
-      await lockPartyBelowCap(tx, input.partyId, input.cap);
+      await lockPartyBelowCap(tx, input.partyId, input.cap, input.replaceUserId);
       const character = await tx.character.create({
         data: { ...input.data, partyId: input.partyId, joinedAt: new Date() },
         select: { id: true },

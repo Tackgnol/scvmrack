@@ -5,6 +5,7 @@ import { ObrOpenInScvmrackButton } from "./ObrOpenInScvmrackButton";
 import { ObrAuthedPicker } from "./ObrAuthedPicker";
 import { ObrGmView } from "./ObrGmView";
 import { ObrUnavailableState } from "./ObrUnavailableState";
+import { ObrRollPicker } from "./ObrRollPicker/ObrRollPicker";
 import { useObrRole } from "@/hooks/useObrRole";
 import {
   broadcastCharacterCardChanged,
@@ -21,6 +22,7 @@ import {
 } from "@/obr/obrApiClient";
 import { useObrSession } from "@/obr/useObrSession";
 import { getApiLocale, getCharacterKey } from "@/hooks/utils";
+import { getApiErrorCode } from "@/utils/errorUtils";
 import { PathsApiCharactersGetParametersQueryLocale } from "@/api/schema";
 import { Button } from "@mui/material";
 import OBR from "@owlbear-rodeo/sdk";
@@ -82,6 +84,8 @@ function ObrPlayerCharacterRoute() {
   const characterId = character?.id ?? null;
   const [signInError, setSignInError] = useState<string | null>(null);
   const [forgeError, setForgeError] = useState<string | null>(null);
+  const [rollError, setRollError] = useState<string | null>(null);
+  const [rollPickerOpen, setRollPickerOpen] = useState(false);
   const [isRestoringCharacter, setIsRestoringCharacter] = useState(true);
   const restoreCheckedRef = useRef(false);
   const restoreInFlightRef = useRef(false);
@@ -94,11 +98,10 @@ function ObrPlayerCharacterRoute() {
     updatedAt: string;
   } | null>(null);
 
-  // Guests hold a single scvm, so a fresh roll must replace it or the BE 409s
-  // (SCVM_ALREADY_EXISTS). Authenticated accounts keep their full roster, so
-  // they create alongside.
-  const rollNew = () =>
-    generateNew(undefined, isAuthenticated ? undefined : { replace: true });
+  const openRollPicker = () => {
+    setRollError(null);
+    setRollPickerOpen(true);
+  };
 
   useEffect(() => {
     setCharacterIdRef.current = setCharacterId;
@@ -258,27 +261,37 @@ function ObrPlayerCharacterRoute() {
   // A character is active — OBR token-bind strip above the real sheet.
   if (character) {
     return (
-      <PlayerSheetShell>
-        {character.id && (
-          <PlayerToolbar>
-            <ObrTokenBar
-              characterId={character.id}
-              characterName={character.name ?? "Scvm"}
-            />
-            {isAuthenticated && (
-              <ObrOpenInScvmrackButton
+      <>
+        <PlayerSheetShell>
+          {character.id && (
+            <PlayerToolbar>
+              <ObrTokenBar
                 characterId={character.id}
-                issueObrExchangeToken={issueObrExchangeToken}
+                characterName={character.name ?? "Scvm"}
               />
-            )}
-          </PlayerToolbar>
-        )}
-        <CharacterSheet
-          stamping={false}
-          onGenerateNew={rollNew}
-          onKillScvm={() => generateNew(undefined, { replace: true })}
+              {isAuthenticated && (
+                <ObrOpenInScvmrackButton
+                  characterId={character.id}
+                  issueObrExchangeToken={issueObrExchangeToken}
+                />
+              )}
+            </PlayerToolbar>
+          )}
+          <CharacterSheet
+            stamping={false}
+            onGenerateNew={openRollPicker}
+            onKillScvm={openRollPicker}
+          />
+          {rollError && <ErrorText>{rollError}</ErrorText>}
+        </PlayerSheetShell>
+        <ObrRollPicker
+          open={rollPickerOpen}
+          roomId={OBR.room.id}
+          locale={locale}
+          onClose={() => setRollPickerOpen(false)}
+          onChoose={(classId) => void handleRoomRoll(classId)}
         />
-      </PlayerSheetShell>
+      </>
     );
   }
 
@@ -290,6 +303,30 @@ function ObrPlayerCharacterRoute() {
     );
   }
 
+  async function handleRoomRoll(classId: number | null) {
+    setRollPickerOpen(false);
+    setRollError(null);
+    try {
+      const actor = await getCurrentObrRoomActor(OBR);
+      generateNew(classId, {
+        replace: !isAuthenticated,
+        obrRoomId: actor.roomId,
+        obrPlayerId: actor.playerId,
+        onError: (error) => {
+          const code = getApiErrorCode(error);
+          if (code === "PARTY_FULL") {
+            setRollError(
+              t("obr.player.partyFull", "This room's party is full. Ask the GM to make room."),
+            );
+          } else if (code === "CLASS_NOT_AVAILABLE") {
+            setRollPickerOpen(true);
+          }
+        },
+      });
+    } catch {
+      setRollError(t("obr.player.rollFailed", "Could not roll a scvm. Try again."));
+    }
+  }
   async function handleForge() {
     setForgeError(null);
     try {
@@ -338,7 +375,7 @@ function ObrPlayerCharacterRoute() {
             <ObrAuthedPicker
               locale={locale}
               onPick={(id) => void setCharacterId(id)}
-              onRollNew={rollNew}
+              onRollNew={openRollPicker}
               onForge={() => void handleForge()}
             />
           ) : (
@@ -349,7 +386,7 @@ function ObrPlayerCharacterRoute() {
                   "Roll a wretch to play right now, or sign in to load your warband.",
                 )}
               </Hint>
-              <Button fullWidth variant="contained" onClick={rollNew}>
+              <Button fullWidth variant="contained" onClick={openRollPicker}>
                 {t("obr.player.rollScvm", "Roll a scvm")}
               </Button>
               <Button
@@ -364,10 +401,18 @@ function ObrPlayerCharacterRoute() {
               </Button>
               {signInError && <ErrorText>{signInError}</ErrorText>}
               {forgeError && <ErrorText>{forgeError}</ErrorText>}
+              {rollError && <ErrorText>{rollError}</ErrorText>}
             </>
           )}
         </Panel>
       </Centered>
+      <ObrRollPicker
+        open={rollPickerOpen}
+        roomId={OBR.room.id}
+        locale={locale}
+        onClose={() => setRollPickerOpen(false)}
+        onChoose={(classId) => void handleRoomRoll(classId)}
+      />
     </>
   );
 }

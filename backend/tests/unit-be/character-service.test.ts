@@ -23,7 +23,8 @@ const state = {
     | { classIds: number[]; acceptedClassIds: number[]; classlessEnabled: boolean; party: null | { id: string; ownerUserId: string } }
     | { gone: true },
   scopeCalls: [] as Array<string | null | undefined>,
-  memberCalls: [] as Array<{ partyId: string; cap: number; data: unknown; obrBinding?: { roomId: string; playerId: string } }>,
+  memberCalls: [] as Array<{ partyId: string; cap: number; data: unknown; obrBinding?: { roomId: string; playerId: string }; replaceUserId?: string }>,
+  roomCreateCalls: [] as Array<{ data: unknown; obrBinding: { roomId: string; playerId: string }; replaceUserId?: string }>,
   partyFull: false,
   updateError: null as unknown,
   generateError: null as unknown,
@@ -62,6 +63,7 @@ function resetState(): void {
   state.scope = { classIds: [1, 2, 3, 4, 5, 6], acceptedClassIds: [1, 2, 3, 4, 5, 6], classlessEnabled: true, party: null };
   state.scopeCalls = [];
   state.memberCalls = [];
+  state.roomCreateCalls = [];
   state.partyFull = false;
   state.updateError = null;
   state.generateError = null;
@@ -119,6 +121,10 @@ mock.module('../../src/repositories/character-repository.js', {
         return state.deleteOthersResult;
       },
       userHasCharacters: async () => state.userHasCharactersResult,
+      createWithObrBindingInTransaction: async (input: { data: unknown; obrBinding: { roomId: string; playerId: string }; replaceUserId?: string }) => {
+        state.roomCreateCalls.push(input);
+        return 'room-character-id';
+      },
       count: async () => {
         if (state.countError) throw state.countError;
         return state.countValue;
@@ -153,7 +159,7 @@ mock.module('../../src/repositories/party-repository.js', {
   namedExports: {
     PartyFullError: FakePartyFullError,
     partyRepository: {
-      createMemberInTransaction: async (input: { partyId: string; cap: number; data: unknown; obrBinding?: { roomId: string; playerId: string } }) => {
+      createMemberInTransaction: async (input: { partyId: string; cap: number; data: unknown; obrBinding?: { roomId: string; playerId: string }; replaceUserId?: string }) => {
         state.memberCalls.push(input);
         if (state.partyFull) throw new FakePartyFullError('full');
         return 'member-id';
@@ -169,6 +175,7 @@ mock.module('../../src/lib/generate-character.js', {
       if (state.generateError) throw state.generateError;
       return state.generatedId;
     },
+    randomCharacterCreateData: async (classId: number | null, _roller: unknown, userId?: string) => ({ fromRandom: classId, userId }),
     characterCreateDataFromDraft: async (draft: unknown, userId: string) => ({ fromDraft: draft, userId }),
     createCharacterFromDraft: async (draft: unknown, userId: string) => {
       state.createFromDraftCalls.push({ draft, userId });
@@ -365,6 +372,75 @@ test('generate binds a room-scoped forge to its Owlbear player in the party tran
       obrBinding: { roomId: 'obr-room-1', playerId: 'obr-player-1' },
     },
   ]);
+});
+test('a room roll creates, joins, and binds in one transaction', async () => {
+  state.scope = partyScope();
+
+  const result = await service().generate({
+    session: session('user-1'),
+    obrRoomId: 'obr-room-1',
+    obrPlayerId: 'obr-player-1',
+    classId: 7,
+    locale: 'en',
+  });
+
+  assert.equal(result.ok, true);
+  assert.deepEqual(state.memberCalls, [{
+    partyId: 'party-1',
+    cap: 10,
+    data: { fromRandom: 7, userId: 'user-1' },
+    obrBinding: { roomId: 'obr-room-1', playerId: 'obr-player-1' },
+  }]);
+});
+
+test('a room roll without a party binds a Book Class scvm', async () => {
+  const result = await service().generate({
+    session: session('user-1'),
+    obrRoomId: 'obr-room-1',
+    obrPlayerId: 'obr-player-1',
+    classId: 1,
+    locale: 'en',
+  });
+
+  assert.equal(result.ok, true);
+  assert.deepEqual(state.roomCreateCalls, [{
+    data: { fromRandom: 1, userId: 'user-1' },
+    obrBinding: { roomId: 'obr-room-1', playerId: 'obr-player-1' },
+  }]);
+});
+
+test('a guest room roll replaces the old scvm inside the party transaction', async () => {
+  state.scope = partyScope();
+
+  const result = await service().generate({
+    session: guestSession('guest-1'),
+    obrRoomId: 'obr-room-1',
+    obrPlayerId: 'obr-player-1',
+    classId: 7,
+    replace: true,
+    locale: 'en',
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(state.memberCalls[0]?.replaceUserId, 'guest-1');
+  assert.deepEqual(state.deleteOthersCalls, []);
+});
+
+test('a full room party creates no direct roll', async () => {
+  state.scope = partyScope();
+  state.partyFull = true;
+
+  const result = await service().generate({
+    session: session('user-1'),
+    obrRoomId: 'obr-room-1',
+    obrPlayerId: 'obr-player-1',
+    classId: 7,
+    locale: 'en',
+  });
+
+  assert.equal(result.ok, false);
+  assert.equal((result as any).error.code, 'PARTY_FULL');
+  assert.deepEqual(state.roomCreateCalls, []);
 });
 test('a draft rolled on a version the GM has since replaced still joins on that version', async () => {
   state.scope = {

@@ -588,6 +588,19 @@ export async function generateCharacter(
   roller: Roller,
   userId?: string,
 ): Promise<string> {
+  const character = await prisma.character.create({
+    data: await randomCharacterCreateData(classId, roller, userId),
+    select: { id: true },
+  });
+  return character.id;
+}
+
+/** Builds one random scvm row without persisting it, for an atomic party join. */
+export async function randomCharacterCreateData(
+  classId: number | null,
+  roller: Roller,
+  userId?: string,
+): Promise<Prisma.CharacterUncheckedCreateInput> {
   // 1. Resolve class (random if not supplied) — rolls on the caller's roller
   //    BEFORE any section roll, preserving the legacy sequence.
   let resolvedClassId: number;
@@ -604,20 +617,14 @@ export async function generateCharacter(
   // pre-refactor implementation.
   const data = await buildCharacterData(resolvedClassId, () => roller);
   const { classlessStatOptions: _classlessStatOptions, ...persistedData } = data;
-
-  const character = await prisma.character.create({
-    data: {
-      ...(userId ? { userId } : {}),
-      ...persistedData,
-      abilities: persistedData.abilities as object[],
-      equipment: persistedData.equipment as object[],
-      equippedWeapons: persistedData.equippedWeapons as object[],
-      equippedArmor: (persistedData.equippedArmor as object | null) ?? Prisma.DbNull,
-    },
-    select: { id: true },
-  });
-
-  return character.id;
+  return {
+    ...(userId ? { userId } : {}),
+    ...persistedData,
+    abilities: persistedData.abilities as object[],
+    equipment: persistedData.equipment as object[],
+    equippedWeapons: persistedData.equippedWeapons as object[],
+    equippedArmor: (persistedData.equippedArmor as object | null) ?? Prisma.DbNull,
+  };
 }
 
 /**

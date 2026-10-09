@@ -9,6 +9,7 @@ import {
   characterCreateDataFromDraft,
   createCharacterFromDraft,
   generateCharacter,
+  randomCharacterCreateData,
 } from '../lib/generate-character.js';
 import { PARTY_MAX_MEMBERS } from '../lib/party-limits.js';
 import { PartyFullError, partyRepository } from '../repositories/party-repository.js';
@@ -204,7 +205,11 @@ export function createCharacterService(
         const scope = await resolveClassScope(input.inviteToken, input.obrRoomId);
         if (!scope.ok) return fail(scope.error);
         const party = scope.value.party;
-        if (party && !input.draft) {
+        const obrBinding =
+          !input.inviteToken && input.obrRoomId && input.obrPlayerId
+            ? { roomId: input.obrRoomId, playerId: input.obrPlayerId }
+            : undefined;
+        if (party && !input.draft && !obrBinding) {
           return fail(badRequest('DRAFT_REQUIRED', 'Forge a scvm to join a party'));
         }
         if (party && party.ownerUserId === userId) {
@@ -252,37 +257,61 @@ export function createCharacterService(
           );
           if (unavailable) return fail(unavailable);
 
+          const data = await characterCreateDataFromDraft(input.draft, userId);
           if (party) {
             characterId = await partyRepository.createMemberInTransaction({
               partyId: party.id,
               cap: PARTY_MAX_MEMBERS,
-              data: await characterCreateDataFromDraft(input.draft, userId),
-              ...(!input.inviteToken && input.obrRoomId && input.obrPlayerId
-                ? {
-                    obrBinding: {
-                      roomId: input.obrRoomId,
-                      playerId: input.obrPlayerId,
-                    },
-                  }
-                : {}),
+              data,
+              ...(obrBinding ? { obrBinding } : {}),
+              ...(isGuest && input.replace ? { replaceUserId: userId } : {}),
             });
             partyBus?.publish(party.id, { type: 'character.joined', characterId });
+          } else if (obrBinding) {
+            characterId = await characterRepository.createWithObrBindingInTransaction({
+              data,
+              obrBinding,
+              ...(isGuest && input.replace ? { replaceUserId: userId } : {}),
+            });
           } else {
             characterId = await createCharacterFromDraft(input.draft, userId);
           }
         } else {
-          const unavailable = classChoiceError(scope.value, false, input.classId ?? null);
-          if (unavailable) return fail(unavailable);
           const roller = new Roller({ engine: new OSRandomEngine() });
-          // Bind ownership at creation so a failure can never leave an orphaned,
-          // unowned (and thus unreachable) character row.
-          characterId = await generateCharacter(
-            input.classId ?? null,
-            roller,
-            userId
-          );
-        }
+          let classId = input.classId ?? null;
+          if (classId === null && party) {
+            if (scope.value.classIds.length === 0) {
+              return fail(badRequest('NO_CLASS_AVAILABLE', 'No classes are available for this party'));
+            }
+            classId = scope.value.classIds[
+              (await roller.roll(`1d${scope.value.classIds.length}`)).total - 1
+            ];
+          }
+          const unavailable = classChoiceError(scope.value, false, classId);
+          if (unavailable) return fail(unavailable);
 
+          if (party) {
+            if (!obrBinding) {
+              return fail(badRequest('DRAFT_REQUIRED', 'Forge a scvm to join a party'));
+            }
+            characterId = await partyRepository.createMemberInTransaction({
+              partyId: party.id,
+              cap: PARTY_MAX_MEMBERS,
+              data: await randomCharacterCreateData(classId, roller, userId),
+              obrBinding,
+              ...(isGuest && input.replace ? { replaceUserId: userId } : {}),
+            });
+            partyBus?.publish(party.id, { type: 'character.joined', characterId });
+          } else if (obrBinding) {
+            characterId = await characterRepository.createWithObrBindingInTransaction({
+              data: await randomCharacterCreateData(classId, roller, userId),
+              obrBinding,
+              ...(isGuest && input.replace ? { replaceUserId: userId } : {}),
+            });
+          } else {
+            characterId = await generateCharacter(classId, roller, userId);
+          }
+        }
         const character = await getCharacterFull(characterId, input.locale);
         if (!character) {
           return fail(
@@ -298,7 +327,7 @@ export function createCharacterService(
         // guest's prior one(s). Generate-first-then-prune mirrors the in-sheet
         // kill-and-replace and leaves no zero-scvm window — so a prune failure is
         // logged and non-blocking rather than failing an otherwise-good create.
-        if (isGuest && input.replace) {
+        if (isGuest && input.replace && !party && !obrBinding) {
           try {
             await characterRepository.deleteOthersForUser(userId, characterId);
           } catch (err) {

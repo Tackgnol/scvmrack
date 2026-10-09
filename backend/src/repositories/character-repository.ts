@@ -126,6 +126,46 @@ export const characterRepository = {
     return prisma.character.deleteMany({ where: { id } });
   },
 
+  /** Creates and binds a room-scoped scvm in one transaction. */
+  async createWithObrBindingInTransaction(input: {
+    data: Prisma.CharacterUncheckedCreateInput;
+    obrBinding: { roomId: string; playerId: string };
+    replaceUserId?: string;
+  }): Promise<string> {
+    return prisma.$transaction(async (tx) => {
+      if (input.replaceUserId) {
+        await tx.character.deleteMany({ where: { userId: input.replaceUserId } });
+      }
+      const character = await tx.character.create({
+        data: input.data,
+        select: { id: true },
+      });
+      await tx.obrRoomBinding.upsert({
+        where: { obrRoomId: input.obrBinding.roomId },
+        create: { obrRoomId: input.obrBinding.roomId },
+        update: { updatedAt: new Date() },
+      });
+      await tx.obrPlayerCharacterBinding.upsert({
+        where: {
+          obrRoomId_obrPlayerId: {
+            obrRoomId: input.obrBinding.roomId,
+            obrPlayerId: input.obrBinding.playerId,
+          },
+        },
+        create: {
+          obrRoomId: input.obrBinding.roomId,
+          obrPlayerId: input.obrBinding.playerId,
+          characterId: character.id,
+          assignedByPlayerId: input.obrBinding.playerId,
+        },
+        update: {
+          characterId: character.id,
+          assignedByPlayerId: input.obrBinding.playerId,
+        },
+      });
+      return character.id;
+    });
+  },
   /** True if the user already owns at least one character. */
   async userHasCharacters(userId: string): Promise<boolean> {
     const row = await prisma.character.findFirst({
