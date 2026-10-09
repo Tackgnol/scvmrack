@@ -18,7 +18,7 @@ BEGIN
     SET "status" = 'archived'
     WHERE "lineage_id" = NEW."lineage_id";
 
-    DELETE FROM "party_class_pool"
+    DELETE FROM "party_class_pools"
     WHERE "lineage_id" = NEW."lineage_id";
   END IF;
   RETURN NEW;
