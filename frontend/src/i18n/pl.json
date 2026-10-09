@@ -23,6 +23,11 @@
       "unnamedScvm": "Scvm bez imienia",
       "classless": "Bez klasy"
     },
+    "forgeComplete": {
+      "title": "Wykuto. Wróć do Owlbear",
+      "body": "Nowy scvm jest przypisany do tego pokoju Owlbear.",
+      "back": "Wróć do Owlbear"
+    },
     "stats": {
       "agilityShort": "ZWI",
       "presenceShort": "OPA",

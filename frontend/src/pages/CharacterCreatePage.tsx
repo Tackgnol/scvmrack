@@ -1,7 +1,10 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Seo } from '@/seo/Seo';
 import { ForgeFlow } from '@/components/organisms/character-create/ForgeFlow';
 import { useCharacter } from '@/CharacterContext/CharacterContext';
+import type { CharacterResponse } from '@/hooks/models';
+import { ObrForgeComplete } from './ObrForgeComplete';
 
 function readObrForgeContext(): { roomId?: string; playerId?: string } {
   const params = new URLSearchParams(window.location.search);
@@ -13,6 +16,14 @@ export function CharacterCreatePage() {
   const { t } = useTranslation();
   const { adoptCreatedCharacter } = useCharacter();
   const obrForge = readObrForgeContext();
+  const [obrForged, setObrForged] = useState(false);
+  const onCreated = (character: CharacterResponse) => {
+    if (obrForge.roomId) {
+      setObrForged(true);
+      return;
+    }
+    adoptCreatedCharacter(character);
+  };
 
   return (
     <>
@@ -23,11 +34,11 @@ export function CharacterCreatePage() {
         noIndex
       />
 
-      <ForgeFlow
-        onCreated={adoptCreatedCharacter}
+      {obrForged ? <ObrForgeComplete /> : <ForgeFlow
+        onCreated={onCreated}
         obrRoomId={obrForge.roomId}
         obrPlayerId={obrForge.playerId}
-      />
+      />}
     </>
   );
 }

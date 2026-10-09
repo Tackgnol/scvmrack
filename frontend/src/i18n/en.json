@@ -23,6 +23,11 @@
       "unnamedScvm": "Unnamed scvm",
       "classless": "Classless"
     },
+    "forgeComplete": {
+      "title": "Forged. Back to Owlbear",
+      "body": "Your new scvm is bound to this Owlbear room.",
+      "back": "Back to Owlbear"
+    },
     "stats": {
       "agilityShort": "AGI",
       "presenceShort": "PRE",
