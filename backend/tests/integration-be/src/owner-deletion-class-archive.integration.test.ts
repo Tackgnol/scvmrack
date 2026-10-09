@@ -17,7 +17,7 @@ test('deleting a GM archives only their non-public class lineages', async () => 
   try {
     await client.query('BEGIN');
     await client.query(
-      'INSERT INTO "user" (id, name, email, "emailVerified") VALUES ($1, $2, $3, true), ($4, $5, $6, true)',
+      'INSERT INTO "user" (id, name, email, "emailVerified", "updatedAt") VALUES ($1, $2, $3, true, CURRENT_TIMESTAMP), ($4, $5, $6, true, CURRENT_TIMESTAMP)',
       [
         ownerId,
         'Deleted GM',
@@ -41,7 +41,7 @@ test('deleting a GM archives only their non-public class lineages', async () => 
       ],
     );
     const party = await client.query<{ id: string }>(
-      'INSERT INTO "parties" (name, "owner_user_id", "invite_token") VALUES ($1, $2, $3) RETURNING id',
+      'INSERT INTO "parties" (name, "owner_user_id", "invite_token", "updated_at") VALUES ($1, $2, $3, CURRENT_TIMESTAMP) RETURNING id',
       ['Archive test party', partyOwnerId, randomUUID()],
     );
     const partyId = party.rows[0]?.id;

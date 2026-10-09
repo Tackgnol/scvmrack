@@ -1,6 +1,7 @@
+import type { TFunction } from 'i18next';
 import { describe, expect, it } from 'vitest';
 import type { ClassPoolView, PoolClass } from '@/api/classPool';
-import { poolSections, poolTally } from '@/components/organisms/class-pool/classPool.utils';
+import { attributionText, poolSections, poolTally } from '@/components/organisms/class-pool/classPool.utils';
 import { applyPoolSwitch } from '@/hooks/useClassPool';
 
 const cls = (lineageId: string, overrides: Partial<PoolClass> = {}): PoolClass => ({
@@ -62,6 +63,21 @@ describe('poolSections', () => {
   });
 });
 
+describe('attributionText', () => {
+  const t = ((_: string, fallback: string) => fallback) as unknown as TFunction;
+
+  it('credits a public class without an owner as created by a former GM', () => {
+    expect(
+      attributionText(
+        t,
+        cls('former-gm', {
+          group: 'public',
+          attribution: { kind: 'owner', name: null, private: false },
+        }),
+      ),
+    ).toBe('created by a former GM');
+  });
+});
 describe('poolTally', () => {
   it('counts switched-on classes per group, leaving empty groups out', () => {
     expect(poolTally(classes)).toEqual([

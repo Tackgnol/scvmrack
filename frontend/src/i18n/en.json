@@ -1192,7 +1192,7 @@
       "mine": "created by you",
       "minePrivate": "created by you · private",
       "owner": "created by {{name}}",
-      "ownerUnknown": "created by another GM"
+      "ownerFormer": "created by a former GM"
     },
     "stats": {
       "abilities_one": "ability",

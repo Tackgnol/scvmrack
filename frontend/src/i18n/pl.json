@@ -1193,7 +1193,7 @@
       "mine": "stworzona przez ciebie",
       "minePrivate": "stworzona przez ciebie · prywatna",
       "owner": "stworzona przez {{name}}",
-      "ownerUnknown": "stworzona przez innego MG"
+      "ownerFormer": "stworzona przez byłego MG"
     },
     "stats": {
       "abilities_one": "zdolność",

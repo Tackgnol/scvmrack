@@ -73,7 +73,7 @@ export function attributionText(t: TFunction, c: PoolClass): string | null {
   }
   return a.name
     ? t("classPool.attribution.owner", "created by {{name}}", { name: a.name })
-    : t("classPool.attribution.ownerUnknown", "created by another GM");
+    : t("classPool.attribution.ownerFormer", "created by a former GM");
 }
 
 /** "English and Polish" for a class's languages. */
