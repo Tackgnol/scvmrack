@@ -421,6 +421,7 @@ function customClassDraft(name: string) {
         ],
         grantItem: 'new:flail',
         grantPet: null,
+        table: null,
       },
       {
         random: true,
@@ -429,6 +430,7 @@ function customClassDraft(name: string) {
         modifiers: [],
         grantItem: null,
         grantPet: null,
+        table: null,
       },
       {
         random: true,
@@ -437,6 +439,7 @@ function customClassDraft(name: string) {
         modifiers: [],
         grantItem: null,
         grantPet: null,
+        table: null,
       },
     ],
     randomAbilityCount: 1,
@@ -601,7 +604,9 @@ test('a forged class shows under My classes, joins the pool and a player rolls i
     csrf: true,
   });
   await expectStatus(edited, 200);
-  const reloaded = await request(`/api/classes/${id}`, { jar: party.jar });
+  const latestId = ((await edited.json()) as { id: number }).id;
+  assert.notEqual(latestId, id);
+  const reloaded = await request(`/api/classes/${latestId}`, { jar: party.jar });
   const reloadedDraft = (
     (await reloaded.json()) as {
       draft: {
