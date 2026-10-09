@@ -45,6 +45,18 @@ describe('CharacterClassSummary Browser', () => {
 
     await expect.element(page.getByText("Some of this class's text was removed by moderation.")).toBeVisible();
   });
+  it('links a public Custom Class to its report form', async () => {
+    await render(
+      <BrowserTestProvider>
+        <CharacterClassSummary label="CLASS" className="Public Wretch" reportClassId={77} />
+      </BrowserTestProvider>
+    );
+
+    await expect
+      .element(page.getByRole('link', { name: 'Report a class' }))
+      .toHaveAttribute('href', '/report?classId=77');
+  });
+
   it('keeps the class action clickable', async () => {
     const onClick = vi.fn();
 

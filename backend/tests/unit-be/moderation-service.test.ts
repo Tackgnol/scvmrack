@@ -7,11 +7,17 @@ let takeDownInput: unknown;
 let merge = false;
 let disputeLimited = false;
 let anonymizeBefore: Date | undefined;
+let reportClass: { id: number; name: string; source: 'user'; visibility: 'private' | 'public' } = {
+  id: 9,
+  name: 'Bog Witch',
+  source: 'user',
+  visibility: 'public',
+};
 mock.module('../../src/repositories/moderation-repository.js', {
   namedExports: {
     moderationRepository: {
       findClass: async (id: number) =>
-        id === 9 ? { id, name: 'Bog Witch' } : null,
+        id === 9 ? reportClass : null,
       createOrMergeReport: async (input: unknown) => {
         if (!merge) created.push(input);
         return { id: '550e8400-e29b-41d4-a716-446655440000', merged: merge };
@@ -177,6 +183,20 @@ test('merges repeat reports from the same email and class', async () => {
   assert.deepEqual((created[0] as { reporterEmail: string }).reporterEmail, 'reporter@example.com');
   merge = false;
 });
+
+test('does not accept reports for a private Custom Class', async () => {
+  reportClass = { ...reportClass, visibility: 'private' };
+  const result = await service.submit({
+    classId: 9,
+    reason: 'other',
+    explanation: 'Not public.',
+    reporterName: 'Reporter',
+    reporterEmail: 'reporter@example.com',
+  });
+  assert.equal(!result.ok && result.error.code, 'CLASS_NOT_FOUND');
+  reportClass = { ...reportClass, visibility: 'public' };
+});
+
 test('an owner can dispute a takedown up to the cap', async () => {
   const created = await service.dispute({
     session: { user: { id: 'gm-1' } },

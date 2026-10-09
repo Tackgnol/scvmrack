@@ -276,7 +276,7 @@ export function createCustomClassService(log: ServiceLogger) {
     },
 
     /** Loads the latest readable version, or the exact reported version for an allowlisted moderator. */
-    async getDetail(input: { session: AppSession; id: number }): Promise<ServiceResult<SavedClass & { attribution: string }>> {
+    async getDetail(input: { session: AppSession; id: number }): Promise<ServiceResult<SavedClass & { attribution: string; reportable: boolean }>> {
       try {
         const admin = isModerationAdmin(input.session);
         const found = admin
@@ -293,7 +293,7 @@ export function createCustomClassService(log: ServiceLogger) {
           }))
         );
         if (!mayRead || (!admin && found.status !== 'active')) return fail(notYours());
-        return ok({ ...saved(found), attribution: classAttribution({ source: 'user', ownerName: found.ownerName, creditWork: null, creditAuthor: null })! });
+        return ok({ ...saved(found), attribution: classAttribution({ source: 'user', ownerName: found.ownerName, creditWork: null, creditAuthor: null })!, reportable: found.visibility === 'public' });
       } catch (err) {
         return fail(unexpected(log, err, 'CLASS_DETAIL_LOAD_FAILED', 'Failed to load the class'));
       }

@@ -10,6 +10,16 @@ export const Meta = styled("div")({
   alignItems: "center",
 });
 
+export const ReportLink = styled("a")({
+  color: yellow,
+  fontFamily: partyFonts.label,
+  fontSize: "0.65rem",
+  letterSpacing: "0.1em",
+  textTransform: "uppercase",
+  textUnderlineOffset: 3,
+  "&:focus-visible": { outline: `2px solid ${yellow}`, outlineOffset: 2 },
+});
+
 /** The class shape: numeral cells, then the rule and who plays it. */
 export const Shape = styled("div")({
   display: "grid",

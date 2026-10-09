@@ -46,7 +46,7 @@ export function createModerationService(log: ModerationLogger) {
       }
       try {
         const cls = await moderationRepository.findClass(input.classId);
-        if (!cls)
+        if (!cls || (cls.source === 'user' && cls.visibility !== 'public'))
           return fail(
             notFound('CLASS_NOT_FOUND', 'The reported class no longer exists')
           );

@@ -43,6 +43,7 @@ export type ClassCatalogRow = {
   descriptionKey: string | null;
   languages: string[];
   source: 'main_book' | 'zine' | 'the_rack' | 'user';
+  visibility: 'private' | 'public';
   creditWork: string | null;
   creditAuthor: string | null;
   ownerName: string | null;
@@ -127,7 +128,7 @@ export const catalogRepository = {
       where: { id: classId },
       select: {
         id: true, name: true, appendix: true, nameKey: true, descriptionKey: true, languages: true,
-        source: true, creditWork: true, creditAuthor: true, contentRemovedAt: true, owner: { select: { name: true } },
+        source: true, visibility: true, creditWork: true, creditAuthor: true, contentRemovedAt: true, owner: { select: { name: true } },
       },
     }).then((row) => row && ({ ...row, ownerName: row.owner?.name ?? null })) as Promise<ClassCatalogRow | null>;
   },

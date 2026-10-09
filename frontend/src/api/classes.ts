@@ -114,7 +114,7 @@ export type SavedClass = {
   status: "draft" | "active" | "archived";
 };
 
-export type ClassDetail = SavedClass & { attribution: string };
+export type ClassDetail = SavedClass & { attribution: string; reportable: boolean };
 
 export type StoredClassDraft = {
   id: number;

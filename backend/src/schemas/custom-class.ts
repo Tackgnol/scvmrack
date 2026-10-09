@@ -371,10 +371,11 @@ export const ClassWithDraftSchema = {
 
 export const ClassDetailSchema = {
   ...ClassWithDraftSchema,
-  required: [...ClassWithDraftSchema.required, 'attribution'],
+  required: [...ClassWithDraftSchema.required, 'attribution', 'reportable'],
   properties: {
     ...ClassWithDraftSchema.properties,
     attribution: { type: 'string' },
+    reportable: { type: 'boolean' },
   },
 } as const;
 export const OwnClassListSchema = {

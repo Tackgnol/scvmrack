@@ -14,7 +14,7 @@ export const moderationRepository = {
   async findClass(id: number) {
     return prisma.class.findUnique({
       where: { id },
-      select: { id: true, name: true },
+      select: { id: true, name: true, source: true, visibility: true },
     });
   },
   async createOrMergeReport(input: CreateModerationReportInput) {

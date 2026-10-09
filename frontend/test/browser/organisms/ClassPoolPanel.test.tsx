@@ -136,6 +136,24 @@ describe('ClassPoolPanel', () => {
     await expect.element(page.getByText('Ossuary Knight')).not.toBeInTheDocument();
   });
 
+  it('links a public Custom Class to its report form', async () => {
+    const withPublic = baseView();
+    withPublic.classes.push(
+      cls('Public Wretch', {
+        classId: 77,
+        group: 'public',
+        attribution: { kind: 'owner', name: 'Ada', private: false },
+      })
+    );
+    vi.mocked(getClassPool).mockResolvedValue(withPublic);
+    renderPanel();
+
+    await page.getByRole('button', { name: /Other GMs' public classes/ }).click();
+    await expect
+      .element(page.getByRole('link', { name: 'Report a class' }))
+      .toHaveAttribute('href', '/report?classId=77');
+  });
+
   it('a class whose author is gone is not called taken down', async () => {
     const withRemoved = baseView();
     withRemoved.removed = [{ lineageId: 'lin-gone', name: 'Orphan', by: null, reason: 'unpublished' }];

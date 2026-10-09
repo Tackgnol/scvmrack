@@ -5,7 +5,7 @@ import { ClassInfoCard } from "../ClassInfoCard/ClassInfoCard";
 import { Attr, Blurb, Chip, ClassName, Row, Who } from "../classPool.styles";
 import { attributionText, languageNames } from "../classPool.utils";
 import type { ClassPoolRowProps } from "./ClassPoolRow.models";
-import { Meta, Shape } from "./ClassPoolRow.styles";
+import { Meta, ReportLink, Shape } from "./ClassPoolRow.styles";
 
 /** One class in the pool panel, with its switch and an info card on hover/focus. */
 export function ClassPoolRow({ cls, onSwitch }: ClassPoolRowProps) {
@@ -40,6 +40,11 @@ export function ClassPoolRow({ cls, onSwitch }: ClassPoolRowProps) {
             {cls.languages.join(" · ").toUpperCase()}
           </Chip>
           {attribution && <Attr>{attribution}</Attr>}
+          {cls.attribution?.kind === "owner" && !cls.attribution.private && (
+            <ReportLink href={`/report?classId=${cls.classId}`}>
+              {t("report.link", "Report a class")}
+            </ReportLink>
+          )}
         </Meta>
       </Who>
       <Shape>

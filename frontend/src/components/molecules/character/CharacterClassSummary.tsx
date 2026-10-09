@@ -1,4 +1,4 @@
-import { Box, Paper, Typography } from '@mui/material';
+import { Box, Button, Paper, Typography } from '@mui/material';
 import { customStyles } from '@/theme/morkBorgTheme';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -10,6 +10,7 @@ interface CharacterClassSummaryProps {
   classAttribution?: string;
   classAuthoredLanguage?: 'en' | 'pl' | null;
   classContentRemoved?: boolean;
+  reportClassId?: number;
   action?: ReactNode;
 }
 
@@ -20,6 +21,7 @@ export default function CharacterClassSummary({
   classAttribution,
   classAuthoredLanguage,
   classContentRemoved,
+  reportClassId,
   action,
 }: CharacterClassSummaryProps) {
   const { t } = useTranslation();
@@ -62,6 +64,11 @@ export default function CharacterClassSummary({
         <Typography variant="body2" sx={customStyles.characterClassDescription}>
           {classDescription}
         </Typography>
+      )}
+      {reportClassId && (
+        <Button component="a" href={`/report?classId=${reportClassId}`} size="small" sx={{ mt: 1 }}>
+          {t('report.link', 'Report a class')}
+        </Button>
       )}
     </Paper>
   );
