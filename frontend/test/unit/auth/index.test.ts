@@ -111,6 +111,9 @@ describe('auth api helpers', () => {
     expect(loginUrl()).toBe(
       'https://api.example.test/api/auth/oauth2/login/logto'
     );
+    expect(loginUrl('/gm')).toBe(
+      'https://api.example.test/api/auth/oauth2/login/logto?returnTo=%2Fgm'
+    );
     expect(profileUrl()).toBe('https://auth.example.test/account/security');
   });
 

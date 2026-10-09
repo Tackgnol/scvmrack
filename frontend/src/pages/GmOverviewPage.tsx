@@ -1,3 +1,4 @@
+import { loginUrl } from '@/auth';
 import { useAuth } from '@/hooks/useAuth';
 import { useCreateParty, usePartyList } from '@/hooks/usePartyRepository';
 import { appHistory } from '@/router/history';
@@ -53,23 +54,27 @@ export function GmOverviewPage() {
     }
   };
 
-  if (isGuest) {
+  if (!isAuthenticated) {
     return (
       <>
-        <Seo
-          title="GM Dashboard"
-          description="Private game-master party dashboard."
-          path="/gm"
-          noIndex
-        />
-        <Box sx={{ py: 4 }}>
-          <Alert data-testid="gm-guest-warning" severity="warning" sx={customStyles.alerts.warning}>
-            {t('gm.loginRequired', 'You need to be logged in to run the GM dashboard.')}
+        <Seo title="GM Dashboard" description="Run a MÖRK BORG warband." path="/gm" />
+        <Page data-testid="gm-overview">
+          <Stamp>{t('gm.stamp', 'Game Master')}</Stamp>
+          <Title component="h1">{t('gm.dashboardTitle', 'Party control')}</Title>
+          <Alert data-testid="gm-guest-warning" severity="info" sx={customStyles.alerts.warning}>
+            {isGuest
+              ? t('gm.guestCarriesOver', 'Your guest scvm comes with you when you sign up.')
+              : t('gm.loginRequired', 'Sign in to create and run a warband.')}
           </Alert>
-          <Button component={Link} to="/" variant="contained" sx={customStyles.charactersListPage.loginButton}>
-            {t('common.backToHome', 'Back to Home')}
-          </Button>
-        </Box>
+          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+            <Button component="a" href={loginUrl('/gm')} variant="contained">
+              {t('gm.signUp', 'Sign up')}
+            </Button>
+            <Button component="a" href={loginUrl('/gm')} variant="outlined">
+              {t('gm.logIn', 'Log in')}
+            </Button>
+          </Box>
+        </Page>
       </>
     );
   }

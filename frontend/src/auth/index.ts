@@ -178,8 +178,9 @@ export async function signOut(): Promise<void> {
   }
 }
 
-export function loginUrl(): string {
-  return `${apiBaseUrl()}/api/auth/oauth2/login/logto`;
+export function loginUrl(returnTo?: string): string {
+  const url = `${apiBaseUrl()}/api/auth/oauth2/login/logto`;
+  return returnTo ? `${url}?returnTo=${encodeURIComponent(returnTo)}` : url;
 }
 
 export function profileUrl(): string {

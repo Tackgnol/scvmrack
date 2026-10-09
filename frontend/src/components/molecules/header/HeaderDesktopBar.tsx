@@ -128,7 +128,7 @@ export function HeaderDesktopBar({
         <NavLink to="/" text={t('nav.start', 'Start')} />
         <NavLink to="/character" href={homeUrl} text={t('nav.home')} />
         {isAuthenticated && <NavLink to="/characters" text={t('nav.characters')} />}
-        {isAuthenticated && <NavLink to="/gm" text={t('nav.gm', 'GM')} />}
+        <NavLink to="/gm" text={t('nav.gm', 'GM')} />
       </Box>
     </Box>
   );

@@ -66,10 +66,27 @@ describe('GmOverviewPage', () => {
   });
   afterEach(() => vi.clearAllMocks());
 
-  it('shows the guest warning when not logged in', async () => {
+  it('shows a locked GM overview that returns from Logto to this tab', async () => {
+    mockedUseAuth.mockReturnValue({ isAuthenticated: false, isGuest: false, isLoading: false } as never);
+    await renderPage();
+
+    await expect.element(page.getByTestId('gm-overview')).toBeVisible();
+    await expect.element(page.getByRole('heading', { name: 'Party control' })).toBeVisible();
+    await expect
+      .element(page.getByRole('link', { name: 'Sign up' }))
+      .toHaveAttribute('href', 'http://localhost:3000/api/auth/oauth2/login/logto?returnTo=%2Fgm');
+    await expect
+      .element(page.getByRole('link', { name: 'Log in' }))
+      .toHaveAttribute('href', 'http://localhost:3000/api/auth/oauth2/login/logto?returnTo=%2Fgm');
+  });
+
+  it('tells guests that their scvm comes with them', async () => {
     mockedUseAuth.mockReturnValue({ isAuthenticated: false, isGuest: true, isLoading: false } as never);
     await renderPage();
-    await expect.element(page.getByTestId('gm-guest-warning')).toBeVisible();
+
+    await expect.element(page.getByTestId('gm-guest-warning')).toHaveTextContent(
+      'Your guest scvm comes with you when you sign up.'
+    );
   });
 
   it('shows the empty state with no parties', async () => {
