@@ -13,6 +13,7 @@ export const ModerationReportBodySchema = {
         'terrorist_content',
         'other_illegal_content',
         'abusive_or_hateful',
+        'owner_removal',
         'other',
       ],
     },

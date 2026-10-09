@@ -298,6 +298,7 @@ enum ModerationReportReason {
   terrorist_content
   other_illegal_content
   abusive_or_hateful
+  owner_removal
   other
 
   @@map("moderation_report_reason")

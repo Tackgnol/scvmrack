@@ -50,3 +50,26 @@ test('silently drops a honeypot-filled report', async () => {
   assert.equal(submitted, 0);
   await app.close();
 });
+
+
+test('accepts a class owner removal request', async () => {
+  submitted = 0;
+  const app = await buildApp();
+
+  const response = await app.inject({
+    method: 'POST',
+    url: '/',
+    payload: {
+      classId: 9,
+      reason: 'owner_removal',
+      explanation: 'I no longer want this shown.',
+      reporterName: 'GM',
+      reporterEmail: 'gm@example.com',
+      goodFaith: true,
+    },
+  });
+
+  assert.equal(response.statusCode, 201);
+  assert.equal(submitted, 1);
+  await app.close();
+});

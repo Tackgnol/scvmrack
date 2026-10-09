@@ -8,6 +8,7 @@ export const REPORT_REASONS = [
   "terrorist_content",
   "other_illegal_content",
   "abusive_or_hateful",
+  "owner_removal",
   "other",
 ] as const;
 export type ReportReason = (typeof REPORT_REASONS)[number];

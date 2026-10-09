@@ -1634,6 +1634,7 @@
       "terrorist_content": "Terrorist content",
       "other_illegal_content": "Other illegal content",
       "abusive_or_hateful": "Abusive or hateful content",
+      "owner_removal": "I no longer want this shown",
       "other": "Other"
     }
   },
