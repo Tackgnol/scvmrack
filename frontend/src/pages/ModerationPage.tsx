@@ -7,6 +7,7 @@ import {
 } from "@/api/moderation";
 import { Seo } from "@/seo/Seo";
 import { CreationBanPanel } from "@/components/organisms/CreationBanPanel/CreationBanPanel";
+import { ModerationRemovalHistory } from "@/components/organisms/ModerationRemovalHistory/ModerationRemovalHistory";
 import { getUserFacingApiErrorMessage } from "@/utils/errorUtils";
 import { Alert, Box, Button, Paper, Stack, TextField, Typography } from "@mui/material";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -85,19 +86,7 @@ export function ModerationPage() {
                 </Stack>
               </Box>
               {group.removalHistory !== null && (
-                <Box component="details" sx={{ borderLeft: 4, borderColor: "warning.main", pl: 2 }}>
-                  <Typography component="summary" sx={{ cursor: "pointer", fontWeight: 700 }}>
-                    {t("moderation.removalHistory", { count: group.removalHistory.length })}
-                  </Typography>
-                  <Box component="ul" sx={{ pl: 2, mb: 0 }}>
-                    {group.removalHistory.map((entry) => (
-                      <Box component="li" key={entry.id} sx={{ mb: 1 }}>
-                        <Typography>{entry.className} · {new Date(entry.date).toLocaleString()} · {t(entry.restored ? "moderation.restored" : "moderation.notRestored")}</Typography>
-                        <Typography sx={{ whiteSpace: "pre-wrap" }}>{entry.reason ?? "—"}</Typography>
-                      </Box>
-                    ))}
-                  </Box>
-                </Box>
+                <ModerationRemovalHistory history={group.removalHistory} />
               )}
               <Typography variant="subtitle2">{t("moderation.classVersions", "Class versions")}</Typography>
               {group.reports.map((report) => {
