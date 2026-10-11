@@ -31,6 +31,12 @@ export type DisputeCopyInput = {
   disputeText: string;
 };
 
+export type TermsChangeInput = {
+  date: string;
+  effectiveDate: string;
+  summary: { en: string; pl: string };
+};
+
 export const APPEAL_ADDRESS = 'scvmrack-appeal@rpgtools.co';
 
 const SIGN_OFF = '— Scvm Rack';
@@ -124,7 +130,12 @@ export function reportDecision(locale: MailLocale, input: ReportDecisionInput): 
 
 export function statementOfReasons(locale: MailLocale, input: StatementOfReasonsInput): RenderedMail {
   const c = copy[locale];
-  return render(c.reasonsSubject(input.className), [
+  const termsBase = process.env.APP_BASE_URL || 'https://scvmrack.rpgtools.co';
+  const termsLinks = [
+    { label: locale === 'pl' ? 'Zasady moderacji' : 'Moderation terms', url: new URL('/terms#moderation', termsBase).toString() },
+    { label: locale === 'pl' ? 'Odwołania' : 'Disputes', url: new URL('/terms#disputes', termsBase).toString() },
+  ];
+  const mail = render(c.reasonsSubject(input.className), [
     c.measure[input.measure](input.className),
     c.facts(input.followedNotice),
     c.found(input.explanation),
@@ -134,6 +145,11 @@ export function statementOfReasons(locale: MailLocale, input: StatementOfReasons
     ...(input.reportId ? [c.reference(input.reportId)] : []),
     SIGN_OFF,
   ]);
+  return {
+    ...mail,
+    text: `${mail.text}\n\n${termsLinks.map(({ label, url }) => `${label}: ${url}`).join('\n')}`,
+    html: `${mail.html}\n${termsLinks.map(({ label, url }) => `<p><a href="${escapeHtml(url)}">${escapeHtml(label)}</a></p>`).join('\n')}`,
+  };
 }
 
 /** Internal copy for the appeal inbox, always in English; replying reaches the author. */
@@ -149,6 +165,20 @@ export function disputeCopy(input: DisputeCopyInput): RenderedMail {
     ],
     input.ownerEmail,
   );
+}
+
+/** Gives public-class authors the binding English notice and a Polish courtesy copy. */
+export function termsChangeNotice(input: TermsChangeInput): RenderedMail {
+  const termsUrl = new URL('/terms', process.env.APP_BASE_URL || 'https://scvmrack.rpgtools.co').toString();
+  return render(`Scvm Rack terms change on ${input.effectiveDate}`, [
+    `We updated the terms on ${input.date}. The change takes effect on ${input.effectiveDate}, at least 14 days after this notice.`,
+    input.summary.en,
+    `Read the binding English terms: ${termsUrl}`,
+    `Polski tekst pomocniczy: Zmieniliśmy regulamin ${input.date}. Zmiana wejdzie w życie ${input.effectiveDate}.`,
+    input.summary.pl,
+    `Regulamin po polsku: ${termsUrl}`,
+    SIGN_OFF,
+  ]);
 }
 
 function render(subject: string, paragraphs: string[], replyTo?: string): RenderedMail {

@@ -49,6 +49,7 @@ const title = () => page.getByRole("heading", { level: 2 });
 describe("ClassCreator", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    localStorage.clear();
   });
 
   it("walks the steps with named Back and Next buttons, and Alt+arrows", async () => {
@@ -439,9 +440,8 @@ describe("ClassCreator", () => {
     await expect
       .element(page.getByLabelText("Name", { exact: true }))
       .toHaveValue("Reliquary Flail");
-    await expect
-      .element(page.getByLabelText("Grants an item"))
-      .not.toHaveValue("");
+    await expect.element(page.getByText("2d6 · melee")).toBeVisible();
+    await expect.element(page.getByRole("button", { name: "Edit stats" })).toBeVisible();
     await expect
       .element(page.getByText("Class Items waiting for an ability"))
       .not.toBeInTheDocument();
@@ -475,6 +475,36 @@ describe("ClassCreator", () => {
     await expect
       .element(page.getByText("Temporary status effects"))
       .toBeVisible();
+  });
+
+  it("undoes one ability grant in one step", async () => {
+    const flail = {
+      ...blankClassItem("weapon"),
+      ref: "new:flail",
+      name: { en: "Reliquary Flail", pl: "" },
+    };
+    renderCreator({
+      ...complete(),
+      items: [flail],
+      abilities: [{
+        random: false,
+        name: { en: "Bone-Reader", pl: "" },
+        text: { en: "Ask a skull.", pl: "" },
+        modifiers: [],
+        grantItem: null,
+        grantPet: null,
+      }],
+    });
+    await userEvent.click(page.getByRole("button", { name: /Abilities/ }).first());
+    await userEvent.click(page.getByRole("button", { name: /Bone-Reader/ }));
+
+    await userEvent.click(page.getByRole("combobox", { name: "Grants an item" }));
+    await expect.element(page.getByRole("option", { name: "Reliquary Flail" })).toBeVisible();
+    await userEvent.keyboard("{ArrowDown}{Enter}");
+    await expect.element(page.getByRole("button", { name: "Edit stats" })).toBeVisible();
+
+    await userEvent.click(page.getByRole("button", { name: /Undo/ }));
+    await expect.element(page.getByRole("button", { name: "Edit stats" })).not.toBeInTheDocument();
   });
 
   it("lists waiting items on Abilities and blocks forging into a taken slot, naming the item", async () => {

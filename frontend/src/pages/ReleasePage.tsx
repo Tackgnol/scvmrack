@@ -40,8 +40,10 @@ const buildReleaseNotes = (t: TFunction): ReleaseNote[] => {
             type: 'minor',
             changes: [
                 t('release.v070.customClasses', 'Forge Custom Classes with your own rules, items, abilities, reference tables, and Getting Better settings'),
+                t('release.v070.omenDice', 'Book Class Omen rolls now match the printed book: Esoteric Hermit and Heretical Priest use d4; other Book Classes use d2'),
                 t('release.v070.versions', 'Saving changes keeps existing scvm on their original class rules and creates a new version for future rolls'),
                 t('release.v070.partyPools', 'Party Class Pools let a GM choose the Book and Custom Classes available at their table and in Owlbear'),
+                t('release.v070.gmOverview', 'Everyone can preview the GM dashboard; guests keep their scvm when they sign up to run a warband'),
                 t('release.v070.sharing', 'Publish a class for other GMs, with clear creator attribution and a report link for public content'),
                 t('release.v070.moderation', 'Reports receive human review; authors receive takedown reasons and can dispute a decision in the app or by email'),
                 t('release.v070.legal', 'Terms, contact, privacy, and report pages explain the rules and ways to reach the project'),

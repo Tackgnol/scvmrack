@@ -145,7 +145,15 @@ export const classKeys = {
   detail: (id: number) => ["classes", "detail", id] as const,
   drafts: () => ["classes", "drafts"] as const,
   draft: (id: number) => ["classes", "drafts", id] as const,
+  creationBan: () => ["classes", "creation-ban"] as const,
 };
+
+export async function getMyCreationBan(): Promise<{ banned: boolean }> {
+  return unwrapApiResult(
+    await classClient.GET<{ banned: boolean }>("/api/classes/creation-ban"),
+    "Failed to load class creation status",
+  );
+}
 
 export async function listMyClasses(
   locale: string,

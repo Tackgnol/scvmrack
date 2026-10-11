@@ -151,7 +151,8 @@ Pentested with Shannon AI (2026-03-23). All findings remediated or accepted.
 | Claim signatures | Shared-auth HMAC claim flow | Verified |
 | Swagger/OpenAPI | Disabled in production (`NODE_ENV=production`) | Verified |
 | Dockerfile | Runs as `node` user, not root | Verified |
-| OBR room access | Room-scoped reads are gated by the **(roomId, characterId) binding tables** (`ObrPlayerCharacterBinding`/`ObrTokenCharacterBinding`): `GET /api/obr/rooms/:roomId/cards` returns table-visible cards only for bound ids; binding writes require a session and owner-or-already-in-room. **Accepted room-trust residual (2026-07-01):** the unguessable OBR room id is a capability — anyone holding it can list bindings/bound cards, manage that room's enemy board (`/api/parties/by-room/:roomId/*`), and read the room party roster via `POST /api/parties/promote`. The party **invite token stays owner-only** (non-owners get a token-less view); Party Class Pool content is readable to room holders; a signed-in GM can claim a system-owned (`system:obr-room`) room party; party attach/detach is owner-only. | Accepted |
+| OBR room access | Room-scoped reads are gated by the **(roomId, characterId) binding tables** (`ObrPlayerCharacterBinding`/`ObrTokenCharacterBinding`): `GET /api/obr/rooms/:roomId/cards` returns table-visible cards only for bound ids; binding writes require a session and owner-or-already-in-room. **Accepted room-trust residual (2026-07-01):** the unguessable OBR room id is a capability — anyone holding it can list bindings/bound cards, manage that room's enemy board (`/api/parties/by-room/:roomId/*`), read the room party roster via `POST /api/parties/promote`, and read that party's Party Class Pool (the Roll popover's class picker). Changing the pool still needs the owning GM; an unclaimed `system:obr-room` party rolls the read-only default pool. The party **invite token stays owner-only** (non-owners get a token-less view); a signed-in GM can claim a system-owned room party; party attach/detach is owner-only. | Accepted |
+| Custom Class content | Only the owning signed-in GM may create, edit, publish, or change visibility of a Custom Class; public classes are readable without a session. Takedown blocks saving and publishing and removes the lineage from party pools. The public report flow implements DSA notice-and-action handling: signed-out notices enter human review, serious categories are flagged, and authors receive a statement of reasons on takedown. Moderation decisions are appended to a log; resolved reports have reporter details anonymized after two years. Public reporting and moderation routes use per-visitor `clientIp` rate limits. | Implemented; SES delivery requires production configuration |
 
 ### Security Considerations When Modifying
 - **Never commit secrets** to version control (`.env` files are in `.gitignore`)
@@ -168,7 +169,7 @@ The project includes scripts to reapply database schema:
 
 - `.env` - Development configuration (never commit to git)
 - Required backend: `DATABASE_URL`, `BETTER_AUTH_SECRET`, `AUTH_BASE_URL`, `APP_BASE_URL`, `CLIENT_ORIGIN`, `LOGTO_ENDPOINT`, `LOGTO_APP_ID`, `LOGTO_APP_SECRET`, `LOGTO_REDIRECT_URI`, `LOGTO_POST_LOGOUT_REDIRECT_URI`
-- Optional backend: `DATABASE_USER`, `DATABASE_HOST`, `DATABASE_NAME`, `DATABASE_PASSWORD`, `DATABASE_PORT`, `CLIENT_GATEWAY`, `LOGTO_RESOURCE`, `GLITCHTIP_DSN`, `PARTY_MAX_MEMBERS` (party member cap; default 10), `CUSTOM_CLASS_MAX_PER_GM` (class cap; default 50), `CUSTOM_CLASS_DAILY_PUBLISH_LIMIT` (new public-class cap; default 5; all read once at startup)
+- Optional backend: `DATABASE_USER`, `DATABASE_HOST`, `DATABASE_NAME`, `DATABASE_PASSWORD`, `DATABASE_PORT`, `CLIENT_GATEWAY`, `LOGTO_RESOURCE`, `GLITCHTIP_DSN`, `PARTY_MAX_MEMBERS` (party member cap; default 10), `CUSTOM_CLASS_MAX_PER_GM` (class cap; default 50), `CUSTOM_CLASS_DAILY_PUBLISH_LIMIT` (new public-class cap; default 5), `MODERATION_ADMIN_USER_IDS` (comma-separated signed-in account IDs allowed to moderate), `SES_REGION`, `SES_ACCESS_KEY_ID`, `SES_SECRET_ACCESS_KEY` (all three required for moderation email delivery)
 - Required frontend build: `VITE_BACKEND_URL`, `VITE_LOGTO_ENDPOINT`
 - Optional frontend build: `VITE_SITE_URL`, `VITE_GLITCHTIP_DSN`, `VITE_ALLOWED_HOSTS`, `VITE_GA_MEASUREMENT_ID` (public GA4 ID; baked into the bundle at build time — GA stays dormant if unset)
 - Production uses separate GlitchTip DSNs: `GLITCHTIP_DSN` for backend and `VITE_GLITCHTIP_DSN` for frontend.
@@ -187,6 +188,8 @@ When cutting a release (any version bump), update **all** of these in the same c
 3. Add a card to `ReleasePage.tsx` with `release.v<xyz>.*` keys, and add those keys to **both** `frontend/src/i18n/en.json` and `pl.json` (keep en/pl in sync).
 4. Tag the release commit `v<version>`.
 
+For a significant Terms or Privacy change, add a dated entry to `frontend/src/legal/legalNotices.ts` with an effective date at least 14 days later, and update the matching legal copy date. For Terms changes, preview the public-class GM audience with `node --import tsx scripts/send-terms-notice.ts` from `backend/`; after checking SES and the count, send once with `--send`. A partial SES failure can duplicate earlier messages on retry, so review the send log before retrying. No notice is active for the initial 0.7.0 copy.
+
 ## Recommended Skills
 
 When working on this codebase, use these skills for best results:
@@ -195,7 +198,6 @@ When working on this codebase, use these skills for best results:
 - **`shannon`** — to run pentests against staging before releases
 - **`postgresql`** — for database schema, functions, or raw SQL query changes
 
-<<<<<<< Updated upstream
 ## Agent skills
 
 ### Issue tracker
@@ -209,7 +211,7 @@ Default five-role vocabulary (`needs-triage`, `needs-info`, `ready-for-agent`, `
 ### Domain docs
 
 Single-context: one root `CONTEXT.md` + `docs/adr/`, created lazily. See `docs/agents/domain.md`.
-=======
+
 ## Universal RPG-Tools Standard
 
 Baseline rules shared by every RPG-Tools app, copied from `WebstormProjects/AGENTS.md` (the source of truth; re-sync from there rather than editing here). Where this repo deliberately differs, it is listed under **Known deviations** and that entry wins for this repo. Entry numbers (`STD-NNN`) are stable.
@@ -422,5 +424,4 @@ Current choices that differ from the baseline. They are legacy, not precedent: l
 - **STD-003 (UI primitives):** the UI is MUI with a custom Mörk Borg theme, not an unstyled library such as React Aria.
 - **STD-003 / STD-004 (structure):** `frontend/src/components/` is flat and not organised by atomic level or per-component folders.
 - **STD-007 (validation):** backend request/response validation uses Fastify JSON schemas (`backend/src/schemas/`), not Zod.
-- **STD-009:** the React Doctor score baseline is not recorded yet. Run `npm run doctor` in `frontend/` and note the score here before the next frontend change.
->>>>>>> Stashed changes
+- **STD-009:** the measured working-tree React Doctor baseline is **61** (2026-10-09), using `npm run doctor -- --score --yes --no-parallel` in `frontend/`. The legal handoff follow-up kept it at 61. Preserve or improve this score; the target remains 80 or higher.

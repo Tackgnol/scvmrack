@@ -309,6 +309,7 @@ enum ModerationReportStatus {
   dismissed
   taken_down
   content_removed
+  restored
 
   @@map("moderation_report_status")
 }
@@ -397,7 +398,8 @@ model ModerationDispute {
 }
 model ModerationLog {
   id          String   @id @default(uuid()) @db.Uuid
-  classId     Int      @map("class_id")
+  classId     Int?     @map("class_id")
+  targetUserId String? @map("target_user_id")
   reportId    String?  @map("report_id") @db.Uuid
   actorUserId String?  @map("actor_user_id")
   action      String   @db.VarChar(40)
@@ -405,12 +407,21 @@ model ModerationLog {
   evidence    Json?
   createdAt   DateTime @default(now()) @map("created_at")
 
-  class  Class             @relation(fields: [classId], references: [id], onDelete: Restrict)
+  class  Class?            @relation(fields: [classId], references: [id], onDelete: Restrict)
   report ModerationReport? @relation(fields: [reportId], references: [id], onDelete: SetNull)
 
   @@index([classId, createdAt])
   @@index([reportId])
+  @@index([targetUserId, createdAt])
   @@map("moderation_log")
+}
+model ClassCreationBan {
+  userId      String   @id @map("user_id")
+  reason      String   @db.VarChar(4000)
+  actorUserId String   @map("actor_user_id")
+  bannedAt    DateTime @default(now()) @map("banned_at")
+
+  @@map("class_creation_bans")
 }
 /// An unvalidated, private Custom Class work-in-progress. Drafts never feed class rows or pools.
 model ClassDraftRecord {

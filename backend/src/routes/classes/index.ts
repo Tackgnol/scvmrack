@@ -22,6 +22,7 @@ import {
 import { sendServiceError } from '../../errors.js';
 import { createCustomClassService } from '../../services/custom-class-service.js';
 import { createModerationService } from '../../services/moderation-service.js';
+import { createCreationBanService } from '../../services/creation-ban-service.js';
 
 const saveLimit = {
   rateLimit: {
@@ -42,6 +43,22 @@ const classes: FastifyPluginAsync = async (fastify): Promise<void> => {
   const service = (request: {
     log: Parameters<typeof createCustomClassService>[0];
   }) => createCustomClassService(request.log);
+
+  app.get('/creation-ban', {
+    schema: {
+      description: 'Read your Custom Class creation restriction',
+      tags: ['classes'],
+      response: {
+        200: { type: 'object', required: ['banned'], properties: { banned: { type: 'boolean' } } },
+        401: ErrorSchema,
+        500: ErrorSchema,
+      },
+    },
+  }, async (request, reply) => {
+    const result = await createCreationBanService(request.log).own({ session: request.appSession });
+    if (!result.ok) return sendServiceError(reply, request, result.error);
+    return reply.send(result.value);
+  });
 
   // GET /api/classes/mine - the GM's own Custom Classes, newest first
   app.get(

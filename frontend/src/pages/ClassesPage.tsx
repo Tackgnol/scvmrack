@@ -402,7 +402,7 @@ export function ClassesPage() {
                   "classes.publishRights",
                   "I made this class or have the right to share it.",
                 )}{" "}
-                <Link to="/terms">{t("footer.terms", "Terms")}</Link>
+                <Link to="/terms" hash="publishing">{t("footer.terms", "Terms")}</Link>
               </>
             }
           />

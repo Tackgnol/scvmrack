@@ -19,6 +19,7 @@ import {
   type OwnClassSummary,
 } from '../repositories/custom-class-repository.js';
 import { catalogRepository } from '../repositories/catalog-repository.js';
+import { creationBanRepository } from '../repositories/creation-ban-repository.js';
 import {
   fail,
   ok,
@@ -71,6 +72,7 @@ function nameTaken(draft: ClassDraft) {
 }
 
 const draftNotYours = () => notFound('DRAFT_NOT_FOUND', 'Draft not found');
+const creationBanned = () => apiError(403, 'CLASS_CREATION_BANNED', 'You cannot create new Custom Classes while a moderation restriction is active. Your existing classes remain available.');
 
 function staleDraft() {
   return apiError(
@@ -214,6 +216,9 @@ export function createCustomClassService(log: ServiceLogger) {
       if (!isGm(input.session)) return fail(unauthorized());
       const ownerUserId = sessionUserId(input.session)!;
       try {
+        if (input.classId === null && input.id === undefined && await creationBanRepository.findActive(ownerUserId)) {
+          return fail(creationBanned());
+        }
         if (input.classId !== null) {
           const cls = await customClassRepository.findWithText(input.classId);
           if (!cls || cls.ownerUserId !== ownerUserId) return fail(notYours());
@@ -321,12 +326,13 @@ export function createCustomClassService(log: ServiceLogger) {
     }): Promise<ServiceResult<SavedClass>> {
       if (!isGm(input.session)) return fail(unauthorized());
       const ownerUserId = sessionUserId(input.session)!;
-      const problems = [
-        ...classDraftProblems(input.draft),
-        ...(await catalogGrantProblems(input.draft)),
-      ];
-      if (problems.length > 0) return fail(draftInvalid(problems));
       try {
+        if (await creationBanRepository.findActive(ownerUserId)) return fail(creationBanned());
+        const problems = [
+          ...classDraftProblems(input.draft),
+          ...(await catalogGrantProblems(input.draft)),
+        ];
+        if (problems.length > 0) return fail(draftInvalid(problems));
         // ponytail: count-then-insert; two saves in the same instant can overshoot the cap by one.
         if (
           (await customClassRepository.countOwnedLineages(ownerUserId)) >=

@@ -416,4 +416,4 @@ Current choices that differ from the baseline. They are legacy, not precedent: l
 - **STD-003 (UI primitives):** the UI is MUI with a custom Mörk Borg theme, not an unstyled library such as React Aria.
 - **STD-003 / STD-004 (structure):** `frontend/src/components/` is flat and not organised by atomic level or per-component folders.
 - **STD-007 (validation):** backend request/response validation uses Fastify JSON schemas (`backend/src/schemas/`), not Zod.
-- **STD-009:** the React Doctor score baseline is not recorded yet. Run `npm run doctor` in `frontend/` and note the score here before the next frontend change.
+- **STD-009:** the measured working-tree React Doctor baseline is **61** (2026-10-09), using `npm run doctor -- --score --yes --no-parallel` in `frontend/`. The legal handoff follow-up kept it at 61. Preserve or improve this score; the target remains 80 or higher.

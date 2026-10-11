@@ -5,6 +5,21 @@ import { blankClassDraft, type ClassDraft } from '../../src/lib/class-draft.ts';
 
 const GM = { user: { id: 'gm-1', isAnonymous: false } };
 const GUEST = { user: { id: 'guest-1', isAnonymous: true } };
+let creationBanned = false;
+
+mock.module('../../src/repositories/creation-ban-repository.js', {
+  namedExports: {
+    creationBanRepository: {
+      findActive: async () => creationBanned ? { reason: 'Repeated removals', bannedAt: new Date() } : null,
+    },
+  },
+});
+mock.module('../../src/lib/draft-seeds.js', {
+  namedExports: {
+    randomSectionSeeds: () => ({}),
+    seededRollerFor: () => ({}),
+  },
+});
 
 const repo = {
   owned: 0,
@@ -53,6 +68,7 @@ mock.module('../../src/repositories/custom-class-repository.js', {
       },
       createVersion: async (id: number, draft: ClassDraft) => {
         repo.versioned.push({ id, draft });
+        if (repo.found) repo.found = { ...repo.found, id: 8, version: repo.found.version + 1, playingCount: 0, draft };
         return 8;
       },
       findWithText: async (id: number) =>
@@ -149,6 +165,7 @@ const ready = (): ClassDraft => ({
 });
 
 beforeEach(() => {
+  creationBanned = false;
   repo.owned = 0;
   repo.found = null;
   repo.createThrows = null;
@@ -172,6 +189,34 @@ test('a GM saves a complete class as their own', async () => {
   assert.equal(result.ok && result.value.id, 42);
   assert.equal(result.ok && result.value.draft.name.en, 'Bog Witch');
   assert.equal(repo.created[0].owner, 'gm-1');
+});
+
+test('a creation ban rejects new drafts and saved classes but keeps owned edits and publishing', async () => {
+  repo.found = {
+    id: 7, lineageId: 'l', ownerUserId: 'gm-1', version: 1,
+    status: 'active', takenDownAt: null, isLatest: true, playingCount: 0, draft: ready(),
+  };
+  const started = await service.saveDraft({ session: GM, classId: null, draft: ready() });
+  assert.equal(started.ok, true);
+  creationBanned = true;
+  const newDraft = await service.saveDraft({ session: GM, classId: null, draft: ready() });
+  const newClass = await service.create({ session: GM, draft: ready() });
+  assert.equal(!newDraft.ok && newDraft.error.code, 'CLASS_CREATION_BANNED');
+  assert.equal(!newClass.ok && newClass.error.code, 'CLASS_CREATION_BANNED');
+  assert.equal(repo.drafts.length, 1);
+  assert.equal(repo.created.length, 0);
+
+  const unfinished = await service.saveDraft({ session: GM, id: 1, classId: null, draft: ready(), revision: 1 });
+  assert.equal(unfinished.ok, true);
+  const existingDraft = await service.saveDraft({ session: GM, classId: 7, draft: ready() });
+  const edited = await service.update({ session: GM, id: 7, draft: ready() });
+  const published = await service.setVisibility({ session: GM, id: 7, visibility: 'public' });
+  assert.equal(existingDraft.ok, true);
+  assert.equal(edited.ok, true);
+  assert.equal(published.ok, true);
+
+  creationBanned = false;
+  assert.equal((await service.create({ session: GM, draft: ready() })).ok, true);
 });
 
 test('guests and signed-out visitors cannot forge classes', async () => {

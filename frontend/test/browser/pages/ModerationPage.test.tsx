@@ -1,11 +1,12 @@
 import { render } from "vitest-browser-react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { page } from "vitest/browser";
+import { userEvent } from "vitest/browser";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { AnchorHTMLAttributes, ReactNode } from "react";
 import BrowserTestProvider from "../BrowserTestProvider";
 import { ModerationPage } from "@/pages/ModerationPage";
-import { listOpenModerationReports } from "@/api/moderation";
+import { banClassCreation, getCreationBan, listOpenModerationReports, unbanClassCreation } from "@/api/moderation";
 
 type MockLinkProps = {
   children: ReactNode;
@@ -18,6 +19,9 @@ vi.mock("@tanstack/react-router", () => ({
 }));
 vi.mock("@/api/moderation", () => ({
   listOpenModerationReports: vi.fn(),
+  getCreationBan: vi.fn(),
+  banClassCreation: vi.fn(),
+  unbanClassCreation: vi.fn(),
   dismissModerationReport: vi.fn(),
   takeDownModerationReport: vi.fn(),
   removeModerationContent: vi.fn(),
@@ -44,10 +48,15 @@ describe("ModerationPage", () => {
     vi.mocked(listOpenModerationReports).mockResolvedValue([
       {
         lineageId: "lineage-1",
+        ownerUserId: "gm-1",
         latest: { id: 12, lineageId: "lineage-1", name: "Bog Witch", version: 2 },
         versions: [
           { id: 12, lineageId: "lineage-1", name: "Bog Witch", version: 2 },
           { id: 9, lineageId: "lineage-1", name: "Bog Witch", version: 1 },
+        ],
+        removalHistory: [
+          { id: "log-2", className: "Bog Witch", date: "2026-10-09T12:00:00.000Z", reason: "Repeated copying", restored: false },
+          { id: "log-1", className: "Bog Witch", date: "2026-10-07T12:00:00.000Z", reason: "Copied text", restored: true },
         ],
         reports: [
           {
@@ -91,5 +100,44 @@ describe("ModerationPage", () => {
     await expect.element(page.getByText("The latest version needs review too.")).toBeVisible();
     await expect.element(page.getByRole("link", { name: /Preview latest version.*Version 2/ })).toHaveAttribute("href", "/classes/12");
     await expect.element(page.getByRole("link", { name: "Version 1" })).toHaveAttribute("href", "/classes/9");
+    await expect.element(page.getByText("GM removal decisions: 2")).toBeVisible();
+    await userEvent.click(page.getByText("GM removal decisions: 2"));
+    await expect.element(page.getByText("Repeated copying")).toBeVisible();
+    await expect.element(page.getByText("Copied text")).toBeVisible();
+    await expect.element(page.getByText(/Bog Witch.*Not restored/)).toBeVisible();
+    await expect.element(page.getByText(/Bog Witch.*Restored/)).toBeVisible();
+  });
+
+  it("lets an administrator look up a GM and record a creation ban", async () => {
+    vi.mocked(listOpenModerationReports).mockResolvedValue([]);
+    vi.mocked(getCreationBan).mockResolvedValue({ userId: "gm-1", active: null, history: [] });
+    vi.mocked(banClassCreation).mockResolvedValue({ banned: true });
+
+    await renderPage();
+    await userEvent.fill(page.getByRole("textbox", { name: "GM user ID" }), "gm-1");
+    await userEvent.click(page.getByRole("button", { name: "Look up" }));
+    await expect.element(page.getByText("Creation allowed")).toBeVisible();
+    await userEvent.fill(page.getByRole("textbox", { name: "Decision reason" }), "Repeated removals");
+    await userEvent.click(page.getByRole("button", { name: "Ban class creation" }));
+    await expect.poll(() => vi.mocked(banClassCreation)).toHaveBeenCalledWith("gm-1", "Repeated removals");
+  });
+
+  it("shows prior ban decisions and allows lifting an active ban", async () => {
+    vi.mocked(listOpenModerationReports).mockResolvedValue([]);
+    vi.mocked(getCreationBan).mockResolvedValue({
+      userId: "gm-1",
+      active: { reason: "Repeated removals", bannedAt: "2026-10-10T12:00:00.000Z" },
+      history: [{ id: "log-1", action: "class_creation_banned", actorUserId: "admin-1", reason: "Repeated removals", date: "2026-10-10T12:00:00.000Z" }],
+    });
+    vi.mocked(unbanClassCreation).mockResolvedValue({ banned: false });
+
+    await renderPage();
+    await userEvent.fill(page.getByRole("textbox", { name: "GM user ID" }), "gm-1");
+    await userEvent.click(page.getByRole("button", { name: "Look up" }));
+    await expect.element(page.getByText(/Creation banned.*Repeated removals/)).toBeVisible();
+    await expect.element(page.getByText("By admin-1")).toBeVisible();
+    await userEvent.fill(page.getByRole("textbox", { name: "Decision reason" }), "Appeal upheld");
+    await userEvent.click(page.getByRole("button", { name: "Lift creation ban" }));
+    await expect.poll(() => vi.mocked(unbanClassCreation)).toHaveBeenCalledWith("gm-1", "Appeal upheld");
   });
 });

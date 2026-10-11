@@ -56,7 +56,7 @@ export function ObrOpenPage() {
             return;
         }
 
-        if (forge && user && !isAnonymous) {
+        if (forge && roomId && playerId && user && !isAnonymous) {
             setMismatch({ token, roomId, playerId });
             return;
         }

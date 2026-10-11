@@ -72,7 +72,6 @@ type Fixture = {
   classes: ClassRow[];
   translations: TranslationRow[];
   classAbilityModifiers: ClassAbilityModifierRow[];
-  abilityOrder?: Array<{ key: string; position: number | null; id: number }>;
   abilityTables?: AbilityTable[];
 };
 
@@ -287,8 +286,6 @@ const catalogRepositoryMock = {
     fixture.translations.filter((row) => row.locale === locale && keys.includes(row.key)),
   findAbilityTables: async (keys: string[]) =>
     (fixture.abilityTables ?? []).filter((table) => keys.includes(table.abilityKey)),
-  findAbilityOrder: async (keys: string[]) =>
-    (fixture.abilityOrder ?? []).filter((row) => keys.includes(row.key)),
   findClassAbilityModifiers: async (classId: number, abilityKeys: string[]) =>
     fixture.classAbilityModifiers.filter(
       (row) => row.classId === classId && abilityKeys.includes(row.abilityKey)
@@ -561,16 +558,12 @@ test("getCharacterFull does not fall back for a class written in the reader's lo
   assert.equal(result.origin, 'origin.one');
 });
 
-test('getCharacterFull lists abilities in the class order, with entries outside it last', async () => {
+test('getCharacterFull preserves the saved order of existing abilities', async () => {
   const next = baseFixture();
   next.characters[0] = {
     ...next.characters[0],
     abilities: [{ key: 'abilities.b' }, { custom: 'loose-note' }, { key: 'abilities.a' }],
   };
-  next.abilityOrder = [
-    { key: 'abilities.a', position: 1, id: 20 },
-    { key: 'abilities.b', position: 2, id: 10 },
-  ];
   resetFixture(next);
 
   const result = await getCharacterFull('character-1', 'en');
@@ -578,7 +571,7 @@ test('getCharacterFull lists abilities in the class order, with entries outside 
   assert.ok(result);
   assert.deepEqual(
     (result.abilities as Array<Record<string, unknown>>).map((ability) => ability.key ?? ability.custom),
-    ['abilities.a', 'abilities.b', 'loose-note'],
+    ['abilities.b', 'loose-note', 'abilities.a'],
   );
 });
 

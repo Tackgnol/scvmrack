@@ -1,7 +1,7 @@
 import { ClassCreator } from "@/components/organisms/class-creator/ClassCreator/ClassCreator";
 import { SavedClassCreator } from "@/components/organisms/class-creator/SavedClassCreator/SavedClassCreator";
 import { blankDraft } from "@/components/organisms/class-creator/classCreator.utils";
-import { classKeys, getClassDraft } from "@/api/classes";
+import { classKeys, getClassDraft, getMyCreationBan } from "@/api/classes";
 import { useAuth } from "@/hooks/useAuth";
 import { CenterRow, Page, Spinner, Stamp, Title } from "@/pages/gmPages.styles";
 import { Seo } from "@/seo/Seo";
@@ -22,6 +22,13 @@ export function ClassCreatorPage() {
     queryFn: () => getClassDraft(draft!),
     enabled: isAuthenticated && draft !== null,
   });
+  const creationBan = useQuery({
+    queryKey: classKeys.creationBan(),
+    queryFn: getMyCreationBan,
+    enabled: isAuthenticated && id === null,
+  });
+  const needsCreationPermission = id === null && (draft === null || draftQuery.data?.classId === null);
+  const canCreate = !needsCreationPermission || (creationBan.isSuccess && !creationBan.data.banned);
 
   return (
     <>
@@ -50,10 +57,19 @@ export function ClassCreatorPage() {
         {isAuthenticated && draft !== null && draftQuery.error && (
           <Alert severity="error">{t("creator.draftLoadFailed", "This draft wouldn't load.")}</Alert>
         )}
-        {isAuthenticated && draft !== null && draftQuery.data && (
+        {isAuthenticated && needsCreationPermission && creationBan.isLoading && (
+          <CenterRow><Spinner /></CenterRow>
+        )}
+        {isAuthenticated && needsCreationPermission && creationBan.error && (
+          <Alert severity="error">{t("creator.creationStatusFailed", "Class creation status couldn't load. Try again later.")}</Alert>
+        )}
+        {isAuthenticated && needsCreationPermission && creationBan.data?.banned && (
+          <Alert severity="warning">{t("creator.creationBanned", "You cannot create new Custom Classes while a moderation restriction is active. Your existing classes remain available.")}</Alert>
+        )}
+        {isAuthenticated && draft !== null && draftQuery.data && canCreate && (
           <ClassCreator classId={draftQuery.data.classId} initialDraft={draftQuery.data.draft} initialDraftRecord={draftQuery.data} />
         )}
-        {isAuthenticated && draft === null && id === null && <ClassCreator classId={null} initialDraft={blankDraft()} />}
+        {isAuthenticated && draft === null && id === null && canCreate && <ClassCreator classId={null} initialDraft={blankDraft()} />}
         {isAuthenticated && draft === null && id !== null && <SavedClassCreator classId={id} />}
       </Page>
     </>

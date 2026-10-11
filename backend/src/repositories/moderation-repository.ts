@@ -66,7 +66,7 @@ async createDispute(classId: number, authorUserId: string, text: string) {
   },
   async listOpenReports() {
     const reports = await prisma.moderationReport.findMany({
-      where: { OR: [{ status: 'open' }, { disputes: { some: {} } }] },
+      where: { OR: [{ status: { in: ['open', 'taken_down', 'content_removed'] } }, { disputes: { some: {} } }] },
       orderBy: { createdAt: 'desc' },
       include: {
         class: {
@@ -75,6 +75,7 @@ async createDispute(classId: number, authorUserId: string, text: string) {
             name: true,
             lineageId: true,
             version: true,
+            ownerUserId: true,
             owner: { select: { email: true } },
           },
         },
@@ -89,7 +90,21 @@ async createDispute(classId: number, authorUserId: string, text: string) {
           select: { id: true, lineageId: true, name: true, version: true },
           orderBy: [{ lineageId: 'asc' }, { version: 'desc' }],
         });
-    return { reports, versions };
+    const ownerIds = [...new Set(reports.map((report) => report.class.ownerUserId).filter((id): id is string => id !== null))];
+    const removalLogs = ownerIds.length === 0
+      ? []
+      : await prisma.moderationLog.findMany({
+          where: {
+            action: { in: ['taken_down', 'content_removed', 'restored'] },
+            class: { ownerUserId: { in: ownerIds } },
+          },
+          select: {
+            id: true, reportId: true, action: true, reason: true, createdAt: true,
+            class: { select: { name: true, ownerUserId: true } },
+          },
+          orderBy: { createdAt: 'desc' },
+        });
+    return { reports, versions, removalLogs };
   },
   async dismissReport(id: string, actorUserId: string, reason: string) {
     return prisma.$transaction(async (tx) => {
@@ -169,6 +184,11 @@ async createDispute(classId: number, authorUserId: string, text: string) {
     return prisma.$transaction(async (tx) => {
       const report = await tx.moderationReport.findUnique({ where: { id }, include: { class: { select: { lineageId: true } } } });
       if (!report || !['taken_down', 'content_removed'].includes(report.status)) return null;
+      const claimed = await tx.moderationReport.updateMany({
+        where: { id, status: { in: ['taken_down', 'content_removed'] } },
+        data: { status: 'restored' },
+      });
+      if (claimed.count === 0) return null;
       if (report.status === 'content_removed') {
         const log = await tx.moderationLog.findFirst({
           where: { reportId: id, action: 'content_removed' },

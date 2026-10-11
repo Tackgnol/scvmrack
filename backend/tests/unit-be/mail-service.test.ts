@@ -132,6 +132,9 @@ test('the statement of reasons carries what the DSA requires, in Polish too', as
   assert.match(mail.text, /sądu/);
   assert.match(mail.text, /koordynatora do spraw usług cyfrowych/);
   assert.match(mail.text, /report-42/, 'names the report so a dispute by email can cite it');
+  assert.match(mail.text, /\/terms#moderation/);
+  assert.match(mail.text, /\/terms#disputes/);
+  assert.match(mail.html, /<a href="https?:\/\/[^\"]+\/terms#disputes">/);
   assert.equal(mail.replyTo, undefined, 'replies go to the default contact address');
 });
 
@@ -148,6 +151,22 @@ test('a dispute copy goes to the appeal inbox, and replying reaches the class ow
   assert.equal(mail.replyTo, 'author@example.com', 'answering the dispute reaches its owner');
   assert.match(mail.text, /author@example\.com/);
   assert.match(mail.text, /I wrote every word myself\./);
+});
+
+test('a terms-change message contains the bilingual summary and effective date', async () => {
+  await service().sendTermsChange({
+    to: 'author@example.com',
+    date: '2026-10-09',
+    effectiveDate: '2026-10-23',
+    summary: { en: 'New publishing rules.', pl: 'Nowe zasady publikacji.' },
+  });
+
+  const [mail] = state.sent;
+  assert.equal(mail.to, 'author@example.com');
+  assert.match(mail.text, /2026-10-23/);
+  assert.match(mail.text, /New publishing rules/);
+  assert.match(mail.text, /Nowe zasady publikacji/);
+  assert.match(mail.text, /\/terms/);
 });
 
 test('an SES failure becomes a server error result', async () => {

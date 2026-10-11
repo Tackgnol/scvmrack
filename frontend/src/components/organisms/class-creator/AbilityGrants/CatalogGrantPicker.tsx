@@ -43,6 +43,7 @@ export function CatalogGrantPicker({ id, label, pinnedOptions, disabledPinnedKey
     <Autocomplete
       id={id}
       options={options}
+      filterOptions={(items) => items}
       value={null}
       inputValue={inputValue}
       openOnFocus

@@ -1,11 +1,10 @@
-import { loginUrl } from '@/auth';
 import { useAuth } from '@/hooks/useAuth';
 import { useCreateParty, usePartyList } from '@/hooks/usePartyRepository';
 import { appHistory } from '@/router/history';
 import { Seo } from '@/seo/Seo';
-import { customStyles } from '@/theme/morkBorgTheme';
 import { getUserFacingApiErrorMessage } from '@/utils/errorUtils';
 import { PartyCreateForm } from '@/components/organisms/party/PartyCreateForm';
+import { GmLockedOverview } from '@/components/organisms/GmLockedOverview/GmLockedOverview';
 import {
   CenterRow,
   EmptyText,
@@ -61,19 +60,7 @@ export function GmOverviewPage() {
         <Page data-testid="gm-overview">
           <Stamp>{t('gm.stamp', 'Game Master')}</Stamp>
           <Title component="h1">{t('gm.dashboardTitle', 'Party control')}</Title>
-          <Alert data-testid="gm-guest-warning" severity="info" sx={customStyles.alerts.warning}>
-            {isGuest
-              ? t('gm.guestCarriesOver', 'Your guest scvm comes with you when you sign up.')
-              : t('gm.loginRequired', 'Sign in to create and run a warband.')}
-          </Alert>
-          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-            <Button component="a" href={loginUrl('/gm')} variant="contained">
-              {t('gm.signUp', 'Sign up')}
-            </Button>
-            <Button component="a" href={loginUrl('/gm')} variant="outlined">
-              {t('gm.logIn', 'Log in')}
-            </Button>
-          </Box>
+          <GmLockedOverview isGuest={isGuest} />
         </Page>
       </>
     );

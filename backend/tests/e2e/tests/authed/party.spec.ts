@@ -68,7 +68,7 @@ test('a player joins a party via the invite link and the GM sees the member', as
   // timing, and the context is privacy-acknowledged like the default fixture.
   const player = await createTestUser('E2E Joiner');
   const playerChar = await createSeededCharacter(player.userId, { name: 'Player Scvm' });
-  const playerContext = await browser.newContext();
+  const playerContext = await browser.newContext({ storageState: { cookies: [], origins: [] } });
   await prepareActorContext(playerContext, player.sessionCookie);
   try {
     const playerPage = await playerContext.newPage();

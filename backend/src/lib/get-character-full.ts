@@ -15,7 +15,6 @@
  */
 import {
   catalogRepository,
-  type AbilityOrderRow,
   type AbilityTable,
 } from '../repositories/catalog-repository.js';
 import { characterRepository } from '../repositories/character-repository.js';
@@ -23,7 +22,6 @@ import { snakeToCamel } from '../utils.js';
 import { statToModifier } from './ability-modifiers.js';
 import { findTranslationsWithAuthoredFallback } from './class-translations.js';
 import { classAttribution } from './class-attribution.js';
-import { byClassOrder } from './ability-order.js';
 
 // ── Internal types ─────────────────────────────────────────────────────────────
 
@@ -382,14 +380,6 @@ function resolveAbilityTable(table: AbilityTable, translations: TranslationMap) 
   };
 }
 
-/** Sorts a character's abilities as their class lists them; entries outside the catalog keep their order, last. */
-function inClassOrder(abilities: Item[], order: AbilityOrderRow[]): Item[] {
-  const rank = new Map(order.map(row => [row.key, row]));
-  const known = abilities.filter(ab => typeof ab.key === 'string' && rank.has(ab.key));
-  const rest = abilities.filter(ab => !known.includes(ab));
-  return [...known.sort((a, b) => byClassOrder(rank.get(a.key as string)!, rank.get(b.key as string)!)), ...rest];
-}
-
 // ── Encumbrance ──────────────────────────────────────────────────────────────
 // Single source of truth for the encumbrance count, ported from the frontend's
 // `isEncumbranceExemptItem` (useEquipmentSections.ts) so the over-capacity
@@ -744,7 +734,7 @@ export async function hydrateCharacterRow(
     .filter((k): k is string => k !== null);
 
   // 4. Bulk fetch catalog entries + class in parallel
-  const [weapons, armors, equips, pets, cls, abilityOrder, abilityTables] = await Promise.all([
+  const [weapons, armors, equips, pets, cls, abilityTables] = await Promise.all([
     catalogRepository.findWeaponsByKeys(allItemKeys),
     catalogRepository.findArmorsByKeys(allItemKeys),
     catalogRepository.findEquipmentByKeys(allItemKeys),
@@ -752,7 +742,6 @@ export async function hydrateCharacterRow(
     row.classId !== null
       ? catalogRepository.findClassById(row.classId)
       : Promise.resolve(null),
-    catalogRepository.findAbilityOrder(abilityKeys),
     catalogRepository.findAbilityTables(abilityKeys),
   ]);
 
@@ -806,7 +795,7 @@ export async function hydrateCharacterRow(
   // (with an empty item if null) to match the SQL function behavior for JSON null
   // values stored by generate_character.sql.
   const resolvedArmor = resolveEquippedArmor(equippedArmor ?? {}, armorMap, translations);
-  const resolvedAbilities = resolveAbilities(inClassOrder(abilities, abilityOrder), translations, abilityTables);
+  const resolvedAbilities = resolveAbilities(abilities, translations, abilityTables);
 
   // 7. Encumbrance and derived values — counted from the resolved items so the
   // catalog-merged tags + ammoType drive the same exemptions the UI uses.

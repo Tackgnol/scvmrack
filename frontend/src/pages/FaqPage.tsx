@@ -80,11 +80,11 @@ export function FaqPage() {
         },
         {
             question: t('faq.guestVsAccount.q', 'Do I need an account?'),
-            answer: t('faq.guestVsAccount.a', 'No! You can use Scvm Rack as a guest. Your character will be saved for 7 days. If you create an account, your characters are saved permanently and you can access them from any device.'),
+            answer: t('faq.guestVsAccount.a', 'No account needed to start. As a guest, you get one character — generating a new one replaces it. Access depends on your browser session. Sign up (free) to keep multiple characters accessible from any device.'),
         },
         {
             question: t('faq.howToSave.q', 'How do I save my character?'),
-            answer: t('faq.howToSave.a', 'Characters are saved automatically as you make changes. As a guest, your character is stored for 7 days. Sign up for a free account to keep your characters forever.'),
+            answer: t('faq.howToSave.a', 'Characters save automatically as you edit. Your guest character is kept until you delete or replace it, or ask us to remove it. Losing your browser session can prevent access to it. Sign up to access your characters across devices and create more.'),
         },
         {
             question: t('faq.multipleCharacters.q', 'Can I have multiple characters?'),

@@ -6,7 +6,7 @@
 
 - Authenticated GMs can forge, autosave, version, archive, restore, publish, and unpublish Custom Classes
 - Party Class Pools, read-only public class details, authored-language and creator attribution, and character/party rendering support Custom Classes at the table
-- Signed-out reporting, owner appeals by form or email, an allowlisted moderation review page, Terms, Contact, Privacy, and report pages, plus FAQ guidance
+- Signed-out reporting, owner appeals by form or email, an allowlisted moderation review page with GM removal and creation-ban history, Terms, Contact, Privacy, and report pages, plus FAQ guidance
 
 ## Stack
 
@@ -52,9 +52,10 @@
   are CORS-enabled and non-cacheable for Owlbear installs. OBR and the main
   party view share the same warband projection for combat modifier filtering
   and armor DR display.
-- **GM overview** — `/gm` dashboard to create and open parties; party creation
-  keeps the yellow name input legible with black text and validates names at 100
-  characters before submit
+- **GM overview** — `/gm` shows signed-out visitors and guests an indexable,
+  locked preview of party control with sign-up links returning to `/gm`; signed-in
+  GMs can create and open parties. Party creation keeps the yellow name input
+  legible with black text and validates names at 100 characters before submit
 - **Print** — printer-friendly character layout
 - **FAQ** — help content
 - **Release notes** — in-app changelog at `/release`

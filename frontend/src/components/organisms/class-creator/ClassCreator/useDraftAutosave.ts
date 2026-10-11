@@ -9,7 +9,7 @@ import {
 import { getApiErrorCode } from "@/utils/errorUtils";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-export type DraftSaveState = "idle" | "saving" | "saved" | "offline" | "conflict";
+export type DraftSaveState = "idle" | "saving" | "saved" | "offline" | "conflict" | "banned";
 
 export type LocalDraftSnapshot = Pick<StoredClassDraft, "id" | "classId" | "draft" | "revision" | "updatedAt">;
 
@@ -105,6 +105,8 @@ export function useDraftAutosave({ classId, draft, revision, initialDraft, repla
     } else if (getApiErrorCode(result.error) === "DRAFT_STALE") {
       conflict.current = true;
       setState("conflict");
+    } else if (getApiErrorCode(result.error) === "CLASS_CREATION_BANNED") {
+      setState("banned");
     } else {
       setState("offline");
       setRetryAttempt((attempt) => attempt + 1);

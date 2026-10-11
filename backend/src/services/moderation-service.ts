@@ -1,5 +1,5 @@
 import type { ModerationReportReason } from '@prisma/client';
-import { apiError, forbidden, notFound } from '../errors.js';
+import { apiError, notFound } from '../errors.js';
 import { moderationRepository } from '../repositories/moderation-repository.js';
 import { createMailService } from './mail-service.js';
 import { fail, ok, unexpected, type ServiceResult } from './result.js';
@@ -19,6 +19,7 @@ export type PublicModerationReport = {
   locale?: 'en' | 'pl';
 };
 const CSAM = 'child_sexual_abuse_material';
+const hiddenAdminResource = () => fail(notFound('MODERATION_NOT_FOUND', 'Moderation resource not found'));
 
 /** Removes reporter details from reports resolved at least two years ago. */
 export async function anonymizeExpiredModerationReports(now = new Date()) {
@@ -35,6 +36,10 @@ export function createModerationService(log: ModerationLogger) {
     ): Promise<ServiceResult<{ id: string }>> {
       const reporterName = input.reporterName?.trim() || null;
       const reporterEmail = input.reporterEmail?.trim().toLowerCase() || null;
+      const explanation = input.explanation.trim();
+      if (!explanation) {
+        return fail(apiError(400, 'REPORT_EXPLANATION_REQUIRED', 'Explain why you are reporting this class'));
+      }
       if (input.reason !== CSAM && (!reporterName || !reporterEmail)) {
         return fail(
           apiError(
@@ -53,7 +58,7 @@ export function createModerationService(log: ModerationLogger) {
         const report = await moderationRepository.createOrMergeReport({
           classId: cls.id,
           reason: input.reason,
-          explanation: input.explanation.trim(),
+          explanation,
           reporterName,
           reporterEmail,
         });
@@ -115,15 +120,32 @@ async dispute(input: {
       }
     },
     async listOpen(input: { session: AppSession }) {
-      if (!isModerationAdmin(input.session)) return fail(forbidden());
+      if (!isModerationAdmin(input.session)) return hiddenAdminResource();
       try {
-        const { reports, versions } = await moderationRepository.listOpenReports();
+        const { reports, versions, removalLogs } = await moderationRepository.listOpenReports();
         const versionsByLineage = new Map<string, typeof versions>();
         for (const version of versions) {
           const lineageVersions = versionsByLineage.get(version.lineageId) ?? [];
           lineageVersions.push(version);
           versionsByLineage.set(version.lineageId, lineageVersions);
         }
+        const restoredReports = new Set(removalLogs.filter((entry) => entry.action === 'restored').map((entry) => entry.reportId));
+        const historyByOwner = new Map<string, Array<{
+          id: string; className: string; date: string; reason: string | null; restored: boolean;
+        }>>();
+        for (const entry of removalLogs) {
+          if (entry.action === 'restored' || !entry.class?.ownerUserId) continue;
+          const history = historyByOwner.get(entry.class.ownerUserId) ?? [];
+          history.push({
+            id: entry.id,
+            className: entry.class.name,
+            date: entry.createdAt.toISOString(),
+            reason: entry.reason,
+            restored: entry.reportId !== null && restoredReports.has(entry.reportId),
+          });
+          historyByOwner.set(entry.class.ownerUserId, history);
+        }
+        const ownerByLineage = new Map(reports.map((report) => [report.class.lineageId, report.class.ownerUserId]));
         const reportData = reports.map((report) => ({
           id: report.id,
           classId: report.classId,
@@ -148,8 +170,11 @@ async dispute(input: {
           latest: (typeof versions)[number];
           versions: typeof versions;
           reports: typeof reportData;
+          ownerUserId: string | null;
+          removalHistory: ReturnType<typeof historyByOwner.get> | null;
         }>();
         for (const report of reportData) {
+          const ownerUserId = ownerByLineage.get(report.lineageId);
           const classVersions = versionsByLineage.get(report.lineageId) ?? [{
             id: report.classId,
             lineageId: report.lineageId,
@@ -165,6 +190,8 @@ async dispute(input: {
               latest: classVersions[0],
               versions: classVersions,
               reports: [report],
+              ownerUserId: ownerUserId ?? null,
+              removalHistory: ownerUserId ? historyByOwner.get(ownerUserId) ?? [] : null,
             });
           }
         }
@@ -175,7 +202,7 @@ async dispute(input: {
     },
     async dismiss(input: { session: AppSession; id: string; reason: string }) {
       const actorUserId = sessionUserId(input.session);
-      if (!isModerationAdmin(input.session) || !actorUserId) return fail(forbidden());
+      if (!isModerationAdmin(input.session) || !actorUserId) return hiddenAdminResource();
       const reason = input.reason.trim();
       if (!reason)
         return fail(apiError(400, 'MODERATION_REASON_REQUIRED', 'A reason is required'));
@@ -200,7 +227,7 @@ async dispute(input: {
     },
     async takeDown(input: { session: AppSession; id: string; reason: string }) {
       const actorUserId = sessionUserId(input.session);
-      if (!isModerationAdmin(input.session) || !actorUserId) return fail(forbidden());
+      if (!isModerationAdmin(input.session) || !actorUserId) return hiddenAdminResource();
       const reason = input.reason.trim();
       if (!reason)
         return fail(apiError(400, 'MODERATION_REASON_REQUIRED', 'A reason is required'));
@@ -240,7 +267,7 @@ async dispute(input: {
     },
     async removeContent(input: { session: AppSession; id: string; reason: string }) {
       const actorUserId = sessionUserId(input.session);
-      if (!isModerationAdmin(input.session) || !actorUserId) return fail(forbidden());
+      if (!isModerationAdmin(input.session) || !actorUserId) return hiddenAdminResource();
       const reason = input.reason.trim();
       if (!reason) return fail(apiError(400, 'MODERATION_REASON_REQUIRED', 'A reason is required'));
       try {
@@ -276,7 +303,7 @@ async dispute(input: {
       }
     },    async restore(input: { session: AppSession; id: string; reason: string }) {
       const actorUserId = sessionUserId(input.session);
-      if (!isModerationAdmin(input.session) || !actorUserId) return fail(forbidden());
+      if (!isModerationAdmin(input.session) || !actorUserId) return hiddenAdminResource();
       const reason = input.reason.trim();
       if (!reason) return fail(apiError(400, 'MODERATION_REASON_REQUIRED', 'A reason is required'));
       try {

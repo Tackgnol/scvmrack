@@ -22,6 +22,7 @@ import {
   withSavedKeys,
 } from "../classCreator.utils";
 import {
+  getApiErrorCode,
   getApiErrorStatus,
   getUserFacingApiErrorMessage,
 } from "@/utils/errorUtils";
@@ -230,7 +231,9 @@ export function useClassCreator(
     },
     onError: (error) =>
       setBlocked(
-        getApiErrorStatus(error) === 429
+        getApiErrorCode(error) === "CLASS_CREATION_BANNED"
+          ? t("creator.creationBanned", "You cannot create new Custom Classes while a moderation restriction is active. Your existing classes remain available.")
+          : getApiErrorStatus(error) === 429
           ? t(
               "creator.saveRateLimited",
               "You've saved 10 times this minute. Wait a minute, then save again.",

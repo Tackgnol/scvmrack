@@ -1,6 +1,7 @@
 import { render } from 'vitest-browser-react';
 import { expect, describe, it, vi, beforeEach } from 'vitest';
 import { page, userEvent } from 'vitest/browser';
+import type { AnchorHTMLAttributes, ReactNode } from 'react';
 import { PrivacyNoticeDrawer } from '@/components/organisms/PrivacyNoticeDrawer';
 import BrowserTestProvider from '../BrowserTestProvider';
 import * as GoogleAnalyticsModule from '@/analytics/googleAnalytics';
@@ -9,6 +10,12 @@ import * as PrivacyDrawerBusModule from '@/privacy/privacyDrawerBus';
 
 vi.mock('@/analytics/googleAnalytics', () => ({
     setAnalyticsEnabled: vi.fn(),
+}));
+
+vi.mock('@tanstack/react-router', () => ({
+    Link: ({ children, to, ...props }: { children: ReactNode; to: string } & AnchorHTMLAttributes<HTMLAnchorElement>) => (
+        <a href={to} {...props}>{children}</a>
+    ),
 }));
 
 vi.mock('@/privacy/privacySettings', () => ({
@@ -55,6 +62,9 @@ describe('PrivacyNoticeDrawer Component', () => {
         // We evaluate visibility via the save button
         const saveBtn = page.getByTestId('privacy-drawer-save-button');
         await expect.element(saveBtn).toBeVisible();
+        const privacyLink = page.getByRole('link', { name: 'Read the full privacy notice' });
+        await expect.element(privacyLink).toBeVisible();
+        await expect.element(privacyLink).toHaveAttribute('href', '/privacy');
     });
 
     it('does not render on mount if already acknowledged', async () => {

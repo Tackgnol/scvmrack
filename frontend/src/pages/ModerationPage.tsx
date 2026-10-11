@@ -6,6 +6,7 @@ import {
   takeDownModerationReport,
 } from "@/api/moderation";
 import { Seo } from "@/seo/Seo";
+import { CreationBanPanel } from "@/components/organisms/CreationBanPanel/CreationBanPanel";
 import { getUserFacingApiErrorMessage } from "@/utils/errorUtils";
 import { Alert, Box, Button, Paper, Stack, TextField, Typography } from "@mui/material";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -56,6 +57,7 @@ export function ModerationPage() {
           </Typography>
           <Typography>{t("moderation.intro", "Open reports require a human decision.")}</Typography>
         </Box>
+        <CreationBanPanel />
         {reports.error && (
           <Alert severity="error">
             {getUserFacingApiErrorMessage(reports.error, t, "You cannot load moderation reports.")}
@@ -70,6 +72,7 @@ export function ModerationPage() {
             <Stack spacing={1.5}>
               <Box>
                 <Typography component="h2" variant="h5">{group.latest.name}</Typography>
+                {group.ownerUserId && <Typography variant="body2" sx={{ overflowWrap: "anywhere" }}>{t("moderation.gmUserId", "GM user ID")}: {group.ownerUserId}</Typography>}
                 <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" alignItems="center">
                   <Button component={Link} to={`/classes/${group.latest.id}`} size="small" variant="contained">
                     {t("moderation.previewLatest", "Preview latest version")} · {t("moderation.version", { version: group.latest.version })}
@@ -81,6 +84,21 @@ export function ModerationPage() {
                   ))}
                 </Stack>
               </Box>
+              {group.removalHistory !== null && (
+                <Box component="details" sx={{ borderLeft: 4, borderColor: "warning.main", pl: 2 }}>
+                  <Typography component="summary" sx={{ cursor: "pointer", fontWeight: 700 }}>
+                    {t("moderation.removalHistory", { count: group.removalHistory.length })}
+                  </Typography>
+                  <Box component="ul" sx={{ pl: 2, mb: 0 }}>
+                    {group.removalHistory.map((entry) => (
+                      <Box component="li" key={entry.id} sx={{ mb: 1 }}>
+                        <Typography>{entry.className} · {new Date(entry.date).toLocaleString()} · {t(entry.restored ? "moderation.restored" : "moderation.notRestored")}</Typography>
+                        <Typography sx={{ whiteSpace: "pre-wrap" }}>{entry.reason ?? "—"}</Typography>
+                      </Box>
+                    ))}
+                  </Box>
+                </Box>
+              )}
               <Typography variant="subtitle2">{t("moderation.classVersions", "Class versions")}</Typography>
               {group.reports.map((report) => {
                 const pending = dismiss.isPending || takeDown.isPending || removeContent.isPending || restore.isPending;

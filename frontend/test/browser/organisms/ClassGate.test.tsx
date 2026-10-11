@@ -37,7 +37,7 @@ describe('ClassGate', () => {
     );
 
     await expect.element(page.getByText('Esoteric Hermit')).toBeVisible();
-    expect(fetchClasses).toHaveBeenCalledWith('en', expect.anything(), 'tok-1');
+    expect(fetchClasses).toHaveBeenCalledWith('en', expect.anything(), 'tok-1', undefined);
   });
 
   it('renders a card per class plus Classless and Random', async () => {

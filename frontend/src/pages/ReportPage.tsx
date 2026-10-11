@@ -179,7 +179,7 @@ export function ReportPage() {
                   "report.appeal",
                   "You may challenge the outcome by emailing scvmrack-appeal@rpgtools.co.",
                 )}{" "}
-                <Link to="/terms">{t("nav.terms")}</Link>
+                <Link to="/terms" hash="reporting">{t("nav.terms")}</Link>
               </Typography>
             </Stack>
           </Paper>

@@ -192,6 +192,8 @@ export function ClassCreator({
                   t("creator.draftOffline", "Offline, will retry")}
                 {creator.draftAutosave.state === "conflict" &&
                   t("creator.draftConflict", "Draft changed elsewhere")}
+                {creator.draftAutosave.state === "banned" &&
+                  t("creator.draftBanned", "New class creation restricted")}
               </StepCount>
             )}
           </div>

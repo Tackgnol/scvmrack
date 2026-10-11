@@ -138,6 +138,9 @@ describe("ClassesPage", () => {
 
     await userEvent.click(page.getByRole("button", { name: "Publish" }));
     await expect.element(page.getByText("Publish this class?")).toBeVisible();
+    const termsLink = page.getByRole('link', { name: 'Terms' });
+    await expect.element(termsLink).toBeVisible();
+    await expect.element(termsLink).toHaveAttribute('hash', 'publishing');
     await expect
       .element(page.getByRole("button", { name: "Publish" }).last())
       .toBeDisabled();

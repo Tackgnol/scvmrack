@@ -687,6 +687,96 @@ test('a forged class shows under My classes, joins the pool and a player rolls i
   assert.ok(!JSON.stringify(await search.json()).includes(name));
 });
 
+test('a moderator bans new class creation without blocking existing classes, then lifts the ban', async () => {
+  const admin = await anonymousSession();
+  const gm = await anonymousSession();
+  await withDatabase(async (client) => {
+    await client.query(
+      'UPDATE "user" SET id = $2, name = $3, email = $4, "emailVerified" = true, "isAnonymous" = false WHERE id = $1',
+      [admin.userId, 'integration-admin', 'Moderation admin', 'integration-admin@example.test']
+    );
+    await client.query(
+      'UPDATE "user" SET name = $2, email = $3, "emailVerified" = true, "isAnonymous" = false WHERE id = $1',
+      [gm.userId, 'Creation ban GM', `ban.${Date.now()}@example.test`]
+    );
+  });
+
+  const draft = customClassDraft(`Ban test ${Date.now()}`);
+  const existing = await request('/api/classes', { method: 'POST', json: { draft }, jar: gm.jar, csrf: true });
+  await expectStatus(existing, 201);
+  const saved = (await existing.json()) as { id: number; draft: unknown };
+  const unfinished = await request('/api/classes/drafts', { method: 'POST', json: { classId: null, draft }, jar: gm.jar, csrf: true });
+  await expectStatus(unfinished, 201);
+  const draftId = ((await unfinished.json()) as { id: number }).id;
+
+  const banned = await request(`/api/admin/creation-bans/${gm.userId}`, {
+    method: 'POST', json: { reason: 'Repeated removals' }, jar: admin.jar, csrf: true,
+  });
+  await expectStatus(banned, 200);
+  const own = await request('/api/classes/creation-ban', { jar: gm.jar });
+  await expectStatus(own, 200);
+  assert.deepEqual(await own.json(), { banned: true });
+  const deniedHistory = await request(`/api/admin/creation-bans/${gm.userId}`, { jar: gm.jar });
+  await expectStatus(deniedHistory, 404);
+
+  const newDraft = await request('/api/classes/drafts', { method: 'POST', json: { classId: null, draft }, jar: gm.jar, csrf: true });
+  await expectStatus(newDraft, 403);
+  assert.equal(((await newDraft.json()) as { code: string }).code, 'CLASS_CREATION_BANNED');
+  const newClass = await request('/api/classes', { method: 'POST', json: { draft: customClassDraft(`Blocked ${Date.now()}`) }, jar: gm.jar, csrf: true });
+  await expectStatus(newClass, 403);
+  assert.equal(((await newClass.json()) as { code: string }).code, 'CLASS_CREATION_BANNED');
+  await expectStatus(await request(`/api/classes/drafts/${draftId}`, { method: 'PUT', json: { draft, revision: 1 }, jar: gm.jar, csrf: true }), 200);
+  await expectStatus(await request(`/api/classes/${saved.id}`, { method: 'PUT', json: { draft: saved.draft }, jar: gm.jar, csrf: true }), 200);
+  await expectStatus(await request(`/api/classes/${saved.id}/publish`, { method: 'POST', json: { confirmed: true }, jar: gm.jar, csrf: true }), 200);
+
+  const inspected = await request(`/api/admin/creation-bans/${gm.userId}`, { jar: admin.jar });
+  await expectStatus(inspected, 200);
+  const history = (await inspected.json()) as { active: { reason: string }; history: Array<{ action: string; actorUserId: string; reason: string }> };
+  assert.equal(history.active.reason, 'Repeated removals');
+  assert.deepEqual(history.history.map((entry) => [entry.action, entry.actorUserId, entry.reason]), [
+    ['class_creation_banned', 'integration-admin', 'Repeated removals'],
+  ]);
+
+  await expectStatus(await request(`/api/admin/creation-bans/${gm.userId}`, { method: 'DELETE', json: { reason: 'Appeal upheld' }, jar: admin.jar, csrf: true }), 200);
+  const after = await request(`/api/admin/creation-bans/${gm.userId}`, { jar: admin.jar });
+  await expectStatus(after, 200);
+  assert.deepEqual(((await after.json()) as { history: Array<{ action: string }> }).history.map((entry) => entry.action), [
+    'class_creation_unbanned', 'class_creation_banned',
+  ]);
+  const newAfterUnban = await request('/api/classes', { method: 'POST', json: { draft: customClassDraft(`Unbanned ${Date.now()}`) }, jar: gm.jar, csrf: true });
+  await expectStatus(newAfterUnban, 201);
+
+  const reportIds = await withDatabase(async (client) => {
+    const ids: string[] = [];
+    for (const explanation of ['Earlier report', 'Repeated report', 'New report']) {
+      const result = await client.query(
+        `INSERT INTO moderation_reports (class_id, reason, explanation, reporter_name, reporter_email, good_faith, updated_at)
+         VALUES ($1, 'other', $2, 'Reporter', $3, true, NOW()) RETURNING id`,
+        [saved.id, explanation, `${explanation.replaceAll(' ', '-')}@example.test`]
+      );
+      ids.push(result.rows[0].id as string);
+    }
+    return ids;
+  });
+  await expectStatus(await request(`/api/admin/reports/${reportIds[0]}/take-down`, { method: 'POST', json: { reason: 'Earlier violation' }, jar: admin.jar, csrf: true }), 200);
+  await expectStatus(await request(`/api/admin/reports/${reportIds[0]}/restore`, { method: 'POST', json: { reason: 'Appeal upheld' }, jar: admin.jar, csrf: true }), 200);
+  await expectStatus(await request(`/api/admin/reports/${reportIds[1]}/take-down`, { method: 'POST', json: { reason: 'Repeated violation' }, jar: admin.jar, csrf: true }), 200);
+  await expectStatus(await request('/api/admin/reports', { jar: gm.jar }), 404);
+
+  const queue = await request('/api/admin/reports', { jar: admin.jar });
+  await expectStatus(queue, 200);
+  const groups = (await queue.json()) as Array<{
+    ownerUserId: string | null;
+    removalHistory: Array<{ className: string; date: string; reason: string; restored: boolean }>;
+  }>;
+  const group = groups.find((entry) => entry.ownerUserId === gm.userId);
+  assert.ok(group);
+  assert.equal(group.removalHistory.length, 2);
+  assert.equal(group.removalHistory.find((entry) => entry.reason === 'Earlier violation')?.restored, true);
+  assert.equal(group.removalHistory.find((entry) => entry.reason === 'Repeated violation')?.restored, false);
+  assert.ok(group.removalHistory.every((entry) => entry.className && !Number.isNaN(Date.parse(entry.date))));
+});
+
 test("a guest can't forge a class", async () => {
   const guest = await anonymousSession();
 

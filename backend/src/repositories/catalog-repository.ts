@@ -1,5 +1,4 @@
 import prisma from '../lib/prisma.js';
-import type { AbilityOrder } from '../lib/ability-order.js';
 
 export type PetCatalogRow = {
   key: string;
@@ -49,8 +48,6 @@ export type ClassCatalogRow = {
   ownerName: string | null;
   contentRemovedAt: Date | null;
 };
-
-export type AbilityOrderRow = AbilityOrder & { key: string };
 
 export type AbilityTable = {
   abilityKey: string;
@@ -164,14 +161,6 @@ export const catalogRepository = {
       die: ability.tableDie!,
       rows: ability.tableRows,
     }));
-  },
-
-  findAbilityOrder(keys: string[]): Promise<AbilityOrderRow[]> {
-    if (keys.length === 0) return Promise.resolve([]);
-    return prisma.ability.findMany({
-      where: { key: { in: keys } },
-      select: { key: true, position: true, id: true },
-    });
   },
 
   findClassAbilityModifiers(classId: number, abilityKeys: string[]): Promise<ClassAbilityModifierRow[]> {

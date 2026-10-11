@@ -54,7 +54,7 @@ Owner confirmed the prototype and these proposals, 2026-09-27.
    - no up and down buttons on every row
    - it works on collapsed and open cards and keeps the one-open-card pattern
 3. **What order means downstream**:
-   - One order everywhere: the sheet, the print page, the `/classes/:id` detail page and the test roll list abilities, Class Items and origins in the creator's order.
+   - The `/classes/:id` detail page and test roll list abilities, Class Items and origins in the creator's order. Newly rolled scvm use that class ability order; existing scvm keep their saved ability order on the sheet and print page (owner clarification, 2026-10-10).
    - Random abilities and origins show their numbers, but a scvm still gets them by an even random pick, never by rolling a number (digital rolling needs no mapping).
    - A table row's number is its die result, so moving a row changes which roll gives it; the sheet shows the rolled row.
 4. **Undo**: one undoable change per move; repeated moves of one card by keyboard or menu collapse into one; row moves carry their Class Item link.
@@ -63,4 +63,4 @@ Owner confirmed the prototype and these proposals, 2026-09-27.
    - origins keep `roll` as their order
    - table rows store their die result
    - Save rewrites positions 1…N in its transaction, and each new Class Version (ticket 10) copies them
-   - **Migration**: Book Class abilities get positions with fixed abilities first (by id), then random ones by `roll_value`, which keeps today's sheet order. `roll_value` is dropped once ticket 02's grant columns land. Origins need nothing.
+   - **Migration**: Book Class abilities get positions with fixed abilities first (by id), then random ones by `roll_value`. Existing character sheets retain their saved order regardless of those positions. `roll_value` is dropped once ticket 02's grant columns land. Origins need nothing.

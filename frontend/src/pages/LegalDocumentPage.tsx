@@ -48,6 +48,7 @@ export function LegalDocumentPage({ document }: LegalDocumentPageProps) {
           <Box component="section" key={section.title}>
             <Typography
               component="h2"
+              id={section.id}
               variant="h5"
               sx={{ fontWeight: 800, mb: 1 }}
             >

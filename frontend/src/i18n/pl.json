@@ -911,11 +911,11 @@
     },
     "guestVsAccount": {
       "q": "Czy potrzebuję konta?",
-      "a": "Nie potrzebujesz konta, żeby zacząć. Jako gość masz jedną postać — wygenerowanie nowej zastępuje poprzednią. Postacie są przechowywane 7 dni. Zarejestruj się (za darmo), żeby trzymać dowolną liczbę postaci na stałe, z każdego urządzenia."
+      "a": "Nie potrzebujesz konta, żeby zacząć. Jako gość masz jedną postać — wygenerowanie nowej zastępuje poprzednią. Dostęp zależy od sesji przeglądarki. Zarejestruj się (za darmo), żeby mieć wiele postaci dostępnych z każdego urządzenia."
     },
     "howToSave": {
       "q": "Jak zapisać moją postać?",
-      "a": "Postacie są zapisywane automatycznie. Jako gość twoja jedyna postać jest przechowywana 7 dni. Zarejestruj się, żeby ją zachować na stałe i tworzyć więcej."
+      "a": "Postacie zapisują się automatycznie podczas edycji. Postać gościa przechowujemy, dopóki jej nie usuniesz, nie zastąpisz nową lub nie poprosisz nas o usunięcie. Utrata sesji przeglądarki może uniemożliwić dostęp do niej. Zarejestruj się, żeby mieć dostęp do postaci z różnych urządzeń i tworzyć kolejne."
     },
     "multipleCharacters": {
       "q": "Czy mogę mieć wiele postaci?",
@@ -970,6 +970,13 @@
       "close": "Zamknij"
     }
   },
+  "legalNotice": {
+    "termsChanged": "Regulamin zmienił się {{date}}: co się zmieniło",
+    "privacyChanged": "Informacja o prywatności zmieniła się {{date}}: co się zmieniło",
+    "effective": "Zmiany wejdą w życie {{date}}.",
+    "read": "Przeczytaj informację",
+    "dismiss": "Zamknij"
+  },
   "release": {
     "title": "Historia Zmian",
     "typeMajor": "Duża",
@@ -978,10 +985,12 @@
     "moreUpdates": "Więcej aktualizacji wkrótce. Świat się kończy, ale my dalej dostarczamy.",
     "v070": {
       "customClasses": "Twórz własne Klasy z własnymi zasadami, przedmiotami, zdolnościami, tabelami i ustawieniami Getting Better",
+      "omenDice": "Rzuty na omeny Klas z Księgi odpowiadają podręcznikowi: Hermetyczny pustelnik i Heretycki Kaznodzieja używają k4, a pozostałe Klasy z Księgi k2",
       "versions": "Zapisywanie zmian pozostawia istniejące scvmy przy ich pierwotnych zasadach klasy i tworzy nową wersję dla przyszłych rzutów",
       "partyPools": "Pule Klas Drużyny pozwalają MG wybrać Klasy z Księgi i własne Klasy dostępne przy stole oraz w Owlbear",
+      "gmOverview": "Każdy może obejrzeć ekran MG; goście zachowają swojego scvma po rejestracji do prowadzenia kompanii",
       "sharing": "Opublikuj klasę dla innych MG z jasnym oznaczeniem autora i linkiem do zgłoszenia publicznej treści",
-      "moderation": "Zgłoszenia są sprawdzane przez człowieka; autorzy dostają uzasadnienie zdjęcia treści i mogą zakwestionować decyzję w aplikacji lub e-mailem",
+      "moderation": "Zgłoszenia są sprawdzane przez człowieka; autorzy mogą kwestionować decyzje, a moderatorzy przeglądać wcześniejsze usunięcia i blokować tworzenie nowych klas bez blokowania istniejących",
       "legal": "Strony zasad, kontaktu, prywatności i zgłoszeń wyjaśniają reguły oraz sposoby kontaktu z projektem"
     },
     "v062": {
@@ -1276,6 +1285,9 @@
   "creator": {
     "titleNew": "Wykuj klasę",
     "titleEdit": "Edytuj klasę",
+    "creationBanned": "Nie możesz tworzyć nowych własnych klas, dopóki obowiązuje ograniczenie moderacyjne. Twoje istniejące klasy pozostają dostępne.",
+    "creationStatusFailed": "Nie udało się sprawdzić uprawnień do tworzenia klas. Spróbuj ponownie później.",
+    "draftBanned": "Tworzenie nowych klas zablokowane",
     "untitled": "Klasa bez nazwy",
     "rail": "Kroki kreatora klasy",
     "steps": {
@@ -1664,7 +1676,20 @@
   "moderation": {
     "classVersions": "Wersje klasy",
     "previewLatest": "Podgląd najnowszej wersji",
-    "version": "Wersja {{version}}"
+    "version": "Wersja {{version}}",
+    "removalHistory": "Decyzje o usunięciu klas MG: {{count}}",
+    "restored": "Przywrócona",
+    "notRestored": "Nieprzywrócona",
+    "creationBans": "Blokady tworzenia klas",
+    "gmUserId": "Identyfikator użytkownika MG",
+    "lookUp": "Wyszukaj",
+    "creationBanActive": "Tworzenie zablokowane",
+    "creationBanInactive": "Tworzenie dozwolone",
+    "banCreation": "Zablokuj tworzenie klas",
+    "liftCreationBan": "Znieś blokadę tworzenia",
+    "creationBanHistory": "Historia blokad",
+    "noBanHistory": "Brak decyzji o blokadzie.",
+    "byActor": "Decyzja: {{actor}}"
   },
   "party": {
     "pill": "Drużyna",
@@ -1776,6 +1801,21 @@
     "vitalStripSubtitle": "Tablet na stole · duże PŻ · dotknij paska, by rozwinąć.",
     "loginRequired": "Zaloguj się, aby tworzyć kompanię i nią zarządzać.",
     "guestCarriesOver": "Twój gościnny scvm przejdzie z tobą po rejestracji.",
+    "previewPartyOne": "Strażnicy Grobów",
+    "previewPartyTwo": "Nocna Straż Galgenbeck",
+    "pinMakeParty": "Utwórz kompanię",
+    "pinSendLink": "Wyślij link",
+    "pinWatchVitals": "Patrz, jak krwawią",
+    "overviewHeading": "To ekran MG. Zarejestruj się, by nim dowodzić.",
+    "overviewIntro": "Narzędzia MG w scvmrack są darmowe z kontem rpgtools.co.",
+    "overviewParty": "Utwórz kompanię i przekaż graczom jeden link z zaproszeniem.",
+    "overviewVitals": "Śledź na żywo PŻ, Omeny i pancerz każdego scvma.",
+    "overviewClasses": "Wybierz klasy, którymi mogą grać, albo stwórz własną.",
+    "overviewMore": "Więcej narzędzi MG",
+    "overviewOwlbearTitle": "Owlbear Rodeo",
+    "overviewOwlbear": "Lista postaci na żywo, przypisywanie pionków i tablica wrogów w pokoju Owlbear.",
+    "overviewCustomClassesTitle": "Własne klasy",
+    "overviewCustomClasses": "Twórz klasy ze zdolnościami, własnymi przedmiotami i tabelami; zachowaj je lub opublikuj.",
     "signUp": "Zarejestruj się",
     "logIn": "Zaloguj się",
     "loadError": "Nie udało się wczytać kompanii.",

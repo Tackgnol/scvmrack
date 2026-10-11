@@ -6,11 +6,13 @@ import {
   reportDecision,
   reportReceipt,
   statementOfReasons,
+  termsChangeNotice,
   type DisputeCopyInput,
   type RenderedMail,
   type ReportDecisionInput,
   type ReportReceiptInput,
   type StatementOfReasonsInput,
+  type TermsChangeInput,
 } from './mail-templates.js';
 import { fail, ok, unexpected, type ServiceLogger, type ServiceResult } from './result.js';
 
@@ -22,7 +24,7 @@ export type MailOutcome = { sent: true; messageId: string } | { sent: false };
 
 type Recipient = { to: string; locale: string | null | undefined };
 
-type MailKind = 'report_receipt' | 'report_decision' | 'statement_of_reasons' | 'dispute_copy';
+type MailKind = 'report_receipt' | 'report_decision' | 'statement_of_reasons' | 'dispute_copy' | 'terms_change';
 
 /**
  * Transactional email in the recipient's language. When SES isn't configured
@@ -57,6 +59,10 @@ export function createMailService(log: MailLogger) {
 
     sendDisputeCopy(input: DisputeCopyInput) {
       return deliver(APPEAL_ADDRESS, disputeCopy(input), 'dispute_copy');
+    },
+
+    sendTermsChange(input: { to: string } & TermsChangeInput) {
+      return deliver(input.to, termsChangeNotice(input), 'terms_change');
     },
   };
 }

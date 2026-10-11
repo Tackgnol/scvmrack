@@ -222,6 +222,7 @@ mock.module('../../src/lib/generate-character.js', {
       return generatedCharacterId;
     },
     characterCreateDataFromDraft: async () => ({}),
+    randomCharacterCreateData: async () => ({}),
   },
 });
 
@@ -503,7 +504,7 @@ test('GET /classes returns the localized class list', async () => {
 
   assert.equal(response.statusCode, 200);
   assert.deepEqual(response.json(), [{ id: 1, name: 'Gutterborn Scvm', description: null }]);
-  assert.deepEqual(listClassCalls, [{ locale: 'en', inviteToken: undefined }]);
+  assert.deepEqual(listClassCalls, [{ locale: 'en', inviteToken: undefined, obrRoomId: undefined }]);
 
   await app.close();
 });

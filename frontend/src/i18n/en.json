@@ -914,11 +914,11 @@
     },
     "guestVsAccount": {
       "q": "Do I need an account?",
-      "a": "No account needed to start. As a guest, you get one character — generating a new one replaces it. Characters are kept for 7 days. Sign up (free) to keep unlimited characters permanently, accessible from any device."
+      "a": "No account needed to start. As a guest, you get one character — generating a new one replaces it. Access depends on your browser session. Sign up (free) to keep multiple characters accessible from any device."
     },
     "howToSave": {
       "q": "How do I save my character?",
-      "a": "Characters save automatically as you edit. As a guest, your single character is stored for 7 days. Sign up to keep it permanently and create more."
+      "a": "Characters save automatically as you edit. Your guest character is kept until you delete or replace it, or ask us to remove it. Losing your browser session can prevent access to it. Sign up to access your characters across devices and create more."
     },
     "multipleCharacters": {
       "q": "Can I have multiple characters?",
@@ -973,6 +973,13 @@
       "close": "Close"
     }
   },
+  "legalNotice": {
+    "termsChanged": "Our terms changed on {{date}}: what changed",
+    "privacyChanged": "Our privacy notice changed on {{date}}: what changed",
+    "effective": "Takes effect on {{date}}.",
+    "read": "Read the notice",
+    "dismiss": "Dismiss"
+  },
   "release": {
     "title": "Release Notes",
     "typeMajor": "Major",
@@ -981,10 +988,12 @@
     "moreUpdates": "More updates coming soon. The world is ending, but we keep shipping.",
     "v070": {
       "customClasses": "Forge Custom Classes with your own rules, items, abilities, reference tables, and Getting Better settings",
+      "omenDice": "Book Class Omen rolls now match the printed book: Esoteric Hermit and Heretical Priest use d4; other Book Classes use d2",
       "versions": "Saving changes keeps existing scvm on their original class rules and creates a new version for future rolls",
       "partyPools": "Party Class Pools let a GM choose the Book and Custom Classes available at their table and in Owlbear",
+      "gmOverview": "Everyone can preview the GM dashboard; guests keep their scvm when they sign up to run a warband",
       "sharing": "Publish a class for other GMs, with clear creator attribution and a report link for public content",
-      "moderation": "Reports receive human review; authors receive takedown reasons and can dispute a decision in the app or by email",
+      "moderation": "Reports receive human review; authors can dispute takedowns, while moderators can review prior removals and restrict new class creation without blocking existing classes",
       "legal": "Terms, contact, privacy, and report pages explain the rules and ways to reach the project"
     },
     "v062": {
@@ -1263,6 +1272,9 @@
   "creator": {
     "titleNew": "Forge a class",
     "titleEdit": "Edit a class",
+    "creationBanned": "You cannot create new Custom Classes while a moderation restriction is active. Your existing classes remain available.",
+    "creationStatusFailed": "Class creation status couldn't load. Try again later.",
+    "draftBanned": "New class creation restricted",
     "untitled": "Untitled class",
     "rail": "Class creator steps",
     "steps": {
@@ -1641,7 +1653,20 @@
   "moderation": {
     "classVersions": "Class versions",
     "previewLatest": "Preview latest version",
-    "version": "Version {{version}}"
+    "version": "Version {{version}}",
+    "removalHistory": "GM removal decisions: {{count}}",
+    "restored": "Restored",
+    "notRestored": "Not restored",
+    "creationBans": "Class creation bans",
+    "gmUserId": "GM user ID",
+    "lookUp": "Look up",
+    "creationBanActive": "Creation banned",
+    "creationBanInactive": "Creation allowed",
+    "banCreation": "Ban class creation",
+    "liftCreationBan": "Lift creation ban",
+    "creationBanHistory": "Ban history",
+    "noBanHistory": "No ban decisions yet.",
+    "byActor": "By {{actor}}"
   },
   "party": {
     "pill": "Party",
@@ -1753,6 +1778,21 @@
     "vitalStripSubtitle": "Tablet at the table · big HP · tap a strip to expand.",
     "loginRequired": "Sign in to create and run a warband.",
     "guestCarriesOver": "Your guest scvm comes with you when you sign up.",
+    "previewPartyOne": "The Grave Wardens",
+    "previewPartyTwo": "Galgenbeck Night Watch",
+    "pinMakeParty": "Make a party",
+    "pinSendLink": "Send its link",
+    "pinWatchVitals": "Watch them bleed",
+    "overviewHeading": "This is the GM screen. Sign up to run it.",
+    "overviewIntro": "The GM side of scvmrack is free with an rpgtools.co account.",
+    "overviewParty": "Make a party and hand your table one invite link.",
+    "overviewVitals": "Follow every scvm’s HP, Omens and armour live.",
+    "overviewClasses": "Choose the classes they roll from, or forge your own.",
+    "overviewMore": "More GM tools",
+    "overviewOwlbearTitle": "Owlbear Rodeo",
+    "overviewOwlbear": "The live roster, token binding and an enemy board inside your Owlbear room.",
+    "overviewCustomClassesTitle": "Custom Classes",
+    "overviewCustomClasses": "Forge classes with abilities, Class Items and tables; keep them or publish them.",
     "signUp": "Sign up",
     "logIn": "Log in",
     "loadError": "The warband roster failed to load.",
