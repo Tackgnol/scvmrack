@@ -768,9 +768,11 @@ test('a moderator bans new class creation without blocking existing classes, the
   const groups = (await queue.json()) as Array<{
     ownerUserId: string | null;
     removalHistory: Array<{ className: string; date: string; reason: string; restored: boolean }>;
+    reports: Array<{ id: string }>;
   }>;
   const group = groups.find((entry) => entry.ownerUserId === gm.userId);
   assert.ok(group);
+  assert.deepEqual(group.reports.map((report) => report.id), [reportIds[2]]);
   assert.equal(group.removalHistory.length, 2);
   assert.equal(group.removalHistory.find((entry) => entry.reason === 'Earlier violation')?.restored, true);
   assert.equal(group.removalHistory.find((entry) => entry.reason === 'Repeated violation')?.restored, false);

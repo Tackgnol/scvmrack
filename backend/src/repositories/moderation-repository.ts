@@ -66,7 +66,7 @@ async createDispute(classId: number, authorUserId: string, text: string) {
   },
   async listOpenReports() {
     const reports = await prisma.moderationReport.findMany({
-      where: { OR: [{ status: { in: ['open', 'taken_down', 'content_removed'] } }, { disputes: { some: {} } }] },
+      where: { OR: [{ status: 'open' }, { disputes: { some: {} } }] },
       orderBy: { createdAt: 'desc' },
       include: {
         class: {
