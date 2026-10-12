@@ -76,6 +76,8 @@ describe("ClassCreator", () => {
       .click();
 
     const strength = page.getByRole("region", { name: "STR dice" });
+    await expect.element(strength.getByText("Book default")).toBeVisible();
+    await strength.getByRole("button", { name: "Change" }).click();
     await strength.getByRole("radio", { name: "Dropped" }).click();
     await strength.getByRole("spinbutton", { name: "Dice" }).click();
     await userEvent.keyboard("{ArrowUp}");
@@ -84,6 +86,9 @@ describe("ClassCreator", () => {
 
     await expect.element(strength.getByText("best 3 of 4d6 −1")).toBeVisible();
     await expect.element(strength.getByText("score 2–17")).toBeVisible();
+    await expect.element(strength.getByText("Book default")).not.toBeInTheDocument();
+    await strength.getByRole("button", { name: "Done" }).click();
+    await expect.element(strength.getByRole("spinbutton", { name: "Dice" })).not.toBeInTheDocument();
   });
 
   it("shows what each language misses, and a Fix jumps there and focuses the field", async () => {
@@ -236,6 +241,7 @@ describe("ClassCreator", () => {
       .first()
       .click();
     const strength = page.getByRole("region", { name: "STR dice" });
+    await strength.getByRole("button", { name: "Change" }).click();
 
     await strength.getByRole("radio", { name: "Dropped" }).click();
     await strength.getByRole("button", { name: "Decrease Dice" }).click();
@@ -386,7 +392,7 @@ describe("ClassCreator", () => {
       .toHaveFocus();
   });
 
-  it("asks about Class Items first, and No reads None on the rail", async () => {
+  it("asks about Class Items first, and No reads Optional on the rail", async () => {
     renderCreator(complete());
     await userEvent.click(
       page.getByRole("button", { name: /Class Items/ }).first(),
@@ -404,7 +410,7 @@ describe("ClassCreator", () => {
       .toBeVisible();
     await expect
       .element(page.getByRole("button", { name: /Class Items/ }).first())
-      .toHaveTextContent("None");
+      .toHaveTextContent("Optional");
   });
 
   it("forges a weapon that waits for an ability, then grants it from a new one", async () => {

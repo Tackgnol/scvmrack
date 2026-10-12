@@ -7,5 +7,6 @@ export type CreatorRailProps = {
   quiet: boolean;
   /** The class carries no Class Items; that step reads None. */
   noItems: boolean;
+  noAbilities: boolean;
   onStep: (step: CreatorStep) => void;
 };

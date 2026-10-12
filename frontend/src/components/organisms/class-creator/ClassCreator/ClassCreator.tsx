@@ -17,17 +17,21 @@ import type {
   CreatorStep,
   StepProps,
 } from "../classCreator.models";
-import { Hint } from "../classCreator.styles";
+import { Hint, SmallAction } from "../classCreator.styles";
 import { focusAfterRender, STEP_TITLE_ID, STEPS } from "../classCreator.utils";
 import { isEditable, isMac } from "./ClassCreator.utils";
 import type { ClassCreatorProps } from "./ClassCreator.models";
 import {
   BackButton,
+  DiscardDraft,
+  DraftStatus,
   Head,
+  History,
   Layout,
   Nav,
   NextButton,
   Paper,
+  PaperFoot,
   StepCount,
   StepTitle,
 } from "./ClassCreator.styles";
@@ -165,6 +169,7 @@ export function ClassCreator({
         issues={creator.issues}
         quiet={quiet}
         noItems={creator.draft.items.length === 0}
+        noAbilities={creator.draft.abilities.length === 0}
         onStep={goTo}
       />
       <section aria-labelledby={STEP_TITLE_ID}>
@@ -180,7 +185,7 @@ export function ClassCreator({
               })}
             </StepCount>
             {creator.draftAutosave.state !== "idle" && (
-              <StepCount data-testid="draft-save-state">
+              <DraftStatus data-testid="draft-save-state" role="status">
                 {creator.draftAutosave.state === "saving" &&
                   t("creator.draftSaving", "Saving…")}
                 {creator.draftAutosave.state === "saved" &&
@@ -194,7 +199,26 @@ export function ClassCreator({
                   t("creator.draftConflict", "Draft changed elsewhere")}
                 {creator.draftAutosave.state === "banned" &&
                   t("creator.draftBanned", "New class creation restricted")}
-              </StepCount>
+                {creator.draftAutosave.record &&
+                  creator.draftAutosave.state !== "conflict" && (
+                    <DiscardDraft
+                      type="button"
+                      onClick={() => {
+                        if (
+                          window.confirm(
+                            t(
+                              "creator.draftDiscardConfirm",
+                              "Discard this unfinished draft?",
+                            ),
+                          )
+                        )
+                          void creator.draftAutosave.discard();
+                      }}
+                    >
+                      {t("creator.draftDiscard", "Discard")}
+                    </DiscardDraft>
+                  )}
+              </DraftStatus>
             )}
           </div>
           {creator.step !== "stats" && (
@@ -208,62 +232,31 @@ export function ClassCreator({
             />
           )}
         </Head>
-        {creator.draftAutosave.record && (
+        {creator.draftAutosave.state === "conflict" && (
           <Alert
-            severity={
-              creator.draftAutosave.state === "conflict" ? "warning" : "info"
-            }
+            severity="warning"
             action={
-              creator.draftAutosave.state === "conflict" ? (
-                <>
-                  <Button
-                    color="inherit"
-                    size="small"
-                    onClick={() => void creator.draftAutosave.loadNewer()}
-                  >
-                    {t("creator.draftLoadNewer", "Load newer one")}
-                  </Button>
-                  <Button
-                    color="inherit"
-                    size="small"
-                    onClick={() => void creator.draftAutosave.keepMine()}
-                  >
-                    {t("creator.draftKeepMine", "Keep mine")}
-                  </Button>
-                </>
-              ) : (
+              <>
                 <Button
                   color="inherit"
                   size="small"
-                  onClick={() => {
-                    if (
-                      window.confirm(
-                        t(
-                          "creator.draftDiscardConfirm",
-                          "Discard this unfinished draft?",
-                        ),
-                      )
-                    )
-                      void creator.draftAutosave.discard();
-                  }}
+                  onClick={() => void creator.draftAutosave.loadNewer()}
                 >
-                  {t("creator.draftDiscard", "Discard")}
+                  {t("creator.draftLoadNewer", "Load newer one")}
                 </Button>
-              )
+                <Button
+                  color="inherit"
+                  size="small"
+                  onClick={() => void creator.draftAutosave.keepMine()}
+                >
+                  {t("creator.draftKeepMine", "Keep mine")}
+                </Button>
+              </>
             }
           >
-            {creator.draftAutosave.state === "conflict"
-              ? t(
-                  "creator.draftConflictBody",
-                  "This draft changed on another device.",
-                )
-              : t(
-                  "creator.draftResumed",
-                  "Unsaved changes are being kept as a private draft.",
-                )}{" "}
             {t(
-              "creator.draftRetention",
-              "Unfinished drafts are deleted after 90 days.",
+              "creator.draftConflictBody",
+              "This draft changed on another device.",
             )}
           </Alert>
         )}
@@ -305,44 +298,44 @@ export function ClassCreator({
               onSave={creator.save}
             />
           )}
+          <PaperFoot>
+            <History
+              role="group"
+              aria-label={t("creator.history.label", "Edit history")}
+            >
+              <SmallAction
+                type="button"
+                disabled={!creator.canUndo}
+                aria-keyshortcuts="Control+Z Meta+Z"
+                onClick={creator.undo}
+              >
+                {creator.undoLabel
+                  ? t("creator.history.undo", "Undo {{step}}", {
+                      step: creator.undoLabel,
+                    })
+                  : t("creator.history.undo", "Undo")}
+              </SmallAction>
+              <SmallAction
+                type="button"
+                disabled={!creator.canRedo}
+                aria-keyshortcuts="Control+Shift+Z Control+Y Meta+Shift+Z Meta+Y"
+                onClick={creator.redo}
+              >
+                {creator.redoLabel
+                  ? t("creator.history.redo", "Redo {{step}}", {
+                      step: creator.redoLabel,
+                    })
+                  : t("creator.history.redo", "Redo")}
+              </SmallAction>
+            </History>
+            <Hint>
+              {t(
+                "creator.reorder.shortcut",
+                "Alt+↑/↓ moves the focused card or table row.",
+              )}
+            </Hint>
+          </PaperFoot>
         </Paper>
-        <div role="status" aria-live="polite">
-          <button
-            type="button"
-            disabled={!creator.canUndo}
-            aria-keyshortcuts="Control+Z Meta+Z"
-            onClick={creator.undo}
-          >
-            {creator.undoLabel
-              ? t("creator.history.undo", "Undo {{step}}", {
-                  step: creator.undoLabel,
-                })
-              : t("creator.history.undo", "Undo")}
-          </button>
-          <button
-            type="button"
-            disabled={!creator.canRedo}
-            aria-keyshortcuts="Control+Shift+Z Control+Y Meta+Shift+Z Meta+Y"
-            onClick={creator.redo}
-          >
-            {creator.redoLabel
-              ? t("creator.history.redo", "Redo {{step}}", {
-                  step: creator.redoLabel,
-                })
-              : t("creator.history.redo", "Redo")}
-          </button>
-        </div>
-        <Hint
-          aria-label={t(
-            "creator.reorder.shortcut",
-            "Alt+↑/↓ moves the focused card or table row.",
-          )}
-        >
-          {t(
-            "creator.reorder.shortcut",
-            "Alt+↑/↓ moves the focused card or table row.",
-          )}
-        </Hint>
         <Nav>
           <BackButton
             type="button"

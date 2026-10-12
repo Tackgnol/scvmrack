@@ -5,68 +5,51 @@ import { signed } from "@/utils/signed";
 import { useTranslation } from "react-i18next";
 import { fieldId, formulaText, statRange } from "../classCreator.utils";
 import type { StatLineProps } from "./StatLine.models";
-import { Formula } from "../classCreator.styles";
-import { Controls, Line, Range, Result, StatName } from "./StatLine.styles";
+import { Formula, SmallAction } from "../classCreator.styles";
+import {
+  BookTag,
+  Controls,
+  Line,
+  Range,
+  Result,
+  StatName,
+  Tail,
+} from "./StatLine.styles";
+import { isBookDefault } from "./StatLine.utils";
 
-/** One stat on one line: dice, sides, modifier, lowest die, and its result stamped in book notation. */
-export function StatLine({ stat, dice, onChange }: StatLineProps) {
+/** One stat as a compact line stamped in book notation; opening it reveals dice, sides, modifier and lowest die. */
+export function StatLine({
+  stat,
+  dice,
+  open,
+  onToggle,
+  onChange,
+}: StatLineProps) {
   const { t } = useTranslation();
   const short = t(`creator.stats.short.${stat}`);
   const range = statRange(dice);
   const path = `stats.${stat}`;
+  const controlsId = `${fieldId(path)}-controls`;
 
   return (
-    <Line aria-label={t("creator.stats.lineLabel", "{{stat}} dice", { stat: short })}>
+    <Line
+      className={open ? "open" : undefined}
+      aria-label={t("creator.stats.lineLabel", "{{stat}} dice", {
+        stat: short,
+      })}
+    >
       <StatName className={stat} aria-hidden="true">
         {short}
       </StatName>
-      <Controls>
-        <NumberStepper
-          id={fieldId(`${path}.count`)}
-          label={t("creator.stats.dice", "Dice")}
-          value={dice.count}
-          min={1}
-          max={6}
-          onChange={(count) => onChange({ ...dice, count, dropLowest: count > 1 && dice.dropLowest })}
-        />
-        <DiePicker
-          id={fieldId(`${path}.faces`)}
-          label={t("creator.stats.sides", "Sides")}
-          value={dice.faces}
-          options={[4, 6, 8, 10, 12]}
-          onChange={(faces) => onChange({ ...dice, faces })}
-        />
-        <NumberStepper
-          id={fieldId(`${path}.modifier`)}
-          label={t("creator.stats.modifier", "Modifier")}
-          value={dice.modifier}
-          min={-6}
-          max={6}
-          signedValue
-          onChange={(modifier) => onChange({ ...dice, modifier })}
-        />
-        <SegmentedChoice<"kept" | "dropped">
-          id={fieldId(`${path}.dropLowest`)}
-          label={t("creator.stats.lowestDie", "Lowest die")}
-          value={dice.dropLowest ? "dropped" : "kept"}
-          options={[
-            { value: "kept", label: t("creator.stats.kept", "Kept") },
-            {
-              value: "dropped",
-              label: t("creator.stats.dropped", "Dropped"),
-              disabledReason:
-                dice.count < 2
-                  ? t("creator.stats.dropNeedsTwo", "Dropping the lowest die needs at least two dice.")
-                  : undefined,
-            },
-          ]}
-          onChange={(next) => onChange({ ...dice, dropLowest: next === "dropped" })}
-        />
-      </Controls>
       <Result aria-live="polite">
         <Formula>{formulaText(dice)}</Formula>
         <Range>
-          <span>{t("creator.stats.scoreRange", "score {{low}}–{{high}}", { low: range.low, high: range.high })}</span>
+          <span>
+            {t("creator.stats.scoreRange", "score {{low}}–{{high}}", {
+              low: range.low,
+              high: range.high,
+            })}
+          </span>
           <span>
             {t("creator.stats.modRange", "mod {{low}} to {{high}}", {
               low: signed(range.modLow),
@@ -75,6 +58,77 @@ export function StatLine({ stat, dice, onChange }: StatLineProps) {
           </span>
         </Range>
       </Result>
+      <Tail>
+        {isBookDefault(dice) && (
+          <BookTag>{t("creator.stats.bookDefault", "Book default")}</BookTag>
+        )}
+        <SmallAction
+          type="button"
+          aria-expanded={open}
+          aria-controls={controlsId}
+          onClick={onToggle}
+        >
+          {open
+            ? t("creator.stats.done", "Done")
+            : t("creator.stats.change", "Change")}
+        </SmallAction>
+      </Tail>
+      {open && (
+        <Controls id={controlsId}>
+          <NumberStepper
+            id={fieldId(`${path}.count`)}
+            label={t("creator.stats.dice", "Dice")}
+            value={dice.count}
+            min={1}
+            max={6}
+            onChange={(count) =>
+              onChange({
+                ...dice,
+                count,
+                dropLowest: count > 1 && dice.dropLowest,
+              })
+            }
+          />
+          <DiePicker
+            id={fieldId(`${path}.faces`)}
+            label={t("creator.stats.sides", "Sides")}
+            value={dice.faces}
+            options={[4, 6, 8, 10, 12]}
+            onChange={(faces) => onChange({ ...dice, faces })}
+          />
+          <NumberStepper
+            id={fieldId(`${path}.modifier`)}
+            label={t("creator.stats.modifier", "Modifier")}
+            value={dice.modifier}
+            min={-6}
+            max={6}
+            signedValue
+            onChange={(modifier) => onChange({ ...dice, modifier })}
+          />
+          <SegmentedChoice<"kept" | "dropped">
+            id={fieldId(`${path}.dropLowest`)}
+            label={t("creator.stats.lowestDie", "Lowest die")}
+            value={dice.dropLowest ? "dropped" : "kept"}
+            options={[
+              { value: "kept", label: t("creator.stats.kept", "Kept") },
+              {
+                value: "dropped",
+                label: t("creator.stats.dropped", "Dropped"),
+                disabledReason:
+                  dice.count < 2
+                    ? t(
+                        "creator.stats.dropNeedsTwo",
+                        "Dropping the lowest die needs at least two dice.",
+                      )
+                    : undefined,
+              },
+            ]}
+            onChange={(next) =>
+              onChange({ ...dice, dropLowest: next === "dropped" })
+            }
+          />
+        </Controls>
+      )}
     </Line>
   );
 }

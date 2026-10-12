@@ -110,3 +110,46 @@ export const NextButton = styled("button")({
   boxShadow: `3px 3px 0 ${black}`,
   "@media (hover: hover)": { "&:hover": { color: white } },
 });
+
+export const DraftStatus = styled("p")({
+  display: "flex",
+  flexWrap: "wrap",
+  alignItems: "baseline",
+  gap: "4px 12px",
+  margin: "6px 0 0",
+  color: black,
+  fontFamily: partyFonts.label,
+  fontSize: "0.75rem",
+  letterSpacing: "0.16em",
+  textTransform: "uppercase",
+});
+
+export const DiscardDraft = styled("button")({
+  background: "none",
+  border: 0,
+  padding: 0,
+  color: black,
+  font: "inherit",
+  letterSpacing: "inherit",
+  textTransform: "inherit",
+  textDecoration: "underline",
+  textUnderlineOffset: 3,
+  cursor: "pointer",
+  "&:focus-visible": { outline: `2px solid ${black}`, outlineOffset: 2 },
+});
+
+export const PaperFoot = styled("div")({
+  display: "flex",
+  flexWrap: "wrap",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: 12,
+  borderTop: `1px solid ${grey}`,
+  paddingTop: 16,
+});
+
+export const History = styled("div")({
+  display: "flex",
+  flexWrap: "wrap",
+  gap: 8,
+});

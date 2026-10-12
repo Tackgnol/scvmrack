@@ -5,7 +5,7 @@ import type { CreatorRailProps } from "./CreatorRail.models";
 import { Rail, RailWrap, Status, StepButton } from "./CreatorRail.styles";
 
 /** The steps as a rail (a sticky column on desktop, a strip on phones), each with OK or its problem count. */
-export function CreatorRail({ current, issues, quiet, noItems, onStep }: CreatorRailProps) {
+export function CreatorRail({ current, issues, quiet, noItems, noAbilities, onStep }: CreatorRailProps) {
   const { t } = useTranslation();
   const currentRef = useRef<HTMLButtonElement>(null);
   useEffect(() => {
@@ -38,7 +38,9 @@ export function CreatorRail({ current, issues, quiet, noItems, onStep }: Creator
                     {count}
                   </Status>
                 ) : step === "items" && noItems ? (
-                  <Status aria-label={t("creator.items.noneLabel", "No Class Items")}>{t("creator.items.noneChip", "None")}</Status>
+                  <Status className="empty" aria-label={t("creator.items.noneLabel", "No Class Items, which is fine")}>{t("creator.items.noneChip", "Optional")}</Status>
+                ) : step === "abilities" && noAbilities ? (
+                  <Status className="empty" aria-label={t("creator.abilities.emptyLabel", "No abilities yet")}>{t("creator.abilities.emptyChip", "Empty")}</Status>
                 ) : (
                   <Status aria-label={t("creator.complete", "Complete")}>{t("creator.ok", "OK")}</Status>
                 )}

@@ -1,6 +1,8 @@
 import { DiePicker } from "@/components/atoms/DiePicker/DiePicker";
 import { NumberStepper } from "@/components/atoms/NumberStepper/NumberStepper";
+import type { ClassStat } from "@/api/classes";
 import { ABILITY_STATS } from "@/utils/stats";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { StatLine } from "../StatLine/StatLine";
 import type { StepProps } from "../classCreator.models";
@@ -11,6 +13,7 @@ import { DiceGrid } from "./StatsStep.styles";
 /** Step 2: how each stat is rolled, plus HP, omens, starting gear dice and silver. */
 export function StatsStep({ draft, update }: Pick<StepProps, "draft" | "update">) {
   const { t } = useTranslation();
+  const [openStat, setOpenStat] = useState<ClassStat | null>(null);
   return (
     <Stack>
       {ABILITY_STATS.map((stat) => (
@@ -18,6 +21,8 @@ export function StatsStep({ draft, update }: Pick<StepProps, "draft" | "update">
           key={stat}
           stat={stat}
           dice={draft.stats[stat]}
+          open={openStat === stat}
+          onToggle={() => setOpenStat((current) => (current === stat ? null : stat))}
           onChange={(dice) => update((d) => ({ ...d, stats: { ...d.stats, [stat]: dice } }))}
         />
       ))}

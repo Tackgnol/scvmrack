@@ -6,49 +6,38 @@ const { white, grey, darkGrey, mutedText } = partyColors;
 
 export const Line = styled("section")({
   display: "grid",
-  gridTemplateColumns: "auto minmax(0, 1fr)",
-  gap: 14,
+  gridTemplateColumns: "auto minmax(0, 1fr) auto",
+  gap: "12px 14px",
   background: grey,
   border: `2px solid ${darkGrey}`,
-  padding: 14,
+  padding: 10,
   alignItems: "center",
-  "@media (min-width: 1080px)": { gridTemplateColumns: "84px minmax(0, 1fr) 230px" },
+  "&.open": { borderColor: partyColors.yellow },
+  "@media (max-width: 520px)": { gridTemplateColumns: "auto minmax(0, 1fr)" },
 });
 
 export const StatName = styled("div")({
   fontFamily: partyFonts.headline,
-  fontSize: "2rem",
+  fontSize: "1.6rem",
   lineHeight: 1,
   color: white,
-  padding: "10px 8px",
+  padding: "8px 6px",
   textAlign: "center",
   letterSpacing: "0.04em",
-  minWidth: 84,
-  alignSelf: "start",
+  minWidth: 72,
   "&.strength": { background: statColors.str },
   "&.agility": { background: statColors.agi },
   "&.presence": { background: statColors.pre },
   "&.toughness": { background: statColors.tou },
-  "@media (max-width: 520px)": { fontSize: "1.5rem", minWidth: 64, padding: "8px 6px" },
-});
-
-export const Controls = styled("div")({
-  display: "flex",
-  flexWrap: "wrap",
-  gap: "14px 20px",
-  alignItems: "flex-end",
-  "@media (max-width: 1079px)": { gridColumn: "1 / -1", gridRow: 2 },
+  "@media (max-width: 520px)": { fontSize: "1.35rem", minWidth: 56 },
 });
 
 export const Result = styled("div")({
   display: "flex",
-  flexDirection: "column",
-  gap: 6,
-  alignItems: "flex-start",
-  "@media (max-width: 1079px)": { gridColumn: 2, gridRow: 1 },
-  "@media (min-width: 1080px)": { alignItems: "flex-end", textAlign: "right" },
+  flexWrap: "wrap",
+  alignItems: "center",
+  gap: "6px 14px",
 });
-
 
 export const Range = styled("div")({
   display: "flex",
@@ -61,4 +50,32 @@ export const Range = styled("div")({
   textTransform: "uppercase",
   color: mutedText,
   fontVariantNumeric: "tabular-nums",
+});
+
+export const Tail = styled("div")({
+  display: "flex",
+  alignItems: "center",
+  gap: 10,
+  "@media (max-width: 520px)": { gridColumn: "1 / -1", justifyContent: "space-between" },
+});
+
+export const BookTag = styled("span")({
+  fontFamily: partyFonts.label,
+  fontSize: "0.7rem",
+  letterSpacing: "0.15em",
+  textTransform: "uppercase",
+  color: mutedText,
+  border: `1px dashed ${mutedText}`,
+  padding: "3px 8px",
+  whiteSpace: "nowrap",
+});
+
+export const Controls = styled("div")({
+  gridColumn: "1 / -1",
+  display: "flex",
+  flexWrap: "wrap",
+  gap: "14px 20px",
+  alignItems: "flex-end",
+  borderTop: `1px solid ${darkGrey}`,
+  paddingTop: 12,
 });
