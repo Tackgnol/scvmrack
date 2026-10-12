@@ -132,6 +132,9 @@ mock.module('../../src/repositories/custom-class-repository.js', {
         repo.drafts.splice(index, 1);
         return true;
       },
+      deleteDraftsForClasses: async (_owner: string, classIds: number[]) => {
+        repo.drafts = repo.drafts.filter((draft) => !classIds.includes(draft.classId as number));
+      },
     },
   },
 });
@@ -335,6 +338,27 @@ test('saving a played current version forks it while an unplayed version changes
   assert.equal(repo.versioned.length, 1);
   assert.equal(repo.updated.length, 0);
 });
+test('saving a class drops leftover drafts linked to it', async () => {
+  repo.found = {
+    id: 7,
+    lineageId: 'l',
+    ownerUserId: 'gm-1',
+    version: 1,
+    status: 'active',
+    takenDownAt: null,
+    isLatest: true,
+    playingCount: 0,
+    draft: ready(),
+  };
+  const linked = await service.saveDraft({ session: GM, classId: 7, draft: ready() });
+  const unrelated = await service.saveDraft({ session: GM, classId: null, draft: ready() });
+  assert.ok(linked.ok && unrelated.ok);
+
+  const result = await service.update({ session: GM, id: 7, draft: ready() });
+
+  assert.equal(result.ok, true);
+  assert.deepEqual(repo.drafts.map((draft) => draft.classId), [null]);
+});
 test('an owner can publish and unpublish only the latest active class', async () => {
   const published = await service.setVisibility({
     session: GM,
@@ -463,6 +487,35 @@ test('new private drafts are capped at three and remain invisible to guests', as
 
   const guest = await service.listDrafts({ session: GUEST });
   assert.equal(!guest.ok && guest.error.statusCode, 401);
+});
+test('a taken-down public class is hidden from everyone but moderators', async () => {
+  repo.detail = {
+    id: 7,
+    lineageId: 'lineage-1',
+    ownerUserId: 'gm-1',
+    ownerName: 'GM',
+    visibility: 'public',
+    version: 1,
+    status: 'active',
+    takenDownAt: new Date('2026-10-08T12:00:00.000Z'),
+    isLatest: true,
+    playingCount: 0,
+    draft: ready(),
+  };
+  const guest = await service.getDetail({ session: null, id: 7 });
+  assert.equal(!guest.ok && guest.error.statusCode, 404);
+  const owner = await service.getDetail({ session: GM, id: 7 });
+  assert.equal(owner.ok, false);
+
+  const previous = process.env.MODERATION_ADMIN_USER_IDS;
+  process.env.MODERATION_ADMIN_USER_IDS = 'admin-1';
+  try {
+    const admin = await service.getDetail({ session: { user: { id: 'admin-1', isAnonymous: false } }, id: 7 });
+    assert.equal(admin.ok && admin.value.reportable, false);
+  } finally {
+    if (previous === undefined) delete process.env.MODERATION_ADMIN_USER_IDS;
+    else process.env.MODERATION_ADMIN_USER_IDS = previous;
+  }
 });
 test('an allowlisted moderator can preview the exact reported class version', async () => {
   const previous = process.env.MODERATION_ADMIN_USER_IDS;

@@ -433,6 +433,12 @@ export const customClassRepository = {
     });
     return deleted.count > 0;
   },
+
+  async deleteDraftsForClasses(ownerUserId: string, classIds: number[]): Promise<void> {
+    await prisma.classDraftRecord.deleteMany({
+      where: { ownerUserId, classId: { in: classIds } },
+    });
+  },
   async create(ownerUserId: string, draft: ClassDraft): Promise<number> {
     return prisma.$transaction(async (tx) => {
       const { id } = await tx.class.create({

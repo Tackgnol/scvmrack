@@ -80,6 +80,8 @@ export function useDraftAutosave({ classId, draft, revision, initialDraft, repla
   const [retryAttempt, setRetryAttempt] = useState(0);
   const replaceDraftRef = useRef(replaceDraft);
   const conflict = useRef(false);
+  // revision the class was last saved at; nothing to autosave until the GM edits again
+  const completedRevision = useRef<number | null>(null);
 
   useEffect(() => {
     latest.current = { draft, revision };
@@ -92,11 +94,19 @@ export function useDraftAutosave({ classId, draft, revision, initialDraft, repla
   }, [replaceDraft]);
   const persist = useCallback(async (force = false) => {
     if (saving.current || latest.current.revision === 0 || conflict.current) return;
+    if (latest.current.revision === completedRevision.current) return;
     saving.current = true;
     setState("saving");
     const snapshot = latest.current;
     const previous = recordRef.current;
     const result = await requestPersist(previous, classId, snapshot.draft, force);
+    if (completedRevision.current !== null && completedRevision.current >= snapshot.revision) {
+      // the class was saved while this write was in flight; its draft is already gone
+      if (result.saved) await deleteClassDraft(result.saved.id).catch(() => undefined);
+      saving.current = false;
+      setState("idle");
+      return;
+    }
     if (result.saved) {
       recordRef.current = result.saved;
       setRecord(result.saved);
@@ -163,6 +173,7 @@ export function useDraftAutosave({ classId, draft, revision, initialDraft, repla
   }, [classId]);
 
   const complete = useCallback(async () => {
+    completedRevision.current = latest.current.revision;
     if (recordRef.current) await deleteClassDraft(recordRef.current.id);
     removeLocalSnapshot(classId);
     recordRef.current = null;

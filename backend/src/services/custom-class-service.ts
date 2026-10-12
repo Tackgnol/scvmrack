@@ -297,8 +297,8 @@ export function createCustomClassService(log: ServiceLogger) {
             sessionId: input.session?.session?.id ?? null,
           }))
         );
-        if (!mayRead || (!admin && found.status !== 'active')) return fail(notYours());
-        return ok({ ...saved(found), attribution: classAttribution({ source: 'user', ownerName: found.ownerName, creditWork: null, creditAuthor: null })!, reportable: found.visibility === 'public' });
+        if (!mayRead || (!admin && (found.status !== 'active' || found.takenDownAt))) return fail(notYours());
+        return ok({ ...saved(found), attribution: classAttribution({ source: 'user', ownerName: found.ownerName, creditWork: null, creditAuthor: null })!, reportable: found.visibility === 'public' && !found.takenDownAt });
       } catch (err) {
         return fail(unexpected(log, err, 'CLASS_DETAIL_LOAD_FAILED', 'Failed to load the class'));
       }
@@ -392,6 +392,7 @@ export function createCustomClassService(log: ServiceLogger) {
         const savedClass = await customClassRepository.findWithText(id);
         if (!savedClass)
           throw new Error(`Class ${id} vanished right after saving`);
+        await customClassRepository.deleteDraftsForClasses(found.ownerUserId!, [input.id, id]);
         return ok(saved(savedClass));
       } catch (err) {
         if (isNameClash(err)) return fail(nameTaken(input.draft));
