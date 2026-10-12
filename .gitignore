@@ -137,3 +137,6 @@ frontend/static/scvmrack_logo.svg
 
 # scraped third-party documentation must never be committed
 docs/owlbear/
+
+# Working notes, drafts and prototypes; kept locally, never committed
+.scratch/
