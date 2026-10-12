@@ -281,9 +281,8 @@ export function ClassesPage() {
                     </CardAction>
                   )}
                   {cls.takenDownAt ? null : cls.visibility === "private" ? (
-                    <Button
-                      color="inherit"
-                      size="small"
+                    <CardAction
+                      className="secondary"
                       disabled={publish.isPending}
                       onClick={() => {
                         setPublishTarget({ id: cls.id, name: cls.name });
@@ -291,16 +290,15 @@ export function ClassesPage() {
                       }}
                     >
                       {t("classes.publish", "Publish")}
-                    </Button>
+                    </CardAction>
                   ) : (
-                    <Button
-                      color="inherit"
-                      size="small"
+                    <CardAction
+                      className="secondary"
                       disabled={unpublish.isPending}
                       onClick={() => unpublish.mutate(cls.id)}
                     >
                       {t("classes.unpublish", "Unpublish")}
-                    </Button>
+                    </CardAction>
                   )}
                   {!cls.takenDownAt && (
                     <ModalButton

@@ -191,18 +191,14 @@ export function AbilitiesStep({
 
   return (
     <Stack>
-      <details>
-        <summary>{t("creator.zinePaste.title", "Porting a zine?")}</summary>
+      {draft.abilities.length > 1 && (
         <Hint>
-          {t("creator.zinePaste.abilities", "Paste an ability list into a Name field: one “Name: rules” entry per line.")}
+          {t(
+            "creator.reorder.abilitiesHint",
+            "This is the order on the sheet, in print, and in the random pool.",
+          )}
         </Hint>
-      </details>
-      <Hint>
-        {t(
-          "creator.reorder.abilitiesHint",
-          "This is the order on the sheet, in print, and in the random pool.",
-        )}
-      </Hint>
+      )}
       <WaitingItemsTray
         draft={draft}
         language={language}
@@ -308,6 +304,12 @@ export function AbilitiesStep({
           {t("creator.abilities.add", "Add ability")}
         </InkButton>
       </div>
+      <details>
+        <summary>{t("creator.zinePaste.title", "Porting a zine?")}</summary>
+        <Hint>
+          {t("creator.zinePaste.abilities", "Paste an ability list into a Name field: one “Name: rules” entry per line.")}
+        </Hint>
+      </details>
     </Stack>
   );
 }

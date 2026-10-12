@@ -85,7 +85,7 @@ export function ModerationPage() {
               )}
               <Box>
                 <Typography component="h2" variant="h5">{group.latest.name}</Typography>
-                {group.ownerUserId && <Typography variant="body2" sx={{ overflowWrap: "anywhere" }}>{t("moderation.gmUserId", "GM user ID")}: {group.ownerUserId}</Typography>}
+                {group.ownerUserId && <Typography variant="body2" sx={{ overflowWrap: "anywhere" }}>{t("moderation.gmUserIdCopy", "GM user ID · copy for ban lookup")}: {group.ownerUserId}</Typography>}
                 <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" alignItems="center">
                   <Button component={Link} to={`/classes/${group.latest.id}`} size="small" variant="contained">
                     {t("moderation.previewLatest", "Preview latest version")} · {t("moderation.version", { version: group.latest.version })}
