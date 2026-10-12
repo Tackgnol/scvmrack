@@ -1732,6 +1732,8 @@ export const customStyles = {
       textTransform: 'uppercase' as const,
     },
     closeButton: {
+      minWidth: 44,
+      minHeight: 44,
       bgcolor: morkBorgColors.black,
       color: morkBorgColors.yellow,
       '&:hover': {
@@ -1849,11 +1851,11 @@ export const customStyles = {
         color: morkBorgColors.black,
       },
       '&.Mui-disabled': {
-        bgcolor: morkBorgColors.darkGrey,
-        color: morkBorgColors.white,
-        borderColor: morkBorgColors.grey,
+        bgcolor: 'transparent',
+        color: '#888',
+        borderColor: morkBorgColors.darkGrey,
+        borderStyle: 'dashed',
         boxShadow: 'none',
-        opacity: 0.62,
       },
     },
   },

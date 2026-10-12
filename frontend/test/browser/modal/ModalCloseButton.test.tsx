@@ -13,7 +13,7 @@ describe('ModalCloseButton Browser', () => {
       </BrowserTestProvider>
     );
 
-    const button = page.getByRole('button', { name: 'Close modal' });
+    const button = page.getByRole('button', { name: 'Close dialog' });
     await expect.element(button).toBeVisible();
     await userEvent.click(button);
 

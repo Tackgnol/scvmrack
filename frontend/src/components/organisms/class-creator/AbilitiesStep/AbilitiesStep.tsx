@@ -205,6 +205,7 @@ export function AbilitiesStep({
         onGrantFromNewAbility={grantFromNewAbility}
       />
       <Spread>
+        {(pool > 0 || draft.randomAbilityCount > 0) && (
         <NumberStepper
           id={fieldId("randomAbilityCount")}
           label={t("creator.abilities.rolled", "Random abilities rolled")}
@@ -220,6 +221,7 @@ export function AbilitiesStep({
             update((d) => ({ ...d, randomAbilityCount }))
           }
         />
+        )}
         <Counter>
           {t("creator.abilities.count", "{{count}} of {{max}} abilities", {
             count: draft.abilities.length,

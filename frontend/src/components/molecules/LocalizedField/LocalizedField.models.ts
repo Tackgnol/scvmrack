@@ -15,6 +15,8 @@ export type LocalizedFieldProps = {
   onPaste?: (
     event: ClipboardEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => void;
+  /** Marks the field as required for saving (an asterisk plus aria-required). */
+  required?: boolean;
   /** A control at the right of the label row, e.g. Remove. */
   action?: ReactNode;
 };

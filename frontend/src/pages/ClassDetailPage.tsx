@@ -53,7 +53,7 @@ export function ClassDetailPage() {
               {/* styled() drops the router's route typing; /report reads classId loosely */}
               {query.data.reportable && (
                 <ReportLink to="/report" search={{ classId } as never}>
-                  {t('report.link', 'Report a class')}
+                  {t('report.thisClass', 'Report this class')}
                 </ReportLink>
               )}
             </Stack>

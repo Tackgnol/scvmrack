@@ -847,6 +847,7 @@
     "stamp": "Page Not Found"
   },
   "common": {
+    "closeDialog": "Close dialog",
     "close": "Close",
     "back": "Back",
     "backToHome": "Back to Home",
@@ -1635,6 +1636,7 @@
     "confirmRemoval": "Confirm removal"
   },
   "classes": {
+    "unsavedEdits": "Unsaved edits to a saved class",
     "stamp": "Game Master · Classes",
     "title": "My classes",
     "forge": "Forge a class",
@@ -1671,6 +1673,8 @@
     "appealEmailLink": "Appeal by email"
   },
   "report": {
+    "thisClass": "Report this class",
+    "otherClass": "Report a different class",
     "link": "Report a class",
     "title": "Report a class",
     "stamp": "Notice & action",
@@ -1714,6 +1718,9 @@
     "creationBans": "Class creation bans",
     "gmUserId": "GM user ID",
     "gmUserIdCopy": "GM user ID · copy for ban lookup",
+    "dismissEffect": "the class stays public and this report closes.",
+    "takeDownEffect": "hidden from search, pickers and party pools; no new characters. Existing characters keep it.",
+    "removeContentEffect": "its text becomes “[removed by moderation]” everywhere, including existing characters.",
     "reasonRequired": "Write a decision reason to act.",
     "lookUp": "Look up",
     "creationBanActive": "Creation banned",

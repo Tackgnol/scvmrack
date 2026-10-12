@@ -844,6 +844,7 @@
     "stamp": "Strona Zaginiona"
   },
   "common": {
+    "closeDialog": "Zamknij okno",
     "close": "Zamknij",
     "back": "Wróć",
     "backToHome": "Powrót do strony głównej",
@@ -1658,6 +1659,7 @@
     "confirmRemoval": "Potwierdź usunięcie"
   },
   "classes": {
+    "unsavedEdits": "Niezapisane zmiany zapisanej klasy",
     "stamp": "Mistrz Gry · Klasy",
     "title": "Moje klasy",
     "forge": "Wykuj klasę",
@@ -1696,6 +1698,8 @@
     "appealEmailLink": "Odwołanie e-mailem"
   },
   "report": {
+    "thisClass": "Zgłoś tę klasę",
+    "otherClass": "Zgłoś inną klasę",
     "link": "Zgłoś klasę",
     "title": "Zgłoś klasę",
     "stamp": "Zgłoszenie treści",
@@ -1739,6 +1743,9 @@
     "creationBans": "Blokady tworzenia klas",
     "gmUserId": "Identyfikator użytkownika MG",
     "gmUserIdCopy": "ID MG · skopiuj, aby sprawdzić blokadę",
+    "dismissEffect": "klasa zostaje publiczna, a zgłoszenie zostaje zamknięte.",
+    "takeDownEffect": "znika z wyszukiwania, wyboru klas i pul drużyn; nie można losować nowych postaci. Istniejące postacie ją zachowują.",
+    "removeContentEffect": "jej tekst wszędzie zmienia się w „[usunięte przez moderację]”, także w istniejących postaciach.",
     "reasonRequired": "Wpisz uzasadnienie decyzji, aby działać.",
     "lookUp": "Wyszukaj",
     "creationBanActive": "Tworzenie zablokowane",

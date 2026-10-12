@@ -36,7 +36,8 @@ export const StepButton = styled("button")({
   fontFamily: partyFonts.gothic,
   fontSize: "1.2rem",
   boxShadow: `2px 2px 0 ${black}`,
-  "& .n": { fontFamily: partyFonts.headline, color: mutedText, marginRight: 6 },
+  "& .sr-only": { position: "absolute", width: 1, height: 1, overflow: "hidden", clip: "rect(0 0 0 0)", whiteSpace: "nowrap" },
+  "& .n": { fontFamily: partyFonts.headline, color: mutedText, marginRight: 2 },
   "@media (hover: hover)": { "&:hover": { borderColor: white } },
   '&[aria-current="step"]': { borderColor: yellow, color: yellow, boxShadow: `4px 4px 0 ${black}`, transform: "rotate(-1deg)" },
   '&[aria-current="step"] .n': { color: yellow },
@@ -56,7 +57,7 @@ export const Status = styled("span")({
   "&.warn.quiet": { background: "transparent", color: white, borderColor: white },
   "&.todo": { color: white, borderColor: white },
   "&.optional": { color: white, borderStyle: "dashed", borderColor: grey },
-  "&.empty": { color: pink, borderStyle: "dashed", borderColor: pink },
+  "&.empty": { color: white, borderStyle: "dashed", borderColor: white },
   "& .count-label": { display: "none" },
   "@media (min-width: 1100px)": { "& .count-label": { display: "inline" }, "& .count-number": { display: "none" } },
 });

@@ -188,7 +188,10 @@ export function ClassesPage() {
                 <Box>
                   <CardName>{name}</CardName>
                   <Meta>
-                    {t("classes.draft", "Unfinished draft")} ·{" "}
+                    {draft.classId === null
+                      ? t("classes.draft", "Unfinished draft")
+                      : t("classes.unsavedEdits", "Unsaved edits to a saved class")}{" "}
+                    ·{" "}
                     {t("classes.lastEdited", "Last edited {{date}}", {
                       date: new Date(draft.updatedAt).toLocaleDateString(),
                     })}

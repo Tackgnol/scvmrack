@@ -27,8 +27,9 @@ export function CreatorRail({ current, issues, quiet, noItems, noAbilities, visi
                 onClick={() => onStep(step)}
               >
                 <span>
-                  <span className="n">{index + 1}</span>
+                  <span className="n">{index + 1}</span>{" "}
                   {t(`creator.steps.${step}.label`)}
+                  <span className="sr-only">, </span>
                 </span>
                 {count > 0 && !attempted && !visited.has(step) ? (
                   <Status className="todo" aria-label={t("creator.toDo", "{{count}} to do", { count })}>

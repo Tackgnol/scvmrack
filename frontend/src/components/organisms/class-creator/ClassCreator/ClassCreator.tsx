@@ -120,6 +120,9 @@ export function ClassCreator({
     return () => window.removeEventListener("beforeunload", warn);
   }, [creator.canUndo, creator.saved]);
   const index = STEPS.indexOf(creator.step);
+  const stepIssues = creator.step === "review"
+    ? creator.issues.length
+    : creator.issues.filter((issue) => issue.step === creator.step).length;
   const previous = STEPS[index - 1];
   const next = STEPS[index + 1];
 
@@ -199,12 +202,12 @@ export function ClassCreator({
                 n: index + 1,
                 total: STEPS.length,
               })}
-              {creator.issues.length > 0 &&
-                ` · ${creator.attempted
-                  ? t("creator.toFix", "{{count}} to fix", { count: creator.issues.length })
-                  : t("creator.toDo", "{{count}} to do", { count: creator.issues.length })}`}
+              {stepIssues > 0 &&
+                ` · ${creator.attempted || creator.visited.has(creator.step)
+                  ? t("creator.toFix", "{{count}} to fix", { count: stepIssues })
+                  : t("creator.toDo", "{{count}} to do", { count: stepIssues })}`}
             </StepCount>
-            {creator.draftAutosave.state !== "idle" && (
+            {(creator.draftAutosave.state !== "idle" || creator.draftAutosave.record) && (
               <DraftStatus data-testid="draft-save-state" role="status">
                 {creator.draftAutosave.state === "saving" &&
                   t("creator.draftSaving", "Saving…")}

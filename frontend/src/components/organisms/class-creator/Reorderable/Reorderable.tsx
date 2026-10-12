@@ -26,6 +26,7 @@ export function Reorderable({
     dragging: boolean;
     target: number;
     mids?: number[];
+    height?: number;
   } | null>(null);
   const suppressClickRef = useRef(false);
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
@@ -43,11 +44,10 @@ export function Reorderable({
     );
   const clearPreview = () =>
     entries().forEach((entry) => entry.style.removeProperty("transform"));
-  const preview = (target: number) => {
+  const preview = (target: number, height: number) => {
     const list = entries();
     clearPreview();
     if (target === index) return;
-    const height = list[index]?.getBoundingClientRect().height ?? 0;
     list.forEach((entry, entryIndex) => {
       if (index < target && entryIndex > index && entryIndex <= target)
         entry.style.transform = `translateY(${-height}px)`;
@@ -111,7 +111,7 @@ export function Reorderable({
       }}
       style={{
         display: "grid",
-        gridTemplateColumns: enabled ? "40px minmax(0, 1fr)" : "minmax(0, 1fr)",
+        gridTemplateColumns: enabled ? "44px minmax(0, 1fr)" : "minmax(0, 1fr)",
         alignItems: "start",
         position: "relative",
         transition: window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ? undefined : "transform 160ms ease",
@@ -151,10 +151,13 @@ export function Reorderable({
               Math.abs(event.clientY - pointer.startY) < DRAG_DISTANCE
             )
               return;
-            if (!pointer.dragging) pointer.mids = midpoints();
+            if (!pointer.dragging) {
+              pointer.mids = midpoints();
+              pointer.height = entries()[index]?.getBoundingClientRect().height ?? 0;
+            }
             pointer.dragging = true;
             pointer.target = targetAt(event.clientY, pointer.mids ?? []);
-            preview(pointer.target);
+            preview(pointer.target, pointer.height ?? 0);
             if (event.clientY < SCROLL_EDGE)
               window.scrollBy({ top: -24, behavior: "auto" });
             if (event.clientY > window.innerHeight - SCROLL_EDGE)

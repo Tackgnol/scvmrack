@@ -43,6 +43,7 @@ export function IdentityStep({ draft, language, update, showMissing, touch }: St
       <LocalizedField
         id={fieldId(namePath)}
         label={t("creator.identity.name", "Class name")}
+        required
         value={draft.name[language]}
         language={language}
         showMissing={showMissing(namePath)}
@@ -53,6 +54,7 @@ export function IdentityStep({ draft, language, update, showMissing, touch }: St
       <LocalizedField
         id={fieldId(descriptionPath)}
         label={t("creator.identity.description", "Description")}
+        required
         value={draft.description[language]}
         language={language}
         multiline

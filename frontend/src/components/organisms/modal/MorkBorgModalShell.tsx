@@ -7,6 +7,7 @@ import {
   type Theme,
 } from '@mui/material';
 import { customStyles } from '@/theme/morkBorgTheme';
+import { useId } from 'react';
 import MorkBorgModalHeader from '@components/molecules/modal/MorkBorgModalHeader';
 import MorkBorgModalActions from '@components/molecules/modal/MorkBorgModalActions';
 import { type MorkBorgModalProps } from '@components/modal/types';
@@ -34,6 +35,7 @@ export default function MorkBorgModalShell({
     fullWidth = true,
     showCloseButton = true,
   } = modalProps;
+  const contentId = useId();
 
   return (
     <Dialog
@@ -43,7 +45,12 @@ export default function MorkBorgModalShell({
       fullWidth={fullWidth}
       TransitionComponent={Fade}
       TransitionProps={{ timeout: transitionDuration }}
-      PaperProps={{ sx: paperSx, role: modalProps.role ?? "dialog" }}
+      PaperProps={{
+        sx: paperSx,
+        role: modalProps.role ?? "dialog",
+        // An alertdialog must say what will happen, not only ask.
+        "aria-describedby": modalProps.role === "alertdialog" ? contentId : undefined,
+      }}
     >
       <MorkBorgModalHeader
         title={title}
@@ -51,7 +58,7 @@ export default function MorkBorgModalShell({
         onClose={onClose}
       />
 
-      <DialogContent sx={customStyles.morkBorgModal.dialogContent}>
+      <DialogContent id={contentId} sx={customStyles.morkBorgModal.dialogContent}>
         {children}
       </DialogContent>
 

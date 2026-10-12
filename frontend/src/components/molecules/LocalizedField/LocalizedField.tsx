@@ -17,6 +17,7 @@ export function LocalizedField({
   onBlur,
   action,
   onPaste,
+  required = false,
 }: LocalizedFieldProps) {
   const { t } = useTranslation();
   const missing = showMissing && value.trim() === "";
@@ -29,6 +30,7 @@ export function LocalizedField({
     value,
     maxLength,
     "aria-invalid": missing,
+    "aria-required": required || undefined,
     "aria-describedby": describedBy || undefined,
     onKeyDown: (
       event: KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -42,7 +44,10 @@ export function LocalizedField({
   return (
     <div>
       <Head>
-        <Label htmlFor={id}>{label}</Label>
+        <Label htmlFor={id}>
+          {label}
+          {required && <span aria-hidden="true"> *</span>}
+        </Label>
         {action}
       </Head>
       {multiline ? (

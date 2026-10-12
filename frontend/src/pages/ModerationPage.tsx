@@ -7,7 +7,8 @@ import {
 } from "@/api/moderation";
 import MorkBorgModal, { ModalButton } from "@/components/molecules/modal/MorkBorgModal";
 import { CardAction, Lede, Stamp, Title } from "@/pages/gmPages.styles";
-import { AuthorityStamp, ModerationCard } from "./ModerationPage.styles";
+import { AuthorityStamp, Consequences, ModerationCard } from "./ModerationPage.styles";
+import { partyColors } from "@/theme/partyTokens";
 import { Seo } from "@/seo/Seo";
 import { CreationBanPanel } from "@/components/organisms/CreationBanPanel/CreationBanPanel";
 import { ModerationRemovalHistory } from "@/components/organisms/ModerationRemovalHistory/ModerationRemovalHistory";
@@ -23,6 +24,10 @@ export function ModerationPage() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [reasons, setReasons] = useState<Record<string, string>>({});
+  const describedBy = (report: { id: string; status: string }) =>
+    [!reasons[report.id]?.trim() && `reason-hint-${report.id}`, report.status === "open" && `consequences-${report.id}`]
+      .filter(Boolean)
+      .join(" ") || undefined;
   const reports = useQuery({
     queryKey: ["moderation", "reports"],
     queryFn: listOpenModerationReports,
@@ -138,23 +143,34 @@ export function ModerationPage() {
                             required
                           />
                           {!reasons[report.id]?.trim() && (
-                            <Typography variant="body2">{t("moderation.reasonRequired", "Write a decision reason to act.")}</Typography>
+                            <Typography id={`reason-hint-${report.id}`} variant="body2">{t("moderation.reasonRequired", "Write a decision reason to act.")}</Typography>
                           )}
-                          <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+                          {report.status === "open" && (
+                            <Consequences id={`consequences-${report.id}`}>
+                              <li><strong>{t("moderation.dismiss", "Dismiss")}</strong>: {t("moderation.dismissEffect", "the class stays public and this report closes.")}</li>
+                              <li><strong>{t("moderation.takeDown", "Take down")}</strong>: {t("moderation.takeDownEffect", "hidden from search, pickers and party pools; no new characters. Existing characters keep it.")}</li>
+                              <li><strong>{t("moderation.removeContent", "Remove content")}</strong>: {t("moderation.removeContentEffect", "its text becomes “[removed by moderation]” everywhere, including existing characters.")}</li>
+                            </Consequences>
+                          )}
+                          <Stack
+                            direction={{ xs: "column", sm: "row" }}
+                            spacing={1}
+                            sx={{ "& .MuiButton-root": { minHeight: 44 }, "& .MuiButton-root.Mui-disabled": { color: partyColors.mutedText } }}
+                          >
                             {report.status === "open" ? (
                               <>
-                                <Button disabled={pending || !reasons[report.id]?.trim()} onClick={() => act(report.id, "dismiss")}>
+                                <Button aria-describedby={describedBy(report)} disabled={pending || !reasons[report.id]?.trim()} onClick={() => act(report.id, "dismiss")}>
                                   {t("moderation.dismiss", "Dismiss")}
                                 </Button>
-                                <ModalButton variant="danger" disabled={pending || !reasons[report.id]?.trim()} onClick={() => setConfirming({ id: report.id, action: "takeDown", className: report.className, version: report.classVersion })}>
+                                <ModalButton variant="danger" aria-describedby={describedBy(report)} disabled={pending || !reasons[report.id]?.trim()} onClick={() => setConfirming({ id: report.id, action: "takeDown", className: report.className, version: report.classVersion })}>
                                   {t("moderation.takeDown", "Take down")}
                                 </ModalButton>
-                                <ModalButton variant="danger" disabled={pending || !reasons[report.id]?.trim()} onClick={() => setConfirming({ id: report.id, action: "removeContent", className: report.className, version: report.classVersion })}>
+                                <ModalButton variant="danger" aria-describedby={describedBy(report)} disabled={pending || !reasons[report.id]?.trim()} onClick={() => setConfirming({ id: report.id, action: "removeContent", className: report.className, version: report.classVersion })}>
                                   {t("moderation.removeContent", "Remove content")}
                                 </ModalButton>
                               </>
                             ) : (
-                              <Button color="success" variant="contained" disabled={pending || !reasons[report.id]?.trim()} onClick={() => act(report.id, "restore")}>
+                              <Button color="success" variant="contained" aria-describedby={describedBy(report)} disabled={pending || !reasons[report.id]?.trim()} onClick={() => act(report.id, "restore")}>
                                 {t("moderation.restore", "Restore")}
                               </Button>
                             )}

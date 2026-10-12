@@ -35,6 +35,7 @@ export function ReportPage() {
   const [email, setEmail] = useState("");
   const [website, setWebsite] = useState("");
   const [goodFaith, setGoodFaith] = useState(false);
+  const [editingClass, setEditingClass] = useState(!search.classId);
   const report = useMutation({ mutationFn: submitPublicReport });
   const numericClassId = Number(classId);
   const knownClass = useQuery({
@@ -124,14 +125,23 @@ export function ReportPage() {
                   )}
                 </Alert>
               )}
-              <TextField
-                label={t("report.classId", "Class reference")}
-                value={classId}
-                onChange={(event) => setClassId(event.target.value)}
-                inputProps={{ inputMode: "numeric", min: 1 }}
-                required
-              />
-              {className && <Typography variant="body2">{t("report.reportingClass", "Reporting: {{name}}", { name: className })}</Typography>}
+              {editingClass || !className ? (
+                <TextField
+                  label={t("report.classId", "Class reference")}
+                  value={classId}
+                  onChange={(event) => setClassId(event.target.value)}
+                  inputProps={{ inputMode: "numeric", min: 1 }}
+                  helperText={className ? t("report.reportingClass", "Reporting: {{name}}", { name: className }) : undefined}
+                  required
+                />
+              ) : (
+                <Stack direction="row" spacing={2} alignItems="center" useFlexGap flexWrap="wrap">
+                  <Typography sx={{ fontWeight: 700 }}>{t("report.reportingClass", "Reporting: {{name}}", { name: className })}</Typography>
+                  <CardAction className="secondary" onClick={() => setEditingClass(true)}>
+                    {t("report.otherClass", "Report a different class")}
+                  </CardAction>
+                </Stack>
+              )}
               <TextField
                 select
                 label={t("report.reason", "Reason")}
@@ -181,6 +191,7 @@ export function ReportPage() {
               <FormControlLabel
                 control={
                   <Checkbox
+                    sx={{ width: 44, height: 44 }}
                     checked={goodFaith}
                     onChange={(event) => setGoodFaith(event.target.checked)}
                   />
@@ -191,7 +202,7 @@ export function ReportPage() {
                 )}
               />
               {missing.length > 0 && (
-                <Typography id="report-missing" variant="body2">
+                <Typography id="report-missing" variant="body2" sx={{ maxWidth: "65ch" }}>
                   {t("report.missing", "Still needed: {{fields}}", { fields: missing.join(", ") })}
                 </Typography>
               )}
