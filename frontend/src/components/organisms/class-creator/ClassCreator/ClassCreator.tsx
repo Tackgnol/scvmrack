@@ -338,17 +338,16 @@ export function ClassCreator({
           </PaperFoot>
         </Paper>
         <Nav>
-          <BackButton
-            type="button"
-            disabled={!previous}
-            aria-keyshortcuts="Alt+ArrowLeft"
-            onClick={() => previous && goTo(previous)}
-          >
-            <ArrowBackIcon aria-hidden="true" />
-            {previous
-              ? t(`creator.steps.${previous}.label`)
-              : t("creator.back", "Back")}
-          </BackButton>
+          {previous && (
+            <BackButton
+              type="button"
+              aria-keyshortcuts="Alt+ArrowLeft"
+              onClick={() => goTo(previous)}
+            >
+              <ArrowBackIcon aria-hidden="true" />
+              {t(`creator.steps.${previous}.label`)}
+            </BackButton>
+          )}
           {next && (
             <NextButton
               type="button"

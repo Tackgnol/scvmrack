@@ -95,17 +95,12 @@ export const BackButton = styled("button")({
   background: "transparent",
   color: black,
   border: `2px solid ${black}`,
-  "@media (hover: hover)": { "&:hover:not(:disabled)": { textDecoration: "underline", textUnderlineOffset: 4 } },
-  "&:disabled": {
-    borderStyle: "dashed",
-    cursor: "default",
-    color: partyColors.mutedInk,
-    borderColor: partyColors.mutedInk,
-  },
+  "@media (hover: hover)": { "&:hover": { textDecoration: "underline", textUnderlineOffset: 4 } },
 });
 
 export const NextButton = styled("button")({
   ...navButton,
+  marginLeft: "auto",
   background: black,
   color: yellow,
   border: `2px solid ${black}`,
