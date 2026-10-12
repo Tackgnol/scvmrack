@@ -106,6 +106,7 @@ export default function Header() {
             <Box sx={customStyles.header.titleRow(isMobile)}>
               <Typography
                 variant="h1"
+                component="p"
                 aria-label={`${t('app.title', 'Scvmrack')} ${t('app.betaBadge', 'Beta')}`}
                 sx={customStyles.header.title(isMobile)}
               >

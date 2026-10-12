@@ -45,7 +45,7 @@ export function ClassCreatorPage() {
         noIndex
       />
       <Page>
-        <Stamp>{t("gm.stamp", "Game Master")}</Stamp>
+        <Stamp>{t("creator.stamp", "Game Master · Forge")}</Stamp>
         <Title component="h1">
           {draft !== null ? t("creator.titleResume", "Resume a class") : id === null ? t("creator.titleNew", "Forge a class") : t("creator.titleEdit", "Edit a class")}
         </Title>

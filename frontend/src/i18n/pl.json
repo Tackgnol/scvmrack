@@ -1296,7 +1296,12 @@
     "footerClassless_many": "Gracze widzą {{count}} klas i Bez klasy. Losowanie wybiera równo spośród klas; nigdy Bez klasy.",
     "footerClassless_other": "Gracze widzą {{count}} klas i Bez klasy. Losowanie wybiera równo spośród klas; nigdy Bez klasy."
   },
+  "classDetail": {
+    "notFound": "Nie znaleziono klasy.",
+    "loadFailed": "Nie udało się wczytać klasy. Spróbuj ponownie za chwilę."
+  },
   "creator": {
+    "stamp": "Mistrz Gry · Kuźnia",
     "titleNew": "Wykuj klasę",
     "titleEdit": "Edytuj klasę",
     "creationBanned": "Nie możesz tworzyć nowych własnych klas, dopóki obowiązuje ograniczenie moderacyjne. Twoje istniejące klasy pozostają dostępne.",
@@ -1348,6 +1353,10 @@
     "back": "Wstecz",
     "ok": "OK",
     "complete": "Gotowe",
+    "toDo_one": "{{count}} do zrobienia",
+    "toDo_few": "{{count}} do zrobienia",
+    "toDo_many": "{{count}} do zrobienia",
+    "toDo_other": "{{count}} do zrobienia",
     "toFix_one": "{{count}} do poprawy",
     "toFix_few": "{{count}} do poprawy",
     "toFix_many": "{{count}} do poprawy",
@@ -1649,6 +1658,7 @@
     "confirmRemoval": "Potwierdź usunięcie"
   },
   "classes": {
+    "stamp": "Mistrz Gry · Klasy",
     "title": "Moje klasy",
     "forge": "Wykuj klasę",
     "loginRequired": "Musisz być zalogowany, żeby wykuwać klasy.",
@@ -1692,6 +1702,8 @@
     "description": "Zgłoś klasę do weryfikacji przez człowieka.",
     "intro": "Każdy może zgłosić publiczną treść. Każde zgłoszenie sprawdza człowiek i wyjaśnia wynik.",
     "classId": "Identyfikator klasy",
+    "goodFaithShort": "Potwierdzenie dobrej wiary",
+    "missing": "Jeszcze potrzebne: {{fields}}",
     "reportingClass": "Zgłaszasz: {{name}}",
     "reason": "Powód",
     "explanation": "Wyjaśnij, co się stało",

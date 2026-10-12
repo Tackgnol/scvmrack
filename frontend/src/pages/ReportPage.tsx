@@ -4,14 +4,13 @@ import {
   submitPublicReport,
   type ReportReason,
 } from "@/api/reports";
-import { Lede, Stamp, Title } from "@/pages/gmPages.styles";
+import { CardAction, Lede, Stamp, Title } from "@/pages/gmPages.styles";
 import { Seo } from "@/seo/Seo";
 import { partyColors } from "@/theme/partyTokens";
 import { getUserFacingApiErrorMessage } from "@/utils/errorUtils";
 import {
   Alert,
   Box,
-  Button,
   Checkbox,
   FormControlLabel,
   MenuItem,
@@ -46,6 +45,13 @@ export function ReportPage() {
   });
   const className = knownClass.data?.draft.name[i18n.language.startsWith("pl") ? "pl" : "en"] || knownClass.data?.draft.name.en || knownClass.data?.draft.name.pl;
   const anonymousAllowed = reason === "child_sexual_abuse_material";
+  const missing = [
+    !reason && t("report.reason", "Reason"),
+    !explanation.trim() && t("report.explanation", "Explain what happened"),
+    !anonymousAllowed && !name.trim() && t("report.name", "Your name"),
+    !anonymousAllowed && !email.trim() && t("report.email", "Your email"),
+    !goodFaith && t("report.goodFaithShort", "Good-faith confirmation"),
+  ].filter(Boolean);
 
   const submit = () => {
     const id = Number(classId);
@@ -184,21 +190,20 @@ export function ReportPage() {
                   "I am submitting this report in good faith.",
                 )}
               />
-              <Button
-                variant="contained"
+              {missing.length > 0 && (
+                <Typography id="report-missing" variant="body2">
+                  {t("report.missing", "Still needed: {{fields}}", { fields: missing.join(", ") })}
+                </Typography>
+              )}
+              <CardAction
                 onClick={submit}
-                disabled={
-                  report.isPending ||
-                  !reason ||
-                  !explanation.trim() ||
-                  !goodFaith ||
-                  (!anonymousAllowed && (!name.trim() || !email.trim()))
-                }
+                aria-describedby={missing.length > 0 ? "report-missing" : undefined}
+                disabled={report.isPending || missing.length > 0}
               >
                 {report.isPending
                   ? t("report.sending", "Sending...")
                   : t("report.submit", "Submit report")}
-              </Button>
+              </CardAction>
               <Typography
                 variant="body2"
                 sx={{ "& a": { color: partyColors.yellow, textUnderlineOffset: 3 } }}

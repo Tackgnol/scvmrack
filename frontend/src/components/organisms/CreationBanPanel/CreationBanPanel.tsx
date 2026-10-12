@@ -1,3 +1,5 @@
+import { CardAction } from "@/pages/gmPages.styles";
+import { partyFonts } from "@/theme/partyTokens";
 import { banClassCreation, getCreationBan, unbanClassCreation } from "@/api/moderation";
 import { getUserFacingApiErrorMessage } from "@/utils/errorUtils";
 import { Alert, Box, Button, Paper, Stack, TextField, Typography } from "@mui/material";
@@ -40,10 +42,10 @@ export function CreationBanPanel() {
   return (
     <Paper component="section" elevation={0} sx={{ p: 2, border: "2px solid", borderColor: "text.primary" }}>
       <Stack spacing={2}>
-        <Typography component="h2" variant="h5">{t("moderation.creationBans", "Class creation bans")}</Typography>
+        <Typography component="h2" variant="h5" sx={{ fontFamily: partyFonts.headline, letterSpacing: "0.04em", textTransform: "uppercase" }}>{t("moderation.creationBans", "Class creation bans")}</Typography>
         <Stack component="form" onSubmit={submitLookup} direction={{ xs: "column", sm: "row" }} spacing={1}>
           <TextField label={t("moderation.gmUserId", "GM user ID")} value={inputUserId} onChange={(event) => setInputUserId(event.target.value)} required fullWidth />
-          <Button type="submit" variant="contained" sx={{ whiteSpace: "nowrap", flexShrink: 0 }}>{t("moderation.lookUp", "Look up")}</Button>
+          <CardAction type="submit" sx={{ whiteSpace: "nowrap", flexShrink: 0 }}>{t("moderation.lookUp", "Look up")}</CardAction>
         </Stack>
         {lookup.isLoading && <Typography>{t("actions.loading", "Loading...")}</Typography>}
         {lookup.error && <Alert severity="error">{getUserFacingApiErrorMessage(lookup.error, t, "Could not load this GM.")}</Alert>}

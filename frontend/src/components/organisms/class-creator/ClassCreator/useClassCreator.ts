@@ -89,7 +89,13 @@ export function useClassCreator(
     replaceDraft,
   });
   const [savedRevision, setSavedRevision] = useState<number | null>(null);
-  const [step, setStep] = useState<CreatorStep>("identity");
+  const [step, setCurrentStep] = useState<CreatorStep>("identity");
+  /** Steps the GM has left at least once; only their problems count as failures in the rail. */
+  const [visited, setVisited] = useState<ReadonlySet<CreatorStep>>(() => new Set());
+  const setStep = (next: CreatorStep) => {
+    setVisited((current) => (current.has(step) ? current : new Set(current).add(step)));
+    setCurrentStep(next);
+  };
   const [chosenLanguage, setLanguage] = useState<ClassLanguage>(
     restoredDraft.languages[0],
   );
@@ -268,7 +274,8 @@ export function useClassCreator(
     replaceDraft(resetDraft);
     historyRef.current = { undo: [], redo: [] };
     publishHistory();
-    setStep("identity");
+    setCurrentStep("identity");
+    setVisited(new Set());
     setLanguage(resetDraft.languages[0]);
     setTouched(new Set());
     setAttempted(false);
@@ -283,6 +290,8 @@ export function useClassCreator(
     draft,
     revision,
     step,
+    visited,
+    attempted,
     language,
     issues,
     blocked,

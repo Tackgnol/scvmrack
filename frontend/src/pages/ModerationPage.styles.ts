@@ -23,6 +23,6 @@ export const AuthorityStamp = styled("p")({
   lineHeight: 1,
   letterSpacing: "0.04em",
   textTransform: "uppercase",
-  padding: "6px 14px 4px",
+  padding: "10px 16px 8px",
   transform: "rotate(-1.5deg)",
 });

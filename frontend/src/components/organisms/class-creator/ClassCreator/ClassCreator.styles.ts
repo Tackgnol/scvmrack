@@ -1,5 +1,6 @@
 import { partyColors, partyFonts } from "@/theme/partyTokens";
 import { styled } from "@mui/material";
+import { Hint } from "../classCreator.styles";
 import { keyframes } from "@mui/system";
 
 const { yellow, black, white, grey } = partyColors;
@@ -52,6 +53,7 @@ export const StepCount = styled("span")({
   fontSize: "0.75rem",
   letterSpacing: "0.2em",
   textTransform: "uppercase",
+  whiteSpace: "nowrap",
   "@media (max-width: 879px)": { display: "inline" },
 });
 
@@ -185,4 +187,8 @@ export const ConflictAction = styled("button")({
   justifySelf: "start",
   "@media (hover: hover)": { "&:hover": { background: partyColors.pink, color: black } },
   "&:focus-visible": { outline: `2px solid ${black}`, outlineOffset: 3 },
+});
+
+export const ShortcutHint = styled(Hint)({
+  "@media (hover: none)": { display: "none" },
 });

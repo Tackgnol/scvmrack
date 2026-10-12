@@ -43,7 +43,7 @@ export default function MorkBorgModalShell({
       fullWidth={fullWidth}
       TransitionComponent={Fade}
       TransitionProps={{ timeout: transitionDuration }}
-      PaperProps={{ sx: paperSx }}
+      PaperProps={{ sx: paperSx, role: modalProps.role ?? "dialog" }}
     >
       <MorkBorgModalHeader
         title={title}

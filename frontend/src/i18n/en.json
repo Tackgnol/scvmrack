@@ -1283,7 +1283,12 @@
     "footerClassless_one": "Players see {{count}} class and Classless. Random picks the class; it never picks Classless.",
     "footerClassless_other": "Players see {{count}} classes and Classless. Random picks evenly among the classes; it never picks Classless."
   },
+  "classDetail": {
+    "notFound": "Class not found.",
+    "loadFailed": "This class wouldn't load. Try again in a moment."
+  },
   "creator": {
+    "stamp": "Game Master · Forge",
     "titleNew": "Forge a class",
     "titleEdit": "Edit a class",
     "creationBanned": "You cannot create new Custom Classes while a moderation restriction is active. Your existing classes remain available.",
@@ -1335,6 +1340,8 @@
     "back": "Back",
     "ok": "OK",
     "complete": "Complete",
+    "toDo_one": "{{count}} to do",
+    "toDo_other": "{{count}} to do",
     "toFix_one": "{{count}} to fix",
     "toFix_other": "{{count}} to fix",
     "writingIn": "Writing in",
@@ -1628,6 +1635,7 @@
     "confirmRemoval": "Confirm removal"
   },
   "classes": {
+    "stamp": "Game Master · Classes",
     "title": "My classes",
     "forge": "Forge a class",
     "loginRequired": "You need to be logged in to forge classes.",
@@ -1669,6 +1677,8 @@
     "description": "Report a class for human review.",
     "intro": "Anyone can report public content. A person reviews every report and will explain the outcome.",
     "classId": "Class reference",
+    "goodFaithShort": "Good-faith confirmation",
+    "missing": "Still needed: {{fields}}",
     "reportingClass": "Reporting: {{name}}",
     "reason": "Reason",
     "explanation": "Explain what happened",

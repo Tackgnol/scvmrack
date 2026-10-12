@@ -8,5 +8,8 @@ export type CreatorRailProps = {
   /** The class carries no Class Items; that step reads None. */
   noItems: boolean;
   noAbilities: boolean;
+  /** Steps already left once; problems on unvisited steps read as neutral to-dos until a save is attempted. */
+  visited: ReadonlySet<CreatorStep>;
+  attempted: boolean;
   onStep: (step: CreatorStep) => void;
 };

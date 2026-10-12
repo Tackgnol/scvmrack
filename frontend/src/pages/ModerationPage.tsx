@@ -6,7 +6,7 @@ import {
   takeDownModerationReport,
 } from "@/api/moderation";
 import MorkBorgModal, { ModalButton } from "@/components/molecules/modal/MorkBorgModal";
-import { Lede, Stamp, Title } from "@/pages/gmPages.styles";
+import { CardAction, Lede, Stamp, Title } from "@/pages/gmPages.styles";
 import { AuthorityStamp, ModerationCard } from "./ModerationPage.styles";
 import { Seo } from "@/seo/Seo";
 import { CreationBanPanel } from "@/components/organisms/CreationBanPanel/CreationBanPanel";
@@ -87,9 +87,9 @@ export function ModerationPage() {
                 <Typography component="h2" variant="h5">{group.latest.name}</Typography>
                 {group.ownerUserId && <Typography variant="body2" sx={{ overflowWrap: "anywhere" }}>{t("moderation.gmUserIdCopy", "GM user ID · copy for ban lookup")}: {group.ownerUserId}</Typography>}
                 <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" alignItems="center">
-                  <Button component={Link} to={`/classes/${group.latest.id}`} size="small" variant="contained">
+                  <CardAction component={Link} to={`/classes/${group.latest.id}`} className="secondary">
                     {t("moderation.previewLatest", "Preview latest version")} · {t("moderation.version", { version: group.latest.version })}
-                  </Button>
+                  </CardAction>
                   {group.versions.slice(1).map((version) => (
                     <Button key={version.id} component={Link} to={`/classes/${version.id}`} size="small">
                       {t("moderation.version", { version: version.version })}
@@ -101,14 +101,16 @@ export function ModerationPage() {
                 <ModerationRemovalHistory history={group.removalHistory} />
               )}
               <Typography component="h3" variant="subtitle2" sx={{ fontSize: "0.8rem" }}>{t("moderation.classVersions", "Class versions")}</Typography>
-              {group.reports.map((report) => {
+              {[...group.reports].sort((a, b) => b.classVersion - a.classVersion).map((report, index, sorted) => {
                 const pending = dismiss.isPending || takeDown.isPending || removeContent.isPending || restore.isPending;
                 const reviewable = report.status === "open" || report.status === "taken_down" || report.status === "content_removed";
                 return (
                   <Box key={report.id} component="article" sx={{ borderTop: "1px solid", borderColor: "divider", pt: 1.5 }}>
                     <Stack spacing={1.5}>
-                      <Typography component="h4" variant="h6">{report.className} · {t("moderation.version", { version: report.classVersion })}</Typography>
-                      <Typography>{t(`report.reasons.${report.reason}`)}</Typography>
+                      {(index === 0 || sorted[index - 1].classVersion !== report.classVersion) && (
+                        <Typography component="h4" variant="h6">{report.className} · {t("moderation.version", { version: report.classVersion })}</Typography>
+                      )}
+                      <Typography sx={{ fontWeight: 700 }}>{t(`report.reasons.${report.reason}`)}</Typography>
                       <Typography sx={{ whiteSpace: "pre-wrap" }}>{report.explanation}</Typography>
                       <Typography variant="body2">
                         {report.reporterName ?? t("moderation.anonymous", "Anonymous")} · {report.reporterEmail ?? "—"}
@@ -168,6 +170,7 @@ export function ModerationPage() {
         ))}
       </Stack>
       <MorkBorgModal
+        role="alertdialog"
         open={confirming !== null}
         onClose={() => setConfirming(null)}
         title={

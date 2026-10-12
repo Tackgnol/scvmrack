@@ -76,6 +76,7 @@ export const Card = styled(Box)(({ theme }) => ({
   color: partyColors.white,
   border: `3px solid ${partyColors.black}`,
   boxShadow: `5px 5px 0 ${partyColors.black}`,
+  [theme.breakpoints.down('sm')]: { boxShadow: `3px 3px 0 ${partyColors.black}` },
   padding: 12,
   display: 'grid',
   gridTemplateColumns: '1fr',
@@ -95,16 +96,19 @@ export const CardName = styled(Typography)({
 export const Meta = styled(Typography)({
   marginTop: 6,
   fontFamily: partyFonts.label,
-  color: partyColors.pink,
+  color: partyColors.mutedText,
   fontSize: '0.66rem',
   letterSpacing: '0.12em',
   textTransform: 'uppercase',
+  '&.warn': { color: partyColors.pink },
 });
 
+/** Main action: yellow slab with black ink, so pink stays reserved for danger. Reads on the yellow page and on black cards. */
 export const CardAction = styled(Button)({
-  backgroundColor: partyColors.pink,
+  backgroundColor: partyColors.yellow,
   color: partyColors.black,
-  border: `2px solid ${partyColors.yellow}`,
+  border: `2px solid ${partyColors.black}`,
+  boxShadow: `3px 3px 0 ${partyColors.black}`,
   borderRadius: 0,
   fontFamily: partyFonts.label,
   letterSpacing: '0.12em',
@@ -112,7 +116,9 @@ export const CardAction = styled(Button)({
   minHeight: 54,
   paddingLeft: 16,
   paddingRight: 16,
-  '&:hover': { backgroundColor: partyColors.yellow },
-  '&.secondary': { backgroundColor: 'transparent', color: partyColors.yellow },
+  '&:hover': { backgroundColor: partyColors.white },
+  '&.Mui-disabled': { backgroundColor: 'transparent', color: partyColors.mutedText, border: `2px dashed ${partyColors.darkGrey}`, boxShadow: 'none' },
+  '&:focus-visible': { outline: `2px solid ${partyColors.pink}`, outlineOffset: 3 },
+  '&.secondary': { backgroundColor: 'transparent', color: partyColors.yellow, borderColor: partyColors.yellow, boxShadow: 'none' },
   '&.secondary:hover': { backgroundColor: partyColors.yellow, color: partyColors.black },
 }) as typeof Button;

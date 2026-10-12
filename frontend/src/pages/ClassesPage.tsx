@@ -127,7 +127,7 @@ export function ClassesPage() {
         noIndex
       />
       <Page>
-        <Stamp>{t("gm.stamp", "Game Master")}</Stamp>
+        <Stamp>{t("classes.stamp", "Game Master · Classes")}</Stamp>
         <Title component="h1">{t("classes.title", "My classes")}</Title>
 
         {signedOut ? (
@@ -194,7 +194,7 @@ export function ClassesPage() {
                     })}
                   </Meta>
                   {days < 14 && (
-                    <Meta sx={{ color: "#ff4d7d" }}>
+                    <Meta className="warn">
                       {t("classes.expiresIn", "Expires in {{count}} days", {
                         count: days,
                       })}
@@ -211,6 +211,7 @@ export function ClassesPage() {
                   <ModalButton
                     variant="danger"
                     disabled={discardDraft.isPending}
+                    style={{ marginLeft: 12 }}
                     onClick={() => setRemovalTarget({ kind: "draft", id: draft.id, name })}
                   >
                     {t("classes.discard", "Discard")}
@@ -304,6 +305,7 @@ export function ClassesPage() {
                     <ModalButton
                       variant="danger"
                       disabled={remove.isPending}
+                      style={{ marginLeft: 12 }}
                       onClick={() => setRemovalTarget({ kind: "class", id: cls.id, name: cls.name })}
                     >
                       {t("classes.remove", "Remove")}
@@ -326,6 +328,7 @@ export function ClassesPage() {
           />
         </ZineLine>
         <MorkBorgModal
+          role="alertdialog"
           open={removalTarget !== null}
           onClose={() => setRemovalTarget(null)}
           title={removalTarget?.kind === "draft"

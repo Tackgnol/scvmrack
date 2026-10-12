@@ -93,7 +93,7 @@ export const SmallAction = styled("button")({
   cursor: "pointer",
   "@media (hover: hover)": { "&:hover": { background: yellow, color: black } },
   "&.kill": { background: partyColors.blood, borderColor: partyColors.blood },
-  "&:disabled": { opacity: 0.35, cursor: "default", background: "transparent", color: yellow },
+  "&:disabled": { opacity: 0.5, borderStyle: "dashed", cursor: "default", background: "transparent", color: yellow },
   "@media (pointer: coarse)": { minHeight: 44 },
   "&:focus-visible": { outline: `2px solid ${yellow}`, outlineOffset: 2 },
 });

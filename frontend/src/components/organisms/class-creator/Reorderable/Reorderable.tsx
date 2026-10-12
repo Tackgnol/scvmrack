@@ -25,6 +25,7 @@ export function Reorderable({
     startY: number;
     dragging: boolean;
     target: number;
+    mids?: number[];
   } | null>(null);
   const suppressClickRef = useRef(false);
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
@@ -54,15 +55,15 @@ export function Reorderable({
         entry.style.transform = `translateY(${height}px)`;
     });
   };
-  const targetAt = (clientY: number) => {
-    const list = entries();
-    const found = list.findIndex(
-      (entry) =>
-        clientY <
-        entry.getBoundingClientRect().top +
-          entry.getBoundingClientRect().height / 2,
-    );
-    return found === -1 ? list.length - 1 : found;
+  /** Page-relative midpoints, measured before the preview starts shifting entries. */
+  const midpoints = () =>
+    entries().map((entry) => {
+      const rect = entry.getBoundingClientRect();
+      return rect.top + window.scrollY + rect.height / 2;
+    });
+  const targetAt = (clientY: number, mids: number[]) => {
+    const found = mids.findIndex((mid) => clientY + window.scrollY < mid);
+    return found === -1 ? mids.length - 1 : found;
   };
   const reset = () => {
     pointerRef.current = null;
@@ -113,7 +114,7 @@ export function Reorderable({
         gridTemplateColumns: enabled ? "40px minmax(0, 1fr)" : "minmax(0, 1fr)",
         alignItems: "start",
         position: "relative",
-        transition: "transform 160ms ease",
+        transition: window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ? undefined : "transform 160ms ease",
         zIndex: anchor ? 2 : undefined,
       }}
     >
@@ -150,8 +151,9 @@ export function Reorderable({
               Math.abs(event.clientY - pointer.startY) < DRAG_DISTANCE
             )
               return;
+            if (!pointer.dragging) pointer.mids = midpoints();
             pointer.dragging = true;
-            pointer.target = targetAt(event.clientY);
+            pointer.target = targetAt(event.clientY, pointer.mids ?? []);
             preview(pointer.target);
             if (event.clientY < SCROLL_EDGE)
               window.scrollBy({ top: -24, behavior: "auto" });

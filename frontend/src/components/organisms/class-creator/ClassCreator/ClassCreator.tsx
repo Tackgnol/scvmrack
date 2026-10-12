@@ -20,7 +20,7 @@ import type {
 } from "../classCreator.models";
 import { Hint, SmallAction } from "../classCreator.styles";
 import { focusAfterRender, STEP_TITLE_ID, STEPS } from "../classCreator.utils";
-import { isEditable, isMac } from "./ClassCreator.utils";
+import { isEditable, isMac, reorderableCount } from "./ClassCreator.utils";
 import type { ClassCreatorProps } from "./ClassCreator.models";
 import {
   BackButton,
@@ -35,6 +35,7 @@ import {
   NextButton,
   Paper,
   PaperFoot,
+  ShortcutHint,
   StepCount,
   StepTitle,
 } from "./ClassCreator.styles";
@@ -183,6 +184,8 @@ export function ClassCreator({
         quiet={quiet}
         noItems={creator.draft.items.length === 0}
         noAbilities={creator.draft.abilities.length === 0}
+        visited={creator.visited}
+        attempted={creator.attempted}
         onStep={goTo}
       />
       <section aria-labelledby={STEP_TITLE_ID}>
@@ -196,6 +199,10 @@ export function ClassCreator({
                 n: index + 1,
                 total: STEPS.length,
               })}
+              {creator.issues.length > 0 &&
+                ` · ${creator.attempted
+                  ? t("creator.toFix", "{{count}} to fix", { count: creator.issues.length })
+                  : t("creator.toDo", "{{count}} to do", { count: creator.issues.length })}`}
             </StepCount>
             {creator.draftAutosave.state !== "idle" && (
               <DraftStatus data-testid="draft-save-state" role="status">
@@ -323,10 +330,10 @@ export function ClassCreator({
                   : t("creator.history.redo", "Redo")}
               </SmallAction>
             </History>
-            {(["abilities", "origins", "items"] as CreatorStep[]).includes(creator.step) && (
-              <Hint>
+            {reorderableCount(creator.draft, creator.step) > 1 && (
+              <ShortcutHint>
                 {t("creator.reorder.shortcut", "Alt+↑/↓ moves the focused card or table row.")}
-              </Hint>
+              </ShortcutHint>
             )}
           </PaperFoot>
         </Paper>
@@ -355,6 +362,7 @@ export function ClassCreator({
         </Nav>
       </section>
       <MorkBorgModal
+        role="alertdialog"
         open={confirmDiscard}
         onClose={() => setConfirmDiscard(false)}
         title={t("creator.draftDiscardConfirm", "Discard this unfinished draft?")}
@@ -370,7 +378,11 @@ export function ClassCreator({
           </>
         }
       >
-        <p>{t("creator.draftDiscardLoss", "This unfinished draft will be permanently deleted.")}</p>
+        <p>
+          {creator.draft.name[creator.language].trim()
+            ? t("classes.discardLoss", "“{{name}}” will be permanently deleted.", { name: creator.draft.name[creator.language].trim() })
+            : t("creator.draftDiscardLoss", "This unfinished draft will be permanently deleted.")}
+        </p>
       </MorkBorgModal>
     </Layout>
   );

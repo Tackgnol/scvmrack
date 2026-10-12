@@ -168,7 +168,7 @@ describe("ClassCreator", () => {
 
     await expect.element(page.getByRole("textbox", { name: "Class name" })).toHaveValue("Bog Witch");
     await userEvent.click(page.getByRole("button", { name: "Discard" }));
-    await userEvent.click(page.getByRole("dialog").getByRole("button", { name: "Discard" }));
+    await userEvent.click(page.getByRole("alertdialog").getByRole("button", { name: "Discard" }));
 
     await expect.element(page.getByRole("textbox", { name: "Class name" })).toHaveValue("");
     expect(deleteClassDraft).toHaveBeenCalledWith(5);
@@ -182,11 +182,11 @@ describe("ClassCreator", () => {
     renderCreator(record.draft, null, record);
 
     await userEvent.click(page.getByRole("button", { name: "Discard" }));
-    await userEvent.click(page.getByRole("dialog").getByRole("button", { name: "Discard" }));
+    await userEvent.click(page.getByRole("alertdialog").getByRole("button", { name: "Discard" }));
 
     await expect.element(page.getByText("The draft couldn't be discarded. Try again.")).toBeVisible();
-    await expect.element(page.getByRole("dialog")).toBeVisible();
-    await userEvent.click(page.getByRole("dialog").getByRole("button", { name: "Cancel" }));
+    await expect.element(page.getByRole("alertdialog")).toBeVisible();
+    await userEvent.click(page.getByRole("alertdialog").getByRole("button", { name: "Cancel" }));
     await expect.element(page.getByRole("textbox", { name: "Class name" })).toHaveValue("Bog Witch");
   });
 
@@ -200,7 +200,7 @@ describe("ClassCreator", () => {
     renderCreator(saved, 7, record);
 
     await userEvent.click(page.getByRole("button", { name: "Discard" }));
-    await userEvent.click(page.getByRole("dialog").getByRole("button", { name: "Discard" }));
+    await userEvent.click(page.getByRole("alertdialog").getByRole("button", { name: "Discard" }));
 
     await expect.element(page.getByRole("textbox", { name: "Class name" })).toHaveValue("Bog Witch");
     expect(deleteClassDraft).toHaveBeenCalledWith(5);

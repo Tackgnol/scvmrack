@@ -169,13 +169,13 @@ describe("ClassesPage", () => {
     await userEvent.click(page.getByRole("button", { name: "Cancel" }));
     expect(deleteClassDraft).not.toHaveBeenCalled();
     await userEvent.click(page.getByTestId("class-draft").getByRole("button", { name: "Discard" }));
-    await userEvent.click(page.getByRole("dialog").getByRole("button", { name: "Discard" }));
+    await userEvent.click(page.getByRole("alertdialog").getByRole("button", { name: "Discard" }));
     await expect.poll(() => vi.mocked(deleteClassDraft).mock.calls[0]?.[0]).toBe(3);
 
     await userEvent.click(page.getByTestId("own-class").getByRole("button", { name: "Remove" }));
     await expect.element(page.getByText(/will be deleted if unused/)).toBeVisible();
     expect(removeClass).not.toHaveBeenCalled();
-    await userEvent.click(page.getByRole("dialog").getByRole("button", { name: "Remove" }));
+    await userEvent.click(page.getByRole("alertdialog").getByRole("button", { name: "Remove" }));
     await expect.poll(() => vi.mocked(removeClass).mock.calls[0]?.[0]).toBe(9);
   });
 

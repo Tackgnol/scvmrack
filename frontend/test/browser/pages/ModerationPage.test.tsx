@@ -142,7 +142,7 @@ describe("ModerationPage", () => {
     await userEvent.fill(page.getByRole("textbox", { name: "Decision reason" }), "Substantiated");
     await userEvent.click(page.getByRole("button", { name: "Take down" }));
 
-    const dialog = page.getByRole("dialog");
+    const dialog = page.getByRole("alertdialog");
     await expect.element(dialog.getByText(/Bog Witch.*version 2/)).toBeVisible();
     expect(takeDownModerationReport).not.toHaveBeenCalled();
     await userEvent.click(dialog.getByRole("button", { name: "Take down" }));

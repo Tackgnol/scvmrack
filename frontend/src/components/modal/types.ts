@@ -23,4 +23,6 @@ export type MorkBorgModalProps = {
   fullWidth?: boolean;
   showCloseButton?: boolean;
   closeOnBackdrop?: boolean;
+  /** "alertdialog" for confirms that destroy something, so screen readers announce them as urgent. */
+  role?: "dialog" | "alertdialog";
 };
