@@ -28,6 +28,7 @@ import {
   type ServiceResult,
 } from './result.js';
 import { isGm, sessionUserId, type AppSession } from './session.js';
+import type { ClassStatus, ClassVisibility } from '../lib/class-model.js';
 
 const NAME_CONSTRAINT = 'classes_name_per_owner';
 const NEW_DRAFT_LIMIT = 3;
@@ -118,7 +119,7 @@ type SavedClass = {
   draft: ClassDraft;
   version: number;
   playingCount: number;
-  status: 'draft' | 'active' | 'archived';
+  status: ClassStatus;
 };
 
 /** Returns a creator payload after the repository has assigned stable content keys. */
@@ -127,7 +128,7 @@ function saved(found: {
   draft: ClassDraft;
   version: number;
   playingCount: number;
-  status: 'draft' | 'active' | 'archived';
+  status: ClassStatus;
 }): SavedClass {
   return {
     id: found.id,
@@ -453,8 +454,8 @@ export function createCustomClassService(log: ServiceLogger) {
     async setVisibility(input: {
       session: AppSession;
       id: number;
-      visibility: 'private' | 'public';
-    }): Promise<ServiceResult<{ visibility: 'private' | 'public' }>> {
+      visibility: ClassVisibility;
+    }): Promise<ServiceResult<{ visibility: ClassVisibility }>> {
       if (!isGm(input.session)) {
         return fail(unauthorized());
       }

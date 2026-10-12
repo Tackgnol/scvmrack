@@ -1,18 +1,11 @@
 import prisma from '../lib/prisma.js';
 import { findTranslationsWithAuthoredFallback } from '../lib/class-translations.js';
 import type { GettingBetterRule } from '../lib/getting-better-types.js';
+import type { ClassVersionRef } from '../lib/class-model.js';
 
 /** One version of a class, as the GM's pool panel needs it. */
-export type PoolCatalogRow = {
-  id: number;
-  lineageId: string;
-  version: number;
-  source: 'main_book' | 'zine' | 'the_rack' | 'user';
-  status: 'draft' | 'active' | 'archived';
-  visibility: 'private' | 'public';
-  ownerUserId: string | null;
+export type PoolCatalogRow = ClassVersionRef & {
   ownerName: string | null;
-  takenDownAt: Date | null;
   name: string;
   blurb: string | null;
   languages: string[];

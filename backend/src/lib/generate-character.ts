@@ -116,9 +116,11 @@ async function rollDie(faces: number, roller: Roller): Promise<number> {
   return (await roller.roll(`1d${faces}`)).total;
 }
 
+/** Rolls one stat as its class defines it: `count`d`faces` + `modifier`, optionally dropping the lowest die. */
 async function rollStat(spec: StatDice, roller: Roller): Promise<number> {
   if (!spec.dropLowest) {
-    return (await roller.roll(`${spec.count}d${spec.faces}`)).total + spec.modifier;
+    const roll = await roller.roll(`${spec.count}d${spec.faces}`);
+    return roll.total + spec.modifier;
   }
   const dice: number[] = [];
   for (let i = 0; i < spec.count; i++) {
@@ -238,9 +240,11 @@ function buildCatalogCache(
   }
   const armorMap = new Map(armors.map(a => [a.key, a]));
   const armorsByMaxTier = new Map<number, ArmorRow[]>();
+  // The class's armorDie picks the tier; the table it picks from is the shared catalog only.
+  // A Custom Class's own armor (rows with a classId) is granted by its ability, so it stays
+  // off everyone's starting table. Class weapons never get a table roll, so need no filter.
   for (const a of armors) {
-    // Class Items only reach a scvm through their ability, never the starting tables.
-    if (a.maxTier !== null && !a.classId) {
+    if (a.maxTier !== null && a.classId == null) {
       const existing = armorsByMaxTier.get(a.maxTier) ?? [];
       armorsByMaxTier.set(a.maxTier, [...existing, a]);
     }

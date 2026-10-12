@@ -17,6 +17,7 @@ import type {
   ClassStat,
   Localized,
 } from '../lib/class-draft.js';
+import { customClassKeyRoot, type ClassStatus, type ClassVisibility } from '../lib/class-model.js';
 
 type Tx = Prisma.TransactionClient;
 
@@ -26,9 +27,9 @@ export type CustomClassRows = {
   lineageId: string;
   ownerUserId: string | null;
   ownerName: string | null;
-  visibility: 'private' | 'public';
+  visibility: ClassVisibility;
   version: number;
-  status: 'draft' | 'active' | 'archived';
+  status: ClassStatus;
   takenDownAt: Date | null;
   isLatest: boolean;
   playingCount: number;
@@ -41,8 +42,8 @@ export type OwnClassSummary = {
   name: string;
   description: string | null;
   languages: string[];
-  visibility: 'private' | 'public';
-  status: 'draft' | 'active' | 'archived';
+  visibility: ClassVisibility;
+  status: ClassStatus;
   originCount: number;
   takenDownAt: string | null;
   takedownReason: string | null;
@@ -70,11 +71,11 @@ const asStoredDraft = (row: {
   updatedAt: row.updatedAt,
 });
 const keysFor = (id: number) => ({
-  name: `cc.${id}.name`,
-  description: `cc.${id}.description`,
-  note: `cc.${id}.getting_better_note`,
-  origin: (n: number) => `cc.${id}.origin.${n}`,
-  ability: (n: number) => `cc.${id}.ability.${n}`,
+  name: `${customClassKeyRoot(id)}.name`,
+  description: `${customClassKeyRoot(id)}.description`,
+  note: `${customClassKeyRoot(id)}.getting_better_note`,
+  origin: (n: number) => `${customClassKeyRoot(id)}.origin.${n}`,
+  ability: (n: number) => `${customClassKeyRoot(id)}.ability.${n}`,
 });
 
 function classColumns(draft: ClassDraft) {
@@ -140,7 +141,7 @@ async function writeText(tx: Tx, id: number, draft: ClassDraft): Promise<void> {
   const [texts, modifierRows, weapons, armors, equipment, pets] =
     await Promise.all([
       tx.translation.findMany({
-        where: { key: { startsWith: `cc.${id}.` } },
+        where: { key: { startsWith: `${customClassKeyRoot(id)}.` } },
         select: { key: true },
       }),
       tx.classAbilityModifier.findMany({
@@ -165,13 +166,13 @@ async function writeText(tx: Tx, id: number, draft: ClassDraft): Promise<void> {
     ...modifierRows.map((m) => m.abilityKey),
   ];
   const originKeys = stableKeys(
-    `cc.${id}.origin.`,
+    `${customClassKeyRoot(id)}.origin.`,
     inUse,
     draft.origins.map((o) => o.key),
     keys.origin
   );
   const abilityKeys = stableKeys(
-    `cc.${id}.ability.`,
+    `${customClassKeyRoot(id)}.ability.`,
     inUse,
     draft.abilities.map((a) => a.key),
     keys.ability
@@ -343,7 +344,7 @@ async function deleteVersion(tx: Tx, id: number): Promise<void> {
     tx.armor.deleteMany({ where: { classId: id } }),
     tx.equipment.deleteMany({ where: { classId: id } }),
     tx.pet.deleteMany({ where: { classId: id } }),
-    tx.translation.deleteMany({ where: { key: { startsWith: `cc.${id}.` } } }),
+    tx.translation.deleteMany({ where: { key: { startsWith: `${customClassKeyRoot(id)}.` } } }),
   ]);
   // Ability table rows cascade from abilities.
   await tx.ability.deleteMany({ where: { classId: id } });
@@ -503,7 +504,7 @@ export const customClassRepository = {
   /** Changes the visibility of every available version in a Custom Class lineage. */
   async setVisibility(
     id: number,
-    visibility: 'private' | 'public'
+    visibility: ClassVisibility
   ): Promise<void> {
     await prisma.$transaction(async (tx) => {
       const current = await tx.class.findUniqueOrThrow({
@@ -652,7 +653,7 @@ export const customClassRepository = {
           orderBy: { id: 'asc' },
         }),
         prisma.translation.findMany({
-          where: { key: { startsWith: `cc.${id}.` } },
+          where: { key: { startsWith: `${customClassKeyRoot(id)}.` } },
       }),
     ]);
     const grantKeys = abilities

@@ -1,19 +1,22 @@
-import type { GettingBetterRule } from './getting-better-types.js';
+/**
+ * The Custom Class draft: the one shape the creator edits, autosaves, test-rolls and saves.
+ * Holds its types, the value lists the API schema accepts, the editing limits, the blank draft,
+ * the save checks (`classDraftProblems`) and the conversion to the generator's `ClassSpec`.
+ * Language and stat lists come from the app-wide definitions; nothing here re-declares them.
+ */
+import { SUPPORTED_LOCALES, type SupportedLocale } from '../config/locales.js';
+import { ABILITY_STATS, type AbilityStat } from './ability-modifiers.js';
+import type { GettingBetterRule } from './class-model.js';
 import type { ClassSpec, StatDice } from './generate-character.js';
 
-export const CLASS_LANGUAGES = ['en', 'pl'] as const;
-export type ClassLanguage = (typeof CLASS_LANGUAGES)[number];
+export const CLASS_LANGUAGES = SUPPORTED_LOCALES;
+export type ClassLanguage = SupportedLocale;
 export type Localized = Record<ClassLanguage, string>;
 /** An origin's text; a saved origin carries its translation key so edits keep it stable. */
 export type OriginText = Localized & { key?: string };
 
-export const CLASS_STATS = [
-  'strength',
-  'agility',
-  'presence',
-  'toughness',
-] as const;
-export type ClassStat = (typeof CLASS_STATS)[number];
+export const CLASS_STATS = ABILITY_STATS;
+export type ClassStat = AbilityStat;
 
 export const LIMIT_LIST = 20;
 export const LIMIT_TEXT = 1500;
@@ -31,8 +34,11 @@ export type AbilityTableRowDraft = {
   itemRef: string | null;
 };
 
+/** Dice an ability's reference table can use; the table has one row per face. */
+export const TABLE_DICE = [2, 3, 4, 6, 8, 10, 12] as const;
+
 export type AbilityTableDraft = {
-  die: 2 | 3 | 4 | 6 | 8 | 10 | 12;
+  die: (typeof TABLE_DICE)[number];
   rows: AbilityTableRowDraft[];
 };
 
@@ -52,6 +58,11 @@ export type AbilityDraft = {
 
 export const CLASS_ITEM_TYPES = ['weapon', 'armor', 'gear', 'pet'] as const;
 export type ClassItemType = (typeof CLASS_ITEM_TYPES)[number];
+export const WEAPON_REACHES = ['melee', 'ranged'] as const;
+export const WEAPON_AMMO = ['none', 'counted', 'endless'] as const;
+export const GEAR_KINDS = ['consumable', 'wearable', 'carried'] as const;
+export const GEAR_EFFECTS = ['text', 'damage', 'die'] as const;
+export const PET_ACTIONS = ['attack', 'buff'] as const;
 
 /**
  * A Class Item as the creator edits it. `ref` is its saved key, or a `new:` id
@@ -67,24 +78,24 @@ export type ClassItemDraft = {
     diceCount: number;
     diceFaces: number;
     damageModifier: number;
-    reach: 'melee' | 'ranged';
-    ammo: 'none' | 'counted' | 'endless';
+    reach: (typeof WEAPON_REACHES)[number];
+    ammo: (typeof WEAPON_AMMO)[number];
     ammoCount: number;
     ammoName: string;
     modifiers: AbilityModifierDraft[];
   };
   armor: { tier: number; modifiers: AbilityModifierDraft[] };
   gear: {
-    kind: 'consumable' | 'wearable' | 'carried';
+    kind: (typeof GEAR_KINDS)[number];
     uses: number;
-    effect: 'text' | 'damage' | 'die';
+    effect: (typeof GEAR_EFFECTS)[number];
     effectDie: number;
     statuses: AbilityModifierDraft[];
   };
   pet: {
     hp: number;
     actionDie: number;
-    action: 'attack' | 'buff';
+    action: (typeof PET_ACTIONS)[number];
     humanoid: boolean;
     buffs: AbilityModifierDraft[];
   };

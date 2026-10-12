@@ -1,6 +1,8 @@
+import type { ClassSource } from './class-model.js';
+
 /** Returns the credit line shown beside a class when its source requires one. */
 export function classAttribution(input: {
-  source: 'main_book' | 'zine' | 'the_rack' | 'user';
+  source: ClassSource;
   ownerName: string | null;
   creditWork: string | null;
   creditAuthor: string | null;

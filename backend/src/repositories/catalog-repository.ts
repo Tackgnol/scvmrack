@@ -1,4 +1,5 @@
 import prisma from '../lib/prisma.js';
+import type { ClassSource, ClassVisibility } from '../lib/class-model.js';
 
 export type PetCatalogRow = {
   key: string;
@@ -41,8 +42,8 @@ export type ClassCatalogRow = {
   nameKey: string | null;
   descriptionKey: string | null;
   languages: string[];
-  source: 'main_book' | 'zine' | 'the_rack' | 'user';
-  visibility: 'private' | 'public';
+  source: ClassSource;
+  visibility: ClassVisibility;
   creditWork: string | null;
   creditAuthor: string | null;
   ownerName: string | null;

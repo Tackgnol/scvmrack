@@ -22,6 +22,7 @@ import { snakeToCamel } from '../utils.js';
 import { statToModifier } from './ability-modifiers.js';
 import { findTranslationsWithAuthoredFallback } from './class-translations.js';
 import { classAttribution } from './class-attribution.js';
+import { isCustomClassKey } from './class-model.js';
 
 // ── Internal types ─────────────────────────────────────────────────────────────
 
@@ -512,6 +513,9 @@ async function resolveComputedModifiers(
   maxEncumbrance: number,
 ): Promise<ComputedModifier[]> {
   const result: ComputedModifier[] = [];
+  // Modifiers whose label a GM already wrote in the reader's language; the Book-source
+  // translation pass below must leave them alone, or a GM's "Strong" could pick up a Book string.
+  const authoredLabels = new Set<ComputedModifier>();
 
   // 1. Armor modifiers
   if (equippedArmor !== null) {
@@ -592,11 +596,9 @@ async function resolveComputedModifiers(
     if (abilityKeys.length > 0) {
       const cams = await catalogRepository.findClassAbilityModifiers(classId, abilityKeys);
       for (const cam of cams) {
-        // A Custom Class ability is named in the reader's language; Book sources are translated below.
-        const label = cam.abilityKey.startsWith('cc.')
-          ? (translate(translations, cam.abilityKey) ?? cam.source)
-          : cam.source;
-        result.push({
+        const authored = isCustomClassKey(cam.abilityKey);
+        const label = authored ? (translate(translations, cam.abilityKey) ?? cam.source) : cam.source;
+        const modifier: ComputedModifier = {
           value: cam.value,
           source: label,
           statistic: cam.statistic,
@@ -604,7 +606,11 @@ async function resolveComputedModifiers(
           origin: 'system',
           originKey: `class_ability.${cam.abilityKey}`,
           originName: label,
-        });
+        };
+        result.push(modifier);
+        if (authored) {
+          authoredLabels.add(modifier);
+        }
       }
     }
   }
@@ -662,7 +668,7 @@ async function resolveComputedModifiers(
       : translations;
 
   for (const m of result) {
-    if (!m.source || m.originKey?.startsWith('class_ability.cc.')) {
+    if (!m.source || authoredLabels.has(m)) {
       continue;
     }
     const translated = translate(modifierTranslations, modifierSourceTranslationKey(m.source));

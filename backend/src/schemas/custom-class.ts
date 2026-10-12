@@ -1,4 +1,18 @@
-import { LIMIT_LIST, LIMIT_NAME, LIMIT_TEXT } from '../lib/class-draft.js';
+import {
+  CLASS_ITEM_TYPES,
+  CLASS_LANGUAGES,
+  CLASS_STATS,
+  GEAR_EFFECTS,
+  GEAR_KINDS,
+  LIMIT_LIST,
+  LIMIT_NAME,
+  LIMIT_TEXT,
+  PET_ACTIONS,
+  TABLE_DICE,
+  WEAPON_AMMO,
+  WEAPON_REACHES,
+} from '../lib/class-draft.js';
+import { CLASS_STATUSES, CLASS_VISIBILITIES, GETTING_BETTER_RULES } from '../lib/class-model.js';
 import { DraftPreviewSchema } from './draft.js';
 
 export { ErrorSchema } from './character.js';
@@ -44,7 +58,7 @@ const AbilityTableSchema = {
   additionalProperties: false,
   required: ['die', 'rows'],
   properties: {
-    die: { type: 'integer', enum: [2, 3, 4, 6, 8, 10, 12] },
+    die: { type: 'integer', enum: TABLE_DICE },
     rows: { type: 'array', minItems: 2, maxItems: 12, items: TableRowSchema },
   },
 } as const;
@@ -59,7 +73,7 @@ const ModifiersSchema = {
     properties: {
       statistic: {
         type: 'string',
-        enum: ['strength', 'agility', 'presence', 'toughness'],
+        enum: CLASS_STATS,
       },
       value: { type: 'integer', minimum: -10, maximum: 10 },
       exclude: {
@@ -101,7 +115,7 @@ const ClassItemSchema = {
   ],
   properties: {
     ref: { type: 'string', pattern: ITEM_REF },
-    type: { type: 'string', enum: ['weapon', 'armor', 'gear', 'pet'] },
+    type: { type: 'string', enum: CLASS_ITEM_TYPES },
     name: NameSchema,
     description: LocalizedSchema,
     value: { type: 'integer', minimum: 0, maximum: 9999 },
@@ -122,8 +136,8 @@ const ClassItemSchema = {
         diceCount: { type: 'integer', minimum: 1, maximum: 6 },
         diceFaces: { type: 'integer', enum: [2, 4, 6, 8, 10, 12] },
         damageModifier: { type: 'integer', minimum: -6, maximum: 6 },
-        reach: { type: 'string', enum: ['melee', 'ranged'] },
-        ammo: { type: 'string', enum: ['none', 'counted', 'endless'] },
+        reach: { type: 'string', enum: WEAPON_REACHES },
+        ammo: { type: 'string', enum: WEAPON_AMMO },
         ammoCount: { type: 'integer', minimum: 1, maximum: 99 },
         ammoName: { type: 'string', maxLength: 50 },
         modifiers: ModifiersSchema,
@@ -143,9 +157,9 @@ const ClassItemSchema = {
       additionalProperties: false,
       required: ['kind', 'uses', 'effect', 'effectDie', 'statuses'],
       properties: {
-        kind: { type: 'string', enum: ['consumable', 'wearable', 'carried'] },
+        kind: { type: 'string', enum: GEAR_KINDS },
         uses: { type: 'integer', minimum: 0, maximum: 99 },
-        effect: { type: 'string', enum: ['text', 'damage', 'die'] },
+        effect: { type: 'string', enum: GEAR_EFFECTS },
         effectDie: { type: 'integer', enum: [2, 4, 6, 8, 10, 12] },
         statuses: ModifiersSchema,
       },
@@ -157,7 +171,7 @@ const ClassItemSchema = {
       properties: {
         hp: { type: 'integer', minimum: 1, maximum: 99 },
         actionDie: { type: 'integer', enum: [2, 4, 6, 8, 10] },
-        action: { type: 'string', enum: ['attack', 'buff'] },
+        action: { type: 'string', enum: PET_ACTIONS },
         humanoid: { type: 'boolean' },
         buffs: ModifiersSchema,
       },
@@ -230,14 +244,14 @@ export const ClassDraftSchema = {
       minItems: 1,
       maxItems: 2,
       uniqueItems: true,
-      items: { type: 'string', enum: ['en', 'pl'] },
+      items: { type: 'string', enum: CLASS_LANGUAGES },
     },
     name: NameSchema,
     description: LocalizedSchema,
     stats: {
       type: 'object',
       additionalProperties: false,
-      required: ['strength', 'agility', 'presence', 'toughness'],
+      required: CLASS_STATS,
       properties: {
         strength: StatDiceSchema,
         agility: StatDiceSchema,
@@ -265,7 +279,7 @@ export const ClassDraftSchema = {
     items: { type: 'array', maxItems: LIMIT_LIST, items: ClassItemSchema },
     gettingBetterRule: {
       type: 'string',
-      enum: ['book', 'book_plus_ability', 'specialist'],
+      enum: GETTING_BETTER_RULES,
     },
     gettingBetterNote: LocalizedSchema,
   },
@@ -284,7 +298,7 @@ export const TestRollBodySchema = {
   required: ['draft', 'language'],
   properties: {
     draft: ClassDraftSchema,
-    language: { type: 'string', enum: ['en', 'pl'] },
+    language: { type: 'string', enum: CLASS_LANGUAGES },
   },
 } as const;
 
@@ -339,7 +353,7 @@ export const ClassDraftListSchema = {
 } as const;
 export const ClassLocaleQuerySchema = {
   type: 'object',
-  properties: { locale: { type: 'string', enum: ['en', 'pl'], default: 'en' } },
+  properties: { locale: { type: 'string', enum: CLASS_LANGUAGES, default: 'en' } },
 } as const;
 
 export const PublishClassBodySchema = {
@@ -353,7 +367,7 @@ export const ClassVisibilityResponseSchema = {
   type: 'object',
   additionalProperties: false,
   required: ['visibility'],
-  properties: { visibility: { type: 'string', enum: ['private', 'public'] } },
+  properties: { visibility: { type: 'string', enum: CLASS_VISIBILITIES } },
 } as const;
 export const ClassWithDraftSchema = {
   type: 'object',
@@ -364,7 +378,7 @@ export const ClassWithDraftSchema = {
     draft: ClassDraftSchema,
     version: { type: 'integer', minimum: 1 },
     playingCount: { type: 'integer', minimum: 0 },
-    status: { type: 'string', enum: ['draft', 'active', 'archived'] },
+    status: { type: 'string', enum: CLASS_STATUSES },
   },
 } as const;
 
@@ -401,8 +415,8 @@ export const OwnClassListSchema = {
       name: { type: 'string' },
       description: { type: ['string', 'null'] },
       languages: { type: 'array', items: { type: 'string' } },
-      visibility: { type: 'string', enum: ['private', 'public'] },
-      status: { type: 'string', enum: ['draft', 'active', 'archived'] },
+      visibility: { type: 'string', enum: CLASS_VISIBILITIES },
+      status: { type: 'string', enum: CLASS_STATUSES },
       originCount: { type: 'integer' },
       takenDownAt: { type: ['string', 'null'], format: 'date-time' },
       takedownReason: { type: ['string', 'null'] },

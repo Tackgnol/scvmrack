@@ -1,6 +1,7 @@
 import prisma from '../lib/prisma.js';
 import { findTranslationsWithAuthoredFallback } from '../lib/class-translations.js';
 import { Prisma } from '@prisma/client';
+import type { ClassVersionRef } from '../lib/class-model.js';
 
 /**
  * Character data-access layer. The ONLY place that talks to Prisma for character
@@ -32,16 +33,7 @@ export type CharacterPartyAccessRow = {
   } | null;
 };
 
-export type ScopeClassRow = {
-  id: number;
-  lineageId: string;
-  version: number;
-  source: 'main_book' | 'zine' | 'the_rack' | 'user';
-  status: 'draft' | 'active' | 'archived';
-  visibility: 'private' | 'public';
-  ownerUserId: string | null;
-  takenDownAt: Date | null;
-};
+export type ScopeClassRow = ClassVersionRef;
 
 const scopeClassSelect = {
   id: true,

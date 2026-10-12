@@ -69,7 +69,9 @@ export type SpecialtyRoll = SpecialtySlot & {
   roll: RollValue;
 };
 
-export type GettingBetterRule = 'book' | 'book_plus_ability' | 'specialist';
+import type { GettingBetterRule } from './class-model.js';
+
+export type { GettingBetterRule };
 
 /** One held specialty: keep it, or swap it for the pre-rolled replacement (null when none is free). */
 export type SpecialtyChoice = {
