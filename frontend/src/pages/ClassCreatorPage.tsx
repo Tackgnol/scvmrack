@@ -33,7 +33,7 @@ export function ClassCreatorPage() {
   return (
     <>
       <Seo
-        title="Forge a class"
+        title={draft !== null ? t("creator.titleResume", "Resume a class") : id === null ? t("creator.titleNew", "Forge a class") : t("creator.titleEdit", "Edit a class")}
         description="The class creator."
         path={draft !== null ? `/gm/classes/draft/${draft}` : id === null ? "/gm/classes/new" : `/gm/classes/${id}`}
         noIndex

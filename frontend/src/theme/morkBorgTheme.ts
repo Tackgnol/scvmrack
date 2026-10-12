@@ -1839,9 +1839,11 @@ export const customStyles = {
       },
     },
     danger: {
-      bgcolor: '#8b0000',
-      color: morkBorgColors.white,
-      border: `2px solid ${morkBorgColors.black}`,
+      bgcolor: morkBorgColors.black,
+      color: morkBorgColors.pink,
+      border: `3px solid ${morkBorgColors.pink}`,
+      boxShadow: `4px 4px 0 ${morkBorgColors.pink}`,
+      minHeight: 44,
       '&:hover': {
         bgcolor: morkBorgColors.pink,
         color: morkBorgColors.black,
@@ -1850,6 +1852,7 @@ export const customStyles = {
         bgcolor: morkBorgColors.darkGrey,
         color: morkBorgColors.white,
         borderColor: morkBorgColors.grey,
+        boxShadow: 'none',
         opacity: 0.62,
       },
     },

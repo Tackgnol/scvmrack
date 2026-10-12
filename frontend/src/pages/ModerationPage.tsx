@@ -7,12 +7,12 @@ import {
 } from "@/api/moderation";
 import MorkBorgModal, { ModalButton } from "@/components/molecules/modal/MorkBorgModal";
 import { Lede, Stamp, Title } from "@/pages/gmPages.styles";
-import { AuthorityStamp } from "./ModerationPage.styles";
+import { AuthorityStamp, ModerationCard } from "./ModerationPage.styles";
 import { Seo } from "@/seo/Seo";
 import { CreationBanPanel } from "@/components/organisms/CreationBanPanel/CreationBanPanel";
 import { ModerationRemovalHistory } from "@/components/organisms/ModerationRemovalHistory/ModerationRemovalHistory";
 import { getUserFacingApiErrorMessage } from "@/utils/errorUtils";
-import { Alert, Box, Button, Paper, Stack, TextField, Typography } from "@mui/material";
+import { Alert, Box, Button, Stack, TextField, Typography } from "@mui/material";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
@@ -78,7 +78,7 @@ export function ModerationPage() {
           <Alert severity="success">{t("moderation.empty", "No open reports.")}</Alert>
         )}
         {reports.data?.map((group) => (
-          <Paper key={group.lineageId} component="section" elevation={0} sx={{ p: 2, border: "2px solid", borderColor: "text.primary" }}>
+          <ModerationCard key={group.lineageId}>
             <Stack spacing={1.5}>
               {group.reports.some((report) => report.serious) && (
                 <AuthorityStamp>{t("moderation.authority", "Needs authority report")}</AuthorityStamp>
@@ -100,21 +100,21 @@ export function ModerationPage() {
               {group.removalHistory !== null && (
                 <ModerationRemovalHistory history={group.removalHistory} />
               )}
-              <Typography variant="subtitle2">{t("moderation.classVersions", "Class versions")}</Typography>
+              <Typography component="h3" variant="subtitle2" sx={{ fontSize: "0.8rem" }}>{t("moderation.classVersions", "Class versions")}</Typography>
               {group.reports.map((report) => {
                 const pending = dismiss.isPending || takeDown.isPending || removeContent.isPending || restore.isPending;
                 const reviewable = report.status === "open" || report.status === "taken_down" || report.status === "content_removed";
                 return (
                   <Box key={report.id} component="article" sx={{ borderTop: "1px solid", borderColor: "divider", pt: 1.5 }}>
                     <Stack spacing={1.5}>
-                      <Typography component="h3" variant="h6">{report.className} · {t("moderation.version", { version: report.classVersion })}</Typography>
+                      <Typography component="h4" variant="h6">{report.className} · {t("moderation.version", { version: report.classVersion })}</Typography>
                       <Typography>{t(`report.reasons.${report.reason}`)}</Typography>
                       <Typography sx={{ whiteSpace: "pre-wrap" }}>{report.explanation}</Typography>
                       <Typography variant="body2">
                         {report.reporterName ?? t("moderation.anonymous", "Anonymous")} · {report.reporterEmail ?? "—"}
                       </Typography>
                       {report.disputes.length > 0 && (
-                        <Stack spacing={1} sx={{ borderLeft: 4, borderColor: "warning.main", pl: 2 }}>
+                        <Stack spacing={1} sx={{ border: "2px solid", borderColor: "secondary.main", p: 2 }}>
                           <Typography variant="subtitle2">{t("moderation.disputes", "Author disputes")}</Typography>
                           {report.disputes.map((dispute) => (
                             <Box key={dispute.id}>
@@ -135,18 +135,21 @@ export function ModerationPage() {
                             inputProps={{ maxLength: 4000 }}
                             required
                           />
+                          {!reasons[report.id]?.trim() && (
+                            <Typography variant="body2">{t("moderation.reasonRequired", "Write a decision reason to act.")}</Typography>
+                          )}
                           <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
                             {report.status === "open" ? (
                               <>
                                 <Button disabled={pending || !reasons[report.id]?.trim()} onClick={() => act(report.id, "dismiss")}>
                                   {t("moderation.dismiss", "Dismiss")}
                                 </Button>
-                                <Button color="error" variant="contained" disabled={pending || !reasons[report.id]?.trim()} onClick={() => setConfirming({ id: report.id, action: "takeDown", className: report.className, version: report.classVersion })}>
+                                <ModalButton variant="danger" disabled={pending || !reasons[report.id]?.trim()} onClick={() => setConfirming({ id: report.id, action: "takeDown", className: report.className, version: report.classVersion })}>
                                   {t("moderation.takeDown", "Take down")}
-                                </Button>
-                                <Button color="error" disabled={pending || !reasons[report.id]?.trim()} onClick={() => setConfirming({ id: report.id, action: "removeContent", className: report.className, version: report.classVersion })}>
+                                </ModalButton>
+                                <ModalButton variant="danger" disabled={pending || !reasons[report.id]?.trim()} onClick={() => setConfirming({ id: report.id, action: "removeContent", className: report.className, version: report.classVersion })}>
                                   {t("moderation.removeContent", "Remove content")}
-                                </Button>
+                                </ModalButton>
                               </>
                             ) : (
                               <Button color="success" variant="contained" disabled={pending || !reasons[report.id]?.trim()} onClick={() => act(report.id, "restore")}>
@@ -161,7 +164,7 @@ export function ModerationPage() {
                 );
               })}
             </Stack>
-          </Paper>
+          </ModerationCard>
         ))}
       </Stack>
       <MorkBorgModal
@@ -179,7 +182,7 @@ export function ModerationPage() {
               {t("actions.cancel", "Cancel")}
             </ModalButton>
             <ModalButton
-              variant="primary"
+              variant="danger"
               onClick={() => {
                 if (confirming) act(confirming.id, confirming.action);
                 setConfirming(null);

@@ -191,12 +191,12 @@ export function AbilitiesStep({
 
   return (
     <Stack>
-      <Hint>
-        {t(
-          "creator.zinePaste.abilities",
-          "Porting a zine? Paste an ability list into a Name field: one “Name: rules” entry per line.",
-        )}
-      </Hint>
+      <details>
+        <summary>{t("creator.zinePaste.title", "Porting a zine?")}</summary>
+        <Hint>
+          {t("creator.zinePaste.abilities", "Paste an ability list into a Name field: one “Name: rules” entry per line.")}
+        </Hint>
+      </details>
       <Hint>
         {t(
           "creator.reorder.abilitiesHint",

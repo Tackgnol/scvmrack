@@ -1,6 +1,14 @@
 import { partyColors, partyFonts } from "@/theme/partyTokens";
 import { styled } from "@mui/material";
 
+export const ModerationCard = styled("section")({
+  background: partyColors.black,
+  color: partyColors.white,
+  border: `3px solid ${partyColors.black}`,
+  boxShadow: `5px 5px 0 ${partyColors.pink}`,
+  padding: 16,
+});
+
 /** The serious-category flag: it must stop the moderator before anything else on the card. */
 export const AuthorityStamp = styled("p")({
   display: "inline-block",

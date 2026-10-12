@@ -1,8 +1,8 @@
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
-import { Alert, Button } from "@mui/material";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import MorkBorgModal, { ModalButton } from "@/components/molecules/modal/MorkBorgModal";
 import { AbilitiesStep } from "../AbilitiesStep/AbilitiesStep";
 import { ItemsStep } from "../ItemsStep/ItemsStep";
 import { CreatorRail } from "../CreatorRail/CreatorRail";
@@ -23,6 +23,8 @@ import { isEditable, isMac } from "./ClassCreator.utils";
 import type { ClassCreatorProps } from "./ClassCreator.models";
 import {
   BackButton,
+  ConflictAction,
+  ConflictPanel,
   DiscardDraft,
   DraftStatus,
   Head,
@@ -46,6 +48,7 @@ export function ClassCreator({
 }: ClassCreatorProps) {
   const { t } = useTranslation();
   const creator = useClassCreator(classId, initialDraft, initialDraftRecord);
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
   const moveRef = useRef(creator.move);
   useEffect(() => {
     moveRef.current = creator.move;
@@ -203,17 +206,7 @@ export function ClassCreator({
                   creator.draftAutosave.state !== "conflict" && (
                     <DiscardDraft
                       type="button"
-                      onClick={() => {
-                        if (
-                          window.confirm(
-                            t(
-                              "creator.draftDiscardConfirm",
-                              "Discard this unfinished draft?",
-                            ),
-                          )
-                        )
-                          void creator.draftAutosave.discard();
-                      }}
+                      onClick={() => setConfirmDiscard(true)}
                     >
                       {t("creator.draftDiscard", "Discard")}
                     </DiscardDraft>
@@ -233,32 +226,24 @@ export function ClassCreator({
           )}
         </Head>
         {creator.draftAutosave.state === "conflict" && (
-          <Alert
-            severity="warning"
-            action={
-              <>
-                <Button
-                  color="inherit"
-                  size="small"
-                  onClick={() => void creator.draftAutosave.loadNewer()}
-                >
+          <ConflictPanel role="alert">
+            <strong>{t("creator.draftConflictTitle", "Draft conflict")}</strong>
+            <p>{t("creator.draftConflictBody", "This draft changed on another device. Choose which version to keep.")}</p>
+            <div className="choices">
+              <div>
+                <ConflictAction type="button" onClick={() => void creator.draftAutosave.loadNewer()}>
                   {t("creator.draftLoadNewer", "Load newer one")}
-                </Button>
-                <Button
-                  color="inherit"
-                  size="small"
-                  onClick={() => void creator.draftAutosave.keepMine()}
-                >
+                </ConflictAction>
+                <p>{t("creator.draftLoadNewerLoss", "Your edits here since the last save will be lost.")}</p>
+              </div>
+              <div>
+                <ConflictAction type="button" onClick={() => void creator.draftAutosave.keepMine()}>
                   {t("creator.draftKeepMine", "Keep mine")}
-                </Button>
-              </>
-            }
-          >
-            {t(
-              "creator.draftConflictBody",
-              "This draft changed on another device.",
-            )}
-          </Alert>
+                </ConflictAction>
+                <p>{t("creator.draftKeepMineLoss", "This overwrites the newer draft from the other device.")}</p>
+              </div>
+            </div>
+          </ConflictPanel>
         )}
         <Paper>
           <Hint>{t(`creator.steps.${creator.step}.hint`)}</Hint>
@@ -328,12 +313,11 @@ export function ClassCreator({
                   : t("creator.history.redo", "Redo")}
               </SmallAction>
             </History>
-            <Hint>
-              {t(
-                "creator.reorder.shortcut",
-                "Alt+↑/↓ moves the focused card or table row.",
-              )}
-            </Hint>
+            {(["abilities", "origins", "items"] as CreatorStep[]).includes(creator.step) && (
+              <Hint>
+                {t("creator.reorder.shortcut", "Alt+↑/↓ moves the focused card or table row.")}
+              </Hint>
+            )}
           </PaperFoot>
         </Paper>
         <Nav>
@@ -360,6 +344,24 @@ export function ClassCreator({
           )}
         </Nav>
       </section>
+      <MorkBorgModal
+        open={confirmDiscard}
+        onClose={() => setConfirmDiscard(false)}
+        title={t("creator.draftDiscardConfirm", "Discard this unfinished draft?")}
+        maxWidth="xs"
+        actions={
+          <>
+            <ModalButton variant="secondary" onClick={() => setConfirmDiscard(false)}>
+              {t("actions.cancel", "Cancel")}
+            </ModalButton>
+            <ModalButton variant="danger" onClick={() => { setConfirmDiscard(false); void creator.draftAutosave.discard(); }}>
+              {t("creator.draftDiscard", "Discard")}
+            </ModalButton>
+          </>
+        }
+      >
+        <p>{t("creator.draftDiscardLoss", "This unfinished draft will be permanently deleted.")}</p>
+      </MorkBorgModal>
     </Layout>
   );
 }

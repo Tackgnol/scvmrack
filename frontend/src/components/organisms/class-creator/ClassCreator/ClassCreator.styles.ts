@@ -153,3 +153,36 @@ export const History = styled("div")({
   flexWrap: "wrap",
   gap: 8,
 });
+
+export const ConflictPanel = styled("section")({
+  background: partyColors.pink,
+  color: black,
+  border: `3px solid ${black}`,
+  boxShadow: `4px 4px 0 ${black}`,
+  padding: 16,
+  marginBottom: 20,
+  display: "grid",
+  gap: 12,
+  fontFamily: partyFonts.body,
+  "& strong": { fontFamily: partyFonts.headline, fontSize: "1.5rem", textTransform: "uppercase" },
+  "& p": { margin: 0 },
+  "& .choices": { display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 12 },
+  "& .choices > div": { display: "grid", alignContent: "start", gap: 6 },
+  "@media (max-width: 600px)": { "& .choices": { gridTemplateColumns: "1fr" } },
+});
+
+export const ConflictAction = styled("button")({
+  fontFamily: partyFonts.label,
+  fontSize: "0.8rem",
+  letterSpacing: "0.1em",
+  textTransform: "uppercase",
+  background: black,
+  color: partyColors.pink,
+  border: `2px solid ${black}`,
+  minHeight: 44,
+  padding: "8px 12px",
+  cursor: "pointer",
+  justifySelf: "start",
+  "@media (hover: hover)": { "&:hover": { background: partyColors.pink, color: black } },
+  "&:focus-visible": { outline: `2px solid ${black}`, outlineOffset: 3 },
+});

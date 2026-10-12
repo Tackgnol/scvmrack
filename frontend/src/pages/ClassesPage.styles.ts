@@ -11,6 +11,7 @@ export const ClassDescription = styled("p")({
 
 export const ZineLine = styled("p")({
   margin: 0,
+  maxWidth: "65ch",
   fontFamily: partyFonts.body,
   fontStyle: "italic",
   color: partyColors.mutedInk,

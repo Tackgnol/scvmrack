@@ -35,10 +35,11 @@ export function CreatorRail({ current, issues, quiet, noItems, noAbilities, onSt
                     className={quiet ? "warn quiet" : "warn"}
                     aria-label={t("creator.toFix", "{{count}} to fix", { count })}
                   >
-                    {count}
+                    <span className="count-number">{count}</span>
+                    <span className="count-label">{t("creator.toFix", "{{count}} to fix", { count })}</span>
                   </Status>
                 ) : step === "items" && noItems ? (
-                  <Status className="empty" aria-label={t("creator.items.noneLabel", "No Class Items, which is fine")}>{t("creator.items.noneChip", "Optional")}</Status>
+                  <Status className="optional" aria-label={t("creator.items.noneLabel", "No Class Items, which is fine")}>{t("creator.items.noneChip", "Optional")}</Status>
                 ) : step === "abilities" && noAbilities ? (
                   <Status className="empty" aria-label={t("creator.abilities.emptyLabel", "No abilities yet")}>{t("creator.abilities.emptyChip", "Empty")}</Status>
                 ) : (

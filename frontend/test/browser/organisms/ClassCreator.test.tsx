@@ -8,12 +8,14 @@ import {
   blankClassItem,
   blankDraft,
 } from "@/components/organisms/class-creator/classCreator.utils";
-import { saveClass, testRollClass, type ClassDraft } from "@/api/classes";
+import { getClassDraft, saveClass, testRollClass, updateClassDraft, type ClassDraft, type StoredClassDraft } from "@/api/classes";
 
 vi.mock("@/api/classes", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/api/classes")>()),
   saveClass: vi.fn(),
   testRollClass: vi.fn(),
+  updateClassDraft: vi.fn(),
+  getClassDraft: vi.fn(),
 }));
 vi.mock("@tanstack/react-router", () => ({
   Link: ({ children, to }: { children: React.ReactNode; to: string }) => (
@@ -31,6 +33,7 @@ const complete = (): ClassDraft => ({
 function renderCreator(
   draft: ClassDraft = blankDraft(),
   classId: number | null = null,
+  initialDraftRecord: StoredClassDraft | null = null,
 ) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
@@ -38,7 +41,7 @@ function renderCreator(
   return render(
     <QueryClientProvider client={queryClient}>
       <BrowserTestProvider>
-        <ClassCreator classId={classId} initialDraft={draft} />
+        <ClassCreator classId={classId} initialDraft={draft} initialDraftRecord={initialDraftRecord} />
       </BrowserTestProvider>
     </QueryClientProvider>,
   );
@@ -126,12 +129,33 @@ describe("ClassCreator", () => {
       .first()
       .click();
 
-    await page.getByRole("button", { name: "Save class" }).click();
+    const save = page.getByRole("button", { name: "Fix 3 things first" });
+    await expect.element(save).toBeVisible();
+    await expect.element(save).toHaveClass("needs-fixes");
+    await userEvent.click(save);
 
     await expect
       .element(page.getByText(/Save is blocked: 3 things to fix/))
       .toBeVisible();
     expect(saveClass).not.toHaveBeenCalled();
+  });
+
+  it("explains both losses before resolving a draft conflict", async () => {
+    const earlier = complete();
+    const newer = { ...earlier, name: { en: "Newer version", pl: "" } };
+    const record: StoredClassDraft = {
+      id: 5, classId: 7, draft: earlier, revision: 1, updatedAt: "2026-10-12T00:00:00.000Z",
+    };
+    vi.mocked(updateClassDraft).mockRejectedValue({ payload: { code: "DRAFT_STALE" } });
+    vi.mocked(getClassDraft).mockResolvedValue({ ...record, draft: newer, revision: 2 });
+    renderCreator(earlier, 7, record);
+
+    await userEvent.fill(page.getByRole("textbox", { name: "Class name" }), "My local edits");
+    await expect.element(page.getByRole("alert")).toBeVisible();
+    await expect.element(page.getByText("Your edits here since the last save will be lost.")).toBeVisible();
+    await expect.element(page.getByText("This overwrites the newer draft from the other device.")).toBeVisible();
+    await userEvent.click(page.getByRole("button", { name: "Load newer one" }));
+    await expect.element(page.getByRole("textbox", { name: "Class name" })).toHaveValue("Newer version");
   });
 
   it("saves a complete class, stamps it FORGED and offers the way to my classes", async () => {

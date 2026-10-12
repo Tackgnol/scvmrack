@@ -19,6 +19,7 @@ Feature: Public Custom Classes and moderation
     When the administrator takes down the class with a statement of reasons
     Then the class is unavailable in public search and every Party Class Pool
     And the author can see the decision and appeal it
+    And My classes does not offer Edit while saving the class is blocked
     And characters already rolled from the class retain their existing content
 
   Scenario: An administrator reviews reports by class version
@@ -30,6 +31,7 @@ Feature: Public Custom Classes and moderation
     Given a public class appears in a class search result, on its detail page, or on a character sheet
     When I choose Report a class
     Then the report form is prefilled with that class
+    And it names the class while letting me change the class reference
     And I can submit the report without signing in
 
   Scenario: A non-administrator cannot access moderation decisions

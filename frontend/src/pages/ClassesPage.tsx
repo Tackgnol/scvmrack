@@ -10,7 +10,7 @@ import {
   unpublishClass,
   type ClassLanguage,
 } from "@/api/classes";
-import { ModalButton, MorkBorgModal } from "@/components";
+import MorkBorgModal, { ModalButton } from "@/components/molecules/modal/MorkBorgModal";
 import { useAuth } from "@/hooks/useAuth";
 import { getApiLocale } from "@/hooks/utils";
 import {
@@ -71,6 +71,7 @@ export function ClassesPage() {
   } | null>(null);
   const [publishConfirmed, setPublishConfirmed] = useState(false);
   const [disputeTarget, setDisputeTarget] = useState<number | null>(null);
+  const [removalTarget, setRemovalTarget] = useState<{ kind: "draft" | "class"; id: number; name: string } | null>(null);
   const [disputeText, setDisputeText] = useState("");
   const queryClient = useQueryClient();
   const draftsQuery = useQuery({
@@ -80,14 +81,18 @@ export function ClassesPage() {
   });
   const discardDraft = useMutation({
     mutationFn: deleteClassDraft,
-    onSuccess: () =>
-      void queryClient.invalidateQueries({ queryKey: classKeys.drafts() }),
+    onSuccess: () => {
+      setRemovalTarget(null);
+      void queryClient.invalidateQueries({ queryKey: classKeys.drafts() });
+    },
   });
   const dispute = useMutation({ mutationFn: disputeClassDecision, onSuccess: () => { setDisputeTarget(null); setDisputeText(""); } });
   const remove = useMutation({
     mutationFn: removeClass,
-    onSuccess: () =>
-      void queryClient.invalidateQueries({ queryKey: ["classes"] }),
+    onSuccess: () => {
+      setRemovalTarget(null);
+      void queryClient.invalidateQueries({ queryKey: ["classes"] });
+    },
   });
   const restore = useMutation({
     mutationFn: restoreClass,
@@ -165,7 +170,7 @@ export function ClassesPage() {
             )}
           </Alert>
         )}
-        {classesQuery.data?.length === 0 && (
+        {classesQuery.data?.length === 0 && draftsQuery.data?.length === 0 && (
           <EmptyText>
             {t(
               "classes.empty",
@@ -203,24 +208,13 @@ export function ClassesPage() {
                   >
                     {t("classes.resume", "Resume")}
                   </CardAction>
-                  <Button
-                    color="inherit"
-                    size="small"
+                  <ModalButton
+                    variant="danger"
                     disabled={discardDraft.isPending}
-                    onClick={() => {
-                      if (
-                        window.confirm(
-                          t(
-                            "classes.discardConfirm",
-                            "Discard this unfinished draft?",
-                          ),
-                        )
-                      )
-                        discardDraft.mutate(draft.id);
-                    }}
+                    onClick={() => setRemovalTarget({ kind: "draft", id: draft.id, name })}
                   >
                     {t("classes.discard", "Discard")}
-                  </Button>
+                  </ModalButton>
                 </Box>
               </Card>
             );
@@ -277,16 +271,15 @@ export function ClassesPage() {
                       {t("classes.appeal", "Appeal this decision")}
                     </CardAction>
                   )}
-                  <CardAction
-                    component={Link}
-                    to={`/gm/classes/${cls.id}`}
-                    className={cls.takenDownAt ? "secondary" : undefined}
-                    aria-label={t("classes.editLabel", "Edit {{name}}", {
-                      name: cls.name,
-                    })}
-                  >
-                    {t("classes.edit", "Edit")}
-                  </CardAction>
+                  {!cls.takenDownAt && (
+                    <CardAction
+                      component={Link}
+                      to={`/gm/classes/${cls.id}`}
+                      aria-label={t("classes.editLabel", "Edit {{name}}", { name: cls.name })}
+                    >
+                      {t("classes.edit", "Edit")}
+                    </CardAction>
+                  )}
                   {cls.takenDownAt ? null : cls.visibility === "private" ? (
                     <Button
                       color="inherit"
@@ -309,24 +302,15 @@ export function ClassesPage() {
                       {t("classes.unpublish", "Unpublish")}
                     </Button>
                   )}
-                  <Button
-                    color="inherit"
-                    size="small"
-                    disabled={remove.isPending}
-                    onClick={() => {
-                      if (
-                        window.confirm(
-                          t(
-                            "classes.removeConfirm",
-                            "Remove this class? Existing scvm will keep their rules; the class will be archived.",
-                          ),
-                        )
-                      )
-                        remove.mutate(cls.id);
-                    }}
-                  >
-                    {t("classes.remove", "Remove")}
-                  </Button>
+                  {!cls.takenDownAt && (
+                    <ModalButton
+                      variant="danger"
+                      disabled={remove.isPending}
+                      onClick={() => setRemovalTarget({ kind: "class", id: cls.id, name: cls.name })}
+                    >
+                      {t("classes.remove", "Remove")}
+                    </ModalButton>
+                  )}
                 </Box>
               )}
             </Card>
@@ -343,6 +327,40 @@ export function ClassesPage() {
             }}
           />
         </ZineLine>
+        <MorkBorgModal
+          open={removalTarget !== null}
+          onClose={() => setRemovalTarget(null)}
+          title={removalTarget?.kind === "draft"
+            ? t("classes.discardConfirm", "Discard this unfinished draft?")
+            : t("classes.removeConfirm", "Remove this class?")}
+          maxWidth="xs"
+          actions={
+            <>
+              <ModalButton variant="secondary" onClick={() => setRemovalTarget(null)}>
+                {t("actions.cancel", "Cancel")}
+              </ModalButton>
+              <ModalButton
+                variant="danger"
+                disabled={discardDraft.isPending || remove.isPending}
+                onClick={() => {
+                  if (!removalTarget) return;
+                  if (removalTarget.kind === "draft") discardDraft.mutate(removalTarget.id);
+                  else remove.mutate(removalTarget.id);
+                }}
+              >
+                {removalTarget?.kind === "draft"
+                  ? t("classes.discard", "Discard")
+                  : t("classes.remove", "Remove")}
+              </ModalButton>
+            </>
+          }
+        >
+          <Typography>
+            {removalTarget?.kind === "draft"
+              ? t("classes.discardLoss", "“{{name}}” will be permanently deleted.", { name: removalTarget.name })
+              : t("classes.removeLoss", "“{{name}}” will be deleted if unused. If scvm still use it, it will be archived and their rules will stay intact.", { name: removalTarget?.name ?? "" })}
+          </Typography>
+        </MorkBorgModal>
         <MorkBorgModal
           open={disputeTarget !== null}
           onClose={() => setDisputeTarget(null)}

@@ -1,5 +1,6 @@
 import type { ModerationRemovalHistoryProps } from "./ModerationRemovalHistory.models";
 import { Box, Typography } from "@mui/material";
+import { partyColors } from "@/theme/partyTokens";
 import { useTranslation } from "react-i18next";
 
 /** Shows a GM's earlier class-removal decisions to moderators reviewing a report. */
@@ -7,7 +8,7 @@ export function ModerationRemovalHistory({ history }: ModerationRemovalHistoryPr
   const { t } = useTranslation();
 
   return (
-    <Box component="details" sx={{ borderLeft: 4, borderColor: "warning.main", pl: 2 }}>
+    <Box component="details" sx={{ border: `2px solid ${partyColors.pink}`, p: 2 }}>
       <Typography component="summary" sx={{ cursor: "pointer", fontWeight: 700 }}>
         {t("moderation.removalHistory", { count: history.length })}
       </Typography>

@@ -23,6 +23,8 @@ export const SaveButton = styled("button")({
   alignSelf: "flex-start",
   boxShadow: `3px 3px 0 ${black}`,
   "@media (hover: hover)": { "&:hover:not(:disabled)": { background: white } },
+  "&.needs-fixes": { background: "transparent", color: yellow, borderColor: yellow, boxShadow: "none" },
+  "&.needs-fixes:hover:not(:disabled)": { background: partyColors.grey },
   "&:disabled": { background: "transparent", color: partyColors.mutedText, border: `2px dashed ${partyColors.darkGrey}`, boxShadow: "none", cursor: "default" },
   "&:focus-visible": { outline: `2px solid ${yellow}`, outlineOffset: 3 },
 });

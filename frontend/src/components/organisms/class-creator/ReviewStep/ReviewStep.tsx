@@ -87,12 +87,15 @@ export function ReviewStep({
         <SaveButton
           type="button"
           aria-describedby="save-status"
+          className={issues.length > 0 ? "needs-fixes" : undefined}
           disabled={saving || saved}
           onClick={onSave}
         >
           {saved
             ? t("creator.review.saved", "Saved")
-            : t("creator.review.save", "Save class")}
+            : issues.length > 0
+              ? t("creator.review.fixFirst", "Fix {{count}} things first", { count: issues.length })
+              : t("creator.review.save", "Save class")}
         </SaveButton>
         <div role="status">
           {saved && <ForgedStamp name={draft.name[draft.languages[0]]} />}

@@ -9,7 +9,8 @@ import type {
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import BrowserTestProvider from "../BrowserTestProvider";
 import { ClassesPage } from "@/pages/ClassesPage";
-import { listMyClasses, publishClass } from "@/api/classes";
+import { deleteClassDraft, listClassDrafts, listMyClasses, publishClass, removeClass } from "@/api/classes";
+import { blankDraft } from "@/components/organisms/class-creator/classCreator.utils";
 import { useAuth } from "@/hooks/useAuth";
 
 type MockLinkProps = {
@@ -55,7 +56,10 @@ vi.mock("@/hooks/useAuth", () => ({ useAuth: vi.fn() }));
 vi.mock("@/api/classes", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/api/classes")>()),
   listMyClasses: vi.fn(),
+  listClassDrafts: vi.fn(),
+  deleteClassDraft: vi.fn(),
   publishClass: vi.fn(),
+  removeClass: vi.fn(),
 }));
 
 function renderPage() {
@@ -74,6 +78,7 @@ function renderPage() {
 describe("ClassesPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(listClassDrafts).mockResolvedValue([]);
     vi.mocked(useAuth).mockReturnValue({
       isAuthenticated: true,
       isGuest: false,
@@ -149,6 +154,31 @@ describe("ClassesPage", () => {
 
     await expect.poll(() => vi.mocked(publishClass).mock.calls[0]?.[0]).toBe(9);
   });
+  it("confirms draft discard and class removal with their different consequences", async () => {
+    vi.mocked(listClassDrafts).mockResolvedValue([{ id: 3, classId: null, draft: { ...blankDraft(), name: { en: "Unfinished", pl: "" } }, revision: 1, updatedAt: "2026-10-12T00:00:00.000Z" }]);
+    vi.mocked(listMyClasses).mockResolvedValue([{ id: 9, lineageId: "b", name: "Bog Witch", description: null, languages: ["en"], visibility: "private", status: "active", originCount: 1 }]);
+    vi.mocked(deleteClassDraft).mockResolvedValue();
+    vi.mocked(removeClass).mockResolvedValue({ archived: false });
+    renderPage();
+
+    await expect.element(page.getByTestId("class-draft")).toBeVisible();
+    await expect.element(page.getByText(/No classes yet/)).not.toBeInTheDocument();
+    await userEvent.click(page.getByTestId("class-draft").getByRole("button", { name: "Discard" }));
+    await expect.element(page.getByText("“Unfinished” will be permanently deleted.")).toBeVisible();
+    expect(deleteClassDraft).not.toHaveBeenCalled();
+    await userEvent.click(page.getByRole("button", { name: "Cancel" }));
+    expect(deleteClassDraft).not.toHaveBeenCalled();
+    await userEvent.click(page.getByTestId("class-draft").getByRole("button", { name: "Discard" }));
+    await userEvent.click(page.getByRole("dialog").getByRole("button", { name: "Discard" }));
+    await expect.poll(() => vi.mocked(deleteClassDraft).mock.calls[0]?.[0]).toBe(3);
+
+    await userEvent.click(page.getByTestId("own-class").getByRole("button", { name: "Remove" }));
+    await expect.element(page.getByText(/will be deleted if unused/)).toBeVisible();
+    expect(removeClass).not.toHaveBeenCalled();
+    await userEvent.click(page.getByRole("dialog").getByRole("button", { name: "Remove" }));
+    await expect.poll(() => vi.mocked(removeClass).mock.calls[0]?.[0]).toBe(9);
+  });
+
   it("tells guests to log in instead of offering the creator", async () => {
     vi.mocked(useAuth).mockReturnValue({
       isAuthenticated: false,
@@ -191,6 +221,8 @@ describe("ClassesPage", () => {
       .element(page.getByText("This class was taken down by moderation."))
       .toBeVisible();
     await expect.element(page.getByText("Credible threat")).toBeVisible();
+    await expect.element(page.getByRole("link", { name: "Edit Bog Witch" })).not.toBeInTheDocument();
+    await expect.element(page.getByRole("button", { name: "Remove" })).not.toBeInTheDocument();
     await userEvent.click(page.getByRole("button", { name: "Appeal this decision" }));
     await expect.element(page.getByRole("heading", { name: "Dispute this decision" })).toBeVisible();
     await expect

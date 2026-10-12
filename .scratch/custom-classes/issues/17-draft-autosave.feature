@@ -11,7 +11,11 @@ Feature: Class creator draft autosave
   Scenario: A stale device cannot overwrite a newer draft
     Given the same draft changes on another device
     When I autosave my stale copy
-    Then I am offered Load the newer one or Keep mine
+    Then a conflict interrupts editing before either draft is overwritten
+    And Load newer one warns that my edits here since the last save will be lost
+    And Keep mine warns that the other device's newer draft will be overwritten
+    When I choose Load newer one
+    Then my stale edits are discarded and the newer draft is loaded
 
   Scenario: Draft limits and expiry are visible
     Given I have three new-class drafts
@@ -40,3 +44,11 @@ Feature: Class creator draft autosave
     When I visit its Resume link or start another new-class draft
     Then the expired draft cannot be resumed
     And it does not count toward my three new-class drafts
+
+  Scenario: Problems block saving without hiding why
+    Given my class draft has three problems
+    When I review it before saving
+    Then the save action says Fix 3 things first and looks secondary
+    And each problem offers a Fix jump to the field
+    When I attempt to save
+    Then no class is saved and the save status explains what blocks it

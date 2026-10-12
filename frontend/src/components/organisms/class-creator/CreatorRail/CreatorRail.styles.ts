@@ -54,5 +54,8 @@ export const Status = styled("span")({
   color: yellow,
   "&.warn": { background: pink, color: black, borderColor: pink },
   "&.warn.quiet": { background: "transparent", color: white, borderColor: white },
-  "&.empty": { color: white, borderStyle: "dashed", borderColor: white },
+  "&.optional": { color: white, borderStyle: "dashed", borderColor: grey },
+  "&.empty": { color: pink, borderStyle: "dashed", borderColor: pink },
+  "& .count-label": { display: "none" },
+  "@media (min-width: 1100px)": { "& .count-label": { display: "inline" }, "& .count-number": { display: "none" } },
 });

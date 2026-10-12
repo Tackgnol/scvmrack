@@ -1,3 +1,4 @@
+import { classKeys, getClassDetail } from "@/api/classes";
 import {
   REPORT_REASONS,
   submitPublicReport,
@@ -19,7 +20,7 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { Link, useSearch } from "@tanstack/react-router";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -36,6 +37,14 @@ export function ReportPage() {
   const [website, setWebsite] = useState("");
   const [goodFaith, setGoodFaith] = useState(false);
   const report = useMutation({ mutationFn: submitPublicReport });
+  const numericClassId = Number(classId);
+  const knownClass = useQuery({
+    queryKey: classKeys.detail(numericClassId),
+    queryFn: () => getClassDetail(numericClassId),
+    enabled: Number.isSafeInteger(numericClassId) && numericClassId > 0,
+    retry: false,
+  });
+  const className = knownClass.data?.draft.name[i18n.language.startsWith("pl") ? "pl" : "en"] || knownClass.data?.draft.name.en || knownClass.data?.draft.name.pl;
   const anonymousAllowed = reason === "child_sexual_abuse_material";
 
   const submit = () => {
@@ -116,6 +125,7 @@ export function ReportPage() {
                 inputProps={{ inputMode: "numeric", min: 1 }}
                 required
               />
+              {className && <Typography variant="body2">{t("report.reportingClass", "Reporting: {{name}}", { name: className })}</Typography>}
               <TextField
                 select
                 label={t("report.reason", "Reason")}
