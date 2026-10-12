@@ -1,0 +1,8 @@
+.tab-session-banner {
+  margin: 16px 0;
+}
+
+.tab-session-banner .MuiButton-root {
+  display: block;
+  margin-top: 8px;
+}

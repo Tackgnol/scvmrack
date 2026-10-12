@@ -6,6 +6,7 @@ import {
     obrCharacterAccessHeaders,
 } from '@/obr/obrCharacterAccess';
 import { embeddedSessionHeaders } from '@/utils/embed';
+import { authHeaders } from '@/utils/tabSession';
 import type { paths } from "./schema.ts";
 // ============================================
 // Auth Query Keys
@@ -61,7 +62,7 @@ function redirectToSessionExpired() {
 async function fetchCsrfToken(): Promise<string> {
     const res = await fetch(
         `${import.meta.env.VITE_BACKEND_URL || ""}/api/csrf-token`,
-        { credentials: "include", headers: embeddedSessionHeaders() }
+        { credentials: "include", headers: { ...embeddedSessionHeaders(), ...authHeaders() } }
     );
     if (!res.ok) {
         throw new Error("Failed to fetch CSRF token");
@@ -160,6 +161,9 @@ export function isAuthPath(pathname: string): boolean {
 
 export const authMiddleware: Middleware = {
     async onRequest({ request, id }) {
+        for (const [key, value] of Object.entries(authHeaders())) {
+            request.headers.set(key, value);
+        }
         if (request.credentials === "include") {
             rememberRetryRequest(authRetryRequests, id, request);
             return request;

@@ -180,6 +180,7 @@ function defaultImprovementPreview() {
     rolledDraft: defaultImprovementDraft(),
     abilityNames: {},
     rulesNote: null,
+    scrollNames: {},
     snapshotHash: 'snapshot-hash',
     createdAt: '2026-03-01T10:00:00.000Z',
     updatedAt: '2026-03-01T10:00:00.000Z',

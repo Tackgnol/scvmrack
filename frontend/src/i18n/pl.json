@@ -5,6 +5,12 @@
     "rolled": "Wyrzucono {{roll}}",
     "gives": "Daje: {{item}}"
   },
+  "tabSession": {
+    "warning": "Wbudowana przeglądarka tej aplikacji nie zapisze Twojej sesji. Twój scvm przepadnie po jej zamknięciu. Otwórz scvmrack w Safari lub Chrome, aby go zachować.",
+    "copyLink": "Kopiuj link",
+    "copied": "Skopiowano",
+    "copyFailed": "Skopiuj adres z paska adresu przeglądarki."
+  },
   "app": {
     "title": "Scvmrack",
     "betaBadge": "Beta",
@@ -992,6 +998,14 @@
       "sharing": "Opublikuj klasę dla innych MG z jasnym oznaczeniem autora i linkiem do zgłoszenia publicznej treści",
       "moderation": "Zgłoszenia są sprawdzane przez człowieka; autorzy mogą kwestionować decyzje, a moderatorzy przeglądać wcześniejsze usunięcia i blokować tworzenie nowych klas bez blokowania istniejących",
       "legal": "Strony zasad, kontaktu, prywatności i zgłoszeń wyjaśniają reguły oraz sposoby kontaktu z projektem"
+    },
+    "v063": {
+      "tabSession": "Scvmrack otwarty w aplikacji Reddit lub Facebook działa podczas tej wizyty i wyświetla ostrzeżenie oraz link do otwarcia w przeglądarce, aby zachować scvma",
+      "classGrants": "Heretycki Kapłan dostaje teraz Pasterską Laskę, a Poltroon Błazen Dworski swojego zwierzaka, zgodnie z opisem zdolności klasowych",
+      "printModifiers": "Sekcja Modyfikatorów na karcie do druku jest teraz przetłumaczona",
+      "printStats": "Długie nazwy cech, takie jak Wytrzymałość, nie wychodzą już poza ramkę na karcie do druku",
+      "freshShell": "Wracający użytkownicy zawsze dostają najnowszą wersję aplikacji zamiast nieaktualnej kopii z pamięci podręcznej",
+      "monitoring": "Cichszy monitoring: błędy zerwanego połączenia przy niestabilnej sieci nie są już zgłaszane"
     },
     "v062": {
       "guestSignIn": "Logowanie gościa na telefonach i w przeglądarkach wbudowanych w aplikacje odzyskuje się teraz samo, zamiast pokazywać błąd",

@@ -45,6 +45,8 @@ npm run format       # Format code with Prettier
 npm run doctor       # React health check (react-doctor) — run after touching hooks/components
 ```
 
+React Doctor baseline before RPG-288 (2026-10-04): **61** on current master. Preserve or improve this score; raising it to 80 remains a priority.
+
 ### Validation checklist (run before committing frontend changes)
 | Step | Command | When |
 |---|---|---|
@@ -143,7 +145,7 @@ Pentested with Shannon AI (2026-03-23). All findings remediated or accepted.
 |---|---|---|
 | Session cookies | `HttpOnly`, `Secure`, `SameSite=Lax`, `__Secure-` prefix | Verified |
 | HSTS | `max-age=31536000; includeSubDomains` via `@fastify/helmet` | Verified |
-| CSRF | HMAC double-submit cookie on all POST/PATCH/DELETE/PUT outside `/api/auth/*` | Verified |
+| CSRF | HMAC double-submit cookie on all POST/PATCH/DELETE/PUT outside `/api/auth/*`; skipped for cookie-less `Authorization: Bearer` requests (RPG-288) | Verified |
 | Password/auth UX | Managed by Logto + Better Auth via shared-auth | Verified |
 | SQL injection | Prisma parameterization and `$queryRaw` tagged templates | Verified |
 | Cache-control | `no-store, no-cache, must-revalidate, private` on all auth responses | Verified |

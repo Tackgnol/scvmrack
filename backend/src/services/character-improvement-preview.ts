@@ -35,6 +35,7 @@ export type PreviewResponse = {
   rolledDraft: ImprovementDraft;
   abilityNames: Record<string, string>;
   rulesNote: string | null;
+  scrollNames: Record<string, string>;
   snapshotHash: string;
   createdAt: string;
   updatedAt: string;
@@ -72,6 +73,21 @@ export async function toPreviewResponse(
       return name === undefined ? [] : [[key, name]];
     })
   );
+  const scrollFamily =
+    draft.debris.kind === 'sacredScroll'
+      ? 'sacred'
+      : draft.debris.kind === 'uncleanScroll'
+      ? 'unclean'
+      : null;
+  const scrollNameKeys = scrollFamily
+    ? scrollKeys(await characterImprovementRepository.findScrolls(scrollFamily))
+    : [];
+  const scrollTranslations = scrollNameKeys.length > 0
+    ? await catalogRepository.findTranslations(locale, scrollNameKeys)
+    : [];
+  const scrollNames = Object.fromEntries(
+    scrollTranslations.map(({ key, value }) => [key, value])
+  );
 
   return {
     id: row.id,
@@ -80,6 +96,7 @@ export async function toPreviewResponse(
     rolledDraft: draft,
     abilityNames,
     rulesNote: noteKey ? (translations.get(noteKey) ?? null) : null,
+    scrollNames,
     snapshotHash: row.snapshotHash,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),

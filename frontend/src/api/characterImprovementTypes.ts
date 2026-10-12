@@ -95,6 +95,7 @@ export type ImprovementPreview = {
   rolledDraft: ImprovementDraft;
   abilityNames: Record<string, string>;
   rulesNote: string | null;
+  scrollNames: Record<string, string>;
   snapshotHash: string;
   createdAt: string;
   updatedAt: string;

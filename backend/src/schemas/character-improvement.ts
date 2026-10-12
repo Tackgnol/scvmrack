@@ -265,6 +265,7 @@ export const ImprovementPreviewResponseSchema = {
     'rolledDraft',
     'abilityNames',
     'rulesNote',
+    'scrollNames',
     'snapshotHash',
     'createdAt',
     'updatedAt',
@@ -279,6 +280,10 @@ export const ImprovementPreviewResponseSchema = {
       additionalProperties: { type: 'string' },
     },
     rulesNote: { type: ['string', 'null'] },
+    scrollNames: {
+      type: 'object',
+      additionalProperties: { type: 'string' },
+    },
     snapshotHash: { type: 'string' },
     createdAt: { type: 'string', format: 'date-time' },
     updatedAt: { type: 'string', format: 'date-time' },

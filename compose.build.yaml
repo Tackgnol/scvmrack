@@ -1,0 +1,13 @@
+# Wires the frontend's source map upload token into the image build as a BuildKit
+# secret so it never lands in an image layer. Used as:
+#   docker compose -f compose.prod.yaml -f compose.build.yaml build
+
+services:
+  frontend:
+    build:
+      secrets:
+        - sentry_auth_token
+
+secrets:
+  sentry_auth_token:
+    environment: SENTRY_AUTH_TOKEN

@@ -19,6 +19,8 @@ export function GettingBetterPanel({ controller }: PanelProps) {
   const abilityName = (key: string) =>
     controller.preview?.abilityNames?.[key] ?? key;
   const rulesNote = controller.preview?.rulesNote;
+  const scrollName = (key: string) =>
+    controller.preview?.scrollNames?.[key] ?? key;
   const updateDraft = (
     updater: (draft: ImprovementDraft) => ImprovementDraft,
   ) => {
@@ -61,6 +63,7 @@ export function GettingBetterPanel({ controller }: PanelProps) {
         draft={draft}
         busy={busy}
         abilityName={abilityName}
+        scrollName={scrollName}
         updateDraft={updateDraft}
         rerollSection={controller.rerollSection}
       />

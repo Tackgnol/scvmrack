@@ -61,6 +61,10 @@ export default defineConfig({
             project: process.env.SENTRY_PROJECT,
             url: process.env.SENTRY_URL,
             telemetry: false,
+            // The plugin only logs upload failures by default; fail the build so a release never ships unmapped.
+            errorHandler: (err) => {
+              throw err;
+            },
             release: {
               name: release,
               setCommits: false,
