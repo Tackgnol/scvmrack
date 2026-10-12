@@ -14,16 +14,22 @@ class CookieJar {
 
     if (setCookies.length === 0) {
       const single = response.headers.get('set-cookie');
-      if (single) setCookies.push(single);
+      if (single) {
+        setCookies.push(single);
+      }
     }
 
     for (const rawCookie of setCookies) {
       const firstChunk = rawCookie.split(';')[0];
       const separator = firstChunk.indexOf('=');
-      if (separator <= 0) continue;
+      if (separator <= 0) {
+        continue;
+      }
       const key = firstChunk.slice(0, separator).trim();
       const value = firstChunk.slice(separator + 1).trim();
-      if (!key || !value) continue;
+      if (!key || !value) {
+        continue;
+      }
       this.cookies.set(key, value);
     }
   }
@@ -49,7 +55,9 @@ async function request(
 
   if (jar) {
     const cookieHeader = jar.header();
-    if (cookieHeader) requestHeaders.cookie = cookieHeader;
+    if (cookieHeader) {
+      requestHeaders.cookie = cookieHeader;
+    }
   }
 
   if (json !== undefined) {
@@ -62,7 +70,9 @@ async function request(
     body: json !== undefined ? JSON.stringify(json) : undefined,
   });
 
-  if (jar) jar.capture(response);
+  if (jar) {
+    jar.capture(response);
+  }
   return response;
 }
 

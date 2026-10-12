@@ -66,7 +66,9 @@ function isNetworkFailure(error: unknown): boolean {
 export function monitoringOperation(
   key: readonly unknown[] | undefined,
 ): string {
-  if (!key) return "unknown_operation";
+  if (!key) {
+    return "unknown_operation";
+  }
 
   const parts = key.filter(
     (part): part is string => typeof part === "string" && part.length > 0,

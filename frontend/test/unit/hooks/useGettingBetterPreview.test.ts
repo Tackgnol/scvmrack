@@ -44,7 +44,9 @@ vi.mock('@/SnackbarContext/SnackbarProvider', () => ({
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string, fallback?: string, values?: Record<string, unknown>) => {
-      if (!fallback) return key;
+      if (!fallback) {
+        return key;
+      }
       return fallback.replace(/\{\{(\w+)}}/g, (_match, token) =>
         String(values?.[token] ?? '')
       );

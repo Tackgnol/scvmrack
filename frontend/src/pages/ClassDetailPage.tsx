@@ -21,7 +21,9 @@ export function ClassDetailPage() {
     queryFn: () => getClassDetail(Number(classId)),
   });
 
-  if (query.isLoading) return <CenterRow><Spinner /></CenterRow>;
+  if (query.isLoading) {
+    return <CenterRow><Spinner /></CenterRow>;
+  }
   if (!query.data) {
     const status = (query.error as { status?: number } | null)?.status;
     const failed = query.isError && (status === undefined || status >= 500);

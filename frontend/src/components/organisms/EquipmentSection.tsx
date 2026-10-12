@@ -123,7 +123,9 @@ export function EquipmentSection() {
   };
 
   const handleSave = () => {
-    if (hasTextErrors) return;
+    if (hasTextErrors) {
+      return;
+    }
 
     if (
       editingSlot.type === 'weapon' &&
@@ -150,7 +152,9 @@ export function EquipmentSection() {
     const w1Empty = !character?.equippedWeapons?.[1]?.name;
 
     let targetIndex = 0;
-    if (!w0Empty && w1Empty) targetIndex = 1;
+    if (!w0Empty && w1Empty) {
+      targetIndex = 1;
+    }
     // If both full, default to 0 (overwrite)
 
     updateWeaponField(targetIndex, 'name', item.name);

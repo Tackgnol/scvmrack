@@ -209,7 +209,9 @@ const prismaMock = {
       fixture.classes.find((row) => row.id === where.id) ?? null,
     findUniqueOrThrow: async ({ where }: { where: { id: number } }) => {
       const row = fixture.classes.find((cls) => cls.id === where.id);
-      if (!row) throw new Error(`Class ${where.id} not found`);
+      if (!row) {
+        throw new Error(`Class ${where.id} not found`);
+      }
       return row;
     },
   },

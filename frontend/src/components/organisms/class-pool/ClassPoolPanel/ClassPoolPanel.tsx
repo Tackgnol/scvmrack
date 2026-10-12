@@ -57,7 +57,9 @@ export function ClassPoolPanel({ partyId }: ClassPoolPanelProps) {
   const toggleGroup = (group: PoolGroup) =>
     setOpenGroups((open) => {
       const next = new Set(open);
-      if (!next.delete(group)) next.add(group);
+      if (!next.delete(group)) {
+        next.add(group);
+      }
       return next;
     });
 

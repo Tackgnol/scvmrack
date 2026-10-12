@@ -48,7 +48,9 @@ export function resetRedirectControl() {
 }
 
 function redirectToSessionExpired() {
-    if (isRedirecting) return;
+    if (isRedirecting) {
+        return;
+    }
     isRedirecting = true;
 
     setTimeout(() => {

@@ -347,9 +347,14 @@ export function ClassesPage() {
                 variant="danger"
                 disabled={discardDraft.isPending || remove.isPending}
                 onClick={() => {
-                  if (!removalTarget) return;
-                  if (removalTarget.kind === "draft") discardDraft.mutate(removalTarget.id);
-                  else remove.mutate(removalTarget.id);
+                  if (!removalTarget) {
+                    return;
+                  }
+                  if (removalTarget.kind === "draft") {
+                    discardDraft.mutate(removalTarget.id);
+                  } else {
+                    remove.mutate(removalTarget.id);
+                  }
                 }}
               >
                 {removalTarget?.kind === "draft"

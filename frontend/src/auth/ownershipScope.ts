@@ -12,7 +12,9 @@ export function synchronizeOwnershipScope(
   queryClient: QueryClient,
   userId: string | null | undefined,
 ): boolean {
-  if (userId === undefined) return false;
+  if (userId === undefined) {
+    return false;
+  }
 
   if (!observedUserIds.has(queryClient)) {
     observedUserIds.set(queryClient, userId);

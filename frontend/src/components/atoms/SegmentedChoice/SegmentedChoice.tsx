@@ -21,7 +21,9 @@ export function SegmentedChoice<T extends string>({
         aria-labelledby={labelId}
         onKeyDown={(event) => {
           const index = moveInRadioGroup(event);
-          if (index !== null) onChange(options[index].value);
+          if (index !== null) {
+            onChange(options[index].value);
+          }
         }}
       >
         {options.map((option) => (

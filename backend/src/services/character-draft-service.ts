@@ -101,12 +101,16 @@ export function createCharacterDraftService(log: ServiceLogger) {
 
       try {
         const scope = await resolveClassScope(input.inviteToken, input.obrRoomId);
-        if (!scope.ok) return fail(scope.error);
+        if (!scope.ok) {
+          return fail(scope.error);
+        }
         const classless = input.classless === true;
         let classId: number | null = classless ? null : (input.classId ?? null);
 
         const unavailable = classChoiceError(scope.value, classless, classId);
-        if (unavailable) return fail(unavailable);
+        if (unavailable) {
+          return fail(unavailable);
+        }
 
         // Random class is a one-time choice recorded in the draft, not a
         // seeded section. Rehydrating the same draft keeps the chosen class.
@@ -151,11 +155,15 @@ export function createCharacterDraftService(log: ServiceLogger) {
 
       try {
         const scope = await resolveClassScope(input.inviteToken, input.obrRoomId);
-        if (!scope.ok) return fail(scope.error);
+        if (!scope.ok) {
+          return fail(scope.error);
+        }
         // A draft without a class rolls classless, so it needs Classless allowed.
         const classless = input.draft.classless || input.draft.classId === null;
         const unavailable = classChoiceError(scope.value, classless, classless ? null : input.draft.classId);
-        if (unavailable) return fail(unavailable);
+        if (unavailable) {
+          return fail(unavailable);
+        }
         const dropLowestAbilities = input.draft.classless
           ? normalizeDropLowestAbilities(input.draft.dropLowestAbilities)
           : undefined;
@@ -185,7 +193,9 @@ export function createCharacterDraftService(log: ServiceLogger) {
     }): Promise<ServiceResult<ClassSummary[]>> {
       try {
         const scope = await resolveClassScope(input.inviteToken, input.obrRoomId);
-        if (!scope.ok) return fail(scope.error);
+        if (!scope.ok) {
+          return fail(scope.error);
+        }
         return ok(await characterRepository.listClassesByIds(scope.value.classIds, input.locale));
       } catch (err) {
         return fail(

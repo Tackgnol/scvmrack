@@ -35,7 +35,9 @@ export function LocalizedField({
     onKeyDown: (
       event: KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>,
     ) => {
-      if (event.key === "Escape") event.currentTarget.blur();
+      if (event.key === "Escape") {
+        event.currentTarget.blur();
+      }
     },
     onPaste,
     onBlur,

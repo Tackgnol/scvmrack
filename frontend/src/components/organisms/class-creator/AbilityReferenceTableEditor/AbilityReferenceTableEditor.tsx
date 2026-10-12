@@ -54,21 +54,33 @@ export function AbilityReferenceTableEditor({ ability, base, draft, index, langu
   const resize = (die: number) => {
     const nextDie = (die < table.die ? [...TABLE_DICE].reverse().find((candidate) => candidate <= die) : TABLE_DICE.find((candidate) => candidate >= die)) ?? table.die;
     const kept = table.rows.slice(0, nextDie);
-    if (nextDie < table.die) parkedRows.current = [...table.rows.slice(nextDie), ...parkedRows.current];
+    if (nextDie < table.die) {
+      parkedRows.current = [...table.rows.slice(nextDie), ...parkedRows.current];
+    }
     const restored = nextDie > table.die ? parkedRows.current.slice(0, nextDie - kept.length) : [];
-    if (restored.length > 0) parkedRows.current = parkedRows.current.slice(restored.length);
+    if (restored.length > 0) {
+      parkedRows.current = parkedRows.current.slice(restored.length);
+    }
     const rows = [...kept, ...restored];
-    while (rows.length < nextDie) rows.push(emptyRow());
+    while (rows.length < nextDie) {
+      rows.push(emptyRow());
+    }
     onChange((entry) => ({ ...entry, table: { die: nextDie, rows } }));
   };
   const applyPaste = () => {
-    if (!pendingPaste) return;
+    if (!pendingPaste) {
+      return;
+    }
     const neededRows = pendingPaste.roll + pendingPaste.lines.length;
     const die = TABLE_DICE.find((candidate) => candidate >= neededRows) ?? 12;
     onChange((entry) => {
-      if (!entry.table) return entry;
+      if (!entry.table) {
+        return entry;
+      }
       const rows = [...entry.table.rows];
-      while (rows.length < die) rows.push(emptyRow());
+      while (rows.length < die) {
+        rows.push(emptyRow());
+      }
       pendingPaste.lines.forEach((text, offset) => {
         const row = pendingPaste.roll + offset;
         rows[row] = { ...rows[row], text: { ...rows[row].text, [language]: text } };
@@ -112,7 +124,9 @@ export function AbilityReferenceTableEditor({ ability, base, draft, index, langu
               maxLength={LIMIT_TEXT}
               onChange={(value) => onChange((entry) => ({ ...entry, table: entry.table && { ...entry.table, rows: entry.table.rows.map((current, currentRoll) => currentRoll === roll ? { ...current, text: { ...current.text, [language]: value } } : current) } }))}
               onBlur={() => touch(`${base}.table.rows.${roll}.text.${language}`)}
-              onPaste={(event) => { const lines = pastedRows(event.clipboardData.getData("text")); if (lines.length < 2) return; event.preventDefault(); setPendingPaste({ roll, lines: lines.slice(0, 12 - roll) }); }}
+              onPaste={(event) => { const lines = pastedRows(event.clipboardData.getData("text")); if (lines.length < 2) {
+                return;
+              } event.preventDefault(); setPendingPaste({ roll, lines: lines.slice(0, 12 - roll) }); }}
             />
             <Select id={fieldId(`${base}.table.rows.${roll}.itemRef`)} value={row.itemRef ?? ""} onChange={(event) => onChange((entry) => ({ ...entry, table: entry.table && { ...entry.table, rows: entry.table.rows.map((current, currentRoll) => currentRoll === roll ? { ...current, itemRef: event.target.value || null } : current) } }))}>
               <option value="">{t("creator.items.nothing", "Nothing")}</option>

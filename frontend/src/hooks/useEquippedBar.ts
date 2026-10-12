@@ -30,7 +30,9 @@ export function useEquippedBar() {
   const armorSlotRef = useRef<HTMLDivElement>(null);
 
   const animateSlot = (ref: RefObject<HTMLDivElement | null>, type: 'equip' | 'unequip') => {
-    if (prefersReducedMotion || !ref.current) return;
+    if (prefersReducedMotion || !ref.current) {
+      return;
+    }
 
     const element = ref.current;
     element.style.transition = 'none';

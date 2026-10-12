@@ -182,20 +182,24 @@ export function classDraftProblems(draft: ClassDraft): string[] {
   const problems: string[] = [];
   const text = (value: Localized, where: string) => {
     for (const language of draft.languages) {
-      if (!value[language]?.trim())
+      if (!value[language]?.trim()) {
         problems.push(`${LANGUAGE_NAMES[language]} missing: ${where}`);
+      }
     }
   };
   text(draft.name, 'class name');
   text(draft.description, 'class description');
   draft.origins.forEach((origin, i) => text(origin, `origin ${i + 1}`));
-  if (draft.origins.length === 0) problems.push('Add at least one origin');
+  if (draft.origins.length === 0) {
+    problems.push('Add at least one origin');
+  }
   for (const stat of CLASS_STATS) {
     const dice = draft.stats[stat];
-    if (dice.dropLowest && dice.count < 2)
+    if (dice.dropLowest && dice.count < 2) {
       problems.push(
         `${stat} can drop its lowest die only when it rolls two or more`
       );
+    }
   }
   draft.abilities.forEach((ability, i) => {
     text(ability.name, `ability ${i + 1} name`);
@@ -248,7 +252,9 @@ export function classDraftProblems(draft: ClassDraft): string[] {
       ['item', ability.grantItem],
       ['pet', ability.grantPet],
     ] as const) {
-      if (!ref) continue;
+      if (!ref) {
+        continue;
+      }
       const item = items.get(ref);
       if (!item && ref.startsWith('new:')) {
         problems.push(
@@ -267,7 +273,9 @@ export function classDraftProblems(draft: ClassDraft): string[] {
       }
     }
     for (const [roll, row] of ability.table?.rows.entries() ?? []) {
-      if (!row.itemRef) continue;
+      if (!row.itemRef) {
+        continue;
+      }
       const item = items.get(row.itemRef);
       if (!item) {
         problems.push(`Ability “${who}” table row ${roll + 1} grants an item that is not in this class`);
@@ -280,10 +288,12 @@ export function classDraftProblems(draft: ClassDraft): string[] {
     text(item.name, `Class Item ${i + 1} name`);
     const what = nameOf(item.name, `${i + 1}`);
     const count = grants.get(item.ref) ?? 0;
-    if (count === 0)
+    if (count === 0) {
       problems.push(`Class Item “${what}” is not granted by any ability`);
-    if (count > 1)
+    }
+    if (count > 1) {
       problems.push(`Class Item “${what}” is granted by more than one ability`);
+    }
   });
   const pool = draft.abilities.filter((a) => a.random).length;
   if (draft.randomAbilityCount > pool) {

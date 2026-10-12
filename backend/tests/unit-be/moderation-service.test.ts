@@ -20,7 +20,9 @@ mock.module('../../src/repositories/moderation-repository.js', {
       findClass: async (id: number) =>
         id === 9 ? reportClass : null,
       createOrMergeReport: async (input: unknown) => {
-        if (!merge) created.push(input);
+        if (!merge) {
+          created.push(input);
+        }
         return { id: '550e8400-e29b-41d4-a716-446655440000', merged: merge };
       },
       createDispute: async () =>
@@ -347,8 +349,11 @@ test('limits review actions to allowlisted GMs and notifies both parties', async
     });
     assert.equal(!missingReason.ok && missingReason.error.code, 'MODERATION_REASON_REQUIRED');
   } finally {
-    if (previous === undefined) delete process.env.MODERATION_ADMIN_USER_IDS;
-    else process.env.MODERATION_ADMIN_USER_IDS = previous;
+    if (previous === undefined) {
+      delete process.env.MODERATION_ADMIN_USER_IDS;
+    } else {
+      process.env.MODERATION_ADMIN_USER_IDS = previous;
+    }
   }
 });
 test('restores only a taken-down report through an allowlisted GM', async () => {
@@ -374,8 +379,11 @@ test('restores only a taken-down report through an allowlisted GM', async () => 
       reason: 'Correcting the decision',
     });
   } finally {
-    if (previous === undefined) delete process.env.MODERATION_ADMIN_USER_IDS;
-    else process.env.MODERATION_ADMIN_USER_IDS = previous;
+    if (previous === undefined) {
+      delete process.env.MODERATION_ADMIN_USER_IDS;
+    } else {
+      process.env.MODERATION_ADMIN_USER_IDS = previous;
+    }
   }
 });
 test('removes content through an allowlisted GM and notifies both parties', async () => {
@@ -414,7 +422,10 @@ test('removes content through an allowlisted GM and notifies both parties', asyn
       },
     ]);
   } finally {
-    if (previous === undefined) delete process.env.MODERATION_ADMIN_USER_IDS;
-    else process.env.MODERATION_ADMIN_USER_IDS = previous;
+    if (previous === undefined) {
+      delete process.env.MODERATION_ADMIN_USER_IDS;
+    } else {
+      process.env.MODERATION_ADMIN_USER_IDS = previous;
+    }
   }
 });

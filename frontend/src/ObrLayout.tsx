@@ -47,7 +47,9 @@ export function ObrLayout({ children }: { children: React.ReactNode }) {
     }
 
     async function openInScvmrack() {
-        if (!characterId) return;
+        if (!characterId) {
+            return;
+        }
         setIsOpening(true);
         try {
             const token = await obrAuthClient.issueObrExchangeToken();

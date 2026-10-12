@@ -22,7 +22,9 @@ mock.module('../../src/services/mail-service.js', {
   namedExports: {
     createMailService: () => ({
       sendTermsChange: async ({ to }: { to: string }) => {
-        if (!state.available) return { ok: true, value: { sent: false } };
+        if (!state.available) {
+          return { ok: true, value: { sent: false } };
+        }
         state.sentTo.push(to);
         return { ok: true, value: { sent: true, messageId: to } };
       },
@@ -54,6 +56,8 @@ test('send mode fails closed when SES is unavailable', async () => {
   state.available = false;
   const result = await sendPublicClassTermsNotice({ ...notice, send: true }, log);
   assert.equal(result.ok, false);
-  if (!result.ok) assert.equal(result.error.statusCode, 503);
+  if (!result.ok) {
+    assert.equal(result.error.statusCode, 503);
+  }
   assert.deepEqual(state.sentTo, []);
 });

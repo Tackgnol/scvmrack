@@ -302,7 +302,9 @@ async function loadItems(
   classId: number,
   keys: string[]
 ): Promise<ClassItemDraft[]> {
-  if (keys.length === 0) return [];
+  if (keys.length === 0) {
+    return [];
+  }
   const where = { classId, key: { in: keys } };
   const [weapons, armors, equipment, pets, texts] = await Promise.all([
     prisma.weapon.findMany({ where }),
@@ -420,7 +422,9 @@ export const customClassRepository = {
       where,
       data: { payload: input.draft, revision: { increment: 1 } },
     });
-    if (updated.count === 0) return null;
+    if (updated.count === 0) {
+      return null;
+    }
     const row = await prisma.classDraftRecord.findUniqueOrThrow({
       where: { id: input.id },
     });
@@ -471,7 +475,9 @@ export const customClassRepository = {
         where: { id },
         select: { lineageId: true, visibility: true, firstPublishedAt: true },
       });
-      if (current.visibility === 'public') return true;
+      if (current.visibility === 'public') {
+        return true;
+      }
       if (current.firstPublishedAt) {
         await tx.class.updateMany({
           where: { lineageId: current.lineageId, takenDownAt: null },
@@ -483,7 +489,9 @@ export const customClassRepository = {
         by: ['lineageId'],
         where: { ownerUserId, firstPublishedAt: { gte: dayStart } },
       });
-      if (publishedToday.length >= limit) return false;
+      if (publishedToday.length >= limit) {
+        return false;
+      }
       await tx.class.updateMany({
         where: { lineageId: current.lineageId, takenDownAt: null },
         data: { visibility: 'public', firstPublishedAt: new Date() },
@@ -543,8 +551,11 @@ export const customClassRepository = {
         where: { classId: { in: older.map((row) => row.id) } },
       });
       const playedIds = new Set(played.map((row) => row.classId));
-      for (const row of older)
-        if (!playedIds.has(row.id)) await deleteVersion(tx, row.id);
+      for (const row of older) {
+        if (!playedIds.has(row.id)) {
+          await deleteVersion(tx, row.id);
+        }
+      }
       return next.id;
     });
   },
@@ -578,7 +589,9 @@ export const customClassRepository = {
       await tx.partyClassPool.deleteMany({
         where: { lineageId: current.lineageId },
       });
-      for (const version of versions) await deleteVersion(tx, version.id);
+      for (const version of versions) {
+        await deleteVersion(tx, version.id);
+      }
       return { archived: false };
     });
   },
@@ -589,7 +602,9 @@ export const customClassRepository = {
       where: { id, takenDownAt: null },
       data: { status: 'active' },
     });
-    if (restored.count === 0) return false;
+    if (restored.count === 0) {
+      return false;
+    }
     const current = await prisma.class.findUniqueOrThrow({
       where: { id },
       select: { lineageId: true },
@@ -602,7 +617,9 @@ export const customClassRepository = {
   },
   async findWithText(id: number): Promise<CustomClassRows | null> {
     const cls = await prisma.class.findFirst({ where: { id, source: 'user' }, include: { owner: { select: { name: true } } } });
-    if (!cls) return null;
+    if (!cls) {
+      return null;
+    }
     const [latest, playingCount, origins, abilities, modifiers, translations] =
       await Promise.all([
         prisma.class.aggregate({
@@ -722,7 +739,9 @@ export const customClassRepository = {
       where: { id, source: 'user' },
       select: { lineageId: true },
     });
-    if (!current) return null;
+    if (!current) {
+      return null;
+    }
     const latest = await prisma.class.findFirst({
       where: { lineageId: current.lineageId, source: 'user' },
       orderBy: { version: 'desc' },
@@ -733,7 +752,9 @@ export const customClassRepository = {
 
   /** Whether a character owner belongs to a party where this lineage is enabled. */
   async isVisibleToPartyMember(input: { lineageId: string; userId: string | null; sessionId: string | null }): Promise<boolean> {
-    if (!input.userId && !input.sessionId) return false;
+    if (!input.userId && !input.sessionId) {
+      return false;
+    }
     return Boolean(await prisma.partyClassPool.findFirst({
       where: {
         lineageId: input.lineageId,

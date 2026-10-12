@@ -132,7 +132,9 @@ mock.module('../../src/repositories/party-repository.js', {
         inviteToken: string;
         obrRoomId?: string | null;
       }) => {
-        if (state.createThrows) throw state.createThrows;
+        if (state.createThrows) {
+          throw state.createThrows;
+        }
         state.createCalls.push(input);
         return {
           id: PARTY_ID,
@@ -148,7 +150,9 @@ mock.module('../../src/repositories/party-repository.js', {
       findOlderClassIds: async () => new Set<number>(),
       getPartyById: async () => state.party,
       getPartyByObrRoomId: async () => {
-        if (state.getByObrThrows) throw state.getByObrThrows;
+        if (state.getByObrThrows) {
+          throw state.getByObrThrows;
+        }
         return state.partyByObrRoomId;
       },
       getPartyByInviteToken: async () => state.partyByToken,
@@ -167,7 +171,9 @@ mock.module('../../src/repositories/party-repository.js', {
         cap: number;
       }) => {
         state.joinCalls.push(input);
-        if (state.joinThrows) throw state.joinThrows;
+        if (state.joinThrows) {
+          throw state.joinThrows;
+        }
       },
       rotateInviteToken: async (id: string, token: string) => {
         state.rotateCalls.push({ id, token });
@@ -247,14 +253,18 @@ mock.module('../../src/repositories/class-pool-repository.js', {
         enabled: boolean
       ) => {
         pool.setLineageCalls.push({ partyId, lineageId, enabled });
-        if (!pool.party) return;
+        if (!pool.party) {
+          return;
+        }
         pool.party.poolLineageIds = enabled
           ? [...new Set([...pool.party.poolLineageIds, lineageId])]
           : pool.party.poolLineageIds.filter((id) => id !== lineageId);
       },
       setClassless: async (partyId: string, enabled: boolean) => {
         pool.setClasslessCalls.push({ partyId, enabled });
-        if (pool.party) pool.party.classlessEnabled = enabled;
+        if (pool.party) {
+          pool.party.classlessEnabled = enabled;
+        }
       },
     },
   },

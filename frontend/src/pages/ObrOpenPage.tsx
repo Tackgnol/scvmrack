@@ -39,7 +39,9 @@ export function ObrOpenPage() {
     }, [queryClient]);
 
     useEffect(() => {
-        if (started.current || isLoading) return;
+        if (started.current || isLoading) {
+            return;
+        }
         started.current = true;
 
         const params = new URLSearchParams(window.location.search);
@@ -51,7 +53,9 @@ export function ObrOpenPage() {
         const forge = to === 'forge';
 
         if (!token || (forge ? !roomId || !playerId : !characterId)) {
-            if (token) scrubToken();
+            if (token) {
+                scrubToken();
+            }
             setFailureMessage(FAILURE_MESSAGE);
             return;
         }
@@ -79,7 +83,9 @@ export function ObrOpenPage() {
     }, [isAnonymous, isLoading, openForge, queryClient, user]);
 
     const forgeAsObrIdentity = async () => {
-        if (!mismatch || switching) return;
+        if (!mismatch || switching) {
+            return;
+        }
         setSwitching(true);
         try {
             await signOut();

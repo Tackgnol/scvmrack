@@ -27,7 +27,9 @@ export function ObrRollPicker({
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      return;
+    }
     const controller = new AbortController();
     setClasses(null);
     setFailed(false);

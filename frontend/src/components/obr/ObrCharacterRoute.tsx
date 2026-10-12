@@ -115,8 +115,12 @@ function ObrPlayerCharacterRoute() {
         return;
       }
 
-      if (restoreInFlightRef.current) return;
-      if (!force && restoreCheckedRef.current) return;
+      if (restoreInFlightRef.current) {
+        return;
+      }
+      if (!force && restoreCheckedRef.current) {
+        return;
+      }
 
       restoreInFlightRef.current = true;
       setIsRestoringCharacter(true);
@@ -192,13 +196,17 @@ function ObrPlayerCharacterRoute() {
     let unsubscribeBroadcast: (() => void) | null = null;
 
     OBR.onReady(() => {
-      if (!active) return;
+      if (!active) {
+        return;
+      }
 
       unsubscribeBroadcast = OBR.broadcast.onMessage(
         rosterChannel(scvmrackObrExtension),
         (event) => {
           const message = isObrRosterBroadcast(event.data) ? event.data : null;
-          if (message?.kind !== "roster") return;
+          if (message?.kind !== "roster") {
+            return;
+          }
 
           restoreCheckedRef.current = false;
           queueMicrotask(() => {
@@ -225,7 +233,9 @@ function ObrPlayerCharacterRoute() {
 
   useEffect(() => {
     const characterId = character?.id?.trim();
-    if (!characterId) return;
+    if (!characterId) {
+      return;
+    }
 
     void persistCurrentObrCharacterId(
       scvmrackObrExtension,
@@ -242,7 +252,9 @@ function ObrPlayerCharacterRoute() {
   useEffect(() => {
     const characterId = character?.id;
     const updatedAt = character?.updatedAt;
-    if (!characterId || !updatedAt) return;
+    if (!characterId || !updatedAt) {
+      return;
+    }
 
     const previous = lastCardPulseRef.current;
     lastCardPulseRef.current = { characterId, updatedAt };

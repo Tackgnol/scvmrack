@@ -11,8 +11,11 @@ export function authHeaders(): Record<string, string> {
 
 export function setTabSession(token: string | null): boolean {
   try {
-    if (token) sessionStorage.setItem(TAB_SESSION_KEY, token);
-    else sessionStorage.removeItem(TAB_SESSION_KEY);
+    if (token) {
+      sessionStorage.setItem(TAB_SESSION_KEY, token);
+    } else {
+      sessionStorage.removeItem(TAB_SESSION_KEY);
+    }
     window.dispatchEvent(new Event(TAB_SESSION_KEY));
     return true;
   } catch {

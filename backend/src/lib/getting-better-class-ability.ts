@@ -47,7 +47,9 @@ export async function rollClassAbility(
     const replacement =
       (await rollFreeAbility(roller, catalog, offered)) ??
       (await rollFreeAbility(roller, catalog, heldKeys));
-    if (replacement) offered.add(replacement.key);
+    if (replacement) {
+      offered.add(replacement.key);
+    }
     specialties.push({ current, replacement, reroll: false });
   }
   return { kind: 'specialties', specialties };
@@ -154,7 +156,9 @@ export async function upgradeLegacyImprovementDraft(
   roller: GettingBetterRoller,
   catalog: GettingBetterCatalog
 ): Promise<Record<string, unknown> | null> {
-  if (!('scumSpecialties' in draft)) return null;
+  if (!('scumSpecialties' in draft)) {
+    return null;
+  }
   const { scumSpecialties: legacy, ...rest } = draft as { scumSpecialties: LegacySpecialties };
 
   let classAbility: ClassAbilityDraft;
@@ -189,8 +193,12 @@ export async function upgradeLegacyImprovementDraft(
 }
 
 function expectedKind(rule: GettingBetterRule, appliedCount: number): ClassAbilityDraft['kind'] {
-  if (rule === 'book') return 'none';
-  if (rule === 'book_plus_ability') return 'newAbility';
+  if (rule === 'book') {
+    return 'none';
+  }
+  if (rule === 'book_plus_ability') {
+    return 'newAbility';
+  }
   return appliedCount === 0 ? 'firstSpecialty' : 'specialties';
 }
 
@@ -200,14 +208,18 @@ async function rollFreeAbility(
   taken: ReadonlySet<string>
 ): Promise<SpecialtyRoll | null> {
   const abilities = classPool(catalog);
-  if (!abilities.some((ability) => !taken.has(ability.key))) return null;
+  if (!abilities.some((ability) => !taken.has(ability.key))) {
+    return null;
+  }
   const maxRoll = maxPoolRoll(abilities);
 
   // ponytail: reroll-until-free mirrors the table rule; fine while pools stay at 20 abilities.
   for (;;) {
     const roll = await rollValue(roller, `1d${maxRoll}`, 1, maxRoll);
     const ability = abilities.find((candidate) => candidate.rollValue === roll.total);
-    if (ability && !taken.has(ability.key)) return { ...ability, roll };
+    if (ability && !taken.has(ability.key)) {
+      return { ...ability, roll };
+    }
   }
 }
 
@@ -216,7 +228,9 @@ function freeAbilityFromSubmission(
   catalog: GettingBetterCatalog,
   heldKeys: ReadonlySet<string>
 ): SpecialtyRoll | null {
-  if (!submitted) return null;
+  if (!submitted) {
+    return null;
+  }
   const ability = abilityFromRoll(submitted.roll, catalog);
   if (heldKeys.has(ability.key)) {
     throw new GettingBetterRuleError(`${ability.key} is already held`);
@@ -243,7 +257,9 @@ function heldPoolAbilities(
   const held: SpecialtySlot[] = [];
   for (const key of new Set(abilityKeys)) {
     const ability = byKey.get(key);
-    if (ability) held.push(ability);
+    if (ability) {
+      held.push(ability);
+    }
   }
   return held;
 }

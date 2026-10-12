@@ -203,7 +203,9 @@ export function createCharacterService(
 
       try {
         const scope = await resolveClassScope(input.inviteToken, input.obrRoomId);
-        if (!scope.ok) return fail(scope.error);
+        if (!scope.ok) {
+          return fail(scope.error);
+        }
         const party = scope.value.party;
         const obrBinding =
           !input.inviteToken && input.obrRoomId && input.obrPlayerId
@@ -255,7 +257,9 @@ export function createCharacterService(
             classless,
             classless ? null : input.draft.classId
           );
-          if (unavailable) return fail(unavailable);
+          if (unavailable) {
+            return fail(unavailable);
+          }
 
           const data = await characterCreateDataFromDraft(input.draft, userId);
           if (party) {
@@ -288,7 +292,9 @@ export function createCharacterService(
             ];
           }
           const unavailable = classChoiceError(scope.value, false, classId);
-          if (unavailable) return fail(unavailable);
+          if (unavailable) {
+            return fail(unavailable);
+          }
 
           if (party) {
             if (!obrBinding) {

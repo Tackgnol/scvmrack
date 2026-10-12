@@ -93,7 +93,9 @@ export function ObrCardRoute({
   }, [token]);
 
   async function handleUnbind() {
-    if (!token) return;
+    if (!token) {
+      return;
+    }
 
     try {
       await unbindCharacterFromToken(scvmrackObrExtension, OBR, token);
@@ -152,7 +154,9 @@ export function ObrCard({
   const [isActionBusy, setIsActionBusy] = useState(false);
 
   async function handleAction() {
-    if (!action) return;
+    if (!action) {
+      return;
+    }
 
     setIsActionBusy(true);
     await action.onClick().finally(() => {

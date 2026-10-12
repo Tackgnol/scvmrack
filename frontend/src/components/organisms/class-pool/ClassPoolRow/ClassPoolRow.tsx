@@ -19,7 +19,9 @@ export function ClassPoolRow({ cls, onSwitch }: ClassPoolRowProps) {
       className={`${cls.enabled ? "on" : "off"}${cardDismissed ? " card-dismissed" : ""}`}
       data-testid="class-pool-row"
       onKeyDown={(event) => {
-        if (event.key === "Escape") setCardDismissed(true);
+        if (event.key === "Escape") {
+          setCardDismissed(true);
+        }
       }}
       onMouseLeave={() => setCardDismissed(false)}
       onBlur={() => setCardDismissed(false)}

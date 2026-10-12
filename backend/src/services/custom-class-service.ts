@@ -101,7 +101,9 @@ async function catalogGrantProblems(draft: ClassDraft): Promise<string[]> {
   return grants.flatMap(({ ability, i, key, slot }) => {
     const itemType = typeByKey.get(key);
     const who = ability.name[draft.languages[0]].trim() || `ability ${i + 1}`;
-    if (!itemType) return `Ability “${who}” grants an unavailable catalog item`;
+    if (!itemType) {
+      return `Ability “${who}” grants an unavailable catalog item`;
+    }
     if ((itemType === 'pet') !== (slot === 'pet')) {
       return `Ability “${who}” holds a ${
         itemType === 'pet' ? 'pet' : 'non-pet'
@@ -146,7 +148,9 @@ export function createCustomClassService(log: ServiceLogger) {
       session: AppSession;
       locale: string;
     }): Promise<ServiceResult<OwnClassSummary[]>> {
-      if (!isGm(input.session)) return fail(unauthorized());
+      if (!isGm(input.session)) {
+        return fail(unauthorized());
+      }
       try {
         return ok(
           await customClassRepository.listOwned(
@@ -168,7 +172,9 @@ export function createCustomClassService(log: ServiceLogger) {
 
     /** Lists unfinished private drafts; invalid payloads are deliberately retained. */
     async listDrafts(input: { session: AppSession }) {
-      if (!isGm(input.session)) return fail(unauthorized());
+      if (!isGm(input.session)) {
+        return fail(unauthorized());
+      }
       try {
         return ok(
           await customClassRepository.listDrafts(sessionUserId(input.session)!)
@@ -186,7 +192,9 @@ export function createCustomClassService(log: ServiceLogger) {
     },
 
     async getDraft(input: { session: AppSession; id: number }) {
-      if (!isGm(input.session)) return fail(unauthorized());
+      if (!isGm(input.session)) {
+        return fail(unauthorized());
+      }
       try {
         const draft = await customClassRepository.getDraft(
           sessionUserId(input.session)!,
@@ -213,7 +221,9 @@ export function createCustomClassService(log: ServiceLogger) {
       revision?: number;
       force?: boolean;
     }) {
-      if (!isGm(input.session)) return fail(unauthorized());
+      if (!isGm(input.session)) {
+        return fail(unauthorized());
+      }
       const ownerUserId = sessionUserId(input.session)!;
       try {
         if (input.classId === null && input.id === undefined && await creationBanRepository.findActive(ownerUserId)) {
@@ -221,9 +231,15 @@ export function createCustomClassService(log: ServiceLogger) {
         }
         if (input.classId !== null) {
           const cls = await customClassRepository.findWithText(input.classId);
-          if (!cls || cls.ownerUserId !== ownerUserId) return fail(notYours());
-          if (cls.takenDownAt) return fail(classTakenDown());
-          if (cls.status === 'archived') return fail(classArchived());
+          if (!cls || cls.ownerUserId !== ownerUserId) {
+            return fail(notYours());
+          }
+          if (cls.takenDownAt) {
+            return fail(classTakenDown());
+          }
+          if (cls.status === 'archived') {
+            return fail(classArchived());
+          }
         } else if (
           input.id === undefined &&
           (await customClassRepository.countNewDrafts(ownerUserId)) >=
@@ -261,7 +277,9 @@ export function createCustomClassService(log: ServiceLogger) {
     },
 
     async deleteDraft(input: { session: AppSession; id: number }) {
-      if (!isGm(input.session)) return fail(unauthorized());
+      if (!isGm(input.session)) {
+        return fail(unauthorized());
+      }
       try {
         const deleted = await customClassRepository.deleteDraft(
           sessionUserId(input.session)!,
@@ -287,7 +305,9 @@ export function createCustomClassService(log: ServiceLogger) {
         const found = admin
           ? await customClassRepository.findWithText(input.id)
           : await customClassRepository.findLatestWithText(input.id);
-        if (!found) return fail(notYours());
+        if (!found) {
+          return fail(notYours());
+        }
         const mayRead = admin || (
           found.visibility === 'public' ||
           found.ownerUserId === sessionUserId(input.session) ||
@@ -297,7 +317,9 @@ export function createCustomClassService(log: ServiceLogger) {
             sessionId: input.session?.session?.id ?? null,
           }))
         );
-        if (!mayRead || (!admin && (found.status !== 'active' || found.takenDownAt))) return fail(notYours());
+        if (!mayRead || (!admin && (found.status !== 'active' || found.takenDownAt))) {
+          return fail(notYours());
+        }
         return ok({ ...saved(found), attribution: classAttribution({ source: 'user', ownerName: found.ownerName, creditWork: null, creditAuthor: null })!, reportable: found.visibility === 'public' && !found.takenDownAt });
       } catch (err) {
         return fail(unexpected(log, err, 'CLASS_DETAIL_LOAD_FAILED', 'Failed to load the class'));
@@ -307,11 +329,14 @@ export function createCustomClassService(log: ServiceLogger) {
       session: AppSession;
       id: number;
     }): Promise<ServiceResult<SavedClass>> {
-      if (!isGm(input.session)) return fail(unauthorized());
+      if (!isGm(input.session)) {
+        return fail(unauthorized());
+      }
       try {
         const found = await customClassRepository.findWithText(input.id);
-        if (!found || found.ownerUserId !== sessionUserId(input.session))
+        if (!found || found.ownerUserId !== sessionUserId(input.session)) {
           return fail(notYours());
+        }
         return ok(saved(found));
       } catch (err) {
         return fail(
@@ -324,15 +349,21 @@ export function createCustomClassService(log: ServiceLogger) {
       session: AppSession;
       draft: ClassDraft;
     }): Promise<ServiceResult<SavedClass>> {
-      if (!isGm(input.session)) return fail(unauthorized());
+      if (!isGm(input.session)) {
+        return fail(unauthorized());
+      }
       const ownerUserId = sessionUserId(input.session)!;
       try {
-        if (await creationBanRepository.findActive(ownerUserId)) return fail(creationBanned());
+        if (await creationBanRepository.findActive(ownerUserId)) {
+          return fail(creationBanned());
+        }
         const problems = [
           ...classDraftProblems(input.draft),
           ...(await catalogGrantProblems(input.draft)),
         ];
-        if (problems.length > 0) return fail(draftInvalid(problems));
+        if (problems.length > 0) {
+          return fail(draftInvalid(problems));
+        }
         // ponytail: count-then-insert; two saves in the same instant can overshoot the cap by one.
         if (
           (await customClassRepository.countOwnedLineages(ownerUserId)) >=
@@ -348,10 +379,14 @@ export function createCustomClassService(log: ServiceLogger) {
         }
         const id = await customClassRepository.create(ownerUserId, input.draft);
         const found = await customClassRepository.findWithText(id);
-        if (!found) throw new Error(`Class ${id} vanished right after saving`);
+        if (!found) {
+          throw new Error(`Class ${id} vanished right after saving`);
+        }
         return ok(saved(found));
       } catch (err) {
-        if (isNameClash(err)) return fail(nameTaken(input.draft));
+        if (isNameClash(err)) {
+          return fail(nameTaken(input.draft));
+        }
         return fail(
           unexpected(log, err, 'CLASS_SAVE_FAILED', 'Failed to save the class')
         );
@@ -363,16 +398,21 @@ export function createCustomClassService(log: ServiceLogger) {
       id: number;
       draft: ClassDraft;
     }): Promise<ServiceResult<SavedClass>> {
-      if (!isGm(input.session)) return fail(unauthorized());
+      if (!isGm(input.session)) {
+        return fail(unauthorized());
+      }
       const problems = [
         ...classDraftProblems(input.draft),
         ...(await catalogGrantProblems(input.draft)),
       ];
-      if (problems.length > 0) return fail(draftInvalid(problems));
+      if (problems.length > 0) {
+        return fail(draftInvalid(problems));
+      }
       try {
         const found = await customClassRepository.findWithText(input.id);
-        if (!found || found.ownerUserId !== sessionUserId(input.session))
+        if (!found || found.ownerUserId !== sessionUserId(input.session)) {
           return fail(notYours());
+        }
         if (!found.isLatest) {
           return fail(
             apiError(
@@ -382,20 +422,27 @@ export function createCustomClassService(log: ServiceLogger) {
             )
           );
         }
-        if (found.takenDownAt) return fail(classTakenDown());
-        if (found.status === 'archived') return fail(classArchived());
+        if (found.takenDownAt) {
+          return fail(classTakenDown());
+        }
+        if (found.status === 'archived') {
+          return fail(classArchived());
+        }
         const id =
           found.playingCount > 0
             ? await customClassRepository.createVersion(input.id, input.draft)
             : (await customClassRepository.update(input.id, input.draft),
               input.id);
         const savedClass = await customClassRepository.findWithText(id);
-        if (!savedClass)
+        if (!savedClass) {
           throw new Error(`Class ${id} vanished right after saving`);
+        }
         await customClassRepository.deleteDraftsForClasses(found.ownerUserId!, [input.id, id]);
         return ok(saved(savedClass));
       } catch (err) {
-        if (isNameClash(err)) return fail(nameTaken(input.draft));
+        if (isNameClash(err)) {
+          return fail(nameTaken(input.draft));
+        }
         return fail(
           unexpected(log, err, 'CLASS_SAVE_FAILED', 'Failed to save the class')
         );
@@ -408,12 +455,15 @@ export function createCustomClassService(log: ServiceLogger) {
       id: number;
       visibility: 'private' | 'public';
     }): Promise<ServiceResult<{ visibility: 'private' | 'public' }>> {
-      if (!isGm(input.session)) return fail(unauthorized());
+      if (!isGm(input.session)) {
+        return fail(unauthorized());
+      }
       try {
         const ownerUserId = sessionUserId(input.session);
         const found = await customClassRepository.findWithText(input.id);
-        if (!ownerUserId || !found || found.ownerUserId !== ownerUserId)
+        if (!ownerUserId || !found || found.ownerUserId !== ownerUserId) {
           return fail(notYours());
+        }
         if (!found.isLatest) {
           return fail(
             apiError(
@@ -423,8 +473,12 @@ export function createCustomClassService(log: ServiceLogger) {
             )
           );
         }
-        if (found.takenDownAt) return fail(classTakenDown());
-        if (found.status === 'archived') return fail(classArchived());
+        if (found.takenDownAt) {
+          return fail(classTakenDown());
+        }
+        if (found.status === 'archived') {
+          return fail(classArchived());
+        }
         if (input.visibility === 'public') {
           const dayStart = new Date();
           dayStart.setUTCHours(0, 0, 0, 0);
@@ -434,7 +488,9 @@ export function createCustomClassService(log: ServiceLogger) {
             dayStart,
             CUSTOM_CLASS_DAILY_PUBLISH_LIMIT
           );
-          if (!published) return fail(dailyPublishLimitReached());
+          if (!published) {
+            return fail(dailyPublishLimitReached());
+          }
         } else {
           await customClassRepository.setVisibility(input.id, input.visibility);
         }
@@ -454,12 +510,15 @@ export function createCustomClassService(log: ServiceLogger) {
       session: AppSession;
       id: number;
     }): Promise<ServiceResult<{ archived: boolean }>> {
-      if (!isGm(input.session)) return fail(unauthorized());
+      if (!isGm(input.session)) {
+        return fail(unauthorized());
+      }
       try {
         const found = await customClassRepository.findWithText(input.id);
-        if (!found || found.ownerUserId !== sessionUserId(input.session))
+        if (!found || found.ownerUserId !== sessionUserId(input.session)) {
           return fail(notYours());
-        if (!found.isLatest)
+        }
+        if (!found.isLatest) {
           return fail(
             apiError(
               409,
@@ -467,7 +526,10 @@ export function createCustomClassService(log: ServiceLogger) {
               'A newer version of this class exists. Manage that one.'
             )
           );
-        if (found.takenDownAt) return fail(classTakenDown());
+        }
+        if (found.takenDownAt) {
+          return fail(classTakenDown());
+        }
         return ok(await customClassRepository.remove(input.id));
       } catch (err) {
         return fail(
@@ -485,12 +547,17 @@ export function createCustomClassService(log: ServiceLogger) {
       session: AppSession;
       id: number;
     }): Promise<ServiceResult<{ restored: true }>> {
-      if (!isGm(input.session)) return fail(unauthorized());
+      if (!isGm(input.session)) {
+        return fail(unauthorized());
+      }
       try {
         const found = await customClassRepository.findWithText(input.id);
-        if (!found || found.ownerUserId !== sessionUserId(input.session))
+        if (!found || found.ownerUserId !== sessionUserId(input.session)) {
           return fail(notYours());
-        if (found.takenDownAt) return fail(classTakenDown());
+        }
+        if (found.takenDownAt) {
+          return fail(classTakenDown());
+        }
         const restored = await customClassRepository.restore(input.id);
         return restored ? ok({ restored: true }) : fail(classTakenDown());
       } catch (err) {
@@ -511,10 +578,14 @@ export function createCustomClassService(log: ServiceLogger) {
       language: ClassLanguage;
       locale: string;
     }): Promise<ServiceResult<Record<string, unknown>>> {
-      if (!isGm(input.session)) return fail(unauthorized());
+      if (!isGm(input.session)) {
+        return fail(unauthorized());
+      }
       try {
         const problems = await catalogGrantProblems(input.draft);
-        if (problems.length > 0) return fail(draftInvalid(problems));
+        if (problems.length > 0) {
+          return fail(draftInvalid(problems));
+        }
         const data = await buildCharacterDataFromSpec(
           null,
           classSpecFromDraft(input.draft, input.language),

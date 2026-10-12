@@ -58,7 +58,9 @@ export function LanguageToggle() {
   const current = (i18n.language || 'en').split('-')[0];
 
   const select = (code: string) => {
-    if (code === current) return;
+    if (code === current) {
+      return;
+    }
     void (async () => {
       await loadLanguage(code);
       await i18n.changeLanguage(code);

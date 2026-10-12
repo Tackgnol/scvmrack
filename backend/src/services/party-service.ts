@@ -190,8 +190,9 @@ export function createPartyService(
     locale: string
   ): Promise<ClassPoolView> {
     const pool = await classPoolRepository.findPartyPool(partyId);
-    if (!pool)
+    if (!pool) {
       throw new Error(`Party ${partyId} vanished while loading its class pool`);
+    }
     const rows = await classPoolRepository.findCatalogRows(
       pool.ownerUserId,
       pool.poolLineageIds,
@@ -576,7 +577,9 @@ export function createPartyService(
       locale: string;
     }): Promise<ServiceResult<ClassPoolView>> {
       const denied = await ensureOwner(input.session, input.id);
-      if (denied) return fail(denied);
+      if (denied) {
+        return fail(denied);
+      }
       try {
         return ok(await loadClassPool(input.id, input.locale));
       } catch (err) {
@@ -599,7 +602,9 @@ export function createPartyService(
       locale: string;
     }): Promise<ServiceResult<ClassPoolView>> {
       const denied = await ensureOwner(input.session, input.id);
-      if (denied) return fail(denied);
+      if (denied) {
+        return fail(denied);
+      }
       try {
         if (!input.enabled) {
           await classPoolRepository.setLineage(
@@ -645,7 +650,9 @@ export function createPartyService(
       locale: string;
     }): Promise<ServiceResult<ClassPoolView>> {
       const denied = await ensureOwner(input.session, input.id);
-      if (denied) return fail(denied);
+      if (denied) {
+        return fail(denied);
+      }
       try {
         await classPoolRepository.setClassless(input.id, input.enabled);
         return ok(await loadClassPool(input.id, input.locale));

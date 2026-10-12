@@ -127,11 +127,18 @@ export function CreateSheetMobile(props: SectionProps) {
   const onDotKeyDown = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
     const last = steps.length - 1;
     let next: number | null = null;
-    if (event.key === 'ArrowRight' || event.key === 'ArrowDown') next = index === last ? 0 : index + 1;
-    else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') next = index === 0 ? last : index - 1;
-    else if (event.key === 'Home') next = 0;
-    else if (event.key === 'End') next = last;
-    if (next === null) return;
+    if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+      next = index === last ? 0 : index + 1;
+    } else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+      next = index === 0 ? last : index - 1;
+    } else if (event.key === 'Home') {
+      next = 0;
+    } else if (event.key === 'End') {
+      next = last;
+    }
+    if (next === null) {
+      return;
+    }
     event.preventDefault();
     focusStep(next);
   };

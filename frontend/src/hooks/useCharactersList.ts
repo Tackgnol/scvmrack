@@ -57,7 +57,9 @@ export function useCharactersList() {
   }, [charactersQuery.error, showUnexpectedError]);
 
   const createNew = () => {
-    if (isCreating) return;
+    if (isCreating) {
+      return;
+    }
 
     setDeleteError(null);
     setIsCreating(true);
@@ -87,20 +89,26 @@ export function useCharactersList() {
   };
 
   const requestDelete = (character: CharacterListItem) => {
-    if (!character.id || deletingId) return;
+    if (!character.id || deletingId) {
+      return;
+    }
 
     setDeleteError(null);
     setDeleteCandidate(character);
   };
 
   const cancelDelete = () => {
-    if (deletingId) return;
+    if (deletingId) {
+      return;
+    }
     setDeleteCandidate(null);
   };
 
   const confirmDelete = async () => {
     const character = deleteCandidate;
-    if (!character?.id) return;
+    if (!character?.id) {
+      return;
+    }
 
     setDeleteError(null);
     setDeletingId(character.id);

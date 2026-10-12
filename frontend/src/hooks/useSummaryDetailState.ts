@@ -3,9 +3,15 @@ import { morkBorgColors, statColors } from '@/theme/morkBorgTheme';
 import { type SummaryDetailKey } from '@/hooks/useSummaryMetrics';
 
 const getAccentColor = (detail: SummaryDetailKey): string => {
-  if (detail === 'dodge') return statColors.agi;
-  if (detail === 'melee') return statColors.str;
-  if (detail === 'ranged') return statColors.pre;
+  if (detail === 'dodge') {
+    return statColors.agi;
+  }
+  if (detail === 'melee') {
+    return statColors.str;
+  }
+  if (detail === 'ranged') {
+    return statColors.pre;
+  }
   return morkBorgColors.yellow;
 };
 
@@ -34,7 +40,9 @@ export function useSummaryDetailState() {
   };
 
   const scheduleClose = () => {
-    if (isPinned) return;
+    if (isPinned) {
+      return;
+    }
     clearCloseTimer();
     closeTimerRef.current = setTimeout(() => {
       setActiveDetail(null);
@@ -44,7 +52,9 @@ export function useSummaryDetailState() {
   };
 
   const openHoverDetail = (detail: SummaryDetailKey, element: HTMLElement) => {
-    if (isPinned && activeDetail !== detail) return;
+    if (isPinned && activeDetail !== detail) {
+      return;
+    }
     clearCloseTimer();
     setActiveDetail(detail);
     setAnchorEl(element);

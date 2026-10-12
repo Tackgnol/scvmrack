@@ -45,7 +45,9 @@ const Count = styled('span')({
 // is one reach away from anywhere in the app.
 export function PartyPullTab({ count }: PartyPullTabProps) {
   const { t } = useTranslation();
-  if (count <= 0) return null;
+  if (count <= 0) {
+    return null;
+  }
 
   return (
     <Tab

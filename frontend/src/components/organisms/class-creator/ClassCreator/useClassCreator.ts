@@ -108,12 +108,18 @@ export function useClassCreator(
   const [openItem, setOpenItem] = useState<number | null>(null);
   const jump = (to: CreatorStep, path: string, toLanguage?: ClassLanguage) => {
     setStep(to);
-    if (toLanguage) setLanguage(toLanguage);
+    if (toLanguage) {
+      setLanguage(toLanguage);
+    }
     const ability = abilityIndexOf(path);
-    if (ability !== null) setOpenAbility(ability);
+    if (ability !== null) {
+      setOpenAbility(ability);
+    }
     const item = itemIndexOf(path);
     // The waiting-items tray on Abilities points at items without opening them.
-    if (item !== null && to === "items") setOpenItem(item);
+    if (item !== null && to === "items") {
+      setOpenItem(item);
+    }
   };
 
   const language = draft.languages.includes(chosenLanguage)
@@ -127,7 +133,9 @@ export function useClassCreator(
   ) => {
     const before = draftRef.current;
     const after = recipe(before);
-    if (sameDraft(before, after)) return;
+    if (sameDraft(before, after)) {
+      return;
+    }
     const active =
       document.activeElement instanceof HTMLElement
         ? document.activeElement
@@ -173,11 +181,12 @@ export function useClassCreator(
     if (coalesce && last) {
       last.after = entry.after;
       last.at = entry.at;
-    } else
+    } else {
       historyRef.current.undo = [
         ...historyRef.current.undo.slice(-(HISTORY_LIMIT - 1)),
         entry,
       ];
+    }
     historyRef.current.redo = [];
     draftRef.current = after;
     setDraft(after);
@@ -188,37 +197,46 @@ export function useClassCreator(
   const restoreFocus = (source: string | null) =>
     requestAnimationFrame(() => {
       const target = source ? document.getElementById(source) : null;
-      if (target instanceof HTMLElement) target.focus();
-      else focusAfterRender(null);
+      if (target instanceof HTMLElement) {
+        target.focus();
+      } else {
+        focusAfterRender(null);
+      }
     });
   const undo = () => {
     const entry = historyRef.current.undo.pop();
-    if (!entry) return;
+    if (!entry) {
+      return;
+    }
     historyRef.current.redo.push(entry);
     draftRef.current = structuredClone(entry.before);
     setDraft(draftRef.current);
     setRevision((current) => current + 1);
     setBlocked(null);
     publishHistory();
-    if (entry.kind !== "move" && entry.kind !== "drag")
+    if (entry.kind !== "move" && entry.kind !== "drag") {
       showInfo(
       t("creator.history.undid", "Undid: {{step}}", { step: entry.label }),
       );
+    }
     restoreFocus(entry.source);
   };
   const redo = () => {
     const entry = historyRef.current.redo.pop();
-    if (!entry) return;
+    if (!entry) {
+      return;
+    }
     historyRef.current.undo.push(entry);
     draftRef.current = structuredClone(entry.after);
     setDraft(draftRef.current);
     setRevision((current) => current + 1);
     setBlocked(null);
     publishHistory();
-    if (entry.kind !== "move" && entry.kind !== "drag")
+    if (entry.kind !== "move" && entry.kind !== "drag") {
       showInfo(
       t("creator.history.redid", "Redid: {{step}}", { step: entry.label }),
       );
+    }
     restoreFocus(entry.source);
   };
 

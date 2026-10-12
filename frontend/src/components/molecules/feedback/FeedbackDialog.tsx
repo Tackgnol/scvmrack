@@ -45,7 +45,9 @@ type FeedbackFormState = {
 };
 
 function cleanedContext(context?: FeedbackContext): Record<string, unknown> {
-  if (!context) return {};
+  if (!context) {
+    return {};
+  }
 
   return Object.fromEntries(
     Object.entries(context).filter(([, value]) => value !== undefined)
@@ -140,7 +142,9 @@ export default function FeedbackDialog({
 
   const handleSubmit = async () => {
     const trimmed = message.trim();
-    if (!trimmed || isSending) return;
+    if (!trimmed || isSending) {
+      return;
+    }
 
     setIsSending(true);
 

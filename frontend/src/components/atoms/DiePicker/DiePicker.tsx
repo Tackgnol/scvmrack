@@ -17,7 +17,9 @@ export function DiePicker({ id, label, value, options, onChange, hint }: DiePick
         aria-describedby={hintId}
         onKeyDown={(event) => {
           const index = moveInRadioGroup(event);
-          if (index !== null) onChange(options[index]);
+          if (index !== null) {
+            onChange(options[index]);
+          }
         }}
       >
         {options.map((faces) => (

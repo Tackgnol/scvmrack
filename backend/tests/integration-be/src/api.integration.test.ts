@@ -14,16 +14,22 @@ class CookieJar {
 
     if (setCookies.length === 0) {
       const single = response.headers.get('set-cookie');
-      if (single) setCookies.push(single);
+      if (single) {
+        setCookies.push(single);
+      }
     }
 
     for (const rawCookie of setCookies) {
       const firstChunk = rawCookie.split(';')[0];
       const separator = firstChunk.indexOf('=');
-      if (separator <= 0) continue;
+      if (separator <= 0) {
+        continue;
+      }
       const key = firstChunk.slice(0, separator).trim();
       const value = firstChunk.slice(separator + 1).trim();
-      if (!key || !value) continue;
+      if (!key || !value) {
+        continue;
+      }
       this.cookies.set(key, value);
     }
   }
@@ -53,7 +59,9 @@ async function request(
   const requestHeaders: Record<string, string> = { ...headers };
   if (jar) {
     const cookieHeader = jar.header();
-    if (cookieHeader) requestHeaders.cookie = cookieHeader;
+    if (cookieHeader) {
+      requestHeaders.cookie = cookieHeader;
+    }
   }
 
   let body: string | undefined;
@@ -68,7 +76,9 @@ async function request(
     body,
   });
 
-  if (jar) jar.capture(response);
+  if (jar) {
+    jar.capture(response);
+  }
   return response;
 }
 
@@ -81,7 +91,9 @@ async function fetchCsrfToken(jar: CookieJar): Promise<string> {
 }
 
 async function expectStatus(response: Response, expectedStatus: number): Promise<void> {
-  if (response.status === expectedStatus) return;
+  if (response.status === expectedStatus) {
+    return;
+  }
   const payload = await response.text();
   assert.fail(
     `${response.url} returned ${response.status}, expected ${expectedStatus}. Payload: ${payload}`
@@ -446,15 +458,33 @@ function tableRoll(total: number): RollValue {
 }
 
 function scoreToModifier(score: number): number {
-  if (score <= 4) return -3;
-  if (score <= 6) return -2;
-  if (score <= 8) return -1;
-  if (score <= 12) return 0;
-  if (score <= 14) return 1;
-  if (score <= 16) return 2;
-  if (score <= 18) return 3;
-  if (score === 19) return 4;
-  if (score === 20) return 5;
+  if (score <= 4) {
+    return -3;
+  }
+  if (score <= 6) {
+    return -2;
+  }
+  if (score <= 8) {
+    return -1;
+  }
+  if (score <= 12) {
+    return 0;
+  }
+  if (score <= 14) {
+    return 1;
+  }
+  if (score <= 16) {
+    return 2;
+  }
+  if (score <= 18) {
+    return 3;
+  }
+  if (score === 19) {
+    return 4;
+  }
+  if (score === 20) {
+    return 5;
+  }
   return 6;
 }
 
@@ -683,7 +713,9 @@ test('Gutterborn Scum is a Specialist: specialties resolve from translations, th
   const plPreview = (await plResponse.json()) as ImprovementPreview;
   const first = plPreview.rolledDraft.classAbility;
   assert.equal(first.kind, 'firstSpecialty');
-  if (first.kind !== 'firstSpecialty' || !first.added) return;
+  if (first.kind !== 'firstSpecialty' || !first.added) {
+    return;
+  }
   assert.equal(first.existing.length, 1);
 
   const keys = [first.existing[0].key, first.added.key];
@@ -727,7 +759,9 @@ test('Gutterborn Scum is a Specialist: specialties resolve from translations, th
   await expectStatus(laterResponse, 200);
   const later = ((await laterResponse.json()) as ImprovementPreview).rolledDraft.classAbility;
   assert.equal(later.kind, 'specialties');
-  if (later.kind !== 'specialties') return;
+  if (later.kind !== 'specialties') {
+    return;
+  }
   assert.deepEqual(
     later.specialties.map((choice) => [choice.current.key, choice.reroll]),
     keys.map((key) => [key, false]),
@@ -1005,7 +1039,9 @@ test('POST /api/characters/new — inventory items with use_effect have boolean 
   const allItems = [...char.equipment, ...char.storage];
 
   for (const item of allItems) {
-    if (!Object.prototype.hasOwnProperty.call(item, 'uses')) continue;
+    if (!Object.prototype.hasOwnProperty.call(item, 'uses')) {
+      continue;
+    }
     assert.ok(
       Array.isArray(item.uses),
       `item.uses should be an array, got ${typeof item.uses} for item: ${JSON.stringify(item)}`

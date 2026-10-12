@@ -10,7 +10,9 @@ export function WaitingItemsTray({ draft, language, onGrantFromNewAbility }: Wai
   const waiting = draft.items
     .map((item, index) => ({ item, index }))
     .filter(({ item }) => !granterOf(draft, item.ref));
-  if (waiting.length === 0) return null;
+  if (waiting.length === 0) {
+    return null;
+  }
 
   return (
     <Tray aria-labelledby="waiting-items">

@@ -43,7 +43,9 @@ function rollable(
   const classIds: number[] = [];
   const acceptedClassIds: number[] = [];
   for (const { latest, versions } of byLineage(rows)) {
-    if (!canOffer(latest, partyOwnerId)) continue;
+    if (!canOffer(latest, partyOwnerId)) {
+      continue;
+    }
     classIds.push(latest.id);
     acceptedClassIds.push(...versions.filter((v) => v.takenDownAt === null).map((v) => v.id));
   }

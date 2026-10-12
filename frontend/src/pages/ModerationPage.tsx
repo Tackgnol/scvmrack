@@ -59,7 +59,9 @@ export function ModerationPage() {
 
   const act = (id: string, action: "dismiss" | "takeDown" | "removeContent" | "restore") => {
     const reason = reasons[id]?.trim();
-    if (!reason) return;
+    if (!reason) {
+      return;
+    }
     (action === "dismiss" ? dismiss : action === "takeDown" ? takeDown : action === "removeContent" ? removeContent : restore).mutate({ id, reason });
   };
 
@@ -203,7 +205,9 @@ export function ModerationPage() {
             <ModalButton
               variant="danger"
               onClick={() => {
-                if (confirming) act(confirming.id, confirming.action);
+                if (confirming) {
+                  act(confirming.id, confirming.action);
+                }
                 setConfirming(null);
               }}
             >

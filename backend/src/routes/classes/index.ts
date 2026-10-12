@@ -57,7 +57,9 @@ const classes: FastifyPluginAsync = async (fastify): Promise<void> => {
     },
   }, async (request, reply) => {
     const result = await createCreationBanService(request.log).own({ session: request.appSession });
-    if (!result.ok) return sendServiceError(reply, request, result.error);
+    if (!result.ok) {
+      return sendServiceError(reply, request, result.error);
+    }
     return reply.send(result.value);
   });
 
@@ -82,7 +84,9 @@ const classes: FastifyPluginAsync = async (fastify): Promise<void> => {
         session: request.appSession,
         locale: request.query.locale ?? 'en',
       });
-      if (!result.ok) return sendServiceError(reply, request, result.error);
+      if (!result.ok) {
+        return sendServiceError(reply, request, result.error);
+      }
       return result.value;
     }
   );
@@ -105,7 +109,9 @@ const classes: FastifyPluginAsync = async (fastify): Promise<void> => {
       const result = await service(request).listDrafts({
         session: request.appSession,
       });
-      if (!result.ok) return sendServiceError(reply, request, result.error);
+      if (!result.ok) {
+        return sendServiceError(reply, request, result.error);
+      }
       return reply.send(result.value as never);
     }
   );
@@ -136,7 +142,9 @@ const classes: FastifyPluginAsync = async (fastify): Promise<void> => {
         classId: request.body.classId ?? null,
         draft: request.body.draft as ClassDraft,
       });
-      if (!result.ok) return sendServiceError(reply, request, result.error);
+      if (!result.ok) {
+        return sendServiceError(reply, request, result.error);
+      }
       return reply.code(201).send(result.value as never);
     }
   );
@@ -163,7 +171,9 @@ const classes: FastifyPluginAsync = async (fastify): Promise<void> => {
         session: request.appSession,
         id: request.params.draftId,
       });
-      if (!result.ok) return sendServiceError(reply, request, result.error);
+      if (!result.ok) {
+        return sendServiceError(reply, request, result.error);
+      }
       return reply.send(result.value as never);
     }
   );
@@ -198,7 +208,9 @@ const classes: FastifyPluginAsync = async (fastify): Promise<void> => {
         revision: request.body.revision,
         force: request.body.force,
       });
-      if (!result.ok) return sendServiceError(reply, request, result.error);
+      if (!result.ok) {
+        return sendServiceError(reply, request, result.error);
+      }
       return reply.send(result.value as never);
     }
   );
@@ -225,7 +237,9 @@ const classes: FastifyPluginAsync = async (fastify): Promise<void> => {
         session: request.appSession,
         id: request.params.draftId,
       });
-      if (!result.ok) return sendServiceError(reply, request, result.error);
+      if (!result.ok) {
+        return sendServiceError(reply, request, result.error);
+      }
       return reply.code(204).send(null);
     }
   );
@@ -253,7 +267,9 @@ const classes: FastifyPluginAsync = async (fastify): Promise<void> => {
         session: request.appSession,
         draft: request.body.draft as ClassDraft,
       });
-      if (!result.ok) return sendServiceError(reply, request, result.error);
+      if (!result.ok) {
+        return sendServiceError(reply, request, result.error);
+      }
       return reply.code(201).send(result.value as never);
     }
   );
@@ -289,7 +305,9 @@ const classes: FastifyPluginAsync = async (fastify): Promise<void> => {
         language: request.body.language,
         locale: request.query.locale ?? 'en',
       });
-      if (!result.ok) return sendServiceError(reply, request, result.error);
+      if (!result.ok) {
+        return sendServiceError(reply, request, result.error);
+      }
       return result.value;
     }
   );
@@ -308,7 +326,9 @@ const classes: FastifyPluginAsync = async (fastify): Promise<void> => {
     },
     async (request, reply) => {
       const result = await service(request).getDetail({ session: request.appSession, id: request.params.id });
-      if (!result.ok) return sendServiceError(reply, request, result.error);
+      if (!result.ok) {
+        return sendServiceError(reply, request, result.error);
+      }
       return reply.send(result.value as never);
     }
   );
@@ -333,7 +353,9 @@ app.post(
         classId: request.params.id,
         text: request.body.text,
       });
-      if (!result.ok) return sendServiceError(reply, request, result.error);
+      if (!result.ok) {
+        return sendServiceError(reply, request, result.error);
+      }
       return reply.code(201).send(result.value);
     }
   );
@@ -365,7 +387,9 @@ app.post(
         id: request.params.id,
         visibility: 'public',
       });
-      if (!result.ok) return sendServiceError(reply, request, result.error);
+      if (!result.ok) {
+        return sendServiceError(reply, request, result.error);
+      }
       return reply.send(result.value);
     }
   );
@@ -396,7 +420,9 @@ app.post(
         id: request.params.id,
         visibility: 'private',
       });
-      if (!result.ok) return sendServiceError(reply, request, result.error);
+      if (!result.ok) {
+        return sendServiceError(reply, request, result.error);
+      }
       return reply.send(result.value);
     }
   );
@@ -422,7 +448,9 @@ app.post(
         session: request.appSession,
         id: request.params.id,
       });
-      if (!result.ok) return sendServiceError(reply, request, result.error);
+      if (!result.ok) {
+        return sendServiceError(reply, request, result.error);
+      }
       // The stored draft passed the same schema on save; its dice are plain numbers to TypeScript.
       return reply.send(result.value as never);
     }
@@ -455,7 +483,9 @@ app.post(
         id: request.params.id,
         draft: request.body.draft as ClassDraft,
       });
-      if (!result.ok) return sendServiceError(reply, request, result.error);
+      if (!result.ok) {
+        return sendServiceError(reply, request, result.error);
+      }
       return reply.send(result.value as never);
     }
   );
@@ -489,7 +519,9 @@ app.post(
         session: request.appSession,
         id: request.params.id,
       });
-      if (!result.ok) return sendServiceError(reply, request, result.error);
+      if (!result.ok) {
+        return sendServiceError(reply, request, result.error);
+      }
       return reply.send(result.value);
     }
   );
@@ -522,7 +554,9 @@ app.post(
         session: request.appSession,
         id: request.params.id,
       });
-      if (!result.ok) return sendServiceError(reply, request, result.error);
+      if (!result.ok) {
+        return sendServiceError(reply, request, result.error);
+      }
       return reply.send(result.value);
     }
   );

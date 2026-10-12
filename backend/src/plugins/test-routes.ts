@@ -17,7 +17,9 @@ interface CreateCharacterBody {
 }
 
 export default fp(async function testRoutesPlugin(fastify: FastifyInstance) {
-  if (process.env.ENABLE_TEST_ROUTES !== '1') return;
+  if (process.env.ENABLE_TEST_ROUTES !== '1') {
+    return;
+  }
 
   fastify.log.warn('ENABLE_TEST_ROUTES=1 — registering /test/* fixture routes');
 

@@ -24,7 +24,9 @@ export function useStorageSection() {
   ) => {
     const diff = newTotal - currentIndices.length;
     if (diff > 0) {
-      for (let i = 0; i < diff; i++) addStorageItem({ ...item });
+      for (let i = 0; i < diff; i++) {
+        addStorageItem({ ...item });
+      }
     } else if (diff < 0) {
       [...currentIndices]
         .slice(newTotal)

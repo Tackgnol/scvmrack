@@ -29,7 +29,9 @@ export function aggregateItems<T extends { name?: string | null; comments?: stri
     const groups = new Map<string, AggregatedItem<T>>();
 
     items.forEach((item, index) => {
-        if (!item) return;
+        if (!item) {
+            return;
+        }
 
         const groupKey = buildGroupKey(item);
         const existing = groups.get(groupKey);

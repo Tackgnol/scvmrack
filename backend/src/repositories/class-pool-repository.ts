@@ -41,7 +41,9 @@ export const classPoolRepository = {
         members: { select: { classId: true } },
       },
     });
-    if (!party) return null;
+    if (!party) {
+      return null;
+    }
     return {
       ownerUserId: party.ownerUserId,
       classlessEnabled: party.classlessEnabled,

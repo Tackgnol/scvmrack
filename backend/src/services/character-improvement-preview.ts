@@ -133,7 +133,9 @@ export async function upgradeActiveDraft(
     new Roller({ engine: new OSRandomEngine() }),
     catalog
   );
-  if (!upgraded) return row;
+  if (!upgraded) {
+    return row;
+  }
   const saved = await characterImprovementRepository.updateRolledDraft(
     row.characterId,
     row.id,
@@ -275,7 +277,9 @@ export async function rerollDraftSection(input: {
 }
 
 function asObjectArray(value: unknown): Array<Record<string, unknown>> {
-  if (!Array.isArray(value)) return [];
+  if (!Array.isArray(value)) {
+    return [];
+  }
   return value.filter(
     (item): item is Record<string, unknown> =>
       item !== null && typeof item === 'object' && !Array.isArray(item)

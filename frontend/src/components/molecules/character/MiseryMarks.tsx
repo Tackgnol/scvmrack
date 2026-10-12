@@ -29,7 +29,9 @@ export default function MiseryMarks({
     index: number,
   ) => {
     const nextIndex = getAdjacentMiseryIndex(index, event.key);
-    if (nextIndex === null) return;
+    if (nextIndex === null) {
+      return;
+    }
 
     event.preventDefault();
     buttonRefs.current[nextIndex]?.focus();

@@ -72,7 +72,9 @@ export function GettingBetterPanelSections({
 
   const setDebrisSilver = (value: string) => {
     updateDraft((current) => {
-      if (current.debris.kind !== "silver") return current;
+      if (current.debris.kind !== "silver") {
+        return current;
+      }
       const silver = tableRoll(numberValue(value));
       return {
         ...current,
@@ -86,8 +88,9 @@ export function GettingBetterPanelSections({
       if (
         current.debris.kind !== "sacredScroll" &&
         current.debris.kind !== "uncleanScroll"
-      )
+      ) {
         return current;
+      }
       const total = Math.max(1, Math.min(10, numberValue(value)));
       const kind =
         current.debris.kind === "sacredScroll" ? "sacred" : "unclean";
@@ -107,8 +110,9 @@ export function GettingBetterPanelSections({
       if (
         current.debris.kind !== "sacredScroll" &&
         current.debris.kind !== "uncleanScroll"
-      )
+      ) {
         return current;
+      }
       return {
         ...current,
         debris: { ...current.debris, itemKey: event.target.value },
@@ -128,7 +132,9 @@ export function GettingBetterPanelSections({
 
   const setSpecialtyReroll = (index: number, reroll: boolean) => {
     updateDraft((current) => {
-      if (current.classAbility.kind !== "specialties") return current;
+      if (current.classAbility.kind !== "specialties") {
+        return current;
+      }
       return {
         ...current,
         classAbility: {

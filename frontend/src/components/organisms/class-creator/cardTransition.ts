@@ -40,6 +40,8 @@ export function withCardTransition(closing: boolean, update: () => void, afterUp
   document.addEventListener("pointerdown", replay, { capture: true, once: true });
   void transition.finished.finally(() => {
     document.removeEventListener("pointerdown", replay, { capture: true });
-    if (running === transition) running = null;
+    if (running === transition) {
+      running = null;
+    }
   });
 }

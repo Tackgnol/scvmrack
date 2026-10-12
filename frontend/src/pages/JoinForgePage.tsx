@@ -69,7 +69,9 @@ export function JoinForgePage() {
     setSessionError(null);
     ensureAnonymousSession()
       .then(() => {
-        if (!cancelled) setSessionReady(true);
+        if (!cancelled) {
+          setSessionReady(true);
+        }
       })
       .catch((error) => {
         if (!cancelled) {
@@ -82,7 +84,9 @@ export function JoinForgePage() {
   }, [t]);
 
   const handleCreated = (character: CharacterResponse) => {
-    if (!character.id) return;
+    if (!character.id) {
+      return;
+    }
     void appHistory.push(
       character.partyId
         ? `/party/${character.partyId}/character/${character.id}`

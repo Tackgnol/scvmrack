@@ -47,12 +47,16 @@ export function Reorderable({
   const preview = (target: number, height: number) => {
     const list = entries();
     clearPreview();
-    if (target === index) return;
+    if (target === index) {
+      return;
+    }
     list.forEach((entry, entryIndex) => {
-      if (index < target && entryIndex > index && entryIndex <= target)
+      if (index < target && entryIndex > index && entryIndex <= target) {
         entry.style.transform = `translateY(${-height}px)`;
-      if (target < index && entryIndex >= target && entryIndex < index)
+      }
+      if (target < index && entryIndex >= target && entryIndex < index) {
         entry.style.transform = `translateY(${height}px)`;
+      }
     });
   };
   /** Page-relative midpoints, measured before the preview starts shifting entries. */
@@ -70,14 +74,18 @@ export function Reorderable({
     clearPreview();
   };
   const move = (to: number, method: "move" | "drag") => {
-    if (to === index || to < 0 || to >= count) return;
+    if (to === index || to < 0 || to >= count) {
+      return;
+    }
     onMove(index, to, method, source);
     requestAnimationFrame(() => gripRef.current?.focus());
   };
 
   useEffect(() => {
     const cancel = (event: KeyboardEvent) => {
-      if (event.key !== "Escape" || !pointerRef.current?.dragging) return;
+      if (event.key !== "Escape" || !pointerRef.current?.dragging) {
+        return;
+      }
       event.preventDefault();
       reset();
       gripRef.current?.focus();
@@ -99,13 +107,15 @@ export function Reorderable({
           !enabled ||
           !event.altKey ||
           (event.key !== "ArrowUp" && event.key !== "ArrowDown")
-        )
+        ) {
           return;
+        }
         if (
           event.target instanceof Element &&
           event.target.closest("input, textarea, [contenteditable=true]")
-        )
+        ) {
           return;
+        }
         event.preventDefault();
         move(index + (event.key === "ArrowUp" ? -1 : 1), "move");
       }}
@@ -145,12 +155,15 @@ export function Reorderable({
           }}
           onPointerMove={(event) => {
             const pointer = pointerRef.current;
-            if (!pointer || pointer.id !== event.pointerId) return;
+            if (!pointer || pointer.id !== event.pointerId) {
+              return;
+            }
             if (
               !pointer.dragging &&
               Math.abs(event.clientY - pointer.startY) < DRAG_DISTANCE
-            )
+            ) {
               return;
+            }
             if (!pointer.dragging) {
               pointer.mids = midpoints();
               pointer.height = entries()[index]?.getBoundingClientRect().height ?? 0;
@@ -158,14 +171,18 @@ export function Reorderable({
             pointer.dragging = true;
             pointer.target = targetAt(event.clientY, pointer.mids ?? []);
             preview(pointer.target, pointer.height ?? 0);
-            if (event.clientY < SCROLL_EDGE)
+            if (event.clientY < SCROLL_EDGE) {
               window.scrollBy({ top: -24, behavior: "auto" });
-            if (event.clientY > window.innerHeight - SCROLL_EDGE)
+            }
+            if (event.clientY > window.innerHeight - SCROLL_EDGE) {
               window.scrollBy({ top: 24, behavior: "auto" });
+            }
           }}
           onPointerUp={(event) => {
             const pointer = pointerRef.current;
-            if (!pointer || pointer.id !== event.pointerId) return;
+            if (!pointer || pointer.id !== event.pointerId) {
+              return;
+            }
             if (pointer.dragging) {
               event.preventDefault();
               suppressClickRef.current = true;

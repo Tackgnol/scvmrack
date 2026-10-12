@@ -64,7 +64,9 @@ export async function rollDebris(
   catalog: GettingBetterCatalog
 ): Promise<ImprovementDebrisRoll> {
   const roll = await rollValue(roller, '1d6', 1, 6);
-  if (roll.total <= 3) return { roll, kind: 'nothing' };
+  if (roll.total <= 3) {
+    return { roll, kind: 'nothing' };
+  }
 
   if (roll.total === 4) {
     const silver = await rollValue(roller, '3d10', 3, 30);
@@ -123,7 +125,9 @@ export function normalizeSubmittedDebris(
   catalog: GettingBetterCatalog
 ): ImprovementDebrisRoll {
   assertRollValue(debris.roll, '1d6', 1, 6);
-  if (debris.roll.total <= 3) return { roll: debris.roll, kind: 'nothing' };
+  if (debris.roll.total <= 3) {
+    return { roll: debris.roll, kind: 'nothing' };
+  }
 
   if (debris.roll.total === 4) {
     if (debris.kind !== 'silver') {

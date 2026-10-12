@@ -39,7 +39,9 @@ mock.module('../../src/lib/generate-character.js', {
   namedExports: {
     buildCharacterData: async (classId: number | null, rollerFor: unknown, options: unknown) => {
       buildCalls.push({ classId, rollerFor, options });
-      if (buildError) throw buildError;
+      if (buildError) {
+        throw buildError;
+      }
       return {
         ...fakeCharacterData,
         classId,
@@ -147,7 +149,9 @@ test('createDraft requires a session', async () => {
   });
 
   assert.equal(result.ok, false);
-  if (!result.ok) assert.equal(result.error.statusCode, 401);
+  if (!result.ok) {
+    assert.equal(result.error.statusCode, 401);
+  }
 });
 
 test('createDraft with explicit classId validates the class and returns draft + preview', async () => {
@@ -158,14 +162,18 @@ test('createDraft with explicit classId validates the class and returns draft + 
   });
 
   assert.equal(result.ok, true);
-  if (!result.ok) return;
+  if (!result.ok) {
+    return;
+  }
   const { draft, preview } = result.value as {
     draft: { classId: number | null; classless: boolean; seeds: Record<string, string> };
     preview: Record<string, unknown>;
   };
   assert.equal(draft.classId, 3);
   assert.equal(draft.classless, false);
-  for (const section of DRAFT_SECTIONS) assert.match(draft.seeds[section], SEED_PATTERN);
+  for (const section of DRAFT_SECTIONS) {
+    assert.match(draft.seeds[section], SEED_PATTERN);
+  }
   assert.equal(buildCalls[0].classId, 3);
   assert.equal(preview.hydrated, true);
   assert.equal(hydrateCalls[0].row.id, null);
@@ -197,7 +205,9 @@ test('createDraft resolves the invite to its pool and rejects classless when the
 
   assert.deepEqual(scopeCalls, ['invite-1']);
   assert.equal(result.ok, false);
-  if (!result.ok) assert.equal(result.error.code, 'CLASSLESS_NOT_AVAILABLE');
+  if (!result.ok) {
+    assert.equal(result.error.code, 'CLASSLESS_NOT_AVAILABLE');
+  }
 });
 
 test('createDraft passes a dead invite through as 410', async () => {
@@ -211,7 +221,9 @@ test('createDraft passes a dead invite through as 410', async () => {
   });
 
   assert.equal(result.ok, false);
-  if (!result.ok) assert.equal(result.error.statusCode, 410);
+  if (!result.ok) {
+    assert.equal(result.error.statusCode, 410);
+  }
   assert.equal(buildCalls.length, 0);
 });
 
@@ -283,7 +295,9 @@ test('createDraft applies a sanitized name override to draft previews', async ()
   });
 
   assert.equal(result.ok, true);
-  if (!result.ok) return;
+  if (!result.ok) {
+    return;
+  }
   const { draft, preview } = result.value as {
     draft: { name?: string };
     preview: Record<string, unknown>;
@@ -319,7 +333,9 @@ test('rerollSection replaces exactly one seed', async () => {
   });
 
   assert.equal(result.ok, true);
-  if (!result.ok) return;
+  if (!result.ok) {
+    return;
+  }
   const { draft } = result.value as { draft: { seeds: Record<string, string> } };
   assert.notEqual(draft.seeds.stats, seeds.stats);
   for (const section of DRAFT_SECTIONS.filter((section: string) => section !== 'stats')) {
@@ -342,7 +358,9 @@ test('rerollSection preserves classless drop-lowest choices', async () => {
   });
 
   assert.equal(result.ok, true);
-  if (!result.ok) return;
+  if (!result.ok) {
+    return;
+  }
   assert.deepEqual(result.value.draft.dropLowestAbilities, ['strength', 'presence']);
   assert.deepEqual(
     (buildCalls[0].options as { dropLowestAbilities?: string[] }).dropLowestAbilities,
@@ -361,7 +379,9 @@ test('rerollSection preserves typed names except when rerolling the name section
     locale: 'en',
   });
   assert.equal(statsResult.ok, true);
-  if (!statsResult.ok) return;
+  if (!statsResult.ok) {
+    return;
+  }
   assert.equal((statsResult.value.draft as { name?: string }).name, 'Rotmaw');
   assert.equal((statsResult.value.preview as Record<string, unknown>).name, 'Rotmaw');
 
@@ -372,7 +392,9 @@ test('rerollSection preserves typed names except when rerolling the name section
     locale: 'en',
   });
   assert.equal(nameResult.ok, true);
-  if (!nameResult.ok) return;
+  if (!nameResult.ok) {
+    return;
+  }
   assert.equal((nameResult.value.draft as { name?: string }).name, undefined);
   assert.equal((nameResult.value.preview as Record<string, unknown>).name, fakeCharacterData.name);
 });
@@ -388,7 +410,9 @@ test('rerollSection rejects a class that left the scope', async () => {
   });
 
   assert.equal(result.ok, false);
-  if (!result.ok) assert.equal(result.error.code, 'CLASS_NOT_AVAILABLE');
+  if (!result.ok) {
+    assert.equal(result.error.code, 'CLASS_NOT_AVAILABLE');
+  }
 });
 
 test('listClasses lists the classes of the scope behind the invite', async () => {
@@ -398,7 +422,9 @@ test('listClasses lists the classes of the scope behind the invite', async () =>
   const result = await createCharacterDraftService(log).listClasses({ locale: 'en', inviteToken: 'invite-1' });
 
   assert.equal(result.ok, true);
-  if (result.ok) assert.deepEqual(result.value, listClassesResult);
+  if (result.ok) {
+    assert.deepEqual(result.value, listClassesResult);
+  }
   assert.deepEqual(scopeCalls, ['invite-1']);
   assert.deepEqual(listedIds, [[1, 7]]);
 });

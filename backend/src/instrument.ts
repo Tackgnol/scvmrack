@@ -18,7 +18,9 @@ const SENSITIVE_REQUEST_HEADERS = new Set([
 
 const redactSensitiveRequestHeaders = (event: ErrorEvent): ErrorEvent => {
   const headers = event.request?.headers;
-  if (!headers) return event;
+  if (!headers) {
+    return event;
+  }
 
   for (const headerName of Object.keys(headers)) {
     if (SENSITIVE_REQUEST_HEADERS.has(headerName.toLowerCase())) {

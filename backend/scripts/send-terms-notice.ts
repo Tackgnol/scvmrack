@@ -15,7 +15,9 @@ const { sendPublicClassTermsNotice } = await import('../src/services/legal-notic
 const { default: prisma } = await import('../src/lib/prisma.js');
 try {
   const result = await sendPublicClassTermsNotice({ ...notice, send }, console);
-  if (!result.ok) throw result.error;
+  if (!result.ok) {
+    throw result.error;
+  }
   console.log(`${send ? 'Sent' : 'Preview'}: ${result.value.sent} emails sent to ${result.value.recipients} public-class GMs`);
 } finally {
   await prisma.$disconnect();

@@ -60,7 +60,9 @@ export default function CustomModifiersGrid({
             const nameLength = (modifier.name ?? '').trim().length;
             const tileSpan = getModifierTileSpan(nameLength);
 
-            if (isRemoving) return null;
+            if (isRemoving) {
+              return null;
+            }
 
             return (
               <Box

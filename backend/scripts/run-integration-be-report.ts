@@ -42,7 +42,9 @@ async function isApiReachable(): Promise<boolean> {
 async function waitForApi(): Promise<boolean> {
   const deadline = Date.now() + MAX_WAIT_MS;
   while (Date.now() < deadline) {
-    if (await isApiReachable()) return true;
+    if (await isApiReachable()) {
+      return true;
+    }
     await new Promise(r => setTimeout(r, POLL_INTERVAL_MS));
     process.stdout.write('.');
   }

@@ -11,15 +11,21 @@ class CookieJar {
       ? response.headers.getSetCookie() : [];
     if (setCookies.length === 0) {
       const single = response.headers.get('set-cookie');
-      if (single) setCookies.push(single);
+      if (single) {
+        setCookies.push(single);
+      }
     }
     for (const rawCookie of setCookies) {
       const firstChunk = rawCookie.split(';')[0];
       const separator = firstChunk.indexOf('=');
-      if (separator <= 0) continue;
+      if (separator <= 0) {
+        continue;
+      }
       const key = firstChunk.slice(0, separator).trim();
       const value = firstChunk.slice(separator + 1).trim();
-      if (!key || !value) continue;
+      if (!key || !value) {
+        continue;
+      }
       this.cookies.set(key, value);
     }
   }
@@ -31,11 +37,15 @@ class CookieJar {
 async function request(path: string, options: { method?: string; json?: unknown; headers?: Record<string, string>; jar?: CookieJar } = {}): Promise<Response> {
   const { method = 'GET', json, headers = {}, jar } = options;
   const requestHeaders: Record<string, string> = { ...headers };
-  if (jar) { const h = jar.header(); if (h) requestHeaders.cookie = h; }
+  if (jar) { const h = jar.header(); if (h) {
+    requestHeaders.cookie = h;
+  } }
   let body: string | undefined;
   if (json !== undefined) { requestHeaders['content-type'] = 'application/json'; body = JSON.stringify(json); }
   const response = await fetch(new URL(path, baseUrl), { method, headers: requestHeaders, body });
-  if (jar) jar.capture(response);
+  if (jar) {
+    jar.capture(response);
+  }
   return response;
 }
 
@@ -208,7 +218,9 @@ for (const bookClass of bookClasses) {
         character.omens >= 1 && character.omens <= bookClass.omenDie,
         `${bookClass.name} omens ${character.omens} should come from a d${bookClass.omenDie}`,
       );
-      if (locale === 'en') assert.equal(character.className, bookClass.name);
+      if (locale === 'en') {
+        assert.equal(character.className, bookClass.name);
+      }
       assert.ok(character.classDescription.length > 0, `${locale} classDescription`);
       if (bookClass.id === 6) {
         const laboratory = character.abilities.find(
@@ -280,7 +292,9 @@ test('every Book Class grant reaches the rolled inventory', async () => {
         for (const granted of (key && bookGrants[key]) || []) {
           assert.ok(inventory.has(granted), `${key} should grant ${granted}`);
         }
-        if (key) unseen.delete(key);
+        if (key) {
+          unseen.delete(key);
+        }
       }
     }
   }

@@ -20,9 +20,15 @@ type AnyRecord = Record<string, unknown>;
 // ── Normalization ─────────────────────────────────────────────────────────────
 
 function normalize(obj: unknown): unknown {
-  if (obj instanceof Date) return '<timestamp>';
-  if (typeof obj !== 'object' || obj === null) return obj;
-  if (Array.isArray(obj)) return obj.map(normalize);
+  if (obj instanceof Date) {
+    return '<timestamp>';
+  }
+  if (typeof obj !== 'object' || obj === null) {
+    return obj;
+  }
+  if (Array.isArray(obj)) {
+    return obj.map(normalize);
+  }
   const result: AnyRecord = {};
   for (const [k, v] of Object.entries(obj as AnyRecord)) {
     if (k === 'id' && typeof v === 'string' && /^[0-9a-f-]{36}$/i.test(v)) {
@@ -41,8 +47,12 @@ function normalize(obj: unknown): unknown {
 
 /** Sort array-valued fields that SQL doesn't guarantee order for. */
 function sortArrays(obj: unknown, fields: string[]): unknown {
-  if (typeof obj !== 'object' || obj === null) return obj;
-  if (Array.isArray(obj)) return obj.map(item => sortArrays(item, fields));
+  if (typeof obj !== 'object' || obj === null) {
+    return obj;
+  }
+  if (Array.isArray(obj)) {
+    return obj.map(item => sortArrays(item, fields));
+  }
   const result = { ...(obj as AnyRecord) };
   for (const field of fields) {
     if (Array.isArray(result[field])) {
@@ -61,7 +71,9 @@ const UNORDERED_ARRAY_FIELDS = ['abilities', 'equipment', 'storage', 'equippedWe
 // ── Diff ──────────────────────────────────────────────────────────────────────
 
 function diff(expected: unknown, actual: unknown, path = ''): string[] {
-  if (JSON.stringify(expected) === JSON.stringify(actual)) return [];
+  if (JSON.stringify(expected) === JSON.stringify(actual)) {
+    return [];
+  }
   const errors: string[] = [];
 
   if (Array.isArray(expected) && Array.isArray(actual)) {
@@ -81,9 +93,13 @@ function diff(expected: unknown, actual: unknown, path = ''): string[] {
     const e = expected as AnyRecord;
     const a = actual   as AnyRecord;
     for (const k of new Set([...Object.keys(e), ...Object.keys(a)])) {
-      if (!(k in e)) errors.push(`${path}.${k}: extra in actual (${JSON.stringify(a[k])})`);
-      else if (!(k in a)) errors.push(`${path}.${k}: missing in actual (expected ${JSON.stringify(e[k])})`);
-      else errors.push(...diff(e[k], a[k], `${path}.${k}`));
+      if (!(k in e)) {
+        errors.push(`${path}.${k}: extra in actual (${JSON.stringify(a[k])})`);
+      } else if (!(k in a)) {
+        errors.push(`${path}.${k}: missing in actual (expected ${JSON.stringify(e[k])})`);
+      } else {
+        errors.push(...diff(e[k], a[k], `${path}.${k}`));
+      }
     }
     return errors;
   }
@@ -114,7 +130,9 @@ async function fetchSql(id: string, locale: string): Promise<AnyRecord> {
   const rows = await prisma.$queryRaw<AnyRecord[]>`
     SELECT * FROM get_character_full(${id}::uuid, ${locale})
   `;
-  if (!rows[0]) throw new Error(`SQL get_character_full returned nothing for ${id}`);
+  if (!rows[0]) {
+    throw new Error(`SQL get_character_full returned nothing for ${id}`);
+  }
   return camelCaseJsonbFields(rows[0]) as AnyRecord;
 }
 
@@ -161,8 +179,12 @@ async function main() {
           pass++;
         } else {
           console.error(`  ✗ ${label} [${locale}]`);
-          for (const d of diffs.slice(0, 15)) console.error(`      ${d}`);
-          if (diffs.length > 15) console.error(`      … and ${diffs.length - 15} more`);
+          for (const d of diffs.slice(0, 15)) {
+            console.error(`      ${d}`);
+          }
+          if (diffs.length > 15) {
+            console.error(`      … and ${diffs.length - 15} more`);
+          }
           fail++;
         }
       } catch (err) {
@@ -179,7 +201,9 @@ async function main() {
   await prisma.$executeRaw`DELETE FROM "user" WHERE id = 'parity-test-user'`.catch(() => {});
 
   console.log(`\n${pass} passed, ${fail} failed`);
-  if (fail > 0) process.exit(1);
+  if (fail > 0) {
+    process.exit(1);
+  }
 }
 
 main().catch(err => {

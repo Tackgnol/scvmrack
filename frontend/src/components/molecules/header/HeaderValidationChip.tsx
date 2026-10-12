@@ -8,7 +8,9 @@ type HeaderValidationChipProps = {
 };
 
 export function HeaderValidationChip({ summary, label }: HeaderValidationChipProps) {
-  if (!summary) return null;
+  if (!summary) {
+    return null;
+  }
 
   return (
     <Tooltip title={summary} placement="bottom">

@@ -11,13 +11,17 @@ mock.module('../../src/repositories/creation-ban-repository.js', {
       findActive: async () => { reads++; return active; },
       listHistory: async () => history,
       ban: async (_userId: string, actorUserId: string, reason: string) => {
-        if (active) return 'already';
+        if (active) {
+          return 'already';
+        }
         active = { reason, bannedAt: new Date('2026-10-10T12:00:00.000Z') };
         history.unshift({ id: 'log-ban', action: 'class_creation_banned', actorUserId, reason, createdAt: active.bannedAt });
         return 'created';
       },
       unban: async (_userId: string, actorUserId: string, reason: string) => {
-        if (!active) return false;
+        if (!active) {
+          return false;
+        }
         active = null;
         history.unshift({ id: 'log-unban', action: 'class_creation_unbanned', actorUserId, reason, createdAt: new Date('2026-10-10T13:00:00.000Z') });
         return true;
@@ -64,7 +68,10 @@ test('only moderators can set, lift, and inspect a user-based creation ban', asy
     const ownAfter = await service.own({ session: gm });
     assert.deepEqual(ownAfter.ok && ownAfter.value, { banned: false });
   } finally {
-    if (previous === undefined) delete process.env.MODERATION_ADMIN_USER_IDS;
-    else process.env.MODERATION_ADMIN_USER_IDS = previous;
+    if (previous === undefined) {
+      delete process.env.MODERATION_ADMIN_USER_IDS;
+    } else {
+      process.env.MODERATION_ADMIN_USER_IDS = previous;
+    }
   }
 });

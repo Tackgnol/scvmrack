@@ -77,7 +77,9 @@ const app: FastifyPluginAsync<AppOptions> = async (fastify, opts) => {
   });
 
   fastify.addHook('onClose', async () => {
-    if (moderationRetentionTimer) clearInterval(moderationRetentionTimer);
+    if (moderationRetentionTimer) {
+      clearInterval(moderationRetentionTimer);
+    }
     if (Sentry.isInitialized()) {
       await Sentry.close(2000);
     }

@@ -38,7 +38,9 @@ export function useObrTokenBindingState() {
     };
 
     OBR.onReady(() => {
-      if (!active) return;
+      if (!active) {
+        return;
+      }
 
       void refreshSelection();
       unsubscribePlayer = OBR.player.onChange((player) => {

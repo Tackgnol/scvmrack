@@ -20,7 +20,9 @@ async function fetchCsrfToken(): Promise<string> {
     credentials: "include",
     headers: embeddedSessionHeaders(),
   });
-  if (!res.ok) throw new Error("Failed to fetch CSRF token");
+  if (!res.ok) {
+    throw new Error("Failed to fetch CSRF token");
+  }
   const data = (await res.json()) as { token: string };
   csrfToken = data.token;
   return data.token;

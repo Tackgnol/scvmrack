@@ -59,7 +59,9 @@ mock.module('../../src/repositories/custom-class-repository.js', {
     customClassRepository: {
       countOwnedLineages: async () => repo.owned,
       create: async (owner: string, draft: ClassDraft) => {
-        if (repo.createThrows) throw repo.createThrows;
+        if (repo.createThrows) {
+          throw repo.createThrows;
+        }
         repo.created.push({ owner, draft });
         return 42;
       },
@@ -68,7 +70,9 @@ mock.module('../../src/repositories/custom-class-repository.js', {
       },
       createVersion: async (id: number, draft: ClassDraft) => {
         repo.versioned.push({ id, draft });
-        if (repo.found) repo.found = { ...repo.found, id: 8, version: repo.found.version + 1, playingCount: 0, draft };
+        if (repo.found) {
+          repo.found = { ...repo.found, id: 8, version: repo.found.version + 1, playingCount: 0, draft };
+        }
         return 8;
       },
       findWithText: async (id: number) =>
@@ -111,7 +115,9 @@ mock.module('../../src/repositories/custom-class-repository.js', {
             ? null
             : repo.drafts.find((draft) => draft.id === input.id);
         if (existing) {
-          if (!input.force && existing.revision !== input.revision) return null;
+          if (!input.force && existing.revision !== input.revision) {
+            return null;
+          }
           existing.draft = input.draft;
           existing.revision += 1;
           return existing;
@@ -128,7 +134,9 @@ mock.module('../../src/repositories/custom-class-repository.js', {
       },
       deleteDraft: async (_owner: string, id: number) => {
         const index = repo.drafts.findIndex((draft) => draft.id === id);
-        if (index < 0) return false;
+        if (index < 0) {
+          return false;
+        }
         repo.drafts.splice(index, 1);
         return true;
       },
@@ -513,8 +521,11 @@ test('a taken-down public class is hidden from everyone but moderators', async (
     const admin = await service.getDetail({ session: { user: { id: 'admin-1', isAnonymous: false } }, id: 7 });
     assert.equal(admin.ok && admin.value.reportable, false);
   } finally {
-    if (previous === undefined) delete process.env.MODERATION_ADMIN_USER_IDS;
-    else process.env.MODERATION_ADMIN_USER_IDS = previous;
+    if (previous === undefined) {
+      delete process.env.MODERATION_ADMIN_USER_IDS;
+    } else {
+      process.env.MODERATION_ADMIN_USER_IDS = previous;
+    }
   }
 });
 test('an allowlisted moderator can preview the exact reported class version', async () => {
@@ -541,7 +552,10 @@ test('an allowlisted moderator can preview the exact reported class version', as
     assert.equal(result.ok && result.value.id, 7);
     assert.equal(result.ok && result.value.version, 1);
   } finally {
-    if (previous === undefined) delete process.env.MODERATION_ADMIN_USER_IDS;
-    else process.env.MODERATION_ADMIN_USER_IDS = previous;
+    if (previous === undefined) {
+      delete process.env.MODERATION_ADMIN_USER_IDS;
+    } else {
+      process.env.MODERATION_ADMIN_USER_IDS = previous;
+    }
   }
 });

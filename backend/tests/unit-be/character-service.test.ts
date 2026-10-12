@@ -108,16 +108,22 @@ mock.module('../../src/repositories/character-repository.js', {
       getPartyId: async () => state.partyIdRow,
       update: async (id: string, data: unknown) => {
         state.updateCalls.push({ id, data });
-        if (state.updateError) throw state.updateError;
+        if (state.updateError) {
+          throw state.updateError;
+        }
         return {};
       },
       deleteById: async () => {
-        if (state.deleteError) throw state.deleteError;
+        if (state.deleteError) {
+          throw state.deleteError;
+        }
         return state.deleteResult;
       },
       deleteOthersForUser: async (userId: string, keepId: string) => {
         state.deleteOthersCalls.push({ userId, keepId });
-        if (state.deleteOthersError) throw state.deleteOthersError;
+        if (state.deleteOthersError) {
+          throw state.deleteOthersError;
+        }
         return state.deleteOthersResult;
       },
       userHasCharacters: async () => state.userHasCharactersResult,
@@ -126,11 +132,15 @@ mock.module('../../src/repositories/character-repository.js', {
         return 'room-character-id';
       },
       count: async () => {
-        if (state.countError) throw state.countError;
+        if (state.countError) {
+          throw state.countError;
+        }
         return state.countValue;
       },
       listSummariesByUser: async () => {
-        if (state.listError) throw state.listError;
+        if (state.listError) {
+          throw state.listError;
+        }
         return state.listRows;
       },
       getClassNameMap: async (classIds: number[], locale: string) => {
@@ -161,7 +171,9 @@ mock.module('../../src/repositories/party-repository.js', {
     partyRepository: {
       createMemberInTransaction: async (input: { partyId: string; cap: number; data: unknown; obrBinding?: { roomId: string; playerId: string }; replaceUserId?: string }) => {
         state.memberCalls.push(input);
-        if (state.partyFull) throw new FakePartyFullError('full');
+        if (state.partyFull) {
+          throw new FakePartyFullError('full');
+        }
         return 'member-id';
       },
     },
@@ -172,14 +184,18 @@ mock.module('../../src/lib/generate-character.js', {
   namedExports: {
     generateCharacter: async (classId: number | null, _roller: unknown, userId?: string) => {
       state.generateCalls.push({ classId, userId });
-      if (state.generateError) throw state.generateError;
+      if (state.generateError) {
+        throw state.generateError;
+      }
       return state.generatedId;
     },
     randomCharacterCreateData: async (classId: number | null, _roller: unknown, userId?: string) => ({ fromRandom: classId, userId }),
     characterCreateDataFromDraft: async (draft: unknown, userId: string) => ({ fromDraft: draft, userId }),
     createCharacterFromDraft: async (draft: unknown, userId: string) => {
       state.createFromDraftCalls.push({ draft, userId });
-      if (state.createFromDraftError) throw state.createFromDraftError;
+      if (state.createFromDraftError) {
+        throw state.createFromDraftError;
+      }
       return 'draft-character-id';
     },
   },
@@ -188,7 +204,9 @@ mock.module('../../src/lib/generate-character.js', {
 mock.module('../../src/lib/get-character-full.js', {
   namedExports: {
     getCharacterFull: async () => {
-      if (state.fullError) throw state.fullError;
+      if (state.fullError) {
+        throw state.fullError;
+      }
       return state.fullResult;
     },
   },

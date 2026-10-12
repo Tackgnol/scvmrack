@@ -28,8 +28,12 @@ interface GoldenCorpus {
 }
 
 function normalize(obj: unknown): unknown {
-  if (typeof obj !== 'object' || obj === null) return obj;
-  if (Array.isArray(obj)) return obj.map(normalize);
+  if (typeof obj !== 'object' || obj === null) {
+    return obj;
+  }
+  if (Array.isArray(obj)) {
+    return obj.map(normalize);
+  }
   const result: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(obj as Record<string, unknown>)) {
     if (k === 'id' && typeof v === 'string' && /^[0-9a-f-]{36}$/i.test(v)) {
@@ -53,11 +57,15 @@ class CookieJar {
       typeof (res.headers as Headers & { getSetCookie?: () => string[] }).getSetCookie === 'function'
         ? (res.headers as Headers & { getSetCookie: () => string[] }).getSetCookie()
         : [];
-    if (!setCookies.length) { const s = res.headers.get('set-cookie'); if (s) setCookies.push(s); }
+    if (!setCookies.length) { const s = res.headers.get('set-cookie'); if (s) {
+      setCookies.push(s);
+    } }
     for (const raw of setCookies) {
       const chunk = raw.split(';')[0];
       const sep = chunk.indexOf('=');
-      if (sep <= 0) continue;
+      if (sep <= 0) {
+        continue;
+      }
       this.cookies.set(chunk.slice(0, sep).trim(), chunk.slice(sep + 1).trim());
     }
   }
@@ -67,48 +75,66 @@ class CookieJar {
 async function req(path: string, opts: { method?: string; json?: unknown; headers?: Record<string, string>; jar?: CookieJar } = {}) {
   const { method = 'GET', json, headers = {}, jar } = opts;
   const h: Record<string, string> = { ...headers };
-  if (jar) { const c = jar.header(); if (c) h.cookie = c; }
+  if (jar) { const c = jar.header(); if (c) {
+    h.cookie = c;
+  } }
   let body: string | undefined;
   if (json !== undefined) { h['content-type'] = 'application/json'; body = JSON.stringify(json); }
   const res = await fetch(`${BASE_URL}${path}`, { method, headers: h, body });
-  if (jar) jar.capture(res);
+  if (jar) {
+    jar.capture(res);
+  }
   return res;
 }
 
 async function signIn(): Promise<CookieJar> {
   const jar = new CookieJar();
   const r = await req('/api/auth/sign-in/anonymous', { method: 'POST', json: {}, jar });
-  if (!r.ok) throw new Error(`sign-in failed: ${r.status}`);
+  if (!r.ok) {
+    throw new Error(`sign-in failed: ${r.status}`);
+  }
   return jar;
 }
 
 async function csrf(jar: CookieJar): Promise<string> {
   const r = await req('/api/csrf-token', { jar });
   const { token } = await r.json() as { token?: string };
-  if (!token) throw new Error('no csrf token');
+  if (!token) {
+    throw new Error('no csrf token');
+  }
   return token;
 }
 
 async function createCharacter(jar: CookieJar, classId?: number): Promise<string> {
   const token = await csrf(jar);
   const body: Record<string, unknown> = {};
-  if (classId !== undefined) body.classId = classId;
+  if (classId !== undefined) {
+    body.classId = classId;
+  }
   const r = await req('/api/characters/new', { method: 'POST', json: body, headers: { 'x-csrf-token': token }, jar });
-  if (!r.ok) throw new Error(`create failed ${r.status}: ${await r.text()}`);
+  if (!r.ok) {
+    throw new Error(`create failed ${r.status}: ${await r.text()}`);
+  }
   const { id } = await r.json() as { id?: string };
-  if (!id) throw new Error('no id');
+  if (!id) {
+    throw new Error('no id');
+  }
   return id;
 }
 
 async function fetchCharacter(jar: CookieJar, id: string, locale: string): Promise<unknown> {
   const r = await req(`/api/characters/${id}?locale=${locale}`, { jar });
-  if (!r.ok) throw new Error(`fetch failed ${r.status}`);
+  if (!r.ok) {
+    throw new Error(`fetch failed ${r.status}`);
+  }
   return r.json();
 }
 
 function diff(expected: unknown, actual: unknown, path = ''): string[] {
   const errors: string[] = [];
-  if (JSON.stringify(expected) === JSON.stringify(actual)) return errors;
+  if (JSON.stringify(expected) === JSON.stringify(actual)) {
+    return errors;
+  }
 
   if (Array.isArray(expected) && Array.isArray(actual)) {
     if (expected.length !== actual.length) {
@@ -145,11 +171,15 @@ async function createCharacterWithRateLimit(jar: CookieJar, classId: number | un
   for (let attempt = 0; attempt < 3; attempt++) {
     const token = await csrf(jar);
     const body: Record<string, unknown> = {};
-    if (classId !== undefined) body.classId = classId;
+    if (classId !== undefined) {
+      body.classId = classId;
+    }
     const r = await req('/api/characters/new', { method: 'POST', json: body, headers: { 'x-csrf-token': token }, jar });
     if (r.ok) {
       const { id } = await r.json() as { id?: string };
-      if (!id) throw new Error('no id');
+      if (!id) {
+        throw new Error('no id');
+      }
       return id;
     }
     if (r.status === 429) {
@@ -199,14 +229,18 @@ async function main() {
         for (const d of diffs.slice(0, 10)) {
           console.error(`      ${d}`);
         }
-        if (diffs.length > 10) console.error(`      … and ${diffs.length - 10} more`);
+        if (diffs.length > 10) {
+          console.error(`      … and ${diffs.length - 10} more`);
+        }
         fail++;
       }
     }
   }
 
   console.log(`\n${pass} passed, ${fail} failed`);
-  if (fail > 0) process.exit(1);
+  if (fail > 0) {
+    process.exit(1);
+  }
 }
 
 main().catch(err => {

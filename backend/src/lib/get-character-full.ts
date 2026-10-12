@@ -74,20 +74,28 @@ interface ComputedModifier {
 
 /** Shallow snake_case → camelCase key normalization for stored JSONB items. */
 function normalizeItemKeys(item: unknown): Item {
-  if (item === null || typeof item !== 'object' || Array.isArray(item)) return {};
+  if (item === null || typeof item !== 'object' || Array.isArray(item)) {
+    return {};
+  }
   return Object.fromEntries(
     Object.entries(item as Record<string, unknown>).map(([k, v]) => [snakeToCamel(k), v])
   );
 }
 
 function asItems(json: unknown): Item[] {
-  if (!Array.isArray(json)) return [];
+  if (!Array.isArray(json)) {
+    return [];
+  }
   return json.map(normalizeItemKeys);
 }
 
 function asItem(json: unknown): Item | null {
-  if (json === null || json === undefined) return null;
-  if (typeof json !== 'object' || Array.isArray(json)) return null;
+  if (json === null || json === undefined) {
+    return null;
+  }
+  if (typeof json !== 'object' || Array.isArray(json)) {
+    return null;
+  }
   return normalizeItemKeys(json as Record<string, unknown>);
 }
 
@@ -112,8 +120,12 @@ function modifierSourceTranslationKey(source: string): string {
 }
 
 function safeInt(val: unknown): number | null {
-  if (typeof val === 'number' && Number.isFinite(val)) return Math.floor(val);
-  if (typeof val === 'string' && /^\d+$/.test(val)) return parseInt(val, 10);
+  if (typeof val === 'number' && Number.isFinite(val)) {
+    return Math.floor(val);
+  }
+  if (typeof val === 'string' && /^\d+$/.test(val)) {
+    return parseInt(val, 10);
+  }
   return null;
 }
 
@@ -130,7 +142,9 @@ function mergeUniqueInts(a: number[], b: number[]): number[] {
 }
 
 function safeIntArray(val: unknown): number[] {
-  if (!Array.isArray(val)) return [];
+  if (!Array.isArray(val)) {
+    return [];
+  }
   return val.filter((d): d is number => typeof d === 'number' && Number.isInteger(d));
 }
 
@@ -348,20 +362,30 @@ function resolveAbilities(
   const tableByKey = new Map(tables.map(table => [table.abilityKey, table]));
   return abilities.map(ab => {
     const key = typeof ab.key === 'string' ? ab.key : null;
-    if (!key) return { ...ab };
+    if (!key) {
+      return { ...ab };
+    }
 
     const name = translate(translations, key) ?? key;
     const description = translate(translations, `${key}.description`) ?? '';
     const result: Record<string, unknown> = { key, name, description };
-    if (typeof ab.comment === 'string') result.comment = ab.comment;
-    if (isTableResult(ab.tableResult)) result.tableResult = ab.tableResult;
+    if (typeof ab.comment === 'string') {
+      result.comment = ab.comment;
+    }
+    if (isTableResult(ab.tableResult)) {
+      result.tableResult = ab.tableResult;
+    }
     const table = tableByKey.get(key);
-    if (table) result.table = resolveAbilityTable(table, translations);
+    if (table) {
+      result.table = resolveAbilityTable(table, translations);
+    }
     return result;
   });
 }
 function isTableResult(value: unknown): value is { roll: number; text: string; itemKey: string | null } {
-  if (value === null || typeof value !== 'object' || Array.isArray(value)) return false;
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) {
+    return false;
+  }
   const result = value as Record<string, unknown>;
   return Number.isInteger(result.roll) && typeof result.text === 'string' &&
     (typeof result.itemKey === 'string' || result.itemKey === null);
@@ -399,7 +423,9 @@ function resolvedKey(item: Record<string, unknown>): string {
 }
 
 function isCarriedResolvedItem(item: Record<string, unknown> | null): boolean {
-  if (!item) return false;
+  if (!item) {
+    return false;
+  }
   const name = typeof item.name === 'string' ? item.name : '';
   return Boolean(resolvedKey(item) || name);
 }
@@ -430,14 +456,20 @@ function calculateEncumbrance(
   let count = 0;
 
   for (const item of equipment) {
-    if (isCarriedResolvedItem(item) && !isEncumbranceExemptResolvedItem(item)) count++;
+    if (isCarriedResolvedItem(item) && !isEncumbranceExemptResolvedItem(item)) {
+      count++;
+    }
   }
 
   for (const weapon of equippedWeapons) {
-    if (isCarriedResolvedItem(weapon)) count++;
+    if (isCarriedResolvedItem(weapon)) {
+      count++;
+    }
   }
 
-  if (isCarriedResolvedItem(equippedArmor)) count++;
+  if (isCarriedResolvedItem(equippedArmor)) {
+    count++;
+  }
 
   return count;
 }
@@ -450,7 +482,9 @@ function buildMod(
   originKey: string,
   originName: string,
 ): ComputedModifier | null {
-  if (typeof mod !== 'object' || mod === null || Array.isArray(mod)) return null;
+  if (typeof mod !== 'object' || mod === null || Array.isArray(mod)) {
+    return null;
+  }
   const exclude = Array.isArray(mod.exclude) ? (mod.exclude as string[]) : undefined;
   return {
     value: typeof mod.value === 'number' ? mod.value : 0,
@@ -495,7 +529,9 @@ async function resolveComputedModifiers(
       const originKey = catalogArmor ? `armor.${key}` : (key ?? 'custom.armor');
       for (const m of mods) {
         const built = buildMod(m as Record<string, unknown>, 'armor', originKey, armorName);
-        if (built) result.push(built);
+        if (built) {
+          result.push(built);
+        }
       }
     }
   }
@@ -515,25 +551,35 @@ async function resolveComputedModifiers(
     const originKey = catalogWeapon ? `weapon.${key!}` : (key ?? 'custom.weapon');
     for (const m of mods) {
       const built = buildMod(m as Record<string, unknown>, 'weapon', originKey, weaponName);
-      if (built) result.push(built);
+      if (built) {
+        result.push(built);
+      }
     }
   }
 
   // 3. Pet buffs
   for (const item of equipment) {
     const key = typeof item.key === 'string' ? item.key : '';
-    if (!(key.startsWith('pet.') || key.startsWith('pets.'))) continue;
+    if (!(key.startsWith('pet.') || key.startsWith('pets.'))) {
+      continue;
+    }
     const suppressPetBuff = item.suppressPetBuff === true;
-    if (suppressPetBuff) continue;
+    if (suppressPetBuff) {
+      continue;
+    }
 
     const pet = petMap.get(key);
-    if (!pet) continue;
+    if (!pet) {
+      continue;
+    }
 
     const buffs = Array.isArray(pet.buff) ? (pet.buff as unknown[]) : [];
     const petName = translate(translations, key) ?? key;
     for (const b of buffs) {
       const built = buildMod(b as Record<string, unknown>, 'pet', `pet.${key}`, petName);
-      if (built) result.push(built);
+      if (built) {
+        result.push(built);
+      }
     }
   }
 
@@ -616,10 +662,16 @@ async function resolveComputedModifiers(
       : translations;
 
   for (const m of result) {
-    if (!m.source || m.originKey?.startsWith('class_ability.cc.')) continue;
+    if (!m.source || m.originKey?.startsWith('class_ability.cc.')) {
+      continue;
+    }
     const translated = translate(modifierTranslations, modifierSourceTranslationKey(m.source));
-    if (!translated) continue;
-    if (m.originName === m.source) m.originName = translated;
+    if (!translated) {
+      continue;
+    }
+    if (m.originName === m.source) {
+      m.originName = translated;
+    }
     m.source = translated;
   }
 
@@ -637,7 +689,9 @@ function calculateDR(
 ): number {
   const sum = allModifiers
     .filter(m => {
-      if (m.statistic !== statistic) return false;
+      if (m.statistic !== statistic) {
+        return false;
+      }
       const excl = m.exclude as string[] | undefined;
       // Include modifier only when none of its exclude entries appear in excludedContexts
       return !(Array.isArray(excl) && excl.some(ctx => excludedContexts.includes(ctx)));
@@ -697,7 +751,9 @@ export async function getCharacterFull(
 ): Promise<Record<string, unknown> | null> {
   // 1. Fetch character row
   const row = await characterRepository.findFullRow(id);
-  if (!row) return null;
+  if (!row) {
+    return null;
+  }
   return hydrateCharacterRow(row as unknown as CharacterRowLike, locale);
 }
 
@@ -752,14 +808,30 @@ export async function hydrateCharacterRow(
 
   // 5. Collect all translation keys for a single bulk fetch
   const transKeySet = new Set<string>();
-  if (cls?.nameKey)        transKeySet.add(cls.nameKey);
-  if (cls?.descriptionKey) transKeySet.add(cls.descriptionKey);
-  if (row.origin)          transKeySet.add(row.origin);
-  if (row.bodyDescription) transKeySet.add(row.bodyDescription);
-  if (row.trait1)          transKeySet.add(row.trait1);
-  if (row.trait2)          transKeySet.add(row.trait2);
-  if (row.habit)           transKeySet.add(row.habit);
-  if (row.tale)            transKeySet.add(row.tale);
+  if (cls?.nameKey) {
+    transKeySet.add(cls.nameKey);
+  }
+  if (cls?.descriptionKey) {
+    transKeySet.add(cls.descriptionKey);
+  }
+  if (row.origin) {
+    transKeySet.add(row.origin);
+  }
+  if (row.bodyDescription) {
+    transKeySet.add(row.bodyDescription);
+  }
+  if (row.trait1) {
+    transKeySet.add(row.trait1);
+  }
+  if (row.trait2) {
+    transKeySet.add(row.trait2);
+  }
+  if (row.habit) {
+    transKeySet.add(row.habit);
+  }
+  if (row.tale) {
+    transKeySet.add(row.tale);
+  }
 
   for (const key of allItemKeys) {
     transKeySet.add(key);
@@ -771,7 +843,9 @@ export async function hydrateCharacterRow(
   }
   for (const row of abilityTables.flatMap(table => table.rows)) {
     transKeySet.add(row.textKey);
-    if (row.itemKey) transKeySet.add(row.itemKey);
+    if (row.itemKey) {
+      transKeySet.add(row.itemKey);
+    }
   }
 
   const transKeys = [...transKeySet];

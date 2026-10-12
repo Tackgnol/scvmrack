@@ -56,7 +56,9 @@ export function ReportPage() {
 
   const submit = () => {
     const id = Number(classId);
-    if (!Number.isInteger(id) || id < 1 || !goodFaith || !reason) return;
+    if (!Number.isInteger(id) || id < 1 || !goodFaith || !reason) {
+      return;
+    }
     report.mutate({
       classId: id,
       reason,

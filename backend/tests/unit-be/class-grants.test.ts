@@ -64,8 +64,12 @@ test('the migration grants the same as the seed', () => {
 test('every seeded grant points at a seeded catalog row', () => {
   const catalogKeys = seededCatalogKeys(seeds);
   for (const [ability, item, pet] of GOLDEN_GRANTS) {
-    if (item) assert.ok(catalogKeys.has(item), `${ability} grants missing item ${item}`);
-    if (pet) assert.ok(catalogKeys.has(pet), `${ability} grants missing pet ${pet}`);
+    if (item) {
+      assert.ok(catalogKeys.has(item), `${ability} grants missing item ${item}`);
+    }
+    if (pet) {
+      assert.ok(catalogKeys.has(pet), `${ability} grants missing pet ${pet}`);
+    }
   }
 });
 

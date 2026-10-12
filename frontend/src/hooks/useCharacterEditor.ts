@@ -90,21 +90,31 @@ export function useCharacterEditor(
     candidate: CharacterResponse | undefined,
     reference: CharacterResponse | undefined
   ) => {
-    if (!candidate?.updatedAt || !reference?.updatedAt) return false;
+    if (!candidate?.updatedAt || !reference?.updatedAt) {
+      return false;
+    }
     return Date.parse(candidate.updatedAt) > Date.parse(reference.updatedAt);
   };
 
   const flush = () => {
-    if (!characterId || readOnly) return;
+    if (!characterId || readOnly) {
+      return;
+    }
     // One PATCH in flight at a time; onSettled re-flushes whatever remains.
-    if (flushingRef.current || updateCharacter.isPending) return;
+    if (flushingRef.current || updateCharacter.isPending) {
+      return;
+    }
 
     const batch = [...pendingRef.current];
-    if (batch.length === 0) return;
+    if (batch.length === 0) {
+      return;
+    }
 
     const key = getActiveKey();
     const currentCharacter = getLatestOptimisticCharacter();
-    if (!currentCharacter) return;
+    if (!currentCharacter) {
+      return;
+    }
 
     // Build request body from the queued patches + the current optimistic state.
     const body = buildRequestFromPatches(batch, currentCharacter);
@@ -252,14 +262,18 @@ export function useCharacterEditor(
   );
 
   const applyLocalPatch = (patch: OptimisticPatch) => {
-    if (!characterId || readOnly) return;
+    if (!characterId || readOnly) {
+      return;
+    }
 
     const base = getLatestOptimisticCharacter();
     const optimistic = base ? applyOptimisticPatch(base, patch) : undefined;
     optimisticCharacterRef.current = optimistic;
 
     const key = getActiveKey();
-    if (!key) return;
+    if (!key) {
+      return;
+    }
 
     queryClient.setQueryData(
       key,
@@ -269,7 +283,9 @@ export function useCharacterEditor(
   };
 
   const queuePatch = (patch: OptimisticPatch) => {
-    if (!characterId || readOnly) return;
+    if (!characterId || readOnly) {
+      return;
+    }
 
     // A fresh edit resumes saving even if a prior batch had halted.
     haltRef.current = false;

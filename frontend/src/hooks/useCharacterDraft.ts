@@ -107,7 +107,9 @@ export function useCharacterDraft(locale: string, options: Options = {}) {
 
   const start = useCallback(
     async (choice: StartChoice, seeds?: CharacterDraft['seeds']) => {
-      if (busyRef.current) return;
+      if (busyRef.current) {
+        return;
+      }
       busyRef.current = true;
       setIsStarting(true);
       setError(null);
@@ -127,7 +129,9 @@ export function useCharacterDraft(locale: string, options: Options = {}) {
         );
         applyResponse(response);
       } catch (e) {
-        if (e instanceof DOMException && e.name === 'AbortError') return;
+        if (e instanceof DOMException && e.name === 'AbortError') {
+          return;
+        }
         clearStored();
         setPhase('class-gate');
         setError(getUserFacingApiErrorMessage(e, fallbackT, 'Failed to roll a draft'));
@@ -141,7 +145,9 @@ export function useCharacterDraft(locale: string, options: Options = {}) {
 
   const reroll = useCallback(
     async (section: DraftSection) => {
-      if (busyRef.current || !draft) return;
+      if (busyRef.current || !draft) {
+        return;
+      }
       busyRef.current = true;
       setRollingSection(section);
       setError(null);
@@ -169,7 +175,9 @@ export function useCharacterDraft(locale: string, options: Options = {}) {
         );
         applyResponse(response);
       } catch (e) {
-        if (e instanceof DOMException && e.name === 'AbortError') return;
+        if (e instanceof DOMException && e.name === 'AbortError') {
+          return;
+        }
         if (isUnavailableClass(e)) {
           backToClassGate(UNAVAILABLE_CLASS_MESSAGE);
           return;
@@ -186,7 +194,9 @@ export function useCharacterDraft(locale: string, options: Options = {}) {
   const setName = useCallback((rawName: string) => {
     const name = rawName.slice(0, 255);
     setDraft((current) => {
-      if (!current) return current;
+      if (!current) {
+        return current;
+      }
       const next: CharacterDraft = { ...current, name };
       try {
         sessionStorage.setItem(storageKey, JSON.stringify(next));
@@ -200,7 +210,9 @@ export function useCharacterDraft(locale: string, options: Options = {}) {
 
   const setDropLowestAbilities = useCallback(
     async (abilities: AbilityStat[]) => {
-      if (busyRef.current || !draft || !draft.classless) return;
+      if (busyRef.current || !draft || !draft.classless) {
+        return;
+      }
       busyRef.current = true;
       setIsChoosingStats(true);
       setError(null);
@@ -220,7 +232,9 @@ export function useCharacterDraft(locale: string, options: Options = {}) {
         const response = await createDraft(nextDraft, locale, controller.signal, inviteToken, obrRoomId, obrPlayerId);
         applyResponse(response);
       } catch (e) {
-        if (e instanceof DOMException && e.name === 'AbortError') return;
+        if (e instanceof DOMException && e.name === 'AbortError') {
+          return;
+        }
         setError(getUserFacingApiErrorMessage(e, fallbackT, 'Failed to choose stat rolls'));
       } finally {
         busyRef.current = false;
@@ -231,7 +245,9 @@ export function useCharacterDraft(locale: string, options: Options = {}) {
   );
 
   const confirm = useCallback(async (replace = false) => {
-    if (busyRef.current || !draft) return;
+    if (busyRef.current || !draft) {
+      return;
+    }
     busyRef.current = true;
     setIsConfirming(true);
     setError(null);
@@ -246,7 +262,9 @@ export function useCharacterDraft(locale: string, options: Options = {}) {
         await onCreatedRef.current?.(character);
       }
     } catch (e) {
-      if (e instanceof DOMException && e.name === 'AbortError') return;
+      if (e instanceof DOMException && e.name === 'AbortError') {
+        return;
+      }
       if (isUnavailableClass(e)) {
         backToClassGate(UNAVAILABLE_CLASS_MESSAGE);
         return;
@@ -274,14 +292,18 @@ export function useCharacterDraft(locale: string, options: Options = {}) {
     let stored: CharacterDraft | null = null;
     try {
       const raw = sessionStorage.getItem(storageKey);
-      if (raw) stored = JSON.parse(raw) as CharacterDraft;
+      if (raw) {
+        stored = JSON.parse(raw) as CharacterDraft;
+      }
     } catch {
       clearStored();
       return;
     }
 
     if (!stored || typeof stored !== 'object' || !stored.seeds) {
-      if (stored !== null) clearStored();
+      if (stored !== null) {
+        clearStored();
+      }
       return;
     }
 

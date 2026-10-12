@@ -94,7 +94,9 @@ export default function ItemStatChips({ item }: ItemStatChipsProps) {
     });
   }
 
-  if (chips.length === 0) return null;
+  if (chips.length === 0) {
+    return null;
+  }
 
   return (
     <Box sx={rowStyle}>

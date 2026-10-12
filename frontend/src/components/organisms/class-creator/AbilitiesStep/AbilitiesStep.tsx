@@ -90,7 +90,9 @@ export function AbilitiesStep({
   };
   const pasteZineAbilities = (index: number, value: string) => {
     const entries = zineAbilities(value).slice(0, LIMIT_LIST - index);
-    if (entries.length < 2) return;
+    if (entries.length < 2) {
+      return;
+    }
     entries.slice(1).forEach((_, offset) => insert(index + offset + 1));
     update(
       (d) => ({

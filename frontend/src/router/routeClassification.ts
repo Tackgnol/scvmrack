@@ -21,16 +21,28 @@ export function getViewTransitionTypes(
   fromPathname: string | undefined,
   toPathname: string,
 ): string[] | false {
-  if (!fromPathname || fromPathname === toPathname) return false;
+  if (!fromPathname || fromPathname === toPathname) {
+    return false;
+  }
 
   const fromSheet = isSheetRoutePath(fromPathname);
   const toSheet = isSheetRoutePath(toPathname);
 
-  if (fromSheet && toPathname === '/print') return ['sheet-to-print'];
-  if (fromPathname === '/print' && toSheet) return ['print-to-sheet'];
-  if (fromSheet && toSheet) return ['sheet-swap'];
-  if (toSheet) return ['to-sheet'];
-  if (fromSheet) return ['from-sheet'];
+  if (fromSheet && toPathname === '/print') {
+    return ['sheet-to-print'];
+  }
+  if (fromPathname === '/print' && toSheet) {
+    return ['print-to-sheet'];
+  }
+  if (fromSheet && toSheet) {
+    return ['sheet-swap'];
+  }
+  if (toSheet) {
+    return ['to-sheet'];
+  }
+  if (fromSheet) {
+    return ['from-sheet'];
+  }
 
   return ['page-change'];
 }

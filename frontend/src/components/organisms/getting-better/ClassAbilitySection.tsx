@@ -82,7 +82,9 @@ export function ClassAbilitySection({
               size="small"
               value={choice.reroll ? "reroll" : "keep"}
               onChange={(_, value: "keep" | "reroll" | null) => {
-                if (value) onToggle(index, value === "reroll");
+                if (value) {
+                  onToggle(index, value === "reroll");
+                }
               }}
               disabled={busy}
               aria-label={abilityName(choice.current.key)}

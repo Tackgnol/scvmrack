@@ -19,12 +19,16 @@ export async function gainedAbilityItems(
   applied: ReturnType<typeof buildAppliedImprovement>
 ): Promise<unknown[]> {
   const change = applied.changes.abilityKeys;
-  if (!change) return [];
+  if (!change) {
+    return [];
+  }
   const gained = new Set(change.to.filter((key) => !change.from.includes(key)));
   const items = classAbilities
     .filter((ability) => gained.has(ability.key))
     .flatMap((ability) => abilityGrantedItems(ability, () => []));
-  if (items.length === 0) return [];
+  if (items.length === 0) {
+    return [];
+  }
   return hydrateInventoryUses(
     items,
     row.presence,
@@ -41,12 +45,18 @@ export function characterUpdateFromApplied(
 ): Prisma.CharacterUpdateInput {
   const data: Prisma.CharacterUpdateInput = {};
 
-  if (applied.changes.maxHp) data.maxHp = applied.changes.maxHp.to;
-  if (applied.changes.silver) data.silver = applied.changes.silver.to;
+  if (applied.changes.maxHp) {
+    data.maxHp = applied.changes.maxHp.to;
+  }
+  if (applied.changes.silver) {
+    data.silver = applied.changes.silver.to;
+  }
 
   for (const stat of ABILITY_STATS) {
     const next = draft.abilities[stat].toScore;
-    if (next !== row[stat]) data[stat] = next;
+    if (next !== row[stat]) {
+      data[stat] = next;
+    }
   }
 
   const added = [...appliedDebrisItems(draft), ...grantedItems];
@@ -87,7 +97,9 @@ function abilityJsonFromKeys(
 }
 
 function asObjectArray(value: unknown): Array<Record<string, unknown>> {
-  if (!Array.isArray(value)) return [];
+  if (!Array.isArray(value)) {
+    return [];
+  }
   return value.filter(
     (item): item is Record<string, unknown> =>
       item !== null && typeof item === 'object' && !Array.isArray(item)

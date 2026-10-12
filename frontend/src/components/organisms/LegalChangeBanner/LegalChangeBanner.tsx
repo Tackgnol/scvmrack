@@ -17,7 +17,9 @@ export function LegalChangeBanner({ notice }: LegalChangeBannerProps) {
   } catch {
     // The notice remains visible when browser storage is unavailable.
   }
-  if (!isAuthenticated || !user?.id || dismissedKey === key || previouslyDismissed) return null;
+  if (!isAuthenticated || !user?.id || dismissedKey === key || previouslyDismissed) {
+    return null;
+  }
 
   const locale = i18n.language.startsWith('pl') ? 'pl' : 'en';
   const formatDate = (date: string) => new Intl.DateTimeFormat(locale === 'pl' ? 'pl-PL' : 'en-GB', {

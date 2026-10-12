@@ -148,7 +148,9 @@ export function OriginsStep({
                 const rows = zineRows(
                   event.clipboardData.getData("text"),
                 ).slice(0, LIMIT_LIST - index);
-                if (rows.length < 2) return;
+                if (rows.length < 2) {
+                  return;
+                }
                 event.preventDefault();
                 rows
                   .slice(1)

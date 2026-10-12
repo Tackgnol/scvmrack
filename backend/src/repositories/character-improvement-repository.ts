@@ -157,14 +157,18 @@ export const characterImprovementRepository = {
       where: { id: classId },
       select: { lineageId: true },
     });
-    if (!current) return null;
+    if (!current) {
+      return null;
+    }
 
     const latest = await prisma.class.findFirst({
       where: { lineageId: current.lineageId },
       orderBy: { version: 'desc' },
       select: { id: true, gettingBetterRule: true, gettingBetterNoteKey: true, languages: true },
     });
-    if (!latest) return null;
+    if (!latest) {
+      return null;
+    }
 
     const abilities = await prisma.ability.findMany({
       where: { classId: latest.id },

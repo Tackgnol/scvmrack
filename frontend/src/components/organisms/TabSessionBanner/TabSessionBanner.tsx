@@ -18,12 +18,16 @@ export function TabSessionBanner() {
     "idle",
   );
   useEffect(() => {
-    if (copyState !== "copied") return;
+    if (copyState !== "copied") {
+      return;
+    }
     const timer = window.setTimeout(() => setCopyState("idle"), 2000);
     return () => window.clearTimeout(timer);
   }, [copyState]);
 
-  if (!active) return null;
+  if (!active) {
+    return null;
+  }
 
   return (
     <Alert severity="warning" className="tab-session-banner">

@@ -32,7 +32,9 @@ export function useAmmoForWeapon(weapon: EquipmentItem | null): AmmoInfo {
     for (let i = 0; i < equipment.length; i++) {
         const item = equipment[i];
         if (item.ammoType === targetType && item.tags?.includes('ammo')) {
-            if (firstIndex === null) firstIndex = i;
+            if (firstIndex === null) {
+                firstIndex = i;
+            }
             // Ammo can be represented either as:
             // - a single stack with `amount` (legacy / some flows), or
             // - multiple inventory entries (1 per arrow/bolt), often with `amount` missing/null.

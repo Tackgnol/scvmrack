@@ -37,7 +37,9 @@ function saveLocalSnapshot(snapshot: LocalDraftSnapshot) {
 export function readLocalDraftSnapshot(classId: number | null): LocalDraftSnapshot | null {
   try {
     const stored = localStorage.getItem(localDraftKey(classId));
-    if (!stored) return null;
+    if (!stored) {
+      return null;
+    }
     const snapshot = JSON.parse(stored) as LocalDraftSnapshot;
     return snapshot && typeof snapshot === "object" && snapshot.draft ? snapshot : null;
   } catch {
@@ -97,9 +99,15 @@ export function useDraftAutosave({ classId, draft, revision, initialDraft, repla
     replaceDraftRef.current = replaceDraft;
   }, [replaceDraft]);
   const persist = useCallback(async (force = false) => {
-    if (saving.current || discarding.current || latest.current.revision === 0 || conflict.current) return;
-    if (completedRevision.current !== null && latest.current.revision <= completedRevision.current) return;
-    if (!force && latest.current.revision === savedRevision.current) return;
+    if (saving.current || discarding.current || latest.current.revision === 0 || conflict.current) {
+      return;
+    }
+    if (completedRevision.current !== null && latest.current.revision <= completedRevision.current) {
+      return;
+    }
+    if (!force && latest.current.revision === savedRevision.current) {
+      return;
+    }
     saving.current = true;
     setState("saving");
     const snapshot = latest.current;
@@ -110,7 +118,9 @@ export function useDraftAutosave({ classId, draft, revision, initialDraft, repla
     pendingWrite.current = null;
     if (completedRevision.current !== null && completedRevision.current >= snapshot.revision) {
       // A save or discard finished during this write; ignore the obsolete revision.
-      if (result.saved && !discarding.current) await deleteClassDraft(result.saved.id).catch(() => undefined);
+      if (result.saved && !discarding.current) {
+        await deleteClassDraft(result.saved.id).catch(() => undefined);
+      }
       saving.current = false;
       setState("idle");
       return;
@@ -131,11 +141,15 @@ export function useDraftAutosave({ classId, draft, revision, initialDraft, repla
       setRetryAttempt((attempt) => attempt + 1);
     }
     saving.current = false;
-    if (latest.current.revision !== snapshot.revision && !conflict.current) void persist();
+    if (latest.current.revision !== snapshot.revision && !conflict.current) {
+      void persist();
+    }
   }, [classId]);
 
   useEffect(() => {
-    if (revision === 0 || (completedRevision.current !== null && revision <= completedRevision.current)) return;
+    if (revision === 0 || (completedRevision.current !== null && revision <= completedRevision.current)) {
+      return;
+    }
     saveLocalSnapshot({
       id: record?.id ?? 0,
       classId,
@@ -148,7 +162,9 @@ export function useDraftAutosave({ classId, draft, revision, initialDraft, repla
   }, [classId, draft, persist, record?.id, record?.revision, revision]);
 
   useEffect(() => {
-    if (state !== "offline") return;
+    if (state !== "offline") {
+      return;
+    }
     const timer = window.setTimeout(() => void persist(), RETRY_MS);
     return () => window.clearTimeout(timer);
   }, [persist, retryAttempt, state]);
@@ -158,7 +174,9 @@ export function useDraftAutosave({ classId, draft, revision, initialDraft, repla
   }, [persist]);
 
   const loadNewer = useCallback(async () => {
-    if (!recordRef.current) return;
+    if (!recordRef.current) {
+      return;
+    }
     const newer = await getClassDraft(recordRef.current.id);
     recordRef.current = newer;
     setRecord(newer);
@@ -205,7 +223,9 @@ export function useDraftAutosave({ classId, draft, revision, initialDraft, repla
 
   const complete = useCallback(async () => {
     completedRevision.current = latest.current.revision;
-    if (recordRef.current) await deleteClassDraft(recordRef.current.id);
+    if (recordRef.current) {
+      await deleteClassDraft(recordRef.current.id);
+    }
     removeLocalSnapshot(classId);
     recordRef.current = null;
     setRecord(null);

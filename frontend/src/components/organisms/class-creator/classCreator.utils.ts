@@ -52,10 +52,13 @@ export function zineAbilities(
 ): Array<{ name: string; text: string }> {
   return zineRows(value).map((row) => {
     const marked = row.match(/^(.+?)\s*(?::|—)\s*(.+)$/);
-    if (marked) return { name: marked[1].trim(), text: marked[2].trim() };
+    if (marked) {
+      return { name: marked[1].trim(), text: marked[2].trim() };
+    }
     const sentence = row.match(/^(.+?)\.\s+(.+)$/);
-    if (sentence && !/(?:\bSt|\bMt)$/i.test(sentence[1]))
+    if (sentence && !/(?:\bSt|\bMt)$/i.test(sentence[1])) {
       return { name: sentence[1].trim(), text: sentence[2].trim() };
+    }
     return { name: row, text: "" };
   });
 }
@@ -263,13 +266,17 @@ function focusPath(path: string | null): void {
   const target = document.getElementById(
     path === null ? STEP_TITLE_ID : fieldId(path),
   );
-  if (!target) return;
+  if (!target) {
+    return;
+  }
   const radio =
     target.getAttribute("role") === "radiogroup"
       ? target.querySelector<HTMLElement>('[role="radio"][tabindex="0"]')
       : null;
   (radio ?? target).focus();
-  if (path === null) window.scrollTo?.({ top: 0 });
+  if (path === null) {
+    window.scrollTo?.({ top: 0 });
+  }
 }
 
 /** How many issues are missing text in `language`, on one step or across all. */
@@ -295,7 +302,9 @@ export function specialistAllowed(draft: ClassDraft): boolean {
 
 /** A random ability's number in the pool (1-based, in list order); null for a fixed one. */
 export function randomNumber(draft: ClassDraft, index: number): number | null {
-  if (!draft.abilities[index]?.random) return null;
+  if (!draft.abilities[index]?.random) {
+    return null;
+  }
   return draft.abilities.slice(0, index + 1).filter((a) => a.random).length;
 }
 
@@ -347,8 +356,9 @@ export function withSavedKeys(
       !item.ref.startsWith("new:") ||
       !savedItem ||
       item.type !== savedItem.type
-    )
+    ) {
       return item;
+    }
     savedItemRefs.set(item.ref, savedItem.ref);
     return { ...item, ref: savedItem.ref };
   });
@@ -406,10 +416,16 @@ export function granterOf(
   ref: string,
 ): { index: number; slot: GrantSlot | "table"; row?: number } | null {
   for (const [index, ability] of draft.abilities.entries()) {
-    if (ability.grantItem === ref) return { index, slot: "grantItem" };
-    if (ability.grantPet === ref) return { index, slot: "grantPet" };
+    if (ability.grantItem === ref) {
+      return { index, slot: "grantItem" };
+    }
+    if (ability.grantPet === ref) {
+      return { index, slot: "grantPet" };
+    }
     const row = ability.table?.rows.findIndex((entry) => entry.itemRef === ref);
-    if (row !== undefined && row >= 0) return { index, slot: "table", row };
+    if (row !== undefined && row >= 0) {
+      return { index, slot: "table", row };
+    }
   }
   return null;
 }
@@ -478,7 +494,9 @@ export function changeItemType(
   type: ClassItemType,
 ): ClassDraft {
   const item = draft.items[index];
-  if (item.type === type) return draft;
+  if (item.type === type) {
+    return draft;
+  }
   const granter = granterOf(draft, item.ref);
   const to = slotFor(type);
   const abilities = draft.abilities.map((ability, i) => {
@@ -487,8 +505,9 @@ export function changeItemType(
       i !== granter.index ||
       granter.slot === "table" ||
       granter.slot === to
-    )
+    ) {
       return ability;
+    }
     const moved = { ...ability, [granter.slot]: null };
     return moved[to] ? moved : { ...moved, [to]: item.ref };
   });

@@ -9,7 +9,9 @@ export const activeLegalNotices: readonly LegalChangeNotice[] = [];
 
 /** Checks that a significant legal change has at least fourteen days' notice. */
 export function hasRequiredNoticePeriod(notice: LegalChangeNotice): boolean {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(notice.date) || !/^\d{4}-\d{2}-\d{2}$/.test(notice.effectiveDate)) return false;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(notice.date) || !/^\d{4}-\d{2}-\d{2}$/.test(notice.effectiveDate)) {
+    return false;
+  }
   const start = Date.parse(`${notice.date}T00:00:00Z`);
   const effective = Date.parse(`${notice.effectiveDate}T00:00:00Z`);
   return Number.isFinite(start) && Number.isFinite(effective)
@@ -24,5 +26,7 @@ export function canSendNoticeOn(notice: LegalChangeNotice, today: string): boole
 }
 
 for (const notice of activeLegalNotices) {
-  if (!hasRequiredNoticePeriod(notice)) throw new Error(`Legal notice ${notice.kind}:${notice.date} needs at least fourteen days' lead time`);
+  if (!hasRequiredNoticePeriod(notice)) {
+    throw new Error(`Legal notice ${notice.kind}:${notice.date} needs at least fourteen days' lead time`);
+  }
 }

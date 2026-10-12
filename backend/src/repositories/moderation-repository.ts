@@ -30,7 +30,9 @@ export const moderationRepository = {
           },
           select: { id: true },
         });
-        if (recent) return { ...recent, merged: true };
+        if (recent) {
+          return { ...recent, merged: true };
+        }
       }
       const report = await tx.moderationReport.create({
         data: { ...input, goodFaith: true },
@@ -45,7 +47,9 @@ async createDispute(classId: number, authorUserId: string, text: string) {
         where: { id: classId },
         select: { lineageId: true },
       });
-      if (!cls) return { kind: 'missing' as const };
+      if (!cls) {
+        return { kind: 'missing' as const };
+      }
       const report = await tx.moderationReport.findFirst({
         where: {
           status: { in: ['taken_down', 'content_removed'] },
@@ -54,9 +58,13 @@ async createDispute(classId: number, authorUserId: string, text: string) {
         orderBy: { resolvedAt: 'desc' },
         include: { class: { select: { name: true, owner: { select: { email: true } } } } },
       });
-      if (!report) return { kind: 'missing' as const };
+      if (!report) {
+        return { kind: 'missing' as const };
+      }
       const count = await tx.moderationDispute.count({ where: { reportId: report.id } });
-      if (count >= 3) return { kind: 'limit' as const };
+      if (count >= 3) {
+        return { kind: 'limit' as const };
+      }
       const dispute = await tx.moderationDispute.create({
         data: { reportId: report.id, authorUserId, text },
         select: { id: true },
@@ -109,7 +117,9 @@ async createDispute(classId: number, authorUserId: string, text: string) {
   async dismissReport(id: string, actorUserId: string, reason: string) {
     return prisma.$transaction(async (tx) => {
       const report = await tx.moderationReport.findUnique({ where: { id }, include: { class: { select: { name: true } } } });
-      if (!report || report.status !== 'open') return null;
+      if (!report || report.status !== 'open') {
+        return null;
+      }
       await tx.moderationReport.update({ where: { id }, data: { status: 'dismissed', resolvedAt: new Date() } });
       await tx.moderationLog.create({ data: { classId: report.classId, reportId: id, actorUserId, action: 'dismissed', reason } });
       return report;
@@ -118,7 +128,9 @@ async createDispute(classId: number, authorUserId: string, text: string) {
   async takeDownReport(id: string, actorUserId: string, reason: string) {
     return prisma.$transaction(async (tx) => {
       const report = await tx.moderationReport.findUnique({ where: { id }, include: { class: { select: { id: true, name: true, lineageId: true, owner: { select: { email: true } } } } } });
-      if (!report || report.status !== 'open') return null;
+      if (!report || report.status !== 'open') {
+        return null;
+      }
       const now = new Date();
       await Promise.all([
         tx.class.updateMany({ where: { lineageId: report.class.lineageId }, data: { takenDownAt: now, takedownReason: reason } }),
@@ -135,7 +147,9 @@ async createDispute(classId: number, authorUserId: string, text: string) {
         where: { id },
         include: { class: { select: { name: true, lineageId: true, owner: { select: { email: true } } } } },
       });
-      if (!report || report.status !== 'open') return null;
+      if (!report || report.status !== 'open') {
+        return null;
+      }
       const versions = await tx.class.findMany({
         where: { lineageId: report.class.lineageId },
         select: { id: true, name: true, appendix: true },
@@ -183,12 +197,16 @@ async createDispute(classId: number, authorUserId: string, text: string) {
   async restoreReport(id: string, actorUserId: string, reason: string) {
     return prisma.$transaction(async (tx) => {
       const report = await tx.moderationReport.findUnique({ where: { id }, include: { class: { select: { lineageId: true } } } });
-      if (!report || !['taken_down', 'content_removed'].includes(report.status)) return null;
+      if (!report || !['taken_down', 'content_removed'].includes(report.status)) {
+        return null;
+      }
       const claimed = await tx.moderationReport.updateMany({
         where: { id, status: { in: ['taken_down', 'content_removed'] } },
         data: { status: 'restored' },
       });
-      if (claimed.count === 0) return null;
+      if (claimed.count === 0) {
+        return null;
+      }
       if (report.status === 'content_removed') {
         const log = await tx.moderationLog.findFirst({
           where: { reportId: id, action: 'content_removed' },
@@ -200,7 +218,9 @@ async createDispute(classId: number, authorUserId: string, text: string) {
           translations: Array<{ locale: string; key: string; value: string }>;
           modifiers: Array<{ id: number; source: string }>;
         }> } | null;
-        if (!evidence?.versions) throw new Error('Missing content-removal evidence');
+        if (!evidence?.versions) {
+          throw new Error('Missing content-removal evidence');
+        }
         for (const version of evidence.versions) {
           await tx.class.update({ where: { id: version.id }, data: { name: version.name, appendix: version.appendix } });
           await Promise.all([

@@ -54,8 +54,12 @@ export const createModifierId = (): string => {
 type BentoSize = 'short' | 'medium' | 'full';
 
 const resolveBentoSize = (nameLength: number): BentoSize => {
-  if (nameLength >= 34) return 'full';
-  if (nameLength >= 17) return 'medium';
+  if (nameLength >= 34) {
+    return 'full';
+  }
+  if (nameLength >= 17) {
+    return 'medium';
+  }
   return 'short';
 };
 

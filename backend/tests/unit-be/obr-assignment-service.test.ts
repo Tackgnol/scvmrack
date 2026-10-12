@@ -68,7 +68,9 @@ mock.module('../../src/lib/obr-bindings-db.js', {
     obrBindingsDb: {
       getPlayerBinding: async (roomId: string, playerId: string) => {
         state.bindingCalls.push({ roomId, playerId });
-        if (state.bindingError) throw state.bindingError;
+        if (state.bindingError) {
+          throw state.bindingError;
+        }
         return state.binding;
       },
     },
@@ -85,7 +87,9 @@ mock.module('../../src/repositories/character-repository.js', {
       },
       deleteOthersForUser: async (userId: string, keepId: string) => {
         state.pruneCalls.push({ userId, keepId });
-        if (state.pruneError) throw state.pruneError;
+        if (state.pruneError) {
+          throw state.pruneError;
+        }
         return { count: 1 };
       },
     },

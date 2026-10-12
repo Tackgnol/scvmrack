@@ -96,7 +96,9 @@ export function createCharacterImprovementService(
       try {
         const locale = isValidLocale(input.rawLocale) ? input.rawLocale : 'en';
         const owned = await loadOwnedCharacter(input.id, input.session);
-        if (!owned.ok) return fail(owned.error);
+        if (!owned.ok) {
+          return fail(owned.error);
+        }
 
         const { catalog, classSettings } = await loadCatalog(owned.row);
         const active = await characterImprovementRepository.findActive(
@@ -125,7 +127,9 @@ export function createCharacterImprovementService(
         return ok(await toPreviewResponse(created, locale, classSettings));
       } catch (err) {
         const ruleError = mapRuleError(err);
-        if (ruleError) return fail(ruleError);
+        if (ruleError) {
+          return fail(ruleError);
+        }
         return fail(
           unexpected(
             log,
@@ -151,7 +155,9 @@ export function createCharacterImprovementService(
       try {
         const locale = isValidLocale(input.rawLocale) ? input.rawLocale : 'en';
         const owned = await loadOwnedCharacter(input.id, input.session);
-        if (!owned.ok) return fail(owned.error);
+        if (!owned.ok) {
+          return fail(owned.error);
+        }
 
         const active = await characterImprovementRepository.findActiveById(
           input.id,
@@ -189,7 +195,9 @@ export function createCharacterImprovementService(
         return ok(await toPreviewResponse(updated, locale, classSettings));
       } catch (err) {
         const ruleError = mapRuleError(err);
-        if (ruleError) return fail(ruleError);
+        if (ruleError) {
+          return fail(ruleError);
+        }
         return fail(
           unexpected(
             log,
@@ -215,7 +223,9 @@ export function createCharacterImprovementService(
 
       try {
         const owned = await loadOwnedCharacter(input.id, input.session);
-        if (!owned.ok) return fail(owned.error);
+        if (!owned.ok) {
+          return fail(owned.error);
+        }
 
         const active = await characterImprovementRepository.findActiveById(
           input.id,
@@ -289,7 +299,9 @@ export function createCharacterImprovementService(
         return ok(character);
       } catch (err) {
         const ruleError = mapRuleError(err);
-        if (ruleError) return fail(ruleError);
+        if (ruleError) {
+          return fail(ruleError);
+        }
         return fail(
           unexpected(
             log,

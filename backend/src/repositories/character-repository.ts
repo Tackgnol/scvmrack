@@ -201,7 +201,9 @@ export const characterRepository = {
 
   /** Every version of the given class lineages, for a Party Class Pool. */
   findClassRowsByLineage(lineageIds: string[]): Promise<ScopeClassRow[]> {
-    if (lineageIds.length === 0) return Promise.resolve([]);
+    if (lineageIds.length === 0) {
+      return Promise.resolve([]);
+    }
     return prisma.class.findMany({ where: { lineageId: { in: lineageIds } }, select: scopeClassSelect });
   },
 
@@ -213,7 +215,9 @@ export const characterRepository = {
     ids: number[],
     locale: string
   ): Promise<Array<{ id: number; name: string | null; description: string | null }>> {
-    if (ids.length === 0) return [];
+    if (ids.length === 0) {
+      return [];
+    }
     const classes = await prisma.class.findMany({
       where: { id: { in: ids } },
       select: { id: true, name: true, nameKey: true, descriptionKey: true, languages: true },

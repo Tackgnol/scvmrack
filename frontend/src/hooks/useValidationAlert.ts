@@ -11,7 +11,9 @@ export function useValidationAlert(message?: string | null): void {
       return;
     }
 
-    if (shownMessageRef.current === message) return;
+    if (shownMessageRef.current === message) {
+      return;
+    }
     shownMessageRef.current = message;
     showError(message);
   }, [message, showError]);

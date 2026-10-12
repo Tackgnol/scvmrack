@@ -33,7 +33,9 @@ function sectionIsDirty(
   workingDraft: ImprovementDraft | null,
   section: DraftSection,
 ): boolean {
-  if (!rolledDraft || !workingDraft) return false;
+  if (!rolledDraft || !workingDraft) {
+    return false;
+  }
   return stableStringify(rolledDraft[section]) !== stableStringify(workingDraft[section]);
 }
 
@@ -82,7 +84,9 @@ export function useGettingBetterPreview(input: {
 
   const previewMutation = useMutation({
     mutationFn: async () => {
-      if (!characterId) throw new Error("Missing character id");
+      if (!characterId) {
+        throw new Error("Missing character id");
+      }
       return getOrCreateImprovementPreview(characterId, apiLocale);
     },
     onSuccess: (nextPreview) => {
@@ -103,7 +107,9 @@ export function useGettingBetterPreview(input: {
 
   const rerollMutation = useMutation({
     mutationFn: async (section: ImprovementRerollSection) => {
-      if (!characterId || !preview) throw new Error("Missing active preview");
+      if (!characterId || !preview) {
+        throw new Error("Missing active preview");
+      }
       return rerollImprovementSection({
         characterId,
         improvementId: preview.id,
@@ -187,14 +193,18 @@ export function useGettingBetterPreview(input: {
   }, [isDirty, preview, t]);
 
   const undoEdits = useCallback(() => {
-    if (!preview) return;
+    if (!preview) {
+      return;
+    }
     setWorkingDraft(cloneDraft(preview.rolledDraft));
     setStaleConflict(false);
   }, [preview]);
 
   const rerollSection = useCallback(
     (section: ImprovementRerollSection) => {
-      if (!preview) return;
+      if (!preview) {
+        return;
+      }
       const sectionDirty =
         section === "all" ? isDirty : dirtySections[section] === true;
       if (

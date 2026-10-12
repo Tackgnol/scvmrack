@@ -17,10 +17,20 @@ export function itemGlyphKind(item: EquipmentItem): CustomItemCategory {
   }
 
   const tags = item.tags ?? [];
-  if (tags.includes('weapon') || tags.includes('shield')) return 'weapon';
-  if (tags.includes('armor')) return 'armor';
-  if (tags.includes('ammo')) return 'ammo';
-  if (tags.includes('consumable')) return 'consumable';
-  if (Array.isArray(item.uses) && item.uses.length > 0) return 'consumable';
+  if (tags.includes('weapon') || tags.includes('shield')) {
+    return 'weapon';
+  }
+  if (tags.includes('armor')) {
+    return 'armor';
+  }
+  if (tags.includes('ammo')) {
+    return 'ammo';
+  }
+  if (tags.includes('consumable')) {
+    return 'consumable';
+  }
+  if (Array.isArray(item.uses) && item.uses.length > 0) {
+    return 'consumable';
+  }
   return 'misc';
 }

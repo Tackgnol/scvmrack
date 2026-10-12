@@ -62,7 +62,9 @@ describe('synchronizeOwnershipScope', () => {
       queryFn: async () => ({ id: 7, as: user }),
     });
     const unsubscribe = observer.subscribe((result) => {
-      if (result.data) results.push(result.data);
+      if (result.data) {
+        results.push(result.data);
+      }
     });
     await vi.waitFor(() => expect(results).toHaveLength(1));
 

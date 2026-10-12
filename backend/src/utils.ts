@@ -26,8 +26,12 @@ const MAX_TRANSFORM_DEPTH = 8;
  * Arrays are traversed, primitives are left as-is. Bounded depth.
  */
 export function transformKeys(obj: unknown, keyFn: (key: string) => string, depth = 0): unknown {
-  if (depth >= MAX_TRANSFORM_DEPTH) return obj;
-  if (Array.isArray(obj)) return obj.map((item) => transformKeys(item, keyFn, depth + 1));
+  if (depth >= MAX_TRANSFORM_DEPTH) {
+    return obj;
+  }
+  if (Array.isArray(obj)) {
+    return obj.map((item) => transformKeys(item, keyFn, depth + 1));
+  }
   if (obj !== null && typeof obj === 'object') {
     const prototype = Object.getPrototypeOf(obj);
     if (prototype !== Object.prototype && prototype !== null) {
@@ -45,7 +49,9 @@ export function transformKeys(obj: unknown, keyFn: (key: string) => string, dept
  * HTML escaping belongs at render boundaries, not in persisted API values.
  */
 export function sanitizeString(input: unknown, maxLength = 10000): string {
-  if (typeof input !== 'string') return '';
+  if (typeof input !== 'string') {
+    return '';
+  }
 
   return input.trim().slice(0, maxLength);
 }

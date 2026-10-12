@@ -78,7 +78,9 @@ export const createUsePips = (
   rule: UseCountRule | undefined,
   stats: CharacterStats,
 ): boolean[] => {
-  if (!rule) return [];
+  if (!rule) {
+    return [];
+  }
 
   const base = clampInteger(rule.base ?? 0, 0, 50);
   const modifier =
@@ -102,7 +104,9 @@ export const collectKnownAmmoTypes = (
 
   items.forEach((item) => {
     const ammoType = item?.ammoType?.trim();
-    if (ammoType) known.add(ammoType);
+    if (ammoType) {
+      known.add(ammoType);
+    }
   });
 
   return Array.from(known).sort((a, b) => a.localeCompare(b));
@@ -112,7 +116,9 @@ const createOptionalModifier = (
   input: CustomItemModifierInput | undefined,
   itemName: string,
 ): CustomModifier[] => {
-  if (!input?.enabled) return [];
+  if (!input?.enabled) {
+    return [];
+  }
 
   return [
     {
@@ -153,10 +159,14 @@ const createAmmoStack = (
   name?: string,
 ): EquipmentItem[] => {
   const normalizedAmmoType = ammoType.trim();
-  if (!normalizedAmmoType) return [];
+  if (!normalizedAmmoType) {
+    return [];
+  }
 
   const count = clampInteger(amount, 0, 999);
-  if (count <= 0) return [];
+  if (count <= 0) {
+    return [];
+  }
 
   return [
     {
@@ -177,7 +187,9 @@ export const buildCustomItemBundle = (
   stats: CharacterStats,
 ): EquipmentItem[] => {
   const name = input.name.trim();
-  if (!name) return [];
+  if (!name) {
+    return [];
+  }
 
   const quantity = clampInteger(input.quantity ?? 1, 1, 50);
   const baseItem = createBaseItem(input, input.kind);

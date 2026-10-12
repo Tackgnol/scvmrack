@@ -81,7 +81,9 @@ export function useAutoCreateCharacter({
 
   // ---- Check for existing characters, then auto-create if none found ----
   useEffect(() => {
-    if (!shouldAutoCreateCharacter) return;
+    if (!shouldAutoCreateCharacter) {
+      return;
+    }
 
     let cancelled = false;
     const controller = new AbortController();
@@ -103,8 +105,12 @@ export function useAutoCreateCharacter({
           return;
         }
       } catch (e) {
-        if (e instanceof DOMException && e.name === 'AbortError') return;
-        if (cancelled) return;
+        if (e instanceof DOMException && e.name === 'AbortError') {
+          return;
+        }
+        if (cancelled) {
+          return;
+        }
         if (isUnexpectedApiError(e)) {
           setAutoCreateFailed(true);
           reportUnexpectedError(
@@ -121,7 +127,9 @@ export function useAutoCreateCharacter({
         // Other errors (4xx / network) — fall through to create.
       }
 
-      if (cancelled) return;
+      if (cancelled) {
+        return;
+      }
 
       // Step 2: No existing characters — create a new one
       createCharacter.mutate(

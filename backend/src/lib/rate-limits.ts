@@ -3,7 +3,9 @@
  * Environments that replay many requests from one address (e2e, integration) raise it in their config.
  */
 export function rateLimitScale(raw = process.env.RATE_LIMIT_SCALE): number {
-  if (raw === undefined || raw.trim() === '') return 1;
+  if (raw === undefined || raw.trim() === '') {
+    return 1;
+  }
   const scale = Number(raw);
   if (!Number.isFinite(scale) || scale < 1) {
     throw new Error(`RATE_LIMIT_SCALE must be a number >= 1, got "${raw}"`);

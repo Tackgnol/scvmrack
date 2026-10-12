@@ -137,7 +137,9 @@ export const obrBindingsDb: ObrBindingsDb = {
   },
 
   async filterCharacterIdsInRoom(ids, roomId) {
-    if (ids.length === 0) return [];
+    if (ids.length === 0) {
+      return [];
+    }
     const [players, tokens] = await Promise.all([
       prisma.obrPlayerCharacterBinding.findMany({
         where: { obrRoomId: roomId, characterId: { in: ids } },

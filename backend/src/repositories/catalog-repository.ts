@@ -89,7 +89,9 @@ export type SharedCatalogItem = {
 
 export const catalogRepository = {
   findPetsByKeys(keys: string[]): Promise<PetCatalogRow[]> {
-    if (keys.length === 0) return Promise.resolve([]);
+    if (keys.length === 0) {
+      return Promise.resolve([]);
+    }
     return prisma.pet.findMany({
       where: { key: { in: keys } },
       select: { key: true, hp: true, tags: true, actionDie: true, buff: true },
@@ -97,7 +99,9 @@ export const catalogRepository = {
   },
 
   findEquipmentByKeys(keys: string[]): Promise<EquipCatalogRow[]> {
-    if (keys.length === 0) return Promise.resolve([]);
+    if (keys.length === 0) {
+      return Promise.resolve([]);
+    }
     return prisma.equipment.findMany({
       where: { key: { in: keys } },
       select: { key: true, tags: true, value: true, ammoType: true, defaultAmount: true },
@@ -105,7 +109,9 @@ export const catalogRepository = {
   },
 
   findWeaponsByKeys(keys: string[]): Promise<WeaponCatalogRow[]> {
-    if (keys.length === 0) return Promise.resolve([]);
+    if (keys.length === 0) {
+      return Promise.resolve([]);
+    }
     return prisma.weapon.findMany({
       where: { key: { in: keys } },
       select: { key: true, dice: true, tags: true, value: true, ammoType: true, modifiers: true },
@@ -113,7 +119,9 @@ export const catalogRepository = {
   },
 
   findArmorsByKeys(keys: string[]): Promise<ArmorCatalogRow[]> {
-    if (keys.length === 0) return Promise.resolve([]);
+    if (keys.length === 0) {
+      return Promise.resolve([]);
+    }
     return prisma.armor.findMany({
       where: { key: { in: keys } },
       select: { key: true, dice: true, tags: true, value: true, maxTier: true, modifiers: true },
@@ -131,7 +139,9 @@ export const catalogRepository = {
   },
 
   findTranslations(locale: string, keys: string[]): Promise<TranslationRow[]> {
-    if (keys.length === 0) return Promise.resolve([]);
+    if (keys.length === 0) {
+      return Promise.resolve([]);
+    }
     return prisma.translation.findMany({
       where: { locale, key: { in: keys } },
       select: { key: true, value: true },
@@ -139,7 +149,9 @@ export const catalogRepository = {
   },
 
   findTranslationsMultiLocale(keys: string[], locales: string[]): Promise<MultiLocaleTranslationRow[]> {
-    if (keys.length === 0) return Promise.resolve([]);
+    if (keys.length === 0) {
+      return Promise.resolve([]);
+    }
     return prisma.translation.findMany({
       where: { key: { in: keys }, locale: { in: locales } },
       select: { locale: true, key: true, value: true },
@@ -147,7 +159,9 @@ export const catalogRepository = {
   },
 
   async findAbilityTables(keys: string[]): Promise<AbilityTable[]> {
-    if (keys.length === 0) return [];
+    if (keys.length === 0) {
+      return [];
+    }
     const abilities = await prisma.ability.findMany({
       where: { key: { in: keys }, tableDie: { not: null } },
       select: {
@@ -164,7 +178,9 @@ export const catalogRepository = {
   },
 
   findClassAbilityModifiers(classId: number, abilityKeys: string[]): Promise<ClassAbilityModifierRow[]> {
-    if (abilityKeys.length === 0) return Promise.resolve([]);
+    if (abilityKeys.length === 0) {
+      return Promise.resolve([]);
+    }
     return prisma.classAbilityModifier.findMany({
       where: { classId, abilityKey: { in: abilityKeys } },
     }) as Promise<ClassAbilityModifierRow[]>;
@@ -183,7 +199,9 @@ export const catalogRepository = {
 
   /** Finds shared catalog items only, never Class Items owned by a Custom Class. */
   async findSharedItemsByKeys(keys: string[]): Promise<SharedCatalogItem[]> {
-    if (keys.length === 0) return [];
+    if (keys.length === 0) {
+      return [];
+    }
     const where = { classId: null, key: { in: keys } };
     const [weapons, armors, equipment, pets] = await Promise.all([
       prisma.weapon.findMany({ where, select: { key: true } }),

@@ -144,7 +144,9 @@ export function AbilityEditor({
         onBlur={() => touch(namePath)}
         onPaste={(event) => {
           const value = event.clipboardData.getData("text");
-          if (value.split(/\r?\n/).filter(Boolean).length < 2) return;
+          if (value.split(/\r?\n/).filter(Boolean).length < 2) {
+            return;
+          }
           event.preventDefault();
           onZinePaste(value);
         }}

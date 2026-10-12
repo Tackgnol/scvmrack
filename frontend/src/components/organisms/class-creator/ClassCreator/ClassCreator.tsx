@@ -94,11 +94,15 @@ export function ClassCreator({
         !modifier ||
         (!undo && !redo) ||
         (isEditable(event.target) && !ownCreatorEdit)
-      )
+      ) {
         return;
+      }
       event.preventDefault();
-      if (redo) creator.redo();
-      else creator.undo();
+      if (redo) {
+        creator.redo();
+      } else {
+        creator.undo();
+      }
     };
     window.addEventListener("keydown", onKey, { capture: true });
     return () =>
@@ -112,7 +116,9 @@ export function ClassCreator({
   ]);
   useEffect(() => {
     const warn = (event: BeforeUnloadEvent) => {
-      if (!creator.canUndo || creator.saved) return;
+      if (!creator.canUndo || creator.saved) {
+        return;
+      }
       event.preventDefault();
       event.returnValue = "";
     };
@@ -132,13 +138,17 @@ export function ClassCreator({
       if (
         !event.altKey ||
         (event.key !== "ArrowLeft" && event.key !== "ArrowRight")
-      )
+      ) {
         return;
+      }
       // On macOS Option+arrow jumps words in a text field and never navigates; leave it be.
-      if (isMac() && isEditable(event.target)) return;
+      if (isMac() && isEditable(event.target)) {
+        return;
+      }
       event.preventDefault();
-      if (moveRef.current(event.key === "ArrowLeft" ? -1 : 1))
+      if (moveRef.current(event.key === "ArrowLeft" ? -1 : 1)) {
         focusAfterRender(null);
+      }
     };
     window.addEventListener("keydown", onKey, { capture: true });
     return () =>

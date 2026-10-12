@@ -23,7 +23,9 @@ mock.module('../../src/repositories/mail-repository.js', {
     mailRepository: {
       isAvailable: () => state.available,
       send: async (mail: SentMail) => {
-        if (state.sendError) throw state.sendError;
+        if (state.sendError) {
+          throw state.sendError;
+        }
         state.sent.push(mail);
         return { messageId: `ses-${state.sent.length}` };
       },
@@ -175,5 +177,7 @@ test('an SES failure becomes a server error result', async () => {
   const result = await service().sendReportReceipt(receipt);
 
   assert.equal(result.ok, false);
-  if (!result.ok) assert.equal(result.error.statusCode, 500);
+  if (!result.ok) {
+    assert.equal(result.error.statusCode, 500);
+  }
 });

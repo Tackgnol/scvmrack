@@ -84,12 +84,18 @@ function describeItem(
 ): string[] {
   const chips: string[] = [];
 
-  if (item.amount && item.amount > 1) chips.push(`×${item.amount}`);
-  if (item.ammoType) chips.push(item.ammoType);
+  if (item.amount && item.amount > 1) {
+    chips.push(`×${item.amount}`);
+  }
+  if (item.ammoType) {
+    chips.push(item.ammoType);
+  }
   if (item.dice && item.dice.length > 0) {
     chips.push(item.dice.map((d) => `d${d}`).join(' / '));
   }
-  if (item.maxTier != null) chips.push(`tier ${item.maxTier}`);
+  if (item.maxTier != null) {
+    chips.push(`tier ${item.maxTier}`);
+  }
   if (item.value && item.value > 0) {
     chips.push(`${item.value}${t('equipment.customItem.silverShort', 's')}`);
   }
@@ -104,7 +110,9 @@ function describeItem(
       chips.push(`${sign}${mod.value} ${mod.statistic}`);
     }
   }
-  if (chips.length === 0) chips.push(kind);
+  if (chips.length === 0) {
+    chips.push(kind);
+  }
   return chips;
 }
 

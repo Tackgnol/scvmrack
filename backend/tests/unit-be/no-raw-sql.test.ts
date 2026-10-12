@@ -44,7 +44,9 @@ test('no $queryRaw or $executeRaw outside the allowlist', () => {
 
   for (const file of walkTs(srcDir)) {
     const rel = relative(srcDir, file).replace(/\\/g, '/');
-    if (ALLOWLIST.has(rel)) continue;
+    if (ALLOWLIST.has(rel)) {
+      continue;
+    }
     const content = readFileSync(file, 'utf-8');
     if (RAW_SQL_PATTERN.test(content)) {
       violations.push(`  ${rel} — contains raw Prisma SQL ($queryRaw/$executeRaw)`);

@@ -261,7 +261,9 @@ export function useCharacterActions({
   };
 
   const changeLocale = async (newLocale: 'en' | 'pl') => {
-    if (newLocale === trimmedLocale) return;
+    if (newLocale === trimmedLocale) {
+      return;
+    }
     await changeLanguage(newLocale);
     trackEvent('language_changed', { from: trimmedLocale, to: newLocale });
   };

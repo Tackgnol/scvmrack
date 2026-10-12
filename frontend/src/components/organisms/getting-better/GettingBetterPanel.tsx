@@ -45,7 +45,9 @@ export function GettingBetterPanel({ controller }: PanelProps) {
     );
   }
 
-  if (!draft) return null;
+  if (!draft) {
+    return null;
+  }
 
   return (
     <Box sx={styles.panel} data-testid="getting-better-panel">

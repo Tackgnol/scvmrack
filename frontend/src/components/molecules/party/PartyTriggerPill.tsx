@@ -39,7 +39,9 @@ const Count = styled('span')({
 export function PartyTriggerPill() {
   const { t } = useTranslation();
   const { count } = useParty();
-  if (count <= 0) return null;
+  if (count <= 0) {
+    return null;
+  }
 
   return (
     <Pill

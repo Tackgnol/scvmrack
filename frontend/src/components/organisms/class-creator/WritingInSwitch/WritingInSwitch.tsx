@@ -18,7 +18,9 @@ export function WritingInSwitch({ languages, value, step, issues, quiet, onChang
         aria-labelledby="writing-in"
         onKeyDown={(event) => {
           const index = moveInRadioGroup(event);
-          if (index !== null) onChange(languages[index]);
+          if (index !== null) {
+            onChange(languages[index]);
+          }
         }}
       >
         {languages.map((language) => {

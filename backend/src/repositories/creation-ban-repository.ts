@@ -21,12 +21,16 @@ export const creationBanRepository = {
   async ban(userId: string, actorUserId: string, reason: string) {
     return prisma.$transaction(async (tx) => {
       const user = await tx.user.findUnique({ where: { id: userId }, select: { id: true } });
-      if (!user) return 'missing' as const;
+      if (!user) {
+        return 'missing' as const;
+      }
       const created = await tx.classCreationBan.createMany({
         data: { userId, actorUserId, reason },
         skipDuplicates: true,
       });
-      if (created.count === 0) return 'already' as const;
+      if (created.count === 0) {
+        return 'already' as const;
+      }
       await tx.moderationLog.create({
         data: { targetUserId: userId, actorUserId, action: 'class_creation_banned', reason },
       });
@@ -36,7 +40,9 @@ export const creationBanRepository = {
   async unban(userId: string, actorUserId: string, reason: string) {
     return prisma.$transaction(async (tx) => {
       const removed = await tx.classCreationBan.deleteMany({ where: { userId } });
-      if (removed.count === 0) return false;
+      if (removed.count === 0) {
+        return false;
+      }
       await tx.moderationLog.create({
         data: { targetUserId: userId, actorUserId, action: 'class_creation_unbanned', reason },
       });

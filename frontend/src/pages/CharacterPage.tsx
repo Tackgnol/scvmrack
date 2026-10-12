@@ -152,7 +152,9 @@ export function CharacterPage() {
     const showSkeleton = useMinimumVisible(isBootstrapping, 600);
 
     useEffect(() => {
-        if (!shouldReportUnexpectedLoadError) return;
+        if (!shouldReportUnexpectedLoadError) {
+            return;
+        }
 
         showUnexpectedError(error, {
             source: 'character_page',

@@ -121,7 +121,9 @@ async function rollStat(spec: StatDice, roller: Roller): Promise<number> {
     return (await roller.roll(`${spec.count}d${spec.faces}`)).total + spec.modifier;
   }
   const dice: number[] = [];
-  for (let i = 0; i < spec.count; i++) dice.push(await rollDie(spec.faces, roller));
+  for (let i = 0; i < spec.count; i++) {
+    dice.push(await rollDie(spec.faces, roller));
+  }
   const total = dice.reduce((sum, die) => sum + die, 0) - Math.min(...dice);
   return total + spec.modifier;
 }
@@ -162,7 +164,9 @@ async function rollClasslessStatOptions(
 }
 
 async function pickRandom<T>(arr: T[], roller: Roller): Promise<T | null> {
-  if (arr.length === 0) return null;
+  if (arr.length === 0) {
+    return null;
+  }
   const idx = await rollDie(arr.length, roller) - 1;
   return arr[Math.max(0, idx)];
 }
@@ -228,7 +232,9 @@ function buildCatalogCache(
   // `weapons` is queried with a stable `orderBy: { id: 'asc' }`, so when two
   // weapons share a roll value the lowest-id one wins deterministically.
   for (const w of weapons) {
-    if (w.roll !== null && !weaponsByRoll.has(w.roll)) weaponsByRoll.set(w.roll, w);
+    if (w.roll !== null && !weaponsByRoll.has(w.roll)) {
+      weaponsByRoll.set(w.roll, w);
+    }
   }
   const armorMap = new Map(armors.map(a => [a.key, a]));
   const armorsByMaxTier = new Map<number, ArmorRow[]>();
@@ -404,7 +410,9 @@ async function rollStartingWeapon(
 ): Promise<PoolItem[]> {
   const roll = await rollDie(weaponDie, roller);
   const weapon = catalog.weaponsByRoll.get(roll);
-  if (!weapon) return [];
+  if (!weapon) {
+    return [];
+  }
 
   let ammoAmount: number | null = null;
   if (weapon.ammoType === 'Arrow' || weapon.ammoType === 'Bolt') {
@@ -425,13 +433,17 @@ async function rollStartingArmor(
   catalog: CatalogCache,
 ): Promise<PoolItem[]> {
   const roll = await rollDie(armorDie, roller);
-  if (roll === 1) return [];
+  if (roll === 1) {
+    return [];
+  }
 
   const tierMap: Record<number, number> = { 2: 1, 3: 2 };
   const tier = tierMap[roll] ?? 3;
   const armorOptions = catalog.armorsByMaxTier.get(tier) ?? [];
   const chosen = await pickRandom(armorOptions, roller);
-  if (!chosen) return [];
+  if (!chosen) {
+    return [];
+  }
 
   return [buildPoolItem(chosen.key, catalog, { autoEquip: true })];
 }
@@ -609,7 +621,9 @@ export async function randomCharacterCreateData(
   } else {
     const classes = await prisma.class.findMany({ where: bookClasses, select: { id: true } });
     const picked = await pickRandom(classes, roller);
-    if (!picked) throw new Error('No classes found in database');
+    if (!picked) {
+      throw new Error('No classes found in database');
+    }
     resolvedClassId = picked.id;
   }
 
@@ -783,7 +797,9 @@ export async function buildCharacterDataFromSpec(
   } else {
     const statDice = cls.statDice;
     const rolled = {} as Record<AbilityStat, number>;
-    for (const stat of ABILITY_STATS) rolled[stat] = await rollStat(statDice[stat], statsRoller);
+    for (const stat of ABILITY_STATS) {
+      rolled[stat] = await rollStat(statDice[stat], statsRoller);
+    }
     ({ strength, agility, presence, toughness } = rolled);
   }
   const hpRoll = await rollDie(hpDie, statsRoller);

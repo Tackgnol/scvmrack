@@ -59,7 +59,9 @@ export function poolTally(classes: PoolClass[]): Array<[PoolGroup, number]> {
 /** The row's "from X by Y" / "created by …" line, or null for Book classes. */
 export function attributionText(t: TFunction, c: PoolClass): string | null {
   const a = c.attribution;
-  if (!a) return null;
+  if (!a) {
+    return null;
+  }
   if (a.kind === "credit") {
     return t("classPool.attribution.credit", "from {{work}} by {{author}}", {
       work: a.work,

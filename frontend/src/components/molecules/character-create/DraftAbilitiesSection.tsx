@@ -9,7 +9,9 @@ import { morkBorgColors } from '@/theme/morkBorgTheme';
 // the two apart from a flag, so we infer prose from shape: no description AND a
 // label that reads like a sentence rather than a heading (long, or punctuated).
 function looksLikeRulesText(label: string, hasDescription: boolean): boolean {
-  if (hasDescription) return false;
+  if (hasDescription) {
+    return false;
+  }
   return label.length > 52 || /[.;!?]/.test(label);
 }
 

@@ -24,11 +24,16 @@ export function CatalogGrantPicker({ id, label, pinnedOptions, disabledPinnedKey
   const catalog = results.filter((item) => (pet ? item.itemType === 'pet' : item.itemType !== 'pet'));
   const options = [...pinned, ...catalog.filter((item) => !pinned.some((own) => own.key === item.key))];
   const onInputChange = (_event: SyntheticEvent, value: string, reason: string) => {
-    if (reason === 'reset') return;
+    if (reason === 'reset') {
+      return;
+    }
     setInputValue(value);
     const query = value.trim();
-    if (query.length >= 2) search(query);
-    else clearResults();
+    if (query.length >= 2) {
+      search(query);
+    } else {
+      clearResults();
+    }
   };
   const onChange = (_event: SyntheticEvent, value: ItemSearchHit | null) => {
     if (!value) {

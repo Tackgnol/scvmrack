@@ -125,7 +125,9 @@ export function useModifiersPanel() {
       return;
     }
 
-    if (computedFingerprintRef.current === computedFingerprint) return;
+    if (computedFingerprintRef.current === computedFingerprint) {
+      return;
+    }
     computedFingerprintRef.current = computedFingerprint;
 
     const label =
@@ -350,7 +352,9 @@ export function useModifiersPanel() {
   };
 
   const removeCustomModifier = (modifierId?: string) => {
-    if (!modifierId || removingModifierIds.includes(modifierId)) return;
+    if (!modifierId || removingModifierIds.includes(modifierId)) {
+      return;
+    }
 
     setRemovingModifierIds((previous) => [...previous, modifierId]);
     const timeoutId = window.setTimeout(() => {

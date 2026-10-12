@@ -73,7 +73,9 @@ export function useCharacterRepository(
             return data;
         },
         onSuccess: (character) => {
-            if (!character?.id) return;
+            if (!character?.id) {
+                return;
+            }
             queryClient.setQueryData(
                 getCharacterKey(character.id, locale),
                 character
@@ -117,7 +119,9 @@ export function useCharacterRepository(
 
     // ---- Refetch Character ----
     const refetchCharacter = () => {
-        if (!characterId) return;
+        if (!characterId) {
+            return;
+        }
         queryClient.invalidateQueries({
             queryKey: getCharacterKey(characterId, locale)
         });

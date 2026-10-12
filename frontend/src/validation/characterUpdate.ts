@@ -360,7 +360,9 @@ export function sanitizeSimpleFieldValue(
   value: number | string
 ): number | string {
   const schema = simpleFieldSchemas[field];
-  if (!schema) return value;
+  if (!schema) {
+    return value;
+  }
   return schema.parse(value) as number | string;
 }
 
@@ -369,11 +371,15 @@ function getSimpleFieldLimitIssue(
   value: number | string
 ): FieldLimitIssue | null {
   const fieldLabel = simpleFieldLabels[field];
-  if (!fieldLabel) return null;
+  if (!fieldLabel) {
+    return null;
+  }
 
   const numberLimit = simpleNumberLimits[field];
   if (numberLimit) {
-    if (value === '' || value === '-' || value === '+') return null;
+    if (value === '' || value === '-' || value === '+') {
+      return null;
+    }
 
     const parsed = Number(value);
     if (
@@ -413,7 +419,9 @@ export function getTextLimitIssue(
   const stringValue = String(value ?? '');
   const max = textFieldLimits[field];
 
-  if (stringValue.length <= max) return null;
+  if (stringValue.length <= max) {
+    return null;
+  }
 
   return {
     kind: 'textMax',
@@ -429,7 +437,9 @@ export function sanitizeModifierValue(value: unknown): number {
 
 export function isCompleteFiniteModifierValueInput(value: string): boolean {
   const trimmedValue = value.trim();
-  if (intermediateModifierValueInputs.has(trimmedValue)) return false;
+  if (intermediateModifierValueInputs.has(trimmedValue)) {
+    return false;
+  }
   return Number.isFinite(Number(trimmedValue));
 }
 
@@ -437,7 +447,9 @@ export function getModifierValueLimitIssue(
   value: string
 ): FieldLimitIssue | null {
   const trimmedValue = value.trim();
-  if (intermediateModifierValueInputs.has(trimmedValue)) return null;
+  if (intermediateModifierValueInputs.has(trimmedValue)) {
+    return null;
+  }
 
   const parsed = Number(trimmedValue);
   if (

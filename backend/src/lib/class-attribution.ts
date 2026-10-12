@@ -5,7 +5,11 @@ export function classAttribution(input: {
   creditWork: string | null;
   creditAuthor: string | null;
 }): string | null {
-  if (input.source === 'user') return `created by ${input.ownerName ?? 'a former GM'}`;
-  if (input.creditWork && input.creditAuthor) return `from ${input.creditWork} by ${input.creditAuthor}`;
+  if (input.source === 'user') {
+    return `created by ${input.ownerName ?? 'a former GM'}`;
+  }
+  if (input.creditWork && input.creditAuthor) {
+    return `from ${input.creditWork} by ${input.creditAuthor}`;
+  }
   return null;
 }

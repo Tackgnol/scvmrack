@@ -45,11 +45,15 @@ const tunnel: FastifyPluginAsync = async (fastify): Promise<void> => {
       let sentryKey: string;
       try {
         const header = JSON.parse(headerLine) as { dsn?: unknown };
-        if (typeof header.dsn !== 'string') throw new Error('no dsn');
+        if (typeof header.dsn !== 'string') {
+          throw new Error('no dsn');
+        }
         const dsnUrl = new URL(header.dsn);
         projectId = dsnUrl.pathname.replace(/^\/+/, '');
         sentryKey = dsnUrl.username;
-        if (!sentryKey) throw new Error('no key');
+        if (!sentryKey) {
+          throw new Error('no key');
+        }
       } catch {
         return sendApiError(
           reply,

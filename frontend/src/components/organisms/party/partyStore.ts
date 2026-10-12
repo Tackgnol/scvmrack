@@ -12,13 +12,17 @@ const emit = (): void => {
 };
 
 export const openParty = (): void => {
-  if (open) return;
+  if (open) {
+    return;
+  }
   open = true;
   emit();
 };
 
 export const closeParty = (): void => {
-  if (!open) return;
+  if (!open) {
+    return;
+  }
   open = false;
   emit();
 };

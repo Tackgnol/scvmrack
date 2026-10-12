@@ -33,7 +33,9 @@ export function SkullSwitch({
       aria-disabled={locked || undefined}
       className={flip ? `flip-${flip}` : undefined}
       onClick={() => {
-        if (!locked) onChange(!checked);
+        if (!locked) {
+          onChange(!checked);
+        }
       }}
     >
       <svg viewBox="0 0 64 30" aria-hidden="true">

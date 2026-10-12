@@ -37,7 +37,9 @@ export default function DescriptorAbilityItem({
   };
 
   const handleKeyDown = (event: KeyboardEvent<HTMLElement>) => {
-    if (event.target !== event.currentTarget) return;
+    if (event.target !== event.currentTarget) {
+      return;
+    }
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
       toggleComment();
@@ -83,7 +85,9 @@ export default function DescriptorAbilityItem({
                 nextValue,
               );
               setCommentErrorMessage(nextError);
-              if (nextError) return;
+              if (nextError) {
+                return;
+              }
               onUpdateComment(nextValue);
             }}
             error={Boolean(commentErrorMessage)}

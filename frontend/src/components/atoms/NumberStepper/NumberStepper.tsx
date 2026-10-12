@@ -26,7 +26,9 @@ export function NumberStepper({
   const shown = signedValue ? signed(value) : String(value);
   const set = (next: number, kind: "nudge" | "typing" = "typing") => {
     const bounded = clamp(next, min, max);
-    if (bounded === value) return;
+    if (bounded === value) {
+      return;
+    }
     document.body.dataset.creatorHistorySource = id;
     document.body.dataset.creatorHistoryKind = kind;
     onChange(bounded);
@@ -36,7 +38,9 @@ export function NumberStepper({
   const commit = () => {
     if (typed !== null) {
       const parsed = parseStepperText(typed);
-      if (parsed !== null) set(parsed, "typing");
+      if (parsed !== null) {
+        set(parsed, "typing");
+      }
       setTyped(null);
     }
   };

@@ -186,7 +186,9 @@ export const partyRepository = {
 
   /** Class ids whose lineage now has a newer version. */
   async findOlderClassIds(classIds: number[]): Promise<Set<number>> {
-    if (classIds.length === 0) return new Set();
+    if (classIds.length === 0) {
+      return new Set();
+    }
     const rows = await prisma.class.findMany({
       where: { id: { in: classIds } },
       select: { id: true, lineageId: true, version: true },
@@ -219,7 +221,9 @@ export const partyRepository = {
         classPool: { select: { lineageId: true } },
       },
     });
-    if (!party) return null;
+    if (!party) {
+      return null;
+    }
     const { classPool, ...rest } = party;
     return { ...rest, poolLineageIds: classPool.map((row) => row.lineageId) };
   },
@@ -235,7 +239,9 @@ export const partyRepository = {
         classPool: { select: { lineageId: true } },
       },
     });
-    if (!party) return null;
+    if (!party) {
+      return null;
+    }
     const { classPool, ...rest } = party;
     return { ...rest, poolLineageIds: classPool.map((row) => row.lineageId) };
   },

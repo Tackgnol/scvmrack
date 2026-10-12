@@ -46,10 +46,14 @@ function parseBrowserAuthCookies(
 
   for (const part of sessionCookie.split(/;\s*/).filter(Boolean)) {
     const separatorIndex = part.indexOf('=');
-    if (separatorIndex <= 0) continue;
+    if (separatorIndex <= 0) {
+      continue;
+    }
 
     const name = part.slice(0, separatorIndex);
-    if (!shouldApplyBrowserAuthCookie(name)) continue;
+    if (!shouldApplyBrowserAuthCookie(name)) {
+      continue;
+    }
 
     cookies.push({
       name,
@@ -74,7 +78,9 @@ function storeResponseCookies(headers: Headers, cookies: CookieJar): void {
   for (const setCookie of collectSetCookieHeaders(headers)) {
     const [nameValue] = setCookie.split(';');
     const separatorIndex = nameValue.indexOf('=');
-    if (separatorIndex <= 0) continue;
+    if (separatorIndex <= 0) {
+      continue;
+    }
 
     cookies.set(nameValue.slice(0, separatorIndex), nameValue.slice(separatorIndex + 1));
   }

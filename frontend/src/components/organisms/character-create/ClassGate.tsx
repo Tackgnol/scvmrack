@@ -57,7 +57,9 @@ export function ClassGate({ onPick, busy, inviteToken, obrRoomId }: ClassGatePro
         setLoadState({ key: requestKey, status: 'loaded', classes: result });
       })
       .catch((e) => {
-        if (e instanceof DOMException && e.name === 'AbortError' && !timedOut) return;
+        if (e instanceof DOMException && e.name === 'AbortError' && !timedOut) {
+          return;
+        }
 
         const error = timedOut ? new Error('Class catalog request timed out') : e;
         setLoadState({ key: requestKey, status: 'failed' });

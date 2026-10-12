@@ -23,7 +23,9 @@ export function useCharacterId() {
             }
             if (nextId) {
                 setLastCharacterId((previousId) => {
-                    if (previousId === nextId) return previousId;
+                    if (previousId === nextId) {
+                        return previousId;
+                    }
                     writeRememberedCharacterId(nextId);
                     return nextId;
                 });

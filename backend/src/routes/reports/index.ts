@@ -36,12 +36,15 @@ const reports: FastifyPluginAsync = async (fastify) => {
       },
     },
     async (request, reply) => {
-      if (request.body.website?.trim())
+      if (request.body.website?.trim()) {
         return reply.code(201).send({ id: randomUUID() });
+      }
       const result = await createModerationService(request.log).submit(
         request.body
       );
-      if (!result.ok) return sendServiceError(reply, request, result.error);
+      if (!result.ok) {
+        return sendServiceError(reply, request, result.error);
+      }
       return reply.code(201).send(result.value);
     }
   );

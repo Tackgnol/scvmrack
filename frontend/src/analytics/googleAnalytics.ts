@@ -117,7 +117,9 @@ const runWithGoogleAnalytics = (
 ): void => {
     const run = () => {
         void loadGoogleAnalytics().then((instance) => {
-            if (!analyticsConsentGranted || !instance) return;
+            if (!analyticsConsentGranted || !instance) {
+                return;
+            }
             callback(instance);
         });
     };
@@ -138,7 +140,9 @@ interface PageViewPayload {
 }
 
 export const trackPageView = ({ path, title, url, search }: PageViewPayload): void => {
-    if (!analyticsConsentGranted || !isBrowserRuntime()) return;
+    if (!analyticsConsentGranted || !isBrowserRuntime()) {
+        return;
+    }
 
     runWithGoogleAnalytics(
         (instance) => {
@@ -157,7 +161,9 @@ export const trackEvent = (
     eventName: string,
     params?: Record<string, string | number | boolean | null | undefined>
 ): void => {
-    if (!analyticsConsentGranted) return;
+    if (!analyticsConsentGranted) {
+        return;
+    }
 
     runWithGoogleAnalytics((instance) => {
         void instance.track(eventName, params ?? {});

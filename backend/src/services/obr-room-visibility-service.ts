@@ -12,7 +12,9 @@ export async function filterVisibleCharacterIdsInObrRoom(
   roomId: string
 ): Promise<string[]> {
   const uniqueIds = [...new Set(ids.filter(isValidUUID))];
-  if (uniqueIds.length === 0) return [];
+  if (uniqueIds.length === 0) {
+    return [];
+  }
 
   const [bound, partyMembers] = await Promise.all([
     obrBindingsDb.filterCharacterIdsInRoom(uniqueIds, roomId),
@@ -28,7 +30,9 @@ export async function filterAdditionalVisibleCharacterIdsInObrRoom(
   roomId: string
 ): Promise<string[]> {
   const uniqueIds = [...new Set(ids.filter(isValidUUID))];
-  if (uniqueIds.length === 0) return [];
+  if (uniqueIds.length === 0) {
+    return [];
+  }
   const partyMembers = await characterRepository.filterCharacterIdsInRoomParty(
     uniqueIds,
     roomId
@@ -50,11 +54,17 @@ export async function canUseCharacterInObrRoom(
   characterId: string,
   roomId: string
 ): Promise<boolean> {
-  if (!isValidUUID(characterId)) return false;
+  if (!isValidUUID(characterId)) {
+    return false;
+  }
 
   const row = await characterRepository.getPartyAccessContext(characterId);
-  if (!row) return false;
+  if (!row) {
+    return false;
+  }
 
-  if (ownsCharacter(session, row)) return true;
+  if (ownsCharacter(session, row)) {
+    return true;
+  }
   return isCharacterVisibleInObrRoom(characterId, roomId);
 }

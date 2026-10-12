@@ -59,7 +59,9 @@ export function buildClassPoolView(input: {
   const playing = new Map<string, number>();
   for (const classId of input.memberClassIds) {
     const lineage = classId === null ? undefined : lineageOf.get(classId);
-    if (lineage) playing.set(lineage, (playing.get(lineage) ?? 0) + 1);
+    if (lineage) {
+      playing.set(lineage, (playing.get(lineage) ?? 0) + 1);
+    }
   }
 
   const classes: PoolClass[] = [];
@@ -109,14 +111,22 @@ function poolGroup(row: PoolCatalogRow, partyOwnerId: string): PoolGroup {
 }
 
 function attribution(row: PoolCatalogRow): PoolAttribution | null {
-  if (row.credit) return { kind: 'credit', ...row.credit };
-  if (row.source !== 'user') return null;
+  if (row.credit) {
+    return { kind: 'credit', ...row.credit };
+  }
+  if (row.source !== 'user') {
+    return null;
+  }
   return { kind: 'owner', name: row.ownerName, private: row.visibility === 'private' };
 }
 
 function removedNotice(row: PoolCatalogRow): RemovedPoolClass {
   const base = { lineageId: row.lineageId, name: row.name };
-  if (row.takenDownAt !== null) return { ...base, by: null, reason: 'taken_down' };
-  if (row.status === 'archived') return { ...base, by: row.ownerName, reason: 'archived' };
+  if (row.takenDownAt !== null) {
+    return { ...base, by: null, reason: 'taken_down' };
+  }
+  if (row.status === 'archived') {
+    return { ...base, by: row.ownerName, reason: 'archived' };
+  }
   return { ...base, by: row.ownerName, reason: 'unpublished' };
 }

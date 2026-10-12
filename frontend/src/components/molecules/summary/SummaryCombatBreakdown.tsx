@@ -22,7 +22,9 @@ interface SummaryCombatBreakdownProps {
 }
 
 const formatSigned = (value: number): string => {
-  if (value > 0) return `+${value}`;
+  if (value > 0) {
+    return `+${value}`;
+  }
   return `${value}`;
 };
 
@@ -30,9 +32,15 @@ const getModifierName = (
   modifier: DecoratedModifier,
   fallbackLabel: string,
 ): string => {
-  if ('originName' in modifier && modifier.originName) return modifier.originName;
-  if ('name' in modifier && modifier.name) return modifier.name;
-  if (modifier.source) return modifier.source;
+  if ('originName' in modifier && modifier.originName) {
+    return modifier.originName;
+  }
+  if ('name' in modifier && modifier.name) {
+    return modifier.name;
+  }
+  if (modifier.source) {
+    return modifier.source;
+  }
   return fallbackLabel;
 };
 

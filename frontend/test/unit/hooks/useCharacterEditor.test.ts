@@ -51,8 +51,12 @@ vi.mock('@/analytics/characterAnalytics', () => ({
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string, fallback?: string, values?: Record<string, unknown>) => {
-      if (key === 'validation.fields.silver') return 'Silver';
-      if (!fallback) return key;
+      if (key === 'validation.fields.silver') {
+        return 'Silver';
+      }
+      if (!fallback) {
+        return key;
+      }
       return fallback.replace(/\{\{(\w+)}}/g, (_match, token) =>
         String(values?.[token] ?? '')
       );

@@ -6,7 +6,9 @@ import type { ModifierListProps } from "./ModifierList.models";
 /** The modifiers an ability or Class Item carries, each editable and removable; nothing when empty. */
 export function ModifierList({ path, title, modifiers, onChange, focus, focusAfterRemove }: ModifierListProps) {
   const { ids, remove } = useStableIds(modifiers.length);
-  if (modifiers.length === 0) return null;
+  if (modifiers.length === 0) {
+    return null;
+  }
   return (
     <Stack>
       <GroupHeading>{title}</GroupHeading>

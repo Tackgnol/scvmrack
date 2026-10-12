@@ -28,7 +28,9 @@ mock.module('../../src/repositories/equipment-repository.js', {
     equipmentRepository: {
       findById: async (itemType: string, id: number) => {
         state.idCalls.push({ itemType, id });
-        if (state.idError) throw state.idError;
+        if (state.idError) {
+          throw state.idError;
+        }
         return state.byId;
       },
       findByKey: async (itemType: string, key: string) => {
@@ -43,7 +45,9 @@ mock.module('../../src/lib/item-search-service.js', {
   namedExports: {
     searchItems: async (q: string, _locale: unknown, limit: number) => {
       state.searchCalls.push({ q, limit });
-      if (state.searchError) throw state.searchError;
+      if (state.searchError) {
+        throw state.searchError;
+      }
       return state.searchResult;
     },
   },

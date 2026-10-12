@@ -11,7 +11,9 @@ export default function ItemQuantityBadge({
   quantity,
   symbol = 'x',
 }: ItemQuantityBadgeProps) {
-  if (quantity <= 1) return null;
+  if (quantity <= 1) {
+    return null;
+  }
 
   return (
     <Typography component="div" sx={customStyles.quantityBadge}>

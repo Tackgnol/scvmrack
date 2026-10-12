@@ -32,7 +32,9 @@ const admin: FastifyPluginAsync = async (fastify) => {
       session: request.appSession,
       userId: (request.params as { userId: string }).userId,
     });
-    if (!result.ok) return sendServiceError(reply, request, result.error);
+    if (!result.ok) {
+      return sendServiceError(reply, request, result.error);
+    }
     return result.value;
   });
   fastify.post('/creation-bans/:userId', { schema: { params: userParams, body: reason } }, async (request, reply) => {
@@ -41,7 +43,9 @@ const admin: FastifyPluginAsync = async (fastify) => {
       userId: (request.params as { userId: string }).userId,
       reason: (request.body as { reason: string }).reason,
     });
-    if (!result.ok) return sendServiceError(reply, request, result.error);
+    if (!result.ok) {
+      return sendServiceError(reply, request, result.error);
+    }
     return result.value;
   });
   fastify.delete('/creation-bans/:userId', { schema: { params: userParams, body: reason } }, async (request, reply) => {
@@ -50,14 +54,18 @@ const admin: FastifyPluginAsync = async (fastify) => {
       userId: (request.params as { userId: string }).userId,
       reason: (request.body as { reason: string }).reason,
     });
-    if (!result.ok) return sendServiceError(reply, request, result.error);
+    if (!result.ok) {
+      return sendServiceError(reply, request, result.error);
+    }
     return result.value;
   });
   fastify.get('/reports', async (request, reply) => {
     const result = await service(request).listOpen({
       session: request.appSession,
     });
-    if (!result.ok) return sendServiceError(reply, request, result.error);
+    if (!result.ok) {
+      return sendServiceError(reply, request, result.error);
+    }
     return result.value;
   });
   fastify.post(
@@ -69,7 +77,9 @@ const admin: FastifyPluginAsync = async (fastify) => {
         id: (request.params as { id: string }).id,
         reason: (request.body as { reason: string }).reason,
       });
-      if (!result.ok) return sendServiceError(reply, request, result.error);
+      if (!result.ok) {
+        return sendServiceError(reply, request, result.error);
+      }
       return result.value;
     }
   );
@@ -82,7 +92,9 @@ const admin: FastifyPluginAsync = async (fastify) => {
         id: (request.params as { id: string }).id,
         reason: (request.body as { reason: string }).reason,
       });
-      if (!result.ok) return sendServiceError(reply, request, result.error);
+      if (!result.ok) {
+        return sendServiceError(reply, request, result.error);
+      }
       return result.value;
     }
   );
@@ -95,7 +107,9 @@ const admin: FastifyPluginAsync = async (fastify) => {
         id: (request.params as { id: string }).id,
         reason: (request.body as { reason: string }).reason,
       });
-      if (!result.ok) return sendServiceError(reply, request, result.error);
+      if (!result.ok) {
+        return sendServiceError(reply, request, result.error);
+      }
       return result.value;
     }
   );  fastify.post(
@@ -107,7 +121,9 @@ const admin: FastifyPluginAsync = async (fastify) => {
         id: (request.params as { id: string }).id,
         reason: (request.body as { reason: string }).reason,
       });
-      if (!result.ok) return sendServiceError(reply, request, result.error);
+      if (!result.ok) {
+        return sendServiceError(reply, request, result.error);
+      }
       return result.value;
     }
   );

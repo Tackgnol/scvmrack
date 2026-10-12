@@ -73,8 +73,11 @@ export default function ItemAutocomplete({
         }
 
         const normalizedValue = value.trim();
-        if (normalizedValue.length >= 2) search(normalizedValue);
-        else clearResults();
+        if (normalizedValue.length >= 2) {
+            search(normalizedValue);
+        } else {
+            clearResults();
+        }
     };
 
     const handleSelect = async (_: SyntheticEvent, value: ItemSearchHit | null) => {
