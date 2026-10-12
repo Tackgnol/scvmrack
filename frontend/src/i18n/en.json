@@ -1298,6 +1298,7 @@
     "draftKeepMineLoss": "This overwrites the newer draft from the other device.",
     "draftDiscardConfirm": "Discard this unfinished draft?",
     "draftDiscardLoss": "This unfinished draft will be permanently deleted.",
+    "draftDiscardFailed": "The draft couldn't be discarded. Try again.",
     "untitled": "Untitled class",
     "rail": "Class creator steps",
     "steps": {

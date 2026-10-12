@@ -8,7 +8,7 @@ import {
   blankClassItem,
   blankDraft,
 } from "@/components/organisms/class-creator/classCreator.utils";
-import { getClassDraft, saveClass, testRollClass, updateClassDraft, type ClassDraft, type StoredClassDraft } from "@/api/classes";
+import { deleteClassDraft, getClassDraft, saveClass, testRollClass, updateClassDraft, type ClassDraft, type StoredClassDraft } from "@/api/classes";
 
 vi.mock("@/api/classes", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/api/classes")>()),
@@ -16,6 +16,7 @@ vi.mock("@/api/classes", async (importOriginal) => ({
   testRollClass: vi.fn(),
   updateClassDraft: vi.fn(),
   getClassDraft: vi.fn(),
+  deleteClassDraft: vi.fn(),
 }));
 vi.mock("@tanstack/react-router", () => ({
   Link: ({ children, to }: { children: React.ReactNode; to: string }) => (
@@ -156,6 +157,53 @@ describe("ClassCreator", () => {
     await expect.element(page.getByText("This overwrites the newer draft from the other device.")).toBeVisible();
     await userEvent.click(page.getByRole("button", { name: "Load newer one" }));
     await expect.element(page.getByRole("textbox", { name: "Class name" })).toHaveValue("Newer version");
+  });
+
+  it("discards an unfinished new class and clears the editor", async () => {
+    const record: StoredClassDraft = {
+      id: 5, classId: null, draft: complete(), revision: 1, updatedAt: "2026-10-12T00:00:00.000Z",
+    };
+    vi.mocked(deleteClassDraft).mockResolvedValue();
+    renderCreator(record.draft, null, record);
+
+    await expect.element(page.getByRole("textbox", { name: "Class name" })).toHaveValue("Bog Witch");
+    await userEvent.click(page.getByRole("button", { name: "Discard" }));
+    await userEvent.click(page.getByRole("dialog").getByRole("button", { name: "Discard" }));
+
+    await expect.element(page.getByRole("textbox", { name: "Class name" })).toHaveValue("");
+    expect(deleteClassDraft).toHaveBeenCalledWith(5);
+  });
+
+  it("keeps a draft open when discard cannot reach the server", async () => {
+    const record: StoredClassDraft = {
+      id: 5, classId: null, draft: complete(), revision: 1, updatedAt: "2026-10-12T00:00:00.000Z",
+    };
+    vi.mocked(deleteClassDraft).mockRejectedValue(new Error("Offline"));
+    renderCreator(record.draft, null, record);
+
+    await userEvent.click(page.getByRole("button", { name: "Discard" }));
+    await userEvent.click(page.getByRole("dialog").getByRole("button", { name: "Discard" }));
+
+    await expect.element(page.getByText("The draft couldn't be discarded. Try again.")).toBeVisible();
+    await expect.element(page.getByRole("dialog")).toBeVisible();
+    await userEvent.click(page.getByRole("dialog").getByRole("button", { name: "Cancel" }));
+    await expect.element(page.getByRole("textbox", { name: "Class name" })).toHaveValue("Bog Witch");
+  });
+
+  it("restores the saved class when an unfinished edit is discarded", async () => {
+    const saved = complete();
+    const unfinished = { ...saved, name: { en: "Unfinished edit", pl: "" } };
+    const record: StoredClassDraft = {
+      id: 5, classId: 7, draft: unfinished, revision: 1, updatedAt: "2026-10-12T00:00:00.000Z",
+    };
+    vi.mocked(deleteClassDraft).mockResolvedValue();
+    renderCreator(saved, 7, record);
+
+    await userEvent.click(page.getByRole("button", { name: "Discard" }));
+    await userEvent.click(page.getByRole("dialog").getByRole("button", { name: "Discard" }));
+
+    await expect.element(page.getByRole("textbox", { name: "Class name" })).toHaveValue("Bog Witch");
+    expect(deleteClassDraft).toHaveBeenCalledWith(5);
   });
 
   it("saves a complete class, stamps it FORGED and offers the way to my classes", async () => {

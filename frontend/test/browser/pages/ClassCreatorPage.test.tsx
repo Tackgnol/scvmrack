@@ -4,19 +4,22 @@ import { page } from "vitest/browser";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import BrowserTestProvider from "../BrowserTestProvider";
 import { ClassCreatorPage } from "@/pages/ClassCreatorPage";
-import { getMyCreationBan } from "@/api/classes";
+import { getClass, getClassDraft, getMyCreationBan } from "@/api/classes";
+import { ClassCreator } from "@/components/organisms/class-creator/ClassCreator/ClassCreator";
+import { blankDraft } from "@/components/organisms/class-creator/classCreator.utils";
 import { useAuth } from "@/hooks/useAuth";
 import { useParams } from "@tanstack/react-router";
 
 vi.mock("@/seo/Seo", () => ({ Seo: () => null }));
 vi.mock("@/api/classes", () => ({
-  classKeys: { draft: (id: number) => ["draft", id], creationBan: () => ["creation-ban"] },
+  classKeys: { draft: (id: number) => ["draft", id], one: (id: number) => ["class", id], creationBan: () => ["creation-ban"] },
+  getClass: vi.fn(),
   getClassDraft: vi.fn(),
   getMyCreationBan: vi.fn(),
 }));
 vi.mock("@/hooks/useAuth", () => ({ useAuth: vi.fn() }));
 vi.mock("@tanstack/react-router", () => ({ useParams: vi.fn() }));
-vi.mock("@/components/organisms/class-creator/ClassCreator/ClassCreator", () => ({ ClassCreator: () => <div>New class editor</div> }));
+vi.mock("@/components/organisms/class-creator/ClassCreator/ClassCreator", () => ({ ClassCreator: vi.fn(() => <div>New class editor</div>) }));
 vi.mock("@/components/organisms/class-creator/SavedClassCreator/SavedClassCreator", () => ({ SavedClassCreator: () => <div>Existing class editor</div> }));
 
 function renderPage() {
@@ -42,6 +45,19 @@ describe("ClassCreatorPage creation bans", () => {
 
     await expect.element(page.getByText("You cannot create new Custom Classes while a moderation restriction is active. Your existing classes remain available.")).toBeVisible();
     await expect.element(page.getByText("New class editor")).not.toBeInTheDocument();
+  });
+
+  it("loads the saved class beneath a resumed edit draft so Discard can restore it", async () => {
+    const saved = { ...blankDraft(), name: { en: "Saved class", pl: "" } };
+    const unfinished = { ...saved, name: { en: "Unfinished edit", pl: "" } };
+    vi.mocked(useParams).mockReturnValue({ draftId: "5" } as never);
+    vi.mocked(getClassDraft).mockResolvedValue({ id: 5, classId: 7, draft: unfinished, revision: 1, updatedAt: "2026-10-12T00:00:00.000Z" } as never);
+    vi.mocked(getClass).mockResolvedValue({ id: 7, draft: saved } as never);
+
+    await renderPage();
+
+    await expect.element(page.getByText("New class editor")).toBeVisible();
+    expect(vi.mocked(ClassCreator).mock.lastCall?.[0].initialDraft).toEqual(saved);
   });
 
   it("keeps an existing class editable even when the GM is banned", async () => {

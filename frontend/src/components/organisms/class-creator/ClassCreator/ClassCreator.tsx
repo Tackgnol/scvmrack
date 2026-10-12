@@ -2,6 +2,7 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useSnackbar } from "@/SnackbarContext/SnackbarProvider";
 import MorkBorgModal, { ModalButton } from "@/components/molecules/modal/MorkBorgModal";
 import { AbilitiesStep } from "../AbilitiesStep/AbilitiesStep";
 import { ItemsStep } from "../ItemsStep/ItemsStep";
@@ -47,8 +48,17 @@ export function ClassCreator({
   versionInfo,
 }: ClassCreatorProps) {
   const { t } = useTranslation();
+  const { showError } = useSnackbar();
   const creator = useClassCreator(classId, initialDraft, initialDraftRecord);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
+  const [discarding, setDiscarding] = useState(false);
+  const discardDraft = () => {
+    setDiscarding(true);
+    void creator.draftAutosave.discard()
+      .then(() => setConfirmDiscard(false))
+      .catch(() => showError(t("creator.draftDiscardFailed", "The draft couldn't be discarded. Try again.")))
+      .finally(() => setDiscarding(false));
+  };
   const moveRef = useRef(creator.move);
   useEffect(() => {
     moveRef.current = creator.move;
@@ -354,7 +364,7 @@ export function ClassCreator({
             <ModalButton variant="secondary" onClick={() => setConfirmDiscard(false)}>
               {t("actions.cancel", "Cancel")}
             </ModalButton>
-            <ModalButton variant="danger" onClick={() => { setConfirmDiscard(false); void creator.draftAutosave.discard(); }}>
+            <ModalButton variant="danger" disabled={discarding} onClick={discardDraft}>
               {t("creator.draftDiscard", "Discard")}
             </ModalButton>
           </>

@@ -17,6 +17,13 @@ Feature: Class creator draft autosave
     When I choose Load newer one
     Then my stale edits are discarded and the newer draft is loaded
 
+  Scenario: Discarding an open draft leaves no copy to recover
+    Given I am editing an unfinished new class with a saved draft
+    When I confirm Discard in the creator
+    Then the server and local draft copies are removed
+    And the creator returns to a blank new class
+    And leaving or reopening the creator does not recreate the discarded draft
+
   Scenario: Draft limits and expiry are visible
     Given I have three new-class drafts
     When I try to create a fourth

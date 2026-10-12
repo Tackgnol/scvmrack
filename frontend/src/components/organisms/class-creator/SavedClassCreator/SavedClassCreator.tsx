@@ -43,7 +43,7 @@ export function SavedClassCreator({ classId }: SavedClassCreatorProps) {
     <ClassCreator
       key={`${classQuery.data.id}:${savedDraft?.id ?? "saved"}`}
       classId={classQuery.data.id}
-      initialDraft={savedDraft?.draft ?? classQuery.data.draft}
+      initialDraft={classQuery.data.draft}
       initialDraftRecord={savedDraft}
       versionInfo={{
         version: classQuery.data.version,

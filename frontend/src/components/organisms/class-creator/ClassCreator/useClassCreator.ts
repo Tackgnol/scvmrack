@@ -14,6 +14,7 @@ import type {
 } from "../classCreator.models";
 import {
   abilityIndexOf,
+  blankDraft,
   draftIssues,
   fieldId,
   focusAfterRender,
@@ -261,6 +262,23 @@ export function useClassCreator(
     }),
   });
 
+  const discard = async () => {
+    await autosave.discard();
+    const resetDraft = classId === null ? blankDraft() : initialDraft;
+    replaceDraft(resetDraft);
+    historyRef.current = { undo: [], redo: [] };
+    publishHistory();
+    setStep("identity");
+    setLanguage(resetDraft.languages[0]);
+    setTouched(new Set());
+    setAttempted(false);
+    setBlocked(null);
+    setOpenAbility(null);
+    setOpenItem(null);
+    setSavedRevision(null);
+    testRoll.reset();
+  };
+
   return {
     draft,
     revision,
@@ -304,7 +322,7 @@ export function useClassCreator(
     redoKind: history.redo[history.redo.length - 1]?.kind,
     setOpenItem,
     jump,
-    draftAutosave: autosave,
+    draftAutosave: { ...autosave, discard },
     /** Steps by `delta` (−1 back, +1 next) when there is one that way. */
     move: (delta: number) => {
       const next = STEPS[STEPS.indexOf(step) + delta];

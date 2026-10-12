@@ -77,6 +77,8 @@ export function useDraftAutosave({ classId, draft, revision, initialDraft, repla
   const latest = useRef({ draft, revision });
   const recordRef = useRef(record);
   const saving = useRef(false);
+  const pendingWrite = useRef<Promise<PersistAttempt> | null>(null);
+  const discarding = useRef(false);
   const [retryAttempt, setRetryAttempt] = useState(0);
   const replaceDraftRef = useRef(replaceDraft);
   const conflict = useRef(false);
@@ -95,17 +97,20 @@ export function useDraftAutosave({ classId, draft, revision, initialDraft, repla
     replaceDraftRef.current = replaceDraft;
   }, [replaceDraft]);
   const persist = useCallback(async (force = false) => {
-    if (saving.current || latest.current.revision === 0 || conflict.current) return;
-    if (latest.current.revision === completedRevision.current) return;
+    if (saving.current || discarding.current || latest.current.revision === 0 || conflict.current) return;
+    if (completedRevision.current !== null && latest.current.revision <= completedRevision.current) return;
     if (!force && latest.current.revision === savedRevision.current) return;
     saving.current = true;
     setState("saving");
     const snapshot = latest.current;
     const previous = recordRef.current;
-    const result = await requestPersist(previous, classId, snapshot.draft, force);
+    const write = requestPersist(previous, classId, snapshot.draft, force);
+    pendingWrite.current = write;
+    const result = await write;
+    pendingWrite.current = null;
     if (completedRevision.current !== null && completedRevision.current >= snapshot.revision) {
-      // the class was saved while this write was in flight; its draft is already gone
-      if (result.saved) await deleteClassDraft(result.saved.id).catch(() => undefined);
+      // A save or discard finished during this write; ignore the obsolete revision.
+      if (result.saved && !discarding.current) await deleteClassDraft(result.saved.id).catch(() => undefined);
       saving.current = false;
       setState("idle");
       return;
@@ -130,7 +135,7 @@ export function useDraftAutosave({ classId, draft, revision, initialDraft, repla
   }, [classId]);
 
   useEffect(() => {
-    if (revision === 0) return;
+    if (revision === 0 || (completedRevision.current !== null && revision <= completedRevision.current)) return;
     saveLocalSnapshot({
       id: record?.id ?? 0,
       classId,
@@ -168,12 +173,34 @@ export function useDraftAutosave({ classId, draft, revision, initialDraft, repla
     await persist(true);
   }, [persist]);
 
-  const discard = useCallback(async () => {
-    if (recordRef.current) await deleteClassDraft(recordRef.current.id);
-    removeLocalSnapshot(classId);
-    recordRef.current = null;
-    setRecord(null);
-    setState("idle");
+  const discard = useCallback(() => {
+    const previousCompleted = completedRevision.current;
+    completedRevision.current = latest.current.revision;
+    discarding.current = true;
+    let savedDuringDiscard: StoredClassDraft | null = null;
+    return Promise.resolve(pendingWrite.current)
+      .then((result) => {
+        savedDuringDiscard = result?.saved ?? null;
+        const toDelete = savedDuringDiscard ?? recordRef.current;
+        return toDelete ? deleteClassDraft(toDelete.id) : Promise.resolve();
+      })
+      .then(() => {
+        removeLocalSnapshot(classId);
+        recordRef.current = null;
+        setRecord(null);
+        setState("idle");
+      })
+      .catch((error: unknown) => {
+        completedRevision.current = previousCompleted;
+        if (savedDuringDiscard) {
+          recordRef.current = savedDuringDiscard;
+          setRecord(savedDuringDiscard);
+          savedRevision.current = latest.current.revision;
+          setState("saved");
+        }
+        throw error;
+      })
+      .finally(() => { discarding.current = false; });
   }, [classId]);
 
   const complete = useCallback(async () => {

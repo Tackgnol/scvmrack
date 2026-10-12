@@ -1311,6 +1311,7 @@
     "draftKeepMineLoss": "Nowszy szkic z innego urządzenia zostanie nadpisany.",
     "draftDiscardConfirm": "Odrzucić ten niedokończony szkic?",
     "draftDiscardLoss": "Ten niedokończony szkic zostanie trwale usunięty.",
+    "draftDiscardFailed": "Nie udało się odrzucić szkicu. Spróbuj ponownie.",
     "untitled": "Klasa bez nazwy",
     "rail": "Kroki kreatora klasy",
     "steps": {
