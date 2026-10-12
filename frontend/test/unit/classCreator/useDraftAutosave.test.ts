@@ -24,6 +24,20 @@ describe('useDraftAutosave after the class is saved', () => {
   });
   afterEach(() => vi.useRealTimers());
 
+  it('writes each edit once instead of re-saving after every save', async () => {
+    let serverRevision = 1;
+    api.updateClassDraft.mockImplementation(async () => ({ ...stored(1), revision: ++serverRevision }));
+    const replaceDraft = vi.fn();
+    renderHook(() =>
+      useDraftAutosave({ classId: 7, draft, revision: 2, initialDraft: stored(1), replaceDraft })
+    );
+
+    await act(async () => { vi.advanceTimersByTime(1_000); });
+    await act(async () => { vi.advanceTimersByTime(10_000); });
+
+    expect(api.updateClassDraft).toHaveBeenCalledTimes(1);
+  });
+
   it('does not recreate a draft from an in-flight write or the unmount flush', async () => {
     let failWrite: (error: Error) => void = () => undefined;
     api.updateClassDraft.mockImplementation(

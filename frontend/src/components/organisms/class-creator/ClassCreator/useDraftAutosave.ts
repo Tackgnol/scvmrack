@@ -82,6 +82,8 @@ export function useDraftAutosave({ classId, draft, revision, initialDraft, repla
   const conflict = useRef(false);
   // revision the class was last saved at; nothing to autosave until the GM edits again
   const completedRevision = useRef<number | null>(null);
+  // last editor revision the server holds; a re-render after a save must not write it again
+  const savedRevision = useRef(0);
 
   useEffect(() => {
     latest.current = { draft, revision };
@@ -95,6 +97,7 @@ export function useDraftAutosave({ classId, draft, revision, initialDraft, repla
   const persist = useCallback(async (force = false) => {
     if (saving.current || latest.current.revision === 0 || conflict.current) return;
     if (latest.current.revision === completedRevision.current) return;
+    if (!force && latest.current.revision === savedRevision.current) return;
     saving.current = true;
     setState("saving");
     const snapshot = latest.current;
@@ -108,6 +111,7 @@ export function useDraftAutosave({ classId, draft, revision, initialDraft, repla
       return;
     }
     if (result.saved) {
+      savedRevision.current = snapshot.revision;
       recordRef.current = result.saved;
       setRecord(result.saved);
       saveLocalSnapshot(result.saved);
