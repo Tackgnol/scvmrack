@@ -8,6 +8,7 @@ import {
   ModerationReportResponseSchema,
 } from '../../schemas/moderation.js';
 import { createModerationService } from '../../services/moderation-service.js';
+import { limitMax } from '../../lib/rate-limits.js';
 
 const reports: FastifyPluginAsync = async (fastify) => {
   const app = fastify.withTypeProvider<JsonSchemaToTsProvider>();
@@ -16,7 +17,7 @@ const reports: FastifyPluginAsync = async (fastify) => {
     {
       config: {
         rateLimit: {
-          max: process.env.NODE_ENV === 'test' ? 10000 : 5,
+          max: limitMax(5),
           timeWindow: '1 hour',
         },
       },

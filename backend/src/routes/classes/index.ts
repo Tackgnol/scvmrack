@@ -23,17 +23,18 @@ import { sendServiceError } from '../../errors.js';
 import { createCustomClassService } from '../../services/custom-class-service.js';
 import { createModerationService } from '../../services/moderation-service.js';
 import { createCreationBanService } from '../../services/creation-ban-service.js';
+import { limitMax } from '../../lib/rate-limits.js';
 
 const saveLimit = {
   rateLimit: {
-    max: process.env.NODE_ENV === 'test' ? 10000 : 10,
+    max: limitMax(10),
     timeWindow: '1 minute',
   },
 };
 
 const draftSaveLimit = {
   rateLimit: {
-    max: process.env.NODE_ENV === 'test' ? 10000 : 120,
+    max: limitMax(120),
     timeWindow: '1 minute',
   },
 };
@@ -263,7 +264,7 @@ const classes: FastifyPluginAsync = async (fastify): Promise<void> => {
     {
       config: {
         rateLimit: {
-          max: process.env.NODE_ENV === 'test' ? 10000 : 30,
+          max: limitMax(30),
           timeWindow: '1 minute',
         },
       },

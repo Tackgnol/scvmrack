@@ -36,7 +36,7 @@ const environment =
   process.env.NODE_ENV ||
   'development';
 
-if (process.env.NODE_ENV !== 'test' && dsn) {
+if (dsn) {
   Sentry.init({
     dsn,
     release,

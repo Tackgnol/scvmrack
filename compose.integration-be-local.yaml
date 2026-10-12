@@ -36,6 +36,8 @@ services:
       DATABASE_PORT: 5432
       PORT: 3000
       NODE_ENV: test
+      # Every test request comes from one address; lift the per-visitor caps.
+      RATE_LIMIT_SCALE: "1000"
       CLIENT_ORIGIN: http://localhost:5173
       CLIENT_GATEWAY: http://localhost:5173
       BETTER_AUTH_SECRET: integration-secret

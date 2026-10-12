@@ -2,6 +2,7 @@ import fp from 'fastify-plugin';
 import type { FastifyInstance } from 'fastify';
 import { prismaAdapter, rpgtoolsSharedAuth } from '@tackgnol/rpgtools-shared-auth';
 import prisma from '../lib/prisma.js';
+import { limitMax } from '../lib/rate-limits.js';
 
 const defaultTrustedOrigins = [
   'http://localhost:5173',
@@ -33,7 +34,7 @@ export default fp(async function rpgtoolsAuthPlugin(fastify: FastifyInstance) {
     // a real abuse cap.
     security: {
       rateLimit: {
-        max: process.env.NODE_ENV === 'test' ? 10000 : 300,
+        max: limitMax(300),
       },
     },
     obrExchange: { allowAnonymousIssue: true },

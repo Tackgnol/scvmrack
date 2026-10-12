@@ -31,6 +31,7 @@ import {
     type ImprovementRerollSection,
 } from '../../services/character-improvement-service.js';
 import { createCharacterService } from '../../services/character-service.js';
+import { limitMax } from '../../lib/rate-limits.js';
 
 type CharacterTypeProvider = JsonSchemaToTsProvider<{
     SerializerSchemaOptions: {
@@ -52,7 +53,7 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
         {
             config: {
                 rateLimit: {
-                    max: process.env.NODE_ENV === 'test' ? 10000 : 20,
+                    max: limitMax(20),
                     timeWindow: '1 minute',
                 },
             },
@@ -279,7 +280,7 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
         {
             config: {
                 rateLimit: {
-                    max: process.env.NODE_ENV === 'test' ? 10000 : 30,
+                    max: limitMax(30),
                     timeWindow: '1 minute',
                 },
             },
@@ -315,7 +316,7 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
         {
             config: {
                 rateLimit: {
-                    max: process.env.NODE_ENV === 'test' ? 10000 : 30,
+                    max: limitMax(30),
                     timeWindow: '1 minute',
                 },
             },
@@ -350,7 +351,7 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
         {
             config: {
                 rateLimit: {
-                    max: process.env.NODE_ENV === 'test' ? 10000 : 30,
+                    max: limitMax(30),
                     timeWindow: '1 minute',
                 },
             },
@@ -381,7 +382,7 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
         {
             config: {
                 rateLimit: {
-                    max: process.env.NODE_ENV === 'test' ? 10000 : 50,
+                    max: limitMax(50),
                     timeWindow: '1 minute',
                 },
             },

@@ -23,6 +23,7 @@ import { sendServiceError } from '../../errors.js';
 import { createPartyService } from '../../services/party-service.js';
 import type { PartyEvent } from '../../plugins/party-bus.js';
 import partyEnemies from './enemies.js';
+import { limitMax } from '../../lib/rate-limits.js';
 
 function encodeSse(event: PartyEvent): string {
   return `event: ${event.type}\ndata: ${JSON.stringify(event)}\n\n`;
@@ -97,7 +98,7 @@ const parties: FastifyPluginAsync = async (fastify): Promise<void> => {
     {
       config: {
         rateLimit: {
-          max: process.env.NODE_ENV === 'test' ? 10000 : 10,
+          max: limitMax(10),
           timeWindow: '1 minute',
         },
       },
@@ -219,7 +220,7 @@ const parties: FastifyPluginAsync = async (fastify): Promise<void> => {
     {
       config: {
         rateLimit: {
-          max: process.env.NODE_ENV === 'test' ? 10000 : 30,
+          max: limitMax(30),
           timeWindow: '1 minute',
         },
       },
@@ -259,7 +260,7 @@ const parties: FastifyPluginAsync = async (fastify): Promise<void> => {
     {
       config: {
         rateLimit: {
-          max: process.env.NODE_ENV === 'test' ? 10000 : 60,
+          max: limitMax(60),
           timeWindow: '1 minute',
         },
       },
@@ -480,7 +481,7 @@ const parties: FastifyPluginAsync = async (fastify): Promise<void> => {
     {
       config: {
         rateLimit: {
-          max: process.env.NODE_ENV === 'test' ? 10000 : 60,
+          max: limitMax(60),
           timeWindow: '1 minute',
         },
       },
@@ -522,7 +523,7 @@ const parties: FastifyPluginAsync = async (fastify): Promise<void> => {
     {
       config: {
         rateLimit: {
-          max: process.env.NODE_ENV === 'test' ? 10000 : 60,
+          max: limitMax(60),
           timeWindow: '1 minute',
         },
       },
@@ -562,7 +563,7 @@ const parties: FastifyPluginAsync = async (fastify): Promise<void> => {
     {
       config: {
         rateLimit: {
-          max: process.env.NODE_ENV === 'test' ? 10000 : 30,
+          max: limitMax(30),
           timeWindow: '1 minute',
         },
       },

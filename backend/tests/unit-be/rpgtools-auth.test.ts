@@ -162,9 +162,6 @@ test('rpgtools auth plugin marks auth and csrf responses as no-store', async () 
 test('rpgtools auth plugin sets the 300/min limit and keeps the shared-auth per-visitor key', async () => {
   registeredSharedAuthOptions = null;
 
-  const originalNodeEnv = process.env.NODE_ENV;
-  process.env.NODE_ENV = 'production';
-
   const app = Fastify({ logger: false });
   try {
     await app.register(rpgtoolsAuthPlugin);
@@ -175,11 +172,6 @@ test('rpgtools auth plugin sets the 300/min limit and keeps the shared-auth per-
     assert.equal(registeredSharedAuthOptions.security.rateLimit.keyGenerator, undefined);
     assert.equal(registeredSharedAuthOptions.security.rateLimit.max, 300);
   } finally {
-    if (originalNodeEnv === undefined) {
-      delete process.env.NODE_ENV;
-    } else {
-      process.env.NODE_ENV = originalNodeEnv;
-    }
     await app.close();
   }
 });

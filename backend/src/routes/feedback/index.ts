@@ -4,6 +4,7 @@ import { FeedbackBodySchema, FeedbackResponseSchema } from '../../schemas/feedba
 import { ErrorSchema } from '../../schemas/equipment.js';
 import { sendServiceError } from '../../errors.js';
 import { createFeedbackService } from '../../services/feedback-service.js';
+import { limitMax } from '../../lib/rate-limits.js';
 
 const feedback: FastifyPluginAsync = async (fastify) => {
   const app = fastify.withTypeProvider<JsonSchemaToTsProvider>();
@@ -14,7 +15,7 @@ const feedback: FastifyPluginAsync = async (fastify) => {
     {
       config: {
         rateLimit: {
-          max: process.env.NODE_ENV === 'test' ? 10000 : 20,
+          max: limitMax(20),
           timeWindow: '1 minute',
         },
       },

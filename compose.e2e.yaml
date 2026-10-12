@@ -54,6 +54,8 @@ services:
       DATABASE_URL: postgresql://p1002_scmgrinder:p1002_scmgrinder@db:5432/p1002_scmgrinder
       PORT: 3000
       NODE_ENV: test
+      # Every test request comes from one address; lift the per-visitor caps.
+      RATE_LIMIT_SCALE: "1000"
       CLIENT_ORIGIN: http://web:5173
       CLIENT_GATEWAY: http://web:5173
       BETTER_AUTH_SECRET: e2e-secret

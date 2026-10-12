@@ -13,6 +13,7 @@ import {
 import { ErrorSchema } from '../../schemas/party.js';
 import { sendServiceError } from '../../errors.js';
 import { createEnemyService } from '../../services/enemy-service.js';
+import { limitMax } from '../../lib/rate-limits.js';
 
 // OBR room enemy board. Room-trust by design: the unguessable OBR room id is
 // the capability (see enemy-service.ts). Registered by routes/parties/index.ts
@@ -59,7 +60,7 @@ const partyEnemies: FastifyPluginAsync = async (fastify): Promise<void> => {
     {
       config: {
         rateLimit: {
-          max: process.env.NODE_ENV === 'test' ? 10000 : 30,
+          max: limitMax(30),
           timeWindow: '1 minute',
         },
       },

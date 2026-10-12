@@ -171,7 +171,7 @@ The project includes scripts to reapply database schema:
 
 - `.env` - Development configuration (never commit to git)
 - Required backend: `DATABASE_URL`, `BETTER_AUTH_SECRET`, `AUTH_BASE_URL`, `APP_BASE_URL`, `CLIENT_ORIGIN`, `LOGTO_ENDPOINT`, `LOGTO_APP_ID`, `LOGTO_APP_SECRET`, `LOGTO_REDIRECT_URI`, `LOGTO_POST_LOGOUT_REDIRECT_URI`
-- Optional backend: `DATABASE_USER`, `DATABASE_HOST`, `DATABASE_NAME`, `DATABASE_PASSWORD`, `DATABASE_PORT`, `CLIENT_GATEWAY`, `LOGTO_RESOURCE`, `GLITCHTIP_DSN`, `PARTY_MAX_MEMBERS` (party member cap; default 10), `CUSTOM_CLASS_MAX_PER_GM` (class cap; default 50), `CUSTOM_CLASS_DAILY_PUBLISH_LIMIT` (new public-class cap; default 5), `MODERATION_ADMIN_USER_IDS` (comma-separated signed-in account IDs allowed to moderate), `SES_REGION`, `SES_ACCESS_KEY_ID`, `SES_SECRET_ACCESS_KEY` (all three required for moderation email delivery)
+- Optional backend: `RATE_LIMIT_SCALE` (multiplies every per-visitor rate limit; default 1, the e2e/integration stacks set 1000), `DATABASE_USER`, `DATABASE_HOST`, `DATABASE_NAME`, `DATABASE_PASSWORD`, `DATABASE_PORT`, `CLIENT_GATEWAY`, `LOGTO_RESOURCE`, `GLITCHTIP_DSN`, `PARTY_MAX_MEMBERS` (party member cap; default 10), `CUSTOM_CLASS_MAX_PER_GM` (class cap; default 50), `CUSTOM_CLASS_DAILY_PUBLISH_LIMIT` (new public-class cap; default 5), `MODERATION_ADMIN_USER_IDS` (comma-separated signed-in account IDs allowed to moderate), `SES_REGION`, `SES_ACCESS_KEY_ID`, `SES_SECRET_ACCESS_KEY` (all three required for moderation email delivery)
 - Required frontend build: `VITE_BACKEND_URL`, `VITE_LOGTO_ENDPOINT`
 - Optional frontend build: `VITE_SITE_URL`, `VITE_GLITCHTIP_DSN`, `VITE_ALLOWED_HOSTS`, `VITE_GA_MEASUREMENT_ID` (public GA4 ID; baked into the bundle at build time — GA stays dormant if unset)
 - Production uses separate GlitchTip DSNs: `GLITCHTIP_DSN` for backend and `VITE_GLITCHTIP_DSN` for frontend.
@@ -234,7 +234,7 @@ Traffic path in production: **Cloudflare (certed) -> Caddy on the host (127.0.0.
 - Reference implementation: scvmrack `backend/src/lib/client-ip.ts` (`clientIp`). It returns `CF-Connecting-IP` only if it is a valid IP (`net.isIP`) **and** the peer is in a private range (`net.BlockList`: 127/8, 10/8, 172.16/12, 192.168/16, ::1, fc00::/7, including IPv4-mapped IPv6), otherwise `request.ip`.
 - Wire it as the limiter's `keyGenerator`. In scvmrack it is passed through shared-auth as `security.rateLimit.keyGenerator`. `@fastify/rate-limit` merges route-level `config.rateLimit` over the global params, so route limits inherit the global `keyGenerator`; you do not repeat it per route.
 - Do not switch on Fastify `trustProxy` as the fix: with Caddy in the middle the `X-Forwarded-For` chain is Caddy's view (Cloudflare edge IP), and a wrong hop count lets clients spoof their IP.
-- Limits in use: shared-auth's default global limit is 100 req/min; scvmrack sets **300 req/min per visitor** globally (tests keep 10000 via `NODE_ENV=test`), with stricter per-route limits (20-50/min) on abuse-prone routes. With per-visitor keys, 300/min is still a real cap (5 req/s per person).
+- Limits in use: shared-auth's default global limit is 100 req/min; scvmrack sets **300 req/min per visitor** globally (test environments raise every cap with `RATE_LIMIT_SCALE`; source never checks for tests), with stricter per-route limits (20-50/min) on abuse-prone routes. With per-visitor keys, 300/min is still a real cap (5 req/s per person).
 - Clients must **not retry a 429**: it spends more of the limit that tripped it. Retry network errors and 5xx only.
 
 **Verify.**

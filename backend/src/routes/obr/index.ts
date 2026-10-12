@@ -4,6 +4,7 @@ import { sendServiceError } from '../../errors.js';
 import { CharacterSchema, ErrorSchema, LocaleQuerySchema } from '../../schemas/character.js';
 import { ObrPlayerParamsSchema } from '../../schemas/obr.js';
 import { createObrAssignmentService } from '../../services/obr-assignment-service.js';
+import { limitMax } from '../../lib/rate-limits.js';
 
 const obrRoutes: FastifyPluginAsync = async (fastify) => {
   const app = fastify.withTypeProvider<JsonSchemaToTsProvider>();
@@ -13,7 +14,7 @@ const obrRoutes: FastifyPluginAsync = async (fastify) => {
     {
       config: {
         rateLimit: {
-          max: process.env.NODE_ENV === 'test' ? 10000 : 30,
+          max: limitMax(30),
           timeWindow: '1 minute',
         },
       },

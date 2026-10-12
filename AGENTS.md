@@ -224,7 +224,7 @@ Traffic path in production: **Cloudflare (certed) -> Caddy on the host (127.0.0.
 - Reference implementation: scvmrack `backend/src/lib/client-ip.ts` (`clientIp`). It returns `CF-Connecting-IP` only if it is a valid IP (`net.isIP`) **and** the peer is in a private range (`net.BlockList`: 127/8, 10/8, 172.16/12, 192.168/16, ::1, fc00::/7, including IPv4-mapped IPv6), otherwise `request.ip`.
 - Wire it as the limiter's `keyGenerator`. In scvmrack it is passed through shared-auth as `security.rateLimit.keyGenerator`. `@fastify/rate-limit` merges route-level `config.rateLimit` over the global params, so route limits inherit the global `keyGenerator`; you do not repeat it per route.
 - Do not switch on Fastify `trustProxy` as the fix: with Caddy in the middle the `X-Forwarded-For` chain is Caddy's view (Cloudflare edge IP), and a wrong hop count lets clients spoof their IP.
-- Limits in use: shared-auth's default global limit is 100 req/min; scvmrack sets **300 req/min per visitor** globally (tests keep 10000 via `NODE_ENV=test`), with stricter per-route limits (20-50/min) on abuse-prone routes. With per-visitor keys, 300/min is still a real cap (5 req/s per person).
+- Limits in use: shared-auth's default global limit is 100 req/min; scvmrack sets **300 req/min per visitor** globally (test environments raise every cap with `RATE_LIMIT_SCALE`; source never checks for tests), with stricter per-route limits (20-50/min) on abuse-prone routes. With per-visitor keys, 300/min is still a real cap (5 req/s per person).
 - Clients must **not retry a 429**: it spends more of the limit that tripped it. Retry network errors and 5xx only.
 
 **Verify.**

@@ -1,5 +1,6 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { badRequest, sendApiError } from '../errors.js';
+import { limitMax } from '../lib/rate-limits.js';
 
 // 5 = scvmrack_fe, 6 = scvmrack_be, 7 = scvmrack_canary (GlitchTip project ids)
 const ALLOWED_PROJECTS = new Set(['5', '6', '7']);
@@ -24,7 +25,7 @@ const tunnel: FastifyPluginAsync = async (fastify): Promise<void> => {
     {
       config: {
         rateLimit: {
-          max: process.env.NODE_ENV === 'test' ? 10000 : 60,
+          max: limitMax(60),
           timeWindow: '1 minute',
         },
       },
