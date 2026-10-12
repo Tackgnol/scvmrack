@@ -1,5 +1,6 @@
 import { partyColors, partyFonts } from "@/theme/partyTokens";
 import { styled } from "@mui/material";
+import d20 from "@/assets/D20.svg";
 
 const { yellow, black, white } = partyColors;
 
@@ -27,4 +28,15 @@ export const SaveButton = styled("button")({
   "&.needs-fixes:hover:not(:disabled)": { background: partyColors.grey },
   "&:disabled": { background: "transparent", color: partyColors.mutedText, border: `2px dashed ${partyColors.darkGrey}`, boxShadow: "none", cursor: "default" },
   "&:focus-visible": { outline: `2px solid ${yellow}`, outlineOffset: 3 },
+});
+
+/** The house d20, masked so it takes the button's text colour (yellow, white on hover, grey when disabled). */
+export const DieIcon = styled("span")({
+  display: "inline-block",
+  width: 22,
+  height: 22,
+  flexShrink: 0,
+  backgroundColor: "currentColor",
+  mask: `url(${d20}) center / contain no-repeat`,
+  WebkitMask: `url(${d20}) center / contain no-repeat`,
 });

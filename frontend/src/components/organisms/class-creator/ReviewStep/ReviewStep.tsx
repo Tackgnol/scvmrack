@@ -1,5 +1,4 @@
 import { getUserFacingApiErrorMessage } from "@/utils/errorUtils";
-import CasinoIcon from "@mui/icons-material/Casino";
 import { useTranslation } from "react-i18next";
 import { ForgedStamp } from "../ForgedStamp/ForgedStamp";
 import { IssueList } from "../IssueList/IssueList";
@@ -12,7 +11,7 @@ import {
   Stack,
 } from "../classCreator.styles";
 import type { ReviewStepProps } from "./ReviewStep.models";
-import { Columns, SaveButton } from "./ReviewStep.styles";
+import { Columns, DieIcon, SaveButton } from "./ReviewStep.styles";
 
 /** Last step: roll a test scvm from the draft (keeping nothing), see what blocks saving, and save. */
 export function ReviewStep({
@@ -42,7 +41,7 @@ export function ReviewStep({
             disabled={testRoll.rolling}
             onClick={testRoll.roll}
           >
-            <CasinoIcon aria-hidden="true" />
+            <DieIcon aria-hidden="true" />
             {testRoll.scvm
               ? t("creator.review.rollAgain", "Roll again")
               : t("creator.review.roll", "Roll a test scvm")}
