@@ -26,11 +26,22 @@ export const Title = styled(Typography)(({ theme }) => ({
   fontFamily: partyFonts.headline,
   color: partyColors.black,
   fontSize: '2.7rem',
+  // repeats the base size: the theme's body1 phone rule would otherwise shrink this to 1rem
+  '@media (max-width:600px)': { fontSize: '2.7rem' },
   [theme.breakpoints.up('sm')]: { fontSize: '3.4rem' },
   letterSpacing: '0.04em',
   lineHeight: 0.95,
   margin: 0,
 })) as typeof Typography;
+
+export const Lede = styled(Typography)({
+  fontFamily: partyFonts.body,
+  color: partyColors.black,
+  fontSize: '1.05rem',
+  lineHeight: 1.5,
+  maxWidth: '65ch',
+  margin: 0,
+}) as typeof Typography;
 
 export const CenterRow = styled(Box)({
   display: 'flex',
@@ -102,4 +113,6 @@ export const CardAction = styled(Button)({
   paddingLeft: 16,
   paddingRight: 16,
   '&:hover': { backgroundColor: partyColors.yellow },
+  '&.secondary': { backgroundColor: 'transparent', color: partyColors.yellow },
+  '&.secondary:hover': { backgroundColor: partyColors.yellow, color: partyColors.black },
 }) as typeof Button;

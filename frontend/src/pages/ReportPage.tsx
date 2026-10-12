@@ -3,12 +3,16 @@ import {
   submitPublicReport,
   type ReportReason,
 } from "@/api/reports";
+import { Lede, Stamp, Title } from "@/pages/gmPages.styles";
 import { Seo } from "@/seo/Seo";
+import { partyColors } from "@/theme/partyTokens";
 import { getUserFacingApiErrorMessage } from "@/utils/errorUtils";
 import {
   Alert,
   Box,
   Button,
+  Checkbox,
+  FormControlLabel,
   MenuItem,
   Paper,
   Stack,
@@ -25,7 +29,7 @@ export function ReportPage() {
   const { t, i18n } = useTranslation();
   const search = useSearch({ strict: false }) as { classId?: string };
   const [classId, setClassId] = useState(search.classId ?? "");
-  const [reason, setReason] = useState<ReportReason>("copyright");
+  const [reason, setReason] = useState<ReportReason | "">("");
   const [explanation, setExplanation] = useState("");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -36,7 +40,7 @@ export function ReportPage() {
 
   const submit = () => {
     const id = Number(classId);
-    if (!Number.isInteger(id) || id < 1 || !goodFaith) return;
+    if (!Number.isInteger(id) || id < 1 || !goodFaith || !reason) return;
     report.mutate({
       classId: id,
       reason,
@@ -59,17 +63,16 @@ export function ReportPage() {
         path="/report"
       />
       <Stack spacing={3}>
-        <Box>
-          <Typography component="h1" variant="h3" sx={{ fontWeight: 800 }}>
-            {t("report.title", "Report a class")}
-          </Typography>
-          <Typography sx={{ mt: 1 }}>
+        <Stack spacing={1.5}>
+          <Stamp>{t("report.stamp", "Notice & action")}</Stamp>
+          <Title component="h1">{t("report.title", "Report a class")}</Title>
+          <Lede>
             {t(
               "report.intro",
               "Anyone can report public content. A person reviews every report and will explain the outcome.",
             )}
-          </Typography>
-        </Box>
+          </Lede>
+        </Stack>
         {report.isSuccess ? (
           <Alert severity="success">
             {t(
@@ -120,9 +123,19 @@ export function ReportPage() {
                 onChange={(event) =>
                   setReason(event.target.value as ReportReason)
                 }
+                required
+                SelectProps={{
+                  MenuProps: { slotProps: { paper: { sx: { maxWidth: "calc(100vw - 32px)" } } } },
+                }}
+                sx={{
+                  "& .MuiSelect-select.MuiSelect-select": {
+                    whiteSpace: "normal",
+                    overflowWrap: "anywhere",
+                  },
+                }}
               >
                 {REPORT_REASONS.map((value) => (
-                  <MenuItem key={value} value={value}>
+                  <MenuItem key={value} value={value} sx={{ whiteSpace: "normal" }}>
                     {t(`report.reasons.${value}`)}
                   </MenuItem>
                 ))}
@@ -149,22 +162,24 @@ export function ReportPage() {
                 onChange={(event) => setEmail(event.target.value)}
                 required={!anonymousAllowed}
               />
-              <label>
-                <input
-                  type="checkbox"
-                  checked={goodFaith}
-                  onChange={(event) => setGoodFaith(event.target.checked)}
-                />{" "}
-                {t(
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={goodFaith}
+                    onChange={(event) => setGoodFaith(event.target.checked)}
+                  />
+                }
+                label={t(
                   "report.goodFaith",
                   "I am submitting this report in good faith.",
                 )}
-              </label>
+              />
               <Button
                 variant="contained"
                 onClick={submit}
                 disabled={
                   report.isPending ||
+                  !reason ||
                   !explanation.trim() ||
                   !goodFaith ||
                   (!anonymousAllowed && (!name.trim() || !email.trim()))
@@ -174,7 +189,10 @@ export function ReportPage() {
                   ? t("report.sending", "Sending...")
                   : t("report.submit", "Submit report")}
               </Button>
-              <Typography variant="body2">
+              <Typography
+                variant="body2"
+                sx={{ "& a": { color: partyColors.yellow, textUnderlineOffset: 3 } }}
+              >
                 {t(
                   "report.appeal",
                   "You may challenge the outcome by emailing scvmrack-appeal@rpgtools.co.",

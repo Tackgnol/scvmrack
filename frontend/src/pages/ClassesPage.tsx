@@ -41,7 +41,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
-import { ClassDescription, ZineLine } from "./ClassesPage.styles";
+import { ClassDescription, TakenDownNotice, ZineLine } from "./ClassesPage.styles";
 
 function draftName(
   draft: { name: { en: string; pl: string } },
@@ -233,26 +233,23 @@ export function ClassesPage() {
                   <ClassDescription>{cls.description}</ClassDescription>
                 )}
                 {cls.takenDownAt && (
-                  <Alert severity="error" sx={{ mt: 1 }}>
+                  <TakenDownNotice>
+                    <strong>{t("classes.takenDown", "Taken down")}</strong>
                     {t(
                       "classes.moderationTakenDown",
                       "This class was taken down by moderation.",
                     )}
                     {cls.takedownReason && ` ${cls.takedownReason}`}
-                    <Button
-                      onClick={() => setDisputeTarget(cls.id)}
-                      size="small"
-                    >
-                      {t("classes.appeal", "Appeal this decision")}
-                    </Button>
-                  </Alert>
+                  </TakenDownNotice>
                 )}
                 <Meta>
                   {[
                     cls.languages
                       .map((l) => t(`classes.languages.${l}`))
                       .join(" + "),
-                    t(`classes.visibility.${cls.visibility}`),
+                    cls.takenDownAt
+                      ? t("classes.takenDown", "Taken down")
+                      : t(`classes.visibility.${cls.visibility}`),
                     t("classes.origins", "{{count}} origins", {
                       count: cls.originCount,
                     }),
@@ -275,16 +272,22 @@ export function ClassesPage() {
                 </Button>
               ) : (
                 <Box>
+                  {cls.takenDownAt && (
+                    <CardAction onClick={() => setDisputeTarget(cls.id)}>
+                      {t("classes.appeal", "Appeal this decision")}
+                    </CardAction>
+                  )}
                   <CardAction
                     component={Link}
                     to={`/gm/classes/${cls.id}`}
+                    className={cls.takenDownAt ? "secondary" : undefined}
                     aria-label={t("classes.editLabel", "Edit {{name}}", {
                       name: cls.name,
                     })}
                   >
                     {t("classes.edit", "Edit")}
                   </CardAction>
-                  {cls.visibility === "private" ? (
+                  {cls.takenDownAt ? null : cls.visibility === "private" ? (
                     <Button
                       color="inherit"
                       size="small"

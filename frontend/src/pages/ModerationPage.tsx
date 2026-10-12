@@ -5,6 +5,9 @@ import {
   restoreModerationReport,
   takeDownModerationReport,
 } from "@/api/moderation";
+import MorkBorgModal, { ModalButton } from "@/components/molecules/modal/MorkBorgModal";
+import { Lede, Stamp, Title } from "@/pages/gmPages.styles";
+import { AuthorityStamp } from "./ModerationPage.styles";
 import { Seo } from "@/seo/Seo";
 import { CreationBanPanel } from "@/components/organisms/CreationBanPanel/CreationBanPanel";
 import { ModerationRemovalHistory } from "@/components/organisms/ModerationRemovalHistory/ModerationRemovalHistory";
@@ -42,6 +45,13 @@ export function ModerationPage() {
     onSuccess: refresh,
   });
 
+  const [confirming, setConfirming] = useState<{
+    id: string;
+    action: "takeDown" | "removeContent";
+    className: string;
+    version: number;
+  } | null>(null);
+
   const act = (id: string, action: "dismiss" | "takeDown" | "removeContent" | "restore") => {
     const reason = reasons[id]?.trim();
     if (!reason) return;
@@ -52,12 +62,11 @@ export function ModerationPage() {
     <Box sx={{ maxWidth: 960, mx: "auto", py: { xs: 3, sm: 6 }, px: 2 }}>
       <Seo title="Moderation" description="Review public class reports." path="/admin/moderation" noIndex />
       <Stack spacing={2}>
-        <Box>
-          <Typography component="h1" variant="h3" sx={{ fontWeight: 800 }}>
-            {t("moderation.title", "Moderation")}
-          </Typography>
-          <Typography>{t("moderation.intro", "Open reports require a human decision.")}</Typography>
-        </Box>
+        <Stack spacing={1.5}>
+          <Stamp>{t("moderation.stamp", "Admin")}</Stamp>
+          <Title component="h1">{t("moderation.title", "Moderation")}</Title>
+          <Lede>{t("moderation.intro", "Open reports require a human decision.")}</Lede>
+        </Stack>
         <CreationBanPanel />
         {reports.error && (
           <Alert severity="error">
@@ -71,6 +80,9 @@ export function ModerationPage() {
         {reports.data?.map((group) => (
           <Paper key={group.lineageId} component="section" elevation={0} sx={{ p: 2, border: "2px solid", borderColor: "text.primary" }}>
             <Stack spacing={1.5}>
+              {group.reports.some((report) => report.serious) && (
+                <AuthorityStamp>{t("moderation.authority", "Needs authority report")}</AuthorityStamp>
+              )}
               <Box>
                 <Typography component="h2" variant="h5">{group.latest.name}</Typography>
                 {group.ownerUserId && <Typography variant="body2" sx={{ overflowWrap: "anywhere" }}>{t("moderation.gmUserId", "GM user ID")}: {group.ownerUserId}</Typography>}
@@ -95,9 +107,6 @@ export function ModerationPage() {
                 return (
                   <Box key={report.id} component="article" sx={{ borderTop: "1px solid", borderColor: "divider", pt: 1.5 }}>
                     <Stack spacing={1.5}>
-                      {report.serious && (
-                        <Alert severity="error">{t("moderation.authority", "Needs authority report")}</Alert>
-                      )}
                       <Typography component="h3" variant="h6">{report.className} · {t("moderation.version", { version: report.classVersion })}</Typography>
                       <Typography>{t(`report.reasons.${report.reason}`)}</Typography>
                       <Typography sx={{ whiteSpace: "pre-wrap" }}>{report.explanation}</Typography>
@@ -132,10 +141,10 @@ export function ModerationPage() {
                                 <Button disabled={pending || !reasons[report.id]?.trim()} onClick={() => act(report.id, "dismiss")}>
                                   {t("moderation.dismiss", "Dismiss")}
                                 </Button>
-                                <Button color="error" variant="contained" disabled={pending || !reasons[report.id]?.trim()} onClick={() => act(report.id, "takeDown")}>
+                                <Button color="error" variant="contained" disabled={pending || !reasons[report.id]?.trim()} onClick={() => setConfirming({ id: report.id, action: "takeDown", className: report.className, version: report.classVersion })}>
                                   {t("moderation.takeDown", "Take down")}
                                 </Button>
-                                <Button color="error" disabled={pending || !reasons[report.id]?.trim()} onClick={() => act(report.id, "removeContent")}>
+                                <Button color="error" disabled={pending || !reasons[report.id]?.trim()} onClick={() => setConfirming({ id: report.id, action: "removeContent", className: report.className, version: report.classVersion })}>
                                   {t("moderation.removeContent", "Remove content")}
                                 </Button>
                               </>
@@ -155,6 +164,42 @@ export function ModerationPage() {
           </Paper>
         ))}
       </Stack>
+      <MorkBorgModal
+        open={confirming !== null}
+        onClose={() => setConfirming(null)}
+        title={
+          confirming?.action === "removeContent"
+            ? t("moderation.confirmRemoveTitle", "Remove this content?")
+            : t("moderation.confirmTakeDownTitle", "Take this class down?")
+        }
+        maxWidth="xs"
+        actions={
+          <>
+            <ModalButton variant="secondary" onClick={() => setConfirming(null)}>
+              {t("actions.cancel", "Cancel")}
+            </ModalButton>
+            <ModalButton
+              variant="primary"
+              onClick={() => {
+                if (confirming) act(confirming.id, confirming.action);
+                setConfirming(null);
+              }}
+            >
+              {confirming?.action === "removeContent"
+                ? t("moderation.removeContent", "Remove content")
+                : t("moderation.takeDown", "Take down")}
+            </ModalButton>
+          </>
+        }
+      >
+        <Typography>
+          {t(
+            "moderation.confirmBody",
+            "“{{name}}” version {{version}} stops being visible right away, every version of it leaves party pools, and the GM gets your reason as the statement of reasons.",
+            { name: confirming?.className ?? "", version: confirming?.version ?? "" },
+          )}
+        </Typography>
+      </MorkBorgModal>
     </Box>
   );
 }

@@ -6,7 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { AnchorHTMLAttributes, ReactNode } from "react";
 import BrowserTestProvider from "../BrowserTestProvider";
 import { ModerationPage } from "@/pages/ModerationPage";
-import { banClassCreation, getCreationBan, listOpenModerationReports, unbanClassCreation } from "@/api/moderation";
+import { banClassCreation, getCreationBan, listOpenModerationReports, takeDownModerationReport, unbanClassCreation } from "@/api/moderation";
 
 type MockLinkProps = {
   children: ReactNode;
@@ -106,6 +106,47 @@ describe("ModerationPage", () => {
     await expect.element(page.getByText("Copied text")).toBeVisible();
     await expect.element(page.getByText(/Bog Witch.*Not restored/)).toBeVisible();
     await expect.element(page.getByText(/Bog Witch.*Restored/)).toBeVisible();
+  });
+
+  it("stamps serious reports and only takes a class down after confirming", async () => {
+    vi.mocked(listOpenModerationReports).mockResolvedValue([
+      {
+        lineageId: "lineage-1",
+        ownerUserId: "gm-1",
+        latest: { id: 12, lineageId: "lineage-1", name: "Bog Witch", version: 2 },
+        versions: [{ id: 12, lineageId: "lineage-1", name: "Bog Witch", version: 2 }],
+        removalHistory: null,
+        reports: [
+          {
+            id: "report-1",
+            classId: 12,
+            className: "Bog Witch",
+            lineageId: "lineage-1",
+            classVersion: 2,
+            reason: "threat_to_life_or_safety",
+            explanation: "A real threat.",
+            reporterName: "Witness",
+            reporterEmail: "w@example.com",
+            createdAt: "2026-10-08T12:00:00.000Z",
+            serious: true,
+            status: "open",
+            disputes: [],
+          },
+        ],
+      },
+    ]);
+    vi.mocked(takeDownModerationReport).mockResolvedValue(undefined as never);
+
+    await renderPage();
+    await expect.element(page.getByText("Needs authority report")).toBeVisible();
+    await userEvent.fill(page.getByRole("textbox", { name: "Decision reason" }), "Substantiated");
+    await userEvent.click(page.getByRole("button", { name: "Take down" }));
+
+    const dialog = page.getByRole("dialog");
+    await expect.element(dialog.getByText(/Bog Witch.*version 2/)).toBeVisible();
+    expect(takeDownModerationReport).not.toHaveBeenCalled();
+    await userEvent.click(dialog.getByRole("button", { name: "Take down" }));
+    await expect.poll(() => vi.mocked(takeDownModerationReport)).toHaveBeenCalledWith("report-1", "Substantiated");
   });
 
   it("lets an administrator look up a GM and record a creation ban", async () => {

@@ -43,7 +43,7 @@ export function CreationBanPanel() {
         <Typography component="h2" variant="h5">{t("moderation.creationBans", "Class creation bans")}</Typography>
         <Stack component="form" onSubmit={submitLookup} direction={{ xs: "column", sm: "row" }} spacing={1}>
           <TextField label={t("moderation.gmUserId", "GM user ID")} value={inputUserId} onChange={(event) => setInputUserId(event.target.value)} required fullWidth />
-          <Button type="submit" variant="contained">{t("moderation.lookUp", "Look up")}</Button>
+          <Button type="submit" variant="contained" sx={{ whiteSpace: "nowrap", flexShrink: 0 }}>{t("moderation.lookUp", "Look up")}</Button>
         </Stack>
         {lookup.isLoading && <Typography>{t("actions.loading", "Loading...")}</Typography>}
         {lookup.error && <Alert severity="error">{getUserFacingApiErrorMessage(lookup.error, t, "Could not load this GM.")}</Alert>}
