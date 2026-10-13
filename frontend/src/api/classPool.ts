@@ -1,45 +1,13 @@
-import { client } from "@/api";
+import { client, type ApiLocale, type ApiOk } from "@/api";
 import { unwrapApiResult, type UntypedApiClient } from "@/api/clientResult";
 
-export type PoolGroup = "book" | "zine" | "rack" | "mine" | "public";
-
-export type PoolAttribution =
-  | { kind: "credit"; work: string; author: string; url: string | null }
-  | { kind: "owner"; name: string | null; private: boolean };
-
-export type GettingBetterRule = "book" | "book_plus_ability" | "specialist";
-
-export type PoolClass = {
-  lineageId: string;
-  classId: number;
-  group: PoolGroup;
-  name: string;
-  blurb: string | null;
-  languages: string[];
-  attribution: PoolAttribution | null;
-  abilityCount: number;
-  randomAbilityCount: number;
-  classItemCount: number;
-  gettingBetterRule: GettingBetterRule;
-  version: number;
-  playingHere: number;
-  enabled: boolean;
-};
-
-export type RemovedPoolClass = {
-  lineageId: string;
-  name: string;
-  by: string | null;
-  reason: "archived" | "unpublished" | "taken_down";
-};
-
-export type ClassPoolView = {
-  classlessEnabled: boolean;
-  classes: PoolClass[];
-  removed: RemovedPoolClass[];
-};
-
-export type ClassPoolLocale = "en" | "pl";
+export type ClassPoolView = ApiOk<"/api/parties/{id}/class-pool">;
+export type PoolClass = ClassPoolView["classes"][number];
+export type RemovedPoolClass = ClassPoolView["removed"][number];
+export type PoolGroup = PoolClass["group"];
+export type PoolAttribution = NonNullable<PoolClass["attribution"]>;
+export type GettingBetterRule = PoolClass["gettingBetterRule"];
+export type ClassPoolLocale = ApiLocale;
 
 const poolClient = client as unknown as UntypedApiClient;
 

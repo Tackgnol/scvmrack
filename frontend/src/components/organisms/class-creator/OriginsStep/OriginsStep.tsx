@@ -53,18 +53,9 @@ export function OriginsStep({
     );
   };
 
-  const reorder = (
-    from: number,
-    to: number,
-    kind: "move" | "drag",
-    source: string,
-  ) => {
+  const reorder = (from: number, to: number) => {
     move(from, to);
-    update((d) => ({ ...d, origins: moveEntry(d.origins, from, to) }), {
-      kind,
-      source,
-      label: t("creator.reorder.reorderedOrigins", "Reordered origins"),
-    });
+    update((d) => ({ ...d, origins: moveEntry(d.origins, from, to) }));
   };
 
   return (
@@ -167,11 +158,6 @@ export function OriginsStep({
                       ...d.origins.slice(index + 1),
                     ],
                   }),
-                  {
-                    kind: "paste",
-                    path,
-                    label: t("creator.history.pastedOrigins", "Pasted origins"),
-                  },
                 );
               }}
               action={

@@ -1,7 +1,9 @@
 // Email wording mirrors the draft terms (§7–§9). Redress text must stay in step
 // with them: the DSA requires decisions and statements of reasons to name every route.
 
-export type MailLocale = 'en' | 'pl';
+import type { SupportedLocale } from '../config/locales.js';
+
+export type MailLocale = SupportedLocale;
 
 export type RenderedMail = { subject: string; text: string; html: string; replyTo?: string };
 

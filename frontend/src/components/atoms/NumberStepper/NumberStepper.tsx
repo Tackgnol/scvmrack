@@ -24,22 +24,17 @@ export function NumberStepper({
   const { t } = useTranslation();
   const [typed, setTyped] = useState<string | null>(null);
   const shown = signedValue ? signed(value) : String(value);
-  const set = (next: number, kind: "nudge" | "typing" = "typing") => {
+  const set = (next: number) => {
     const bounded = clamp(next, min, max);
-    if (bounded === value) {
-      return;
+    if (bounded !== value) {
+      onChange(bounded);
     }
-    document.body.dataset.creatorHistorySource = id;
-    document.body.dataset.creatorHistoryKind = kind;
-    onChange(bounded);
-    delete document.body.dataset.creatorHistorySource;
-    delete document.body.dataset.creatorHistoryKind;
   };
   const commit = () => {
     if (typed !== null) {
       const parsed = parseStepperText(typed);
       if (parsed !== null) {
-        set(parsed, "typing");
+        set(parsed);
       }
       setTyped(null);
     }
@@ -57,7 +52,7 @@ export function NumberStepper({
             label,
           })}
           disabled={value <= min}
-          onClick={() => set(value - 1, "nudge")}
+          onClick={() => set(value - 1)}
         >
           <RemoveIcon aria-hidden="true" />
         </StepButton>
@@ -81,7 +76,7 @@ export function NumberStepper({
             ) {
               event.preventDefault();
               setTyped(null);
-              set(value + (event.key === "ArrowUp" ? 1 : -1), "nudge");
+              set(value + (event.key === "ArrowUp" ? 1 : -1));
             } else if (event.key === "Enter") {
               commit();
             }
@@ -94,7 +89,7 @@ export function NumberStepper({
             label,
           })}
           disabled={value >= max}
-          onClick={() => set(value + 1, "nudge")}
+          onClick={() => set(value + 1)}
         >
           <AddIcon aria-hidden="true" />
         </StepButton>

@@ -1,9 +1,10 @@
+import { MAX_DB_INT } from './character.js';
 export const ModerationReportBodySchema = {
   type: 'object',
   additionalProperties: false,
   required: ['classId', 'reason', 'explanation', 'goodFaith'],
   properties: {
-    classId: { type: 'integer', minimum: 1, maximum: 2147483647 },
+    classId: { type: 'integer', minimum: 1, maximum: MAX_DB_INT },
     reason: {
       type: 'string',
       enum: [

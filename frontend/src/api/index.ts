@@ -8,6 +8,18 @@ import {
 import { embeddedSessionHeaders } from '@/utils/embed';
 import { authHeaders } from '@/utils/tabSession';
 import type { paths } from "./schema.ts";
+
+/** The JSON body a GET route answers 200 with. */
+export type ApiOk<P extends keyof paths> = paths[P] extends {
+    get: { responses: { 200: { content: { "application/json": infer T } } } };
+}
+    ? T
+    : never;
+
+/** A locale the API accepts. */
+export type ApiLocale = NonNullable<
+    NonNullable<paths["/api/characters/{id}"]["get"]["parameters"]["query"]>["locale"]
+>;
 // ============================================
 // Auth Query Keys
 // ============================================

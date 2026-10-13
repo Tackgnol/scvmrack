@@ -47,11 +47,18 @@ const repo = {
     updatedAt: Date;
   }>,
   newDraftCount: 0,
-  removeResult: { archived: false },
-  restoreResult: true,
-  publishAllowed: true,
-  visibilityChanges: [] as Array<{ id: number; visibility: 'private' | 'public' }>,
   detail: null as unknown,
+};
+
+/** The lineage state the fake transaction reads, and the writes it records. */
+const lineage = {
+  visibility: 'private' as 'private' | 'public',
+  firstPublishedAt: null as Date | null,
+  publishedToday: 0,
+  versionIds: [7] as number[],
+  played: new Set<number>(),
+  restorable: 1,
+  writes: [] as string[],
 };
 
 mock.module('../../src/repositories/custom-class-repository.js', {
@@ -68,13 +75,40 @@ mock.module('../../src/repositories/custom-class-repository.js', {
       update: async (id: number, draft: ClassDraft) => {
         repo.updated.push({ id, draft });
       },
-      createVersion: async (id: number, draft: ClassDraft) => {
-        repo.versioned.push({ id, draft });
-        if (repo.found) {
-          repo.found = { ...repo.found, id: 8, version: repo.found.version + 1, playingCount: 0, draft };
-        }
-        return 8;
-      },
+      transaction: async (work: (ops: unknown) => Promise<unknown>) =>
+        work({
+          lockOwner: async () => {},
+          findPublishState: async () => ({
+            lineageId: 'l',
+            visibility: lineage.visibility,
+            firstPublishedAt: lineage.firstPublishedAt,
+          }),
+          countFirstPublishedSince: async () => lineage.publishedToday,
+          setVisibility: async (_lineageId: string, visibility: string) => {
+            lineage.writes.push(`visibility:${visibility}`);
+          },
+          setStatus: async (_lineageId: string, status: string) => {
+            lineage.writes.push(`status:${status}`);
+            return lineage.restorable;
+          },
+          removeFromPools: async (_lineageId: string, keepOwnerUserId?: string) => {
+            lineage.writes.push(`pools-except:${keepOwnerUserId ?? 'none'}`);
+          },
+          versionIds: async () => lineage.versionIds,
+          playedVersionIds: async (ids: number[]) =>
+            new Set(ids.filter((id) => lineage.played.has(id))),
+          deleteVersions: async (ids: number[]) => {
+            lineage.writes.push(`delete:${ids.join(',')}`);
+          },
+          insertNextVersion: async (id: number, draft: ClassDraft) => {
+            repo.versioned.push({ id, draft });
+            if (repo.found) {
+              repo.found = { ...repo.found, id: 8, version: repo.found.version + 1, playingCount: 0, draft };
+            }
+            lineage.versionIds = [...lineage.versionIds, 8];
+            return 8;
+          },
+        }),
       findWithText: async (id: number) =>
         repo.detail ?? repo.found ?? {
           id,
@@ -90,15 +124,7 @@ mock.module('../../src/repositories/custom-class-repository.js', {
       findLatestWithText: async () => repo.detail,
       isVisibleToPartyMember: async () => false,
       listOwned: async () => [],
-      remove: async () => repo.removeResult,
-      restore: async () => repo.restoreResult,
-      publish: async (id: number) => {
-        repo.visibilityChanges.push({ id, visibility: 'public' });
-        return repo.publishAllowed;
-      },
-      setVisibility: async (id: number, visibility: 'private' | 'public') => {
-        repo.visibilityChanges.push({ id, visibility });
-      },
+      deleteDraftsUpdatedBefore: async () => {},
       listDrafts: async () => repo.drafts,
       getDraft: async (_owner: string, id: number) =>
         repo.drafts.find((draft) => draft.id === id) ?? null,
@@ -186,11 +212,16 @@ beforeEach(() => {
   repo.specs = [];
   repo.drafts = [];
   repo.newDraftCount = 0;
-  repo.removeResult = { archived: false };
-  repo.restoreResult = true;
-  repo.publishAllowed = true;
-  repo.visibilityChanges = [];
   repo.detail = null;
+  Object.assign(lineage, {
+    visibility: 'private',
+    firstPublishedAt: null,
+    publishedToday: 0,
+    versionIds: [7],
+    played: new Set<number>(),
+    restorable: 1,
+    writes: [],
+  });
 });
 
 test('a GM saves a complete class as their own', async () => {
@@ -346,6 +377,25 @@ test('saving a played current version forks it while an unplayed version changes
   assert.equal(repo.versioned.length, 1);
   assert.equal(repo.updated.length, 0);
 });
+test('forking keeps superseded versions a scvm plays and deletes the rest', async () => {
+  repo.found = {
+    id: 7,
+    lineageId: 'l',
+    ownerUserId: 'gm-1',
+    version: 3,
+    status: 'active',
+    takenDownAt: null,
+    isLatest: true,
+    playingCount: 1,
+    draft: ready(),
+  };
+  lineage.versionIds = [5, 6, 7];
+  lineage.played = new Set([5, 7]);
+
+  await service.update({ session: GM, id: 7, draft: ready() });
+
+  assert.deepEqual(lineage.writes, ['delete:6']);
+});
 test('saving a class drops leftover drafts linked to it', async () => {
   repo.found = {
     id: 7,
@@ -381,9 +431,10 @@ test('an owner can publish and unpublish only the latest active class', async ()
 
   assert.equal(published.ok && published.value.visibility, 'public');
   assert.equal(unpublished.ok && unpublished.value.visibility, 'private');
-  assert.deepEqual(repo.visibilityChanges, [
-    { id: 7, visibility: 'public' },
-    { id: 7, visibility: 'private' },
+  assert.deepEqual(lineage.writes, [
+    'visibility:public',
+    'visibility:private',
+    'pools-except:gm-1',
   ]);
 
   repo.found = {
@@ -405,7 +456,7 @@ test('an owner can publish and unpublish only the latest active class', async ()
   assert.equal(!stale.ok && stale.error.code, 'CLASS_NOT_LATEST');
 });
 test('a GM sees the daily publication limit', async () => {
-  repo.publishAllowed = false;
+  lineage.publishedToday = 5;
 
   const result = await service.setVisibility({
     session: GM,
@@ -418,6 +469,16 @@ test('a GM sees the daily publication limit', async () => {
     !result.ok ? result.error.message : '',
     /You've published 5 classes today\. Try again tomorrow\./
   );
+  assert.deepEqual(lineage.writes, []);
+});
+test('republishing a once-public class skips the daily limit', async () => {
+  lineage.publishedToday = 5;
+  lineage.firstPublishedAt = new Date('2026-01-01');
+
+  const result = await service.setVisibility({ session: GM, id: 7, visibility: 'public' });
+
+  assert.equal(result.ok, true);
+  assert.deepEqual(lineage.writes, ['visibility:public']);
 });
 test('removing a played class archives it and the owner can restore it', async () => {
   repo.found = {
@@ -431,13 +492,22 @@ test('removing a played class archives it and the owner can restore it', async (
     playingCount: 1,
     draft: ready(),
   };
-  repo.removeResult = { archived: true };
+  lineage.played = new Set([7]);
 
   const removed = await service.remove({ session: GM, id: 7 });
   const restored = await service.restore({ session: GM, id: 7 });
 
   assert.equal(removed.ok && removed.value.archived, true);
   assert.equal(restored.ok && restored.value.restored, true);
+  assert.deepEqual(lineage.writes, ['pools-except:none', 'status:archived', 'status:active']);
+});
+test('removing an unplayed class deletes every version', async () => {
+  lineage.versionIds = [6, 7];
+
+  const removed = await service.remove({ session: GM, id: 7 });
+
+  assert.equal(removed.ok && removed.value.archived, false);
+  assert.deepEqual(lineage.writes, ['pools-except:none', 'delete:6,7']);
 });
 test('a test roll rolls from the draft, keeps nothing, and ignores missing text', async () => {
   const result = await service.testRoll({

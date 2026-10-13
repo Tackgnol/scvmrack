@@ -25,8 +25,8 @@ export const LocaleQuerySchema = {
   },
 } as const;
 
-/** Upper bound of a class id (Postgres INTEGER); classes are no longer a fixed six. */
-export const MAX_CLASS_ID = 2147483647;
+/** Upper bound of a Postgres INTEGER id or counter. */
+export const MAX_DB_INT = 2147483647;
 
 /** Locale plus an optional party invite token: the party's Party Class Pool scopes the roll. */
 export const InviteLocaleQuerySchema = {
@@ -404,7 +404,7 @@ export const ErrorSchema = {
 export const GenerateBodySchema = {
   type: 'object',
   properties: {
-    classId: { type: 'integer', minimum: 1, maximum: MAX_CLASS_ID },
+    classId: { type: 'integer', minimum: 1, maximum: MAX_DB_INT },
     // Opt-in for guests: replace the single scvm an anonymous session already
     // owns. Without it, creating a second one is a 409 (see character-service).
     replace: { type: 'boolean' },
@@ -413,7 +413,7 @@ export const GenerateBodySchema = {
       additionalProperties: false,
       required: ['classId', 'classless', 'seeds'],
       properties: {
-        classId: { type: ['integer', 'null'], minimum: 1, maximum: MAX_CLASS_ID },
+        classId: { type: ['integer', 'null'], minimum: 1, maximum: MAX_DB_INT },
         classless: { type: 'boolean' },
         name: { type: 'string', maxLength: 255 },
         dropLowestAbilities: {

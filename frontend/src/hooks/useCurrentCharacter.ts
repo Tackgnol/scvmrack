@@ -1,4 +1,3 @@
-import { PathsApiCharactersNewPostParametersQueryLocale } from '@/api/schema.ts';
 import { useAuth } from '@/hooks/useAuth.ts';
 import { useCharacterActions } from '@/hooks/useCharacterActions.ts';
 import { useAutoCreateCharacter } from '@/hooks/useAutoCreateCharacter.ts';
@@ -62,7 +61,7 @@ export function useCurrentCharacter() {
     i18n: { changeLanguage, language: locale },
   } = useTranslation();
   const trimmedLocale =
-    getApiLocale<PathsApiCharactersNewPostParametersQueryLocale>(locale);
+    getApiLocale(locale);
   const { showError } = useSnackbar();
   const { showUnexpectedError } = useErrorFeedback();
   const queryClient = useQueryClient();

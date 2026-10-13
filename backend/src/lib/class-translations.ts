@@ -20,3 +20,37 @@ export async function findTranslationsWithAuthoredFallback(
   }
   return translations;
 }
+
+type ClassText = {
+  name: string;
+  nameKey: string | null;
+  descriptionKey: string | null;
+  languages: readonly string[];
+};
+
+/**
+ * Each class's name and description in the reader's locale, in one query for the whole list.
+ * A class written in one language falls back to its authored language, then the name to the
+ * stored `name`; a description with no translation is null.
+ */
+export async function translatedClassTexts(
+  locale: string,
+  classes: readonly ClassText[],
+): Promise<Array<{ name: string; description: string | null }>> {
+  const authoredFallback = (cls: ClassText) =>
+    cls.languages.length > 0 && !cls.languages.includes(locale) ? cls.languages[0] : null;
+  const keys = classes.flatMap((cls) =>
+    [cls.nameKey, cls.descriptionKey].filter((k): k is string => k !== null)
+  );
+  const locales = new Set([locale, ...classes.flatMap((cls) => authoredFallback(cls) ?? [])]);
+  const rows = await catalogRepository.findTranslationsMultiLocale(keys, [...locales]);
+  const text = new Map(rows.map((row) => [`${row.locale}:${row.key}`, row.value]));
+  return classes.map((cls) => {
+    const fallback = authoredFallback(cls);
+    const get = (key: string | null) =>
+      key === null
+        ? undefined
+        : text.get(`${locale}:${key}`) ?? (fallback ? text.get(`${fallback}:${key}`) : undefined);
+    return { name: get(cls.nameKey) ?? cls.name, description: get(cls.descriptionKey) ?? null };
+  });
+}

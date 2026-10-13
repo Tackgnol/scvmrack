@@ -1381,10 +1381,6 @@
       "abilitiesHint": "This is the order on the sheet, in print, and in the random pool.",
       "itemsHint": "This is the order Class Items appear wherever this class lists them.",
       "originsHint": "Order is the numbered origin list used when a scvm is created.",
-      "reorderedAbilities": "Reordered abilities",
-      "reorderedItems": "Reordered Class Items",
-      "reorderedOrigins": "Reordered origins",
-      "reorderedTableRows": "Reordered table rows",
       "shortcut": "Alt+↑/↓ moves the focused card or table row."
     },
     "identity": {

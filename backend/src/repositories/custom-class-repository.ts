@@ -1,6 +1,6 @@
 import type { Prisma } from '@prisma/client';
 import prisma from '../lib/prisma.js';
-import { findTranslationsWithAuthoredFallback } from '../lib/class-translations.js';
+import { translatedClassTexts } from '../lib/class-translations.js';
 import { stableKeys } from '../lib/stable-keys.js';
 import {
   itemFromRow,
@@ -9,14 +9,17 @@ import {
   stableItemKeys,
   type ItemRowRead,
 } from '../lib/class-items.js';
-import type {
-  AbilityModifierDraft,
-  ClassDraft,
-  ClassItemDraft,
-  ClassLanguage,
-  ClassStat,
-  Localized,
+import {
+  CLASS_LANGUAGES,
+  type AbilityModifierDraft,
+  type ClassDraft,
+  type ClassItemDraft,
+  type ClassLanguage,
+  type ClassStat,
+  type Localized,
+  type TableDie,
 } from '../lib/class-draft.js';
+import { CLASSLESS_DEFAULTS } from '../lib/generate-character.js';
 import { customClassKeyRoot, type ClassStatus, type ClassVisibility } from '../lib/class-model.js';
 
 type Tx = Prisma.TransactionClient;
@@ -70,6 +73,19 @@ const asStoredDraft = (row: {
   revision: row.revision,
   updatedAt: row.updatedAt,
 });
+/** The text stored under `key` in every class language; a missing translation is empty. */
+function localizedFrom(
+  rows: Array<{ key: string; locale: string; value: string }>,
+  key: string | null
+): Localized {
+  return Object.fromEntries(
+    CLASS_LANGUAGES.map((language) => [
+      language,
+      rows.find((row) => row.key === key && row.locale === language)?.value ?? '',
+    ])
+  ) as Localized;
+}
+
 const keysFor = (id: number) => ({
   name: `${customClassKeyRoot(id)}.name`,
   description: `${customClassKeyRoot(id)}.description`,
@@ -316,10 +332,7 @@ async function loadItems(
       where: { key: { in: keys.flatMap((k) => [k, `${k}.description`]) } },
     }),
   ]);
-  const text = (key: string): Localized => ({
-    en: texts.find((t) => t.key === key && t.locale === 'en')?.value ?? '',
-    pl: texts.find((t) => t.key === key && t.locale === 'pl')?.value ?? '',
-  });
+  const text = (key: string) => localizedFrom(texts, key);
   const rows: ItemRowRead[] = [...weapons, ...armors, ...equipment, ...pets];
   return rows
     .sort(
@@ -350,8 +363,112 @@ async function deleteVersion(tx: Tx, id: number): Promise<void> {
   await tx.ability.deleteMany({ where: { classId: id } });
   await tx.class.delete({ where: { id } });
 }
+/** Lineage reads and writes bound to one transaction, so a service can combine them atomically. */
+function lineageOps(tx: Tx) {
+  return {
+    /** Serializes this owner's publishes until the transaction ends. */
+    async lockOwner(ownerUserId: string): Promise<void> {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${ownerUserId}))`;
+    },
+
+    async findPublishState(id: number) {
+      return tx.class.findUniqueOrThrow({
+        where: { id },
+        select: { lineageId: true, visibility: true, firstPublishedAt: true },
+      });
+    },
+
+    /** How many of the owner's lineages were first published at or after `since`. */
+    async countFirstPublishedSince(ownerUserId: string, since: Date): Promise<number> {
+      const rows = await tx.class.groupBy({
+        by: ['lineageId'],
+        where: { ownerUserId, firstPublishedAt: { gte: since } },
+      });
+      return rows.length;
+    },
+
+    /** Sets the visibility of every version that is not taken down. */
+    async setVisibility(
+      lineageId: string,
+      visibility: ClassVisibility,
+      firstPublishedAt?: Date
+    ): Promise<void> {
+      await tx.class.updateMany({
+        where: { lineageId, takenDownAt: null },
+        data: { visibility, firstPublishedAt },
+      });
+    },
+
+    /** Sets the status of every version that is not taken down; returns how many changed. */
+    async setStatus(lineageId: string, status: ClassStatus): Promise<number> {
+      const updated = await tx.class.updateMany({
+        where: { lineageId, takenDownAt: null },
+        data: { status },
+      });
+      return updated.count;
+    },
+
+    /** Drops the lineage from party pools, except the pools of `keepOwnerUserId`'s parties. */
+    async removeFromPools(lineageId: string, keepOwnerUserId?: string): Promise<void> {
+      await tx.partyClassPool.deleteMany({
+        where: {
+          lineageId,
+          ...(keepOwnerUserId ? { party: { ownerUserId: { not: keepOwnerUserId } } } : {}),
+        },
+      });
+    },
+
+    async versionIds(lineageId: string): Promise<number[]> {
+      const rows = await tx.class.findMany({ where: { lineageId }, select: { id: true } });
+      return rows.map((row) => row.id);
+    },
+
+    /** The versions among `ids` that at least one scvm plays. */
+    async playedVersionIds(ids: number[]): Promise<Set<number>> {
+      const rows = await tx.character.groupBy({
+        by: ['classId'],
+        where: { classId: { in: ids } },
+      });
+      return new Set(rows.flatMap((row) => (row.classId === null ? [] : [row.classId])));
+    },
+
+    async deleteVersions(ids: number[]): Promise<void> {
+      for (const id of ids) {
+        await deleteVersion(tx, id);
+      }
+    },
+
+    /** Saves `draft` as the next version of `fromId`, keeping its lineage, owner and publication. */
+    async insertNextVersion(fromId: number, draft: ClassDraft): Promise<number> {
+      const current = await tx.class.findUniqueOrThrow({ where: { id: fromId } });
+      const { id } = await tx.class.create({
+        data: {
+          ...classColumns(draft),
+          source: current.source,
+          ownerUserId: current.ownerUserId,
+          visibility: current.visibility,
+          firstPublishedAt: current.firstPublishedAt,
+          status: 'active',
+          lineageId: current.lineageId,
+          version: current.version + 1,
+        },
+        select: { id: true },
+      });
+      await writeText(tx, id, draft);
+      return id;
+    },
+  };
+}
+
+export type LineageOps = ReturnType<typeof lineageOps>;
+
 /** Custom Class data access: the GM's own classes and the creator's saves. */
 export const customClassRepository = {
+  /** Runs `work` in one transaction with the lineage operations bound to it. */
+  transaction<T>(work: (ops: LineageOps) => Promise<T>): Promise<T> {
+    return prisma.$transaction((tx) => work(lineageOps(tx)));
+  },
+
   /** Custom Classes (lineages) the account holds, archived included. */
   async countOwnedLineages(ownerUserId: string): Promise<number> {
     const rows = await prisma.class.findMany({
@@ -362,14 +479,14 @@ export const customClassRepository = {
     return rows.length;
   },
 
-  /** The server copy of unfinished creator work, newest first; abandoned drafts expire after 90 days. */
-  async listDrafts(ownerUserId: string): Promise<StoredClassDraft[]> {
+  async deleteDraftsUpdatedBefore(ownerUserId: string, before: Date): Promise<void> {
     await prisma.classDraftRecord.deleteMany({
-      where: {
-        ownerUserId,
-        updatedAt: { lt: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000) },
-      },
+      where: { ownerUserId, updatedAt: { lt: before } },
     });
+  },
+
+  /** The server copy of unfinished creator work, newest first. */
+  async listDrafts(ownerUserId: string): Promise<StoredClassDraft[]> {
     const rows = await prisma.classDraftRecord.findMany({
       where: { ownerUserId },
       orderBy: { updatedAt: 'desc' },
@@ -468,154 +585,6 @@ export const customClassRepository = {
     });
   },
 
-  /** Publishes a lineage only while the owner's daily new-public-class quota remains. */
-  async publish(id: number, ownerUserId: string, dayStart: Date, limit: number): Promise<boolean> {
-    return prisma.$transaction(async (tx) => {
-      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${ownerUserId}))`;
-      const current = await tx.class.findUniqueOrThrow({
-        where: { id },
-        select: { lineageId: true, visibility: true, firstPublishedAt: true },
-      });
-      if (current.visibility === 'public') {
-        return true;
-      }
-      if (current.firstPublishedAt) {
-        await tx.class.updateMany({
-          where: { lineageId: current.lineageId, takenDownAt: null },
-          data: { visibility: 'public' },
-        });
-        return true;
-      }
-      const publishedToday = await tx.class.groupBy({
-        by: ['lineageId'],
-        where: { ownerUserId, firstPublishedAt: { gte: dayStart } },
-      });
-      if (publishedToday.length >= limit) {
-        return false;
-      }
-      await tx.class.updateMany({
-        where: { lineageId: current.lineageId, takenDownAt: null },
-        data: { visibility: 'public', firstPublishedAt: new Date() },
-      });
-      return true;
-    });
-  },
-
-  /** Changes the visibility of every available version in a Custom Class lineage. */
-  async setVisibility(
-    id: number,
-    visibility: ClassVisibility
-  ): Promise<void> {
-    await prisma.$transaction(async (tx) => {
-      const current = await tx.class.findUniqueOrThrow({
-        where: { id },
-        select: { lineageId: true, ownerUserId: true },
-      });
-      await tx.class.updateMany({
-        where: { lineageId: current.lineageId, takenDownAt: null },
-        data: { visibility },
-      });
-      if (visibility === 'private' && current.ownerUserId) {
-        await tx.partyClassPool.deleteMany({
-          where: {
-            lineageId: current.lineageId,
-            party: { ownerUserId: { not: current.ownerUserId } },
-          },
-        });
-      }
-    });
-  },
-  /** Forks the current version, then discards superseded versions that no scvm has used. */
-  async createVersion(id: number, draft: ClassDraft): Promise<number> {
-    return prisma.$transaction(async (tx) => {
-      const current = await tx.class.findUniqueOrThrow({ where: { id } });
-      const next = await tx.class.create({
-        data: {
-          ...classColumns(draft),
-          source: current.source,
-          ownerUserId: current.ownerUserId,
-          visibility: current.visibility,
-          firstPublishedAt: current.firstPublishedAt,
-          status: 'active',
-          lineageId: current.lineageId,
-          version: current.version + 1,
-        },
-        select: { id: true },
-      });
-      await writeText(tx, next.id, draft);
-      const older = await tx.class.findMany({
-        where: { lineageId: current.lineageId, id: { not: next.id } },
-        select: { id: true },
-      });
-      const played = await tx.character.groupBy({
-        by: ['classId'],
-        where: { classId: { in: older.map((row) => row.id) } },
-      });
-      const playedIds = new Set(played.map((row) => row.classId));
-      for (const row of older) {
-        if (!playedIds.has(row.id)) {
-          await deleteVersion(tx, row.id);
-        }
-      }
-      return next.id;
-    });
-  },
-
-  /** Deletes an unused lineage, or archives it when a scvm still needs one of its versions. */
-  async remove(id: number): Promise<{ archived: boolean }> {
-    return prisma.$transaction(async (tx) => {
-      const current = await tx.class.findUniqueOrThrow({
-        where: { id },
-        select: { lineageId: true },
-      });
-      const versions = await tx.class.findMany({
-        where: { lineageId: current.lineageId },
-        select: { id: true },
-      });
-      const played = await tx.character.count({
-        where: { classId: { in: versions.map((row) => row.id) } },
-      });
-      if (played > 0) {
-        await Promise.all([
-          tx.class.updateMany({
-            where: { lineageId: current.lineageId },
-            data: { status: 'archived' },
-          }),
-          tx.partyClassPool.deleteMany({
-            where: { lineageId: current.lineageId },
-          }),
-        ]);
-        return { archived: true };
-      }
-      await tx.partyClassPool.deleteMany({
-        where: { lineageId: current.lineageId },
-      });
-      for (const version of versions) {
-        await deleteVersion(tx, version.id);
-      }
-      return { archived: false };
-    });
-  },
-
-  /** Restores an owner-archived lineage unless it has since been taken down. */
-  async restore(id: number): Promise<boolean> {
-    const restored = await prisma.class.updateMany({
-      where: { id, takenDownAt: null },
-      data: { status: 'active' },
-    });
-    if (restored.count === 0) {
-      return false;
-    }
-    const current = await prisma.class.findUniqueOrThrow({
-      where: { id },
-      select: { lineageId: true },
-    });
-    await prisma.class.updateMany({
-      where: { lineageId: current.lineageId, takenDownAt: null },
-      data: { status: 'active' },
-    });
-    return true;
-  },
   async findWithText(id: number): Promise<CustomClassRows | null> {
     const cls = await prisma.class.findFirst({ where: { id, source: 'user' }, include: { owner: { select: { name: true } } } });
     if (!cls) {
@@ -672,15 +641,8 @@ export const customClassRepository = {
           value: m.value,
           exclude: Array.isArray(m.exclude) ? (m.exclude as string[]) : [],
         }));
-    const text = (key: string | null): Localized => ({
-      en:
-        translations.find((t) => t.key === key && t.locale === 'en')?.value ??
-        '',
-      pl:
-        translations.find((t) => t.key === key && t.locale === 'pl')?.value ??
-        '',
-    });
-    const silverDice = cls.silverDice.length > 0 ? cls.silverDice : [6];
+    const text = (key: string | null) => localizedFrom(translations, key);
+    const silverDice = cls.silverDice.length > 0 ? cls.silverDice : CLASSLESS_DEFAULTS.silverDice;
     return {
       id: cls.id,
       lineageId: cls.lineageId,
@@ -697,14 +659,14 @@ export const customClassRepository = {
         name: text(cls.nameKey),
         description: text(cls.descriptionKey),
         stats: cls.statDice as ClassDraft['stats'],
-        hpDie: cls.hpDie ?? 8,
+        hpDie: cls.hpDie ?? CLASSLESS_DEFAULTS.hpDie,
         omenDie: cls.omenDie,
-        weaponDie: cls.weaponDie ?? 10,
-        armorDie: cls.armorDie ?? 4,
+        weaponDie: cls.weaponDie ?? CLASSLESS_DEFAULTS.weaponDie,
+        armorDie: cls.armorDie ?? CLASSLESS_DEFAULTS.armorDie,
         silver: {
-          count: cls.silverDice.length || 1,
+          count: silverDice.length,
           faces: silverDice[0],
-          multiplier: cls.silverModifier ?? 10,
+          multiplier: cls.silverModifier ?? CLASSLESS_DEFAULTS.silverModifier,
         },
         origins: origins.map((o) => ({ ...text(o.key), key: o.key })),
         abilities: abilities.map((a) => ({
@@ -717,7 +679,7 @@ export const customClassRepository = {
           grantPet: a.grantPetKey,
           table: a.tableDie
             ? {
-            die: a.tableDie as 2 | 3 | 4 | 6 | 8 | 10 | 12,
+            die: a.tableDie as TableDie,
                 rows: a.tableRows.map((row) => ({
                   text: text(row.textKey),
                   itemRef: row.itemKey,
@@ -797,32 +759,22 @@ export const customClassRepository = {
     const countByClass = new Map(
       originCounts.map((r) => [r.classId, r._count._all])
     );
-    const summaries = await Promise.all(
-      rows.map(async (row) => {
-        const keys = [row.nameKey, row.descriptionKey].filter(
-          (k): k is string => k !== null
-        );
-        const text = await findTranslationsWithAuthoredFallback(
-          locale,
-          row.languages,
-          keys
-        );
-        return {
-          id: row.id,
-          lineageId: row.lineageId,
-          name: (row.nameKey ? text.get(row.nameKey) : undefined) ?? row.name,
-          description:
-            (row.descriptionKey ? text.get(row.descriptionKey) : undefined) ??
-            null,
-          languages: row.languages,
-          visibility: row.visibility,
-          status: row.status,
-          originCount: countByClass.get(row.id) ?? 0,
-          takenDownAt: row.takenDownAt?.toISOString() ?? null,
-          takedownReason: row.takedownReason,
-        };
-      })
-    );
+    const texts = await translatedClassTexts(locale, rows);
+    const summaries = rows.map((row, i) => {
+      const text = texts[i];
+      return {
+        id: row.id,
+        lineageId: row.lineageId,
+        name: text.name,
+        description: text.description,
+        languages: row.languages,
+        visibility: row.visibility,
+        status: row.status,
+        originCount: countByClass.get(row.id) ?? 0,
+        takenDownAt: row.takenDownAt?.toISOString() ?? null,
+        takedownReason: row.takedownReason,
+      };
+    });
     return summaries.sort((a, b) => b.id - a.id);
   },
 };

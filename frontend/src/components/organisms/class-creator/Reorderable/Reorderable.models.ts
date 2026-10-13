@@ -1,7 +1,5 @@
 import type { ReactNode } from "react";
 
-export type ReorderMethod = "move" | "drag";
-
 export type ReorderableProps = {
   children: ReactNode;
   count: number;
@@ -9,10 +7,5 @@ export type ReorderableProps = {
   itemId: string;
   label: string;
   listId: string;
-  onMove: (
-    from: number,
-    to: number,
-    method: ReorderMethod,
-    source: string,
-  ) => void;
+  onMove: (from: number, to: number) => void;
 };

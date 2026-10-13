@@ -73,11 +73,11 @@ export function Reorderable({
     pointerRef.current = null;
     clearPreview();
   };
-  const move = (to: number, method: "move" | "drag") => {
+  const move = (to: number) => {
     if (to === index || to < 0 || to >= count) {
       return;
     }
-    onMove(index, to, method, source);
+    onMove(index, to);
     requestAnimationFrame(() => gripRef.current?.focus());
   };
 
@@ -117,7 +117,7 @@ export function Reorderable({
           return;
         }
         event.preventDefault();
-        move(index + (event.key === "ArrowUp" ? -1 : 1), "move");
+        move(index + (event.key === "ArrowUp" ? -1 : 1));
       }}
       style={{
         display: "grid",
@@ -186,7 +186,7 @@ export function Reorderable({
             if (pointer.dragging) {
               event.preventDefault();
               suppressClickRef.current = true;
-              move(pointer.target, "drag");
+              move(pointer.target);
             }
             reset();
           }}
@@ -215,22 +215,22 @@ export function Reorderable({
       >
         <MenuItem
           disabled={index === 0}
-          onClick={() => move(index - 1, "move")}
+          onClick={() => move(index - 1)}
         >
           {t("creator.reorder.up", "Move up")}
         </MenuItem>
         <MenuItem
           disabled={index === count - 1}
-          onClick={() => move(index + 1, "move")}
+          onClick={() => move(index + 1)}
         >
           {t("creator.reorder.down", "Move down")}
         </MenuItem>
-        <MenuItem disabled={index === 0} onClick={() => move(0, "move")}>
+        <MenuItem disabled={index === 0} onClick={() => move(0)}>
           {t("creator.reorder.top", "To the top")}
         </MenuItem>
         <MenuItem
           disabled={index === count - 1}
-          onClick={() => move(count - 1, "move")}
+          onClick={() => move(count - 1)}
         >
           {t("creator.reorder.bottom", "To the bottom")}
         </MenuItem>

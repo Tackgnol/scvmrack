@@ -61,7 +61,7 @@ export function useGettingBetterPreview(input: {
   locale?: string;
 }) {
   const { characterId, locale } = input;
-  const apiLocale = getApiLocale<"en" | "pl">(locale);
+  const apiLocale = getApiLocale(locale);
   const queryClient = useQueryClient();
   const { showError, showSuccess } = useSnackbar();
   const { t } = useTranslation();

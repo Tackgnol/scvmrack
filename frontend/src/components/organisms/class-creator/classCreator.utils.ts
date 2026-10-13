@@ -1,6 +1,5 @@
 import type {
   AbilityDraft,
-  AbilityModifierDraft,
   ClassDraft,
   ClassItemDraft,
   ClassItemType,
@@ -9,8 +8,6 @@ import type {
   StatDice,
 } from "@/api/classes";
 import type { TFunction } from "i18next";
-import type { ScopeOption } from "@/components/modifiers/types";
-import { scopeOfExclude, scopeToExclude } from "@/components/modifiers/utils";
 import { signed } from "@/utils/signed";
 import { statToModifier } from "@/utils/stats";
 import type {
@@ -35,6 +32,8 @@ export const STEPS: CreatorStep[] = [
 ];
 
 export const MAX_MODIFIERS = 6;
+/** Dice a weapon, gear effect or hit points can roll. */
+export const DIE_FACES = [2, 4, 6, 8, 10, 12] as const;
 /** Turns a pasted zine list into clean rows, dropping common roll-table headers and numbering. */
 export function zineRows(value: string): string[] {
   const rows = value
@@ -314,19 +313,12 @@ export function abilityIndexOf(path: string): number | null {
   return match ? Number(match[1]) : null;
 }
 
-/** Which preset a modifier's exclusions match, as the sheet reads it. */
-export function modifierScope(modifier: AbilityModifierDraft): ScopeOption {
-  return scopeOfExclude(modifier.exclude);
-}
-
-export { scopeToExclude as scopeExclude };
-
 /** A new ability, fixed unless said otherwise, with no text yet. */
 export function blankAbility(random = false): AbilityDraft {
   return {
     random,
-    name: { en: "", pl: "" },
-    text: { en: "", pl: "" },
+    name: empty(),
+    text: empty(),
     modifiers: [],
     grantItem: null,
     grantPet: null,
@@ -381,8 +373,8 @@ export function blankClassItem(type: ClassItemType): ClassItemDraft {
   return {
     ref: `new:${crypto.randomUUID()}`,
     type,
-    name: { en: "", pl: "" },
-    description: { en: "", pl: "" },
+    name: empty(),
+    description: empty(),
     value: 0,
     weapon: {
       diceCount: 1,

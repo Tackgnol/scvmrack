@@ -11,8 +11,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 export type DraftSaveState = "idle" | "saving" | "saved" | "offline" | "conflict" | "banned";
 
-export type LocalDraftSnapshot = Pick<StoredClassDraft, "id" | "classId" | "draft" | "revision" | "updatedAt">;
-
 type UseDraftAutosaveInput = {
   classId: number | null;
   draft: ClassDraft;
@@ -22,36 +20,6 @@ type UseDraftAutosaveInput = {
 };
 
 const RETRY_MS = 5_000;
-
-function localDraftKey(classId: number | null) {
-  return `scvmrack:class-draft:${classId ?? "new"}`;
-}
-
-function saveLocalSnapshot(snapshot: LocalDraftSnapshot) {
-  try { localStorage.setItem(localDraftKey(snapshot.classId), JSON.stringify(snapshot)); } catch {
-    // Browser storage is only a safety net; server persistence remains authoritative.
-  }
-}
-
-
-export function readLocalDraftSnapshot(classId: number | null): LocalDraftSnapshot | null {
-  try {
-    const stored = localStorage.getItem(localDraftKey(classId));
-    if (!stored) {
-      return null;
-    }
-    const snapshot = JSON.parse(stored) as LocalDraftSnapshot;
-    return snapshot && typeof snapshot === "object" && snapshot.draft ? snapshot : null;
-  } catch {
-    return null;
-  }
-}
-
-function removeLocalSnapshot(classId: number | null) {
-  try { localStorage.removeItem(localDraftKey(classId)); } catch {
-    // A full or disabled local store must not stop the creator.
-  }
-}
 
 type PersistAttempt =
   | { saved: StoredClassDraft; error: null }
@@ -72,7 +40,7 @@ async function requestPersist(
     return { saved: null, error };
   }
 }
-/** Keeps a private server draft in sync after an idle second, with local storage as a safety net. */
+/** Keeps a private server draft in sync after an idle second, retrying while offline. */
 export function useDraftAutosave({ classId, draft, revision, initialDraft, replaceDraft }: UseDraftAutosaveInput) {
   const [record, setRecord] = useState<StoredClassDraft | null>(initialDraft);
   const [state, setState] = useState<DraftSaveState>(initialDraft ? "saved" : "idle");
@@ -129,7 +97,6 @@ export function useDraftAutosave({ classId, draft, revision, initialDraft, repla
       savedRevision.current = snapshot.revision;
       recordRef.current = result.saved;
       setRecord(result.saved);
-      saveLocalSnapshot(result.saved);
       setState("saved");
     } else if (getApiErrorCode(result.error) === "DRAFT_STALE") {
       conflict.current = true;
@@ -150,16 +117,9 @@ export function useDraftAutosave({ classId, draft, revision, initialDraft, repla
     if (revision === 0 || (completedRevision.current !== null && revision <= completedRevision.current)) {
       return;
     }
-    saveLocalSnapshot({
-      id: record?.id ?? 0,
-      classId,
-      draft,
-      revision: record?.revision ?? 0,
-      updatedAt: new Date().toISOString(),
-    });
     const timer = window.setTimeout(() => void persist(), 1_000);
     return () => window.clearTimeout(timer);
-  }, [classId, draft, persist, record?.id, record?.revision, revision]);
+  }, [draft, persist, revision]);
 
   useEffect(() => {
     if (state !== "offline") {
@@ -180,7 +140,6 @@ export function useDraftAutosave({ classId, draft, revision, initialDraft, repla
     const newer = await getClassDraft(recordRef.current.id);
     recordRef.current = newer;
     setRecord(newer);
-    saveLocalSnapshot(newer);
     replaceDraftRef.current(newer.draft);
     conflict.current = false;
     setState("saved");
@@ -203,7 +162,6 @@ export function useDraftAutosave({ classId, draft, revision, initialDraft, repla
         return toDelete ? deleteClassDraft(toDelete.id) : Promise.resolve();
       })
       .then(() => {
-        removeLocalSnapshot(classId);
         recordRef.current = null;
         setRecord(null);
         setState("idle");
@@ -219,18 +177,17 @@ export function useDraftAutosave({ classId, draft, revision, initialDraft, repla
         throw error;
       })
       .finally(() => { discarding.current = false; });
-  }, [classId]);
+  }, []);
 
   const complete = useCallback(async () => {
     completedRevision.current = latest.current.revision;
     if (recordRef.current) {
       await deleteClassDraft(recordRef.current.id);
     }
-    removeLocalSnapshot(classId);
     recordRef.current = null;
     setRecord(null);
     setState("idle");
-  }, [classId]);
+  }, []);
 
   return { state, record, persist, loadNewer, keepMine, discard, complete };
 }

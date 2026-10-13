@@ -114,19 +114,10 @@ export function ItemsStep({
     jump("abilities", `abilities.${abilityIndex}.text.${language}`);
   };
 
-  const reorder = (
-    from: number,
-    to: number,
-    kind: "move" | "drag",
-    source: string,
-  ) => {
+  const reorder = (from: number, to: number) => {
     move(from, to);
     onOpenItem(movedIndex(openItem, from, to));
-    update((d) => ({ ...d, items: moveEntry(d.items, from, to) }), {
-      kind,
-      source,
-      label: t("creator.reorder.reorderedItems", "Reordered Class Items"),
-    });
+    update((d) => ({ ...d, items: moveEntry(d.items, from, to) }));
   };
 
   if (draft.items.length === 0 && answer === "no") {

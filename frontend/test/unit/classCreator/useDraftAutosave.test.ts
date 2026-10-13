@@ -20,7 +20,6 @@ describe('useDraftAutosave after the class is saved', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     vi.clearAllMocks();
-    localStorage.clear();
     api.deleteClassDraft.mockResolvedValue(undefined);
   });
   afterEach(() => vi.useRealTimers());
@@ -71,7 +70,6 @@ describe('useDraftAutosave after the class is saved', () => {
     await expect(act(async () => result.current.discard())).rejects.toThrow('Offline');
 
     expect(result.current.record?.id).toBe(5);
-    expect(localStorage.getItem('scvmrack:class-draft:new')).not.toBeNull();
   });
 
   it('removes a save that finishes while discard is in flight', async () => {
@@ -90,7 +88,6 @@ describe('useDraftAutosave after the class is saved', () => {
     unmount();
 
     expect(api.deleteClassDraft).toHaveBeenCalledWith(5);
-    expect(localStorage.getItem('scvmrack:class-draft:new')).toBeNull();
   });
 
   it('keeps an in-flight saved draft available when deletion fails, then retries', async () => {
@@ -108,11 +105,9 @@ describe('useDraftAutosave after the class is saved', () => {
       await expect(discarded).rejects.toThrow('Offline');
     });
     expect(result.current.record?.id).toBe(5);
-    expect(localStorage.getItem('scvmrack:class-draft:new')).not.toBeNull();
 
     await act(async () => { await result.current.discard(); });
     expect(api.deleteClassDraft).toHaveBeenCalledTimes(2);
-    expect(localStorage.getItem('scvmrack:class-draft:new')).toBeNull();
   });
 
   it('autosaves a new edit after discard', async () => {
@@ -129,7 +124,7 @@ describe('useDraftAutosave after the class is saved', () => {
     expect(api.createClassDraft).toHaveBeenCalledTimes(1);
   });
 
-  it('does not restore a discarded draft from local storage or the unmount flush', async () => {
+  it('does not resave a discarded draft from the unmount flush', async () => {
     const record = { ...stored(5), classId: null };
     const { result, unmount } = renderHook(() =>
       useDraftAutosave({ classId: null, draft, revision: 2, initialDraft: record, replaceDraft: vi.fn() })
@@ -141,7 +136,6 @@ describe('useDraftAutosave after the class is saved', () => {
     await act(async () => { vi.advanceTimersByTime(10_000); });
 
     expect(api.deleteClassDraft).toHaveBeenCalledWith(5);
-    expect(localStorage.getItem('scvmrack:class-draft:new')).toBeNull();
     expect(api.createClassDraft).not.toHaveBeenCalled();
     expect(api.updateClassDraft).not.toHaveBeenCalled();
   });

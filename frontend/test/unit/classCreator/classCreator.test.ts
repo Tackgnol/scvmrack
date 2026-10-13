@@ -7,7 +7,6 @@ import {
   itemStamp,
   removeItem,
   abilityIndexOf,
-  scopeExclude,
   withSavedKeys,
   blankDraft,
   randomNumber,
@@ -193,7 +192,7 @@ describe("review fixes", () => {
   const tests = {
     statistic: "presence" as const,
     value: 2,
-    exclude: scopeExclude("tests"),
+    exclude: scopeToExclude("tests"),
   };
 
   it("flags the same modifier twice on one ability, at the second one", () => {

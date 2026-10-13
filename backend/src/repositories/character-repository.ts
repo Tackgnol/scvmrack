@@ -1,5 +1,5 @@
 import prisma from '../lib/prisma.js';
-import { findTranslationsWithAuthoredFallback } from '../lib/class-translations.js';
+import { translatedClassTexts } from '../lib/class-translations.js';
 import { Prisma } from '@prisma/client';
 import type { ClassVersionRef } from '../lib/class-model.js';
 
@@ -32,8 +32,6 @@ export type CharacterPartyAccessRow = {
     }>;
   } | null;
 };
-
-export type ScopeClassRow = ClassVersionRef;
 
 const scopeClassSelect = {
   id: true,
@@ -187,12 +185,12 @@ export const characterRepository = {
   },
 
   /** Every Book Class row, for the solo (no-party) class scope. */
-  findBookClassRows(): Promise<ScopeClassRow[]> {
+  findBookClassRows(): Promise<ClassVersionRef[]> {
     return prisma.class.findMany({ where: { source: 'main_book' }, select: scopeClassSelect });
   },
 
   /** Every version of the given class lineages, for a Party Class Pool. */
-  findClassRowsByLineage(lineageIds: string[]): Promise<ScopeClassRow[]> {
+  findClassRowsByLineage(lineageIds: string[]): Promise<ClassVersionRef[]> {
     if (lineageIds.length === 0) {
       return Promise.resolve([]);
     }
@@ -216,17 +214,8 @@ export const characterRepository = {
       orderBy: { id: 'asc' },
     });
 
-    return Promise.all(
-      classes.map(async (c) => {
-        const keys = [c.nameKey, c.descriptionKey].filter((k): k is string => k !== null);
-        const translations = await findTranslationsWithAuthoredFallback(locale, c.languages, keys);
-        return {
-          id: c.id,
-          name: (c.nameKey ? translations.get(c.nameKey) : undefined) ?? c.name,
-          description: c.descriptionKey ? (translations.get(c.descriptionKey) ?? null) : null,
-        };
-      })
-    );
+    const texts = await translatedClassTexts(locale, classes);
+    return classes.map((c, i) => ({ id: c.id, ...texts[i] }));
   },
 
   listSummariesByUser(userId: string): Promise<CharacterSummaryRow[]> {

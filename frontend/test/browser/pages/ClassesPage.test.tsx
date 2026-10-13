@@ -97,6 +97,8 @@ describe("ClassesPage", () => {
         visibility: "private",
         status: "active",
         originCount: 1,
+        takenDownAt: null,
+        takedownReason: null,
       },
       {
         id: 4,
@@ -107,6 +109,8 @@ describe("ClassesPage", () => {
         visibility: "private",
         status: "active",
         originCount: 3,
+        takenDownAt: null,
+        takedownReason: null,
       },
     ]);
     renderPage();
@@ -136,6 +140,8 @@ describe("ClassesPage", () => {
         visibility: "private",
         status: "active",
         originCount: 1,
+        takenDownAt: null,
+        takedownReason: null,
       },
     ]);
     vi.mocked(publishClass).mockResolvedValue({ visibility: "public" });
@@ -156,7 +162,7 @@ describe("ClassesPage", () => {
   });
   it("confirms draft discard and class removal with their different consequences", async () => {
     vi.mocked(listClassDrafts).mockResolvedValue([{ id: 3, classId: null, draft: { ...blankDraft(), name: { en: "Unfinished", pl: "" } }, revision: 1, updatedAt: "2026-10-12T00:00:00.000Z" }]);
-    vi.mocked(listMyClasses).mockResolvedValue([{ id: 9, lineageId: "b", name: "Bog Witch", description: null, languages: ["en"], visibility: "private", status: "active", originCount: 1 }]);
+    vi.mocked(listMyClasses).mockResolvedValue([{ id: 9, lineageId: "b", name: "Bog Witch", description: null, languages: ["en"], visibility: "private", status: "active", originCount: 1, takenDownAt: null, takedownReason: null }]);
     vi.mocked(deleteClassDraft).mockResolvedValue();
     vi.mocked(removeClass).mockResolvedValue({ archived: false });
     renderPage();

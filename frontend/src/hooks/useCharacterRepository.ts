@@ -1,5 +1,4 @@
 import { $api, characterKeys, client } from "@/api";
-import { PathsApiCharactersIdGetParametersQueryLocale } from "@/api/schema.ts";
 
 import { CharacterResponse } from "@/hooks/models.ts";
 import { getApiLocale, getCharacterKey } from "@/hooks/utils.ts";
@@ -12,7 +11,7 @@ export function useCharacterRepository(
     options: { enabled?: boolean } = {}
 ) {
     const queryClient = useQueryClient();
-    const trimmedLocale = getApiLocale<PathsApiCharactersIdGetParametersQueryLocale>(locale);
+    const trimmedLocale = getApiLocale(locale);
     const queryEnabled = options.enabled ?? true;
 
     // ---- Character Query ----

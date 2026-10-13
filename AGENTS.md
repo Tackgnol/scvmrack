@@ -1,31 +1,31 @@
 # AGENTS.md
 
-This file provides guidance to Codex when working with code in this repository.
+This file guides coding agents (Codex, Claude Code, and others) working in this repository. It is the single source of agent instructions; `CLAUDE.md` imports it and adds only Claude-specific notes.
 
 ## Project Overview
 
-MÖRK BORG Character Sheet is a full-stack TTRPG character management app with a neo-brutalist punk aesthetic.
-
-The repository is a two-app monorepo:
+MÖRK BORG Character Sheet is a full-stack TTRPG character management app with a neo-brutalist punk aesthetic. The repository is a two-app monorepo:
 
 | Directory | Role | Stack |
 |---|---|---|
-| `backend/` | REST API | Fastify 5, TypeScript, PostgreSQL, Prisma |
-| `frontend/` | SPA | React, Vite, TanStack Query/Router, MUI |
+| `backend/` | REST API | Fastify 5, TypeScript, PostgreSQL (custom functions, views, fuzzy search), Prisma, `@tackgnol/rpgtools-shared-auth` |
+| `frontend/` | SPA | React 18, Vite, TanStack Query/Router, MUI with a custom Mörk Borg theme |
 
-Authentication is handled by `@tackgnol/rpgtools-shared-auth` in `backend/src/plugins/rpgtools-auth.ts`.
+i18n: English (en) and Polish (pl).
 
 ## Common Commands
 
 ### Backend (`backend/`)
 
 ```bash
-npm run dev              # Start the Docker dev stack from backend/
+npm run dev              # Start the Docker dev stack (compose.dev.yaml) with watch
+npm run start            # Production build and start
 npm run build:ts         # Compile TypeScript
-npm test                 # Backend unit tests + frontend unit tests
+npm test                 # Fast unit loop: backend unit tests + frontend unit tests
 npm run test:integration # Backend integration suite in Docker
 npm run test:browser     # Frontend browser suite
-npm run test:all         # Broad pre-merge verification
+npm run test:e2e         # Whole user flow
+npm run test:all         # Reproduce CI before pushing to master
 ```
 
 ### Frontend (`frontend/`)
@@ -37,7 +37,8 @@ npm run test:unit    # JSDOM unit tests
 npm run test:browser # Browser component tests
 npm run lint         # ESLint
 npm run lint:fix     # Fix linting issues
-npm run format       # Format source files
+npm run format       # Format source files with Prettier
+npm run doctor       # React health check (react-doctor) — run after touching hooks/components
 ```
 
 ### Docker
@@ -49,6 +50,18 @@ docker compose -f compose.prod.yaml config
 ```
 
 Do not read `.npmrc`; it is gitignored and contains registry credentials.
+
+### Validation checklist (run before committing frontend changes)
+
+| Step | Command | When |
+|---|---|---|
+| TypeScript | `cd frontend && npx tsc --noEmit` | Always |
+| Lint | `cd frontend && npm run lint` | Always |
+| Unit tests | `cd backend && npm run test:unit` | Always |
+| Browser tests | `cd frontend && npm run test:browser` | When touching components/hooks |
+| React health | `cd frontend && npm run doctor` | When touching components/hooks |
+
+React Doctor baseline: see STD-009 under **Known deviations** below.
 
 ## Testing Standards
 
@@ -79,16 +92,23 @@ backend/
 │   ├── routes/          # Fastify route handlers, autoloaded under /api — THIN controllers only
 │   ├── services/        # Business logic; return a stable ServiceResult (see API Layering)
 │   ├── repositories/    # ALL Prisma / external data access lives here
-│   ├── plugins/         # Swagger and shared auth plugin
+│   ├── plugins/         # Fastify plugins (autoloaded); rpgtools-auth.ts = shared auth, CSRF, helmet, rate limiting
 │   ├── lib/             # Prisma client, character generation/reads, integration helpers
 │   ├── schemas/         # JSON schema validation
 │   └── types/           # TypeScript types
 ├── prisma/              # Prisma schema and migrations
-├── init/                # PostgreSQL extensions, schema, LIVE functions, views, seed data
-│                        # (superseded PL/pgSQL is parked in init/_archive/, not re-applied)
+├── init/                # Raw SQL, applied in order by migrate.js
+│   ├── 01-extensions/   # PostgreSQL extensions
+│   ├── 02-schema/       # Tables (characters, classes, equipment, etc.)
+│   ├── 03-functions/    # LIVE stored functions only (equipment search, inventory, dice utils)
+│   ├── 04-views/        # Database views
+│   ├── 05-seed/         # Game data (classes, items, translations)
+│   └── _archive/        # Superseded PL/pgSQL (generate/get_full/update_character) — NOT re-applied
 ├── scripts/             # DB/test/deploy helper scripts
 └── tests/               # Backend integration and unit projects
 ```
+
+`scripts/db-reapply.sh` (Unix) or `scripts/db-reapply.ps1` (Windows) reapply all init SQL files in order.
 
 ### Frontend Structure
 
@@ -100,15 +120,14 @@ frontend/src/
 ├── api/            # OpenAPI-generated client
 ├── pages/          # Route pages
 ├── router/         # TanStack Router config
-├── i18n/           # en/pl translations
+├── i18n/           # en/pl translations (en.json, pl.json)
 └── theme/          # MUI Mörk Borg theme
 ```
 
 ### Runtime Routing
 
 - Backend API routes live under `/api/*`.
-- Shared auth routes live under `/api/auth/*`.
-- Shared claim routes live under `/api/claim/*`.
+- Shared auth mounts Better Auth at `/api/auth/*`, CSRF at `/api/csrf-token`, and claim routes at `/api/claim/*`.
 - The backend keeps `/health` as a direct container health alias and `/api/health` for proxied checks.
 - The frontend is a static SPA served by nginx in production.
 - Caddy routes `/api/*` to the backend and everything else to the frontend.
@@ -117,11 +136,11 @@ frontend/src/
 
 ### API Layering (Repository → Service → Controller)
 
-All backend route groups (`characters`, `equipment`, `feedback`) follow one layering. **Keep new endpoints in this shape — never put Prisma calls or business logic in route files.**
+All backend route groups follow one layering. **Keep new endpoints in this shape — never put Prisma calls or business logic in route files.**
 
-- **Repository** (`src/repositories/*-repository.ts`) — the ONLY place that touches Prisma / external systems; no business logic.
+- **Repository** (`src/repositories/*-repository.ts`) — the ONLY place that touches Prisma / external systems. No business logic.
 - **Service** (`src/services/*-service.ts`) — all logic (ownership, validation, orchestration). Returns a stable `ServiceResult<T>` (`{ ok: true, value } | { ok: false, error: ApiHttpError }`) from `src/services/result.ts`; map unexpected errors with the shared `unexpected(log, ...)` helper.
-- **Controller** (`src/routes/**/index.ts`) — thin HTTP↔service translation using `sendServiceError(reply, request, error)`: domain failures (4xx) are sent to the client; server failures (5xx) are re-thrown to the central error handler (which reports to Sentry).
+- **Controller** (`src/routes/**/index.ts`) — thin HTTP↔service translation using `sendServiceError(reply, request, error)`: domain failures (4xx) are sent to the client; server failures (5xx) are re-thrown so the central error handler renders them and reports to Sentry.
 - Services accept a `ServiceLogger` (`request.log` satisfies it). Unit-test services with mocked repositories/lib; repository tests are intentionally skipped (they'd only exercise Prisma).
 
 ### Character Editing
@@ -129,58 +148,71 @@ All backend route groups (`characters`, `equipment`, `feedback`) follow one laye
 The frontend uses optimistic updates with debouncing:
 
 1. Changes are queued as patches in `useCharacterEditor`.
-2. UI updates immediately through TanStack Query cache writes.
-3. Changes flush after a short idle period; flushes are serialized (one PATCH in flight).
-4. The PATCH response (already hydrated) is written back into the cache and still-pending patches are re-applied on top; transient failures auto-retry, then surface a manual retry. The queue is flushed on unmount.
+2. UI updates immediately via `queryClient.setQueryData`.
+3. Changes flush after 1 second of inactivity; flushes are serialized (one PATCH in flight).
+4. The PATCH response (already hydrated) is written back into the cache and still-pending patches are re-applied on top; transient 5xx/network failures auto-retry, then surface a manual retry.
+5. The queue is flushed on unmount so a last edit isn't dropped.
 
-**Caution:** the cache is reconciled from the PATCH *response*. Do NOT re-add a per-PATCH `invalidateQueries`/refetch on the character detail query — it races the optimistic queue and silently drops edits.
+**Caution:** the cache is reconciled from the PATCH *response*. Do NOT re-add a per-PATCH `invalidateQueries`/refetch on the character detail query (in `useCharacterRepository` or the editor) — it races the optimistic queue and silently drops edits.
 
 ### Authentication Flow
 
-- `@tackgnol/rpgtools-shared-auth` owns Better Auth setup, Logto OAuth, CSRF, security headers, rate limiting, anonymous sessions, and claim routes.
-- Logto handles real-user sign-in/profile flows.
-- Anonymous Better Auth sessions are still used for first-run character ownership.
+- `@tackgnol/rpgtools-shared-auth` (wired in `backend/src/plugins/rpgtools-auth.ts`) owns Better Auth setup, Logto OAuth, CSRF, security headers, rate limiting, anonymous sessions, and claim routes.
+- Logto handles real-user sign-in/profile flows. Anonymous Better Auth sessions are still used for first-run character ownership.
 - `request.appSession` is the raw shared-auth session shape: `{ session, user } | null`.
 - No roles/RBAC. Authorization is ownership-based: `characters.user_id === request.appSession.user.id`.
 
 ### Character Ownership
 
-Characters are bound to users through `characters.user_id`.
+Characters are bound to users through `characters.user_id`. Ownership transfers by:
 
-- `onLinkAccount` in `backend/src/plugins/rpgtools-auth.ts` transfers anonymous characters when the same browser session links to Logto.
-- `/api/claim/issue` and `/api/claim/redeem` from shared-auth handle cross-device transfers.
+1. **`onLinkAccount`** in `rpgtools-auth.ts`, when the same browser session links an anonymous account to Logto.
+2. **Shared claim routes** (`/api/claim/issue`, `/api/claim/redeem`) for cross-device transfers.
 
-### Database
+### Character Generation & Reads (TypeScript, NOT SQL)
 
 - Character generation and full-character reads are **TypeScript** in `backend/src/lib/` (`generate-character.ts`, `get-character-full.ts`), driven by a seedable ChaCha20 roller (`@tackgnol/rpg-tools-roller`) — not Postgres `random()`. Generator parity with the old SQL is a non-goal.
 - Character updates go through Prisma directly (via the repository/service), not a stored procedure.
-- The legacy PL/pgSQL `generate_character` / `get_character_full` / `update_character` is **dead and archived** in `backend/init/_archive/`. Do not call, re-add, or "fix" it.
+- The legacy PL/pgSQL (`generate_character`, `get_character_full`, `update_character`) is **dead and archived** in `backend/init/_archive/`. Do not call, re-add, or "fix" it.
 - Still live in the DB: equipment fuzzy search (PostgreSQL trigram indexes), inventory helpers, and dice utils in `backend/init/03-functions/`.
 - Prisma owns auth/claim tables and models the character relation. Remaining game schema/seed data come from `backend/init/`.
 
 ## Security Architecture
 
-Pentested with Shannon AI on 2026-03-23. All findings were remediated or accepted.
+Pentested with Shannon AI (2026-03-23). All findings remediated or accepted.
+
+### Validated Security Controls
 
 | Control | Implementation | Status |
 |---|---|---|
 | Session cookies | `HttpOnly`, `Secure`, `SameSite=Lax`, `__Secure-` prefix | Verified |
-| HSTS | Shared-auth/Fastify helmet setup | Verified |
-| CSRF | HMAC double-submit cookie on state-changing routes outside `/api/auth/*` | Verified |
-| Password/auth UX | Managed by Logto + Better Auth through shared-auth | Verified |
-| SQL injection | Prisma parameterization and tagged `$queryRaw` calls | Verified |
-| Cache-control | No-store auth responses | Verified |
-| Rate limiting | Shared-auth route limits plus app API limits | Verified |
-| Claim flow | Shared-auth HMAC claim flow | Verified |
-| Swagger/OpenAPI | Disabled in production | Verified |
-| Dockerfile | Backend production image runs as `node`, not root | Verified |
+| HSTS | `max-age=31536000; includeSubDomains` via `@fastify/helmet` | Verified |
+| CSRF | HMAC double-submit cookie on all POST/PATCH/DELETE/PUT outside `/api/auth/*`; skipped for cookie-less `Authorization: Bearer` requests (RPG-288) | Verified |
+| Password/auth UX | Managed by Logto + Better Auth via shared-auth | Verified |
+| SQL injection | Prisma parameterization and `$queryRaw` tagged templates | Verified |
+| Cache-control | `no-store, no-cache, must-revalidate, private` on all auth responses | Verified |
+| Rate limiting | Per visitor: shared-auth's default `keyGenerator` (`clientIp`, exported by `@tackgnol/rpgtools-shared-auth` >= 1.7.2) uses Cloudflare's `CF-Connecting-IP`, trusted only when the peer is a private address (Caddy), and also feeds Better Auth's own sign-in limiter. Behind Caddy `request.ip` is the Docker gateway for everyone, so never key limits on it. 300 req/min global per visitor (`rpgtools-auth.ts`), 20–50 req/min on character/equipment routes | Verified |
+| Claim signatures | Shared-auth HMAC claim flow | Verified |
+| Swagger/OpenAPI | Disabled in production (`NODE_ENV=production`) | Verified |
+| Dockerfile | Runs as `node` user, not root | Verified |
+| OBR room access | Room-scoped reads are gated by the **(roomId, characterId) binding tables** (`ObrPlayerCharacterBinding`/`ObrTokenCharacterBinding`): `GET /api/obr/rooms/:roomId/cards` returns table-visible cards only for bound ids; binding writes require a session and owner-or-already-in-room. **Accepted room-trust residual (2026-07-01):** the unguessable OBR room id is a capability — anyone holding it can list bindings/bound cards, manage that room's enemy board (`/api/parties/by-room/:roomId/*`), read the room party roster via `POST /api/parties/promote`, and read that party's Party Class Pool (the Roll popover's class picker). Changing the pool still needs the owning GM; an unclaimed `system:obr-room` party rolls the read-only default pool. The party **invite token stays owner-only** (non-owners get a token-less view); a signed-in GM can claim a system-owned room party; party attach/detach is owner-only. | Accepted |
+| Custom Class content | Only the owning signed-in GM may create, edit, publish, or change visibility of a Custom Class; public classes are readable without a session. Takedown blocks saving and publishing and removes the lineage from party pools. The public report flow implements DSA notice-and-action handling: signed-out notices enter human review, serious categories are flagged, and authors receive a statement of reasons on takedown. Moderation decisions are appended to a log; resolved reports have reporter details anonymized after two years. Public reporting and moderation routes use per-visitor `clientIp` rate limits. | Implemented; SES delivery requires production configuration |
 
 ### Security Rules
 
-- Never commit secrets. `.env`, `.env.*`, and `.npmrc` are ignored.
+- **Never commit secrets.** `.env`, `.env.*`, and `.npmrc` are ignored.
 - Keep Logto credentials in env/secret storage, not source files or compose defaults.
 - Do not bypass shared-auth CSRF for app state-changing routes.
 - Do not reintroduce plaintext email storage, local password UI, magic-link UI, or Turnstile code in this app; those concerns moved out with the auth migration.
+
+## Environment Variables
+
+- Backend dev values live in `backend/.env`, based on `backend/.env.example`. Production deploy values can be documented locally in root `.env`, based on root `.env.example`. Never commit either.
+- Required backend: `DATABASE_URL`, `BETTER_AUTH_SECRET`, `AUTH_BASE_URL`, `APP_BASE_URL`, `CLIENT_ORIGIN`, `LOGTO_ENDPOINT`, `LOGTO_APP_ID`, `LOGTO_APP_SECRET`, `LOGTO_REDIRECT_URI`, `LOGTO_POST_LOGOUT_REDIRECT_URI`
+- Optional backend: `RATE_LIMIT_SCALE` (multiplies every per-visitor rate limit; default 1, the e2e/integration stacks set 1000), `DATABASE_USER`, `DATABASE_HOST`, `DATABASE_NAME`, `DATABASE_PASSWORD`, `DATABASE_PORT`, `CLIENT_GATEWAY`, `LOGTO_RESOURCE`, `GLITCHTIP_DSN`, `PARTY_MAX_MEMBERS` (party member cap; default 10), `CUSTOM_CLASS_MAX_PER_GM` (class cap; default 50), `CUSTOM_CLASS_DAILY_PUBLISH_LIMIT` (new public-class cap; default 5), `MODERATION_ADMIN_USER_IDS` (comma-separated signed-in account IDs allowed to moderate), `SES_REGION`, `SES_ACCESS_KEY_ID`, `SES_SECRET_ACCESS_KEY` (all three required for moderation email delivery)
+- Required frontend build: `VITE_BACKEND_URL`, `VITE_LOGTO_ENDPOINT`
+- Optional frontend build: `VITE_SITE_URL`, `VITE_GLITCHTIP_DSN`, `VITE_ALLOWED_HOSTS`, `VITE_GA_MEASUREMENT_ID` (public GA4 ID; baked into the bundle at build time — GA stays dormant if unset)
+- Production uses separate GlitchTip DSNs: `GLITCHTIP_DSN` for backend and `VITE_GLITCHTIP_DSN` for frontend.
 
 ## Release Notes
 
@@ -197,12 +229,13 @@ When cutting a release (any version bump), update **all** of these in the same c
 3. Add a card to `ReleasePage.tsx` with `release.v<xyz>.*` keys, and add those keys to **both** `frontend/src/i18n/en.json` and `pl.json` (keep en/pl in sync).
 4. Tag the release commit `v<version>`.
 
-## Environment
+For a significant Terms or Privacy change, add a dated entry to `frontend/src/legal/legalNotices.ts` with an effective date at least 14 days later, and update the matching legal copy date. For Terms changes, preview the public-class GM audience with `node --import tsx scripts/send-terms-notice.ts` from `backend/`; after checking SES and the count, send once with `--send`. A partial SES failure can duplicate earlier messages on retry, so review the send log before retrying. No notice is active for the initial 0.7.0 copy.
 
-- Backend dev values live in `backend/.env`, based on `backend/.env.example`.
-- Production deploy values can be documented locally in root `.env`, based on root `.env.example`.
-- Required auth env: `BETTER_AUTH_SECRET`, `AUTH_BASE_URL`, `APP_BASE_URL`, `CLIENT_ORIGIN`, `LOGTO_ENDPOINT`, `LOGTO_APP_ID`, `LOGTO_APP_SECRET`, `LOGTO_REDIRECT_URI`, `LOGTO_POST_LOGOUT_REDIRECT_URI`.
-- Frontend build env: `VITE_BACKEND_URL`, `VITE_LOGTO_ENDPOINT`, optional `VITE_SITE_URL`, optional `VITE_GLITCHTIP_DSN`.
+## Project Workflow
+
+- **Issue tracker:** Linear (rpgtoolsco workspace, team `RPG`, `RPG-<n>`), not GitHub Issues. See `docs/agents/issue-tracker.md`.
+- **Triage labels:** default five-role vocabulary (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`). See `docs/agents/triage-labels.md`.
+- **Domain docs:** single-context: one root `CONTEXT.md` + `docs/adr/`, created lazily. See `docs/agents/domain.md`.
 
 ## Universal RPG-Tools Standard
 

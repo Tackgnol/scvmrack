@@ -1,141 +1,33 @@
-import { client } from "@/api";
+import { client, type ApiOk as Ok } from "@/api";
 import { unwrapApiResult, type UntypedApiClient } from "@/api/clientResult";
-import type { GettingBetterRule } from "@/api/classPool";
 import type { CharacterResponse } from "@/hooks/models";
-import type { AbilityStat } from "@/utils/stats";
 
-export type ClassLanguage = "en" | "pl";
-export type Localized = Record<ClassLanguage, string>;
+export type SavedClass = Ok<"/api/classes/{id}">;
+export type ClassDetail = Ok<"/api/classes/details/{id}">;
+export type StoredClassDraft = Ok<"/api/classes/drafts/{draftId}">;
+export type OwnClassSummary = Ok<"/api/classes/mine">[number];
+
+/** A Custom Class as the creator edits it; the same shape is saved and test-rolled. */
+export type ClassDraft = SavedClass["draft"];
+export type ClassLanguage = ClassDraft["languages"][number];
+export type Localized = ClassDraft["name"];
 /** An origin text; a saved one carries its key, which the creator passes back untouched. */
-export type OriginText = Localized & { key?: string };
-export type ClassStat = AbilityStat;
-export type StatDice = {
-  count: number;
-  faces: number;
-  modifier: number;
-  dropLowest: boolean;
-};
-
-/** A stat modifier an ability carries; `exclude` names the rolls it doesn't apply to, as the sheet stores it. */
-export type AbilityModifierDraft = {
-  statistic: ClassStat;
-  value: number;
-  exclude: string[];
-};
-
-export type AbilityTableRowDraft = {
-  text: Localized;
-  itemRef: string | null;
-};
-
-export type AbilityTableDraft = {
-  die: 2 | 3 | 4 | 6 | 8 | 10 | 12;
-  rows: AbilityTableRowDraft[];
-};
-
+export type OriginText = ClassDraft["origins"][number];
+export type ClassStat = keyof ClassDraft["stats"];
+export type StatDice = ClassDraft["stats"][ClassStat];
 /** An ability as the creator edits it; a saved one carries its key, which the creator passes back untouched. */
-export type AbilityDraft = {
-  key?: string;
-  random: boolean;
-  name: Localized;
-  text: Localized;
-  modifiers: AbilityModifierDraft[];
-  /** The Class Item (not a pet) it grants, by the item's `ref`. */
-  grantItem: string | null;
-  /** The pet Class Item it grants, by the item's `ref`. */
-  grantPet: string | null;
-  table: AbilityTableDraft | null;
-};
-
-export const CLASS_ITEM_TYPES = ["weapon", "armor", "gear", "pet"] as const;
-export type ClassItemType = (typeof CLASS_ITEM_TYPES)[number];
-
+export type AbilityDraft = ClassDraft["abilities"][number];
+/** A stat modifier an ability carries; `exclude` names the rolls it doesn't apply to, as the sheet stores it. */
+export type AbilityModifierDraft = AbilityDraft["modifiers"][number];
+export type AbilityTableDraft = NonNullable<AbilityDraft["table"]>;
+export type AbilityTableRowDraft = AbilityTableDraft["rows"][number];
 /**
  * A Class Item as the creator edits it. `ref` is its saved key, or a `new:` id
  * until saved. Every type's fields are kept, so changing type loses nothing.
  */
-export type ClassItemDraft = {
-  ref: string;
-  type: ClassItemType;
-  name: Localized;
-  description: Localized;
-  value: number;
-  weapon: {
-    diceCount: number;
-    diceFaces: number;
-    damageModifier: number;
-    reach: "melee" | "ranged";
-    ammo: "none" | "counted" | "endless";
-    ammoCount: number;
-    ammoName: string;
-    modifiers: AbilityModifierDraft[];
-  };
-  armor: { tier: number; modifiers: AbilityModifierDraft[] };
-  gear: {
-    kind: "consumable" | "wearable" | "carried";
-    uses: number;
-    effect: "text" | "damage" | "die";
-    effectDie: number;
-    statuses: AbilityModifierDraft[];
-  };
-  pet: {
-    hp: number;
-    actionDie: number;
-    action: "attack" | "buff";
-    humanoid: boolean;
-    buffs: AbilityModifierDraft[];
-  };
-};
-
-/** A Custom Class as the creator edits it; the same shape is saved and test-rolled. */
-export type ClassDraft = {
-  languages: ClassLanguage[];
-  name: Localized;
-  description: Localized;
-  stats: Record<ClassStat, StatDice>;
-  hpDie: number;
-  omenDie: number;
-  weaponDie: number;
-  armorDie: number;
-  silver: { count: number; faces: number; multiplier: number };
-  origins: OriginText[];
-  abilities: AbilityDraft[];
-  randomAbilityCount: number;
-  items: ClassItemDraft[];
-  gettingBetterRule: GettingBetterRule;
-  gettingBetterNote: Localized;
-};
-
-export type SavedClass = {
-  id: number;
-  draft: ClassDraft;
-  version: number;
-  playingCount: number;
-  status: "draft" | "active" | "archived";
-};
-
-export type ClassDetail = SavedClass & { attribution: string; reportable: boolean };
-
-export type StoredClassDraft = {
-  id: number;
-  classId: number | null;
-  draft: ClassDraft;
-  revision: number;
-  updatedAt: string;
-};
-
-export type OwnClassSummary = {
-  id: number;
-  lineageId: string;
-  name: string;
-  description: string | null;
-  languages: string[];
-  visibility: "private" | "public";
-  status: "draft" | "active" | "archived";
-  originCount: number;
-  takenDownAt?: string | null;
-  takedownReason?: string | null;
-};
+export type ClassItemDraft = ClassDraft["items"][number];
+export type ClassItemType = ClassItemDraft["type"];
+export const CLASS_ITEM_TYPES = ["weapon", "armor", "gear", "pet"] as const satisfies readonly ClassItemType[];
 
 const classClient = client as unknown as UntypedApiClient;
 

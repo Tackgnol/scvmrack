@@ -23,7 +23,6 @@ import {
 import { useObrSession } from "@/obr/useObrSession";
 import { getApiLocale, getCharacterKey } from "@/hooks/utils";
 import { getApiErrorCode } from "@/utils/errorUtils";
-import { PathsApiCharactersGetParametersQueryLocale } from "@/api/schema";
 import { Button } from "@mui/material";
 import OBR from "@owlbear-rodeo/sdk";
 import { useQueryClient } from "@tanstack/react-query";
@@ -78,7 +77,7 @@ function ObrPlayerCharacterRoute() {
   const { isLoading, isAuthenticated, signIn, issueObrExchangeToken } =
     useObrSession();
   const queryClient = useQueryClient();
-  const locale = getApiLocale<PathsApiCharactersGetParametersQueryLocale>(
+  const locale = getApiLocale(
     i18n.language,
   );
   const characterId = character?.id ?? null;

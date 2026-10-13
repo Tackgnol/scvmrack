@@ -1,5 +1,4 @@
 import { $api } from '@/api';
-import { PathsApiCharactersIdGetParametersQueryLocale } from '@/api/schema.ts';
 import { getApiLocale } from '@/hooks/utils.ts';
 import type { Character } from '@/hooks/models';
 import {
@@ -22,7 +21,7 @@ export function useWarbandMember(
   refetch: () => void;
 } {
   const { i18n } = useTranslation();
-  const locale = getApiLocale<PathsApiCharactersIdGetParametersQueryLocale>(
+  const locale = getApiLocale(
     i18n.language
   );
 

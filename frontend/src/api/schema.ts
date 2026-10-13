@@ -37,6 +37,202 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/obr/rooms/{roomId}/cards": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    roomId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/obr/rooms/{roomId}/bindings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    roomId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/obr/rooms/{roomId}/players/{playerId}/character": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    roomId: string;
+                    playerId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        characterId: string;
+                        connectionId?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    roomId: string;
+                    playerId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/obr/rooms/{roomId}/tokens/{tokenId}/character": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    roomId: string;
+                    tokenId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        characterId: string;
+                        playerId?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    roomId: string;
+                    tokenId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/health": {
         parameters: {
             query?: never;
@@ -220,6 +416,288 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/admin/creation-bans/{userId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    userId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    userId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        reason: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    userId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        reason: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/reports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/reports/{id}/dismiss": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        reason: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/reports/{id}/take-down": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        reason: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/reports/{id}/remove-content": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        reason: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/reports/{id}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        reason: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/characters/new": {
         parameters: {
             query?: never;
@@ -229,11 +707,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** @description Generate a new random character */
+        /** @description Generate a new random character, or forge one into a party through its invite */
         post: {
             parameters: {
                 query?: {
-                    locale?: PathsApiCharactersNewPostParametersQueryLocale;
+                    locale?: "en" | "pl";
+                    invite?: string;
+                    obrRoom?: string;
+                    obrPlayer?: string;
                 };
                 header?: never;
                 path?: never;
@@ -248,7 +729,7 @@ export interface paths {
                             classId: number | null;
                             classless: boolean;
                             name?: string;
-                            dropLowestAbilities?: PathsApiCharactersNewPostRequestBodyContentApplicationJsonDraftDropLowestAbilities[];
+                            dropLowestAbilities?: ("strength" | "agility" | "presence" | "toughness")[];
                             seeds: {
                                 name: string;
                                 stats: string;
@@ -277,6 +758,11 @@ export interface paths {
                             classId?: null | number;
                             className?: null | string;
                             classDescription?: null | string;
+                            classAttribution?: null | string;
+                            /** @enum {null|string} */
+                            classAuthoredLanguage?: "en" | "pl" | null;
+                            classContentRemoved?: boolean;
+                            classReportable?: boolean;
                             origin?: null | string;
                             strength?: number;
                             agility?: number;
@@ -299,6 +785,15 @@ export interface paths {
                                 name?: string;
                                 description?: string;
                                 comment?: string;
+                                table?: {
+                                    die: number;
+                                    rows: {
+                                        roll: number;
+                                        text: string;
+                                        itemKey: null | string;
+                                        itemName: null | string;
+                                    }[];
+                                };
                             }[];
                             equipment?: {
                                 key?: string;
@@ -317,10 +812,10 @@ export interface paths {
                                 ammoType?: string;
                                 useCountRule?: {
                                     /** @enum {string} */
-                                    mode?: PathsApiCharactersNewPostResponses201ContentApplicationJsonEquipmentUseCountRuleMode;
+                                    mode?: "fixed" | "fixedPlusModifier";
                                     base?: number;
                                     /** @enum {string} */
-                                    statistic?: PathsApiCharactersNewPostResponses201ContentApplicationJsonEquipmentUseCountRuleStatistic;
+                                    statistic?: "agility" | "strength" | "presence" | "toughness";
                                 };
                                 modifiers?: {
                                     id?: string;
@@ -328,10 +823,10 @@ export interface paths {
                                     value?: number;
                                     source?: string;
                                     /** @enum {string} */
-                                    statistic?: PathsApiCharactersNewPostResponses201ContentApplicationJsonEquipmentModifiersStatistic;
+                                    statistic?: "agility" | "strength" | "presence" | "toughness";
                                     exclude?: string[];
                                     /** @enum {string} */
-                                    scope?: PathsApiCharactersNewPostResponses201ContentApplicationJsonEquipmentModifiersScope;
+                                    scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
                                     comment?: string;
                                 }[];
                             }[];
@@ -352,10 +847,10 @@ export interface paths {
                                 ammoType?: string;
                                 useCountRule?: {
                                     /** @enum {string} */
-                                    mode?: PathsApiCharactersNewPostResponses201ContentApplicationJsonStorageUseCountRuleMode;
+                                    mode?: "fixed" | "fixedPlusModifier";
                                     base?: number;
                                     /** @enum {string} */
-                                    statistic?: PathsApiCharactersNewPostResponses201ContentApplicationJsonStorageUseCountRuleStatistic;
+                                    statistic?: "agility" | "strength" | "presence" | "toughness";
                                 };
                                 modifiers?: {
                                     id?: string;
@@ -363,10 +858,10 @@ export interface paths {
                                     value?: number;
                                     source?: string;
                                     /** @enum {string} */
-                                    statistic?: PathsApiCharactersNewPostResponses201ContentApplicationJsonStorageModifiersStatistic;
+                                    statistic?: "agility" | "strength" | "presence" | "toughness";
                                     exclude?: string[];
                                     /** @enum {string} */
-                                    scope?: PathsApiCharactersNewPostResponses201ContentApplicationJsonStorageModifiersScope;
+                                    scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
                                     comment?: string;
                                 }[];
                             }[];
@@ -387,10 +882,10 @@ export interface paths {
                                     value?: number;
                                     source?: string;
                                     /** @enum {string} */
-                                    statistic?: PathsApiCharactersNewPostResponses201ContentApplicationJsonEquippedWeaponsModifiersStatistic;
+                                    statistic?: "agility" | "strength" | "presence" | "toughness";
                                     exclude?: string[];
                                     /** @enum {string} */
-                                    scope?: PathsApiCharactersNewPostResponses201ContentApplicationJsonEquippedWeaponsModifiersScope;
+                                    scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
                                     comment?: string;
                                 }[];
                             }[];
@@ -412,10 +907,10 @@ export interface paths {
                                     value?: number;
                                     source?: string;
                                     /** @enum {string} */
-                                    statistic?: PathsApiCharactersNewPostResponses201ContentApplicationJsonEquippedArmorOneOf0ModifiersStatistic;
+                                    statistic?: "agility" | "strength" | "presence" | "toughness";
                                     exclude?: string[];
                                     /** @enum {string} */
-                                    scope?: PathsApiCharactersNewPostResponses201ContentApplicationJsonEquippedArmorOneOf0ModifiersScope;
+                                    scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
                                     comment?: string;
                                 }[];
                             } | null;
@@ -425,20 +920,20 @@ export interface paths {
                                 value?: number;
                                 source?: string;
                                 /** @enum {string} */
-                                statistic?: PathsApiCharactersNewPostResponses201ContentApplicationJsonModifiersStatistic;
+                                statistic?: "agility" | "strength" | "presence" | "toughness";
                                 exclude?: string[];
                                 /** @enum {string} */
-                                scope?: PathsApiCharactersNewPostResponses201ContentApplicationJsonModifiersScope;
+                                scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
                                 comment?: string;
                             }[];
                             computedModifiers?: {
                                 value?: number;
                                 source?: string;
                                 /** @enum {string} */
-                                statistic?: PathsApiCharactersNewPostResponses201ContentApplicationJsonComputedModifiersStatistic;
+                                statistic?: "agility" | "strength" | "presence" | "toughness";
                                 exclude?: string[];
                                 /** @enum {string} */
-                                origin?: PathsApiCharactersNewPostResponses201ContentApplicationJsonComputedModifiersOrigin;
+                                origin?: "armor" | "weapon" | "pet" | "system";
                                 originKey?: string;
                                 originName?: string;
                             }[];
@@ -452,7 +947,7 @@ export interface paths {
                             /** Format: date-time */
                             joinedAt?: null | string;
                             /** @enum {string} */
-                            viewerAccess?: PathsApiCharactersNewPostResponses201ContentApplicationJsonViewerAccess;
+                            viewerAccess?: "owner" | "party";
                             /** Format: date-time */
                             createdAt?: string;
                             /** Format: date-time */
@@ -501,7 +996,47 @@ export interface paths {
                     };
                 };
                 /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
                 409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                410: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -581,7 +1116,10 @@ export interface paths {
         post: {
             parameters: {
                 query?: {
-                    locale?: PathsApiCharactersDraftPostParametersQueryLocale;
+                    locale?: "en" | "pl";
+                    invite?: string;
+                    obrRoom?: string;
+                    obrPlayer?: string;
                 };
                 header?: never;
                 path?: never;
@@ -593,7 +1131,7 @@ export interface paths {
                         classId?: number | null;
                         classless?: boolean;
                         name?: string;
-                        dropLowestAbilities?: PathsApiCharactersDraftPostRequestBodyContentApplicationJsonDropLowestAbilities[];
+                        dropLowestAbilities?: ("strength" | "agility" | "presence" | "toughness")[];
                         seeds?: {
                             name: string;
                             stats: string;
@@ -619,7 +1157,7 @@ export interface paths {
                                 classId: null | number;
                                 classless: boolean;
                                 name?: string;
-                                dropLowestAbilities?: PathsApiCharactersDraftPostResponses200ContentApplicationJsonDraftDropLowestAbilities[];
+                                dropLowestAbilities?: ("strength" | "agility" | "presence" | "toughness")[];
                                 seeds: {
                                     name: string;
                                     stats: string;
@@ -638,6 +1176,11 @@ export interface paths {
                                 classId?: null | number;
                                 className?: null | string;
                                 classDescription?: null | string;
+                                classAttribution?: null | string;
+                                /** @enum {null|string} */
+                                classAuthoredLanguage?: "en" | "pl" | null;
+                                classContentRemoved?: boolean;
+                                classReportable?: boolean;
                                 origin?: null | string;
                                 strength?: number;
                                 agility?: number;
@@ -660,6 +1203,15 @@ export interface paths {
                                     name?: string;
                                     description?: string;
                                     comment?: string;
+                                    table?: {
+                                        die: number;
+                                        rows: {
+                                            roll: number;
+                                            text: string;
+                                            itemKey: null | string;
+                                            itemName: null | string;
+                                        }[];
+                                    };
                                 }[];
                                 equipment?: {
                                     key?: string;
@@ -678,10 +1230,10 @@ export interface paths {
                                     ammoType?: string;
                                     useCountRule?: {
                                         /** @enum {string} */
-                                        mode?: PathsApiCharactersDraftPostResponses200ContentApplicationJsonPreviewEquipmentUseCountRuleMode;
+                                        mode?: "fixed" | "fixedPlusModifier";
                                         base?: number;
                                         /** @enum {string} */
-                                        statistic?: PathsApiCharactersDraftPostResponses200ContentApplicationJsonPreviewEquipmentUseCountRuleStatistic;
+                                        statistic?: "agility" | "strength" | "presence" | "toughness";
                                     };
                                     modifiers?: {
                                         id?: string;
@@ -689,10 +1241,10 @@ export interface paths {
                                         value?: number;
                                         source?: string;
                                         /** @enum {string} */
-                                        statistic?: PathsApiCharactersDraftPostResponses200ContentApplicationJsonPreviewEquipmentModifiersStatistic;
+                                        statistic?: "agility" | "strength" | "presence" | "toughness";
                                         exclude?: string[];
                                         /** @enum {string} */
-                                        scope?: PathsApiCharactersDraftPostResponses200ContentApplicationJsonPreviewEquipmentModifiersScope;
+                                        scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
                                         comment?: string;
                                     }[];
                                 }[];
@@ -713,10 +1265,10 @@ export interface paths {
                                     ammoType?: string;
                                     useCountRule?: {
                                         /** @enum {string} */
-                                        mode?: PathsApiCharactersDraftPostResponses200ContentApplicationJsonPreviewStorageUseCountRuleMode;
+                                        mode?: "fixed" | "fixedPlusModifier";
                                         base?: number;
                                         /** @enum {string} */
-                                        statistic?: PathsApiCharactersDraftPostResponses200ContentApplicationJsonPreviewStorageUseCountRuleStatistic;
+                                        statistic?: "agility" | "strength" | "presence" | "toughness";
                                     };
                                     modifiers?: {
                                         id?: string;
@@ -724,10 +1276,10 @@ export interface paths {
                                         value?: number;
                                         source?: string;
                                         /** @enum {string} */
-                                        statistic?: PathsApiCharactersDraftPostResponses200ContentApplicationJsonPreviewStorageModifiersStatistic;
+                                        statistic?: "agility" | "strength" | "presence" | "toughness";
                                         exclude?: string[];
                                         /** @enum {string} */
-                                        scope?: PathsApiCharactersDraftPostResponses200ContentApplicationJsonPreviewStorageModifiersScope;
+                                        scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
                                         comment?: string;
                                     }[];
                                 }[];
@@ -748,10 +1300,10 @@ export interface paths {
                                         value?: number;
                                         source?: string;
                                         /** @enum {string} */
-                                        statistic?: PathsApiCharactersDraftPostResponses200ContentApplicationJsonPreviewEquippedWeaponsModifiersStatistic;
+                                        statistic?: "agility" | "strength" | "presence" | "toughness";
                                         exclude?: string[];
                                         /** @enum {string} */
-                                        scope?: PathsApiCharactersDraftPostResponses200ContentApplicationJsonPreviewEquippedWeaponsModifiersScope;
+                                        scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
                                         comment?: string;
                                     }[];
                                 }[];
@@ -773,10 +1325,10 @@ export interface paths {
                                         value?: number;
                                         source?: string;
                                         /** @enum {string} */
-                                        statistic?: PathsApiCharactersDraftPostResponses200ContentApplicationJsonPreviewEquippedArmorOneOf0ModifiersStatistic;
+                                        statistic?: "agility" | "strength" | "presence" | "toughness";
                                         exclude?: string[];
                                         /** @enum {string} */
-                                        scope?: PathsApiCharactersDraftPostResponses200ContentApplicationJsonPreviewEquippedArmorOneOf0ModifiersScope;
+                                        scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
                                         comment?: string;
                                     }[];
                                 } | null;
@@ -786,20 +1338,20 @@ export interface paths {
                                     value?: number;
                                     source?: string;
                                     /** @enum {string} */
-                                    statistic?: PathsApiCharactersDraftPostResponses200ContentApplicationJsonPreviewModifiersStatistic;
+                                    statistic?: "agility" | "strength" | "presence" | "toughness";
                                     exclude?: string[];
                                     /** @enum {string} */
-                                    scope?: PathsApiCharactersDraftPostResponses200ContentApplicationJsonPreviewModifiersScope;
+                                    scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
                                     comment?: string;
                                 }[];
                                 computedModifiers?: {
                                     value?: number;
                                     source?: string;
                                     /** @enum {string} */
-                                    statistic?: PathsApiCharactersDraftPostResponses200ContentApplicationJsonPreviewComputedModifiersStatistic;
+                                    statistic?: "agility" | "strength" | "presence" | "toughness";
                                     exclude?: string[];
                                     /** @enum {string} */
-                                    origin?: PathsApiCharactersDraftPostResponses200ContentApplicationJsonPreviewComputedModifiersOrigin;
+                                    origin?: "armor" | "weapon" | "pet" | "system";
                                     originKey?: string;
                                     originName?: string;
                                 }[];
@@ -813,7 +1365,7 @@ export interface paths {
                                 /** Format: date-time */
                                 joinedAt?: null | string;
                                 /** @enum {string} */
-                                viewerAccess?: PathsApiCharactersDraftPostResponses200ContentApplicationJsonPreviewViewerAccess;
+                                viewerAccess?: "owner" | "party";
                                 /** Format: date-time */
                                 createdAt?: string;
                                 /** Format: date-time */
@@ -821,7 +1373,7 @@ export interface paths {
                             };
                             classlessStatOptions?: {
                                 /** @enum {string} */
-                                ability: PathsApiCharactersDraftPostResponses200ContentApplicationJsonClasslessStatOptionsAbility;
+                                ability: "strength" | "agility" | "presence" | "toughness";
                                 dice: number[];
                                 minTotal: number;
                                 maxTotal: number;
@@ -872,6 +1424,46 @@ export interface paths {
                 };
                 /** @description Default Response */
                 404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                410: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -951,11 +1543,14 @@ export interface paths {
         post: {
             parameters: {
                 query?: {
-                    locale?: PathsApiCharactersDraftRerollSectionPostParametersQueryLocale;
+                    locale?: "en" | "pl";
+                    invite?: string;
+                    obrRoom?: string;
+                    obrPlayer?: string;
                 };
                 header?: never;
                 path: {
-                    section: PathsApiCharactersDraftRerollSectionPostParametersPathSection;
+                    section: "name" | "stats" | "omens" | "silver" | "origin" | "abilities" | "gear" | "personality";
                 };
                 cookie?: never;
             };
@@ -966,7 +1561,7 @@ export interface paths {
                             classId: null | number;
                             classless: boolean;
                             name?: string;
-                            dropLowestAbilities?: PathsApiCharactersDraftRerollSectionPostRequestBodyContentApplicationJsonDraftDropLowestAbilities[];
+                            dropLowestAbilities?: ("strength" | "agility" | "presence" | "toughness")[];
                             seeds: {
                                 name: string;
                                 stats: string;
@@ -993,7 +1588,7 @@ export interface paths {
                                 classId: null | number;
                                 classless: boolean;
                                 name?: string;
-                                dropLowestAbilities?: PathsApiCharactersDraftRerollSectionPostResponses200ContentApplicationJsonDraftDropLowestAbilities[];
+                                dropLowestAbilities?: ("strength" | "agility" | "presence" | "toughness")[];
                                 seeds: {
                                     name: string;
                                     stats: string;
@@ -1012,6 +1607,11 @@ export interface paths {
                                 classId?: null | number;
                                 className?: null | string;
                                 classDescription?: null | string;
+                                classAttribution?: null | string;
+                                /** @enum {null|string} */
+                                classAuthoredLanguage?: "en" | "pl" | null;
+                                classContentRemoved?: boolean;
+                                classReportable?: boolean;
                                 origin?: null | string;
                                 strength?: number;
                                 agility?: number;
@@ -1034,6 +1634,15 @@ export interface paths {
                                     name?: string;
                                     description?: string;
                                     comment?: string;
+                                    table?: {
+                                        die: number;
+                                        rows: {
+                                            roll: number;
+                                            text: string;
+                                            itemKey: null | string;
+                                            itemName: null | string;
+                                        }[];
+                                    };
                                 }[];
                                 equipment?: {
                                     key?: string;
@@ -1052,10 +1661,10 @@ export interface paths {
                                     ammoType?: string;
                                     useCountRule?: {
                                         /** @enum {string} */
-                                        mode?: PathsApiCharactersDraftRerollSectionPostResponses200ContentApplicationJsonPreviewEquipmentUseCountRuleMode;
+                                        mode?: "fixed" | "fixedPlusModifier";
                                         base?: number;
                                         /** @enum {string} */
-                                        statistic?: PathsApiCharactersDraftRerollSectionPostResponses200ContentApplicationJsonPreviewEquipmentUseCountRuleStatistic;
+                                        statistic?: "agility" | "strength" | "presence" | "toughness";
                                     };
                                     modifiers?: {
                                         id?: string;
@@ -1063,10 +1672,10 @@ export interface paths {
                                         value?: number;
                                         source?: string;
                                         /** @enum {string} */
-                                        statistic?: PathsApiCharactersDraftRerollSectionPostResponses200ContentApplicationJsonPreviewEquipmentModifiersStatistic;
+                                        statistic?: "agility" | "strength" | "presence" | "toughness";
                                         exclude?: string[];
                                         /** @enum {string} */
-                                        scope?: PathsApiCharactersDraftRerollSectionPostResponses200ContentApplicationJsonPreviewEquipmentModifiersScope;
+                                        scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
                                         comment?: string;
                                     }[];
                                 }[];
@@ -1087,10 +1696,10 @@ export interface paths {
                                     ammoType?: string;
                                     useCountRule?: {
                                         /** @enum {string} */
-                                        mode?: PathsApiCharactersDraftRerollSectionPostResponses200ContentApplicationJsonPreviewStorageUseCountRuleMode;
+                                        mode?: "fixed" | "fixedPlusModifier";
                                         base?: number;
                                         /** @enum {string} */
-                                        statistic?: PathsApiCharactersDraftRerollSectionPostResponses200ContentApplicationJsonPreviewStorageUseCountRuleStatistic;
+                                        statistic?: "agility" | "strength" | "presence" | "toughness";
                                     };
                                     modifiers?: {
                                         id?: string;
@@ -1098,10 +1707,10 @@ export interface paths {
                                         value?: number;
                                         source?: string;
                                         /** @enum {string} */
-                                        statistic?: PathsApiCharactersDraftRerollSectionPostResponses200ContentApplicationJsonPreviewStorageModifiersStatistic;
+                                        statistic?: "agility" | "strength" | "presence" | "toughness";
                                         exclude?: string[];
                                         /** @enum {string} */
-                                        scope?: PathsApiCharactersDraftRerollSectionPostResponses200ContentApplicationJsonPreviewStorageModifiersScope;
+                                        scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
                                         comment?: string;
                                     }[];
                                 }[];
@@ -1122,10 +1731,10 @@ export interface paths {
                                         value?: number;
                                         source?: string;
                                         /** @enum {string} */
-                                        statistic?: PathsApiCharactersDraftRerollSectionPostResponses200ContentApplicationJsonPreviewEquippedWeaponsModifiersStatistic;
+                                        statistic?: "agility" | "strength" | "presence" | "toughness";
                                         exclude?: string[];
                                         /** @enum {string} */
-                                        scope?: PathsApiCharactersDraftRerollSectionPostResponses200ContentApplicationJsonPreviewEquippedWeaponsModifiersScope;
+                                        scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
                                         comment?: string;
                                     }[];
                                 }[];
@@ -1147,10 +1756,10 @@ export interface paths {
                                         value?: number;
                                         source?: string;
                                         /** @enum {string} */
-                                        statistic?: PathsApiCharactersDraftRerollSectionPostResponses200ContentApplicationJsonPreviewEquippedArmorOneOf0ModifiersStatistic;
+                                        statistic?: "agility" | "strength" | "presence" | "toughness";
                                         exclude?: string[];
                                         /** @enum {string} */
-                                        scope?: PathsApiCharactersDraftRerollSectionPostResponses200ContentApplicationJsonPreviewEquippedArmorOneOf0ModifiersScope;
+                                        scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
                                         comment?: string;
                                     }[];
                                 } | null;
@@ -1160,20 +1769,20 @@ export interface paths {
                                     value?: number;
                                     source?: string;
                                     /** @enum {string} */
-                                    statistic?: PathsApiCharactersDraftRerollSectionPostResponses200ContentApplicationJsonPreviewModifiersStatistic;
+                                    statistic?: "agility" | "strength" | "presence" | "toughness";
                                     exclude?: string[];
                                     /** @enum {string} */
-                                    scope?: PathsApiCharactersDraftRerollSectionPostResponses200ContentApplicationJsonPreviewModifiersScope;
+                                    scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
                                     comment?: string;
                                 }[];
                                 computedModifiers?: {
                                     value?: number;
                                     source?: string;
                                     /** @enum {string} */
-                                    statistic?: PathsApiCharactersDraftRerollSectionPostResponses200ContentApplicationJsonPreviewComputedModifiersStatistic;
+                                    statistic?: "agility" | "strength" | "presence" | "toughness";
                                     exclude?: string[];
                                     /** @enum {string} */
-                                    origin?: PathsApiCharactersDraftRerollSectionPostResponses200ContentApplicationJsonPreviewComputedModifiersOrigin;
+                                    origin?: "armor" | "weapon" | "pet" | "system";
                                     originKey?: string;
                                     originName?: string;
                                 }[];
@@ -1187,7 +1796,7 @@ export interface paths {
                                 /** Format: date-time */
                                 joinedAt?: null | string;
                                 /** @enum {string} */
-                                viewerAccess?: PathsApiCharactersDraftRerollSectionPostResponses200ContentApplicationJsonPreviewViewerAccess;
+                                viewerAccess?: "owner" | "party";
                                 /** Format: date-time */
                                 createdAt?: string;
                                 /** Format: date-time */
@@ -1195,7 +1804,7 @@ export interface paths {
                             };
                             classlessStatOptions?: {
                                 /** @enum {string} */
-                                ability: PathsApiCharactersDraftRerollSectionPostResponses200ContentApplicationJsonClasslessStatOptionsAbility;
+                                ability: "strength" | "agility" | "presence" | "toughness";
                                 dice: number[];
                                 minTotal: number;
                                 maxTotal: number;
@@ -1246,6 +1855,46 @@ export interface paths {
                 };
                 /** @description Default Response */
                 404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                410: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -1319,11 +1968,14 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description List character classes with localized names */
+        /** @description List the classes a roll may use: the invite's Party Class Pool, or Book Classes */
         get: {
             parameters: {
                 query?: {
-                    locale?: PathsApiCharactersClassesGetParametersQueryLocale;
+                    locale?: "en" | "pl";
+                    invite?: string;
+                    obrRoom?: string;
+                    obrPlayer?: string;
                 };
                 header?: never;
                 path?: never;
@@ -1342,6 +1994,26 @@ export interface paths {
                             name?: null | string;
                             description?: null | string;
                         }[];
+                    };
+                };
+                /** @description Default Response */
+                410: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
                     };
                 };
                 /** @description Default Response */
@@ -1443,7 +2115,7 @@ export interface paths {
         get: {
             parameters: {
                 query?: {
-                    locale?: PathsApiCharactersIdGetParametersQueryLocale;
+                    locale?: "en" | "pl";
                 };
                 header?: never;
                 path: {
@@ -1466,6 +2138,11 @@ export interface paths {
                             classId?: null | number;
                             className?: null | string;
                             classDescription?: null | string;
+                            classAttribution?: null | string;
+                            /** @enum {null|string} */
+                            classAuthoredLanguage?: "en" | "pl" | null;
+                            classContentRemoved?: boolean;
+                            classReportable?: boolean;
                             origin?: null | string;
                             strength?: number;
                             agility?: number;
@@ -1488,6 +2165,15 @@ export interface paths {
                                 name?: string;
                                 description?: string;
                                 comment?: string;
+                                table?: {
+                                    die: number;
+                                    rows: {
+                                        roll: number;
+                                        text: string;
+                                        itemKey: null | string;
+                                        itemName: null | string;
+                                    }[];
+                                };
                             }[];
                             equipment?: {
                                 key?: string;
@@ -1506,10 +2192,10 @@ export interface paths {
                                 ammoType?: string;
                                 useCountRule?: {
                                     /** @enum {string} */
-                                    mode?: PathsApiCharactersIdGetResponses200ContentApplicationJsonEquipmentUseCountRuleMode;
+                                    mode?: "fixed" | "fixedPlusModifier";
                                     base?: number;
                                     /** @enum {string} */
-                                    statistic?: PathsApiCharactersIdGetResponses200ContentApplicationJsonEquipmentUseCountRuleStatistic;
+                                    statistic?: "agility" | "strength" | "presence" | "toughness";
                                 };
                                 modifiers?: {
                                     id?: string;
@@ -1517,10 +2203,10 @@ export interface paths {
                                     value?: number;
                                     source?: string;
                                     /** @enum {string} */
-                                    statistic?: PathsApiCharactersIdGetResponses200ContentApplicationJsonEquipmentModifiersStatistic;
+                                    statistic?: "agility" | "strength" | "presence" | "toughness";
                                     exclude?: string[];
                                     /** @enum {string} */
-                                    scope?: PathsApiCharactersIdGetResponses200ContentApplicationJsonEquipmentModifiersScope;
+                                    scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
                                     comment?: string;
                                 }[];
                             }[];
@@ -1541,10 +2227,10 @@ export interface paths {
                                 ammoType?: string;
                                 useCountRule?: {
                                     /** @enum {string} */
-                                    mode?: PathsApiCharactersIdGetResponses200ContentApplicationJsonStorageUseCountRuleMode;
+                                    mode?: "fixed" | "fixedPlusModifier";
                                     base?: number;
                                     /** @enum {string} */
-                                    statistic?: PathsApiCharactersIdGetResponses200ContentApplicationJsonStorageUseCountRuleStatistic;
+                                    statistic?: "agility" | "strength" | "presence" | "toughness";
                                 };
                                 modifiers?: {
                                     id?: string;
@@ -1552,10 +2238,10 @@ export interface paths {
                                     value?: number;
                                     source?: string;
                                     /** @enum {string} */
-                                    statistic?: PathsApiCharactersIdGetResponses200ContentApplicationJsonStorageModifiersStatistic;
+                                    statistic?: "agility" | "strength" | "presence" | "toughness";
                                     exclude?: string[];
                                     /** @enum {string} */
-                                    scope?: PathsApiCharactersIdGetResponses200ContentApplicationJsonStorageModifiersScope;
+                                    scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
                                     comment?: string;
                                 }[];
                             }[];
@@ -1576,10 +2262,10 @@ export interface paths {
                                     value?: number;
                                     source?: string;
                                     /** @enum {string} */
-                                    statistic?: PathsApiCharactersIdGetResponses200ContentApplicationJsonEquippedWeaponsModifiersStatistic;
+                                    statistic?: "agility" | "strength" | "presence" | "toughness";
                                     exclude?: string[];
                                     /** @enum {string} */
-                                    scope?: PathsApiCharactersIdGetResponses200ContentApplicationJsonEquippedWeaponsModifiersScope;
+                                    scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
                                     comment?: string;
                                 }[];
                             }[];
@@ -1601,10 +2287,10 @@ export interface paths {
                                     value?: number;
                                     source?: string;
                                     /** @enum {string} */
-                                    statistic?: PathsApiCharactersIdGetResponses200ContentApplicationJsonEquippedArmorOneOf0ModifiersStatistic;
+                                    statistic?: "agility" | "strength" | "presence" | "toughness";
                                     exclude?: string[];
                                     /** @enum {string} */
-                                    scope?: PathsApiCharactersIdGetResponses200ContentApplicationJsonEquippedArmorOneOf0ModifiersScope;
+                                    scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
                                     comment?: string;
                                 }[];
                             } | null;
@@ -1614,20 +2300,20 @@ export interface paths {
                                 value?: number;
                                 source?: string;
                                 /** @enum {string} */
-                                statistic?: PathsApiCharactersIdGetResponses200ContentApplicationJsonModifiersStatistic;
+                                statistic?: "agility" | "strength" | "presence" | "toughness";
                                 exclude?: string[];
                                 /** @enum {string} */
-                                scope?: PathsApiCharactersIdGetResponses200ContentApplicationJsonModifiersScope;
+                                scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
                                 comment?: string;
                             }[];
                             computedModifiers?: {
                                 value?: number;
                                 source?: string;
                                 /** @enum {string} */
-                                statistic?: PathsApiCharactersIdGetResponses200ContentApplicationJsonComputedModifiersStatistic;
+                                statistic?: "agility" | "strength" | "presence" | "toughness";
                                 exclude?: string[];
                                 /** @enum {string} */
-                                origin?: PathsApiCharactersIdGetResponses200ContentApplicationJsonComputedModifiersOrigin;
+                                origin?: "armor" | "weapon" | "pet" | "system";
                                 originKey?: string;
                                 originName?: string;
                             }[];
@@ -1641,7 +2327,7 @@ export interface paths {
                             /** Format: date-time */
                             joinedAt?: null | string;
                             /** @enum {string} */
-                            viewerAccess?: PathsApiCharactersIdGetResponses200ContentApplicationJsonViewerAccess;
+                            viewerAccess?: "owner" | "party";
                             /** Format: date-time */
                             createdAt?: string;
                             /** Format: date-time */
@@ -1880,7 +2566,7 @@ export interface paths {
         patch: {
             parameters: {
                 query?: {
-                    locale?: PathsApiCharactersIdPatchParametersQueryLocale;
+                    locale?: "en" | "pl";
                 };
                 header?: never;
                 path: {
@@ -1932,10 +2618,10 @@ export interface paths {
                             ammoType?: string;
                             useCountRule?: {
                                 /** @enum {string} */
-                                mode?: PathsApiCharactersIdPatchRequestBodyContentApplicationJsonEquipmentUseCountRuleMode;
+                                mode?: "fixed" | "fixedPlusModifier";
                                 base?: number;
                                 /** @enum {string} */
-                                statistic?: PathsApiCharactersIdPatchRequestBodyContentApplicationJsonEquipmentUseCountRuleStatistic;
+                                statistic?: "agility" | "strength" | "presence" | "toughness";
                             };
                             modifiers?: {
                                 id?: string;
@@ -1943,10 +2629,10 @@ export interface paths {
                                 value?: number;
                                 source?: string;
                                 /** @enum {string} */
-                                statistic?: PathsApiCharactersIdPatchRequestBodyContentApplicationJsonEquipmentModifiersStatistic;
+                                statistic?: "agility" | "strength" | "presence" | "toughness";
                                 exclude?: string[];
                                 /** @enum {string} */
-                                scope?: PathsApiCharactersIdPatchRequestBodyContentApplicationJsonEquipmentModifiersScope;
+                                scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
                                 comment?: string;
                             }[];
                         }[];
@@ -1967,10 +2653,10 @@ export interface paths {
                             ammoType?: string;
                             useCountRule?: {
                                 /** @enum {string} */
-                                mode?: PathsApiCharactersIdPatchRequestBodyContentApplicationJsonStorageUseCountRuleMode;
+                                mode?: "fixed" | "fixedPlusModifier";
                                 base?: number;
                                 /** @enum {string} */
-                                statistic?: PathsApiCharactersIdPatchRequestBodyContentApplicationJsonStorageUseCountRuleStatistic;
+                                statistic?: "agility" | "strength" | "presence" | "toughness";
                             };
                             modifiers?: {
                                 id?: string;
@@ -1978,10 +2664,10 @@ export interface paths {
                                 value?: number;
                                 source?: string;
                                 /** @enum {string} */
-                                statistic?: PathsApiCharactersIdPatchRequestBodyContentApplicationJsonStorageModifiersStatistic;
+                                statistic?: "agility" | "strength" | "presence" | "toughness";
                                 exclude?: string[];
                                 /** @enum {string} */
-                                scope?: PathsApiCharactersIdPatchRequestBodyContentApplicationJsonStorageModifiersScope;
+                                scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
                                 comment?: string;
                             }[];
                         }[];
@@ -2002,10 +2688,10 @@ export interface paths {
                                 value?: number;
                                 source?: string;
                                 /** @enum {string} */
-                                statistic?: PathsApiCharactersIdPatchRequestBodyContentApplicationJsonEquippedWeaponsModifiersStatistic;
+                                statistic?: "agility" | "strength" | "presence" | "toughness";
                                 exclude?: string[];
                                 /** @enum {string} */
-                                scope?: PathsApiCharactersIdPatchRequestBodyContentApplicationJsonEquippedWeaponsModifiersScope;
+                                scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
                                 comment?: string;
                             }[];
                         }[];
@@ -2027,10 +2713,10 @@ export interface paths {
                                 value?: number;
                                 source?: string;
                                 /** @enum {string} */
-                                statistic?: PathsApiCharactersIdPatchRequestBodyContentApplicationJsonEquippedArmorOneOf0ModifiersStatistic;
+                                statistic?: "agility" | "strength" | "presence" | "toughness";
                                 exclude?: string[];
                                 /** @enum {string} */
-                                scope?: PathsApiCharactersIdPatchRequestBodyContentApplicationJsonEquippedArmorOneOf0ModifiersScope;
+                                scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
                                 comment?: string;
                             }[];
                         } | null;
@@ -2040,10 +2726,10 @@ export interface paths {
                             value?: number;
                             source?: string;
                             /** @enum {string} */
-                            statistic?: PathsApiCharactersIdPatchRequestBodyContentApplicationJsonModifiersStatistic;
+                            statistic?: "agility" | "strength" | "presence" | "toughness";
                             exclude?: string[];
                             /** @enum {string} */
-                            scope?: PathsApiCharactersIdPatchRequestBodyContentApplicationJsonModifiersScope;
+                            scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
                             comment?: string;
                         }[];
                     };
@@ -2063,6 +2749,11 @@ export interface paths {
                             classId?: null | number;
                             className?: null | string;
                             classDescription?: null | string;
+                            classAttribution?: null | string;
+                            /** @enum {null|string} */
+                            classAuthoredLanguage?: "en" | "pl" | null;
+                            classContentRemoved?: boolean;
+                            classReportable?: boolean;
                             origin?: null | string;
                             strength?: number;
                             agility?: number;
@@ -2085,6 +2776,15 @@ export interface paths {
                                 name?: string;
                                 description?: string;
                                 comment?: string;
+                                table?: {
+                                    die: number;
+                                    rows: {
+                                        roll: number;
+                                        text: string;
+                                        itemKey: null | string;
+                                        itemName: null | string;
+                                    }[];
+                                };
                             }[];
                             equipment?: {
                                 key?: string;
@@ -2103,10 +2803,10 @@ export interface paths {
                                 ammoType?: string;
                                 useCountRule?: {
                                     /** @enum {string} */
-                                    mode?: PathsApiCharactersIdPatchResponses200ContentApplicationJsonEquipmentUseCountRuleMode;
+                                    mode?: "fixed" | "fixedPlusModifier";
                                     base?: number;
                                     /** @enum {string} */
-                                    statistic?: PathsApiCharactersIdPatchResponses200ContentApplicationJsonEquipmentUseCountRuleStatistic;
+                                    statistic?: "agility" | "strength" | "presence" | "toughness";
                                 };
                                 modifiers?: {
                                     id?: string;
@@ -2114,10 +2814,10 @@ export interface paths {
                                     value?: number;
                                     source?: string;
                                     /** @enum {string} */
-                                    statistic?: PathsApiCharactersIdPatchResponses200ContentApplicationJsonEquipmentModifiersStatistic;
+                                    statistic?: "agility" | "strength" | "presence" | "toughness";
                                     exclude?: string[];
                                     /** @enum {string} */
-                                    scope?: PathsApiCharactersIdPatchResponses200ContentApplicationJsonEquipmentModifiersScope;
+                                    scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
                                     comment?: string;
                                 }[];
                             }[];
@@ -2138,10 +2838,10 @@ export interface paths {
                                 ammoType?: string;
                                 useCountRule?: {
                                     /** @enum {string} */
-                                    mode?: PathsApiCharactersIdPatchResponses200ContentApplicationJsonStorageUseCountRuleMode;
+                                    mode?: "fixed" | "fixedPlusModifier";
                                     base?: number;
                                     /** @enum {string} */
-                                    statistic?: PathsApiCharactersIdPatchResponses200ContentApplicationJsonStorageUseCountRuleStatistic;
+                                    statistic?: "agility" | "strength" | "presence" | "toughness";
                                 };
                                 modifiers?: {
                                     id?: string;
@@ -2149,10 +2849,10 @@ export interface paths {
                                     value?: number;
                                     source?: string;
                                     /** @enum {string} */
-                                    statistic?: PathsApiCharactersIdPatchResponses200ContentApplicationJsonStorageModifiersStatistic;
+                                    statistic?: "agility" | "strength" | "presence" | "toughness";
                                     exclude?: string[];
                                     /** @enum {string} */
-                                    scope?: PathsApiCharactersIdPatchResponses200ContentApplicationJsonStorageModifiersScope;
+                                    scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
                                     comment?: string;
                                 }[];
                             }[];
@@ -2173,10 +2873,10 @@ export interface paths {
                                     value?: number;
                                     source?: string;
                                     /** @enum {string} */
-                                    statistic?: PathsApiCharactersIdPatchResponses200ContentApplicationJsonEquippedWeaponsModifiersStatistic;
+                                    statistic?: "agility" | "strength" | "presence" | "toughness";
                                     exclude?: string[];
                                     /** @enum {string} */
-                                    scope?: PathsApiCharactersIdPatchResponses200ContentApplicationJsonEquippedWeaponsModifiersScope;
+                                    scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
                                     comment?: string;
                                 }[];
                             }[];
@@ -2198,10 +2898,10 @@ export interface paths {
                                     value?: number;
                                     source?: string;
                                     /** @enum {string} */
-                                    statistic?: PathsApiCharactersIdPatchResponses200ContentApplicationJsonEquippedArmorOneOf0ModifiersStatistic;
+                                    statistic?: "agility" | "strength" | "presence" | "toughness";
                                     exclude?: string[];
                                     /** @enum {string} */
-                                    scope?: PathsApiCharactersIdPatchResponses200ContentApplicationJsonEquippedArmorOneOf0ModifiersScope;
+                                    scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
                                     comment?: string;
                                 }[];
                             } | null;
@@ -2211,20 +2911,20 @@ export interface paths {
                                 value?: number;
                                 source?: string;
                                 /** @enum {string} */
-                                statistic?: PathsApiCharactersIdPatchResponses200ContentApplicationJsonModifiersStatistic;
+                                statistic?: "agility" | "strength" | "presence" | "toughness";
                                 exclude?: string[];
                                 /** @enum {string} */
-                                scope?: PathsApiCharactersIdPatchResponses200ContentApplicationJsonModifiersScope;
+                                scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
                                 comment?: string;
                             }[];
                             computedModifiers?: {
                                 value?: number;
                                 source?: string;
                                 /** @enum {string} */
-                                statistic?: PathsApiCharactersIdPatchResponses200ContentApplicationJsonComputedModifiersStatistic;
+                                statistic?: "agility" | "strength" | "presence" | "toughness";
                                 exclude?: string[];
                                 /** @enum {string} */
-                                origin?: PathsApiCharactersIdPatchResponses200ContentApplicationJsonComputedModifiersOrigin;
+                                origin?: "armor" | "weapon" | "pet" | "system";
                                 originKey?: string;
                                 originName?: string;
                             }[];
@@ -2238,7 +2938,7 @@ export interface paths {
                             /** Format: date-time */
                             joinedAt?: null | string;
                             /** @enum {string} */
-                            viewerAccess?: PathsApiCharactersIdPatchResponses200ContentApplicationJsonViewerAccess;
+                            viewerAccess?: "owner" | "party";
                             /** Format: date-time */
                             createdAt?: string;
                             /** Format: date-time */
@@ -2370,24 +3070,920 @@ export interface paths {
         };
         trace?: never;
     };
-    "/api/characters": {
+    "/api/characters/{id}/improvements/preview": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** @description List characters for current user */
-        get: {
+        get?: never;
+        put?: never;
+        /** @description Get or create an active Getting Better preview */
+        post: {
             parameters: {
                 query?: {
-                    locale?: PathsApiCharactersGetParametersQueryLocale;
+                    locale?: "en" | "pl";
                 };
                 header?: never;
-                path?: never;
+                path: {
+                    id: string;
+                };
                 cookie?: never;
             };
             requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            /** Format: uuid */
+                            characterId: string;
+                            sequence: number;
+                            rolledDraft: {
+                                sequence: number;
+                                snapshot: {
+                                    /** Format: date-time */
+                                    characterUpdatedAt: string;
+                                    maxHp: number;
+                                    silver: number;
+                                    abilities: {
+                                        strength: number;
+                                        agility: number;
+                                        presence: number;
+                                        toughness: number;
+                                    };
+                                    abilityKeys: string[];
+                                    equipmentFingerprint: string;
+                                    snapshotHash: string;
+                                };
+                                hp: {
+                                    check: {
+                                        /** @enum {string} */
+                                        source: "server" | "table";
+                                        dice?: number[];
+                                        total: number;
+                                    };
+                                    fromMaxHp: number;
+                                    succeeds: boolean;
+                                    increase: {
+                                        /** @enum {string} */
+                                        source: "server" | "table";
+                                        dice?: number[];
+                                        total: number;
+                                    } | null;
+                                    toMaxHp: number;
+                                };
+                                debris: {
+                                    roll: {
+                                        /** @enum {string} */
+                                        source: "server" | "table";
+                                        dice?: number[];
+                                        total: number;
+                                    };
+                                    /** @enum {string} */
+                                    kind: "nothing" | "silver" | "uncleanScroll" | "sacredScroll";
+                                    silver?: {
+                                        /** @enum {string} */
+                                        source: "server" | "table";
+                                        dice?: number[];
+                                        total: number;
+                                    };
+                                    amount?: number;
+                                    scroll?: {
+                                        /** @enum {string} */
+                                        source: "server" | "table";
+                                        dice?: number[];
+                                        total: number;
+                                    };
+                                    itemKey?: string;
+                                } & ({
+                                    /** @enum {unknown} */
+                                    kind?: "nothing";
+                                } | {
+                                    /** @enum {unknown} */
+                                    kind?: "silver";
+                                } | {
+                                    /** @enum {unknown} */
+                                    kind?: "uncleanScroll";
+                                } | {
+                                    /** @enum {unknown} */
+                                    kind?: "sacredScroll";
+                                });
+                                abilities: {
+                                    strength: {
+                                        roll: {
+                                            /** @enum {string} */
+                                            source: "server" | "table";
+                                            dice?: number[];
+                                            total: number;
+                                        };
+                                        fromScore: number;
+                                        fromModifier: number;
+                                        toModifier: number;
+                                        toScore: number;
+                                        /** @enum {string} */
+                                        outcome: "increase" | "decrease" | "same";
+                                    };
+                                    agility: {
+                                        roll: {
+                                            /** @enum {string} */
+                                            source: "server" | "table";
+                                            dice?: number[];
+                                            total: number;
+                                        };
+                                        fromScore: number;
+                                        fromModifier: number;
+                                        toModifier: number;
+                                        toScore: number;
+                                        /** @enum {string} */
+                                        outcome: "increase" | "decrease" | "same";
+                                    };
+                                    presence: {
+                                        roll: {
+                                            /** @enum {string} */
+                                            source: "server" | "table";
+                                            dice?: number[];
+                                            total: number;
+                                        };
+                                        fromScore: number;
+                                        fromModifier: number;
+                                        toModifier: number;
+                                        toScore: number;
+                                        /** @enum {string} */
+                                        outcome: "increase" | "decrease" | "same";
+                                    };
+                                    toughness: {
+                                        roll: {
+                                            /** @enum {string} */
+                                            source: "server" | "table";
+                                            dice?: number[];
+                                            total: number;
+                                        };
+                                        fromScore: number;
+                                        fromModifier: number;
+                                        toModifier: number;
+                                        toScore: number;
+                                        /** @enum {string} */
+                                        outcome: "increase" | "decrease" | "same";
+                                    };
+                                };
+                                classAbility: {
+                                    /** @enum {string} */
+                                    kind: "none" | "newAbility" | "firstSpecialty" | "specialties";
+                                    existing?: {
+                                        key: string;
+                                        rollValue: number;
+                                    }[];
+                                    added?: {
+                                        key: string;
+                                        rollValue: number;
+                                        roll: {
+                                            /** @enum {string} */
+                                            source: "server" | "table";
+                                            dice?: number[];
+                                            total: number;
+                                        };
+                                    } | null;
+                                    specialties?: {
+                                        current: {
+                                            key: string;
+                                            rollValue: number;
+                                        };
+                                        replacement: {
+                                            key: string;
+                                            rollValue: number;
+                                            roll: {
+                                                /** @enum {string} */
+                                                source: "server" | "table";
+                                                dice?: number[];
+                                                total: number;
+                                            };
+                                        } | null;
+                                        reroll: boolean;
+                                    }[];
+                                } & ({
+                                    /** @enum {unknown} */
+                                    kind?: "none";
+                                } | {
+                                    /** @enum {unknown} */
+                                    kind?: "newAbility";
+                                } | {
+                                    /** @enum {unknown} */
+                                    kind?: "firstSpecialty";
+                                } | {
+                                    /** @enum {unknown} */
+                                    kind?: "specialties";
+                                });
+                            };
+                            abilityNames: {
+                                [key: string]: string;
+                            };
+                            rulesNote: null | string;
+                            scrollNames: {
+                                [key: string]: string;
+                            };
+                            snapshotHash: string;
+                            /** Format: date-time */
+                            createdAt: string;
+                            /** Format: date-time */
+                            updatedAt: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/characters/{id}/improvements/{improvementId}/reroll/{section}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Reroll one section of an active Getting Better preview */
+        post: {
+            parameters: {
+                query?: {
+                    locale?: "en" | "pl";
+                };
+                header?: never;
+                path: {
+                    id: string;
+                    improvementId: string;
+                    section: "hp" | "debris" | "abilities" | "classAbility" | "all";
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            /** Format: uuid */
+                            characterId: string;
+                            sequence: number;
+                            rolledDraft: {
+                                sequence: number;
+                                snapshot: {
+                                    /** Format: date-time */
+                                    characterUpdatedAt: string;
+                                    maxHp: number;
+                                    silver: number;
+                                    abilities: {
+                                        strength: number;
+                                        agility: number;
+                                        presence: number;
+                                        toughness: number;
+                                    };
+                                    abilityKeys: string[];
+                                    equipmentFingerprint: string;
+                                    snapshotHash: string;
+                                };
+                                hp: {
+                                    check: {
+                                        /** @enum {string} */
+                                        source: "server" | "table";
+                                        dice?: number[];
+                                        total: number;
+                                    };
+                                    fromMaxHp: number;
+                                    succeeds: boolean;
+                                    increase: {
+                                        /** @enum {string} */
+                                        source: "server" | "table";
+                                        dice?: number[];
+                                        total: number;
+                                    } | null;
+                                    toMaxHp: number;
+                                };
+                                debris: {
+                                    roll: {
+                                        /** @enum {string} */
+                                        source: "server" | "table";
+                                        dice?: number[];
+                                        total: number;
+                                    };
+                                    /** @enum {string} */
+                                    kind: "nothing" | "silver" | "uncleanScroll" | "sacredScroll";
+                                    silver?: {
+                                        /** @enum {string} */
+                                        source: "server" | "table";
+                                        dice?: number[];
+                                        total: number;
+                                    };
+                                    amount?: number;
+                                    scroll?: {
+                                        /** @enum {string} */
+                                        source: "server" | "table";
+                                        dice?: number[];
+                                        total: number;
+                                    };
+                                    itemKey?: string;
+                                } & ({
+                                    /** @enum {unknown} */
+                                    kind?: "nothing";
+                                } | {
+                                    /** @enum {unknown} */
+                                    kind?: "silver";
+                                } | {
+                                    /** @enum {unknown} */
+                                    kind?: "uncleanScroll";
+                                } | {
+                                    /** @enum {unknown} */
+                                    kind?: "sacredScroll";
+                                });
+                                abilities: {
+                                    strength: {
+                                        roll: {
+                                            /** @enum {string} */
+                                            source: "server" | "table";
+                                            dice?: number[];
+                                            total: number;
+                                        };
+                                        fromScore: number;
+                                        fromModifier: number;
+                                        toModifier: number;
+                                        toScore: number;
+                                        /** @enum {string} */
+                                        outcome: "increase" | "decrease" | "same";
+                                    };
+                                    agility: {
+                                        roll: {
+                                            /** @enum {string} */
+                                            source: "server" | "table";
+                                            dice?: number[];
+                                            total: number;
+                                        };
+                                        fromScore: number;
+                                        fromModifier: number;
+                                        toModifier: number;
+                                        toScore: number;
+                                        /** @enum {string} */
+                                        outcome: "increase" | "decrease" | "same";
+                                    };
+                                    presence: {
+                                        roll: {
+                                            /** @enum {string} */
+                                            source: "server" | "table";
+                                            dice?: number[];
+                                            total: number;
+                                        };
+                                        fromScore: number;
+                                        fromModifier: number;
+                                        toModifier: number;
+                                        toScore: number;
+                                        /** @enum {string} */
+                                        outcome: "increase" | "decrease" | "same";
+                                    };
+                                    toughness: {
+                                        roll: {
+                                            /** @enum {string} */
+                                            source: "server" | "table";
+                                            dice?: number[];
+                                            total: number;
+                                        };
+                                        fromScore: number;
+                                        fromModifier: number;
+                                        toModifier: number;
+                                        toScore: number;
+                                        /** @enum {string} */
+                                        outcome: "increase" | "decrease" | "same";
+                                    };
+                                };
+                                classAbility: {
+                                    /** @enum {string} */
+                                    kind: "none" | "newAbility" | "firstSpecialty" | "specialties";
+                                    existing?: {
+                                        key: string;
+                                        rollValue: number;
+                                    }[];
+                                    added?: {
+                                        key: string;
+                                        rollValue: number;
+                                        roll: {
+                                            /** @enum {string} */
+                                            source: "server" | "table";
+                                            dice?: number[];
+                                            total: number;
+                                        };
+                                    } | null;
+                                    specialties?: {
+                                        current: {
+                                            key: string;
+                                            rollValue: number;
+                                        };
+                                        replacement: {
+                                            key: string;
+                                            rollValue: number;
+                                            roll: {
+                                                /** @enum {string} */
+                                                source: "server" | "table";
+                                                dice?: number[];
+                                                total: number;
+                                            };
+                                        } | null;
+                                        reroll: boolean;
+                                    }[];
+                                } & ({
+                                    /** @enum {unknown} */
+                                    kind?: "none";
+                                } | {
+                                    /** @enum {unknown} */
+                                    kind?: "newAbility";
+                                } | {
+                                    /** @enum {unknown} */
+                                    kind?: "firstSpecialty";
+                                } | {
+                                    /** @enum {unknown} */
+                                    kind?: "specialties";
+                                });
+                            };
+                            abilityNames: {
+                                [key: string]: string;
+                            };
+                            rulesNote: null | string;
+                            scrollNames: {
+                                [key: string]: string;
+                            };
+                            snapshotHash: string;
+                            /** Format: date-time */
+                            createdAt: string;
+                            /** Format: date-time */
+                            updatedAt: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/characters/{id}/improvements/{improvementId}/apply": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Apply a Getting Better draft to the character */
+        post: {
+            parameters: {
+                query?: {
+                    locale?: "en" | "pl";
+                };
+                header?: never;
+                path: {
+                    id: string;
+                    improvementId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        draft: {
+                            sequence: number;
+                            snapshot: {
+                                /** Format: date-time */
+                                characterUpdatedAt: string;
+                                maxHp: number;
+                                silver: number;
+                                abilities: {
+                                    strength: number;
+                                    agility: number;
+                                    presence: number;
+                                    toughness: number;
+                                };
+                                abilityKeys: string[];
+                                equipmentFingerprint: string;
+                                snapshotHash: string;
+                            };
+                            hp: {
+                                check: {
+                                    /** @enum {string} */
+                                    source: "server" | "table";
+                                    dice?: number[];
+                                    total: number;
+                                };
+                                fromMaxHp: number;
+                                succeeds: boolean;
+                                increase: {
+                                    /** @enum {string} */
+                                    source: "server" | "table";
+                                    dice?: number[];
+                                    total: number;
+                                } | null;
+                                toMaxHp: number;
+                            };
+                            debris: {
+                                roll: {
+                                    /** @enum {string} */
+                                    source: "server" | "table";
+                                    dice?: number[];
+                                    total: number;
+                                };
+                                /** @enum {string} */
+                                kind: "nothing" | "silver" | "uncleanScroll" | "sacredScroll";
+                                silver?: {
+                                    /** @enum {string} */
+                                    source: "server" | "table";
+                                    dice?: number[];
+                                    total: number;
+                                };
+                                amount?: number;
+                                scroll?: {
+                                    /** @enum {string} */
+                                    source: "server" | "table";
+                                    dice?: number[];
+                                    total: number;
+                                };
+                                itemKey?: string;
+                            } & ({
+                                /** @enum {unknown} */
+                                kind?: "nothing";
+                            } | {
+                                /** @enum {unknown} */
+                                kind?: "silver";
+                            } | {
+                                /** @enum {unknown} */
+                                kind?: "uncleanScroll";
+                            } | {
+                                /** @enum {unknown} */
+                                kind?: "sacredScroll";
+                            });
+                            abilities: {
+                                strength: {
+                                    roll: {
+                                        /** @enum {string} */
+                                        source: "server" | "table";
+                                        dice?: number[];
+                                        total: number;
+                                    };
+                                    fromScore: number;
+                                    fromModifier: number;
+                                    toModifier: number;
+                                    toScore: number;
+                                    /** @enum {string} */
+                                    outcome: "increase" | "decrease" | "same";
+                                };
+                                agility: {
+                                    roll: {
+                                        /** @enum {string} */
+                                        source: "server" | "table";
+                                        dice?: number[];
+                                        total: number;
+                                    };
+                                    fromScore: number;
+                                    fromModifier: number;
+                                    toModifier: number;
+                                    toScore: number;
+                                    /** @enum {string} */
+                                    outcome: "increase" | "decrease" | "same";
+                                };
+                                presence: {
+                                    roll: {
+                                        /** @enum {string} */
+                                        source: "server" | "table";
+                                        dice?: number[];
+                                        total: number;
+                                    };
+                                    fromScore: number;
+                                    fromModifier: number;
+                                    toModifier: number;
+                                    toScore: number;
+                                    /** @enum {string} */
+                                    outcome: "increase" | "decrease" | "same";
+                                };
+                                toughness: {
+                                    roll: {
+                                        /** @enum {string} */
+                                        source: "server" | "table";
+                                        dice?: number[];
+                                        total: number;
+                                    };
+                                    fromScore: number;
+                                    fromModifier: number;
+                                    toModifier: number;
+                                    toScore: number;
+                                    /** @enum {string} */
+                                    outcome: "increase" | "decrease" | "same";
+                                };
+                            };
+                            classAbility: {
+                                /** @enum {string} */
+                                kind: "none" | "newAbility" | "firstSpecialty" | "specialties";
+                                existing?: {
+                                    key: string;
+                                    rollValue: number;
+                                }[];
+                                added?: {
+                                    key: string;
+                                    rollValue: number;
+                                    roll: {
+                                        /** @enum {string} */
+                                        source: "server" | "table";
+                                        dice?: number[];
+                                        total: number;
+                                    };
+                                } | null;
+                                specialties?: {
+                                    current: {
+                                        key: string;
+                                        rollValue: number;
+                                    };
+                                    replacement: {
+                                        key: string;
+                                        rollValue: number;
+                                        roll: {
+                                            /** @enum {string} */
+                                            source: "server" | "table";
+                                            dice?: number[];
+                                            total: number;
+                                        };
+                                    } | null;
+                                    reroll: boolean;
+                                }[];
+                            } & ({
+                                /** @enum {unknown} */
+                                kind?: "none";
+                            } | {
+                                /** @enum {unknown} */
+                                kind?: "newAbility";
+                            } | {
+                                /** @enum {unknown} */
+                                kind?: "firstSpecialty";
+                            } | {
+                                /** @enum {unknown} */
+                                kind?: "specialties";
+                            });
+                        };
+                    };
+                };
+            };
             responses: {
                 /** @description Default Response */
                 200: {
@@ -2402,6 +3998,11 @@ export interface paths {
                             classId?: null | number;
                             className?: null | string;
                             classDescription?: null | string;
+                            classAttribution?: null | string;
+                            /** @enum {null|string} */
+                            classAuthoredLanguage?: "en" | "pl" | null;
+                            classContentRemoved?: boolean;
+                            classReportable?: boolean;
                             origin?: null | string;
                             strength?: number;
                             agility?: number;
@@ -2424,6 +4025,15 @@ export interface paths {
                                 name?: string;
                                 description?: string;
                                 comment?: string;
+                                table?: {
+                                    die: number;
+                                    rows: {
+                                        roll: number;
+                                        text: string;
+                                        itemKey: null | string;
+                                        itemName: null | string;
+                                    }[];
+                                };
                             }[];
                             equipment?: {
                                 key?: string;
@@ -2442,10 +4052,10 @@ export interface paths {
                                 ammoType?: string;
                                 useCountRule?: {
                                     /** @enum {string} */
-                                    mode?: PathsApiCharactersGetResponses200ContentApplicationJsonEquipmentUseCountRuleMode;
+                                    mode?: "fixed" | "fixedPlusModifier";
                                     base?: number;
                                     /** @enum {string} */
-                                    statistic?: PathsApiCharactersGetResponses200ContentApplicationJsonEquipmentUseCountRuleStatistic;
+                                    statistic?: "agility" | "strength" | "presence" | "toughness";
                                 };
                                 modifiers?: {
                                     id?: string;
@@ -2453,10 +4063,10 @@ export interface paths {
                                     value?: number;
                                     source?: string;
                                     /** @enum {string} */
-                                    statistic?: PathsApiCharactersGetResponses200ContentApplicationJsonEquipmentModifiersStatistic;
+                                    statistic?: "agility" | "strength" | "presence" | "toughness";
                                     exclude?: string[];
                                     /** @enum {string} */
-                                    scope?: PathsApiCharactersGetResponses200ContentApplicationJsonEquipmentModifiersScope;
+                                    scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
                                     comment?: string;
                                 }[];
                             }[];
@@ -2477,10 +4087,10 @@ export interface paths {
                                 ammoType?: string;
                                 useCountRule?: {
                                     /** @enum {string} */
-                                    mode?: PathsApiCharactersGetResponses200ContentApplicationJsonStorageUseCountRuleMode;
+                                    mode?: "fixed" | "fixedPlusModifier";
                                     base?: number;
                                     /** @enum {string} */
-                                    statistic?: PathsApiCharactersGetResponses200ContentApplicationJsonStorageUseCountRuleStatistic;
+                                    statistic?: "agility" | "strength" | "presence" | "toughness";
                                 };
                                 modifiers?: {
                                     id?: string;
@@ -2488,10 +4098,10 @@ export interface paths {
                                     value?: number;
                                     source?: string;
                                     /** @enum {string} */
-                                    statistic?: PathsApiCharactersGetResponses200ContentApplicationJsonStorageModifiersStatistic;
+                                    statistic?: "agility" | "strength" | "presence" | "toughness";
                                     exclude?: string[];
                                     /** @enum {string} */
-                                    scope?: PathsApiCharactersGetResponses200ContentApplicationJsonStorageModifiersScope;
+                                    scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
                                     comment?: string;
                                 }[];
                             }[];
@@ -2512,10 +4122,10 @@ export interface paths {
                                     value?: number;
                                     source?: string;
                                     /** @enum {string} */
-                                    statistic?: PathsApiCharactersGetResponses200ContentApplicationJsonEquippedWeaponsModifiersStatistic;
+                                    statistic?: "agility" | "strength" | "presence" | "toughness";
                                     exclude?: string[];
                                     /** @enum {string} */
-                                    scope?: PathsApiCharactersGetResponses200ContentApplicationJsonEquippedWeaponsModifiersScope;
+                                    scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
                                     comment?: string;
                                 }[];
                             }[];
@@ -2537,10 +4147,10 @@ export interface paths {
                                     value?: number;
                                     source?: string;
                                     /** @enum {string} */
-                                    statistic?: PathsApiCharactersGetResponses200ContentApplicationJsonEquippedArmorOneOf0ModifiersStatistic;
+                                    statistic?: "agility" | "strength" | "presence" | "toughness";
                                     exclude?: string[];
                                     /** @enum {string} */
-                                    scope?: PathsApiCharactersGetResponses200ContentApplicationJsonEquippedArmorOneOf0ModifiersScope;
+                                    scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
                                     comment?: string;
                                 }[];
                             } | null;
@@ -2550,20 +4160,20 @@ export interface paths {
                                 value?: number;
                                 source?: string;
                                 /** @enum {string} */
-                                statistic?: PathsApiCharactersGetResponses200ContentApplicationJsonModifiersStatistic;
+                                statistic?: "agility" | "strength" | "presence" | "toughness";
                                 exclude?: string[];
                                 /** @enum {string} */
-                                scope?: PathsApiCharactersGetResponses200ContentApplicationJsonModifiersScope;
+                                scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
                                 comment?: string;
                             }[];
                             computedModifiers?: {
                                 value?: number;
                                 source?: string;
                                 /** @enum {string} */
-                                statistic?: PathsApiCharactersGetResponses200ContentApplicationJsonComputedModifiersStatistic;
+                                statistic?: "agility" | "strength" | "presence" | "toughness";
                                 exclude?: string[];
                                 /** @enum {string} */
-                                origin?: PathsApiCharactersGetResponses200ContentApplicationJsonComputedModifiersOrigin;
+                                origin?: "armor" | "weapon" | "pet" | "system";
                                 originKey?: string;
                                 originName?: string;
                             }[];
@@ -2577,7 +4187,364 @@ export interface paths {
                             /** Format: date-time */
                             joinedAt?: null | string;
                             /** @enum {string} */
-                            viewerAccess?: PathsApiCharactersGetResponses200ContentApplicationJsonViewerAccess;
+                            viewerAccess?: "owner" | "party";
+                            /** Format: date-time */
+                            createdAt?: string;
+                            /** Format: date-time */
+                            updatedAt?: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/characters": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description List characters for current user */
+        get: {
+            parameters: {
+                query?: {
+                    locale?: "en" | "pl";
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id?: string;
+                            name?: string;
+                            classId?: null | number;
+                            className?: null | string;
+                            classDescription?: null | string;
+                            classAttribution?: null | string;
+                            /** @enum {null|string} */
+                            classAuthoredLanguage?: "en" | "pl" | null;
+                            classContentRemoved?: boolean;
+                            classReportable?: boolean;
+                            origin?: null | string;
+                            strength?: number;
+                            agility?: number;
+                            presence?: number;
+                            toughness?: number;
+                            maxHp?: number;
+                            currentHp?: number;
+                            omens?: number;
+                            maxOmens?: number;
+                            silver?: number;
+                            habit?: null | string;
+                            tale?: null | string;
+                            bodyDescription?: null | string;
+                            trait1?: null | string;
+                            trait2?: null | string;
+                            notes?: string;
+                            miseryCount?: number;
+                            abilities?: {
+                                key?: string;
+                                name?: string;
+                                description?: string;
+                                comment?: string;
+                                table?: {
+                                    die: number;
+                                    rows: {
+                                        roll: number;
+                                        text: string;
+                                        itemKey: null | string;
+                                        itemName: null | string;
+                                    }[];
+                                };
+                            }[];
+                            equipment?: {
+                                key?: string;
+                                name?: string;
+                                description?: string;
+                                comments?: string;
+                                source?: string;
+                                category?: string;
+                                value?: number;
+                                uses?: boolean[];
+                                dice?: number[];
+                                tags?: string[];
+                                maxTier?: number;
+                                currentTier?: number;
+                                amount?: number;
+                                ammoType?: string;
+                                useCountRule?: {
+                                    /** @enum {string} */
+                                    mode?: "fixed" | "fixedPlusModifier";
+                                    base?: number;
+                                    /** @enum {string} */
+                                    statistic?: "agility" | "strength" | "presence" | "toughness";
+                                };
+                                modifiers?: {
+                                    id?: string;
+                                    name?: string;
+                                    value?: number;
+                                    source?: string;
+                                    /** @enum {string} */
+                                    statistic?: "agility" | "strength" | "presence" | "toughness";
+                                    exclude?: string[];
+                                    /** @enum {string} */
+                                    scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
+                                    comment?: string;
+                                }[];
+                            }[];
+                            storage?: {
+                                key?: string;
+                                name?: string;
+                                description?: string;
+                                comments?: string;
+                                source?: string;
+                                category?: string;
+                                value?: number;
+                                uses?: boolean[];
+                                dice?: number[];
+                                tags?: string[];
+                                maxTier?: number;
+                                currentTier?: number;
+                                amount?: number;
+                                ammoType?: string;
+                                useCountRule?: {
+                                    /** @enum {string} */
+                                    mode?: "fixed" | "fixedPlusModifier";
+                                    base?: number;
+                                    /** @enum {string} */
+                                    statistic?: "agility" | "strength" | "presence" | "toughness";
+                                };
+                                modifiers?: {
+                                    id?: string;
+                                    name?: string;
+                                    value?: number;
+                                    source?: string;
+                                    /** @enum {string} */
+                                    statistic?: "agility" | "strength" | "presence" | "toughness";
+                                    exclude?: string[];
+                                    /** @enum {string} */
+                                    scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
+                                    comment?: string;
+                                }[];
+                            }[];
+                            equippedWeapons?: {
+                                key?: string;
+                                name?: string;
+                                description?: string;
+                                comments?: string;
+                                source?: string;
+                                category?: string;
+                                value?: number;
+                                dice?: number[];
+                                tags?: string[];
+                                ammoType?: string;
+                                modifiers?: {
+                                    id?: string;
+                                    name?: string;
+                                    value?: number;
+                                    source?: string;
+                                    /** @enum {string} */
+                                    statistic?: "agility" | "strength" | "presence" | "toughness";
+                                    exclude?: string[];
+                                    /** @enum {string} */
+                                    scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
+                                    comment?: string;
+                                }[];
+                            }[];
+                            equippedArmor?: {
+                                key?: string;
+                                name?: string;
+                                description?: string;
+                                comments?: string;
+                                source?: string;
+                                category?: string;
+                                value?: number;
+                                dice?: number[];
+                                maxTier?: number;
+                                currentTier?: number;
+                                tags?: string[];
+                                modifiers?: {
+                                    id?: string;
+                                    name?: string;
+                                    value?: number;
+                                    source?: string;
+                                    /** @enum {string} */
+                                    statistic?: "agility" | "strength" | "presence" | "toughness";
+                                    exclude?: string[];
+                                    /** @enum {string} */
+                                    scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
+                                    comment?: string;
+                                }[];
+                            } | null;
+                            modifiers?: {
+                                id?: string;
+                                name?: string;
+                                value?: number;
+                                source?: string;
+                                /** @enum {string} */
+                                statistic?: "agility" | "strength" | "presence" | "toughness";
+                                exclude?: string[];
+                                /** @enum {string} */
+                                scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
+                                comment?: string;
+                            }[];
+                            computedModifiers?: {
+                                value?: number;
+                                source?: string;
+                                /** @enum {string} */
+                                statistic?: "agility" | "strength" | "presence" | "toughness";
+                                exclude?: string[];
+                                /** @enum {string} */
+                                origin?: "armor" | "weapon" | "pet" | "system";
+                                originKey?: string;
+                                originName?: string;
+                            }[];
+                            encumbrance?: number;
+                            maxEncumbrance?: number;
+                            drToDodge?: number;
+                            drToMelee?: number;
+                            drToRanged?: number;
+                            /** Format: uuid */
+                            partyId?: null | string;
+                            /** Format: date-time */
+                            joinedAt?: null | string;
+                            /** @enum {string} */
+                            viewerAccess?: "owner" | "party";
                             /** Format: date-time */
                             createdAt?: string;
                             /** Format: date-time */
@@ -2635,6 +4602,4601 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/classes/creation-ban": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Read your Custom Class creation restriction */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            banned: boolean;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/classes/mine": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description The signed-in GM's Custom Classes at their latest version */
+        get: {
+            parameters: {
+                query?: {
+                    locale?: "en" | "pl";
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            id: number;
+                            lineageId: string;
+                            name: string;
+                            description: null | string;
+                            languages: string[];
+                            /** @enum {string} */
+                            visibility: "private" | "public";
+                            /** @enum {string} */
+                            status: "draft" | "active" | "archived";
+                            originCount: number;
+                            /** Format: date-time */
+                            takenDownAt: null | string;
+                            takedownReason: null | string;
+                        }[];
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/classes/drafts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description The signed-in GM's unfinished Custom Class drafts */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            id: number;
+                            classId: null | number;
+                            draft: {
+                                languages: ("en" | "pl")[];
+                                name: {
+                                    en: string;
+                                    pl: string;
+                                };
+                                description: {
+                                    en: string;
+                                    pl: string;
+                                };
+                                stats: {
+                                    strength: {
+                                        count: number;
+                                        /** @enum {integer} */
+                                        faces: 4 | 6 | 8 | 10 | 12;
+                                        modifier: number;
+                                        dropLowest: boolean;
+                                    };
+                                    agility: {
+                                        count: number;
+                                        /** @enum {integer} */
+                                        faces: 4 | 6 | 8 | 10 | 12;
+                                        modifier: number;
+                                        dropLowest: boolean;
+                                    };
+                                    presence: {
+                                        count: number;
+                                        /** @enum {integer} */
+                                        faces: 4 | 6 | 8 | 10 | 12;
+                                        modifier: number;
+                                        dropLowest: boolean;
+                                    };
+                                    toughness: {
+                                        count: number;
+                                        /** @enum {integer} */
+                                        faces: 4 | 6 | 8 | 10 | 12;
+                                        modifier: number;
+                                        dropLowest: boolean;
+                                    };
+                                };
+                                /** @enum {integer} */
+                                hpDie: 2 | 4 | 6 | 8 | 10 | 12;
+                                /** @enum {integer} */
+                                omenDie: 2 | 4 | 6;
+                                /** @enum {integer} */
+                                weaponDie: 4 | 6 | 8 | 10;
+                                /** @enum {integer} */
+                                armorDie: 2 | 3 | 4;
+                                silver: {
+                                    count: number;
+                                    /** @enum {integer} */
+                                    faces: 4 | 6;
+                                    multiplier: number;
+                                };
+                                origins: {
+                                    en: string;
+                                    pl: string;
+                                    key?: string;
+                                }[];
+                                abilities: {
+                                    key?: string;
+                                    random: boolean;
+                                    name: {
+                                        en: string;
+                                        pl: string;
+                                    };
+                                    text: {
+                                        en: string;
+                                        pl: string;
+                                    };
+                                    modifiers: {
+                                        /** @enum {string} */
+                                        statistic: "strength" | "agility" | "presence" | "toughness";
+                                        value: number;
+                                        exclude: ("melee" | "ranged" | "defence" | "cast" | "ability" | "test" | "heal" | "buff" | "item")[];
+                                    }[];
+                                    grantItem: null | string;
+                                    grantPet: null | string;
+                                    table: null | {
+                                        /** @enum {integer} */
+                                        die: 2 | 3 | 4 | 6 | 8 | 10 | 12;
+                                        rows: {
+                                            text: {
+                                                en: string;
+                                                pl: string;
+                                            };
+                                            itemRef: null | string;
+                                        }[];
+                                    };
+                                }[];
+                                randomAbilityCount: number;
+                                items: {
+                                    ref: string;
+                                    /** @enum {string} */
+                                    type: "weapon" | "armor" | "gear" | "pet";
+                                    name: {
+                                        en: string;
+                                        pl: string;
+                                    };
+                                    description: {
+                                        en: string;
+                                        pl: string;
+                                    };
+                                    value: number;
+                                    weapon: {
+                                        diceCount: number;
+                                        /** @enum {integer} */
+                                        diceFaces: 2 | 4 | 6 | 8 | 10 | 12;
+                                        damageModifier: number;
+                                        /** @enum {string} */
+                                        reach: "melee" | "ranged";
+                                        /** @enum {string} */
+                                        ammo: "none" | "counted" | "endless";
+                                        ammoCount: number;
+                                        ammoName: string;
+                                        modifiers: {
+                                            /** @enum {string} */
+                                            statistic: "strength" | "agility" | "presence" | "toughness";
+                                            value: number;
+                                            exclude: ("melee" | "ranged" | "defence" | "cast" | "ability" | "test" | "heal" | "buff" | "item")[];
+                                        }[];
+                                    };
+                                    armor: {
+                                        /** @enum {integer} */
+                                        tier: 1 | 2 | 3;
+                                        modifiers: {
+                                            /** @enum {string} */
+                                            statistic: "strength" | "agility" | "presence" | "toughness";
+                                            value: number;
+                                            exclude: ("melee" | "ranged" | "defence" | "cast" | "ability" | "test" | "heal" | "buff" | "item")[];
+                                        }[];
+                                    };
+                                    gear: {
+                                        /** @enum {string} */
+                                        kind: "consumable" | "wearable" | "carried";
+                                        uses: number;
+                                        /** @enum {string} */
+                                        effect: "text" | "damage" | "die";
+                                        /** @enum {integer} */
+                                        effectDie: 2 | 4 | 6 | 8 | 10 | 12;
+                                        statuses: {
+                                            /** @enum {string} */
+                                            statistic: "strength" | "agility" | "presence" | "toughness";
+                                            value: number;
+                                            exclude: ("melee" | "ranged" | "defence" | "cast" | "ability" | "test" | "heal" | "buff" | "item")[];
+                                        }[];
+                                    };
+                                    pet: {
+                                        hp: number;
+                                        /** @enum {integer} */
+                                        actionDie: 2 | 4 | 6 | 8 | 10;
+                                        /** @enum {string} */
+                                        action: "attack" | "buff";
+                                        humanoid: boolean;
+                                        buffs: {
+                                            /** @enum {string} */
+                                            statistic: "strength" | "agility" | "presence" | "toughness";
+                                            value: number;
+                                            exclude: ("melee" | "ranged" | "defence" | "cast" | "ability" | "test" | "heal" | "buff" | "item")[];
+                                        }[];
+                                    };
+                                }[];
+                                /** @enum {string} */
+                                gettingBetterRule: "book" | "book_plus_ability" | "specialist";
+                                gettingBetterNote: {
+                                    en: string;
+                                    pl: string;
+                                };
+                            };
+                            revision: number;
+                            /** Format: date-time */
+                            updatedAt: string;
+                        }[];
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** @description Create an unfinished private Custom Class draft */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        classId?: number | null;
+                        draft: {
+                            languages: ("en" | "pl")[];
+                            name: {
+                                en: string;
+                                pl: string;
+                            };
+                            description: {
+                                en: string;
+                                pl: string;
+                            };
+                            stats: {
+                                strength: {
+                                    count: number;
+                                    /** @enum {integer} */
+                                    faces: 4 | 6 | 8 | 10 | 12;
+                                    modifier: number;
+                                    dropLowest: boolean;
+                                };
+                                agility: {
+                                    count: number;
+                                    /** @enum {integer} */
+                                    faces: 4 | 6 | 8 | 10 | 12;
+                                    modifier: number;
+                                    dropLowest: boolean;
+                                };
+                                presence: {
+                                    count: number;
+                                    /** @enum {integer} */
+                                    faces: 4 | 6 | 8 | 10 | 12;
+                                    modifier: number;
+                                    dropLowest: boolean;
+                                };
+                                toughness: {
+                                    count: number;
+                                    /** @enum {integer} */
+                                    faces: 4 | 6 | 8 | 10 | 12;
+                                    modifier: number;
+                                    dropLowest: boolean;
+                                };
+                            };
+                            /** @enum {integer} */
+                            hpDie: 2 | 4 | 6 | 8 | 10 | 12;
+                            /** @enum {integer} */
+                            omenDie: 2 | 4 | 6;
+                            /** @enum {integer} */
+                            weaponDie: 4 | 6 | 8 | 10;
+                            /** @enum {integer} */
+                            armorDie: 2 | 3 | 4;
+                            silver: {
+                                count: number;
+                                /** @enum {integer} */
+                                faces: 4 | 6;
+                                multiplier: number;
+                            };
+                            origins: {
+                                en: string;
+                                pl: string;
+                                key?: string;
+                            }[];
+                            abilities: {
+                                key?: string;
+                                random: boolean;
+                                name: {
+                                    en: string;
+                                    pl: string;
+                                };
+                                text: {
+                                    en: string;
+                                    pl: string;
+                                };
+                                modifiers: {
+                                    /** @enum {string} */
+                                    statistic: "strength" | "agility" | "presence" | "toughness";
+                                    value: number;
+                                    exclude: ("melee" | "ranged" | "defence" | "cast" | "ability" | "test" | "heal" | "buff" | "item")[];
+                                }[];
+                                grantItem: null | string;
+                                grantPet: null | string;
+                                table: null | {
+                                    /** @enum {integer} */
+                                    die: 2 | 3 | 4 | 6 | 8 | 10 | 12;
+                                    rows: {
+                                        text: {
+                                            en: string;
+                                            pl: string;
+                                        };
+                                        itemRef: null | string;
+                                    }[];
+                                };
+                            }[];
+                            randomAbilityCount: number;
+                            items: {
+                                ref: string;
+                                /** @enum {string} */
+                                type: "weapon" | "armor" | "gear" | "pet";
+                                name: {
+                                    en: string;
+                                    pl: string;
+                                };
+                                description: {
+                                    en: string;
+                                    pl: string;
+                                };
+                                value: number;
+                                weapon: {
+                                    diceCount: number;
+                                    /** @enum {integer} */
+                                    diceFaces: 2 | 4 | 6 | 8 | 10 | 12;
+                                    damageModifier: number;
+                                    /** @enum {string} */
+                                    reach: "melee" | "ranged";
+                                    /** @enum {string} */
+                                    ammo: "none" | "counted" | "endless";
+                                    ammoCount: number;
+                                    ammoName: string;
+                                    modifiers: {
+                                        /** @enum {string} */
+                                        statistic: "strength" | "agility" | "presence" | "toughness";
+                                        value: number;
+                                        exclude: ("melee" | "ranged" | "defence" | "cast" | "ability" | "test" | "heal" | "buff" | "item")[];
+                                    }[];
+                                };
+                                armor: {
+                                    /** @enum {integer} */
+                                    tier: 1 | 2 | 3;
+                                    modifiers: {
+                                        /** @enum {string} */
+                                        statistic: "strength" | "agility" | "presence" | "toughness";
+                                        value: number;
+                                        exclude: ("melee" | "ranged" | "defence" | "cast" | "ability" | "test" | "heal" | "buff" | "item")[];
+                                    }[];
+                                };
+                                gear: {
+                                    /** @enum {string} */
+                                    kind: "consumable" | "wearable" | "carried";
+                                    uses: number;
+                                    /** @enum {string} */
+                                    effect: "text" | "damage" | "die";
+                                    /** @enum {integer} */
+                                    effectDie: 2 | 4 | 6 | 8 | 10 | 12;
+                                    statuses: {
+                                        /** @enum {string} */
+                                        statistic: "strength" | "agility" | "presence" | "toughness";
+                                        value: number;
+                                        exclude: ("melee" | "ranged" | "defence" | "cast" | "ability" | "test" | "heal" | "buff" | "item")[];
+                                    }[];
+                                };
+                                pet: {
+                                    hp: number;
+                                    /** @enum {integer} */
+                                    actionDie: 2 | 4 | 6 | 8 | 10;
+                                    /** @enum {string} */
+                                    action: "attack" | "buff";
+                                    humanoid: boolean;
+                                    buffs: {
+                                        /** @enum {string} */
+                                        statistic: "strength" | "agility" | "presence" | "toughness";
+                                        value: number;
+                                        exclude: ("melee" | "ranged" | "defence" | "cast" | "ability" | "test" | "heal" | "buff" | "item")[];
+                                    }[];
+                                };
+                            }[];
+                            /** @enum {string} */
+                            gettingBetterRule: "book" | "book_plus_ability" | "specialist";
+                            gettingBetterNote: {
+                                en: string;
+                                pl: string;
+                            };
+                        };
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            id: number;
+                            classId: null | number;
+                            draft: {
+                                languages: ("en" | "pl")[];
+                                name: {
+                                    en: string;
+                                    pl: string;
+                                };
+                                description: {
+                                    en: string;
+                                    pl: string;
+                                };
+                                stats: {
+                                    strength: {
+                                        count: number;
+                                        /** @enum {integer} */
+                                        faces: 4 | 6 | 8 | 10 | 12;
+                                        modifier: number;
+                                        dropLowest: boolean;
+                                    };
+                                    agility: {
+                                        count: number;
+                                        /** @enum {integer} */
+                                        faces: 4 | 6 | 8 | 10 | 12;
+                                        modifier: number;
+                                        dropLowest: boolean;
+                                    };
+                                    presence: {
+                                        count: number;
+                                        /** @enum {integer} */
+                                        faces: 4 | 6 | 8 | 10 | 12;
+                                        modifier: number;
+                                        dropLowest: boolean;
+                                    };
+                                    toughness: {
+                                        count: number;
+                                        /** @enum {integer} */
+                                        faces: 4 | 6 | 8 | 10 | 12;
+                                        modifier: number;
+                                        dropLowest: boolean;
+                                    };
+                                };
+                                /** @enum {integer} */
+                                hpDie: 2 | 4 | 6 | 8 | 10 | 12;
+                                /** @enum {integer} */
+                                omenDie: 2 | 4 | 6;
+                                /** @enum {integer} */
+                                weaponDie: 4 | 6 | 8 | 10;
+                                /** @enum {integer} */
+                                armorDie: 2 | 3 | 4;
+                                silver: {
+                                    count: number;
+                                    /** @enum {integer} */
+                                    faces: 4 | 6;
+                                    multiplier: number;
+                                };
+                                origins: {
+                                    en: string;
+                                    pl: string;
+                                    key?: string;
+                                }[];
+                                abilities: {
+                                    key?: string;
+                                    random: boolean;
+                                    name: {
+                                        en: string;
+                                        pl: string;
+                                    };
+                                    text: {
+                                        en: string;
+                                        pl: string;
+                                    };
+                                    modifiers: {
+                                        /** @enum {string} */
+                                        statistic: "strength" | "agility" | "presence" | "toughness";
+                                        value: number;
+                                        exclude: ("melee" | "ranged" | "defence" | "cast" | "ability" | "test" | "heal" | "buff" | "item")[];
+                                    }[];
+                                    grantItem: null | string;
+                                    grantPet: null | string;
+                                    table: null | {
+                                        /** @enum {integer} */
+                                        die: 2 | 3 | 4 | 6 | 8 | 10 | 12;
+                                        rows: {
+                                            text: {
+                                                en: string;
+                                                pl: string;
+                                            };
+                                            itemRef: null | string;
+                                        }[];
+                                    };
+                                }[];
+                                randomAbilityCount: number;
+                                items: {
+                                    ref: string;
+                                    /** @enum {string} */
+                                    type: "weapon" | "armor" | "gear" | "pet";
+                                    name: {
+                                        en: string;
+                                        pl: string;
+                                    };
+                                    description: {
+                                        en: string;
+                                        pl: string;
+                                    };
+                                    value: number;
+                                    weapon: {
+                                        diceCount: number;
+                                        /** @enum {integer} */
+                                        diceFaces: 2 | 4 | 6 | 8 | 10 | 12;
+                                        damageModifier: number;
+                                        /** @enum {string} */
+                                        reach: "melee" | "ranged";
+                                        /** @enum {string} */
+                                        ammo: "none" | "counted" | "endless";
+                                        ammoCount: number;
+                                        ammoName: string;
+                                        modifiers: {
+                                            /** @enum {string} */
+                                            statistic: "strength" | "agility" | "presence" | "toughness";
+                                            value: number;
+                                            exclude: ("melee" | "ranged" | "defence" | "cast" | "ability" | "test" | "heal" | "buff" | "item")[];
+                                        }[];
+                                    };
+                                    armor: {
+                                        /** @enum {integer} */
+                                        tier: 1 | 2 | 3;
+                                        modifiers: {
+                                            /** @enum {string} */
+                                            statistic: "strength" | "agility" | "presence" | "toughness";
+                                            value: number;
+                                            exclude: ("melee" | "ranged" | "defence" | "cast" | "ability" | "test" | "heal" | "buff" | "item")[];
+                                        }[];
+                                    };
+                                    gear: {
+                                        /** @enum {string} */
+                                        kind: "consumable" | "wearable" | "carried";
+                                        uses: number;
+                                        /** @enum {string} */
+                                        effect: "text" | "damage" | "die";
+                                        /** @enum {integer} */
+                                        effectDie: 2 | 4 | 6 | 8 | 10 | 12;
+                                        statuses: {
+                                            /** @enum {string} */
+                                            statistic: "strength" | "agility" | "presence" | "toughness";
+                                            value: number;
+                                            exclude: ("melee" | "ranged" | "defence" | "cast" | "ability" | "test" | "heal" | "buff" | "item")[];
+                                        }[];
+                                    };
+                                    pet: {
+                                        hp: number;
+                                        /** @enum {integer} */
+                                        actionDie: 2 | 4 | 6 | 8 | 10;
+                                        /** @enum {string} */
+                                        action: "attack" | "buff";
+                                        humanoid: boolean;
+                                        buffs: {
+                                            /** @enum {string} */
+                                            statistic: "strength" | "agility" | "presence" | "toughness";
+                                            value: number;
+                                            exclude: ("melee" | "ranged" | "defence" | "cast" | "ability" | "test" | "heal" | "buff" | "item")[];
+                                        }[];
+                                    };
+                                }[];
+                                /** @enum {string} */
+                                gettingBetterRule: "book" | "book_plus_ability" | "specialist";
+                                gettingBetterNote: {
+                                    en: string;
+                                    pl: string;
+                                };
+                            };
+                            revision: number;
+                            /** Format: date-time */
+                            updatedAt: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/classes/drafts/{draftId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Load one unfinished private Custom Class draft */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    draftId: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            id: number;
+                            classId: null | number;
+                            draft: {
+                                languages: ("en" | "pl")[];
+                                name: {
+                                    en: string;
+                                    pl: string;
+                                };
+                                description: {
+                                    en: string;
+                                    pl: string;
+                                };
+                                stats: {
+                                    strength: {
+                                        count: number;
+                                        /** @enum {integer} */
+                                        faces: 4 | 6 | 8 | 10 | 12;
+                                        modifier: number;
+                                        dropLowest: boolean;
+                                    };
+                                    agility: {
+                                        count: number;
+                                        /** @enum {integer} */
+                                        faces: 4 | 6 | 8 | 10 | 12;
+                                        modifier: number;
+                                        dropLowest: boolean;
+                                    };
+                                    presence: {
+                                        count: number;
+                                        /** @enum {integer} */
+                                        faces: 4 | 6 | 8 | 10 | 12;
+                                        modifier: number;
+                                        dropLowest: boolean;
+                                    };
+                                    toughness: {
+                                        count: number;
+                                        /** @enum {integer} */
+                                        faces: 4 | 6 | 8 | 10 | 12;
+                                        modifier: number;
+                                        dropLowest: boolean;
+                                    };
+                                };
+                                /** @enum {integer} */
+                                hpDie: 2 | 4 | 6 | 8 | 10 | 12;
+                                /** @enum {integer} */
+                                omenDie: 2 | 4 | 6;
+                                /** @enum {integer} */
+                                weaponDie: 4 | 6 | 8 | 10;
+                                /** @enum {integer} */
+                                armorDie: 2 | 3 | 4;
+                                silver: {
+                                    count: number;
+                                    /** @enum {integer} */
+                                    faces: 4 | 6;
+                                    multiplier: number;
+                                };
+                                origins: {
+                                    en: string;
+                                    pl: string;
+                                    key?: string;
+                                }[];
+                                abilities: {
+                                    key?: string;
+                                    random: boolean;
+                                    name: {
+                                        en: string;
+                                        pl: string;
+                                    };
+                                    text: {
+                                        en: string;
+                                        pl: string;
+                                    };
+                                    modifiers: {
+                                        /** @enum {string} */
+                                        statistic: "strength" | "agility" | "presence" | "toughness";
+                                        value: number;
+                                        exclude: ("melee" | "ranged" | "defence" | "cast" | "ability" | "test" | "heal" | "buff" | "item")[];
+                                    }[];
+                                    grantItem: null | string;
+                                    grantPet: null | string;
+                                    table: null | {
+                                        /** @enum {integer} */
+                                        die: 2 | 3 | 4 | 6 | 8 | 10 | 12;
+                                        rows: {
+                                            text: {
+                                                en: string;
+                                                pl: string;
+                                            };
+                                            itemRef: null | string;
+                                        }[];
+                                    };
+                                }[];
+                                randomAbilityCount: number;
+                                items: {
+                                    ref: string;
+                                    /** @enum {string} */
+                                    type: "weapon" | "armor" | "gear" | "pet";
+                                    name: {
+                                        en: string;
+                                        pl: string;
+                                    };
+                                    description: {
+                                        en: string;
+                                        pl: string;
+                                    };
+                                    value: number;
+                                    weapon: {
+                                        diceCount: number;
+                                        /** @enum {integer} */
+                                        diceFaces: 2 | 4 | 6 | 8 | 10 | 12;
+                                        damageModifier: number;
+                                        /** @enum {string} */
+                                        reach: "melee" | "ranged";
+                                        /** @enum {string} */
+                                        ammo: "none" | "counted" | "endless";
+                                        ammoCount: number;
+                                        ammoName: string;
+                                        modifiers: {
+                                            /** @enum {string} */
+                                            statistic: "strength" | "agility" | "presence" | "toughness";
+                                            value: number;
+                                            exclude: ("melee" | "ranged" | "defence" | "cast" | "ability" | "test" | "heal" | "buff" | "item")[];
+                                        }[];
+                                    };
+                                    armor: {
+                                        /** @enum {integer} */
+                                        tier: 1 | 2 | 3;
+                                        modifiers: {
+                                            /** @enum {string} */
+                                            statistic: "strength" | "agility" | "presence" | "toughness";
+                                            value: number;
+                                            exclude: ("melee" | "ranged" | "defence" | "cast" | "ability" | "test" | "heal" | "buff" | "item")[];
+                                        }[];
+                                    };
+                                    gear: {
+                                        /** @enum {string} */
+                                        kind: "consumable" | "wearable" | "carried";
+                                        uses: number;
+                                        /** @enum {string} */
+                                        effect: "text" | "damage" | "die";
+                                        /** @enum {integer} */
+                                        effectDie: 2 | 4 | 6 | 8 | 10 | 12;
+                                        statuses: {
+                                            /** @enum {string} */
+                                            statistic: "strength" | "agility" | "presence" | "toughness";
+                                            value: number;
+                                            exclude: ("melee" | "ranged" | "defence" | "cast" | "ability" | "test" | "heal" | "buff" | "item")[];
+                                        }[];
+                                    };
+                                    pet: {
+                                        hp: number;
+                                        /** @enum {integer} */
+                                        actionDie: 2 | 4 | 6 | 8 | 10;
+                                        /** @enum {string} */
+                                        action: "attack" | "buff";
+                                        humanoid: boolean;
+                                        buffs: {
+                                            /** @enum {string} */
+                                            statistic: "strength" | "agility" | "presence" | "toughness";
+                                            value: number;
+                                            exclude: ("melee" | "ranged" | "defence" | "cast" | "ability" | "test" | "heal" | "buff" | "item")[];
+                                        }[];
+                                    };
+                                }[];
+                                /** @enum {string} */
+                                gettingBetterRule: "book" | "book_plus_ability" | "specialist";
+                                gettingBetterNote: {
+                                    en: string;
+                                    pl: string;
+                                };
+                            };
+                            revision: number;
+                            /** Format: date-time */
+                            updatedAt: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        /** @description Update an unfinished private Custom Class draft */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    draftId: number;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        draft: {
+                            languages: ("en" | "pl")[];
+                            name: {
+                                en: string;
+                                pl: string;
+                            };
+                            description: {
+                                en: string;
+                                pl: string;
+                            };
+                            stats: {
+                                strength: {
+                                    count: number;
+                                    /** @enum {integer} */
+                                    faces: 4 | 6 | 8 | 10 | 12;
+                                    modifier: number;
+                                    dropLowest: boolean;
+                                };
+                                agility: {
+                                    count: number;
+                                    /** @enum {integer} */
+                                    faces: 4 | 6 | 8 | 10 | 12;
+                                    modifier: number;
+                                    dropLowest: boolean;
+                                };
+                                presence: {
+                                    count: number;
+                                    /** @enum {integer} */
+                                    faces: 4 | 6 | 8 | 10 | 12;
+                                    modifier: number;
+                                    dropLowest: boolean;
+                                };
+                                toughness: {
+                                    count: number;
+                                    /** @enum {integer} */
+                                    faces: 4 | 6 | 8 | 10 | 12;
+                                    modifier: number;
+                                    dropLowest: boolean;
+                                };
+                            };
+                            /** @enum {integer} */
+                            hpDie: 2 | 4 | 6 | 8 | 10 | 12;
+                            /** @enum {integer} */
+                            omenDie: 2 | 4 | 6;
+                            /** @enum {integer} */
+                            weaponDie: 4 | 6 | 8 | 10;
+                            /** @enum {integer} */
+                            armorDie: 2 | 3 | 4;
+                            silver: {
+                                count: number;
+                                /** @enum {integer} */
+                                faces: 4 | 6;
+                                multiplier: number;
+                            };
+                            origins: {
+                                en: string;
+                                pl: string;
+                                key?: string;
+                            }[];
+                            abilities: {
+                                key?: string;
+                                random: boolean;
+                                name: {
+                                    en: string;
+                                    pl: string;
+                                };
+                                text: {
+                                    en: string;
+                                    pl: string;
+                                };
+                                modifiers: {
+                                    /** @enum {string} */
+                                    statistic: "strength" | "agility" | "presence" | "toughness";
+                                    value: number;
+                                    exclude: ("melee" | "ranged" | "defence" | "cast" | "ability" | "test" | "heal" | "buff" | "item")[];
+                                }[];
+                                grantItem: null | string;
+                                grantPet: null | string;
+                                table: null | {
+                                    /** @enum {integer} */
+                                    die: 2 | 3 | 4 | 6 | 8 | 10 | 12;
+                                    rows: {
+                                        text: {
+                                            en: string;
+                                            pl: string;
+                                        };
+                                        itemRef: null | string;
+                                    }[];
+                                };
+                            }[];
+                            randomAbilityCount: number;
+                            items: {
+                                ref: string;
+                                /** @enum {string} */
+                                type: "weapon" | "armor" | "gear" | "pet";
+                                name: {
+                                    en: string;
+                                    pl: string;
+                                };
+                                description: {
+                                    en: string;
+                                    pl: string;
+                                };
+                                value: number;
+                                weapon: {
+                                    diceCount: number;
+                                    /** @enum {integer} */
+                                    diceFaces: 2 | 4 | 6 | 8 | 10 | 12;
+                                    damageModifier: number;
+                                    /** @enum {string} */
+                                    reach: "melee" | "ranged";
+                                    /** @enum {string} */
+                                    ammo: "none" | "counted" | "endless";
+                                    ammoCount: number;
+                                    ammoName: string;
+                                    modifiers: {
+                                        /** @enum {string} */
+                                        statistic: "strength" | "agility" | "presence" | "toughness";
+                                        value: number;
+                                        exclude: ("melee" | "ranged" | "defence" | "cast" | "ability" | "test" | "heal" | "buff" | "item")[];
+                                    }[];
+                                };
+                                armor: {
+                                    /** @enum {integer} */
+                                    tier: 1 | 2 | 3;
+                                    modifiers: {
+                                        /** @enum {string} */
+                                        statistic: "strength" | "agility" | "presence" | "toughness";
+                                        value: number;
+                                        exclude: ("melee" | "ranged" | "defence" | "cast" | "ability" | "test" | "heal" | "buff" | "item")[];
+                                    }[];
+                                };
+                                gear: {
+                                    /** @enum {string} */
+                                    kind: "consumable" | "wearable" | "carried";
+                                    uses: number;
+                                    /** @enum {string} */
+                                    effect: "text" | "damage" | "die";
+                                    /** @enum {integer} */
+                                    effectDie: 2 | 4 | 6 | 8 | 10 | 12;
+                                    statuses: {
+                                        /** @enum {string} */
+                                        statistic: "strength" | "agility" | "presence" | "toughness";
+                                        value: number;
+                                        exclude: ("melee" | "ranged" | "defence" | "cast" | "ability" | "test" | "heal" | "buff" | "item")[];
+                                    }[];
+                                };
+                                pet: {
+                                    hp: number;
+                                    /** @enum {integer} */
+                                    actionDie: 2 | 4 | 6 | 8 | 10;
+                                    /** @enum {string} */
+                                    action: "attack" | "buff";
+                                    humanoid: boolean;
+                                    buffs: {
+                                        /** @enum {string} */
+                                        statistic: "strength" | "agility" | "presence" | "toughness";
+                                        value: number;
+                                        exclude: ("melee" | "ranged" | "defence" | "cast" | "ability" | "test" | "heal" | "buff" | "item")[];
+                                    }[];
+                                };
+                            }[];
+                            /** @enum {string} */
+                            gettingBetterRule: "book" | "book_plus_ability" | "specialist";
+                            gettingBetterNote: {
+                                en: string;
+                                pl: string;
+                            };
+                        };
+                        revision: number;
+                        force?: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            id: number;
+                            classId: null | number;
+                            draft: {
+                                languages: ("en" | "pl")[];
+                                name: {
+                                    en: string;
+                                    pl: string;
+                                };
+                                description: {
+                                    en: string;
+                                    pl: string;
+                                };
+                                stats: {
+                                    strength: {
+                                        count: number;
+                                        /** @enum {integer} */
+                                        faces: 4 | 6 | 8 | 10 | 12;
+                                        modifier: number;
+                                        dropLowest: boolean;
+                                    };
+                                    agility: {
+                                        count: number;
+                                        /** @enum {integer} */
+                                        faces: 4 | 6 | 8 | 10 | 12;
+                                        modifier: number;
+                                        dropLowest: boolean;
+                                    };
+                                    presence: {
+                                        count: number;
+                                        /** @enum {integer} */
+                                        faces: 4 | 6 | 8 | 10 | 12;
+                                        modifier: number;
+                                        dropLowest: boolean;
+                                    };
+                                    toughness: {
+                                        count: number;
+                                        /** @enum {integer} */
+                                        faces: 4 | 6 | 8 | 10 | 12;
+                                        modifier: number;
+                                        dropLowest: boolean;
+                                    };
+                                };
+                                /** @enum {integer} */
+                                hpDie: 2 | 4 | 6 | 8 | 10 | 12;
+                                /** @enum {integer} */
+                                omenDie: 2 | 4 | 6;
+                                /** @enum {integer} */
+                                weaponDie: 4 | 6 | 8 | 10;
+                                /** @enum {integer} */
+                                armorDie: 2 | 3 | 4;
+                                silver: {
+                                    count: number;
+                                    /** @enum {integer} */
+                                    faces: 4 | 6;
+                                    multiplier: number;
+                                };
+                                origins: {
+                                    en: string;
+                                    pl: string;
+                                    key?: string;
+                                }[];
+                                abilities: {
+                                    key?: string;
+                                    random: boolean;
+                                    name: {
+                                        en: string;
+                                        pl: string;
+                                    };
+                                    text: {
+                                        en: string;
+                                        pl: string;
+                                    };
+                                    modifiers: {
+                                        /** @enum {string} */
+                                        statistic: "strength" | "agility" | "presence" | "toughness";
+                                        value: number;
+                                        exclude: ("melee" | "ranged" | "defence" | "cast" | "ability" | "test" | "heal" | "buff" | "item")[];
+                                    }[];
+                                    grantItem: null | string;
+                                    grantPet: null | string;
+                                    table: null | {
+                                        /** @enum {integer} */
+                                        die: 2 | 3 | 4 | 6 | 8 | 10 | 12;
+                                        rows: {
+                                            text: {
+                                                en: string;
+                                                pl: string;
+                                            };
+                                            itemRef: null | string;
+                                        }[];
+                                    };
+                                }[];
+                                randomAbilityCount: number;
+                                items: {
+                                    ref: string;
+                                    /** @enum {string} */
+                                    type: "weapon" | "armor" | "gear" | "pet";
+                                    name: {
+                                        en: string;
+                                        pl: string;
+                                    };
+                                    description: {
+                                        en: string;
+                                        pl: string;
+                                    };
+                                    value: number;
+                                    weapon: {
+                                        diceCount: number;
+                                        /** @enum {integer} */
+                                        diceFaces: 2 | 4 | 6 | 8 | 10 | 12;
+                                        damageModifier: number;
+                                        /** @enum {string} */
+                                        reach: "melee" | "ranged";
+                                        /** @enum {string} */
+                                        ammo: "none" | "counted" | "endless";
+                                        ammoCount: number;
+                                        ammoName: string;
+                                        modifiers: {
+                                            /** @enum {string} */
+                                            statistic: "strength" | "agility" | "presence" | "toughness";
+                                            value: number;
+                                            exclude: ("melee" | "ranged" | "defence" | "cast" | "ability" | "test" | "heal" | "buff" | "item")[];
+                                        }[];
+                                    };
+                                    armor: {
+                                        /** @enum {integer} */
+                                        tier: 1 | 2 | 3;
+                                        modifiers: {
+                                            /** @enum {string} */
+                                            statistic: "strength" | "agility" | "presence" | "toughness";
+                                            value: number;
+                                            exclude: ("melee" | "ranged" | "defence" | "cast" | "ability" | "test" | "heal" | "buff" | "item")[];
+                                        }[];
+                                    };
+                                    gear: {
+                                        /** @enum {string} */
+                                        kind: "consumable" | "wearable" | "carried";
+                                        uses: number;
+                                        /** @enum {string} */
+                                        effect: "text" | "damage" | "die";
+                                        /** @enum {integer} */
+                                        effectDie: 2 | 4 | 6 | 8 | 10 | 12;
+                                        statuses: {
+                                            /** @enum {string} */
+                                            statistic: "strength" | "agility" | "presence" | "toughness";
+                                            value: number;
+                                            exclude: ("melee" | "ranged" | "defence" | "cast" | "ability" | "test" | "heal" | "buff" | "item")[];
+                                        }[];
+                                    };
+                                    pet: {
+                                        hp: number;
+                                        /** @enum {integer} */
+                                        actionDie: 2 | 4 | 6 | 8 | 10;
+                                        /** @enum {string} */
+                                        action: "attack" | "buff";
+                                        humanoid: boolean;
+                                        buffs: {
+                                            /** @enum {string} */
+                                            statistic: "strength" | "agility" | "presence" | "toughness";
+                                            value: number;
+                                            exclude: ("melee" | "ranged" | "defence" | "cast" | "ability" | "test" | "heal" | "buff" | "item")[];
+                                        }[];
+                                    };
+                                }[];
+                                /** @enum {string} */
+                                gettingBetterRule: "book" | "book_plus_ability" | "specialist";
+                                gettingBetterNote: {
+                                    en: string;
+                                    pl: string;
+                                };
+                            };
+                            revision: number;
+                            /** Format: date-time */
+                            updatedAt: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        post?: never;
+        /** @description Discard one unfinished private Custom Class draft */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    draftId: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/classes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Save a new Custom Class from the creator */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        draft: {
+                            languages: ("en" | "pl")[];
+                            name: {
+                                en: string;
+                                pl: string;
+                            };
+                            description: {
+                                en: string;
+                                pl: string;
+                            };
+                            stats: {
+                                strength: {
+                                    count: number;
+                                    /** @enum {integer} */
+                                    faces: 4 | 6 | 8 | 10 | 12;
+                                    modifier: number;
+                                    dropLowest: boolean;
+                                };
+                                agility: {
+                                    count: number;
+                                    /** @enum {integer} */
+                                    faces: 4 | 6 | 8 | 10 | 12;
+                                    modifier: number;
+                                    dropLowest: boolean;
+                                };
+                                presence: {
+                                    count: number;
+                                    /** @enum {integer} */
+                                    faces: 4 | 6 | 8 | 10 | 12;
+                                    modifier: number;
+                                    dropLowest: boolean;
+                                };
+                                toughness: {
+                                    count: number;
+                                    /** @enum {integer} */
+                                    faces: 4 | 6 | 8 | 10 | 12;
+                                    modifier: number;
+                                    dropLowest: boolean;
+                                };
+                            };
+                            /** @enum {integer} */
+                            hpDie: 2 | 4 | 6 | 8 | 10 | 12;
+                            /** @enum {integer} */
+                            omenDie: 2 | 4 | 6;
+                            /** @enum {integer} */
+                            weaponDie: 4 | 6 | 8 | 10;
+                            /** @enum {integer} */
+                            armorDie: 2 | 3 | 4;
+                            silver: {
+                                count: number;
+                                /** @enum {integer} */
+                                faces: 4 | 6;
+                                multiplier: number;
+                            };
+                            origins: {
+                                en: string;
+                                pl: string;
+                                key?: string;
+                            }[];
+                            abilities: {
+                                key?: string;
+                                random: boolean;
+                                name: {
+                                    en: string;
+                                    pl: string;
+                                };
+                                text: {
+                                    en: string;
+                                    pl: string;
+                                };
+                                modifiers: {
+                                    /** @enum {string} */
+                                    statistic: "strength" | "agility" | "presence" | "toughness";
+                                    value: number;
+                                    exclude: ("melee" | "ranged" | "defence" | "cast" | "ability" | "test" | "heal" | "buff" | "item")[];
+                                }[];
+                                grantItem: null | string;
+                                grantPet: null | string;
+                                table: null | {
+                                    /** @enum {integer} */
+                                    die: 2 | 3 | 4 | 6 | 8 | 10 | 12;
+                                    rows: {
+                                        text: {
+                                            en: string;
+                                            pl: string;
+                                        };
+                                        itemRef: null | string;
+                                    }[];
+                                };
+                            }[];
+                            randomAbilityCount: number;
+                            items: {
+                                ref: string;
+                                /** @enum {string} */
+                                type: "weapon" | "armor" | "gear" | "pet";
+                                name: {
+                                    en: string;
+                                    pl: string;
+                                };
+                                description: {
+                                    en: string;
+                                    pl: string;
+                                };
+                                value: number;
+                                weapon: {
+                                    diceCount: number;
+                                    /** @enum {integer} */
+                                    diceFaces: 2 | 4 | 6 | 8 | 10 | 12;
+                                    damageModifier: number;
+                                    /** @enum {string} */
+                                    reach: "melee" | "ranged";
+                                    /** @enum {string} */
+                                    ammo: "none" | "counted" | "endless";
+                                    ammoCount: number;
+                                    ammoName: string;
+                                    modifiers: {
+                                        /** @enum {string} */
+                                        statistic: "strength" | "agility" | "presence" | "toughness";
+                                        value: number;
+                                        exclude: ("melee" | "ranged" | "defence" | "cast" | "ability" | "test" | "heal" | "buff" | "item")[];
+                                    }[];
+                                };
+                                armor: {
+                                    /** @enum {integer} */
+                                    tier: 1 | 2 | 3;
+                                    modifiers: {
+                                        /** @enum {string} */
+                                        statistic: "strength" | "agility" | "presence" | "toughness";
+                                        value: number;
+                                        exclude: ("melee" | "ranged" | "defence" | "cast" | "ability" | "test" | "heal" | "buff" | "item")[];
+                                    }[];
+                                };
+                                gear: {
+                                    /** @enum {string} */
+                                    kind: "consumable" | "wearable" | "carried";
+                                    uses: number;
+                                    /** @enum {string} */
+                                    effect: "text" | "damage" | "die";
+                                    /** @enum {integer} */
+                                    effectDie: 2 | 4 | 6 | 8 | 10 | 12;
+                                    statuses: {
+                                        /** @enum {string} */
+                                        statistic: "strength" | "agility" | "presence" | "toughness";
+                                        value: number;
+                                        exclude: ("melee" | "ranged" | "defence" | "cast" | "ability" | "test" | "heal" | "buff" | "item")[];
+                                    }[];
+                                };
+                                pet: {
+                                    hp: number;
+                                    /** @enum {integer} */
+                                    actionDie: 2 | 4 | 6 | 8 | 10;
+                                    /** @enum {string} */
+                                    action: "attack" | "buff";
+                                    humanoid: boolean;
+                                    buffs: {
+                                        /** @enum {string} */
+                                        statistic: "strength" | "agility" | "presence" | "toughness";
+                                        value: number;
+                                        exclude: ("melee" | "ranged" | "defence" | "cast" | "ability" | "test" | "heal" | "buff" | "item")[];
+                                    }[];
+                                };
+                            }[];
+                            /** @enum {string} */
+                            gettingBetterRule: "book" | "book_plus_ability" | "specialist";
+                            gettingBetterNote: {
+                                en: string;
+                                pl: string;
+                            };
+                        };
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            id: number;
+                            draft: {
+                                languages: ("en" | "pl")[];
+                                name: {
+                                    en: string;
+                                    pl: string;
+                                };
+                                description: {
+                                    en: string;
+                                    pl: string;
+                                };
+                                stats: {
+                                    strength: {
+                                        count: number;
+                                        /** @enum {integer} */
+                                        faces: 4 | 6 | 8 | 10 | 12;
+                                        modifier: number;
+                                        dropLowest: boolean;
+                                    };
+                                    agility: {
+                                        count: number;
+                                        /** @enum {integer} */
+                                        faces: 4 | 6 | 8 | 10 | 12;
+                                        modifier: number;
+                                        dropLowest: boolean;
+                                    };
+                                    presence: {
+                                        count: number;
+                                        /** @enum {integer} */
+                                        faces: 4 | 6 | 8 | 10 | 12;
+                                        modifier: number;
+                                        dropLowest: boolean;
+                                    };
+                                    toughness: {
+                                        count: number;
+                                        /** @enum {integer} */
+                                        faces: 4 | 6 | 8 | 10 | 12;
+                                        modifier: number;
+                                        dropLowest: boolean;
+                                    };
+                                };
+                                /** @enum {integer} */
+                                hpDie: 2 | 4 | 6 | 8 | 10 | 12;
+                                /** @enum {integer} */
+                                omenDie: 2 | 4 | 6;
+                                /** @enum {integer} */
+                                weaponDie: 4 | 6 | 8 | 10;
+                                /** @enum {integer} */
+                                armorDie: 2 | 3 | 4;
+                                silver: {
+                                    count: number;
+                                    /** @enum {integer} */
+                                    faces: 4 | 6;
+                                    multiplier: number;
+                                };
+                                origins: {
+                                    en: string;
+                                    pl: string;
+                                    key?: string;
+                                }[];
+                                abilities: {
+                                    key?: string;
+                                    random: boolean;
+                                    name: {
+                                        en: string;
+                                        pl: string;
+                                    };
+                                    text: {
+                                        en: string;
+                                        pl: string;
+                                    };
+                                    modifiers: {
+                                        /** @enum {string} */
+                                        statistic: "strength" | "agility" | "presence" | "toughness";
+                                        value: number;
+                                        exclude: ("melee" | "ranged" | "defence" | "cast" | "ability" | "test" | "heal" | "buff" | "item")[];
+                                    }[];
+                                    grantItem: null | string;
+                                    grantPet: null | string;
+                                    table: null | {
+                                        /** @enum {integer} */
+                                        die: 2 | 3 | 4 | 6 | 8 | 10 | 12;
+                                        rows: {
+                                            text: {
+                                                en: string;
+                                                pl: string;
+                                            };
+                                            itemRef: null | string;
+                                        }[];
+                                    };
+                                }[];
+                                randomAbilityCount: number;
+                                items: {
+                                    ref: string;
+                                    /** @enum {string} */
+                                    type: "weapon" | "armor" | "gear" | "pet";
+                                    name: {
+                                        en: string;
+                                        pl: string;
+                                    };
+                                    description: {
+                                        en: string;
+                                        pl: string;
+                                    };
+                                    value: number;
+                                    weapon: {
+                                        diceCount: number;
+                                        /** @enum {integer} */
+                                        diceFaces: 2 | 4 | 6 | 8 | 10 | 12;
+                                        damageModifier: number;
+                                        /** @enum {string} */
+                                        reach: "melee" | "ranged";
+                                        /** @enum {string} */
+                                        ammo: "none" | "counted" | "endless";
+                                        ammoCount: number;
+                                        ammoName: string;
+                                        modifiers: {
+                                            /** @enum {string} */
+                                            statistic: "strength" | "agility" | "presence" | "toughness";
+                                            value: number;
+                                            exclude: ("melee" | "ranged" | "defence" | "cast" | "ability" | "test" | "heal" | "buff" | "item")[];
+                                        }[];
+                                    };
+                                    armor: {
+                                        /** @enum {integer} */
+                                        tier: 1 | 2 | 3;
+                                        modifiers: {
+                                            /** @enum {string} */
+                                            statistic: "strength" | "agility" | "presence" | "toughness";
+                                            value: number;
+                                            exclude: ("melee" | "ranged" | "defence" | "cast" | "ability" | "test" | "heal" | "buff" | "item")[];
+                                        }[];
+                                    };
+                                    gear: {
+                                        /** @enum {string} */
+                                        kind: "consumable" | "wearable" | "carried";
+                                        uses: number;
+                                        /** @enum {string} */
+                                        effect: "text" | "damage" | "die";
+                                        /** @enum {integer} */
+                                        effectDie: 2 | 4 | 6 | 8 | 10 | 12;
+                                        statuses: {
+                                            /** @enum {string} */
+                                            statistic: "strength" | "agility" | "presence" | "toughness";
+                                            value: number;
+                                            exclude: ("melee" | "ranged" | "defence" | "cast" | "ability" | "test" | "heal" | "buff" | "item")[];
+                                        }[];
+                                    };
+                                    pet: {
+                                        hp: number;
+                                        /** @enum {integer} */
+                                        actionDie: 2 | 4 | 6 | 8 | 10;
+                                        /** @enum {string} */
+                                        action: "attack" | "buff";
+                                        humanoid: boolean;
+                                        buffs: {
+                                            /** @enum {string} */
+                                            statistic: "strength" | "agility" | "presence" | "toughness";
+                                            value: number;
+                                            exclude: ("melee" | "ranged" | "defence" | "cast" | "ability" | "test" | "heal" | "buff" | "item")[];
+                                        }[];
+                                    };
+                                }[];
+                                /** @enum {string} */
+                                gettingBetterRule: "book" | "book_plus_ability" | "specialist";
+                                gettingBetterNote: {
+                                    en: string;
+                                    pl: string;
+                                };
+                            };
+                            version: number;
+                            playingCount: number;
+                            /** @enum {string} */
+                            status: "draft" | "active" | "archived";
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/classes/test-roll": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Roll a test scvm from a class draft (not persisted) */
+        post: {
+            parameters: {
+                query?: {
+                    locale?: "en" | "pl";
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        draft: {
+                            languages: ("en" | "pl")[];
+                            name: {
+                                en: string;
+                                pl: string;
+                            };
+                            description: {
+                                en: string;
+                                pl: string;
+                            };
+                            stats: {
+                                strength: {
+                                    count: number;
+                                    /** @enum {integer} */
+                                    faces: 4 | 6 | 8 | 10 | 12;
+                                    modifier: number;
+                                    dropLowest: boolean;
+                                };
+                                agility: {
+                                    count: number;
+                                    /** @enum {integer} */
+                                    faces: 4 | 6 | 8 | 10 | 12;
+                                    modifier: number;
+                                    dropLowest: boolean;
+                                };
+                                presence: {
+                                    count: number;
+                                    /** @enum {integer} */
+                                    faces: 4 | 6 | 8 | 10 | 12;
+                                    modifier: number;
+                                    dropLowest: boolean;
+                                };
+                                toughness: {
+                                    count: number;
+                                    /** @enum {integer} */
+                                    faces: 4 | 6 | 8 | 10 | 12;
+                                    modifier: number;
+                                    dropLowest: boolean;
+                                };
+                            };
+                            /** @enum {integer} */
+                            hpDie: 2 | 4 | 6 | 8 | 10 | 12;
+                            /** @enum {integer} */
+                            omenDie: 2 | 4 | 6;
+                            /** @enum {integer} */
+                            weaponDie: 4 | 6 | 8 | 10;
+                            /** @enum {integer} */
+                            armorDie: 2 | 3 | 4;
+                            silver: {
+                                count: number;
+                                /** @enum {integer} */
+                                faces: 4 | 6;
+                                multiplier: number;
+                            };
+                            origins: {
+                                en: string;
+                                pl: string;
+                                key?: string;
+                            }[];
+                            abilities: {
+                                key?: string;
+                                random: boolean;
+                                name: {
+                                    en: string;
+                                    pl: string;
+                                };
+                                text: {
+                                    en: string;
+                                    pl: string;
+                                };
+                                modifiers: {
+                                    /** @enum {string} */
+                                    statistic: "strength" | "agility" | "presence" | "toughness";
+                                    value: number;
+                                    exclude: ("melee" | "ranged" | "defence" | "cast" | "ability" | "test" | "heal" | "buff" | "item")[];
+                                }[];
+                                grantItem: null | string;
+                                grantPet: null | string;
+                                table: null | {
+                                    /** @enum {integer} */
+                                    die: 2 | 3 | 4 | 6 | 8 | 10 | 12;
+                                    rows: {
+                                        text: {
+                                            en: string;
+                                            pl: string;
+                                        };
+                                        itemRef: null | string;
+                                    }[];
+                                };
+                            }[];
+                            randomAbilityCount: number;
+                            items: {
+                                ref: string;
+                                /** @enum {string} */
+                                type: "weapon" | "armor" | "gear" | "pet";
+                                name: {
+                                    en: string;
+                                    pl: string;
+                                };
+                                description: {
+                                    en: string;
+                                    pl: string;
+                                };
+                                value: number;
+                                weapon: {
+                                    diceCount: number;
+                                    /** @enum {integer} */
+                                    diceFaces: 2 | 4 | 6 | 8 | 10 | 12;
+                                    damageModifier: number;
+                                    /** @enum {string} */
+                                    reach: "melee" | "ranged";
+                                    /** @enum {string} */
+                                    ammo: "none" | "counted" | "endless";
+                                    ammoCount: number;
+                                    ammoName: string;
+                                    modifiers: {
+                                        /** @enum {string} */
+                                        statistic: "strength" | "agility" | "presence" | "toughness";
+                                        value: number;
+                                        exclude: ("melee" | "ranged" | "defence" | "cast" | "ability" | "test" | "heal" | "buff" | "item")[];
+                                    }[];
+                                };
+                                armor: {
+                                    /** @enum {integer} */
+                                    tier: 1 | 2 | 3;
+                                    modifiers: {
+                                        /** @enum {string} */
+                                        statistic: "strength" | "agility" | "presence" | "toughness";
+                                        value: number;
+                                        exclude: ("melee" | "ranged" | "defence" | "cast" | "ability" | "test" | "heal" | "buff" | "item")[];
+                                    }[];
+                                };
+                                gear: {
+                                    /** @enum {string} */
+                                    kind: "consumable" | "wearable" | "carried";
+                                    uses: number;
+                                    /** @enum {string} */
+                                    effect: "text" | "damage" | "die";
+                                    /** @enum {integer} */
+                                    effectDie: 2 | 4 | 6 | 8 | 10 | 12;
+                                    statuses: {
+                                        /** @enum {string} */
+                                        statistic: "strength" | "agility" | "presence" | "toughness";
+                                        value: number;
+                                        exclude: ("melee" | "ranged" | "defence" | "cast" | "ability" | "test" | "heal" | "buff" | "item")[];
+                                    }[];
+                                };
+                                pet: {
+                                    hp: number;
+                                    /** @enum {integer} */
+                                    actionDie: 2 | 4 | 6 | 8 | 10;
+                                    /** @enum {string} */
+                                    action: "attack" | "buff";
+                                    humanoid: boolean;
+                                    buffs: {
+                                        /** @enum {string} */
+                                        statistic: "strength" | "agility" | "presence" | "toughness";
+                                        value: number;
+                                        exclude: ("melee" | "ranged" | "defence" | "cast" | "ability" | "test" | "heal" | "buff" | "item")[];
+                                    }[];
+                                };
+                            }[];
+                            /** @enum {string} */
+                            gettingBetterRule: "book" | "book_plus_ability" | "specialist";
+                            gettingBetterNote: {
+                                en: string;
+                                pl: string;
+                            };
+                        };
+                        /** @enum {string} */
+                        language: "en" | "pl";
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id?: null | string;
+                            name?: string;
+                            classId?: null | number;
+                            className?: null | string;
+                            classDescription?: null | string;
+                            classAttribution?: null | string;
+                            /** @enum {null|string} */
+                            classAuthoredLanguage?: "en" | "pl" | null;
+                            classContentRemoved?: boolean;
+                            classReportable?: boolean;
+                            origin?: null | string;
+                            strength?: number;
+                            agility?: number;
+                            presence?: number;
+                            toughness?: number;
+                            maxHp?: number;
+                            currentHp?: number;
+                            omens?: number;
+                            maxOmens?: number;
+                            silver?: number;
+                            habit?: null | string;
+                            tale?: null | string;
+                            bodyDescription?: null | string;
+                            trait1?: null | string;
+                            trait2?: null | string;
+                            notes?: string;
+                            miseryCount?: number;
+                            abilities?: {
+                                key?: string;
+                                name?: string;
+                                description?: string;
+                                comment?: string;
+                                table?: {
+                                    die: number;
+                                    rows: {
+                                        roll: number;
+                                        text: string;
+                                        itemKey: null | string;
+                                        itemName: null | string;
+                                    }[];
+                                };
+                            }[];
+                            equipment?: {
+                                key?: string;
+                                name?: string;
+                                description?: string;
+                                comments?: string;
+                                source?: string;
+                                category?: string;
+                                value?: number;
+                                uses?: boolean[];
+                                dice?: number[];
+                                tags?: string[];
+                                maxTier?: number;
+                                currentTier?: number;
+                                amount?: number;
+                                ammoType?: string;
+                                useCountRule?: {
+                                    /** @enum {string} */
+                                    mode?: "fixed" | "fixedPlusModifier";
+                                    base?: number;
+                                    /** @enum {string} */
+                                    statistic?: "agility" | "strength" | "presence" | "toughness";
+                                };
+                                modifiers?: {
+                                    id?: string;
+                                    name?: string;
+                                    value?: number;
+                                    source?: string;
+                                    /** @enum {string} */
+                                    statistic?: "agility" | "strength" | "presence" | "toughness";
+                                    exclude?: string[];
+                                    /** @enum {string} */
+                                    scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
+                                    comment?: string;
+                                }[];
+                            }[];
+                            storage?: {
+                                key?: string;
+                                name?: string;
+                                description?: string;
+                                comments?: string;
+                                source?: string;
+                                category?: string;
+                                value?: number;
+                                uses?: boolean[];
+                                dice?: number[];
+                                tags?: string[];
+                                maxTier?: number;
+                                currentTier?: number;
+                                amount?: number;
+                                ammoType?: string;
+                                useCountRule?: {
+                                    /** @enum {string} */
+                                    mode?: "fixed" | "fixedPlusModifier";
+                                    base?: number;
+                                    /** @enum {string} */
+                                    statistic?: "agility" | "strength" | "presence" | "toughness";
+                                };
+                                modifiers?: {
+                                    id?: string;
+                                    name?: string;
+                                    value?: number;
+                                    source?: string;
+                                    /** @enum {string} */
+                                    statistic?: "agility" | "strength" | "presence" | "toughness";
+                                    exclude?: string[];
+                                    /** @enum {string} */
+                                    scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
+                                    comment?: string;
+                                }[];
+                            }[];
+                            equippedWeapons?: {
+                                key?: string;
+                                name?: string;
+                                description?: string;
+                                comments?: string;
+                                source?: string;
+                                category?: string;
+                                value?: number;
+                                dice?: number[];
+                                tags?: string[];
+                                ammoType?: string;
+                                modifiers?: {
+                                    id?: string;
+                                    name?: string;
+                                    value?: number;
+                                    source?: string;
+                                    /** @enum {string} */
+                                    statistic?: "agility" | "strength" | "presence" | "toughness";
+                                    exclude?: string[];
+                                    /** @enum {string} */
+                                    scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
+                                    comment?: string;
+                                }[];
+                            }[];
+                            equippedArmor?: {
+                                key?: string;
+                                name?: string;
+                                description?: string;
+                                comments?: string;
+                                source?: string;
+                                category?: string;
+                                value?: number;
+                                dice?: number[];
+                                maxTier?: number;
+                                currentTier?: number;
+                                tags?: string[];
+                                modifiers?: {
+                                    id?: string;
+                                    name?: string;
+                                    value?: number;
+                                    source?: string;
+                                    /** @enum {string} */
+                                    statistic?: "agility" | "strength" | "presence" | "toughness";
+                                    exclude?: string[];
+                                    /** @enum {string} */
+                                    scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
+                                    comment?: string;
+                                }[];
+                            } | null;
+                            modifiers?: {
+                                id?: string;
+                                name?: string;
+                                value?: number;
+                                source?: string;
+                                /** @enum {string} */
+                                statistic?: "agility" | "strength" | "presence" | "toughness";
+                                exclude?: string[];
+                                /** @enum {string} */
+                                scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
+                                comment?: string;
+                            }[];
+                            computedModifiers?: {
+                                value?: number;
+                                source?: string;
+                                /** @enum {string} */
+                                statistic?: "agility" | "strength" | "presence" | "toughness";
+                                exclude?: string[];
+                                /** @enum {string} */
+                                origin?: "armor" | "weapon" | "pet" | "system";
+                                originKey?: string;
+                                originName?: string;
+                            }[];
+                            encumbrance?: number;
+                            maxEncumbrance?: number;
+                            drToDodge?: number;
+                            drToMelee?: number;
+                            drToRanged?: number;
+                            /** Format: uuid */
+                            partyId?: null | string;
+                            /** Format: date-time */
+                            joinedAt?: null | string;
+                            /** @enum {string} */
+                            viewerAccess?: "owner" | "party";
+                            /** Format: date-time */
+                            createdAt?: string;
+                            /** Format: date-time */
+                            updatedAt?: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/classes/details/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Load the latest readable Custom Class version for display */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            id: number;
+                            draft: {
+                                languages: ("en" | "pl")[];
+                                name: {
+                                    en: string;
+                                    pl: string;
+                                };
+                                description: {
+                                    en: string;
+                                    pl: string;
+                                };
+                                stats: {
+                                    strength: {
+                                        count: number;
+                                        /** @enum {integer} */
+                                        faces: 4 | 6 | 8 | 10 | 12;
+                                        modifier: number;
+                                        dropLowest: boolean;
+                                    };
+                                    agility: {
+                                        count: number;
+                                        /** @enum {integer} */
+                                        faces: 4 | 6 | 8 | 10 | 12;
+                                        modifier: number;
+                                        dropLowest: boolean;
+                                    };
+                                    presence: {
+                                        count: number;
+                                        /** @enum {integer} */
+                                        faces: 4 | 6 | 8 | 10 | 12;
+                                        modifier: number;
+                                        dropLowest: boolean;
+                                    };
+                                    toughness: {
+                                        count: number;
+                                        /** @enum {integer} */
+                                        faces: 4 | 6 | 8 | 10 | 12;
+                                        modifier: number;
+                                        dropLowest: boolean;
+                                    };
+                                };
+                                /** @enum {integer} */
+                                hpDie: 2 | 4 | 6 | 8 | 10 | 12;
+                                /** @enum {integer} */
+                                omenDie: 2 | 4 | 6;
+                                /** @enum {integer} */
+                                weaponDie: 4 | 6 | 8 | 10;
+                                /** @enum {integer} */
+                                armorDie: 2 | 3 | 4;
+                                silver: {
+                                    count: number;
+                                    /** @enum {integer} */
+                                    faces: 4 | 6;
+                                    multiplier: number;
+                                };
+                                origins: {
+                                    en: string;
+                                    pl: string;
+                                    key?: string;
+                                }[];
+                                abilities: {
+                                    key?: string;
+                                    random: boolean;
+                                    name: {
+                                        en: string;
+                                        pl: string;
+                                    };
+                                    text: {
+                                        en: string;
+                                        pl: string;
+                                    };
+                                    modifiers: {
+                                        /** @enum {string} */
+                                        statistic: "strength" | "agility" | "presence" | "toughness";
+                                        value: number;
+                                        exclude: ("melee" | "ranged" | "defence" | "cast" | "ability" | "test" | "heal" | "buff" | "item")[];
+                                    }[];
+                                    grantItem: null | string;
+                                    grantPet: null | string;
+                                    table: null | {
+                                        /** @enum {integer} */
+                                        die: 2 | 3 | 4 | 6 | 8 | 10 | 12;
+                                        rows: {
+                                            text: {
+                                                en: string;
+                                                pl: string;
+                                            };
+                                            itemRef: null | string;
+                                        }[];
+                                    };
+                                }[];
+                                randomAbilityCount: number;
+                                items: {
+                                    ref: string;
+                                    /** @enum {string} */
+                                    type: "weapon" | "armor" | "gear" | "pet";
+                                    name: {
+                                        en: string;
+                                        pl: string;
+                                    };
+                                    description: {
+                                        en: string;
+                                        pl: string;
+                                    };
+                                    value: number;
+                                    weapon: {
+                                        diceCount: number;
+                                        /** @enum {integer} */
+                                        diceFaces: 2 | 4 | 6 | 8 | 10 | 12;
+                                        damageModifier: number;
+                                        /** @enum {string} */
+                                        reach: "melee" | "ranged";
+                                        /** @enum {string} */
+                                        ammo: "none" | "counted" | "endless";
+                                        ammoCount: number;
+                                        ammoName: string;
+                                        modifiers: {
+                                            /** @enum {string} */
+                                            statistic: "strength" | "agility" | "presence" | "toughness";
+                                            value: number;
+                                            exclude: ("melee" | "ranged" | "defence" | "cast" | "ability" | "test" | "heal" | "buff" | "item")[];
+                                        }[];
+                                    };
+                                    armor: {
+                                        /** @enum {integer} */
+                                        tier: 1 | 2 | 3;
+                                        modifiers: {
+                                            /** @enum {string} */
+                                            statistic: "strength" | "agility" | "presence" | "toughness";
+                                            value: number;
+                                            exclude: ("melee" | "ranged" | "defence" | "cast" | "ability" | "test" | "heal" | "buff" | "item")[];
+                                        }[];
+                                    };
+                                    gear: {
+                                        /** @enum {string} */
+                                        kind: "consumable" | "wearable" | "carried";
+                                        uses: number;
+                                        /** @enum {string} */
+                                        effect: "text" | "damage" | "die";
+                                        /** @enum {integer} */
+                                        effectDie: 2 | 4 | 6 | 8 | 10 | 12;
+                                        statuses: {
+                                            /** @enum {string} */
+                                            statistic: "strength" | "agility" | "presence" | "toughness";
+                                            value: number;
+                                            exclude: ("melee" | "ranged" | "defence" | "cast" | "ability" | "test" | "heal" | "buff" | "item")[];
+                                        }[];
+                                    };
+                                    pet: {
+                                        hp: number;
+                                        /** @enum {integer} */
+                                        actionDie: 2 | 4 | 6 | 8 | 10;
+                                        /** @enum {string} */
+                                        action: "attack" | "buff";
+                                        humanoid: boolean;
+                                        buffs: {
+                                            /** @enum {string} */
+                                            statistic: "strength" | "agility" | "presence" | "toughness";
+                                            value: number;
+                                            exclude: ("melee" | "ranged" | "defence" | "cast" | "ability" | "test" | "heal" | "buff" | "item")[];
+                                        }[];
+                                    };
+                                }[];
+                                /** @enum {string} */
+                                gettingBetterRule: "book" | "book_plus_ability" | "specialist";
+                                gettingBetterNote: {
+                                    en: string;
+                                    pl: string;
+                                };
+                            };
+                            version: number;
+                            playingCount: number;
+                            /** @enum {string} */
+                            status: "draft" | "active" | "archived";
+                            attribution: string;
+                            reportable: boolean;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/classes/{id}/disputes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        text: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/classes/{id}/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Publish a Custom Class after the creator confirms sharing rights */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @enum {unknown} */
+                        confirmed: true;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            visibility: "private" | "public";
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                410: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/classes/{id}/unpublish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Unpublish a Custom Class lineage */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            visibility: "private" | "public";
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                410: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/classes/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Load one of your Custom Classes into the creator */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            id: number;
+                            draft: {
+                                languages: ("en" | "pl")[];
+                                name: {
+                                    en: string;
+                                    pl: string;
+                                };
+                                description: {
+                                    en: string;
+                                    pl: string;
+                                };
+                                stats: {
+                                    strength: {
+                                        count: number;
+                                        /** @enum {integer} */
+                                        faces: 4 | 6 | 8 | 10 | 12;
+                                        modifier: number;
+                                        dropLowest: boolean;
+                                    };
+                                    agility: {
+                                        count: number;
+                                        /** @enum {integer} */
+                                        faces: 4 | 6 | 8 | 10 | 12;
+                                        modifier: number;
+                                        dropLowest: boolean;
+                                    };
+                                    presence: {
+                                        count: number;
+                                        /** @enum {integer} */
+                                        faces: 4 | 6 | 8 | 10 | 12;
+                                        modifier: number;
+                                        dropLowest: boolean;
+                                    };
+                                    toughness: {
+                                        count: number;
+                                        /** @enum {integer} */
+                                        faces: 4 | 6 | 8 | 10 | 12;
+                                        modifier: number;
+                                        dropLowest: boolean;
+                                    };
+                                };
+                                /** @enum {integer} */
+                                hpDie: 2 | 4 | 6 | 8 | 10 | 12;
+                                /** @enum {integer} */
+                                omenDie: 2 | 4 | 6;
+                                /** @enum {integer} */
+                                weaponDie: 4 | 6 | 8 | 10;
+                                /** @enum {integer} */
+                                armorDie: 2 | 3 | 4;
+                                silver: {
+                                    count: number;
+                                    /** @enum {integer} */
+                                    faces: 4 | 6;
+                                    multiplier: number;
+                                };
+                                origins: {
+                                    en: string;
+                                    pl: string;
+                                    key?: string;
+                                }[];
+                                abilities: {
+                                    key?: string;
+                                    random: boolean;
+                                    name: {
+                                        en: string;
+                                        pl: string;
+                                    };
+                                    text: {
+                                        en: string;
+                                        pl: string;
+                                    };
+                                    modifiers: {
+                                        /** @enum {string} */
+                                        statistic: "strength" | "agility" | "presence" | "toughness";
+                                        value: number;
+                                        exclude: ("melee" | "ranged" | "defence" | "cast" | "ability" | "test" | "heal" | "buff" | "item")[];
+                                    }[];
+                                    grantItem: null | string;
+                                    grantPet: null | string;
+                                    table: null | {
+                                        /** @enum {integer} */
+                                        die: 2 | 3 | 4 | 6 | 8 | 10 | 12;
+                                        rows: {
+                                            text: {
+                                                en: string;
+                                                pl: string;
+                                            };
+                                            itemRef: null | string;
+                                        }[];
+                                    };
+                                }[];
+                                randomAbilityCount: number;
+                                items: {
+                                    ref: string;
+                                    /** @enum {string} */
+                                    type: "weapon" | "armor" | "gear" | "pet";
+                                    name: {
+                                        en: string;
+                                        pl: string;
+                                    };
+                                    description: {
+                                        en: string;
+                                        pl: string;
+                                    };
+                                    value: number;
+                                    weapon: {
+                                        diceCount: number;
+                                        /** @enum {integer} */
+                                        diceFaces: 2 | 4 | 6 | 8 | 10 | 12;
+                                        damageModifier: number;
+                                        /** @enum {string} */
+                                        reach: "melee" | "ranged";
+                                        /** @enum {string} */
+                                        ammo: "none" | "counted" | "endless";
+                                        ammoCount: number;
+                                        ammoName: string;
+                                        modifiers: {
+                                            /** @enum {string} */
+                                            statistic: "strength" | "agility" | "presence" | "toughness";
+                                            value: number;
+                                            exclude: ("melee" | "ranged" | "defence" | "cast" | "ability" | "test" | "heal" | "buff" | "item")[];
+                                        }[];
+                                    };
+                                    armor: {
+                                        /** @enum {integer} */
+                                        tier: 1 | 2 | 3;
+                                        modifiers: {
+                                            /** @enum {string} */
+                                            statistic: "strength" | "agility" | "presence" | "toughness";
+                                            value: number;
+                                            exclude: ("melee" | "ranged" | "defence" | "cast" | "ability" | "test" | "heal" | "buff" | "item")[];
+                                        }[];
+                                    };
+                                    gear: {
+                                        /** @enum {string} */
+                                        kind: "consumable" | "wearable" | "carried";
+                                        uses: number;
+                                        /** @enum {string} */
+                                        effect: "text" | "damage" | "die";
+                                        /** @enum {integer} */
+                                        effectDie: 2 | 4 | 6 | 8 | 10 | 12;
+                                        statuses: {
+                                            /** @enum {string} */
+                                            statistic: "strength" | "agility" | "presence" | "toughness";
+                                            value: number;
+                                            exclude: ("melee" | "ranged" | "defence" | "cast" | "ability" | "test" | "heal" | "buff" | "item")[];
+                                        }[];
+                                    };
+                                    pet: {
+                                        hp: number;
+                                        /** @enum {integer} */
+                                        actionDie: 2 | 4 | 6 | 8 | 10;
+                                        /** @enum {string} */
+                                        action: "attack" | "buff";
+                                        humanoid: boolean;
+                                        buffs: {
+                                            /** @enum {string} */
+                                            statistic: "strength" | "agility" | "presence" | "toughness";
+                                            value: number;
+                                            exclude: ("melee" | "ranged" | "defence" | "cast" | "ability" | "test" | "heal" | "buff" | "item")[];
+                                        }[];
+                                    };
+                                }[];
+                                /** @enum {string} */
+                                gettingBetterRule: "book" | "book_plus_ability" | "specialist";
+                                gettingBetterNote: {
+                                    en: string;
+                                    pl: string;
+                                };
+                            };
+                            version: number;
+                            playingCount: number;
+                            /** @enum {string} */
+                            status: "draft" | "active" | "archived";
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        /** @description Save edits to one of your Custom Classes */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        draft: {
+                            languages: ("en" | "pl")[];
+                            name: {
+                                en: string;
+                                pl: string;
+                            };
+                            description: {
+                                en: string;
+                                pl: string;
+                            };
+                            stats: {
+                                strength: {
+                                    count: number;
+                                    /** @enum {integer} */
+                                    faces: 4 | 6 | 8 | 10 | 12;
+                                    modifier: number;
+                                    dropLowest: boolean;
+                                };
+                                agility: {
+                                    count: number;
+                                    /** @enum {integer} */
+                                    faces: 4 | 6 | 8 | 10 | 12;
+                                    modifier: number;
+                                    dropLowest: boolean;
+                                };
+                                presence: {
+                                    count: number;
+                                    /** @enum {integer} */
+                                    faces: 4 | 6 | 8 | 10 | 12;
+                                    modifier: number;
+                                    dropLowest: boolean;
+                                };
+                                toughness: {
+                                    count: number;
+                                    /** @enum {integer} */
+                                    faces: 4 | 6 | 8 | 10 | 12;
+                                    modifier: number;
+                                    dropLowest: boolean;
+                                };
+                            };
+                            /** @enum {integer} */
+                            hpDie: 2 | 4 | 6 | 8 | 10 | 12;
+                            /** @enum {integer} */
+                            omenDie: 2 | 4 | 6;
+                            /** @enum {integer} */
+                            weaponDie: 4 | 6 | 8 | 10;
+                            /** @enum {integer} */
+                            armorDie: 2 | 3 | 4;
+                            silver: {
+                                count: number;
+                                /** @enum {integer} */
+                                faces: 4 | 6;
+                                multiplier: number;
+                            };
+                            origins: {
+                                en: string;
+                                pl: string;
+                                key?: string;
+                            }[];
+                            abilities: {
+                                key?: string;
+                                random: boolean;
+                                name: {
+                                    en: string;
+                                    pl: string;
+                                };
+                                text: {
+                                    en: string;
+                                    pl: string;
+                                };
+                                modifiers: {
+                                    /** @enum {string} */
+                                    statistic: "strength" | "agility" | "presence" | "toughness";
+                                    value: number;
+                                    exclude: ("melee" | "ranged" | "defence" | "cast" | "ability" | "test" | "heal" | "buff" | "item")[];
+                                }[];
+                                grantItem: null | string;
+                                grantPet: null | string;
+                                table: null | {
+                                    /** @enum {integer} */
+                                    die: 2 | 3 | 4 | 6 | 8 | 10 | 12;
+                                    rows: {
+                                        text: {
+                                            en: string;
+                                            pl: string;
+                                        };
+                                        itemRef: null | string;
+                                    }[];
+                                };
+                            }[];
+                            randomAbilityCount: number;
+                            items: {
+                                ref: string;
+                                /** @enum {string} */
+                                type: "weapon" | "armor" | "gear" | "pet";
+                                name: {
+                                    en: string;
+                                    pl: string;
+                                };
+                                description: {
+                                    en: string;
+                                    pl: string;
+                                };
+                                value: number;
+                                weapon: {
+                                    diceCount: number;
+                                    /** @enum {integer} */
+                                    diceFaces: 2 | 4 | 6 | 8 | 10 | 12;
+                                    damageModifier: number;
+                                    /** @enum {string} */
+                                    reach: "melee" | "ranged";
+                                    /** @enum {string} */
+                                    ammo: "none" | "counted" | "endless";
+                                    ammoCount: number;
+                                    ammoName: string;
+                                    modifiers: {
+                                        /** @enum {string} */
+                                        statistic: "strength" | "agility" | "presence" | "toughness";
+                                        value: number;
+                                        exclude: ("melee" | "ranged" | "defence" | "cast" | "ability" | "test" | "heal" | "buff" | "item")[];
+                                    }[];
+                                };
+                                armor: {
+                                    /** @enum {integer} */
+                                    tier: 1 | 2 | 3;
+                                    modifiers: {
+                                        /** @enum {string} */
+                                        statistic: "strength" | "agility" | "presence" | "toughness";
+                                        value: number;
+                                        exclude: ("melee" | "ranged" | "defence" | "cast" | "ability" | "test" | "heal" | "buff" | "item")[];
+                                    }[];
+                                };
+                                gear: {
+                                    /** @enum {string} */
+                                    kind: "consumable" | "wearable" | "carried";
+                                    uses: number;
+                                    /** @enum {string} */
+                                    effect: "text" | "damage" | "die";
+                                    /** @enum {integer} */
+                                    effectDie: 2 | 4 | 6 | 8 | 10 | 12;
+                                    statuses: {
+                                        /** @enum {string} */
+                                        statistic: "strength" | "agility" | "presence" | "toughness";
+                                        value: number;
+                                        exclude: ("melee" | "ranged" | "defence" | "cast" | "ability" | "test" | "heal" | "buff" | "item")[];
+                                    }[];
+                                };
+                                pet: {
+                                    hp: number;
+                                    /** @enum {integer} */
+                                    actionDie: 2 | 4 | 6 | 8 | 10;
+                                    /** @enum {string} */
+                                    action: "attack" | "buff";
+                                    humanoid: boolean;
+                                    buffs: {
+                                        /** @enum {string} */
+                                        statistic: "strength" | "agility" | "presence" | "toughness";
+                                        value: number;
+                                        exclude: ("melee" | "ranged" | "defence" | "cast" | "ability" | "test" | "heal" | "buff" | "item")[];
+                                    }[];
+                                };
+                            }[];
+                            /** @enum {string} */
+                            gettingBetterRule: "book" | "book_plus_ability" | "specialist";
+                            gettingBetterNote: {
+                                en: string;
+                                pl: string;
+                            };
+                        };
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            id: number;
+                            draft: {
+                                languages: ("en" | "pl")[];
+                                name: {
+                                    en: string;
+                                    pl: string;
+                                };
+                                description: {
+                                    en: string;
+                                    pl: string;
+                                };
+                                stats: {
+                                    strength: {
+                                        count: number;
+                                        /** @enum {integer} */
+                                        faces: 4 | 6 | 8 | 10 | 12;
+                                        modifier: number;
+                                        dropLowest: boolean;
+                                    };
+                                    agility: {
+                                        count: number;
+                                        /** @enum {integer} */
+                                        faces: 4 | 6 | 8 | 10 | 12;
+                                        modifier: number;
+                                        dropLowest: boolean;
+                                    };
+                                    presence: {
+                                        count: number;
+                                        /** @enum {integer} */
+                                        faces: 4 | 6 | 8 | 10 | 12;
+                                        modifier: number;
+                                        dropLowest: boolean;
+                                    };
+                                    toughness: {
+                                        count: number;
+                                        /** @enum {integer} */
+                                        faces: 4 | 6 | 8 | 10 | 12;
+                                        modifier: number;
+                                        dropLowest: boolean;
+                                    };
+                                };
+                                /** @enum {integer} */
+                                hpDie: 2 | 4 | 6 | 8 | 10 | 12;
+                                /** @enum {integer} */
+                                omenDie: 2 | 4 | 6;
+                                /** @enum {integer} */
+                                weaponDie: 4 | 6 | 8 | 10;
+                                /** @enum {integer} */
+                                armorDie: 2 | 3 | 4;
+                                silver: {
+                                    count: number;
+                                    /** @enum {integer} */
+                                    faces: 4 | 6;
+                                    multiplier: number;
+                                };
+                                origins: {
+                                    en: string;
+                                    pl: string;
+                                    key?: string;
+                                }[];
+                                abilities: {
+                                    key?: string;
+                                    random: boolean;
+                                    name: {
+                                        en: string;
+                                        pl: string;
+                                    };
+                                    text: {
+                                        en: string;
+                                        pl: string;
+                                    };
+                                    modifiers: {
+                                        /** @enum {string} */
+                                        statistic: "strength" | "agility" | "presence" | "toughness";
+                                        value: number;
+                                        exclude: ("melee" | "ranged" | "defence" | "cast" | "ability" | "test" | "heal" | "buff" | "item")[];
+                                    }[];
+                                    grantItem: null | string;
+                                    grantPet: null | string;
+                                    table: null | {
+                                        /** @enum {integer} */
+                                        die: 2 | 3 | 4 | 6 | 8 | 10 | 12;
+                                        rows: {
+                                            text: {
+                                                en: string;
+                                                pl: string;
+                                            };
+                                            itemRef: null | string;
+                                        }[];
+                                    };
+                                }[];
+                                randomAbilityCount: number;
+                                items: {
+                                    ref: string;
+                                    /** @enum {string} */
+                                    type: "weapon" | "armor" | "gear" | "pet";
+                                    name: {
+                                        en: string;
+                                        pl: string;
+                                    };
+                                    description: {
+                                        en: string;
+                                        pl: string;
+                                    };
+                                    value: number;
+                                    weapon: {
+                                        diceCount: number;
+                                        /** @enum {integer} */
+                                        diceFaces: 2 | 4 | 6 | 8 | 10 | 12;
+                                        damageModifier: number;
+                                        /** @enum {string} */
+                                        reach: "melee" | "ranged";
+                                        /** @enum {string} */
+                                        ammo: "none" | "counted" | "endless";
+                                        ammoCount: number;
+                                        ammoName: string;
+                                        modifiers: {
+                                            /** @enum {string} */
+                                            statistic: "strength" | "agility" | "presence" | "toughness";
+                                            value: number;
+                                            exclude: ("melee" | "ranged" | "defence" | "cast" | "ability" | "test" | "heal" | "buff" | "item")[];
+                                        }[];
+                                    };
+                                    armor: {
+                                        /** @enum {integer} */
+                                        tier: 1 | 2 | 3;
+                                        modifiers: {
+                                            /** @enum {string} */
+                                            statistic: "strength" | "agility" | "presence" | "toughness";
+                                            value: number;
+                                            exclude: ("melee" | "ranged" | "defence" | "cast" | "ability" | "test" | "heal" | "buff" | "item")[];
+                                        }[];
+                                    };
+                                    gear: {
+                                        /** @enum {string} */
+                                        kind: "consumable" | "wearable" | "carried";
+                                        uses: number;
+                                        /** @enum {string} */
+                                        effect: "text" | "damage" | "die";
+                                        /** @enum {integer} */
+                                        effectDie: 2 | 4 | 6 | 8 | 10 | 12;
+                                        statuses: {
+                                            /** @enum {string} */
+                                            statistic: "strength" | "agility" | "presence" | "toughness";
+                                            value: number;
+                                            exclude: ("melee" | "ranged" | "defence" | "cast" | "ability" | "test" | "heal" | "buff" | "item")[];
+                                        }[];
+                                    };
+                                    pet: {
+                                        hp: number;
+                                        /** @enum {integer} */
+                                        actionDie: 2 | 4 | 6 | 8 | 10;
+                                        /** @enum {string} */
+                                        action: "attack" | "buff";
+                                        humanoid: boolean;
+                                        buffs: {
+                                            /** @enum {string} */
+                                            statistic: "strength" | "agility" | "presence" | "toughness";
+                                            value: number;
+                                            exclude: ("melee" | "ranged" | "defence" | "cast" | "ability" | "test" | "heal" | "buff" | "item")[];
+                                        }[];
+                                    };
+                                }[];
+                                /** @enum {string} */
+                                gettingBetterRule: "book" | "book_plus_ability" | "specialist";
+                                gettingBetterNote: {
+                                    en: string;
+                                    pl: string;
+                                };
+                            };
+                            version: number;
+                            playingCount: number;
+                            /** @enum {string} */
+                            status: "draft" | "active" | "archived";
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        post?: never;
+        /** @description Remove an unused Custom Class, or archive it when scvm still use it */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            archived: boolean;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                410: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/classes/{id}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Restore an owner-archived Custom Class lineage */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            restored: boolean;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                410: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/equipment/search": {
         parameters: {
             query?: never;
@@ -2647,7 +9209,7 @@ export interface paths {
             parameters: {
                 query: {
                     q: string;
-                    locale?: PathsApiEquipmentSearchGetParametersQueryLocale;
+                    locale?: "en" | "pl";
                     limit?: number;
                 };
                 header?: never;
@@ -2755,7 +9317,7 @@ export interface paths {
                 };
                 header?: never;
                 path: {
-                    itemType: PathsApiEquipmentItemTypeIdGetParametersPathItemType;
+                    itemType: "weapon" | "armor" | "equipment" | "pet";
                     id: number;
                 };
                 cookie?: never;
@@ -2853,7 +9415,7 @@ export interface paths {
                 content: {
                     "application/json": {
                         /** @enum {string} */
-                        kind: PathsApiFeedbackPostRequestBodyContentApplicationJsonKind;
+                        kind: "error" | "feedback";
                         message: string;
                         source: string;
                         url?: string;
@@ -2951,23 +9513,25 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/obr/rooms/{roomId}/cards": {
+    "/api/obr/rooms/{roomId}/players/{playerId}/character/claim": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** @description Compact table-visible Owlbear room character cards */
-        get: {
+        get?: never;
+        put?: never;
+        /** @description Claim the scvm assigned to the current Owlbear player. */
+        post: {
             parameters: {
-                query: {
-                    ids: string;
-                    locale?: PathsApiObrRoomsRoomIdCardsGetParametersQueryLocale;
+                query?: {
+                    locale?: "en" | "pl";
                 };
                 header?: never;
                 path: {
                     roomId: string;
+                    playerId: string;
                 };
                 cookie?: never;
             };
@@ -2981,250 +9545,205 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** Format: uuid */
-                            id?: null | string;
+                            id?: string;
                             name?: string;
+                            classId?: null | number;
                             className?: null | string;
-                            currentHp?: number;
-                            maxHp?: number;
+                            classDescription?: null | string;
+                            classAttribution?: null | string;
+                            /** @enum {null|string} */
+                            classAuthoredLanguage?: "en" | "pl" | null;
+                            classContentRemoved?: boolean;
+                            classReportable?: boolean;
+                            origin?: null | string;
                             strength?: number;
                             agility?: number;
                             presence?: number;
                             toughness?: number;
-                            drToDodge?: number;
-                            drToMelee?: number;
-                            drToRanged?: number;
+                            maxHp?: number;
+                            currentHp?: number;
                             omens?: number;
                             maxOmens?: number;
                             silver?: number;
-                            equippedWeapons?: {
-                                name?: null | string;
+                            habit?: null | string;
+                            tale?: null | string;
+                            bodyDescription?: null | string;
+                            trait1?: null | string;
+                            trait2?: null | string;
+                            notes?: string;
+                            miseryCount?: number;
+                            abilities?: {
+                                key?: string;
+                                name?: string;
+                                description?: string;
+                                comment?: string;
+                                table?: {
+                                    die: number;
+                                    rows: {
+                                        roll: number;
+                                        text: string;
+                                        itemKey: null | string;
+                                        itemName: null | string;
+                                    }[];
+                                };
+                            }[];
+                            equipment?: {
+                                key?: string;
+                                name?: string;
+                                description?: string;
+                                comments?: string;
+                                source?: string;
+                                category?: string;
+                                value?: number;
+                                uses?: boolean[];
                                 dice?: number[];
+                                tags?: string[];
+                                maxTier?: number;
+                                currentTier?: number;
+                                amount?: number;
+                                ammoType?: string;
+                                useCountRule?: {
+                                    /** @enum {string} */
+                                    mode?: "fixed" | "fixedPlusModifier";
+                                    base?: number;
+                                    /** @enum {string} */
+                                    statistic?: "agility" | "strength" | "presence" | "toughness";
+                                };
+                                modifiers?: {
+                                    id?: string;
+                                    name?: string;
+                                    value?: number;
+                                    source?: string;
+                                    /** @enum {string} */
+                                    statistic?: "agility" | "strength" | "presence" | "toughness";
+                                    exclude?: string[];
+                                    /** @enum {string} */
+                                    scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
+                                    comment?: string;
+                                }[];
+                            }[];
+                            storage?: {
+                                key?: string;
+                                name?: string;
+                                description?: string;
+                                comments?: string;
+                                source?: string;
+                                category?: string;
+                                value?: number;
+                                uses?: boolean[];
+                                dice?: number[];
+                                tags?: string[];
+                                maxTier?: number;
+                                currentTier?: number;
+                                amount?: number;
+                                ammoType?: string;
+                                useCountRule?: {
+                                    /** @enum {string} */
+                                    mode?: "fixed" | "fixedPlusModifier";
+                                    base?: number;
+                                    /** @enum {string} */
+                                    statistic?: "agility" | "strength" | "presence" | "toughness";
+                                };
+                                modifiers?: {
+                                    id?: string;
+                                    name?: string;
+                                    value?: number;
+                                    source?: string;
+                                    /** @enum {string} */
+                                    statistic?: "agility" | "strength" | "presence" | "toughness";
+                                    exclude?: string[];
+                                    /** @enum {string} */
+                                    scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
+                                    comment?: string;
+                                }[];
+                            }[];
+                            equippedWeapons?: {
+                                key?: string;
+                                name?: string;
+                                description?: string;
+                                comments?: string;
+                                source?: string;
+                                category?: string;
+                                value?: number;
+                                dice?: number[];
+                                tags?: string[];
+                                ammoType?: string;
+                                modifiers?: {
+                                    id?: string;
+                                    name?: string;
+                                    value?: number;
+                                    source?: string;
+                                    /** @enum {string} */
+                                    statistic?: "agility" | "strength" | "presence" | "toughness";
+                                    exclude?: string[];
+                                    /** @enum {string} */
+                                    scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
+                                    comment?: string;
+                                }[];
                             }[];
                             equippedArmor?: {
-                                name?: null | string;
+                                key?: string;
+                                name?: string;
+                                description?: string;
+                                comments?: string;
+                                source?: string;
+                                category?: string;
+                                value?: number;
                                 dice?: number[];
                                 maxTier?: number;
                                 currentTier?: number;
-                            };
-                            equipment?: {
+                                tags?: string[];
+                                modifiers?: {
+                                    id?: string;
+                                    name?: string;
+                                    value?: number;
+                                    source?: string;
+                                    /** @enum {string} */
+                                    statistic?: "agility" | "strength" | "presence" | "toughness";
+                                    exclude?: string[];
+                                    /** @enum {string} */
+                                    scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
+                                    comment?: string;
+                                }[];
+                            } | null;
+                            modifiers?: {
+                                id?: string;
                                 name?: string;
-                                description?: string;
+                                value?: number;
+                                source?: string;
+                                /** @enum {string} */
+                                statistic?: "agility" | "strength" | "presence" | "toughness";
+                                exclude?: string[];
+                                /** @enum {string} */
+                                scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
+                                comment?: string;
                             }[];
                             computedModifiers?: {
-                                [key: string]: unknown;
+                                value?: number;
+                                source?: string;
+                                /** @enum {string} */
+                                statistic?: "agility" | "strength" | "presence" | "toughness";
+                                exclude?: string[];
+                                /** @enum {string} */
+                                origin?: "armor" | "weapon" | "pet" | "system";
+                                originKey?: string;
+                                originName?: string;
                             }[];
-                            bodyDescription?: null | string;
-                            habit?: null | string;
-                            origin?: null | string;
-                            trait1?: null | string;
-                            trait2?: null | string;
-                        }[];
-                    };
-                };
-                /** @description Default Response */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            error: string;
-                            message: string;
-                            code: string;
-                            statusCode: number;
-                            requestId: string;
-                            details?: {
-                                field?: string;
-                                message: string;
-                                code?: string;
-                            }[];
-                        };
-                    };
-                };
-                /** @description Default Response */
-                429: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            error: string;
-                            message: string;
-                            code: string;
-                            statusCode: number;
-                            requestId: string;
-                            details?: {
-                                field?: string;
-                                message: string;
-                                code?: string;
-                            }[];
-                        };
-                    };
-                };
-                /** @description Default Response */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            error: string;
-                            message: string;
-                            code: string;
-                            statusCode: number;
-                            requestId: string;
-                            details?: {
-                                field?: string;
-                                message: string;
-                                code?: string;
-                            }[];
-                        };
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/obr/rooms/{roomId}/bindings": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** @description List Owlbear player and token character bindings */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    roomId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Default Response */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            roomId: string;
-                            players: {
-                                playerId: string;
-                                connectionId: null | string;
-                                /** Format: uuid */
-                                characterId: string;
-                                assignedByPlayerId: string;
-                            }[];
-                            tokens: {
-                                tokenId: string;
-                                playerId: null | string;
-                                /** Format: uuid */
-                                characterId: string;
-                            }[];
-                        };
-                    };
-                };
-                /** @description Default Response */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            error: string;
-                            message: string;
-                            code: string;
-                            statusCode: number;
-                            requestId: string;
-                            details?: {
-                                field?: string;
-                                message: string;
-                                code?: string;
-                            }[];
-                        };
-                    };
-                };
-                /** @description Default Response */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            error: string;
-                            message: string;
-                            code: string;
-                            statusCode: number;
-                            requestId: string;
-                            details?: {
-                                field?: string;
-                                message: string;
-                                code?: string;
-                            }[];
-                        };
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/obr/rooms/{roomId}/players/{playerId}/character": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /** @description Bind an Owlbear player to a character in this room */
-        put: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    roomId: string;
-                    playerId: string;
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": {
-                        /** Format: uuid */
-                        characterId: string;
-                        connectionId?: string;
-                    };
-                };
-            };
-            responses: {
-                /** @description Default Response */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            playerId: string;
-                            connectionId: null | string;
+                            encumbrance?: number;
+                            maxEncumbrance?: number;
+                            drToDodge?: number;
+                            drToMelee?: number;
+                            drToRanged?: number;
                             /** Format: uuid */
-                            characterId: string;
-                            assignedByPlayerId: string;
+                            partyId?: null | string;
+                            /** Format: date-time */
+                            joinedAt?: null | string;
+                            /** @enum {string} */
+                            viewerAccess?: "owner" | "party";
+                            /** Format: date-time */
+                            createdAt?: string;
+                            /** Format: date-time */
+                            updatedAt?: string;
                         };
                     };
                 };
@@ -3250,26 +9769,6 @@ export interface paths {
                 };
                 /** @description Default Response */
                 401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            error: string;
-                            message: string;
-                            code: string;
-                            statusCode: number;
-                            requestId: string;
-                            details?: {
-                                field?: string;
-                                message: string;
-                                code?: string;
-                            }[];
-                        };
-                    };
-                };
-                /** @description Default Response */
-                403: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -3330,402 +9829,7 @@ export interface paths {
                 };
             };
         };
-        post?: never;
-        /** @description Clear an Owlbear player character binding in this room */
-        delete: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    roomId: string;
-                    playerId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Default Response */
-                204: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                /** @description Default Response */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            error: string;
-                            message: string;
-                            code: string;
-                            statusCode: number;
-                            requestId: string;
-                            details?: {
-                                field?: string;
-                                message: string;
-                                code?: string;
-                            }[];
-                        };
-                    };
-                };
-                /** @description Default Response */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            error: string;
-                            message: string;
-                            code: string;
-                            statusCode: number;
-                            requestId: string;
-                            details?: {
-                                field?: string;
-                                message: string;
-                                code?: string;
-                            }[];
-                        };
-                    };
-                };
-                /** @description Default Response */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            error: string;
-                            message: string;
-                            code: string;
-                            statusCode: number;
-                            requestId: string;
-                            details?: {
-                                field?: string;
-                                message: string;
-                                code?: string;
-                            }[];
-                        };
-                    };
-                };
-                /** @description Default Response */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            error: string;
-                            message: string;
-                            code: string;
-                            statusCode: number;
-                            requestId: string;
-                            details?: {
-                                field?: string;
-                                message: string;
-                                code?: string;
-                            }[];
-                        };
-                    };
-                };
-                /** @description Default Response */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            error: string;
-                            message: string;
-                            code: string;
-                            statusCode: number;
-                            requestId: string;
-                            details?: {
-                                field?: string;
-                                message: string;
-                                code?: string;
-                            }[];
-                        };
-                    };
-                };
-            };
-        };
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/obr/rooms/{roomId}/tokens/{tokenId}/character": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /** @description Bind an Owlbear token to a character in this room */
-        put: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    roomId: string;
-                    tokenId: string;
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": {
-                        /** Format: uuid */
-                        characterId: string;
-                        playerId?: string;
-                    };
-                };
-            };
-            responses: {
-                /** @description Default Response */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            tokenId: string;
-                            playerId: null | string;
-                            /** Format: uuid */
-                            characterId: string;
-                        };
-                    };
-                };
-                /** @description Default Response */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            error: string;
-                            message: string;
-                            code: string;
-                            statusCode: number;
-                            requestId: string;
-                            details?: {
-                                field?: string;
-                                message: string;
-                                code?: string;
-                            }[];
-                        };
-                    };
-                };
-                /** @description Default Response */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            error: string;
-                            message: string;
-                            code: string;
-                            statusCode: number;
-                            requestId: string;
-                            details?: {
-                                field?: string;
-                                message: string;
-                                code?: string;
-                            }[];
-                        };
-                    };
-                };
-                /** @description Default Response */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            error: string;
-                            message: string;
-                            code: string;
-                            statusCode: number;
-                            requestId: string;
-                            details?: {
-                                field?: string;
-                                message: string;
-                                code?: string;
-                            }[];
-                        };
-                    };
-                };
-                /** @description Default Response */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            error: string;
-                            message: string;
-                            code: string;
-                            statusCode: number;
-                            requestId: string;
-                            details?: {
-                                field?: string;
-                                message: string;
-                                code?: string;
-                            }[];
-                        };
-                    };
-                };
-                /** @description Default Response */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            error: string;
-                            message: string;
-                            code: string;
-                            statusCode: number;
-                            requestId: string;
-                            details?: {
-                                field?: string;
-                                message: string;
-                                code?: string;
-                            }[];
-                        };
-                    };
-                };
-            };
-        };
-        post?: never;
-        /** @description Clear an Owlbear token character binding in this room */
-        delete: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    roomId: string;
-                    tokenId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Default Response */
-                204: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                /** @description Default Response */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            error: string;
-                            message: string;
-                            code: string;
-                            statusCode: number;
-                            requestId: string;
-                            details?: {
-                                field?: string;
-                                message: string;
-                                code?: string;
-                            }[];
-                        };
-                    };
-                };
-                /** @description Default Response */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            error: string;
-                            message: string;
-                            code: string;
-                            statusCode: number;
-                            requestId: string;
-                            details?: {
-                                field?: string;
-                                message: string;
-                                code?: string;
-                            }[];
-                        };
-                    };
-                };
-                /** @description Default Response */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            error: string;
-                            message: string;
-                            code: string;
-                            statusCode: number;
-                            requestId: string;
-                            details?: {
-                                field?: string;
-                                message: string;
-                                code?: string;
-                            }[];
-                        };
-                    };
-                };
-                /** @description Default Response */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            error: string;
-                            message: string;
-                            code: string;
-                            statusCode: number;
-                            requestId: string;
-                            details?: {
-                                field?: string;
-                                message: string;
-                                code?: string;
-                            }[];
-                        };
-                    };
-                };
-                /** @description Default Response */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            error: string;
-                            message: string;
-                            code: string;
-                            statusCode: number;
-                            requestId: string;
-                            details?: {
-                                field?: string;
-                                message: string;
-                                code?: string;
-                            }[];
-                        };
-                    };
-                };
-            };
-        };
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -5676,6 +11780,700 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/parties/{id}/class-pool": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description The classes this party's players can roll, as the GM's pool panel shows them */
+        get: {
+            parameters: {
+                query?: {
+                    locale?: "en" | "pl";
+                };
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            classlessEnabled: boolean;
+                            classes: {
+                                lineageId: string;
+                                classId: number;
+                                /** @enum {string} */
+                                group: "book" | "zine" | "rack" | "mine" | "public";
+                                name: string;
+                                blurb: null | string;
+                                languages: string[];
+                                attribution: {
+                                    /** @enum {unknown} */
+                                    kind: "credit";
+                                    work: string;
+                                    author: string;
+                                    url: string | null;
+                                } | {
+                                    /** @enum {unknown} */
+                                    kind: "owner";
+                                    name: string | null;
+                                    private: boolean;
+                                } | null;
+                                abilityCount: number;
+                                randomAbilityCount: number;
+                                classItemCount: number;
+                                /** @enum {string} */
+                                gettingBetterRule: "book" | "book_plus_ability" | "specialist";
+                                version: number;
+                                playingHere: number;
+                                enabled: boolean;
+                            }[];
+                            removed: {
+                                lineageId: string;
+                                name: string;
+                                by: null | string;
+                                /** @enum {string} */
+                                reason: "archived" | "unpublished" | "taken_down";
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/parties/{id}/class-pool/lineages/{lineageId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** @description Switch a class on or off in the party's pool (GM only) */
+        put: {
+            parameters: {
+                query?: {
+                    locale?: "en" | "pl";
+                };
+                header?: never;
+                path: {
+                    id: string;
+                    lineageId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        enabled: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            classlessEnabled: boolean;
+                            classes: {
+                                lineageId: string;
+                                classId: number;
+                                /** @enum {string} */
+                                group: "book" | "zine" | "rack" | "mine" | "public";
+                                name: string;
+                                blurb: null | string;
+                                languages: string[];
+                                attribution: {
+                                    /** @enum {unknown} */
+                                    kind: "credit";
+                                    work: string;
+                                    author: string;
+                                    url: string | null;
+                                } | {
+                                    /** @enum {unknown} */
+                                    kind: "owner";
+                                    name: string | null;
+                                    private: boolean;
+                                } | null;
+                                abilityCount: number;
+                                randomAbilityCount: number;
+                                classItemCount: number;
+                                /** @enum {string} */
+                                gettingBetterRule: "book" | "book_plus_ability" | "specialist";
+                                version: number;
+                                playingHere: number;
+                                enabled: boolean;
+                            }[];
+                            removed: {
+                                lineageId: string;
+                                name: string;
+                                by: null | string;
+                                /** @enum {string} */
+                                reason: "archived" | "unpublished" | "taken_down";
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/parties/{id}/class-pool/classless": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** @description Switch Classless scvm on or off for the party (GM only) */
+        put: {
+            parameters: {
+                query?: {
+                    locale?: "en" | "pl";
+                };
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        enabled: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            classlessEnabled: boolean;
+                            classes: {
+                                lineageId: string;
+                                classId: number;
+                                /** @enum {string} */
+                                group: "book" | "zine" | "rack" | "mine" | "public";
+                                name: string;
+                                blurb: null | string;
+                                languages: string[];
+                                attribution: {
+                                    /** @enum {unknown} */
+                                    kind: "credit";
+                                    work: string;
+                                    author: string;
+                                    url: string | null;
+                                } | {
+                                    /** @enum {unknown} */
+                                    kind: "owner";
+                                    name: string | null;
+                                    private: boolean;
+                                } | null;
+                                abilityCount: number;
+                                randomAbilityCount: number;
+                                classItemCount: number;
+                                /** @enum {string} */
+                                gettingBetterRule: "book" | "book_plus_ability" | "specialist";
+                                version: number;
+                                playingHere: number;
+                                enabled: boolean;
+                            }[];
+                            removed: {
+                                lineageId: string;
+                                name: string;
+                                by: null | string;
+                                /** @enum {string} */
+                                reason: "archived" | "unpublished" | "taken_down";
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/parties/{id}/miseries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** @description Set every party member's Misery count (GM only) */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        miseryCount: number;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            miseryCount: number;
+                            updatedCharacters: number;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/parties/{id}/regenerate-link": {
         parameters: {
             query?: never;
@@ -6191,6 +12989,142 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/reports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Submit a signed-out report about a class for human review */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        classId: number;
+                        /** @enum {string} */
+                        reason: "copyright" | "child_sexual_abuse_material" | "threat_to_life_or_safety" | "terrorist_content" | "other_illegal_content" | "abusive_or_hateful" | "owner_removal" | "other";
+                        explanation: string;
+                        reporterName?: string;
+                        /** Format: email */
+                        reporterEmail?: string;
+                        website?: string;
+                        /** @enum {string} */
+                        locale?: "en" | "pl";
+                        /** @enum {unknown} */
+                        goodFaith: true;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -6202,828 +13136,4 @@ export interface components {
     pathItems: never;
 }
 export type $defs = Record<string, never>;
-export enum PathsApiCharactersNewPostParametersQueryLocale {
-    en = "en",
-    pl = "pl"
-}
-export enum PathsApiCharactersNewPostRequestBodyContentApplicationJsonDraftDropLowestAbilities {
-    strength = "strength",
-    agility = "agility",
-    presence = "presence",
-    toughness = "toughness"
-}
-export enum PathsApiCharactersNewPostResponses201ContentApplicationJsonEquipmentUseCountRuleMode {
-    fixed = "fixed",
-    fixedPlusModifier = "fixedPlusModifier"
-}
-export enum PathsApiCharactersNewPostResponses201ContentApplicationJsonEquipmentUseCountRuleStatistic {
-    agility = "agility",
-    strength = "strength",
-    presence = "presence",
-    toughness = "toughness"
-}
-export enum PathsApiCharactersNewPostResponses201ContentApplicationJsonEquipmentModifiersStatistic {
-    agility = "agility",
-    strength = "strength",
-    presence = "presence",
-    toughness = "toughness"
-}
-export enum PathsApiCharactersNewPostResponses201ContentApplicationJsonEquipmentModifiersScope {
-    all = "all",
-    combat = "combat",
-    defence = "defence",
-    melee = "melee",
-    ranged = "ranged",
-    powers = "powers"
-}
-export enum PathsApiCharactersNewPostResponses201ContentApplicationJsonStorageUseCountRuleMode {
-    fixed = "fixed",
-    fixedPlusModifier = "fixedPlusModifier"
-}
-export enum PathsApiCharactersNewPostResponses201ContentApplicationJsonStorageUseCountRuleStatistic {
-    agility = "agility",
-    strength = "strength",
-    presence = "presence",
-    toughness = "toughness"
-}
-export enum PathsApiCharactersNewPostResponses201ContentApplicationJsonStorageModifiersStatistic {
-    agility = "agility",
-    strength = "strength",
-    presence = "presence",
-    toughness = "toughness"
-}
-export enum PathsApiCharactersNewPostResponses201ContentApplicationJsonStorageModifiersScope {
-    all = "all",
-    combat = "combat",
-    defence = "defence",
-    melee = "melee",
-    ranged = "ranged",
-    powers = "powers"
-}
-export enum PathsApiCharactersNewPostResponses201ContentApplicationJsonEquippedWeaponsModifiersStatistic {
-    agility = "agility",
-    strength = "strength",
-    presence = "presence",
-    toughness = "toughness"
-}
-export enum PathsApiCharactersNewPostResponses201ContentApplicationJsonEquippedWeaponsModifiersScope {
-    all = "all",
-    combat = "combat",
-    defence = "defence",
-    melee = "melee",
-    ranged = "ranged",
-    powers = "powers"
-}
-export enum PathsApiCharactersNewPostResponses201ContentApplicationJsonEquippedArmorOneOf0ModifiersStatistic {
-    agility = "agility",
-    strength = "strength",
-    presence = "presence",
-    toughness = "toughness"
-}
-export enum PathsApiCharactersNewPostResponses201ContentApplicationJsonEquippedArmorOneOf0ModifiersScope {
-    all = "all",
-    combat = "combat",
-    defence = "defence",
-    melee = "melee",
-    ranged = "ranged",
-    powers = "powers"
-}
-export enum PathsApiCharactersNewPostResponses201ContentApplicationJsonModifiersStatistic {
-    agility = "agility",
-    strength = "strength",
-    presence = "presence",
-    toughness = "toughness"
-}
-export enum PathsApiCharactersNewPostResponses201ContentApplicationJsonModifiersScope {
-    all = "all",
-    combat = "combat",
-    defence = "defence",
-    melee = "melee",
-    ranged = "ranged",
-    powers = "powers"
-}
-export enum PathsApiCharactersNewPostResponses201ContentApplicationJsonComputedModifiersStatistic {
-    agility = "agility",
-    strength = "strength",
-    presence = "presence",
-    toughness = "toughness"
-}
-export enum PathsApiCharactersNewPostResponses201ContentApplicationJsonComputedModifiersOrigin {
-    armor = "armor",
-    weapon = "weapon",
-    pet = "pet",
-    system = "system"
-}
-export enum PathsApiCharactersNewPostResponses201ContentApplicationJsonViewerAccess {
-    owner = "owner",
-    party = "party"
-}
-export enum PathsApiCharactersDraftPostParametersQueryLocale {
-    en = "en",
-    pl = "pl"
-}
-export enum PathsApiCharactersDraftPostRequestBodyContentApplicationJsonDropLowestAbilities {
-    strength = "strength",
-    agility = "agility",
-    presence = "presence",
-    toughness = "toughness"
-}
-export enum PathsApiCharactersDraftPostResponses200ContentApplicationJsonDraftDropLowestAbilities {
-    strength = "strength",
-    agility = "agility",
-    presence = "presence",
-    toughness = "toughness"
-}
-export enum PathsApiCharactersDraftPostResponses200ContentApplicationJsonPreviewEquipmentUseCountRuleMode {
-    fixed = "fixed",
-    fixedPlusModifier = "fixedPlusModifier"
-}
-export enum PathsApiCharactersDraftPostResponses200ContentApplicationJsonPreviewEquipmentUseCountRuleStatistic {
-    agility = "agility",
-    strength = "strength",
-    presence = "presence",
-    toughness = "toughness"
-}
-export enum PathsApiCharactersDraftPostResponses200ContentApplicationJsonPreviewEquipmentModifiersStatistic {
-    agility = "agility",
-    strength = "strength",
-    presence = "presence",
-    toughness = "toughness"
-}
-export enum PathsApiCharactersDraftPostResponses200ContentApplicationJsonPreviewEquipmentModifiersScope {
-    all = "all",
-    combat = "combat",
-    defence = "defence",
-    melee = "melee",
-    ranged = "ranged",
-    powers = "powers"
-}
-export enum PathsApiCharactersDraftPostResponses200ContentApplicationJsonPreviewStorageUseCountRuleMode {
-    fixed = "fixed",
-    fixedPlusModifier = "fixedPlusModifier"
-}
-export enum PathsApiCharactersDraftPostResponses200ContentApplicationJsonPreviewStorageUseCountRuleStatistic {
-    agility = "agility",
-    strength = "strength",
-    presence = "presence",
-    toughness = "toughness"
-}
-export enum PathsApiCharactersDraftPostResponses200ContentApplicationJsonPreviewStorageModifiersStatistic {
-    agility = "agility",
-    strength = "strength",
-    presence = "presence",
-    toughness = "toughness"
-}
-export enum PathsApiCharactersDraftPostResponses200ContentApplicationJsonPreviewStorageModifiersScope {
-    all = "all",
-    combat = "combat",
-    defence = "defence",
-    melee = "melee",
-    ranged = "ranged",
-    powers = "powers"
-}
-export enum PathsApiCharactersDraftPostResponses200ContentApplicationJsonPreviewEquippedWeaponsModifiersStatistic {
-    agility = "agility",
-    strength = "strength",
-    presence = "presence",
-    toughness = "toughness"
-}
-export enum PathsApiCharactersDraftPostResponses200ContentApplicationJsonPreviewEquippedWeaponsModifiersScope {
-    all = "all",
-    combat = "combat",
-    defence = "defence",
-    melee = "melee",
-    ranged = "ranged",
-    powers = "powers"
-}
-export enum PathsApiCharactersDraftPostResponses200ContentApplicationJsonPreviewEquippedArmorOneOf0ModifiersStatistic {
-    agility = "agility",
-    strength = "strength",
-    presence = "presence",
-    toughness = "toughness"
-}
-export enum PathsApiCharactersDraftPostResponses200ContentApplicationJsonPreviewEquippedArmorOneOf0ModifiersScope {
-    all = "all",
-    combat = "combat",
-    defence = "defence",
-    melee = "melee",
-    ranged = "ranged",
-    powers = "powers"
-}
-export enum PathsApiCharactersDraftPostResponses200ContentApplicationJsonPreviewModifiersStatistic {
-    agility = "agility",
-    strength = "strength",
-    presence = "presence",
-    toughness = "toughness"
-}
-export enum PathsApiCharactersDraftPostResponses200ContentApplicationJsonPreviewModifiersScope {
-    all = "all",
-    combat = "combat",
-    defence = "defence",
-    melee = "melee",
-    ranged = "ranged",
-    powers = "powers"
-}
-export enum PathsApiCharactersDraftPostResponses200ContentApplicationJsonPreviewComputedModifiersStatistic {
-    agility = "agility",
-    strength = "strength",
-    presence = "presence",
-    toughness = "toughness"
-}
-export enum PathsApiCharactersDraftPostResponses200ContentApplicationJsonPreviewComputedModifiersOrigin {
-    armor = "armor",
-    weapon = "weapon",
-    pet = "pet",
-    system = "system"
-}
-export enum PathsApiCharactersDraftPostResponses200ContentApplicationJsonPreviewViewerAccess {
-    owner = "owner",
-    party = "party"
-}
-export enum PathsApiCharactersDraftPostResponses200ContentApplicationJsonClasslessStatOptionsAbility {
-    strength = "strength",
-    agility = "agility",
-    presence = "presence",
-    toughness = "toughness"
-}
-export enum PathsApiCharactersDraftRerollSectionPostParametersQueryLocale {
-    en = "en",
-    pl = "pl"
-}
-export enum PathsApiCharactersDraftRerollSectionPostParametersPathSection {
-    name = "name",
-    stats = "stats",
-    omens = "omens",
-    silver = "silver",
-    origin = "origin",
-    abilities = "abilities",
-    gear = "gear",
-    personality = "personality"
-}
-export enum PathsApiCharactersDraftRerollSectionPostRequestBodyContentApplicationJsonDraftDropLowestAbilities {
-    strength = "strength",
-    agility = "agility",
-    presence = "presence",
-    toughness = "toughness"
-}
-export enum PathsApiCharactersDraftRerollSectionPostResponses200ContentApplicationJsonDraftDropLowestAbilities {
-    strength = "strength",
-    agility = "agility",
-    presence = "presence",
-    toughness = "toughness"
-}
-export enum PathsApiCharactersDraftRerollSectionPostResponses200ContentApplicationJsonPreviewEquipmentUseCountRuleMode {
-    fixed = "fixed",
-    fixedPlusModifier = "fixedPlusModifier"
-}
-export enum PathsApiCharactersDraftRerollSectionPostResponses200ContentApplicationJsonPreviewEquipmentUseCountRuleStatistic {
-    agility = "agility",
-    strength = "strength",
-    presence = "presence",
-    toughness = "toughness"
-}
-export enum PathsApiCharactersDraftRerollSectionPostResponses200ContentApplicationJsonPreviewEquipmentModifiersStatistic {
-    agility = "agility",
-    strength = "strength",
-    presence = "presence",
-    toughness = "toughness"
-}
-export enum PathsApiCharactersDraftRerollSectionPostResponses200ContentApplicationJsonPreviewEquipmentModifiersScope {
-    all = "all",
-    combat = "combat",
-    defence = "defence",
-    melee = "melee",
-    ranged = "ranged",
-    powers = "powers"
-}
-export enum PathsApiCharactersDraftRerollSectionPostResponses200ContentApplicationJsonPreviewStorageUseCountRuleMode {
-    fixed = "fixed",
-    fixedPlusModifier = "fixedPlusModifier"
-}
-export enum PathsApiCharactersDraftRerollSectionPostResponses200ContentApplicationJsonPreviewStorageUseCountRuleStatistic {
-    agility = "agility",
-    strength = "strength",
-    presence = "presence",
-    toughness = "toughness"
-}
-export enum PathsApiCharactersDraftRerollSectionPostResponses200ContentApplicationJsonPreviewStorageModifiersStatistic {
-    agility = "agility",
-    strength = "strength",
-    presence = "presence",
-    toughness = "toughness"
-}
-export enum PathsApiCharactersDraftRerollSectionPostResponses200ContentApplicationJsonPreviewStorageModifiersScope {
-    all = "all",
-    combat = "combat",
-    defence = "defence",
-    melee = "melee",
-    ranged = "ranged",
-    powers = "powers"
-}
-export enum PathsApiCharactersDraftRerollSectionPostResponses200ContentApplicationJsonPreviewEquippedWeaponsModifiersStatistic {
-    agility = "agility",
-    strength = "strength",
-    presence = "presence",
-    toughness = "toughness"
-}
-export enum PathsApiCharactersDraftRerollSectionPostResponses200ContentApplicationJsonPreviewEquippedWeaponsModifiersScope {
-    all = "all",
-    combat = "combat",
-    defence = "defence",
-    melee = "melee",
-    ranged = "ranged",
-    powers = "powers"
-}
-export enum PathsApiCharactersDraftRerollSectionPostResponses200ContentApplicationJsonPreviewEquippedArmorOneOf0ModifiersStatistic {
-    agility = "agility",
-    strength = "strength",
-    presence = "presence",
-    toughness = "toughness"
-}
-export enum PathsApiCharactersDraftRerollSectionPostResponses200ContentApplicationJsonPreviewEquippedArmorOneOf0ModifiersScope {
-    all = "all",
-    combat = "combat",
-    defence = "defence",
-    melee = "melee",
-    ranged = "ranged",
-    powers = "powers"
-}
-export enum PathsApiCharactersDraftRerollSectionPostResponses200ContentApplicationJsonPreviewModifiersStatistic {
-    agility = "agility",
-    strength = "strength",
-    presence = "presence",
-    toughness = "toughness"
-}
-export enum PathsApiCharactersDraftRerollSectionPostResponses200ContentApplicationJsonPreviewModifiersScope {
-    all = "all",
-    combat = "combat",
-    defence = "defence",
-    melee = "melee",
-    ranged = "ranged",
-    powers = "powers"
-}
-export enum PathsApiCharactersDraftRerollSectionPostResponses200ContentApplicationJsonPreviewComputedModifiersStatistic {
-    agility = "agility",
-    strength = "strength",
-    presence = "presence",
-    toughness = "toughness"
-}
-export enum PathsApiCharactersDraftRerollSectionPostResponses200ContentApplicationJsonPreviewComputedModifiersOrigin {
-    armor = "armor",
-    weapon = "weapon",
-    pet = "pet",
-    system = "system"
-}
-export enum PathsApiCharactersDraftRerollSectionPostResponses200ContentApplicationJsonPreviewViewerAccess {
-    owner = "owner",
-    party = "party"
-}
-export enum PathsApiCharactersDraftRerollSectionPostResponses200ContentApplicationJsonClasslessStatOptionsAbility {
-    strength = "strength",
-    agility = "agility",
-    presence = "presence",
-    toughness = "toughness"
-}
-export enum PathsApiCharactersClassesGetParametersQueryLocale {
-    en = "en",
-    pl = "pl"
-}
-export enum PathsApiCharactersIdGetParametersQueryLocale {
-    en = "en",
-    pl = "pl"
-}
-export enum PathsApiCharactersIdGetResponses200ContentApplicationJsonEquipmentUseCountRuleMode {
-    fixed = "fixed",
-    fixedPlusModifier = "fixedPlusModifier"
-}
-export enum PathsApiCharactersIdGetResponses200ContentApplicationJsonEquipmentUseCountRuleStatistic {
-    agility = "agility",
-    strength = "strength",
-    presence = "presence",
-    toughness = "toughness"
-}
-export enum PathsApiCharactersIdGetResponses200ContentApplicationJsonEquipmentModifiersStatistic {
-    agility = "agility",
-    strength = "strength",
-    presence = "presence",
-    toughness = "toughness"
-}
-export enum PathsApiCharactersIdGetResponses200ContentApplicationJsonEquipmentModifiersScope {
-    all = "all",
-    combat = "combat",
-    defence = "defence",
-    melee = "melee",
-    ranged = "ranged",
-    powers = "powers"
-}
-export enum PathsApiCharactersIdGetResponses200ContentApplicationJsonStorageUseCountRuleMode {
-    fixed = "fixed",
-    fixedPlusModifier = "fixedPlusModifier"
-}
-export enum PathsApiCharactersIdGetResponses200ContentApplicationJsonStorageUseCountRuleStatistic {
-    agility = "agility",
-    strength = "strength",
-    presence = "presence",
-    toughness = "toughness"
-}
-export enum PathsApiCharactersIdGetResponses200ContentApplicationJsonStorageModifiersStatistic {
-    agility = "agility",
-    strength = "strength",
-    presence = "presence",
-    toughness = "toughness"
-}
-export enum PathsApiCharactersIdGetResponses200ContentApplicationJsonStorageModifiersScope {
-    all = "all",
-    combat = "combat",
-    defence = "defence",
-    melee = "melee",
-    ranged = "ranged",
-    powers = "powers"
-}
-export enum PathsApiCharactersIdGetResponses200ContentApplicationJsonEquippedWeaponsModifiersStatistic {
-    agility = "agility",
-    strength = "strength",
-    presence = "presence",
-    toughness = "toughness"
-}
-export enum PathsApiCharactersIdGetResponses200ContentApplicationJsonEquippedWeaponsModifiersScope {
-    all = "all",
-    combat = "combat",
-    defence = "defence",
-    melee = "melee",
-    ranged = "ranged",
-    powers = "powers"
-}
-export enum PathsApiCharactersIdGetResponses200ContentApplicationJsonEquippedArmorOneOf0ModifiersStatistic {
-    agility = "agility",
-    strength = "strength",
-    presence = "presence",
-    toughness = "toughness"
-}
-export enum PathsApiCharactersIdGetResponses200ContentApplicationJsonEquippedArmorOneOf0ModifiersScope {
-    all = "all",
-    combat = "combat",
-    defence = "defence",
-    melee = "melee",
-    ranged = "ranged",
-    powers = "powers"
-}
-export enum PathsApiCharactersIdGetResponses200ContentApplicationJsonModifiersStatistic {
-    agility = "agility",
-    strength = "strength",
-    presence = "presence",
-    toughness = "toughness"
-}
-export enum PathsApiCharactersIdGetResponses200ContentApplicationJsonModifiersScope {
-    all = "all",
-    combat = "combat",
-    defence = "defence",
-    melee = "melee",
-    ranged = "ranged",
-    powers = "powers"
-}
-export enum PathsApiCharactersIdGetResponses200ContentApplicationJsonComputedModifiersStatistic {
-    agility = "agility",
-    strength = "strength",
-    presence = "presence",
-    toughness = "toughness"
-}
-export enum PathsApiCharactersIdGetResponses200ContentApplicationJsonComputedModifiersOrigin {
-    armor = "armor",
-    weapon = "weapon",
-    pet = "pet",
-    system = "system"
-}
-export enum PathsApiCharactersIdGetResponses200ContentApplicationJsonViewerAccess {
-    owner = "owner",
-    party = "party"
-}
-export enum PathsApiCharactersIdPatchParametersQueryLocale {
-    en = "en",
-    pl = "pl"
-}
-export enum PathsApiCharactersIdPatchRequestBodyContentApplicationJsonEquipmentUseCountRuleMode {
-    fixed = "fixed",
-    fixedPlusModifier = "fixedPlusModifier"
-}
-export enum PathsApiCharactersIdPatchRequestBodyContentApplicationJsonEquipmentUseCountRuleStatistic {
-    agility = "agility",
-    strength = "strength",
-    presence = "presence",
-    toughness = "toughness"
-}
-export enum PathsApiCharactersIdPatchRequestBodyContentApplicationJsonEquipmentModifiersStatistic {
-    agility = "agility",
-    strength = "strength",
-    presence = "presence",
-    toughness = "toughness"
-}
-export enum PathsApiCharactersIdPatchRequestBodyContentApplicationJsonEquipmentModifiersScope {
-    all = "all",
-    combat = "combat",
-    defence = "defence",
-    melee = "melee",
-    ranged = "ranged",
-    powers = "powers"
-}
-export enum PathsApiCharactersIdPatchRequestBodyContentApplicationJsonStorageUseCountRuleMode {
-    fixed = "fixed",
-    fixedPlusModifier = "fixedPlusModifier"
-}
-export enum PathsApiCharactersIdPatchRequestBodyContentApplicationJsonStorageUseCountRuleStatistic {
-    agility = "agility",
-    strength = "strength",
-    presence = "presence",
-    toughness = "toughness"
-}
-export enum PathsApiCharactersIdPatchRequestBodyContentApplicationJsonStorageModifiersStatistic {
-    agility = "agility",
-    strength = "strength",
-    presence = "presence",
-    toughness = "toughness"
-}
-export enum PathsApiCharactersIdPatchRequestBodyContentApplicationJsonStorageModifiersScope {
-    all = "all",
-    combat = "combat",
-    defence = "defence",
-    melee = "melee",
-    ranged = "ranged",
-    powers = "powers"
-}
-export enum PathsApiCharactersIdPatchRequestBodyContentApplicationJsonEquippedWeaponsModifiersStatistic {
-    agility = "agility",
-    strength = "strength",
-    presence = "presence",
-    toughness = "toughness"
-}
-export enum PathsApiCharactersIdPatchRequestBodyContentApplicationJsonEquippedWeaponsModifiersScope {
-    all = "all",
-    combat = "combat",
-    defence = "defence",
-    melee = "melee",
-    ranged = "ranged",
-    powers = "powers"
-}
-export enum PathsApiCharactersIdPatchRequestBodyContentApplicationJsonEquippedArmorOneOf0ModifiersStatistic {
-    agility = "agility",
-    strength = "strength",
-    presence = "presence",
-    toughness = "toughness"
-}
-export enum PathsApiCharactersIdPatchRequestBodyContentApplicationJsonEquippedArmorOneOf0ModifiersScope {
-    all = "all",
-    combat = "combat",
-    defence = "defence",
-    melee = "melee",
-    ranged = "ranged",
-    powers = "powers"
-}
-export enum PathsApiCharactersIdPatchRequestBodyContentApplicationJsonModifiersStatistic {
-    agility = "agility",
-    strength = "strength",
-    presence = "presence",
-    toughness = "toughness"
-}
-export enum PathsApiCharactersIdPatchRequestBodyContentApplicationJsonModifiersScope {
-    all = "all",
-    combat = "combat",
-    defence = "defence",
-    melee = "melee",
-    ranged = "ranged",
-    powers = "powers"
-}
-export enum PathsApiCharactersIdPatchResponses200ContentApplicationJsonEquipmentUseCountRuleMode {
-    fixed = "fixed",
-    fixedPlusModifier = "fixedPlusModifier"
-}
-export enum PathsApiCharactersIdPatchResponses200ContentApplicationJsonEquipmentUseCountRuleStatistic {
-    agility = "agility",
-    strength = "strength",
-    presence = "presence",
-    toughness = "toughness"
-}
-export enum PathsApiCharactersIdPatchResponses200ContentApplicationJsonEquipmentModifiersStatistic {
-    agility = "agility",
-    strength = "strength",
-    presence = "presence",
-    toughness = "toughness"
-}
-export enum PathsApiCharactersIdPatchResponses200ContentApplicationJsonEquipmentModifiersScope {
-    all = "all",
-    combat = "combat",
-    defence = "defence",
-    melee = "melee",
-    ranged = "ranged",
-    powers = "powers"
-}
-export enum PathsApiCharactersIdPatchResponses200ContentApplicationJsonStorageUseCountRuleMode {
-    fixed = "fixed",
-    fixedPlusModifier = "fixedPlusModifier"
-}
-export enum PathsApiCharactersIdPatchResponses200ContentApplicationJsonStorageUseCountRuleStatistic {
-    agility = "agility",
-    strength = "strength",
-    presence = "presence",
-    toughness = "toughness"
-}
-export enum PathsApiCharactersIdPatchResponses200ContentApplicationJsonStorageModifiersStatistic {
-    agility = "agility",
-    strength = "strength",
-    presence = "presence",
-    toughness = "toughness"
-}
-export enum PathsApiCharactersIdPatchResponses200ContentApplicationJsonStorageModifiersScope {
-    all = "all",
-    combat = "combat",
-    defence = "defence",
-    melee = "melee",
-    ranged = "ranged",
-    powers = "powers"
-}
-export enum PathsApiCharactersIdPatchResponses200ContentApplicationJsonEquippedWeaponsModifiersStatistic {
-    agility = "agility",
-    strength = "strength",
-    presence = "presence",
-    toughness = "toughness"
-}
-export enum PathsApiCharactersIdPatchResponses200ContentApplicationJsonEquippedWeaponsModifiersScope {
-    all = "all",
-    combat = "combat",
-    defence = "defence",
-    melee = "melee",
-    ranged = "ranged",
-    powers = "powers"
-}
-export enum PathsApiCharactersIdPatchResponses200ContentApplicationJsonEquippedArmorOneOf0ModifiersStatistic {
-    agility = "agility",
-    strength = "strength",
-    presence = "presence",
-    toughness = "toughness"
-}
-export enum PathsApiCharactersIdPatchResponses200ContentApplicationJsonEquippedArmorOneOf0ModifiersScope {
-    all = "all",
-    combat = "combat",
-    defence = "defence",
-    melee = "melee",
-    ranged = "ranged",
-    powers = "powers"
-}
-export enum PathsApiCharactersIdPatchResponses200ContentApplicationJsonModifiersStatistic {
-    agility = "agility",
-    strength = "strength",
-    presence = "presence",
-    toughness = "toughness"
-}
-export enum PathsApiCharactersIdPatchResponses200ContentApplicationJsonModifiersScope {
-    all = "all",
-    combat = "combat",
-    defence = "defence",
-    melee = "melee",
-    ranged = "ranged",
-    powers = "powers"
-}
-export enum PathsApiCharactersIdPatchResponses200ContentApplicationJsonComputedModifiersStatistic {
-    agility = "agility",
-    strength = "strength",
-    presence = "presence",
-    toughness = "toughness"
-}
-export enum PathsApiCharactersIdPatchResponses200ContentApplicationJsonComputedModifiersOrigin {
-    armor = "armor",
-    weapon = "weapon",
-    pet = "pet",
-    system = "system"
-}
-export enum PathsApiCharactersIdPatchResponses200ContentApplicationJsonViewerAccess {
-    owner = "owner",
-    party = "party"
-}
-export enum PathsApiCharactersGetParametersQueryLocale {
-    en = "en",
-    pl = "pl"
-}
-export enum PathsApiCharactersGetResponses200ContentApplicationJsonEquipmentUseCountRuleMode {
-    fixed = "fixed",
-    fixedPlusModifier = "fixedPlusModifier"
-}
-export enum PathsApiCharactersGetResponses200ContentApplicationJsonEquipmentUseCountRuleStatistic {
-    agility = "agility",
-    strength = "strength",
-    presence = "presence",
-    toughness = "toughness"
-}
-export enum PathsApiCharactersGetResponses200ContentApplicationJsonEquipmentModifiersStatistic {
-    agility = "agility",
-    strength = "strength",
-    presence = "presence",
-    toughness = "toughness"
-}
-export enum PathsApiCharactersGetResponses200ContentApplicationJsonEquipmentModifiersScope {
-    all = "all",
-    combat = "combat",
-    defence = "defence",
-    melee = "melee",
-    ranged = "ranged",
-    powers = "powers"
-}
-export enum PathsApiCharactersGetResponses200ContentApplicationJsonStorageUseCountRuleMode {
-    fixed = "fixed",
-    fixedPlusModifier = "fixedPlusModifier"
-}
-export enum PathsApiCharactersGetResponses200ContentApplicationJsonStorageUseCountRuleStatistic {
-    agility = "agility",
-    strength = "strength",
-    presence = "presence",
-    toughness = "toughness"
-}
-export enum PathsApiCharactersGetResponses200ContentApplicationJsonStorageModifiersStatistic {
-    agility = "agility",
-    strength = "strength",
-    presence = "presence",
-    toughness = "toughness"
-}
-export enum PathsApiCharactersGetResponses200ContentApplicationJsonStorageModifiersScope {
-    all = "all",
-    combat = "combat",
-    defence = "defence",
-    melee = "melee",
-    ranged = "ranged",
-    powers = "powers"
-}
-export enum PathsApiCharactersGetResponses200ContentApplicationJsonEquippedWeaponsModifiersStatistic {
-    agility = "agility",
-    strength = "strength",
-    presence = "presence",
-    toughness = "toughness"
-}
-export enum PathsApiCharactersGetResponses200ContentApplicationJsonEquippedWeaponsModifiersScope {
-    all = "all",
-    combat = "combat",
-    defence = "defence",
-    melee = "melee",
-    ranged = "ranged",
-    powers = "powers"
-}
-export enum PathsApiCharactersGetResponses200ContentApplicationJsonEquippedArmorOneOf0ModifiersStatistic {
-    agility = "agility",
-    strength = "strength",
-    presence = "presence",
-    toughness = "toughness"
-}
-export enum PathsApiCharactersGetResponses200ContentApplicationJsonEquippedArmorOneOf0ModifiersScope {
-    all = "all",
-    combat = "combat",
-    defence = "defence",
-    melee = "melee",
-    ranged = "ranged",
-    powers = "powers"
-}
-export enum PathsApiCharactersGetResponses200ContentApplicationJsonModifiersStatistic {
-    agility = "agility",
-    strength = "strength",
-    presence = "presence",
-    toughness = "toughness"
-}
-export enum PathsApiCharactersGetResponses200ContentApplicationJsonModifiersScope {
-    all = "all",
-    combat = "combat",
-    defence = "defence",
-    melee = "melee",
-    ranged = "ranged",
-    powers = "powers"
-}
-export enum PathsApiCharactersGetResponses200ContentApplicationJsonComputedModifiersStatistic {
-    agility = "agility",
-    strength = "strength",
-    presence = "presence",
-    toughness = "toughness"
-}
-export enum PathsApiCharactersGetResponses200ContentApplicationJsonComputedModifiersOrigin {
-    armor = "armor",
-    weapon = "weapon",
-    pet = "pet",
-    system = "system"
-}
-export enum PathsApiCharactersGetResponses200ContentApplicationJsonViewerAccess {
-    owner = "owner",
-    party = "party"
-}
-export enum PathsApiEquipmentSearchGetParametersQueryLocale {
-    en = "en",
-    pl = "pl"
-}
-export enum PathsApiEquipmentItemTypeIdGetParametersPathItemType {
-    weapon = "weapon",
-    armor = "armor",
-    equipment = "equipment",
-    pet = "pet"
-}
-export enum PathsApiFeedbackPostRequestBodyContentApplicationJsonKind {
-    error = "error",
-    feedback = "feedback"
-}
-export enum PathsApiObrRoomsRoomIdCardsGetParametersQueryLocale {
-    en = "en",
-    pl = "pl"
-}
 export type operations = Record<string, never>;

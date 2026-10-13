@@ -98,7 +98,7 @@ type BuildCharacterOptions = {
  * Classless scvm (MÖRK BORG core rules): no stat modifiers, d8 HP, 2d6×10
  * silver, d10 weapon die, d4 armor die, no class abilities, no origin.
  */
-const CLASSLESS_DEFAULTS = {
+export const CLASSLESS_DEFAULTS = {
   hpDie: 8,
   silverDice: [6, 6],
   silverModifier: 10,

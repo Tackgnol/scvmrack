@@ -14,28 +14,65 @@ let reportClass: { id: number; name: string; source: 'user'; visibility: 'privat
   source: 'user',
   visibility: 'public',
 };
+/** The fake report's status, and the writes the fake transaction records. */
+let reportStatus = 'open';
+const writes: string[] = [];
+const decidedReport = (id: string) => ({
+  id,
+  classId: 9,
+  status: reportStatus,
+  reporterEmail: 'reporter@example.com',
+  class: { id: 9, name: 'Bog Witch', lineageId: 'lineage-1', owner: { email: 'author@example.com' } },
+});
+const ops = {
+  lock: async () => {},
+  findReportSince: async () => (merge ? { id: '550e8400-e29b-41d4-a716-446655440000' } : null),
+  createReport: async (input: unknown) => {
+    created.push(input);
+    return { id: '550e8400-e29b-41d4-a716-446655440000' };
+  },
+  findReport: async (id: string) => decidedReport(id),
+  findLatestOwnerReport: async () => ({
+    id: '550e8400-e29b-41d4-a716-446655440000',
+    class: { name: 'Bog Witch', owner: { email: 'author@example.com' } },
+  }),
+  countDisputes: async () => (disputeLimited ? 3 : 0),
+  createDispute: async () => ({ id: '550e8400-e29b-41d4-a716-446655440001' }),
+  claimReport: async (_id: string, from: string[], to: string) => {
+    if (!from.includes(reportStatus)) {
+      return false;
+    }
+    writes.push(`claim:${reportStatus}->${to}`);
+    return true;
+  },
+  appendLog: async (entry: { reportId: string; actorUserId: string; action: string; reason: string; evidence?: unknown }) => {
+    takeDownInput = { id: entry.reportId, actorUserId: entry.actorUserId, reason: entry.reason };
+    writes.push(`log:${entry.action}${entry.evidence ? '+evidence' : ''}`);
+  },
+  hideLineage: async () => {
+    writes.push('hide');
+  },
+  unhideLineage: async () => {
+    writes.push('unhide');
+  },
+  removeFromPools: async () => {
+    writes.push('pools');
+  },
+  snapshotContent: async () => ({ versions: [] }),
+  blankContent: async () => {
+    writes.push('blank');
+  },
+  findRemovalEvidence: async () => ({ versions: [] }),
+  restoreContent: async () => {
+    writes.push('restore-content');
+  },
+};
 mock.module('../../src/repositories/moderation-repository.js', {
   namedExports: {
     moderationRepository: {
+      transaction: async (work: (o: typeof ops) => Promise<unknown>) => work(ops),
       findClass: async (id: number) =>
         id === 9 ? reportClass : null,
-      createOrMergeReport: async (input: unknown) => {
-        if (!merge) {
-          created.push(input);
-        }
-        return { id: '550e8400-e29b-41d4-a716-446655440000', merged: merge };
-      },
-      createDispute: async () =>
-        disputeLimited
-          ? { kind: 'limit' as const }
-          : {
-              kind: 'created' as const,
-              dispute: { id: '550e8400-e29b-41d4-a716-446655440001' },
-              report: {
-                id: '550e8400-e29b-41d4-a716-446655440000',
-                class: { name: 'Bog Witch', owner: { email: 'author@example.com' } },
-              },
-            },
       listOpenReports: async () => {
         listCalls++;
         return {
@@ -79,26 +116,6 @@ mock.module('../../src/repositories/moderation-repository.js', {
           { id: 'log-1', reportId: 'report-1', action: 'content_removed', reason: 'Copied text', createdAt: new Date('2026-10-07T12:00:00.000Z'), class: { name: 'Bog Witch', ownerUserId: 'gm-1' } },
           ],
         };
-      },
-      dismissReport: async () => null,
-      takeDownReport: async (id: string, actorUserId: string, reason: string) => {
-        takeDownInput = { id, actorUserId, reason };
-        return {
-          id,
-          reporterEmail: 'reporter@example.com',
-          class: { name: 'Bog Witch', owner: { email: 'author@example.com' } },
-        };
-      },
-      removeContentReport: async (id: string, actorUserId: string, reason: string) => {
-        takeDownInput = { id, actorUserId, reason };
-        return {
-          id,
-          reporterEmail: 'reporter@example.com',
-          class: { name: 'Bog Witch', owner: { email: 'author@example.com' } },
-        };
-      },      restoreReport: async (id: string, actorUserId: string, reason: string) => {
-        takeDownInput = { id, actorUserId, reason };
-        return { id };
       },
       anonymizeResolvedReports: async (before: Date) => {
         anonymizeBefore = before;
@@ -243,6 +260,7 @@ test('limits review actions to allowlisted GMs and notifies both parties', async
   const previous = process.env.MODERATION_ADMIN_USER_IDS;
   process.env.MODERATION_ADMIN_USER_IDS = 'admin-1';
   sent.length = 0;
+  writes.length = 0;
   takeDownInput = undefined;
   listCalls = 0;
   try {
@@ -323,6 +341,7 @@ test('limits review actions to allowlisted GMs and notifies both parties', async
       actorUserId: 'admin-1',
       reason: 'Credible threat',
     });
+    assert.deepEqual(writes, ['claim:open->taken_down', 'hide', 'pools', 'log:taken_down']);
     assert.deepEqual(sent, [
       {
         kind: 'decision',
@@ -341,6 +360,15 @@ test('limits review actions to allowlisted GMs and notifies both parties', async
         },
       },
     ]);
+
+    reportStatus = 'taken_down';
+    const decided = await service.dismiss({
+      session: { user: { id: 'admin-1' } },
+      id: '550e8400-e29b-41d4-a716-446655440000',
+      reason: 'Too late',
+    });
+    assert.equal(!decided.ok && decided.error.code, 'REPORT_NOT_FOUND');
+    reportStatus = 'open';
 
     const missingReason = await service.takeDown({
       session: { user: { id: 'admin-1' } },
@@ -367,6 +395,15 @@ test('restores only a taken-down report through an allowlisted GM', async () => 
     });
     assert.equal(!denied.ok && denied.error.statusCode, 404);
 
+    const stillOpen = await service.restore({
+      session: { user: { id: 'admin-1' } },
+      id: '550e8400-e29b-41d4-a716-446655440000',
+      reason: 'Nothing to restore',
+    });
+    assert.equal(!stillOpen.ok && stillOpen.error.code, 'REPORT_NOT_FOUND');
+
+    reportStatus = 'content_removed';
+    writes.length = 0;
     const restored = await service.restore({
       session: { user: { id: 'admin-1' } },
       id: '550e8400-e29b-41d4-a716-446655440000',
@@ -378,7 +415,9 @@ test('restores only a taken-down report through an allowlisted GM', async () => 
       actorUserId: 'admin-1',
       reason: 'Correcting the decision',
     });
+    assert.deepEqual(writes, ['claim:content_removed->restored', 'restore-content', 'unhide', 'log:restored']);
   } finally {
+    reportStatus = 'open';
     if (previous === undefined) {
       delete process.env.MODERATION_ADMIN_USER_IDS;
     } else {
@@ -390,6 +429,7 @@ test('removes content through an allowlisted GM and notifies both parties', asyn
   const previous = process.env.MODERATION_ADMIN_USER_IDS;
   process.env.MODERATION_ADMIN_USER_IDS = 'admin-1';
   sent.length = 0;
+  writes.length = 0;
   takeDownInput = undefined;
   try {
     const result = await service.removeContent({
@@ -403,6 +443,7 @@ test('removes content through an allowlisted GM and notifies both parties', asyn
       actorUserId: 'admin-1',
       reason: 'Illegal copied text',
     });
+    assert.deepEqual(writes, ['claim:open->content_removed', 'blank', 'hide', 'pools', 'log:content_removed+evidence']);
     assert.deepEqual(sent, [
       {
         kind: 'decision',

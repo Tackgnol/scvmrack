@@ -4,7 +4,7 @@ import type { DiePickerProps } from "./DiePicker.models";
 import { Die, Group } from "./DiePicker.styles";
 
 /** A row of die buttons (d4…d12), one chosen and stamped yellow; a keyboard radio group. */
-export function DiePicker({ id, label, value, options, onChange, hint }: DiePickerProps) {
+export function DiePicker<T extends number>({ id, label, value, options, onChange, hint }: DiePickerProps<T>) {
   const labelId = `${id}-label`;
   const hintId = hint ? `${id}-hint` : undefined;
   return (

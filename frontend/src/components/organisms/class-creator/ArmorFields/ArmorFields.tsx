@@ -17,7 +17,7 @@ export function ArmorFields({ path, item, onChange }: ItemFieldsProps<"armor">) 
           value: tier,
           label: t("creator.items.tierN", "Tier {{n}}", { n: tier }),
         }))}
-        onChange={(tier) => onChange({ ...item.armor, tier: Number(tier) })}
+        onChange={(tier) => onChange({ ...item.armor, tier: Number(tier) as typeof item.armor.tier })}
       />
     </Controls>
   );

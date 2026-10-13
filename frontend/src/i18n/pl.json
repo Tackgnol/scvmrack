@@ -1400,10 +1400,6 @@
       "abilitiesHint": "Ta kolejność jest używana na karcie, wydruku i w puli losowych zdolności.",
       "itemsHint": "Ta kolejność Class Items jest używana wszędzie, gdzie klasa je wyświetla.",
       "originsHint": "Kolejność to numerowana lista pochodzeń, z której losuje się przy tworzeniu scvma.",
-      "reorderedAbilities": "Zmieniono kolejność zdolności",
-      "reorderedItems": "Zmieniono kolejność Class Items",
-      "reorderedOrigins": "Zmieniono kolejność pochodzeń",
-      "reorderedTableRows": "Zmieniono kolejność wierszy tabeli",
       "shortcut": "Alt+↑/↓ przenosi aktywną kartę lub wiersz tabeli."
     },
     "identity": {

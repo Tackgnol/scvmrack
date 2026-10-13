@@ -1,6 +1,10 @@
 import { client } from "@/api";
+import type { paths } from "@/api/schema";
 import { unwrapApiResult, type UntypedApiClient } from "@/api/clientResult";
 
+type ReportBody = paths["/api/reports"]["post"]["requestBody"]["content"]["application/json"];
+export type PublicReportInput = Omit<ReportBody, "goodFaith">;
+export type ReportReason = ReportBody["reason"];
 export const REPORT_REASONS = [
   "copyright",
   "child_sexual_abuse_material",
@@ -10,17 +14,7 @@ export const REPORT_REASONS = [
   "abusive_or_hateful",
   "owner_removal",
   "other",
-] as const;
-export type ReportReason = (typeof REPORT_REASONS)[number];
-export type PublicReportInput = {
-  classId: number;
-  reason: ReportReason;
-  explanation: string;
-  reporterName?: string;
-  reporterEmail?: string;
-  website?: string;
-  locale: "en" | "pl";
-};
+] as const satisfies readonly ReportReason[];
 const reportClient = client as unknown as UntypedApiClient;
 
 /** Sends a public class report for human review. */

@@ -32,4 +32,5 @@ export default fp(async function rpgtoolsOwlbearPlugin(fastify: FastifyInstance)
   });
 
   fastify.log.info('rpgtools-owlbear registered');
-});
+  // Swagger must load first so these routes reach the OpenAPI document.
+}, { dependencies: ['swagger'] });

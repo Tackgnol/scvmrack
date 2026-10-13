@@ -64,7 +64,7 @@ export function ClassesPage() {
   const { t, i18n } = useTranslation();
   const { isAuthenticated, isLoading } = useAuth();
   const signedOut = !isLoading && !isAuthenticated;
-  const locale = getApiLocale<ClassLanguage>(i18n.language);
+  const locale = getApiLocale(i18n.language);
   const [publishTarget, setPublishTarget] = useState<{
     id: number;
     name: string;

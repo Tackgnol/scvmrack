@@ -1,50 +1,56 @@
+import { MODIFIER_CONTEXTS } from '../lib/ability-modifiers.js';
 import {
   CLASS_ITEM_TYPES,
   CLASS_LANGUAGES,
   CLASS_STATS,
+  DIE_FACES,
   GEAR_EFFECTS,
   GEAR_KINDS,
   LIMIT_LIST,
   LIMIT_NAME,
   LIMIT_TEXT,
   PET_ACTIONS,
+  STAT_DIE_FACES,
   TABLE_DICE,
   WEAPON_AMMO,
   WEAPON_REACHES,
 } from '../lib/class-draft.js';
-import { CLASS_STATUSES, CLASS_VISIBILITIES, GETTING_BETTER_RULES } from '../lib/class-model.js';
+import { CLASS_ITEM_KEY } from '../lib/class-items.js';
+import {
+  CLASS_STATUSES,
+  CLASS_VISIBILITIES,
+  customClassKeyPattern,
+  GETTING_BETTER_RULES,
+} from '../lib/class-model.js';
+import { MAX_DB_INT } from './character.js';
 import { DraftPreviewSchema } from './draft.js';
 
 export { ErrorSchema } from './character.js';
 
-const LocalizedSchema = {
-  type: 'object',
-  additionalProperties: false,
-  required: ['en', 'pl'],
-  properties: {
-    en: { type: 'string', maxLength: LIMIT_TEXT },
-    pl: { type: 'string', maxLength: LIMIT_TEXT },
-  },
-} as const;
+/** One string per class language, each at most `maxLength` long. */
+const localized = <const N extends number>(maxLength: N) =>
+  ({
+    type: 'object',
+    additionalProperties: false,
+    required: CLASS_LANGUAGES,
+    properties: Object.fromEntries(
+      CLASS_LANGUAGES.map((language) => [language, { type: 'string', maxLength }])
+    ) as Record<(typeof CLASS_LANGUAGES)[number], { type: 'string'; maxLength: N }>,
+  }) as const;
 
-const NameSchema = {
-  ...LocalizedSchema,
-  properties: {
-    en: { type: 'string', maxLength: LIMIT_NAME },
-    pl: { type: 'string', maxLength: LIMIT_NAME },
-  },
-} as const;
+const LocalizedSchema = localized(LIMIT_TEXT);
+const NameSchema = localized(LIMIT_NAME);
+const IdSchema = { type: 'integer', minimum: 1, maximum: MAX_DB_INT } as const;
 
 const OriginSchema = {
   ...LocalizedSchema,
   properties: {
     ...LocalizedSchema.properties,
-    key: { type: 'string', pattern: '^cc\\.[0-9]{1,9}\\.origin\\.[0-9]{1,9}$' },
+    key: { type: 'string', pattern: customClassKeyPattern('origin') },
   },
 } as const;
 
-const ITEM_REF =
-  '^(new:[A-Za-z0-9-]{1,64}|(weapons|armor|equipment|pets).cc-[0-9]{1,9}-[0-9]{1,9})$';
+const ITEM_REF = `^(new:[A-Za-z0-9-]{1,64}|${CLASS_ITEM_KEY})$`;
 const GrantSchema = { type: ['string', 'null'], pattern: ITEM_REF } as const;
 const TableRowSchema = {
   type: 'object',
@@ -80,20 +86,7 @@ const ModifiersSchema = {
         type: 'array',
         uniqueItems: true,
         maxItems: 9,
-        items: {
-          type: 'string',
-          enum: [
-            'melee',
-            'ranged',
-            'defence',
-            'cast',
-            'ability',
-            'test',
-            'heal',
-            'buff',
-            'item',
-          ],
-        },
+        items: { type: 'string', enum: MODIFIER_CONTEXTS },
       },
     },
   },
@@ -134,7 +127,7 @@ const ClassItemSchema = {
       ],
       properties: {
         diceCount: { type: 'integer', minimum: 1, maximum: 6 },
-        diceFaces: { type: 'integer', enum: [2, 4, 6, 8, 10, 12] },
+        diceFaces: { type: 'integer', enum: DIE_FACES },
         damageModifier: { type: 'integer', minimum: -6, maximum: 6 },
         reach: { type: 'string', enum: WEAPON_REACHES },
         ammo: { type: 'string', enum: WEAPON_AMMO },
@@ -160,7 +153,7 @@ const ClassItemSchema = {
         kind: { type: 'string', enum: GEAR_KINDS },
         uses: { type: 'integer', minimum: 0, maximum: 99 },
         effect: { type: 'string', enum: GEAR_EFFECTS },
-        effectDie: { type: 'integer', enum: [2, 4, 6, 8, 10, 12] },
+        effectDie: { type: 'integer', enum: DIE_FACES },
         statuses: ModifiersSchema,
       },
     },
@@ -192,10 +185,7 @@ const AbilitySchema = {
     'table',
   ],
   properties: {
-    key: {
-      type: 'string',
-      pattern: '^cc\\.[0-9]{1,9}\\.ability\\.[0-9]{1,9}$',
-    },
+    key: { type: 'string', pattern: customClassKeyPattern('ability') },
     random: { type: 'boolean' },
     name: NameSchema,
     text: LocalizedSchema,
@@ -212,7 +202,7 @@ const StatDiceSchema = {
   required: ['count', 'faces', 'modifier', 'dropLowest'],
   properties: {
     count: { type: 'integer', minimum: 1, maximum: 6 },
-    faces: { type: 'integer', enum: [4, 6, 8, 10, 12] },
+    faces: { type: 'integer', enum: STAT_DIE_FACES },
     modifier: { type: 'integer', minimum: -6, maximum: 6 },
     dropLowest: { type: 'boolean' },
   },
@@ -252,14 +242,12 @@ export const ClassDraftSchema = {
       type: 'object',
       additionalProperties: false,
       required: CLASS_STATS,
-      properties: {
-        strength: StatDiceSchema,
-        agility: StatDiceSchema,
-        presence: StatDiceSchema,
-        toughness: StatDiceSchema,
-      },
+      properties: Object.fromEntries(CLASS_STATS.map((stat) => [stat, StatDiceSchema])) as Record<
+        (typeof CLASS_STATS)[number],
+        typeof StatDiceSchema
+      >,
     },
-    hpDie: { type: 'integer', enum: [2, 4, 6, 8, 10, 12] },
+    hpDie: { type: 'integer', enum: DIE_FACES },
     omenDie: { type: 'integer', enum: [2, 4, 6] },
     weaponDie: { type: 'integer', enum: [4, 6, 8, 10] },
     armorDie: { type: 'integer', enum: [2, 3, 4] },
@@ -305,12 +293,12 @@ export const TestRollBodySchema = {
 export const ClassIdParamsSchema = {
   type: 'object',
   required: ['id'],
-  properties: { id: { type: 'integer', minimum: 1, maximum: 2147483647 } },
+  properties: { id: IdSchema },
 } as const;
 export const DraftIdParamsSchema = {
   type: 'object',
   required: ['draftId'],
-  properties: { draftId: { type: 'integer', minimum: 1, maximum: 2147483647 } },
+  properties: { draftId: IdSchema },
 } as const;
 
 export const DraftCreateBodySchema = {
@@ -318,7 +306,7 @@ export const DraftCreateBodySchema = {
   additionalProperties: false,
   required: ['draft'],
   properties: {
-    classId: { type: ['integer', 'null'], minimum: 1, maximum: 2147483647 },
+    classId: { ...IdSchema, type: ['integer', 'null'] },
     draft: ClassDraftSchema,
   },
 } as const;
@@ -329,7 +317,7 @@ export const DraftUpdateBodySchema = {
   required: ['draft', 'revision'],
   properties: {
     draft: ClassDraftSchema,
-    revision: { type: 'integer', minimum: 1, maximum: 2147483647 },
+    revision: IdSchema,
     force: { type: 'boolean' },
   },
 } as const;

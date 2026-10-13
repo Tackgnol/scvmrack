@@ -1,5 +1,5 @@
 import prisma from '../lib/prisma.js';
-import { findTranslationsWithAuthoredFallback } from '../lib/class-translations.js';
+import { translatedClassTexts } from '../lib/class-translations.js';
 import type { GettingBetterRule } from '../lib/getting-better-types.js';
 import type { ClassVersionRef } from '../lib/class-model.js';
 
@@ -11,6 +11,7 @@ export type PoolCatalogRow = ClassVersionRef & {
   languages: string[];
   credit: { work: string; author: string; url: string | null } | null;
   abilityCount: number;
+  classItemCount: number;
   randomAbilityCount: number;
   gettingBetterRule: GettingBetterRule;
 };
@@ -47,7 +48,8 @@ export const classPoolRepository = {
 
   /**
    * Every version of the classes a GM's panel can show: built-in, the GM's own,
-   * other GMs' public ones, and whatever is pooled already.
+   * other GMs' public ones, and whatever is pooled already. A database pre-filter for
+   * `mayUse` in lib/class-model.ts; keep the two in step.
    */
   // ponytail: loads every public class; page or search server-side once public classes number in the hundreds.
   async findCatalogRows(
@@ -87,40 +89,52 @@ export const classPoolRepository = {
       },
       orderBy: { id: 'asc' },
     });
-    const abilityCounts = await prisma.ability.groupBy({
-      by: ['classId'],
+    const byClass = {
+      by: ['classId' as const],
       where: { classId: { in: classes.map((c) => c.id) } },
-      _count: { _all: true },
-    });
+      _count: { _all: true as const },
+    };
+    const [abilityCounts, ...itemCounts] = await Promise.all([
+      prisma.ability.groupBy(byClass),
+      prisma.weapon.groupBy(byClass),
+      prisma.armor.groupBy(byClass),
+      prisma.equipment.groupBy(byClass),
+      prisma.pet.groupBy(byClass),
+    ]);
     const countByClass = new Map(abilityCounts.map((row) => [row.classId, row._count._all]));
+    const itemsByClass = new Map<number, number>();
+    for (const row of itemCounts.flat()) {
+      if (row.classId !== null) {
+        itemsByClass.set(row.classId, (itemsByClass.get(row.classId) ?? 0) + row._count._all);
+      }
+    }
 
-    return Promise.all(
-      classes.map(async (c) => {
-        const keys = [c.nameKey, c.descriptionKey].filter((k): k is string => k !== null);
-        const text = await findTranslationsWithAuthoredFallback(locale, c.languages, keys);
-        return {
-          id: c.id,
-          lineageId: c.lineageId,
-          version: c.version,
-          source: c.source,
-          status: c.status,
-          visibility: c.visibility,
-          ownerUserId: c.ownerUserId,
-          ownerName: c.owner?.name ?? null,
-          takenDownAt: c.takenDownAt,
-          name: (c.nameKey ? text.get(c.nameKey) : undefined) ?? c.name,
-          blurb: (c.descriptionKey ? text.get(c.descriptionKey) : undefined) ?? c.appendix,
-          languages: c.languages,
-          credit:
-            c.creditWork && c.creditAuthor
-              ? { work: c.creditWork, author: c.creditAuthor, url: c.creditUrl }
-              : null,
-          abilityCount: countByClass.get(c.id) ?? 0,
-          randomAbilityCount: c.randomAbilityCount ?? 0,
-          gettingBetterRule: c.gettingBetterRule,
-        };
-      })
-    );
+    const texts = await translatedClassTexts(locale, classes);
+    return classes.map((c, i) => {
+      const text = texts[i];
+      return {
+        id: c.id,
+        lineageId: c.lineageId,
+        version: c.version,
+        source: c.source,
+        status: c.status,
+        visibility: c.visibility,
+        ownerUserId: c.ownerUserId,
+        ownerName: c.owner?.name ?? null,
+        takenDownAt: c.takenDownAt,
+        name: text.name,
+        blurb: text.description ?? c.appendix,
+        languages: c.languages,
+        credit:
+          c.creditWork && c.creditAuthor
+            ? { work: c.creditWork, author: c.creditAuthor, url: c.creditUrl }
+            : null,
+        abilityCount: countByClass.get(c.id) ?? 0,
+        classItemCount: itemsByClass.get(c.id) ?? 0,
+        randomAbilityCount: c.randomAbilityCount ?? 0,
+        gettingBetterRule: c.gettingBetterRule,
+      };
+    });
   },
 
   async setLineage(partyId: string, lineageId: string, enabled: boolean): Promise<void> {

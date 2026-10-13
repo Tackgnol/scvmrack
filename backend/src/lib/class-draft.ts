@@ -7,7 +7,7 @@
 import { SUPPORTED_LOCALES, type SupportedLocale } from '../config/locales.js';
 import { ABILITY_STATS, type AbilityStat } from './ability-modifiers.js';
 import type { GettingBetterRule } from './class-model.js';
-import type { ClassSpec, StatDice } from './generate-character.js';
+import { CLASSLESS_DEFAULTS, type ClassSpec, type StatDice } from './generate-character.js';
 
 export const CLASS_LANGUAGES = SUPPORTED_LOCALES;
 export type ClassLanguage = SupportedLocale;
@@ -36,9 +36,14 @@ export type AbilityTableRowDraft = {
 
 /** Dice an ability's reference table can use; the table has one row per face. */
 export const TABLE_DICE = [2, 3, 4, 6, 8, 10, 12] as const;
+export type TableDie = (typeof TABLE_DICE)[number];
+/** Dice a weapon, gear effect or hit points can roll. */
+export const DIE_FACES = [2, 4, 6, 8, 10, 12] as const;
+/** Dice a stat can roll. */
+export const STAT_DIE_FACES = [4, 6, 8, 10, 12] as const;
 
 export type AbilityTableDraft = {
-  die: (typeof TABLE_DICE)[number];
+  die: TableDie;
   rows: AbilityTableRowDraft[];
 };
 
@@ -144,11 +149,15 @@ export function blankClassDraft(): ClassDraft {
       presence: bookStat(),
       toughness: bookStat(),
     },
-    hpDie: 8,
-    omenDie: 2,
-    weaponDie: 10,
-    armorDie: 4,
-    silver: { count: 2, faces: 6, multiplier: 10 },
+    hpDie: CLASSLESS_DEFAULTS.hpDie,
+    omenDie: CLASSLESS_DEFAULTS.omenDie,
+    weaponDie: CLASSLESS_DEFAULTS.weaponDie,
+    armorDie: CLASSLESS_DEFAULTS.armorDie,
+    silver: {
+      count: CLASSLESS_DEFAULTS.silverDice.length,
+      faces: CLASSLESS_DEFAULTS.silverDice[0],
+      multiplier: CLASSLESS_DEFAULTS.silverModifier,
+    },
     origins: [],
     abilities: [],
     randomAbilityCount: 0,

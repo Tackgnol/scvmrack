@@ -14,7 +14,11 @@ export const ITEM_TABLES = {
   pet: { table: 'pet', prefix: 'pets.' },
 } as const satisfies Record<ClassItemType, { table: string; prefix: string }>;
 
-const KEY = /^(weapons|armor|equipment|pets)\.cc-(\d+)-(\d+)$/;
+/** A saved Class Item key, `<table prefix>cc-<classId>-<n>`; capture groups are prefix, class id, n. */
+export const CLASS_ITEM_KEY = `(${Object.values(ITEM_TABLES)
+  .map((t) => t.prefix.slice(0, -1))
+  .join('|')})\\.cc-([0-9]{1,9})-([0-9]{1,9})`;
+const KEY = new RegExp(`^${CLASS_ITEM_KEY}$`);
 const TIER_DIE: Record<number, number> = { 1: 2, 2: 4, 3: 6 };
 const TIER_TAG: Record<number, string> = {
   1: 'light-armor',
@@ -251,13 +255,6 @@ export function itemFromRow(
 /** The type a stored Class Item key belongs to. */
 export function itemTypeOf(key: string): ClassItemType | null {
   const prefix = KEY.exec(key)?.[1];
-  return prefix === 'weapons'
-    ? 'weapon'
-    : prefix === 'armor'
-    ? 'armor'
-    : prefix === 'equipment'
-    ? 'gear'
-    : prefix === 'pets'
-    ? 'pet'
-    : null;
+  const entry = Object.entries(ITEM_TABLES).find(([, t]) => t.prefix === `${prefix}.`);
+  return entry ? (entry[0] as ClassItemType) : null;
 }

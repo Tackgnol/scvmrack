@@ -6,7 +6,6 @@ import { useRef, useState } from "react";
 import { useStableIds } from "@/hooks/useStableIds";
 import { useTranslation } from "react-i18next";
 import { fieldId, LIMIT_TEXT } from "../classCreator.utils";
-import type { CreatorChange } from "../classCreator.models";
 import { Reorderable } from "../Reorderable/Reorderable";
 import { moveEntry } from "../reorder.utils";
 import { RemoveConfirm } from "../RemoveConfirm/RemoveConfirm";
@@ -18,7 +17,7 @@ type Props = {
   draft: ClassDraft;
   index: number;
   language: ClassLanguage;
-  onChange: (recipe: (ability: AbilityDraft) => AbilityDraft, change?: CreatorChange) => void;
+  onChange: (recipe: (ability: AbilityDraft) => AbilityDraft) => void;
   showMissing: (path: string) => boolean;
   touch: (path: string) => void;
 };
@@ -89,12 +88,9 @@ export function AbilityReferenceTableEditor({ ability, base, draft, index, langu
     });
     setPendingPaste(null);
   };
-  const reorderRows = (from: number, to: number, kind: "move" | "drag", source: string) => {
+  const reorderRows = (from: number, to: number) => {
     move(from, to);
-    onChange(
-      (entry) => entry.table ? { ...entry, table: { ...entry.table, rows: moveEntry(entry.table.rows, from, to) } } : entry,
-      { kind, source, label: t("creator.reorder.reorderedTableRows", "Reordered table rows") },
-    );
+    onChange((entry) => entry.table ? { ...entry, table: { ...entry.table, rows: moveEntry(entry.table.rows, from, to) } } : entry);
   };
 
   return (

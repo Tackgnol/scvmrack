@@ -1,7 +1,8 @@
 import { apiError } from '../errors.js';
 import type { ClassScope } from './class-choice.js';
 
-import { characterRepository, type ScopeClassRow } from '../repositories/character-repository.js';
+import type { ClassVersionRef } from '../lib/class-model.js';
+import { characterRepository } from '../repositories/character-repository.js';
 import { partyRepository } from '../repositories/party-repository.js';
 import { byLineage, canOffer } from './class-offer.js';
 import { fail, ok, type ServiceResult } from './result.js';
@@ -37,7 +38,7 @@ export async function resolveClassScope(
  * a draft may still confirm on any of the lineage's versions not taken down.
  */
 function rollable(
-  rows: ScopeClassRow[],
+  rows: ClassVersionRef[],
   partyOwnerId: string | null
 ): Pick<ClassScope, 'classIds' | 'acceptedClassIds'> {
   const classIds: number[] = [];

@@ -1,3 +1,4 @@
+import { scopeToExclude } from "@/components/modifiers/utils";
 import { SegmentedChoice } from "@/components/atoms/SegmentedChoice/SegmentedChoice";
 import { LocalizedField } from "@/components/molecules/LocalizedField/LocalizedField";
 import { useState } from "react";
@@ -14,14 +15,7 @@ import {
   OpenCard,
   SmallAction,
 } from "../classCreator.styles";
-import {
-  fieldId,
-  LIMIT_LIST,
-  LIMIT_NAME,
-  LIMIT_TEXT,
-  MAX_MODIFIERS,
-  scopeExclude,
-} from "../classCreator.utils";
+import { fieldId, LIMIT_LIST, LIMIT_NAME, LIMIT_TEXT, MAX_MODIFIERS } from "../classCreator.utils";
 import type { AbilityEditorProps } from "./AbilityEditor.models";
 
 /** The open ability card: Fixed or Random, name, rules text, grants, modifiers; Remove, Duplicate and Done at the foot. */
@@ -64,7 +58,7 @@ export function AbilityEditor({
       ...a,
       modifiers: [
         ...a.modifiers,
-        { statistic: "presence", value: 1, exclude: scopeExclude("all") },
+        { statistic: "presence", value: 1, exclude: scopeToExclude("all") },
       ],
     }));
     focus(`${base}.modifiers.${ability.modifiers.length}.statistic`);

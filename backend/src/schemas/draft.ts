@@ -1,6 +1,6 @@
 import { ABILITY_STATS, DRAFT_SECTIONS } from '../lib/draft-seeds.js';
 import { CharacterSchema } from './character.js';
-import { MAX_CLASS_ID } from './character.js';
+import { MAX_DB_INT } from './character.js';
 
 const SeedSchema = { type: 'string', pattern: '^[0-9a-f]{64}$' } as const;
 const AbilityStatSchema = {
@@ -28,7 +28,7 @@ export const DraftSchema = {
   additionalProperties: false,
   required: ['classId', 'classless', 'seeds'],
   properties: {
-    classId: { type: ['integer', 'null'], minimum: 1, maximum: MAX_CLASS_ID },
+    classId: { type: ['integer', 'null'], minimum: 1, maximum: MAX_DB_INT },
     classless: { type: 'boolean' },
     name: { type: 'string', maxLength: 255 },
     dropLowestAbilities: DropLowestAbilitiesSchema,
@@ -40,7 +40,7 @@ export const DraftBodySchema = {
   type: 'object',
   additionalProperties: false,
   properties: {
-    classId: { type: ['integer', 'null'], minimum: 1, maximum: MAX_CLASS_ID },
+    classId: { type: ['integer', 'null'], minimum: 1, maximum: MAX_DB_INT },
     classless: { type: 'boolean' },
     name: { type: 'string', maxLength: 255 },
     dropLowestAbilities: DropLowestAbilitiesSchema,

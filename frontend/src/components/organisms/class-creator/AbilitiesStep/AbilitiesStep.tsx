@@ -25,7 +25,6 @@ import {
   zineAbilities,
   slotFor,
 } from "../classCreator.utils";
-import type { CreatorChange } from "../classCreator.models";
 import { movedIndex, moveEntry } from "../reorder.utils";
 import type { AbilitiesStepProps } from "./AbilitiesStep.models";
 
@@ -46,15 +45,11 @@ export function AbilitiesStep({
   const setAbility = (
     index: number,
     recipe: (ability: AbilityDraft) => AbilityDraft,
-    change?: CreatorChange,
   ) =>
-    update(
-      (d) => ({
-        ...d,
-        abilities: d.abilities.map((a, i) => (i === index ? recipe(a) : a)),
-      }),
-      change,
-    );
+    update((d) => ({
+      ...d,
+      abilities: d.abilities.map((a, i) => (i === index ? recipe(a) : a)),
+    }));
   const open = (index: number | null, focusPath: string) =>
     withCardTransition(
       index === null,
@@ -112,11 +107,6 @@ export function AbilitiesStep({
           ...d.abilities.slice(index + 1),
         ],
       }),
-      {
-        kind: "paste",
-        path: `abilities.${index}.name.${language}`,
-        label: t("creator.history.pastedAbilities", "Pasted abilities"),
-      },
     );
   };
 
@@ -176,19 +166,10 @@ export function AbilitiesStep({
     );
   };
 
-  const reorder = (
-    from: number,
-    to: number,
-    kind: "move" | "drag",
-    source: string,
-  ) => {
+  const reorder = (from: number, to: number) => {
     move(from, to);
     onOpenAbility(movedIndex(openAbility, from, to));
-    update((d) => ({ ...d, abilities: moveEntry(d.abilities, from, to) }), {
-      kind,
-      source,
-      label: t("creator.reorder.reorderedAbilities", "Reordered abilities"),
-    });
+    update((d) => ({ ...d, abilities: moveEntry(d.abilities, from, to) }));
   };
 
   return (
@@ -260,7 +241,7 @@ export function AbilitiesStep({
               index={index}
               randomNumber={randomNumber(draft, index)}
               full={full}
-              onChange={(recipe, change) => setAbility(index, recipe, change)}
+              onChange={(recipe) => setAbility(index, recipe)}
               onDone={() => open(null, `abilities.${index}`)}
               onRemove={(withItems) => removeAt(index, withItems)}
               onGrant={(slot, ref) =>

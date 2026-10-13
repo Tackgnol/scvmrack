@@ -3,7 +3,6 @@ import {
   getClassPool,
   setPoolClass,
   setPoolClassless,
-  type ClassPoolLocale,
   type ClassPoolView,
 } from "@/api/classPool";
 import { getApiLocale } from "@/hooks/utils";
@@ -44,7 +43,7 @@ export type PoolSwitchCallbacks = {
  */
 export function useClassPool(partyId: string, callbacks: PoolSwitchCallbacks) {
   const { i18n } = useTranslation();
-  const locale = getApiLocale<ClassPoolLocale>(i18n.language);
+  const locale = getApiLocale(i18n.language);
   const queryKey = classPoolKeys.pool(partyId, locale);
   const queryClient = useQueryClient();
 

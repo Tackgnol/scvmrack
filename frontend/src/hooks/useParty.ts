@@ -1,5 +1,4 @@
 import { $api } from "@/api";
-import { PathsApiCharactersGetParametersQueryLocale } from "@/api/schema.ts";
 import { useAuth } from "@/hooks/useAuth";
 import type { CharacterListItem } from "@/hooks/models";
 import { usePartyDetail } from "@/hooks/usePartyRepository";
@@ -30,7 +29,7 @@ export function useParty(): {
 } {
   const { isAuthenticated } = useAuth();
   const { i18n } = useTranslation();
-  const locale = getApiLocale<PathsApiCharactersGetParametersQueryLocale>(
+  const locale = getApiLocale(
     i18n.language,
   );
 

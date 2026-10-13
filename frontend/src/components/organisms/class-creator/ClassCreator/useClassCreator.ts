@@ -4,20 +4,14 @@ import {
   testRollClass,
   type ClassDraft,
   type ClassLanguage,
+  type StoredClassDraft,
 } from "@/api/classes";
 import { getApiLocale } from "@/hooks/utils";
-import { useSnackbar } from "@/SnackbarContext/SnackbarProvider";
-import type {
-  CreatorChange,
-  CreatorIssue,
-  CreatorStep,
-} from "../classCreator.models";
+import type { CreatorIssue, CreatorStep } from "../classCreator.models";
 import {
   abilityIndexOf,
   blankDraft,
   draftIssues,
-  fieldId,
-  focusAfterRender,
   itemIndexOf,
   STEPS,
   withSavedKeys,
@@ -30,17 +24,12 @@ import {
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { readLocalDraftSnapshot, useDraftAutosave } from "./useDraftAutosave";
+import { useDraftAutosave } from "./useDraftAutosave";
 
-type HistoryEntry = {
-  before: ClassDraft;
-  after: ClassDraft;
-  label: string;
-  source: string | null;
-  kind?: CreatorChange["kind"];
-  at: number;
-};
+type HistoryEntry = { before: ClassDraft; after: ClassDraft; at: number };
 const HISTORY_LIMIT = 30;
+/** Edits closer together than this undo as one step, so typing and nudging aren't undone a keystroke at a time. */
+const MERGE_MS = 1000;
 const sameDraft = (left: ClassDraft, right: ClassDraft) =>
   JSON.stringify(left) === JSON.stringify(right);
 
@@ -51,17 +40,10 @@ const sameDraft = (left: ClassDraft, right: ClassDraft) =>
 export function useClassCreator(
   classId: number | null,
   initialDraft: ClassDraft,
-  initialDraftRecord: import("@/api/classes").StoredClassDraft | null = null,
+  initialDraftRecord: StoredClassDraft | null = null,
 ) {
   const { t, i18n } = useTranslation();
-  const { showInfo } = useSnackbar();
-  const [localSnapshot] = useState(() =>
-    initialDraftRecord ? null : readLocalDraftSnapshot(classId),
-  );
-  const restoredDraft =
-    initialDraftRecord?.draft ?? localSnapshot?.draft ?? initialDraft;
-  const restoredRecord =
-    initialDraftRecord ?? (localSnapshot?.id ? localSnapshot : null);
+  const restoredDraft = initialDraftRecord?.draft ?? initialDraft;
   const draftRef = useRef(restoredDraft);
   const historyRef = useRef<{ undo: HistoryEntry[]; redo: HistoryEntry[] }>({
     undo: [],
@@ -79,13 +61,13 @@ export function useClassCreator(
     draftRef.current = nextDraft;
     setDraft(nextDraft);
   };
-  const [revision, setRevision] = useState(localSnapshot ? 1 : 0);
+  const [revision, setRevision] = useState(0);
   const [savedId, setSavedId] = useState(classId);
   const autosave = useDraftAutosave({
     classId: savedId,
     draft,
     revision,
-    initialDraft: restoredRecord,
+    initialDraft: initialDraftRecord,
     replaceDraft,
   });
   const [savedRevision, setSavedRevision] = useState<number | null>(null);
@@ -127,58 +109,19 @@ export function useClassCreator(
     : draft.languages[0];
   const issues = draftIssues(draft);
 
-  const update = (
-    recipe: (current: ClassDraft) => ClassDraft,
-    change?: CreatorChange,
-  ) => {
+  const update = (recipe: (current: ClassDraft) => ClassDraft) => {
     const before = draftRef.current;
     const after = recipe(before);
     if (sameDraft(before, after)) {
       return;
     }
-    const active =
-      document.activeElement instanceof HTMLElement
-        ? document.activeElement
-        : null;
-    const hintedSource = document.body.dataset.creatorHistorySource;
-    const hintedKind = document.body.dataset.creatorHistoryKind as
-      | CreatorChange["kind"]
-      | undefined;
-    const source =
-      change?.source ??
-      (change?.path
-      ? fieldId(change.path)
-      : hintedSource || active?.id || null);
-    const kind =
-      change?.kind ??
-      hintedKind ??
-      (active instanceof HTMLTextAreaElement ||
-      (active instanceof HTMLInputElement &&
-        active.getAttribute("role") !== "spinbutton")
-        ? "typing"
-        : undefined);
     const entry: HistoryEntry = {
       before: structuredClone(before),
       after: structuredClone(after),
-      label:
-        change?.label ??
-        (kind === "typing"
-          ? t("creator.history.editedText", "Edited text")
-          : t("creator.history.changed", "Changed class")),
-      source,
-      kind,
       at: Date.now(),
     };
     const last = historyRef.current.undo[historyRef.current.undo.length - 1];
-    const coalesce = Boolean(
-      last &&
-      last.source === source &&
-      last.kind === kind &&
-        ((kind === "typing" && entry.at - last.at <= 1000) ||
-          kind === "nudge" ||
-          kind === "move"),
-    );
-    if (coalesce && last) {
+    if (last && entry.at - last.at <= MERGE_MS) {
       last.after = entry.after;
       last.at = entry.at;
     } else {
@@ -194,15 +137,6 @@ export function useClassCreator(
     setBlocked(null);
     publishHistory();
   };
-  const restoreFocus = (source: string | null) =>
-    requestAnimationFrame(() => {
-      const target = source ? document.getElementById(source) : null;
-      if (target instanceof HTMLElement) {
-        target.focus();
-      } else {
-        focusAfterRender(null);
-      }
-    });
   const undo = () => {
     const entry = historyRef.current.undo.pop();
     if (!entry) {
@@ -214,12 +148,6 @@ export function useClassCreator(
     setRevision((current) => current + 1);
     setBlocked(null);
     publishHistory();
-    if (entry.kind !== "move" && entry.kind !== "drag") {
-      showInfo(
-      t("creator.history.undid", "Undid: {{step}}", { step: entry.label }),
-      );
-    }
-    restoreFocus(entry.source);
   };
   const redo = () => {
     const entry = historyRef.current.redo.pop();
@@ -232,12 +160,6 @@ export function useClassCreator(
     setRevision((current) => current + 1);
     setBlocked(null);
     publishHistory();
-    if (entry.kind !== "move" && entry.kind !== "drag") {
-      showInfo(
-      t("creator.history.redid", "Redid: {{step}}", { step: entry.label }),
-      );
-    }
-    restoreFocus(entry.source);
   };
 
   const save = useMutation({
@@ -280,7 +202,7 @@ export function useClassCreator(
       scvm: await testRollClass({
         draft: input.draft,
         language: input.language,
-        locale: getApiLocale<ClassLanguage>(i18n.language),
+        locale: getApiLocale(i18n.language),
       }),
       revision: input.revision,
     }),
@@ -327,8 +249,6 @@ export function useClassCreator(
     redo,
     canUndo: history.undo.length > 0,
     canRedo: history.redo.length > 0,
-    undoLabel: history.undo[history.undo.length - 1]?.label ?? null,
-    redoLabel: history.redo[history.redo.length - 1]?.label ?? null,
     touch: (path: string) =>
       setTouched((current) =>
         current.has(path) ? current : new Set(current).add(path),
@@ -342,11 +262,7 @@ export function useClassCreator(
     setLanguage,
     openAbility,
     setOpenAbility,
-    undoSource: history.undo[history.undo.length - 1]?.source ?? null,
-    undoKind: history.undo[history.undo.length - 1]?.kind,
     openItem,
-    redoSource: history.redo[history.redo.length - 1]?.source ?? null,
-    redoKind: history.redo[history.redo.length - 1]?.kind,
     setOpenItem,
     jump,
     draftAutosave: { ...autosave, discard },

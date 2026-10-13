@@ -1,5 +1,4 @@
-import { $api } from "@/api";
-import { type PathsApiCharactersGetParametersQueryLocale } from "@/api/schema";
+import { $api, type ApiLocale } from "@/api";
 import { type CharacterListItem } from "@/hooks/models";
 import { Button } from "@mui/material";
 import { useTranslation } from "react-i18next";
@@ -16,7 +15,7 @@ export function ObrAuthedPicker({
   onRollNew,
   onForge,
 }: {
-  locale: PathsApiCharactersGetParametersQueryLocale;
+  locale: ApiLocale;
   onPick: (id: string) => void;
   onRollNew: () => void;
   onForge: () => void;

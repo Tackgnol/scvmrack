@@ -1,8 +1,8 @@
-export type DiePickerProps = {
+export type DiePickerProps<T extends number> = {
   id: string;
   label: string;
-  value: number;
-  options: number[];
-  onChange: (value: number) => void;
+  value: T;
+  options: readonly T[];
+  onChange: (value: T) => void;
   hint?: string;
 };

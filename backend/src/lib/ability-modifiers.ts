@@ -7,6 +7,19 @@ export const ABILITY_STATS = [
 
 export type AbilityStat = (typeof ABILITY_STATS)[number];
 
+/** Roll contexts a modifier's `exclude` list can name. */
+export const MODIFIER_CONTEXTS = [
+  'melee',
+  'ranged',
+  'defence',
+  'cast',
+  'ability',
+  'test',
+  'heal',
+  'buff',
+  'item',
+] as const;
+
 export function statToModifier(stat: number): number {
   if (stat <= 4) {
     return -3;

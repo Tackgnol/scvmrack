@@ -2,7 +2,6 @@ import OBR from "@owlbear-rodeo/sdk";
 import {
   fetchObrCards,
   type ObrCard,
-  type ObrLocale,
 } from "@/api/obr";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { WarbandCardView } from "@/components/organisms/party/WarbandCardView";
@@ -44,7 +43,7 @@ export function ObrCardRoute({
 }: ObrCardRouteProps) {
   const { i18n, t } = useTranslation();
   const [role, setRole] = useState<"GM" | "PLAYER" | null>(null);
-  const locale = getApiLocale<ObrLocale>(i18n.language);
+  const locale = getApiLocale(i18n.language);
   const ids = characterId?.trim() ?? "";
   const room = roomId?.trim() ?? "";
   const token = tokenId?.trim() ?? "";

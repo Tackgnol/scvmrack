@@ -83,18 +83,8 @@ export function ClassCreator({
         event.key.toLowerCase() === "y" ||
         (event.key.toLowerCase() === "z" && event.shiftKey);
       const undo = event.key.toLowerCase() === "z" && !event.shiftKey;
-      const fieldHistory = redo
-        ? { source: creator.redoSource, kind: creator.redoKind }
-        : { source: creator.undoSource, kind: creator.undoKind };
-      const ownCreatorEdit =
-        event.target instanceof HTMLElement &&
-        event.target.id === fieldHistory.source &&
-        (fieldHistory.kind === "nudge" || fieldHistory.kind === "paste");
-      if (
-        !modifier ||
-        (!undo && !redo) ||
-        (isEditable(event.target) && !ownCreatorEdit)
-      ) {
+      // Inside a field the browser's own undo applies.
+      if (!modifier || (!undo && !redo) || isEditable(event.target)) {
         return;
       }
       event.preventDefault();
@@ -107,13 +97,7 @@ export function ClassCreator({
     window.addEventListener("keydown", onKey, { capture: true });
     return () =>
       window.removeEventListener("keydown", onKey, { capture: true });
-  }, [
-    creator,
-    creator.redoKind,
-    creator.redoSource,
-    creator.undoKind,
-    creator.undoSource,
-  ]);
+  }, [creator]);
   useEffect(() => {
     const warn = (event: BeforeUnloadEvent) => {
       if (!creator.canUndo || creator.saved) {
@@ -324,11 +308,7 @@ export function ClassCreator({
                 aria-keyshortcuts="Control+Z Meta+Z"
                 onClick={creator.undo}
               >
-                {creator.undoLabel
-                  ? t("creator.history.undo", "Undo {{step}}", {
-                      step: creator.undoLabel,
-                    })
-                  : t("creator.history.undo", "Undo")}
+                {t("creator.history.undo", "Undo")}
               </SmallAction>
               <SmallAction
                 type="button"
@@ -336,11 +316,7 @@ export function ClassCreator({
                 aria-keyshortcuts="Control+Shift+Z Control+Y Meta+Shift+Z Meta+Y"
                 onClick={creator.redo}
               >
-                {creator.redoLabel
-                  ? t("creator.history.redo", "Redo {{step}}", {
-                      step: creator.redoLabel,
-                    })
-                  : t("creator.history.redo", "Redo")}
+                {t("creator.history.redo", "Redo")}
               </SmallAction>
             </History>
             {reorderableCount(creator.draft, creator.step) > 1 && (

@@ -7,7 +7,7 @@ import { useTranslation } from "react-i18next";
 import { StatLine } from "../StatLine/StatLine";
 import type { StepProps } from "../classCreator.models";
 import { Stack } from "../classCreator.styles";
-import { fieldId } from "../classCreator.utils";
+import { fieldId, DIE_FACES } from "../classCreator.utils";
 import { DiceGrid } from "./StatsStep.styles";
 
 /** Step 2: how each stat is rolled, plus HP, omens, starting gear dice and silver. */
@@ -31,7 +31,7 @@ export function StatsStep({ draft, update }: Pick<StepProps, "draft" | "update">
           id={fieldId("hpDie")}
           label={t("creator.stats.hpDie", "HP die (+ TOU)")}
           value={draft.hpDie}
-          options={[2, 4, 6, 8, 10, 12]}
+          options={DIE_FACES}
           hint={t("creator.stats.hpHint", "Starting HP is this die plus Toughness, at least 1. Book classes use d4 to d10.")}
           onChange={(hpDie) => update((d) => ({ ...d, hpDie }))}
         />

@@ -1,3 +1,4 @@
+import { scopeOfExclude, scopeToExclude } from "@/components/modifiers/utils";
 import type { ClassStat } from "@/api/classes";
 import { NumberStepper } from "@/components/atoms/NumberStepper/NumberStepper";
 import { SegmentedChoice } from "@/components/atoms/SegmentedChoice/SegmentedChoice";
@@ -6,14 +7,14 @@ import type { ScopeOption } from "@/components/modifiers/types";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Controls, GroupHeading, SmallAction, Spread } from "../classCreator.styles";
-import { fieldId, modifierScope, scopeExclude } from "../classCreator.utils";
+import { fieldId } from "../classCreator.utils";
 import type { ModifierRowProps } from "./ModifierRow.models";
 import { Row } from "./ModifierRow.styles";
 
 /** One modifier an ability carries: the stat, the value, and which rolls it applies to. */
 export function ModifierRow({ path, index, modifier, onChange, onRemove }: ModifierRowProps) {
   const { t } = useTranslation();
-  const scope = modifierScope(modifier);
+  const scope = scopeOfExclude(modifier.exclude);
   const [showMore, setShowMore] = useState(() => scopeIncludeOptions.some((o) => o.more && o.value === scope));
   // The chosen scope stays listed, so the radio group always has a focusable choice.
   const scopes = scopeIncludeOptions.filter((option) => showMore || !option.more || option.value === scope);
@@ -48,7 +49,7 @@ export function ModifierRow({ path, index, modifier, onChange, onRemove }: Modif
           label={t("creator.abilities.appliesTo", "Applies to")}
           value={scope}
           options={scopes.map((option) => ({ value: option.value, label: t(option.labelKey) }))}
-          onChange={(next) => onChange({ ...modifier, exclude: scopeExclude(next) })}
+          onChange={(next) => onChange({ ...modifier, exclude: scopeToExclude(next) })}
         />
         <SmallAction type="button" aria-expanded={showMore} onClick={() => setShowMore((open) => !open)}>
           {showMore ? t("modifiers.fewer", "Fewer") : t("modifiers.more", "More")}

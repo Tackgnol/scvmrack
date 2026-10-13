@@ -18,7 +18,6 @@ export type PoolClass = {
   attribution: PoolAttribution | null;
   abilityCount: number;
   randomAbilityCount: number;
-  /** Class Items arrive with the class creator; Built-in Classes have none of their own. */
   classItemCount: number;
   gettingBetterRule: GettingBetterRule;
   version: number;
@@ -79,7 +78,7 @@ export function buildClassPoolView(input: {
         attribution: attribution(row),
         abilityCount: row.abilityCount,
         randomAbilityCount: row.randomAbilityCount,
-        classItemCount: 0,
+        classItemCount: row.classItemCount,
         gettingBetterRule: row.gettingBetterRule,
         version: row.version,
         playingHere: playing.get(row.lineageId) ?? 0,

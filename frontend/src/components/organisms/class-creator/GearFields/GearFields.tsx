@@ -4,7 +4,7 @@ import { SegmentedChoice } from "@/components/atoms/SegmentedChoice/SegmentedCho
 import { useTranslation } from "react-i18next";
 import type { ItemFieldsProps } from "../classCreator.models";
 import { Controls } from "../classCreator.styles";
-import { fieldId } from "../classCreator.utils";
+import { fieldId, DIE_FACES } from "../classCreator.utils";
 
 /** Gear: consumable, wearable or carried; how many uses; what using it does. */
 export function GearFields({ path, item, onChange }: ItemFieldsProps<"gear">) {
@@ -52,7 +52,7 @@ export function GearFields({ path, item, onChange }: ItemFieldsProps<"gear">) {
               : t("creator.items.effectDieLabel", "Effect die")
           }
           value={g.effectDie}
-          options={[2, 4, 6, 8, 10, 12]}
+          options={DIE_FACES}
           onChange={(effectDie) => onChange({ ...g, effectDie })}
         />
       )}

@@ -19,6 +19,7 @@ const row = (id: number, overrides: Partial<PoolCatalogRow> = {}): PoolCatalogRo
   languages: ['en', 'pl'],
   credit: null,
   abilityCount: 7,
+  classItemCount: 0,
   randomAbilityCount: 1,
   gettingBetterRule: 'book',
   ...overrides,

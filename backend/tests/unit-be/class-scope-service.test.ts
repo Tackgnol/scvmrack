@@ -1,18 +1,9 @@
 import assert from 'node:assert/strict';
 import { beforeEach, mock, test } from 'node:test';
 
-type ScopeClassRow = {
-  id: number;
-  lineageId: string;
-  version: number;
-  source: 'main_book' | 'zine' | 'the_rack' | 'user';
-  status: 'draft' | 'active' | 'archived';
-  visibility: 'private' | 'public';
-  ownerUserId: string | null;
-  takenDownAt: Date | null;
-};
+import type { ClassVersionRef } from '../../src/lib/class-model.js';
 
-const book = (id: number, overrides: Partial<ScopeClassRow> = {}): ScopeClassRow => ({
+const book = (id: number, overrides: Partial<ClassVersionRef> = {}): ClassVersionRef => ({
   id,
   lineageId: `lineage-${id}`,
   version: 1,
@@ -25,8 +16,8 @@ const book = (id: number, overrides: Partial<ScopeClassRow> = {}): ScopeClassRow
 });
 
 const state = {
-  bookRows: [] as ScopeClassRow[],
-  poolRows: [] as ScopeClassRow[],
+  bookRows: [] as ClassVersionRef[],
+  poolRows: [] as ClassVersionRef[],
   party: null as null | {
     id: string;
     ownerUserId: string;
