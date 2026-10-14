@@ -10,7 +10,8 @@ const drafts: Array<{
   classId: number | null;
   draft: ClassDraft;
   revision: number;
-  updatedAt: Date;
+  updatedAt: string;
+  expiresAt: string;
 }> = [];
 
 mock.module('../../src/services/custom-class-service.js', {
@@ -26,6 +27,9 @@ mock.module('../../src/services/custom-class-service.js', {
             version: 1,
             playingCount: 0,
             status: 'active',
+            takenDownAt: null,
+            takedownReason: null,
+            savedRefs: {},
           },
         };
       },
@@ -38,6 +42,9 @@ mock.module('../../src/services/custom-class-service.js', {
           version: 1,
           playingCount: 0,
           status: 'active',
+          takenDownAt: null,
+          takedownReason: null,
+          savedRefs: {},
         },
       }),
       update: async () => ({
@@ -48,6 +55,9 @@ mock.module('../../src/services/custom-class-service.js', {
           version: 1,
           playingCount: 0,
           status: 'active',
+          takenDownAt: null,
+          takedownReason: null,
+          savedRefs: {},
         },
       }),
       testRoll: async () => ({ ok: true, value: {} }),
@@ -76,7 +86,8 @@ mock.module('../../src/services/custom-class-service.js', {
           classId: input.classId,
           draft: input.draft,
           revision: 1,
-          updatedAt: new Date(),
+          updatedAt: new Date().toISOString(),
+          expiresAt: new Date().toISOString(),
         };
         drafts.push(draft);
         return { ok: true, value: draft };

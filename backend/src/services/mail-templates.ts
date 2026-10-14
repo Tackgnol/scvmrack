@@ -1,7 +1,10 @@
 // Email wording mirrors the draft terms (§7–§9). Redress text must stay in step
 // with them: the DSA requires decisions and statements of reasons to name every route.
 
+import type { ModerationReportReason } from '@prisma/client';
 import type { SupportedLocale } from '../config/locales.js';
+import { REMOVAL_MARKER } from '../lib/class-model.js';
+import type { ReportMeasure } from '../lib/moderation-model.js';
 
 export type MailLocale = SupportedLocale;
 
@@ -16,11 +19,11 @@ export type ReportDecisionInput = ReportReceiptInput & {
 
 export type StatementOfReasonsInput = {
   className: string;
-  measure: 'taken_down' | 'content_removed';
+  measure: ReportMeasure;
   /** True when the decision followed someone's report, false for the operator's own check. */
   followedNotice: boolean;
-  /** The legal ground or the terms clause that was broken. */
-  ground: string;
+  /** The category of illegal content or terms breach the decision rests on. */
+  ground: ModerationReportReason;
   explanation: string;
   /** The report it followed, so the author can cite it when disputing by email. */
   reportId?: string | null;
@@ -70,12 +73,22 @@ const copy = {
       taken_down: (name: string) =>
         `We took down your class "${name}": it no longer appears in search, pickers or class pools, and no new characters can be rolled from it. Characters already rolled keep it. This lasts until the class is restored.`,
       content_removed: (name: string) =>
-        `We removed the content of your class "${name}": its text is replaced with "[removed by moderation]" everywhere it appears, including in existing characters. This lasts until the class is restored.`,
+        `We removed the content of your class "${name}": its text is replaced with "${REMOVAL_MARKER}" everywhere it appears, including in existing characters. This lasts until the class is restored.`,
     },
     facts: (followedNotice: boolean) =>
       followedNotice ? 'This followed a report from someone else.' : 'This followed our own review.',
     found: (text: string) => `What we found: ${text}`,
     ground: (text: string) => `Ground: ${text}`,
+    grounds: {
+      copyright: 'illegal content: copyright infringement',
+      child_sexual_abuse_material: 'illegal content: child sexual abuse material',
+      threat_to_life_or_safety: 'illegal content: threat to life or safety',
+      terrorist_content: 'illegal content: terrorist content',
+      other_illegal_content: 'illegal content',
+      abusive_or_hateful: 'Terms of Service: abusive or hateful content',
+      owner_removal: 'Terms of Service: removal requested by the owner',
+      other: 'Terms of Service',
+    },
     authorRedress: `To dispute it, use "Dispute this decision" on the notice in the app, or write to ${APPEAL_ADDRESS}. You can dispute a decision up to 3 times. A dispute is reviewed by a person, and you get an answer by email. You can also take the decision to court, or complain to the Digital Services Coordinator. Disputing it with us first is not required.`,
   },
   pl: {
@@ -105,6 +118,16 @@ const copy = {
       followedNotice ? 'Decyzja zapadła po zgłoszeniu od innej osoby.' : 'Decyzja zapadła w wyniku naszej własnej weryfikacji.',
     found: (text: string) => `Co ustaliliśmy: ${text}`,
     ground: (text: string) => `Podstawa: ${text}`,
+    grounds: {
+      copyright: 'treść nielegalna: naruszenie praw autorskich',
+      child_sexual_abuse_material: 'treść nielegalna: materiały przedstawiające seksualne wykorzystywanie dzieci',
+      threat_to_life_or_safety: 'treść nielegalna: zagrożenie życia lub bezpieczeństwa',
+      terrorist_content: 'treść nielegalna: treści terrorystyczne',
+      other_illegal_content: 'treść nielegalna',
+      abusive_or_hateful: 'Regulamin: treści obraźliwe lub nienawistne',
+      owner_removal: 'Regulamin: usunięcie na wniosek właściciela',
+      other: 'Regulamin',
+    },
     authorRedress: `Aby się odwołać, użyj przycisku „Odwołaj się od decyzji” w komunikacie w aplikacji albo napisz na ${APPEAL_ADDRESS}. Od jednej decyzji możesz odwołać się do 3 razy. Odwołanie rozpatruje człowiek, a odpowiedź otrzymasz e-mailem. Możesz też skierować sprawę do sądu albo złożyć skargę do koordynatora do spraw usług cyfrowych. Wcześniejsze odwołanie do nas nie jest do tego wymagane.`,
   },
 } as const;
@@ -141,7 +164,7 @@ export function statementOfReasons(locale: MailLocale, input: StatementOfReasons
     c.measure[input.measure](input.className),
     c.facts(input.followedNotice),
     c.found(input.explanation),
-    c.ground(input.ground),
+    c.ground(c.grounds[input.ground]),
     c.noAutomation,
     c.authorRedress,
     ...(input.reportId ? [c.reference(input.reportId)] : []),

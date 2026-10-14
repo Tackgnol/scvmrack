@@ -3,9 +3,10 @@ import { NumberStepper } from "@/components/atoms/NumberStepper/NumberStepper";
 import { SegmentedChoice } from "@/components/atoms/SegmentedChoice/SegmentedChoice";
 import { LocalizedField } from "@/components/molecules/LocalizedField/LocalizedField";
 import { useTranslation } from "react-i18next";
-import { Controls } from "../classCreator.styles";
-import { fieldId, DIE_FACES } from "../classCreator.utils";
-import type { ItemFieldsProps } from "../classCreator.models";
+import { Controls } from "../creatorShared.styles";
+import { fieldId } from "../creatorShared.utils";
+import { DIE_FACES } from "@/utils/rollDie";
+import type { ItemFieldsProps } from "../creatorShared.models";
 
 /** A weapon's damage, reach and ammo. */
 export function WeaponFields({ path, item, language, onChange }: ItemFieldsProps<"weapon">) {

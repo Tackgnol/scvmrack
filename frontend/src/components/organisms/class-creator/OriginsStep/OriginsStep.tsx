@@ -2,7 +2,7 @@ import { LocalizedField } from "@/components/molecules/LocalizedField/LocalizedF
 import { useStableIds } from "@/hooks/useStableIds";
 import { useTranslation } from "react-i18next";
 import { Reorderable } from "../Reorderable/Reorderable";
-import type { StepProps } from "../classCreator.models";
+import type { StepProps } from "../creatorShared.models";
 import { moveEntry } from "../reorder.utils";
 import {
   Counter,
@@ -12,13 +12,13 @@ import {
   SmallAction,
   Spread,
   Stack,
-} from "../classCreator.styles";
+} from "../creatorShared.styles";
 import {
   fieldId,
   LIMIT_LIST,
   LIMIT_TEXT,
   zineRows,
-} from "../classCreator.utils";
+} from "../creatorShared.utils";
 
 /** Step 3: where this wretch came from; each scvm gets one at random. */
 export function OriginsStep({

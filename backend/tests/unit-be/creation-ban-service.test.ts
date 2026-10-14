@@ -10,22 +10,27 @@ mock.module('../../src/repositories/creation-ban-repository.js', {
       findUser: async (userId: string) => userId === 'gm-1' ? { id: userId } : null,
       findActive: async () => { reads++; return active; },
       listHistory: async () => history,
-      ban: async (_userId: string, actorUserId: string, reason: string) => {
-        if (active) {
-          return 'already';
-        }
-        active = { reason, bannedAt: new Date('2026-10-10T12:00:00.000Z') };
-        history.unshift({ id: 'log-ban', action: 'class_creation_banned', actorUserId, reason, createdAt: active.bannedAt });
-        return 'created';
-      },
-      unban: async (_userId: string, actorUserId: string, reason: string) => {
-        if (!active) {
-          return false;
-        }
-        active = null;
-        history.unshift({ id: 'log-unban', action: 'class_creation_unbanned', actorUserId, reason, createdAt: new Date('2026-10-10T13:00:00.000Z') });
-        return true;
-      },
+      transaction: async (work: (ops: unknown) => Promise<unknown>) =>
+        work({
+          userExists: async (userId: string) => userId === 'gm-1',
+          addBan: async (_userId: string, _actor: string, reason: string) => {
+            if (active) {
+              return false;
+            }
+            active = { reason, bannedAt: new Date('2026-10-10T12:00:00.000Z') };
+            return true;
+          },
+          removeBan: async () => {
+            if (!active) {
+              return false;
+            }
+            active = null;
+            return true;
+          },
+          appendLog: async (entry: { action: string; actorUserId: string; reason: string }) => {
+            history.unshift({ id: `log-${history.length}`, ...entry, createdAt: new Date('2026-10-10T12:00:00.000Z') });
+          },
+        }),
     },
   },
 });

@@ -15,10 +15,10 @@ describe('SkullSwitch', () => {
 
     const toggle = page.getByRole('switch', { name: 'Fanged Deserter in the pool' });
     await expect.element(toggle).toHaveAttribute('aria-checked', 'false');
-    await toggle.click();
+    await userEvent.click(toggle);
     await userEvent.keyboard(' ');
     await userEvent.keyboard('{Enter}');
-    expect(onChange.mock.calls).toEqual([[true], [true], [true]]);
+    await expect.poll(() => onChange.mock.calls).toEqual([[true], [true], [true]]);
   });
 
   it('plays the flip from the old state when checked changes, even on re-render', async () => {
@@ -56,7 +56,7 @@ describe('SkullSwitch', () => {
 
     const toggle = page.getByRole('switch', { name: 'Locked' });
     await expect.element(toggle).toHaveAttribute('aria-disabled', 'true');
-    await toggle.click({ force: true });
+    await userEvent.click(toggle, { force: true });
     expect(onChange).not.toHaveBeenCalled();
   });
 });

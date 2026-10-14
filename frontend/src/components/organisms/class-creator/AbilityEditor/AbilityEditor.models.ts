@@ -1,6 +1,6 @@
 import type { AbilityDraft, ClassItemType } from "@/api/classes";
-import type { GrantSlot } from "../classCreator.models";
-import type { StepProps } from "../classCreator.models";
+import type { GrantSlot } from "../creatorShared.models";
+import type { StepProps } from "../creatorShared.models";
 
 export type AbilityEditorProps = Omit<StepProps, "update"> & {
   index: number;

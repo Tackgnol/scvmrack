@@ -42,6 +42,7 @@ type CharForJoin = {
   partyId: string | null;
 } | null;
 
+let classVersions = new Map<number, { version: number; latestVersion: number }>();
 const state = {
   party: null as (PartyRow & { members: Member[] }) | null,
   partyByToken: null as PartyRow | null,
@@ -115,6 +116,13 @@ function resetState(): void {
   publishedEvents.length = 0;
 }
 
+mock.module('../../src/lib/class-translations.js', {
+  namedExports: {
+    // The rows these tests use already carry their text.
+    translatedClassTexts: async (_locale: string, rows: Array<{ name: string; description?: string | null; blurb?: string | null }>) =>
+      rows.map((row) => ({ name: row.name, description: row.description ?? row.blurb ?? null })),
+  },
+});
 mock.module('../../src/repositories/party-repository.js', {
   namedExports: {
     PartyFullError,
@@ -147,7 +155,7 @@ mock.module('../../src/repositories/party-repository.js', {
         };
       },
       listPartiesByOwner: async () => state.ownerList,
-      findOlderClassIds: async () => new Set<number>(),
+      findClassVersions: async () => classVersions,
       getPartyById: async () => state.party,
       getPartyByObrRoomId: async () => {
         if (state.getByObrThrows) {
@@ -326,7 +334,10 @@ function partyWith(
   };
 }
 
-beforeEach(() => resetState());
+beforeEach(() => {
+  resetState();
+  classVersions = new Map();
+});
 
 // ───────────────────────── createParty ─────────────────────────
 test('createParty requires a GM (account, non-anon)', async () => {
@@ -591,6 +602,19 @@ test('getParty gives the owner a manage view with the token', async () => {
   assert.equal((r as any).value.inviteToken, 'tok-abc');
   assert.equal((r as any).value.invitePath, '/join/tok-abc');
   assert.equal((r as any).value.members.length, 1);
+});
+
+test('getParty marks a member playing an older Class Version with both version numbers', async () => {
+  state.party = partyWith([{ id: CHAR_ID, userId: 'player-1', classId: 5 }, { id: 'c-2', userId: 'player-2', classId: 6 }], 'gm-1');
+  classVersions = new Map([
+    [5, { version: 3, latestVersion: 5 }],
+    [6, { version: 2, latestVersion: 2 }],
+  ]);
+  const r = await service().getParty({ session: gm('gm-1'), id: PARTY_ID });
+  assert.deepEqual(
+    (r as any).value.members.map((m: { olderRules: unknown }) => m.olderRules),
+    [{ version: 3, latestVersion: 5 }, null]
+  );
 });
 
 test('getParty gives a member a read view WITHOUT the token', async () => {

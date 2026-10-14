@@ -1,8 +1,11 @@
-import { client, type ApiOk as Ok } from "@/api";
-import { unwrapApiResult, type UntypedApiClient } from "@/api/clientResult";
+import { client, type ApiLocale, type ApiOk as Ok } from "@/api";
+import { unwrapApiResult } from "@/api/clientResult";
+import type { paths } from "@/api/schema";
 import type { CharacterResponse } from "@/hooks/models";
 
 export type SavedClass = Ok<"/api/classes/{id}">;
+/** A save response: the saved class plus the saved key each `new:` Class Item ref became. */
+export type SavedClassWithRefs = paths["/api/classes"]["post"]["responses"][201]["content"]["application/json"];
 export type ClassDetail = Ok<"/api/classes/details/{id}">;
 export type StoredClassDraft = Ok<"/api/classes/drafts/{draftId}">;
 export type OwnClassSummary = Ok<"/api/classes/mine">[number];
@@ -29,9 +32,8 @@ export type ClassItemDraft = ClassDraft["items"][number];
 export type ClassItemType = ClassItemDraft["type"];
 export const CLASS_ITEM_TYPES = ["weapon", "armor", "gear", "pet"] as const satisfies readonly ClassItemType[];
 
-const classClient = client as unknown as UntypedApiClient;
-
 export const classKeys = {
+  all: () => ["classes"] as const,
   mine: (locale: string) => ["classes", "mine", locale] as const,
   one: (id: number) => ["classes", id] as const,
   detail: (id: number) => ["classes", "detail", id] as const,
@@ -40,63 +42,39 @@ export const classKeys = {
   creationBan: () => ["classes", "creation-ban"] as const,
 };
 
-export async function getMyCreationBan(): Promise<{ banned: boolean }> {
-  return unwrapApiResult(
-    await classClient.GET<{ banned: boolean }>("/api/classes/creation-ban"),
-    "Failed to load class creation status",
-  );
+const classPath = (id: number) => ({ params: { path: { id } } });
+const draftPath = (draftId: number) => ({ params: { path: { draftId } } });
+
+export async function getMyCreationBan(): Promise<Ok<"/api/classes/creation-ban">> {
+  return unwrapApiResult(await client.GET("/api/classes/creation-ban"), "Failed to load class creation status");
 }
 
-export async function listMyClasses(
-  locale: string,
-): Promise<OwnClassSummary[]> {
+export async function listMyClasses(locale: ApiLocale): Promise<OwnClassSummary[]> {
   return unwrapApiResult(
-    await classClient.GET<OwnClassSummary[]>("/api/classes/mine", {
-      params: { query: { locale } },
-    }),
+    await client.GET("/api/classes/mine", { params: { query: { locale } } }),
     "Failed to load your classes",
   );
 }
 
 export async function getClass(id: number): Promise<SavedClass> {
-  return unwrapApiResult(
-    await classClient.GET<SavedClass>(`/api/classes/${id}`),
-    "Failed to load the class",
-  );
+  return unwrapApiResult(await client.GET("/api/classes/{id}", classPath(id)), "Failed to load the class");
 }
 
 export async function getClassDetail(id: number): Promise<ClassDetail> {
-  return unwrapApiResult(
-    await classClient.GET<ClassDetail>(`/api/classes/details/${id}`),
-    "Failed to load the class",
-  );
+  return unwrapApiResult(await client.GET("/api/classes/details/{id}", classPath(id)), "Failed to load the class");
 }
 
 /** Lists unfinished private creator work, newest first. */
 export async function listClassDrafts(): Promise<StoredClassDraft[]> {
-  return unwrapApiResult(
-    await classClient.GET<StoredClassDraft[]>("/api/classes/drafts"),
-    "Failed to load your drafts",
-  );
+  return unwrapApiResult(await client.GET("/api/classes/drafts"), "Failed to load your drafts");
 }
 
 export async function getClassDraft(id: number): Promise<StoredClassDraft> {
-  return unwrapApiResult(
-    await classClient.GET<StoredClassDraft>(`/api/classes/drafts/${id}`),
-    "Failed to load the draft",
-  );
+  return unwrapApiResult(await client.GET("/api/classes/drafts/{draftId}", draftPath(id)), "Failed to load the draft");
 }
 
-export async function createClassDraft(input: {
-  classId: number | null;
-  draft: ClassDraft;
-}): Promise<StoredClassDraft> {
-  return unwrapApiResult(
-    await classClient.POST<StoredClassDraft>("/api/classes/drafts", {
-      body: input,
-    }),
-    "Failed to save the draft",
-  );
+export async function createClassDraft(input: { classId: number | null; draft: ClassDraft }): Promise<StoredClassDraft> {
+  return unwrapApiResult(await client.POST("/api/classes/drafts", { body: input }), "Failed to save the draft");
 }
 
 export async function updateClassDraft(input: {
@@ -106,95 +84,74 @@ export async function updateClassDraft(input: {
   force?: boolean;
 }): Promise<StoredClassDraft> {
   return unwrapApiResult(
-    await classClient.PUT<StoredClassDraft>(`/api/classes/drafts/${input.id}`, {
-      body: {
-        draft: input.draft,
-        revision: input.revision,
-        force: input.force,
-      },
+    await client.PUT("/api/classes/drafts/{draftId}", {
+      ...draftPath(input.id),
+      body: { draft: input.draft, revision: input.revision, force: input.force },
     }),
     "Failed to save the draft",
   );
 }
 
 export async function deleteClassDraft(id: number): Promise<void> {
-  await unwrapApiResult(
-    await classClient.DELETE<void>(`/api/classes/drafts/${id}`),
-    "Failed to discard the draft",
-  );
+  await unwrapApiResult(await client.DELETE("/api/classes/drafts/{draftId}", draftPath(id)), "Failed to discard the draft");
 }
-/** Saves a new class, or edits `id` when given. */
-export async function saveClass(input: {
-  id: number | null;
-  draft: ClassDraft;
-}): Promise<SavedClass> {
-  const body = { draft: input.draft };
+
+/**
+ * Saves a new class, or edits `id` when given. `draftId` names the autosaved draft the save
+ * completes; the server discards it.
+ */
+export async function saveClass(input: { id: number | null; draft: ClassDraft; draftId?: number }): Promise<SavedClassWithRefs> {
+  const body = { draft: input.draft, draftId: input.draftId };
   return unwrapApiResult(
     input.id === null
-      ? await classClient.POST<SavedClass>("/api/classes", { body })
-      : await classClient.PUT<SavedClass>(`/api/classes/${input.id}`, { body }),
+      ? await client.POST("/api/classes", { body })
+      : await client.PUT("/api/classes/{id}", { ...classPath(input.id), body }),
     "Failed to save the class",
   );
 }
 
 /** Deletes an unused lineage or archives it when existing scvm still need it. */
 export async function removeClass(id: number): Promise<{ archived: boolean }> {
-  return unwrapApiResult(
-    await classClient.DELETE<{ archived: boolean }>(`/api/classes/${id}`),
-    "Failed to remove the class",
-  );
+  return unwrapApiResult(await client.DELETE("/api/classes/{id}", classPath(id)), "Failed to remove the class");
 }
 
 /** Restores a class lineage that the owner previously archived. */
-export async function restoreClass(id: number): Promise<{ restored: boolean }> {
-  return unwrapApiResult(
-    await classClient.POST<{ restored: boolean }>(`/api/classes/${id}/restore`),
-    "Failed to restore the class",
-  );
+export async function restoreClass(id: number) {
+  return unwrapApiResult(await client.POST("/api/classes/{id}/restore", classPath(id)), "Failed to restore the class");
 }
+
 /** Publishes a Custom Class after its creator confirms sharing rights. */
-export async function publishClass(
-  id: number,
-): Promise<{ visibility: "public" }> {
+export async function publishClass(id: number) {
   return unwrapApiResult(
-    await classClient.POST<{ visibility: "public" }>(
-      `/api/classes/${id}/publish`,
-      {
-        body: { confirmed: true },
-      },
-    ),
+    await client.POST("/api/classes/{id}/publish", { ...classPath(id), body: { confirmed: true } }),
     "Failed to publish the class",
   );
 }
 
 /** Removes a Custom Class from public discovery and other GMs' pools. */
-export async function unpublishClass(
-  id: number,
-): Promise<{ visibility: "private" }> {
-  return unwrapApiResult(
-    await classClient.POST<{ visibility: "private" }>(
-      `/api/classes/${id}/unpublish`,
-    ),
-    "Failed to unpublish the class",
-  );
+export async function unpublishClass(id: number) {
+  return unwrapApiResult(await client.POST("/api/classes/{id}/unpublish", classPath(id)), "Failed to unpublish the class");
 }
+
 export async function testRollClass(input: {
   draft: ClassDraft;
   language: ClassLanguage;
-  locale: string;
+  locale: ApiLocale;
 }): Promise<CharacterResponse> {
-  return unwrapApiResult(
-    await classClient.POST<CharacterResponse>("/api/classes/test-roll", {
+  const scvm = await unwrapApiResult(
+    await client.POST("/api/classes/test-roll", {
       params: { query: { locale: input.locale } },
       body: { draft: input.draft, language: input.language },
     }),
     "Failed to roll a test scvm",
   );
+  // shortcut: the preview schema marks every field optional while the sheet's Character type doesn't; drop once one derives from the other.
+  return scvm as CharacterResponse;
 }
 
 export async function disputeClassDecision(input: { id: number; text: string }): Promise<{ id: string }> {
   return unwrapApiResult(
-    await classClient.POST<{ id: string }>(`/api/classes/${input.id}/disputes`, { body: { text: input.text } }),
+    await client.POST("/api/classes/{id}/disputes", { ...classPath(input.id), body: { text: input.text } }),
     "Failed to submit dispute",
   );
 }

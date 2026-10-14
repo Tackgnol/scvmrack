@@ -8,31 +8,17 @@ import { SUPPORTED_LOCALES, type SupportedLocale } from '../config/locales.js';
 import { ABILITY_STATS, type AbilityStat } from './ability-modifiers.js';
 import type { GettingBetterRule } from './class-model.js';
 import { CLASSLESS_DEFAULTS, type ClassSpec, type StatDice } from './generate-character.js';
+import type { FromSchema } from 'json-schema-to-ts';
+import type { ClassDraftSchema } from '../schemas/custom-class.js';
 
-export const CLASS_LANGUAGES = SUPPORTED_LOCALES;
-export type ClassLanguage = SupportedLocale;
-export type Localized = Record<ClassLanguage, string>;
+export type Localized = Record<SupportedLocale, string>;
 /** An origin's text; a saved origin carries its translation key so edits keep it stable. */
 export type OriginText = Localized & { key?: string };
 
-export const CLASS_STATS = ABILITY_STATS;
-export type ClassStat = AbilityStat;
 
 export const LIMIT_LIST = 20;
 export const LIMIT_TEXT = 1500;
 export const LIMIT_NAME = 100;
-
-/** A stat modifier an ability carries; `exclude` names the rolls it doesn't apply to, as the sheet stores it. */
-export type AbilityModifierDraft = {
-  statistic: ClassStat;
-  value: number;
-  exclude: string[];
-};
-
-export type AbilityTableRowDraft = {
-  text: Localized;
-  itemRef: string | null;
-};
 
 /** Dice an ability's reference table can use; the table has one row per face. */
 export const TABLE_DICE = [2, 3, 4, 6, 8, 10, 12] as const;
@@ -41,25 +27,18 @@ export type TableDie = (typeof TABLE_DICE)[number];
 export const DIE_FACES = [2, 4, 6, 8, 10, 12] as const;
 /** Dice a stat can roll. */
 export const STAT_DIE_FACES = [4, 6, 8, 10, 12] as const;
-
-export type AbilityTableDraft = {
-  die: TableDie;
-  rows: AbilityTableRowDraft[];
-};
-
-/** An ability as the creator edits it; a saved one carries its key, kept stable across edits. */
-export type AbilityDraft = {
-  key?: string;
-  random: boolean;
-  name: Localized;
-  text: Localized;
-  modifiers: AbilityModifierDraft[];
-  /** A Class Item or shared catalog item (not a pet) it grants, by key or `ref`. */
-  grantItem: string | null;
-  /** A pet Class Item or shared catalog pet it grants, by key or `ref`. */
-  grantPet: string | null;
-  table: AbilityTableDraft | null;
-};
+/** Dice the omen roll can use. */
+export const OMEN_DICE = [2, 4, 6] as const;
+/** Dice a starting weapon roll can use. */
+export const WEAPON_DICE = [4, 6, 8, 10] as const;
+/** Dice a starting armor roll can use. */
+export const ARMOR_DICE = [2, 3, 4] as const;
+/** Dice the starting silver roll can use. */
+export const SILVER_DICE = [4, 6] as const;
+/** Dice a pet's action can roll. */
+export const PET_ACTION_DICE = [2, 4, 6, 8, 10] as const;
+/** Armor tiers: light, medium, heavy. */
+export const ARMOR_TIERS = [1, 2, 3] as const;
 
 export const CLASS_ITEM_TYPES = ['weapon', 'armor', 'gear', 'pet'] as const;
 export type ClassItemType = (typeof CLASS_ITEM_TYPES)[number];
@@ -70,67 +49,28 @@ export const GEAR_EFFECTS = ['text', 'damage', 'die'] as const;
 export const PET_ACTIONS = ['attack', 'buff'] as const;
 
 /**
+ * A Custom Class as the creator edits it, and as it is sent to save or test-roll.
+ * Derived from the request schema, so the type and the validation can't drift.
+ */
+export type ClassDraft = FromSchema<typeof ClassDraftSchema>;
+/** An ability as the creator edits it; a saved one carries its key, kept stable across edits. */
+export type AbilityDraft = ClassDraft['abilities'][number];
+/** A stat modifier an ability carries; `exclude` names the rolls it doesn't apply to, as the sheet stores it. */
+export type AbilityModifierDraft = AbilityDraft['modifiers'][number];
+export type AbilityTableDraft = NonNullable<AbilityDraft['table']>;
+export type AbilityTableRowDraft = AbilityTableDraft['rows'][number];
+/**
  * A Class Item as the creator edits it. `ref` is its saved key, or a `new:` id
  * until saved. Every type's fields are kept, so changing type loses nothing.
  */
-export type ClassItemDraft = {
-  ref: string;
-  type: ClassItemType;
-  name: Localized;
-  description: Localized;
-  value: number;
-  weapon: {
-    diceCount: number;
-    diceFaces: number;
-    damageModifier: number;
-    reach: (typeof WEAPON_REACHES)[number];
-    ammo: (typeof WEAPON_AMMO)[number];
-    ammoCount: number;
-    ammoName: string;
-    modifiers: AbilityModifierDraft[];
-  };
-  armor: { tier: number; modifiers: AbilityModifierDraft[] };
-  gear: {
-    kind: (typeof GEAR_KINDS)[number];
-    uses: number;
-    effect: (typeof GEAR_EFFECTS)[number];
-    effectDie: number;
-    statuses: AbilityModifierDraft[];
-  };
-  pet: {
-    hp: number;
-    actionDie: number;
-    action: (typeof PET_ACTIONS)[number];
-    humanoid: boolean;
-    buffs: AbilityModifierDraft[];
-  };
-};
+export type ClassItemDraft = ClassDraft['items'][number];
 
-/** A Custom Class as the creator edits it, and as it is sent to save or test-roll. */
-export type ClassDraft = {
-  languages: ClassLanguage[];
-  name: Localized;
-  description: Localized;
-  stats: Record<ClassStat, StatDice>;
-  hpDie: number;
-  omenDie: number;
-  weaponDie: number;
-  armorDie: number;
-  silver: { count: number; faces: number; multiplier: number };
-  origins: OriginText[];
-  abilities: AbilityDraft[];
-  randomAbilityCount: number;
-  items: ClassItemDraft[];
-  gettingBetterRule: GettingBetterRule;
-  gettingBetterNote: Localized;
-};
-
-const LANGUAGE_NAMES: Record<ClassLanguage, string> = {
+const LANGUAGE_NAMES: Record<SupportedLocale, string> = {
   en: 'English',
   pl: 'Polish',
 };
 const empty = (): Localized => ({ en: '', pl: '' });
-const bookStat = (): StatDice => ({
+const bookStat = (): ClassDraft['stats'][AbilityStat] => ({
   count: 3,
   faces: 6,
   modifier: 0,
@@ -213,7 +153,7 @@ export function classDraftProblems(draft: ClassDraft): string[] {
   if (draft.origins.length === 0) {
     problems.push('Add at least one origin');
   }
-  for (const stat of CLASS_STATS) {
+  for (const stat of ABILITY_STATS) {
     const dice = draft.stats[stat];
     if (dice.dropLowest && dice.count < 2) {
       problems.push(
@@ -335,7 +275,7 @@ export function classDraftProblems(draft: ClassDraft): string[] {
 /** The generator's view of a draft. Origins and abilities are their text in `language`, standing in for keys. */
 export function classSpecFromDraft(
   draft: ClassDraft,
-  language: ClassLanguage
+  language: SupportedLocale
 ): ClassSpec {
   const textIn = (value: Localized) =>
     value[language] || value[draft.languages[0]];

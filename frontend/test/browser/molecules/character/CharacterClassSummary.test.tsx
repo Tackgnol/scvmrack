@@ -2,7 +2,16 @@ import { render } from 'vitest-browser-react';
 import { expect, describe, it, vi } from 'vitest';
 import { page, userEvent } from 'vitest/browser';
 import CharacterClassSummary from '@/components/molecules/character/CharacterClassSummary';
+import type { ReactNode } from 'react';
 import BrowserTestProvider from '../../BrowserTestProvider';
+
+vi.mock('@tanstack/react-router', () => ({
+  Link: ({ children, to, search, ...props }: { children: ReactNode; to: string; search?: Record<string, string> }) => (
+    <a href={to + (search ? `?${new URLSearchParams(search)}` : '')} {...props}>
+      {children}
+    </a>
+  ),
+}));
 
 describe('CharacterClassSummary Browser', () => {
   it('renders label and class name', async () => {

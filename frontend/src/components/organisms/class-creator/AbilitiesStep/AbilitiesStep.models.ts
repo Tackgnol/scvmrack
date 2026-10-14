@@ -1,4 +1,4 @@
-import type { CreatorIssue, StepProps } from "../classCreator.models";
+import type { CreatorIssue, StepProps } from "../creatorShared.models";
 
 export type AbilitiesStepProps = StepProps & {
   issues: CreatorIssue[];

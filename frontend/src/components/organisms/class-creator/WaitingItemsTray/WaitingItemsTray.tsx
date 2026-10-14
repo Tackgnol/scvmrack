@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
-import { GroupHeading, SmallAction } from "../classCreator.styles";
-import { fieldId, granterOf, itemStamp } from "../classCreator.utils";
+import { GroupHeading, SmallAction } from "../creatorShared.styles";
+import { fieldId, granterOf, itemStamp } from "../creatorShared.utils";
 import type { WaitingItemsTrayProps } from "./WaitingItemsTray.models";
 import { Tray, Waiting } from "./WaitingItemsTray.styles";
 

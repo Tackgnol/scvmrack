@@ -1,4 +1,31 @@
+import type { Prisma } from '@prisma/client';
 import prisma from '../lib/prisma.js';
+
+type Tx = Prisma.TransactionClient;
+
+/** Ban reads and writes bound to one transaction. */
+function banOps(tx: Tx) {
+  return {
+    async userExists(userId: string): Promise<boolean> {
+      return (await tx.user.findUnique({ where: { id: userId }, select: { id: true } })) !== null;
+    },
+    /** Adds the ban unless one exists; false when the user was already banned. */
+    async addBan(userId: string, actorUserId: string, reason: string): Promise<boolean> {
+      const created = await tx.classCreationBan.createMany({ data: { userId, actorUserId, reason }, skipDuplicates: true });
+      return created.count > 0;
+    },
+    /** Lifts the ban; false when there was none. */
+    async removeBan(userId: string): Promise<boolean> {
+      const removed = await tx.classCreationBan.deleteMany({ where: { userId } });
+      return removed.count > 0;
+    },
+    async appendLog(entry: { targetUserId: string; actorUserId: string; action: string; reason: string }): Promise<void> {
+      await tx.moderationLog.create({ data: entry });
+    },
+  };
+}
+
+export type BanOps = ReturnType<typeof banOps>;
 
 /** Reads active creation restrictions and records administrator decisions. */
 export const creationBanRepository = {
@@ -18,35 +45,8 @@ export const creationBanRepository = {
       orderBy: { createdAt: 'desc' },
     });
   },
-  async ban(userId: string, actorUserId: string, reason: string) {
-    return prisma.$transaction(async (tx) => {
-      const user = await tx.user.findUnique({ where: { id: userId }, select: { id: true } });
-      if (!user) {
-        return 'missing' as const;
-      }
-      const created = await tx.classCreationBan.createMany({
-        data: { userId, actorUserId, reason },
-        skipDuplicates: true,
-      });
-      if (created.count === 0) {
-        return 'already' as const;
-      }
-      await tx.moderationLog.create({
-        data: { targetUserId: userId, actorUserId, action: 'class_creation_banned', reason },
-      });
-      return 'created' as const;
-    });
-  },
-  async unban(userId: string, actorUserId: string, reason: string) {
-    return prisma.$transaction(async (tx) => {
-      const removed = await tx.classCreationBan.deleteMany({ where: { userId } });
-      if (removed.count === 0) {
-        return false;
-      }
-      await tx.moderationLog.create({
-        data: { targetUserId: userId, actorUserId, action: 'class_creation_unbanned', reason },
-      });
-      return true;
-    });
+  /** Runs `work` in one transaction with the ban operations bound to it. */
+  transaction<T>(work: (ops: BanOps) => Promise<T>): Promise<T> {
+    return prisma.$transaction((tx) => work(banOps(tx)));
   },
 };

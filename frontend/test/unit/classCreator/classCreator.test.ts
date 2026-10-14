@@ -19,7 +19,7 @@ import {
   statRange,
   zineAbilities,
   zineRows,
-} from "@/components/organisms/class-creator/classCreator.utils";
+} from "@/components/organisms/class-creator/creatorShared.utils";
 import { signed } from "@/utils/signed";
 import {
   movedIndex,
@@ -121,6 +121,7 @@ describe("abilities in the draft", () => {
     modifiers: [],
     grantItem: null,
     grantPet: null,
+    table: null,
   });
 
   it("puts the Abilities step between Stats & dice and Origins", () => {
@@ -206,6 +207,7 @@ describe("review fixes", () => {
             modifiers: [tests, { ...tests }],
             grantItem: null,
             grantPet: null,
+            table: null,
           },
         ],
       }),
@@ -228,7 +230,7 @@ describe("review fixes", () => {
         { en: "Bog", pl: "", key: "cc.1.origin.2" },
       ],
     });
-    expect(withSavedKeys(current, saved).origins.map((o) => o.key)).toEqual([
+    expect(withSavedKeys(current, saved, {}).origins.map((o) => o.key)).toEqual([
       "cc.1.origin.1",
       "cc.1.origin.9",
     ]);
@@ -246,6 +248,7 @@ describe("review fixes", () => {
           modifiers: [],
           grantItem: flail.ref,
           grantPet: null,
+          table: null,
         },
       ],
     });
@@ -259,7 +262,7 @@ describe("review fixes", () => {
         },
       ],
     });
-    const after = withSavedKeys(current, saved);
+    const after = withSavedKeys(current, saved, { "new:flail": "weapons.cc-1-1" });
     expect(after.items[0].ref).toBe("weapons.cc-1-1");
     expect(after.abilities[0].grantItem).toBe("weapons.cc-1-1");
   });
@@ -287,6 +290,7 @@ describe("Class Items", () => {
     modifiers: [],
     grantItem: null,
     grantPet: null,
+    table: null,
     ...grant,
   });
   const item = (
@@ -378,6 +382,7 @@ describe("Class Items", () => {
     expect(moved.abilities[0]).toMatchObject({
       grantItem: null,
       grantPet: "new:a",
+      table: null,
     });
 
     const taken = changeItemType(
@@ -391,6 +396,7 @@ describe("Class Items", () => {
     expect(taken.abilities[0]).toMatchObject({
       grantItem: null,
       grantPet: "new:b",
+      table: null,
     });
   });
 

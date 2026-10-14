@@ -6,8 +6,8 @@ import { scopeIncludeOptions, statOptions } from "@/components/modifiers/config"
 import type { ScopeOption } from "@/components/modifiers/types";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Controls, GroupHeading, SmallAction, Spread } from "../classCreator.styles";
-import { fieldId } from "../classCreator.utils";
+import { Controls, GroupHeading, SmallAction, Spread } from "../creatorShared.styles";
+import { fieldId } from "../creatorShared.utils";
 import type { ModifierRowProps } from "./ModifierRow.models";
 import { Row } from "./ModifierRow.styles";
 

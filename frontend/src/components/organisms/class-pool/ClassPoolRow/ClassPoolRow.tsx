@@ -1,4 +1,5 @@
 import { SkullSwitch } from "@/components/atoms/SkullSwitch/SkullSwitch";
+import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ClassInfoCard } from "../ClassInfoCard/ClassInfoCard";
@@ -35,7 +36,13 @@ export function ClassPoolRow({ cls, onSwitch }: ClassPoolRowProps) {
         describedBy={infoId}
       />
       <Who>
-        <ClassName className="class-name">{cls.name}</ClassName>
+        <ClassName className="class-name">
+          {cls.attribution?.kind === "owner" ? (
+            <Link to="/classes/$classId" params={{ classId: String(cls.classId) }}>{cls.name}</Link>
+          ) : (
+            cls.name
+          )}
+        </ClassName>
         {cls.blurb && <Blurb className="class-blurb">{cls.blurb}</Blurb>}
         <Meta>
           <Chip title={languageNames(t, cls.languages)}>
@@ -43,7 +50,7 @@ export function ClassPoolRow({ cls, onSwitch }: ClassPoolRowProps) {
           </Chip>
           {attribution && <Attr>{attribution}</Attr>}
           {cls.attribution?.kind === "owner" && !cls.attribution.private && (
-            <ReportLink href={`/report?classId=${cls.classId}`}>
+            <ReportLink to="/report" search={{ classId: String(cls.classId) } as never}>
               {t("report.link", "Report a class")}
             </ReportLink>
           )}

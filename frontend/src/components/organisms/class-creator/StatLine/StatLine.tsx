@@ -3,9 +3,9 @@ import { NumberStepper } from "@/components/atoms/NumberStepper/NumberStepper";
 import { SegmentedChoice } from "@/components/atoms/SegmentedChoice/SegmentedChoice";
 import { signed } from "@/utils/signed";
 import { useTranslation } from "react-i18next";
-import { fieldId, formulaText, statRange } from "../classCreator.utils";
+import { fieldId, formulaText, STAT_DIE_FACES, statRange } from "../creatorShared.utils";
 import type { StatLineProps } from "./StatLine.models";
-import { Formula, SmallAction } from "../classCreator.styles";
+import { Formula, SmallAction } from "../creatorShared.styles";
 import {
   BookTag,
   Controls,
@@ -93,7 +93,7 @@ export function StatLine({
             id={fieldId(`${path}.faces`)}
             label={t("creator.stats.sides", "Sides")}
             value={dice.faces}
-            options={[4, 6, 8, 10, 12]}
+            options={STAT_DIE_FACES}
             onChange={(faces) => onChange({ ...dice, faces })}
           />
           <NumberStepper

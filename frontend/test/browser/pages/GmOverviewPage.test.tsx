@@ -79,7 +79,7 @@ describe('GmOverviewPage', () => {
     const preview = page.getByTestId('gm-locked-preview');
     await expect.element(preview).toBeVisible();
     await expect.element(preview).toHaveAttribute('aria-hidden', 'true');
-    expect(preview.element()?.inert).toBe(true);
+    expect((preview.element() as HTMLElement | null)?.inert).toBe(true);
     expect(preview.element()?.querySelector('form')).not.toBeNull();
     await expect
       .element(page.getByRole('link', { name: 'Sign up' }))

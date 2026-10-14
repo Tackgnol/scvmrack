@@ -9,7 +9,7 @@ import {
   InkButton,
   Interrupt,
   Stack,
-} from "../classCreator.styles";
+} from "../creatorShared.styles";
 import type { ReviewStepProps } from "./ReviewStep.models";
 import { Columns, DieIcon, SaveButton } from "./ReviewStep.styles";
 

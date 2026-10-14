@@ -1,4 +1,4 @@
-import type { CreatorIssue } from "../classCreator.models";
+import type { CreatorIssue } from "../creatorShared.models";
 
 export type IssueListProps = {
   issues: CreatorIssue[];

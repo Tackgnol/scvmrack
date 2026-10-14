@@ -1,3 +1,4 @@
+import { translatedClassTexts } from '../lib/class-translations.js';
 import { buildCharacterData } from '../lib/generate-character.js';
 import { hydrateCharacterRow } from '../lib/get-character-full.js';
 import {
@@ -196,7 +197,9 @@ export function createCharacterDraftService(log: ServiceLogger) {
         if (!scope.ok) {
           return fail(scope.error);
         }
-        return ok(await characterRepository.listClassesByIds(scope.value.classIds, input.locale));
+        const classes = await characterRepository.listClassesByIds(scope.value.classIds);
+        const texts = await translatedClassTexts(input.locale, classes);
+        return ok(classes.map((c, i) => ({ id: c.id, ...texts[i] })));
       } catch (err) {
         return fail(
           unexpected(log, err, 'CLASS_LIST_FAILED', 'Failed to list classes')

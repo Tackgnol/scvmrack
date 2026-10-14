@@ -6,7 +6,7 @@ import BrowserTestProvider from "../BrowserTestProvider";
 import { ClassCreatorPage } from "@/pages/ClassCreatorPage";
 import { getClass, getClassDraft, getMyCreationBan } from "@/api/classes";
 import { ClassCreator } from "@/components/organisms/class-creator/ClassCreator/ClassCreator";
-import { blankDraft } from "@/components/organisms/class-creator/classCreator.utils";
+import { blankDraft } from "@/components/organisms/class-creator/creatorShared.utils";
 import { useAuth } from "@/hooks/useAuth";
 import { useParams } from "@tanstack/react-router";
 

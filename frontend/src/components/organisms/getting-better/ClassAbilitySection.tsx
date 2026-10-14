@@ -1,16 +1,8 @@
 import { Box, ToggleButton, ToggleButtonGroup, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import type { ClassAbilityDraft } from "@/api/characterImprovementTypes";
 import { gettingBetterStyles as styles } from "./GettingBetterPanel.styles";
 import { SectionButton } from "./SectionButton";
-
-type Props = {
-  classAbility: Exclude<ClassAbilityDraft, { kind: "none" }>;
-  busy: boolean;
-  abilityName: (key: string) => string;
-  onReroll: () => void;
-  onToggle: (index: number, reroll: boolean) => void;
-};
+import type { ClassAbilitySectionProps } from "./ClassAbilitySection.models";
 
 export function ClassAbilitySection({
   classAbility,
@@ -18,7 +10,7 @@ export function ClassAbilitySection({
   abilityName,
   onReroll,
   onToggle,
-}: Props) {
+}: ClassAbilitySectionProps) {
   const { t } = useTranslation();
   const noneLeft = t(
     "gettingBetter.classAbility.noneLeft",

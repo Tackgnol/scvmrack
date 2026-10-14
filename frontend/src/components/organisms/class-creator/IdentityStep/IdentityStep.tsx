@@ -1,10 +1,10 @@
 import { SegmentedChoice } from "@/components/atoms/SegmentedChoice/SegmentedChoice";
 import { LocalizedField } from "@/components/molecules/LocalizedField/LocalizedField";
 import { Trans, useTranslation } from "react-i18next";
-import type { StepProps } from "../classCreator.models";
+import type { StepProps } from "../creatorShared.models";
 import type { LanguageChoice } from "./IdentityStep.models";
-import { Hint, Stack, ZineContact } from "../classCreator.styles";
-import { fieldId, LIMIT_NAME, LIMIT_TEXT } from "../classCreator.utils";
+import { Hint, Stack, ZineContact } from "../creatorShared.styles";
+import { fieldId, LIMIT_NAME, LIMIT_TEXT } from "../creatorShared.utils";
 
 /** Step 1: which languages the class is written in, its name and its description. */
 export function IdentityStep({ draft, language, update, showMissing, touch }: StepProps) {

@@ -17,7 +17,9 @@ vi.mock("@/seo/Seo", () => ({ Seo: () => null }));
 vi.mock("@tanstack/react-router", () => ({
   Link: ({ children, to, ...props }: MockLinkProps) => <a href={to} {...props}>{children}</a>,
 }));
-vi.mock("@/api/moderation", () => ({
+vi.mock("@/api/moderation", async (importOriginal) => ({
+  moderationKeys: (await importOriginal<typeof import("@/api/moderation")>()).moderationKeys,
+  listModerationLog: vi.fn(async () => []),
   listOpenModerationReports: vi.fn(),
   getCreationBan: vi.fn(),
   banClassCreation: vi.fn(),
@@ -49,6 +51,7 @@ describe("ModerationPage", () => {
       {
         lineageId: "lineage-1",
         ownerUserId: "gm-1",
+        builtIn: false,
         latest: { id: 12, lineageId: "lineage-1", name: "Bog Witch", version: 2 },
         versions: [
           { id: 12, lineageId: "lineage-1", name: "Bog Witch", version: 2 },
@@ -113,6 +116,7 @@ describe("ModerationPage", () => {
       {
         lineageId: "lineage-1",
         ownerUserId: "gm-1",
+        builtIn: false,
         latest: { id: 12, lineageId: "lineage-1", name: "Bog Witch", version: 2 },
         versions: [{ id: 12, lineageId: "lineage-1", name: "Bog Witch", version: 2 }],
         removalHistory: null,
@@ -146,7 +150,7 @@ describe("ModerationPage", () => {
     await expect.element(dialog.getByText(/Bog Witch.*version 2/)).toBeVisible();
     expect(takeDownModerationReport).not.toHaveBeenCalled();
     await userEvent.click(dialog.getByRole("button", { name: "Take down" }));
-    await expect.poll(() => vi.mocked(takeDownModerationReport)).toHaveBeenCalledWith("report-1", "Substantiated");
+    await expect.poll(() => vi.mocked(takeDownModerationReport)).toHaveBeenCalledWith("report-1", "Substantiated", "threat_to_life_or_safety");
   });
 
   it("lets an administrator look up a GM and record a creation ban", async () => {

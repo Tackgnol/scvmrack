@@ -10,7 +10,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import BrowserTestProvider from "../BrowserTestProvider";
 import { ClassesPage } from "@/pages/ClassesPage";
 import { deleteClassDraft, listClassDrafts, listMyClasses, publishClass, removeClass } from "@/api/classes";
-import { blankDraft } from "@/components/organisms/class-creator/classCreator.utils";
+import { blankDraft } from "@/components/organisms/class-creator/creatorShared.utils";
 import { useAuth } from "@/hooks/useAuth";
 
 type MockLinkProps = {
@@ -99,6 +99,7 @@ describe("ClassesPage", () => {
         originCount: 1,
         takenDownAt: null,
         takedownReason: null,
+        everPublished: false,
       },
       {
         id: 4,
@@ -111,6 +112,7 @@ describe("ClassesPage", () => {
         originCount: 3,
         takenDownAt: null,
         takedownReason: null,
+        everPublished: false,
       },
     ]);
     renderPage();
@@ -142,6 +144,7 @@ describe("ClassesPage", () => {
         originCount: 1,
         takenDownAt: null,
         takedownReason: null,
+        everPublished: false,
       },
     ]);
     vi.mocked(publishClass).mockResolvedValue({ visibility: "public" });
@@ -161,8 +164,8 @@ describe("ClassesPage", () => {
     await expect.poll(() => vi.mocked(publishClass).mock.calls[0]?.[0]).toBe(9);
   });
   it("confirms draft discard and class removal with their different consequences", async () => {
-    vi.mocked(listClassDrafts).mockResolvedValue([{ id: 3, classId: null, draft: { ...blankDraft(), name: { en: "Unfinished", pl: "" } }, revision: 1, updatedAt: "2026-10-12T00:00:00.000Z" }]);
-    vi.mocked(listMyClasses).mockResolvedValue([{ id: 9, lineageId: "b", name: "Bog Witch", description: null, languages: ["en"], visibility: "private", status: "active", originCount: 1, takenDownAt: null, takedownReason: null }]);
+    vi.mocked(listClassDrafts).mockResolvedValue([{ id: 3, classId: null, draft: { ...blankDraft(), name: { en: "Unfinished", pl: "" } }, revision: 1, updatedAt: "2026-10-12T00:00:00.000Z", expiresAt: "2027-01-10T00:00:00.000Z" }]);
+    vi.mocked(listMyClasses).mockResolvedValue([{ id: 9, lineageId: "b", name: "Bog Witch", description: null, languages: ["en"], visibility: "private", status: "active", originCount: 1, takenDownAt: null, takedownReason: null, everPublished: false }]);
     vi.mocked(deleteClassDraft).mockResolvedValue();
     vi.mocked(removeClass).mockResolvedValue({ archived: false });
     renderPage();
@@ -183,6 +186,18 @@ describe("ClassesPage", () => {
     expect(removeClass).not.toHaveBeenCalled();
     await userEvent.click(page.getByRole("alertdialog").getByRole("button", { name: "Remove" }));
     await expect.poll(() => vi.mocked(removeClass).mock.calls[0]?.[0]).toBe(9);
+  });
+
+  it("republishes a once-public class without asking for the sharing confirmation again", async () => {
+    vi.mocked(listMyClasses).mockResolvedValue([
+      { id: 9, lineageId: "b", name: "Bog Witch", description: null, languages: ["en"], visibility: "private", status: "active", originCount: 1, takenDownAt: null, takedownReason: null, everPublished: true },
+    ]);
+    vi.mocked(publishClass).mockResolvedValue({ visibility: "public" });
+    renderPage();
+
+    await userEvent.click(page.getByRole("button", { name: "Publish" }));
+    await expect.poll(() => vi.mocked(publishClass).mock.calls[0]?.[0]).toBe(9);
+    await expect.element(page.getByText("Publish this class?")).not.toBeInTheDocument();
   });
 
   it("tells guests to log in instead of offering the creator", async () => {
@@ -219,6 +234,7 @@ describe("ClassesPage", () => {
         originCount: 1,
         takenDownAt: "2026-10-07T12:00:00.000Z",
         takedownReason: "Credible threat",
+        everPublished: false,
       },
     ]);
     renderPage();

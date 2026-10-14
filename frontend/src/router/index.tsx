@@ -111,6 +111,9 @@ const faqRoute = createRoute({
 const reportRoute = createRoute({
     getParentRoute: () => rootRoute,
     path: '/report',
+    validateSearch: (search: Record<string, unknown>): { classId?: string } => ({
+        classId: typeof search.classId === 'string' || typeof search.classId === 'number' ? String(search.classId) : undefined,
+    }),
     component: lazyRouteComponent(() => import('@/pages/ReportPage').then(m => ({ default: m.ReportPage }))),
 });
 const moderationRoute = createRoute({

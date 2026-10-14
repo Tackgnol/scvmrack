@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { SmallAction } from "../classCreator.styles";
+import { SmallAction } from "../creatorShared.styles";
 import type { RemoveConfirmProps } from "./RemoveConfirm.models";
 import { Actions, Confirm } from "./RemoveConfirm.styles";
 

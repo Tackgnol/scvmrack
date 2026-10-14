@@ -8,24 +8,30 @@ let merge = false;
 let disputeLimited = false;
 let anonymizeBefore: Date | undefined;
 let listCalls = 0;
-let reportClass: { id: number; name: string; source: 'user'; visibility: 'private' | 'public' } = {
+let reportClass: { id: number; name: string; source: 'user'; visibility: 'private' | 'public'; takenDownAt: Date | null } = {
   id: 9,
   name: 'Bog Witch',
   source: 'user',
   visibility: 'public',
+  takenDownAt: null,
 };
 /** The fake report's status, and the writes the fake transaction records. */
 let reportStatus = 'open';
+let stillInForce: string[] = [];
+let earlierRemoval: { versions: unknown[] } | null = null;
 const writes: string[] = [];
+let decidedSource = 'user';
 const decidedReport = (id: string) => ({
   id,
   classId: 9,
   status: reportStatus,
   reporterEmail: 'reporter@example.com',
-  class: { id: 9, name: 'Bog Witch', lineageId: 'lineage-1', owner: { email: 'author@example.com' } },
+  reporterLocale: 'en',
+  class: { id: 9, name: 'Bog Witch', lineageId: 'lineage-1', source: decidedSource, owner: { email: 'author@example.com' } },
 });
 const ops = {
   lock: async () => {},
+  lockLineage: async () => {},
   findReportSince: async () => (merge ? { id: '550e8400-e29b-41d4-a716-446655440000' } : null),
   createReport: async (input: unknown) => {
     created.push(input);
@@ -55,6 +61,10 @@ const ops = {
   unhideLineage: async () => {
     writes.push('unhide');
   },
+  clearContentRemoved: async () => {
+    writes.push('clear-content-removed');
+  },
+  lineageReportStatuses: async () => stillInForce,
   removeFromPools: async () => {
     writes.push('pools');
   },
@@ -63,6 +73,7 @@ const ops = {
     writes.push('blank');
   },
   findRemovalEvidence: async () => ({ versions: [] }),
+  findLineageRemovalEvidence: async () => earlierRemoval,
   restoreContent: async () => {
     writes.push('restore-content');
   },
@@ -91,7 +102,7 @@ mock.module('../../src/repositories/moderation-repository.js', {
               createdAt: new Date('2026-10-08T12:00:00.000Z'),
             }],
             createdAt: new Date('2026-10-07T12:00:00.000Z'),
-            class: { name: 'Bog Witch', lineageId: 'lineage-1', version: 1, ownerUserId: 'gm-1' },
+            class: { name: 'Bog Witch', lineageId: 'lineage-1', version: 1, source: 'user', ownerUserId: 'gm-1' },
           },
           {
             id: '550e8400-e29b-41d4-a716-446655440002',
@@ -103,7 +114,7 @@ mock.module('../../src/repositories/moderation-repository.js', {
             status: 'open',
             disputes: [],
             createdAt: new Date('2026-10-08T13:00:00.000Z'),
-            class: { name: 'Bog Witch', lineageId: 'lineage-1', version: 2, ownerUserId: 'gm-1' },
+            class: { name: 'Bog Witch', lineageId: 'lineage-1', version: 2, source: 'user', ownerUserId: 'gm-1' },
           },
           ],
           versions: [
@@ -117,34 +128,42 @@ mock.module('../../src/repositories/moderation-repository.js', {
           ],
         };
       },
-      anonymizeResolvedReports: async (before: Date) => {
-        anonymizeBefore = before;
+      listLog: async () => [
+        {
+          id: '550e8400-e29b-41d4-a716-446655440009',
+          action: 'taken_down',
+          reason: 'Credible threat',
+          ground: 'threat_to_life_or_safety',
+          actorUserId: 'admin-1',
+          reportId: null,
+          targetUserId: null,
+          createdAt: new Date('2026-10-09T12:00:00.000Z'),
+          class: { id: 9, name: 'Bog Witch' },
+        },
+      ],
+      anonymizeReports: async (input: { before: Date }) => {
+        anonymizeBefore = input.before;
         return { count: 2 };
       },
     },
   },
 });
-mock.module('../../src/services/mail-service.js', {
-  namedExports: {
-    createMailService: () => ({
-      sendReportReceipt: async () => ({ ok: true, value: { sent: false } }),
-      sendDisputeCopy: async () => ({ ok: true, value: { sent: false } }),
-      sendReportDecision: async (input: unknown) => {
-        sent.push({ kind: 'decision', input });
-        return { ok: true, value: { sent: false } };
-      },
-      sendStatementOfReasons: async (input: unknown) => {
-        sent.push({ kind: 'statement', input });
-        return { ok: true, value: { sent: false } };
-      },
-    }),
-  },
-});
-
 const { createModerationService, anonymizeExpiredModerationReports } = await import(
   '../../src/services/moderation-service.js'
 );
-const service = createModerationService({ error: () => {}, warn: () => {} });
+/** Records who the service asks to notify; the SES adapter is tested in moderation-notifier.test.ts. */
+const notifier = {
+  received: async (input: unknown) => {
+    sent.push({ kind: 'received', input });
+  },
+  decided: async (input: { outcome: string; explanation: string; statement: unknown }) => {
+    sent.push({ kind: 'decided', input: { outcome: input.outcome, explanation: input.explanation, statement: input.statement } });
+  },
+  disputed: async (input: unknown) => {
+    sent.push({ kind: 'disputed', input });
+  },
+};
+const service = createModerationService({ error: () => {}, warn: () => {} }, notifier);
 
 test('rejects a whitespace-only report explanation', async () => {
   const before = created.length;
@@ -197,6 +216,7 @@ test('requires contact for ordinary reports but allows anonymous CSAM reports', 
       explanation: 'Remove this material.',
       reporterName: null,
       reporterEmail: null,
+      reporterLocale: 'en',
     },
   ]);
 });
@@ -224,6 +244,51 @@ test('merges repeat reports from the same email and class', async () => {
   assert.equal(created.length, 1);
   assert.deepEqual((created[0] as { reporterEmail: string }).reporterEmail, 'reporter@example.com');
   merge = false;
+});
+
+test('a filled honeypot looks accepted but saves and mails nothing', async () => {
+  created.length = 0;
+  sent.length = 0;
+  const result = await service.submit({
+    classId: 9,
+    reason: 'copyright',
+    explanation: 'Copied work',
+    reporterName: 'Bot',
+    reporterEmail: 'bot@example.com',
+    website: 'https://spam.example',
+  });
+
+  assert.match(result.ok ? result.value.id : '', /^[0-9a-f-]{36}$/i);
+  assert.equal(created.length, 0);
+  assert.equal(sent.length, 0);
+});
+
+test('only allowlisted moderators can read the moderation log', async () => {
+  const previous = process.env.MODERATION_ADMIN_USER_IDS;
+  process.env.MODERATION_ADMIN_USER_IDS = 'admin-1';
+  try {
+    const denied = await service.listLog({ session: { user: { id: 'gm-1' } } });
+    assert.equal(!denied.ok && denied.error.statusCode, 404);
+    const log = await service.listLog({ session: { user: { id: 'admin-1' } } });
+    assert.deepEqual(log.ok && log.value[0], {
+      id: '550e8400-e29b-41d4-a716-446655440009',
+      action: 'taken_down',
+      reason: 'Credible threat',
+      ground: 'threat_to_life_or_safety',
+      actorUserId: 'admin-1',
+      reportId: null,
+      targetUserId: null,
+      classId: 9,
+      className: 'Bog Witch',
+      createdAt: '2026-10-09T12:00:00.000Z',
+    });
+  } finally {
+    if (previous === undefined) {
+      delete process.env.MODERATION_ADMIN_USER_IDS;
+    } else {
+      process.env.MODERATION_ADMIN_USER_IDS = previous;
+    }
+  }
 });
 
 test('does not accept reports for a private Custom Class', async () => {
@@ -282,6 +347,7 @@ test('limits review actions to allowlisted GMs and notifies both parties', async
       {
         lineageId: 'lineage-1',
         ownerUserId: 'gm-1',
+        builtIn: false,
         latest: { id: 10, lineageId: 'lineage-1', name: 'Bog Witch', version: 2 },
         versions: [
           { id: 10, lineageId: 'lineage-1', name: 'Bog Witch', version: 2 },
@@ -332,6 +398,7 @@ test('limits review actions to allowlisted GMs and notifies both parties', async
 
     const result = await service.takeDown({
       session: { user: { id: 'admin-1' } },
+      ground: 'other_illegal_content',
       id: '550e8400-e29b-41d4-a716-446655440000',
       reason: '  Credible threat  ',
     });
@@ -344,19 +411,11 @@ test('limits review actions to allowlisted GMs and notifies both parties', async
     assert.deepEqual(writes, ['claim:open->taken_down', 'hide', 'pools', 'log:taken_down']);
     assert.deepEqual(sent, [
       {
-        kind: 'decision',
+        kind: 'decided',
         input: {
-          to: 'reporter@example.com', locale: 'en',
-          reportId: '550e8400-e29b-41d4-a716-446655440000',
-          className: 'Bog Witch', outcome: 'taken_down', explanation: 'Credible threat',
-        },
-      },
-      {
-        kind: 'statement',
-        input: {
-          to: 'author@example.com', locale: 'en', className: 'Bog Witch',
-          measure: 'taken_down', followedNotice: true, ground: 'Credible threat',
-          explanation: 'Credible threat', reportId: '550e8400-e29b-41d4-a716-446655440000',
+          outcome: 'taken_down',
+          explanation: 'Credible threat',
+          statement: { measure: 'taken_down', ground: 'other_illegal_content' },
         },
       },
     ]);
@@ -372,6 +431,7 @@ test('limits review actions to allowlisted GMs and notifies both parties', async
 
     const missingReason = await service.takeDown({
       session: { user: { id: 'admin-1' } },
+      ground: 'other_illegal_content',
       id: '550e8400-e29b-41d4-a716-446655440000',
       reason: ' ',
     });
@@ -415,7 +475,25 @@ test('restores only a taken-down report through an allowlisted GM', async () => 
       actorUserId: 'admin-1',
       reason: 'Correcting the decision',
     });
-    assert.deepEqual(writes, ['claim:content_removed->restored', 'restore-content', 'unhide', 'log:restored']);
+    assert.deepEqual(writes, [
+      'claim:content_removed->restored',
+      'restore-content',
+      'clear-content-removed',
+      'unhide',
+      'log:restored',
+    ]);
+
+    reportStatus = 'taken_down';
+    stillInForce = ['taken_down'];
+    writes.length = 0;
+    const stillHidden = await service.restore({
+      session: { user: { id: 'admin-1' } },
+      id: '550e8400-e29b-41d4-a716-446655440000',
+      reason: 'One of two reports',
+    });
+    assert.equal(stillHidden.ok, true);
+    assert.deepEqual(writes, ['claim:taken_down->restored', 'log:restored']);
+    stillInForce = [];
   } finally {
     reportStatus = 'open';
     if (previous === undefined) {
@@ -425,6 +503,53 @@ test('restores only a taken-down report through an allowlisted GM', async () => 
     }
   }
 });
+test('a second removal keeps the first removal’s evidence instead of snapshotting blanked text', async () => {
+  const previous = process.env.MODERATION_ADMIN_USER_IDS;
+  process.env.MODERATION_ADMIN_USER_IDS = 'admin-1';
+  writes.length = 0;
+  earlierRemoval = { versions: [] };
+  try {
+    const result = await service.removeContent({
+      session: { user: { id: 'admin-1' } },
+      ground: 'other_illegal_content',
+      id: '550e8400-e29b-41d4-a716-446655440000',
+      reason: 'Second report',
+    });
+    assert.equal(result.ok, true);
+    assert.deepEqual(writes, ['claim:open->content_removed', 'hide', 'pools', 'log:content_removed+evidence']);
+  } finally {
+    earlierRemoval = null;
+    if (previous === undefined) {
+      delete process.env.MODERATION_ADMIN_USER_IDS;
+    } else {
+      process.env.MODERATION_ADMIN_USER_IDS = previous;
+    }
+  }
+});
+test('refuses to remove content from a Built-in Class and changes nothing', async () => {
+  const previous = process.env.MODERATION_ADMIN_USER_IDS;
+  process.env.MODERATION_ADMIN_USER_IDS = 'admin-1';
+  writes.length = 0;
+  decidedSource = 'main_book';
+  try {
+    const result = await service.removeContent({
+      session: { user: { id: 'admin-1' } },
+      ground: 'other_illegal_content',
+      id: '550e8400-e29b-41d4-a716-446655440000',
+      reason: 'Copied text',
+    });
+    assert.equal(!result.ok && result.error.code, 'MODERATION_BUILT_IN_CLASS');
+    assert.deepEqual(writes, []);
+  } finally {
+    decidedSource = 'user';
+    if (previous === undefined) {
+      delete process.env.MODERATION_ADMIN_USER_IDS;
+    } else {
+      process.env.MODERATION_ADMIN_USER_IDS = previous;
+    }
+  }
+});
+
 test('removes content through an allowlisted GM and notifies both parties', async () => {
   const previous = process.env.MODERATION_ADMIN_USER_IDS;
   process.env.MODERATION_ADMIN_USER_IDS = 'admin-1';
@@ -434,6 +559,7 @@ test('removes content through an allowlisted GM and notifies both parties', asyn
   try {
     const result = await service.removeContent({
       session: { user: { id: 'admin-1' } },
+      ground: 'other_illegal_content',
       id: '550e8400-e29b-41d4-a716-446655440000',
       reason: '  Illegal copied text  ',
     });
@@ -446,19 +572,11 @@ test('removes content through an allowlisted GM and notifies both parties', asyn
     assert.deepEqual(writes, ['claim:open->content_removed', 'blank', 'hide', 'pools', 'log:content_removed+evidence']);
     assert.deepEqual(sent, [
       {
-        kind: 'decision',
+        kind: 'decided',
         input: {
-          to: 'reporter@example.com', locale: 'en',
-          reportId: '550e8400-e29b-41d4-a716-446655440000',
-          className: 'Bog Witch', outcome: 'content_removed', explanation: 'Illegal copied text',
-        },
-      },
-      {
-        kind: 'statement',
-        input: {
-          to: 'author@example.com', locale: 'en', className: 'Bog Witch',
-          measure: 'content_removed', followedNotice: true, ground: 'Illegal copied text',
-          explanation: 'Illegal copied text', reportId: '550e8400-e29b-41d4-a716-446655440000',
+          outcome: 'content_removed',
+          explanation: 'Illegal copied text',
+          statement: { measure: 'content_removed', ground: 'other_illegal_content' },
         },
       },
     ]);

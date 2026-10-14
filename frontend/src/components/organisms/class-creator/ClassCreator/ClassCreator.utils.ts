@@ -1,5 +1,5 @@
 import type { ClassDraft } from "@/api/classes";
-import type { CreatorStep } from "../classCreator.models";
+import type { CreatorStep } from "../creatorShared.models";
 
 /** Whether a key event's target takes text (a text input, a textarea or editable content). */
 export function isEditable(target: EventTarget | null): boolean {
@@ -7,7 +7,8 @@ export function isEditable(target: EventTarget | null): boolean {
     target instanceof HTMLElement &&
     (target.isContentEditable ||
       target instanceof HTMLTextAreaElement ||
-      (target instanceof HTMLInputElement && target.type === "text"))
+      // A number stepper is a text input, but its nudges aren't in the browser's undo stack.
+      (target instanceof HTMLInputElement && target.type === "text" && target.getAttribute("role") !== "spinbutton"))
   );
 }
 

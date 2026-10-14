@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import { partyColors, partyFonts } from "@/theme/partyTokens";
 import { styled } from "@mui/material";
 
@@ -10,7 +11,7 @@ export const Meta = styled("div")({
   alignItems: "center",
 });
 
-export const ReportLink = styled("a")({
+export const ReportLink = styled(Link)({
   color: yellow,
   fontFamily: partyFonts.label,
   fontSize: "0.65rem",

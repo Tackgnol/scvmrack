@@ -1,6 +1,6 @@
 import type { ClassItemDraft } from "@/api/classes";
 import type { TFunction } from "i18next";
-import type { ClassItemChange } from "../classCreator.models";
+import type { ClassItemChange } from "../creatorShared.models";
 import type { ItemModifierState } from "./ItemModifiers.models";
 
 /** Returns the active modifier list and the way to update it for an item. */

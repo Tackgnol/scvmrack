@@ -1,130 +1,172 @@
 import type { FastifyPluginAsync } from 'fastify';
+import type { JsonSchemaToTsProvider } from '@fastify/type-provider-json-schema-to-ts';
 import { sendServiceError } from '../../errors.js';
+import { ErrorSchema } from '../../schemas/equipment.js';
+import {
+  AdminReportGroupsSchema,
+  CreationBanStatusSchema,
+  CreationBanViewSchema,
+  DecisionBodySchema,
+  ContentRemovedSchema,
+  DismissedSchema,
+  RestoredSchema,
+  TakenDownSchema,
+  MeasureBodySchema,
+  ModerationLogSchema,
+  ReportIdParamsSchema,
+  UserIdParamsSchema,
+} from '../../schemas/moderation.js';
 import { createModerationService } from '../../services/moderation-service.js';
 import { createCreationBanService } from '../../services/creation-ban-service.js';
 
-const params = {
-  type: 'object',
-  required: ['id'],
-  properties: { id: { type: 'string', format: 'uuid' } },
-} as const;
-const reason = {
-  type: 'object',
-  additionalProperties: false,
-  required: ['reason'],
-  properties: { reason: { type: 'string', minLength: 1, maxLength: 4000 } },
-} as const;
-const userParams = {
-  type: 'object',
-  required: ['userId'],
-  properties: { userId: { type: 'string', minLength: 1, maxLength: 255 } },
-} as const;
+const errors = { 400: ErrorSchema, 404: ErrorSchema, 409: ErrorSchema, 500: ErrorSchema };
 
+/** Moderation for allowlisted accounts; every route answers 404 to anyone else. */
 const admin: FastifyPluginAsync = async (fastify) => {
-  const service = (request: {
-    log: Parameters<typeof createModerationService>[0];
-  }) => createModerationService(request.log);
-  const bans = (request: {
-    log: Parameters<typeof createCreationBanService>[0];
-  }) => createCreationBanService(request.log);
-  fastify.get('/creation-bans/:userId', { schema: { params: userParams } }, async (request, reply) => {
-    const result = await bans(request).inspect({
-      session: request.appSession,
-      userId: (request.params as { userId: string }).userId,
-    });
-    if (!result.ok) {
-      return sendServiceError(reply, request, result.error);
+  const app = fastify.withTypeProvider<JsonSchemaToTsProvider>();
+
+  app.get(
+    '/creation-bans/:userId',
+    { schema: { tags: ['admin'], params: UserIdParamsSchema, response: { 200: CreationBanViewSchema, ...errors } } },
+    async (request, reply) => {
+      const result = await createCreationBanService(request.log).inspect({
+        session: request.appSession,
+        userId: request.params.userId,
+      });
+      return result.ok ? result.value : sendServiceError(reply, request, result.error);
     }
-    return result.value;
-  });
-  fastify.post('/creation-bans/:userId', { schema: { params: userParams, body: reason } }, async (request, reply) => {
-    const result = await bans(request).ban({
-      session: request.appSession,
-      userId: (request.params as { userId: string }).userId,
-      reason: (request.body as { reason: string }).reason,
-    });
-    if (!result.ok) {
-      return sendServiceError(reply, request, result.error);
+  );
+  app.post(
+    '/creation-bans/:userId',
+    {
+      schema: {
+        tags: ['admin'],
+        params: UserIdParamsSchema,
+        body: DecisionBodySchema,
+        response: { 200: CreationBanStatusSchema, ...errors },
+      },
+    },
+    async (request, reply) => {
+      const result = await createCreationBanService(request.log).ban({
+        session: request.appSession,
+        userId: request.params.userId,
+        reason: request.body.reason,
+      });
+      return result.ok ? result.value : sendServiceError(reply, request, result.error);
     }
-    return result.value;
-  });
-  fastify.delete('/creation-bans/:userId', { schema: { params: userParams, body: reason } }, async (request, reply) => {
-    const result = await bans(request).unban({
-      session: request.appSession,
-      userId: (request.params as { userId: string }).userId,
-      reason: (request.body as { reason: string }).reason,
-    });
-    if (!result.ok) {
-      return sendServiceError(reply, request, result.error);
+  );
+  app.delete(
+    '/creation-bans/:userId',
+    {
+      schema: {
+        tags: ['admin'],
+        params: UserIdParamsSchema,
+        body: DecisionBodySchema,
+        response: { 200: CreationBanStatusSchema, ...errors },
+      },
+    },
+    async (request, reply) => {
+      const result = await createCreationBanService(request.log).unban({
+        session: request.appSession,
+        userId: request.params.userId,
+        reason: request.body.reason,
+      });
+      return result.ok ? result.value : sendServiceError(reply, request, result.error);
     }
-    return result.value;
-  });
-  fastify.get('/reports', async (request, reply) => {
-    const result = await service(request).listOpen({
-      session: request.appSession,
-    });
-    if (!result.ok) {
-      return sendServiceError(reply, request, result.error);
+  );
+
+  app.get(
+    '/log',
+    { schema: { tags: ['admin'], response: { 200: ModerationLogSchema, ...errors } } },
+    async (request, reply) => {
+      const result = await createModerationService(request.log).listLog({ session: request.appSession });
+      return result.ok ? result.value : sendServiceError(reply, request, result.error);
     }
-    return result.value;
-  });
-  fastify.post(
+  );
+  app.get(
+    '/reports',
+    { schema: { tags: ['admin'], response: { 200: AdminReportGroupsSchema, ...errors } } },
+    async (request, reply) => {
+      const result = await createModerationService(request.log).listOpen({ session: request.appSession });
+      return result.ok ? result.value : sendServiceError(reply, request, result.error);
+    }
+  );
+  app.post(
     '/reports/:id/dismiss',
-    { schema: { params, body: reason } },
+    {
+      schema: {
+        tags: ['admin'],
+        params: ReportIdParamsSchema,
+        body: DecisionBodySchema,
+        response: { 200: DismissedSchema, ...errors },
+      },
+    },
     async (request, reply) => {
-      const result = await service(request).dismiss({
+      const result = await createModerationService(request.log).dismiss({
         session: request.appSession,
-        id: (request.params as { id: string }).id,
-        reason: (request.body as { reason: string }).reason,
+        id: request.params.id,
+        reason: request.body.reason,
       });
-      if (!result.ok) {
-        return sendServiceError(reply, request, result.error);
-      }
-      return result.value;
+      return result.ok ? result.value : sendServiceError(reply, request, result.error);
     }
   );
-  fastify.post(
+  app.post(
     '/reports/:id/take-down',
-    { schema: { params, body: reason } },
+    {
+      schema: {
+        tags: ['admin'],
+        params: ReportIdParamsSchema,
+        body: MeasureBodySchema,
+        response: { 200: TakenDownSchema, ...errors },
+      },
+    },
     async (request, reply) => {
-      const result = await service(request).takeDown({
+      const result = await createModerationService(request.log).takeDown({
         session: request.appSession,
-        id: (request.params as { id: string }).id,
-        reason: (request.body as { reason: string }).reason,
+        id: request.params.id,
+        reason: request.body.reason,
+        ground: request.body.ground,
       });
-      if (!result.ok) {
-        return sendServiceError(reply, request, result.error);
-      }
-      return result.value;
+      return result.ok ? result.value : sendServiceError(reply, request, result.error);
     }
   );
-  fastify.post(
+  app.post(
     '/reports/:id/remove-content',
-    { schema: { params, body: reason } },
+    {
+      schema: {
+        tags: ['admin'],
+        params: ReportIdParamsSchema,
+        body: MeasureBodySchema,
+        response: { 200: ContentRemovedSchema, ...errors },
+      },
+    },
     async (request, reply) => {
-      const result = await service(request).removeContent({
+      const result = await createModerationService(request.log).removeContent({
         session: request.appSession,
-        id: (request.params as { id: string }).id,
-        reason: (request.body as { reason: string }).reason,
+        id: request.params.id,
+        reason: request.body.reason,
+        ground: request.body.ground,
       });
-      if (!result.ok) {
-        return sendServiceError(reply, request, result.error);
-      }
-      return result.value;
+      return result.ok ? result.value : sendServiceError(reply, request, result.error);
     }
-  );  fastify.post(
+  );
+  app.post(
     '/reports/:id/restore',
-    { schema: { params, body: reason } },
+    {
+      schema: {
+        tags: ['admin'],
+        params: ReportIdParamsSchema,
+        body: DecisionBodySchema,
+        response: { 200: RestoredSchema, ...errors },
+      },
+    },
     async (request, reply) => {
-      const result = await service(request).restore({
+      const result = await createModerationService(request.log).restore({
         session: request.appSession,
-        id: (request.params as { id: string }).id,
-        reason: (request.body as { reason: string }).reason,
+        id: request.params.id,
+        reason: request.body.reason,
       });
-      if (!result.ok) {
-        return sendServiceError(reply, request, result.error);
-      }
-      return result.value;
+      return result.ok ? result.value : sendServiceError(reply, request, result.error);
     }
   );
 };

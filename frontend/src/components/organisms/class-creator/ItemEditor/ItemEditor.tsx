@@ -15,7 +15,7 @@ import {
   Head,
   OpenCard,
   SmallAction,
-} from "../classCreator.styles";
+} from "../creatorShared.styles";
 import {
   fieldId,
   granterOf,
@@ -23,7 +23,7 @@ import {
   LIMIT_LIST,
   LIMIT_NAME,
   LIMIT_TEXT,
-} from "../classCreator.utils";
+} from "../creatorShared.utils";
 import type { ItemEditorProps } from "./ItemEditor.models";
 
 /** The open Class Item card: who grants it, name, description, type and its numbers; Remove, Duplicate and Done. */

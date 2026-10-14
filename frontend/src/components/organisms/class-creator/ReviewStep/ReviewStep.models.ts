@@ -1,6 +1,6 @@
 import type { ClassDraft, ClassLanguage } from "@/api/classes";
 import type { CharacterResponse } from "@/hooks/models";
-import type { CreatorIssue } from "../classCreator.models";
+import type { CreatorIssue } from "../creatorShared.models";
 
 export type ReviewStepProps = {
   draft: ClassDraft;

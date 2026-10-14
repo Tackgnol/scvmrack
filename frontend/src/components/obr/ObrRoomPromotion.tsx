@@ -2,6 +2,7 @@ import OBR from "@owlbear-rodeo/sdk";
 import { useTranslation } from "react-i18next";
 import { useObrRoomParty, usePromoteObrRoom } from "@/hooks/usePartyRepository";
 import { ObrRoomAttach } from "./ObrRoomAttach";
+import { ObrRoomPoolSummary } from "./ObrRoomPoolSummary/ObrRoomPoolSummary";
 import {
   PromotionButton,
   PromotionCopyButton,
@@ -74,6 +75,9 @@ export function ObrRoomPromotion() {
               "Sign in as the owner to manage invites",
             )}
           </PromotionLinks>
+        )}
+        {!party.invitePath && (
+          <ObrRoomPoolSummary roomId={roomId} />
         )}
       </PromotionPanel>
     );

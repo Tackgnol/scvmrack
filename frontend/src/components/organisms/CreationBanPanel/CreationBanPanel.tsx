@@ -1,6 +1,6 @@
 import { CardAction } from "@/pages/gmPages.styles";
 import { partyFonts } from "@/theme/partyTokens";
-import { banClassCreation, getCreationBan, unbanClassCreation } from "@/api/moderation";
+import { banClassCreation, getCreationBan, moderationKeys, unbanClassCreation } from "@/api/moderation";
 import { getUserFacingApiErrorMessage } from "@/utils/errorUtils";
 import { Alert, Box, Button, Paper, Stack, TextField, Typography } from "@mui/material";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -15,14 +15,14 @@ export function CreationBanPanel() {
   const [userId, setUserId] = useState("");
   const [reason, setReason] = useState("");
   const lookup = useQuery({
-    queryKey: ["moderation", "creation-ban", userId],
+    queryKey: moderationKeys.creationBan(userId),
     queryFn: () => getCreationBan(userId),
     enabled: userId.length > 0,
     retry: false,
   });
   const refresh = () => {
     setReason("");
-    void queryClient.invalidateQueries({ queryKey: ["moderation", "creation-ban", userId] });
+    void queryClient.invalidateQueries({ queryKey: moderationKeys.creationBan(userId) });
   };
   const ban = useMutation({
     mutationFn: () => banClassCreation(userId, reason.trim()),

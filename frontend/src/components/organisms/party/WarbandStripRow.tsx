@@ -14,7 +14,7 @@ type WarbandStripRowProps = {
   /** A recent SSE event touched this member — drives the quiet "changed" pulse. */
   changed?: boolean;
   /** Rolled with an older version of their class than the one now offered. */
-  olderRules?: boolean;
+  olderRules?: { version: number; latestVersion: number } | null;
   /** Only fetch while the GM overview is mounted/visible. */
   active: boolean;
   renderActions?: (member: WarbandMember) => ReactNode;
@@ -90,7 +90,7 @@ export function WarbandStripRow({
   name,
   disconnected = false,
   changed = false,
-  olderRules = false,
+  olderRules = null,
   active,
   renderActions,
 }: WarbandStripRowProps) {

@@ -75,7 +75,9 @@
       "binding": "Przypisywanie",
       "openInScvmrack": "Otwórz w scvmrack",
       "openingInScvmrack": "Otwieranie",
-      "openInScvmrackFailed": "Nie udało się otworzyć w scvmrack"
+      "openInScvmrackFailed": "Nie udało się otworzyć w scvmrack",
+      "bindMetadataWarning": "Zapisano powiązanie, ale etykieta żetonu się nie zaktualizowała.",
+      "forgeFailed": "Nie udało się otworzyć kuźni. Zezwól na wyskakujące okna i spróbuj ponownie."
     },
     "gm": {
       "region": "Widok MG",
@@ -119,7 +121,15 @@
       "mods": "Mody",
       "showMods": "Pokaż mody {{count}}",
       "hideMods": "Ukryj mody {{count}}",
-      "noActiveModifiers": "Brak aktywnych."
+      "noActiveModifiers": "Brak aktywnych.",
+      "bindSelectedToken": "Powiąż zaznaczony żeton",
+      "missingCard": "Nie znaleziono scvm {{id}}",
+      "missingCardName": "Brakujący scvm {{id}}",
+      "removeFromRoster": "Usuń z listy",
+      "removingFromRoster": "Usuwanie",
+      "roomPoolList": "Klasy losowane w tym pokoju: {{classes}}.",
+      "roomPoolClassless": "Tylko bez klasy",
+      "roomPoolReadOnly": "Zmienić je może tylko właściciel drużyny."
     },
     "card": {
       "missingId": "Brak ID scvma",
@@ -485,7 +495,8 @@
     "advancedTooltip": "Zaawansowane opcje modyfikatora",
     "shiftNegative": "Klątwy drgnęły",
     "shiftPositive": "Błogosławieństwa drgnęły",
-    "shiftNeutral": "Losy drgnęły"
+    "shiftNeutral": "Losy drgnęły",
+    "removeModifier": "Usuń modyfikator"
   },
   "attributes": {
     "agility": "Zwinność",
@@ -640,7 +651,8 @@
     "wretch": "nieszczęśnik",
     "classless": "Bez klasy",
     "classContentRemoved": "Część tekstu tej klasy usunęła moderacja.",
-    "noSpecialAbilities": "Brak specjalnych zdolności"
+    "noSpecialAbilities": "Brak specjalnych zdolności",
+    "classWrittenIn": "Ta klasa jest napisana w języku: {{language}}."
   },
   "traits": {
     "title": "Cechy i Dolegliwości",
@@ -666,7 +678,8 @@
   "footer": {
     "worldEnding": "Świat Się Kończy",
     "legalNotice": "MÖRK BORG jest chroniony prawem autorskim Ockult Örtmästare Games oraz Stockholm Kartell. Scvmrack to niezależna produkcja Adama Kościelniaka, rozwijana jako część pakietu <rpgtoolsLink>rpgtools.co</rpgtoolsLink>; nie jest ona powiązana z Ockult Örtmästare Games ani Stockholm Kartell. Została opublikowana na mocy licencji MÖRK BORG Third Party License. <privacyLink>Sprawdź ustawienia prywatności</privacyLink>",
-    "translationCredit": "Oficjalne polskie tłumaczenie dostarczone przez Nerd Sirens"
+    "translationCredit": "Oficjalne polskie tłumaczenie dostarczone przez Nerd Sirens",
+    "terms": "Regulamin"
   },
   "actions": {
     "print": "Drukuj kartę",
@@ -678,7 +691,10 @@
     "killConfirmDontAskAgain": "Nie pokazuj tego ponownie",
     "testModal": "Testuj Modal",
     "cancel": "Anuluj",
-    "retry": "Ponów"
+    "retry": "Ponów",
+    "back": "Wstecz",
+    "killConfirmPartyDesc": "Zastępca wczołga się do tej drużyny, zanim stare ciało zostanie usunięte.",
+    "loading": "Wczytywanie..."
   },
   "gettingBetter": {
     "title": "Rozwój",
@@ -741,12 +757,16 @@
   "powers": {
     "title": "Moce",
     "noScrollsOrPowers": "Brak zwojów i mocy",
-    "unknownScroll": "Nieznany Zwój"
+    "unknownScroll": "Nieznany Zwój",
+    "usePipUsed": "Oznacz jako użyte: {{name}}, użycie {{use}}",
+    "usePipUnused": "Oznacz jako nieużyte: {{name}}, użycie {{use}}"
   },
   "pets": {
     "title": "Zwierzęta",
     "actionDie": "Kości akcji",
-    "unknown": "Nieznane zwierzę"
+    "unknown": "Nieznane zwierzę",
+    "hpPipFill": "Zaznacz punkt życia jako pełny: {{name}}, punkt {{point}}",
+    "hpPipEmpty": "Zaznacz punkt życia jako pusty: {{name}}, punkt {{point}}"
   },
   "consumables": {
     "title": "Zużywalne",
@@ -852,7 +872,13 @@
     "apply": "Zastosuj",
     "loading": "Ładowanie...",
     "increaseHitPoints": "Zwiększ punkty życia",
-    "decreaseHitPoints": "Zmniejsz punkty życia"
+    "decreaseHitPoints": "Zmniejsz punkty życia",
+    "decreaseArmorTier": "Obniż poziom pancerza",
+    "decreaseStat": "Zmniejsz {{stat}}",
+    "increaseArmorTier": "Podnieś poziom pancerza",
+    "increaseStat": "Zwiększ {{stat}}",
+    "openMenu": "Otwórz menu",
+    "retry": "Ponów"
   },
   "nav": {
     "start": "Start",
@@ -1440,7 +1466,10 @@
       "silverDice": "Kości srebra",
       "silverSides": "Ścianki srebra",
       "silverMultiplier": "Mnożnik srebra",
-      "silverHint": "Srebro to suma kości razy ta liczba. Domyślnie w podręczniku 2k6 × 10."
+      "silverHint": "Srebro to suma kości razy ta liczba. Domyślnie w podręczniku 2k6 × 10.",
+      "bookDefault": "Domyślnie z podręcznika",
+      "change": "Zmień",
+      "done": "Gotowe"
     },
     "origins": {
       "add": "Dodaj pochodzenie",
@@ -1483,7 +1512,11 @@
       "saved": "Zapisano",
       "forged": "Wykuta",
       "forgedNote": "„{{name}}” jest zapisana w twoich klasach. Każda zmiana tutaj znów odblokuje zapis.",
-      "goToClasses": "Przejdź do moich klas"
+      "goToClasses": "Przejdź do moich klas",
+      "versionWarning_one": "{{count}} scvm gra wersją {{version}}. Zapis utworzy wersję {{nextVersion}}: on zostaje przy wersji {{version}}, a nowe rzuty użyją wersji {{nextVersion}}.",
+      "versionWarning_other": "{{count}} scvm gra wersją {{version}}. Zapis utworzy wersję {{nextVersion}}: zostają przy wersji {{version}}, a nowe rzuty użyją wersji {{nextVersion}}.",
+      "versionWarning_few": "{{count}} scvm grają wersją {{version}}. Zapis utworzy wersję {{nextVersion}}: zostają przy wersji {{version}}, a nowe rzuty użyją wersji {{nextVersion}}.",
+      "versionWarning_many": "{{count}} scvm gra wersją {{version}}. Zapis utworzy wersję {{nextVersion}}: zostają przy wersji {{version}}, a nowe rzuty użyją wersji {{nextVersion}}."
     },
     "issues": {
       "missingName": "Brak tekstu po {{language}}: nazwa klasy",
@@ -1545,7 +1578,16 @@
       },
       "removeGranter": "Tylko ta zdolność daje {{items}}. Usunąć też przedmiot, czy zostawić go dla innej zdolności?",
       "removeBoth": "Usuń oba",
-      "keepItem": "Zostaw przedmiot bez nadania"
+      "keepItem": "Zostaw przedmiot bez nadania",
+      "addTable": "Dodaj tabelę",
+      "pasteTableRows": "Zastąpić {{count}} wierszy tabeli? Drugi język wklej osobno.",
+      "referenceTable": "Tabela",
+      "removeTable": "Usuń tabelę",
+      "removeTableWithItems": "Ta tabela daje {{items}}. Usunąć tabelę i jej powiązania?",
+      "replaceRows": "Zastąp wiersze",
+      "tableDie": "Kość tabeli",
+      "tableHint": "Numer wiersza to wynik rzutu kością.",
+      "tableRow": "Wynik {{roll}}"
     },
     "items": {
       "question": "Czy ta klasa ma własny sprzęt albo bestie?",
@@ -1652,7 +1694,32 @@
       "keepIt": "Zostaw"
     },
     "cancel": "Anuluj",
-    "confirmRemoval": "Potwierdź usunięcie"
+    "confirmRemoval": "Potwierdź usunięcie",
+    "archivedLocked": "Ta klasa jest zarchiwizowana. Przywróć ją w Moich klasach, zanim ją zmienisz.",
+    "backToClasses": "Wróć do Moich klas",
+    "discardDraft": "Odrzuć niezapisane zmiany",
+    "discardDraftShort": "Odrzuć",
+    "discardFailed": "Nie udało się odrzucić zmian. Spróbuj ponownie.",
+    "draftDiscard": "Odrzuć",
+    "draftLoadFailed": "Nie udało się wczytać szkicu.",
+    "draftOffline": "Brak połączenia, ponowimy próbę",
+    "draftSaved": "Szkic zapisany · przechowywany do {{date}}, chyba że znów go edytujesz",
+    "draftSaving": "Zapisywanie…",
+    "history": {
+      "label": "Historia edycji",
+      "redo": "Ponów",
+      "undo": "Cofnij"
+    },
+    "referenceTable": {
+      "rolled": "Rzut {{roll}}: {{text}}"
+    },
+    "resumeDraft": "Wznów",
+    "takenDownLocked": "Ta klasa została zdjęta przez moderację i nie można jej zmienić. Możesz się odwołać w Moich klasach.",
+    "titleResume": "Wznów klasę",
+    "unsavedChanges": "Niezapisane zmiany z {{date}}. Wznowić czy odrzucić?",
+    "draftLimit": "Nie zapisano szkicu: masz już 3 niedokończone nowe klasy. Zapisz tę klasę albo odrzuć któryś szkic.",
+    "draftUnsaved": "Szkic nie został zapisany. Następna edycja spróbuje ponownie.",
+    "takedownReason": "Uzasadnienie:"
   },
   "classes": {
     "unsavedEdits": "Niezapisane zmiany zapisanej klasy",
@@ -1691,7 +1758,29 @@
     "disputeText": "Dlaczego powinniśmy ponownie rozpatrzyć tę decyzję?",
     "submitDispute": "Wyślij odwołanie",
     "appealEmail": "Możesz też wysłać odwołanie na",
-    "appealEmailLink": "Odwołanie e-mailem"
+    "appealEmailLink": "Odwołanie e-mailem",
+    "archived": "Zarchiwizowana",
+    "discardFailed": "Nie udało się odrzucić szkicu. Spróbuj ponownie.",
+    "disputeFailed": "Nie udało się wysłać odwołania. Spróbuj ponownie.",
+    "disputeSent": "Odwołanie wysłane. Rozpatrzy je człowiek, a odpowiedź przyjdzie e-mailem.",
+    "draft": "Niedokończony szkic",
+    "expiresIn_one": "Wygasa za {{count}} dzień",
+    "expiresIn_other": "Wygasa za {{count}} dni",
+    "lastEdited": "Ostatnia edycja {{date}}",
+    "moderationTerms": "Jak działa moderacja",
+    "publishFailed": "Nie udało się opublikować klasy. Spróbuj ponownie.",
+    "removeFailed": "Nie udało się usunąć klasy. Spróbuj ponownie.",
+    "restore": "Przywróć",
+    "restoreFailed": "Nie udało się przywrócić klasy. Spróbuj ponownie.",
+    "resume": "Wznów",
+    "showActive": "Pokaż aktywne klasy",
+    "showArchived": "Zarchiwizowane ({{count}})",
+    "unpublishFailed": "Klasa nadal jest publiczna. Spróbuj ponownie.",
+    "untitled": "Klasa bez nazwy",
+    "expiresIn_few": "Wygasa za {{count}} dni",
+    "expiresIn_many": "Wygasa za {{count}} dni",
+    "draftLimit": "Masz 3 niedokończone nowe klasy. Dokończ albo odrzuć jedną, aby wykuć kolejną.",
+    "loadFailed": "Nie udało się wczytać Twoich klas."
   },
   "report": {
     "thisClass": "Zgłoś tę klasę",
@@ -1712,8 +1801,8 @@
     "goodFaith": "Składam to zgłoszenie w dobrej wierze.",
     "submit": "Wyślij zgłoszenie",
     "sending": "Wysyłanie...",
-    "sent": "Zgłoszenie zapisano do weryfikacji przez człowieka. Wynik możesz zakwestionować pod adresem scvmrack-appeal@rpgtools.co.",
-    "appeal": "Wynik możesz zakwestionować, pisząc na scvmrack-appeal@rpgtools.co.",
+    "sent": "Zgłoszenie zapisano do weryfikacji przez człowieka. Wynik możesz zakwestionować pod adresem {{appealAddress}}.",
+    "appeal": "Wynik możesz zakwestionować, pisząc na {{appealAddress}}.",
     "reasons": {
       "copyright": "Prawo autorskie — jestem właścicielem(-ką) i nie chcę tego w Scvm Rack",
       "child_sexual_abuse_material": "Materiały przedstawiające seksualne wykorzystywanie dzieci",
@@ -1723,7 +1812,9 @@
       "abusive_or_hateful": "Treść obraźliwa lub nienawistna",
       "owner_removal": "Nie chcę już, aby to było wyświetlane",
       "other": "Inne"
-    }
+    },
+    "classIdHint": "Numer lub link strony klasy, np. /classes/12.",
+    "submitFailed": "Nie udało się wysłać zgłoszenia."
   },
   "moderation": {
     "classVersions": "Wersje klasy",
@@ -1750,7 +1841,37 @@
     "liftCreationBan": "Znieś blokadę tworzenia",
     "creationBanHistory": "Historia blokad",
     "noBanHistory": "Brak decyzji o blokadzie.",
-    "byActor": "Decyzja: {{actor}}"
+    "byActor": "Decyzja: {{actor}}",
+    "anonymous": "Anonimowo",
+    "authority": "Wymaga zgłoszenia do organów",
+    "decisionFailed": "Nie udało się zapisać decyzji. Spróbuj ponownie.",
+    "decisionReason": "Uzasadnienie decyzji",
+    "dismiss": "Odrzuć zgłoszenie",
+    "disputes": "Odwołania autora",
+    "empty": "Brak otwartych zgłoszeń.",
+    "ground": "Podstawa w uzasadnieniu decyzji",
+    "hide": "Ukryj",
+    "intro": "Otwarte zgłoszenia wymagają decyzji człowieka.",
+    "log": {
+      "empty": "Brak decyzji.",
+      "loadFailed": "Nie udało się wczytać dziennika moderacji.",
+      "title": "Dziennik moderacji",
+      "actions": {
+        "dismissed": "Odrzucono",
+        "taken_down": "Zdjęto",
+        "content_removed": "Usunięto treść",
+        "restored": "Przywrócono",
+        "class_creation_banned": "Zablokowano tworzenie klas",
+        "class_creation_unbanned": "Zdjęto blokadę tworzenia klas"
+      }
+    },
+    "removeContent": "Usuń treść",
+    "restore": "Przywróć",
+    "takeDown": "Zdejmij",
+    "title": "Moderacja",
+    "confirmHideBody": "„{{name}}” od razu przestaje być dostępna i znika ze wszystkich pul drużyn. Istniejące postacie ją zachowują.",
+    "confirmHideTitle": "Ukryć tę klasę?",
+    "loadFailed": "Nie możesz wczytać zgłoszeń moderacyjnych."
   },
   "party": {
     "pill": "Drużyna",
@@ -1788,8 +1909,6 @@
     "scrollPrev": "Poprzedni scvm",
     "scrollNext": "Następny scvm",
     "guildTitle": "Gildia",
-    "olderRules": "Starsze zasady",
-    "olderRulesHint": "Wylosowany na starszej wersji tej klasy; pula oferuje już nowszą.",
     "guildInvite": "Zaproś członków gildii",
     "guildWhat": "Czym są gildie?",
     "guildComingSoon": "Zaproszenia do gildii już wkrótce — przywołaj towarzysza z gildii prosto do swojej kompanii.",
@@ -1797,7 +1916,19 @@
     "alreadyInThisWarband": "{{name}} jest już w tej kompanii",
     "goToSheet": "Przejdź do karty",
     "leaveParty": "Opuść drużynę",
-    "leaving": "Opuszczanie..."
+    "leaving": "Opuszczanie...",
+    "alreadyInParty": "Już w drużynie",
+    "changedFields": "Zaktualizowano: {{fields}}",
+    "defaultName": "Banda bez nazwy",
+    "invalidInvite": "Ten link z zaproszeniem jest już nieważny.",
+    "joinBody": "Wybierz scvm z tej sesji albo wykuj nowego dla stołu.",
+    "joinCta": "Dołącz do drużyny",
+    "joinTitle": "Dołącz do bandy",
+    "joining": "Dołączanie...",
+    "loadingName": "Banda",
+    "preparingSession": "Przygotowujemy Twoją sesję…",
+    "readyToJoin": "Gotowy do dołączenia",
+    "olderRulesVersions": "Wylosowano z v{{version}} · klasa jest teraz w v{{latestVersion}}"
   },
   "owlbear": {
     "title": "Owlbear Rodeo",

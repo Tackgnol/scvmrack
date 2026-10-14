@@ -1,6 +1,6 @@
 import { partyColors, partyFonts } from "@/theme/partyTokens";
 import { styled } from "@mui/material";
-import { Hint } from "../classCreator.styles";
+import { Hint } from "../creatorShared.styles";
 import { keyframes } from "@mui/system";
 
 const { yellow, black, white, grey } = partyColors;

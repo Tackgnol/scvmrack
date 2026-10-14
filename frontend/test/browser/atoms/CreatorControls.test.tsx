@@ -31,7 +31,7 @@ describe('NumberStepper', () => {
         <NumberStepper id="dice" label="Dice" value={6} min={1} max={6} onChange={onChange} />
       </BrowserTestProvider>
     );
-    await page.getByRole('spinbutton', { name: 'Dice' }).click();
+    await userEvent.click(page.getByRole('spinbutton', { name: 'Dice' }));
 
     await userEvent.keyboard('{ArrowUp}{ArrowDown}');
 
@@ -48,11 +48,11 @@ describe('DiePicker', () => {
         <DiePicker id="hp" label="HP die" value={6} options={[4, 6, 8]} onChange={onChange} />
       </BrowserTestProvider>
     );
-    await page.getByRole('radio', { name: 'd6' }).click();
+    await userEvent.click(page.getByRole('radio', { name: 'd6' }));
 
     await userEvent.keyboard('{ArrowRight}');
 
-    expect(onChange).toHaveBeenCalledWith(8);
+    await expect.poll(() => onChange).toHaveBeenCalledWith(8);
     await expect.element(page.getByRole('radio', { name: 'd8' })).toHaveFocus();
   });
 });

@@ -1,5 +1,5 @@
 import type { ClassDraft, ClassItemType, ClassLanguage } from "@/api/classes";
-import type { GrantSlot } from "../classCreator.models";
+import type { GrantSlot } from "../creatorShared.models";
 
 export type AbilityGrantsProps = {
   draft: ClassDraft;

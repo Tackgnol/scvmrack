@@ -2,9 +2,9 @@ import type { GettingBetterRule } from "@/api/classPool";
 import { SegmentedChoice } from "@/components/atoms/SegmentedChoice/SegmentedChoice";
 import { LocalizedField } from "@/components/molecules/LocalizedField/LocalizedField";
 import { useTranslation } from "react-i18next";
-import type { StepProps } from "../classCreator.models";
-import { Hint, Interrupt, Stack } from "../classCreator.styles";
-import { fieldId, LIMIT_TEXT, specialistAllowed } from "../classCreator.utils";
+import type { StepProps } from "../creatorShared.models";
+import { Hint, Interrupt, Stack } from "../creatorShared.styles";
+import { fieldId, LIMIT_TEXT, specialistAllowed } from "../creatorShared.utils";
 
 /** Step 4: what happens when a scvm of this class gets better, and a note for the player. */
 export function GettingBetterStep({ draft, language, update, touch }: StepProps) {

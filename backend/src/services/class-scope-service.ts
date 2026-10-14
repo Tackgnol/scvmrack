@@ -4,7 +4,7 @@ import type { ClassScope } from './class-choice.js';
 import type { ClassVersionRef } from '../lib/class-model.js';
 import { characterRepository } from '../repositories/character-repository.js';
 import { partyRepository } from '../repositories/party-repository.js';
-import { byLineage, canOffer } from './class-offer.js';
+import { byLineage, mayOffer } from '../lib/class-model.js';
 import { fail, ok, type ServiceResult } from './result.js';
 
 /** Resolves an invite token (or none) to the classes it may roll from. A dead token is 410. */
@@ -44,7 +44,7 @@ function rollable(
   const classIds: number[] = [];
   const acceptedClassIds: number[] = [];
   for (const { latest, versions } of byLineage(rows)) {
-    if (!canOffer(latest, partyOwnerId)) {
+    if (!mayOffer(latest, partyOwnerId)) {
       continue;
     }
     classIds.push(latest.id);

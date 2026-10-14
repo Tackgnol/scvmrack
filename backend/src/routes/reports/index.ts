@@ -1,6 +1,5 @@
 import type { FastifyPluginAsync } from 'fastify';
 import type { JsonSchemaToTsProvider } from '@fastify/type-provider-json-schema-to-ts';
-import { randomUUID } from 'node:crypto';
 import { sendServiceError } from '../../errors.js';
 import { ErrorSchema } from '../../schemas/equipment.js';
 import {
@@ -8,19 +7,14 @@ import {
   ModerationReportResponseSchema,
 } from '../../schemas/moderation.js';
 import { createModerationService } from '../../services/moderation-service.js';
-import { limitMax } from '../../lib/rate-limits.js';
+import { reportLimit } from '../../lib/rate-limits.js';
 
 const reports: FastifyPluginAsync = async (fastify) => {
   const app = fastify.withTypeProvider<JsonSchemaToTsProvider>();
   app.post(
     '/',
     {
-      config: {
-        rateLimit: {
-          max: limitMax(5),
-          timeWindow: '1 hour',
-        },
-      },
+      config: reportLimit,
       schema: {
         description:
           'Submit a signed-out report about a class for human review',
@@ -36,9 +30,6 @@ const reports: FastifyPluginAsync = async (fastify) => {
       },
     },
     async (request, reply) => {
-      if (request.body.website?.trim()) {
-        return reply.code(201).send({ id: randomUUID() });
-      }
       const result = await createModerationService(request.log).submit(
         request.body
       );

@@ -2,9 +2,10 @@ import { DiePicker } from "@/components/atoms/DiePicker/DiePicker";
 import { NumberStepper } from "@/components/atoms/NumberStepper/NumberStepper";
 import { SegmentedChoice } from "@/components/atoms/SegmentedChoice/SegmentedChoice";
 import { useTranslation } from "react-i18next";
-import type { ItemFieldsProps } from "../classCreator.models";
-import { Controls } from "../classCreator.styles";
-import { fieldId, DIE_FACES } from "../classCreator.utils";
+import type { ItemFieldsProps } from "../creatorShared.models";
+import { Controls } from "../creatorShared.styles";
+import { fieldId } from "../creatorShared.utils";
+import { DIE_FACES } from "@/utils/rollDie";
 
 /** Gear: consumable, wearable or carried; how many uses; what using it does. */
 export function GearFields({ path, item, onChange }: ItemFieldsProps<"gear">) {

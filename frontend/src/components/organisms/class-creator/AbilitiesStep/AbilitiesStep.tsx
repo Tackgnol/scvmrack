@@ -14,7 +14,7 @@ import {
   InkButton,
   Spread,
   Stack,
-} from "../classCreator.styles";
+} from "../creatorShared.styles";
 import {
   blankAbility,
   blankClassItem,
@@ -24,7 +24,7 @@ import {
   randomPoolSize,
   zineAbilities,
   slotFor,
-} from "../classCreator.utils";
+} from "../creatorShared.utils";
 import { movedIndex, moveEntry } from "../reorder.utils";
 import type { AbilitiesStepProps } from "./AbilitiesStep.models";
 

@@ -1,5 +1,4 @@
 import prisma from '../lib/prisma.js';
-import { translatedClassTexts } from '../lib/class-translations.js';
 import { Prisma } from '@prisma/client';
 import type { ClassVersionRef } from '../lib/class-model.js';
 
@@ -197,25 +196,16 @@ export const characterRepository = {
     return prisma.class.findMany({ where: { lineageId: { in: lineageIds } }, select: scopeClassSelect });
   },
 
-  /**
-   * Classes for the creation gate: id + localized name/description, in id order.
-   * One-language classes fall back to their authored language.
-   */
-  async listClassesByIds(
-    ids: number[],
-    locale: string
-  ): Promise<Array<{ id: number; name: string | null; description: string | null }>> {
+  /** Classes for the creation gate with their untranslated text keys, in id order. */
+  async listClassesByIds(ids: number[]) {
     if (ids.length === 0) {
       return [];
     }
-    const classes = await prisma.class.findMany({
+    return prisma.class.findMany({
       where: { id: { in: ids } },
       select: { id: true, name: true, nameKey: true, descriptionKey: true, languages: true },
       orderBy: { id: 'asc' },
     });
-
-    const texts = await translatedClassTexts(locale, classes);
-    return classes.map((c, i) => ({ id: c.id, ...texts[i] }));
   },
 
   listSummariesByUser(userId: string): Promise<CharacterSummaryRow[]> {

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { beforeEach, mock, test } from 'node:test';
 
-import { blankClassDraft, type ClassDraft } from '../../src/lib/class-draft.ts';
+import { blankClassDraft, blankClassItem, type ClassDraft } from '../../src/lib/class-draft.ts';
 
 const GM = { user: { id: 'gm-1', isAnonymous: false } };
 const GUEST = { user: { id: 'guest-1', isAnonymous: true } };
@@ -57,24 +57,15 @@ const lineage = {
   publishedToday: 0,
   versionIds: [7] as number[],
   played: new Set<number>(),
+  moderated: new Set<number>(),
   restorable: 1,
+  takenDownMidSave: false,
   writes: [] as string[],
 };
 
 mock.module('../../src/repositories/custom-class-repository.js', {
   namedExports: {
     customClassRepository: {
-      countOwnedLineages: async () => repo.owned,
-      create: async (owner: string, draft: ClassDraft) => {
-        if (repo.createThrows) {
-          throw repo.createThrows;
-        }
-        repo.created.push({ owner, draft });
-        return 42;
-      },
-      update: async (id: number, draft: ClassDraft) => {
-        repo.updated.push({ id, draft });
-      },
       transaction: async (work: (ops: unknown) => Promise<unknown>) =>
         work({
           lockOwner: async () => {},
@@ -82,6 +73,7 @@ mock.module('../../src/repositories/custom-class-repository.js', {
             lineageId: 'l',
             visibility: lineage.visibility,
             firstPublishedAt: lineage.firstPublishedAt,
+            takenDownAt: lineage.takenDownMidSave ? new Date() : null,
           }),
           countFirstPublishedSince: async () => lineage.publishedToday,
           setVisibility: async (_lineageId: string, visibility: string) => {
@@ -96,12 +88,39 @@ mock.module('../../src/repositories/custom-class-repository.js', {
           },
           versionIds: async () => lineage.versionIds,
           playedVersionIds: async (ids: number[]) =>
-            new Set(ids.filter((id) => lineage.played.has(id))),
+            new Set(
+              ids.filter(
+                (id) => lineage.played.has(id) || (repo.found?.id === id && repo.found.playingCount > 0)
+              )
+            ),
+          moderatedVersionIds: async (ids: number[]) => new Set(ids.filter((id) => lineage.moderated.has(id))),
+          lockVersion: async () => {},
+          lockLineage: async () => {},
+          countOwnedLineages: async () => repo.owned,
+          findVersionRow: async (id: number) => ({
+            source: 'user',
+            ownerUserId: 'gm-1',
+            visibility: 'private',
+            firstPublishedAt: null,
+            lineageId: 'l',
+            version: repo.found?.id === id ? repo.found.version : 1,
+            takenDownAt: lineage.takenDownMidSave ? new Date() : null,
+          }),
+          updateVersion: async (id: number, draft: ClassDraft) => {
+            repo.updated.push({ id, draft });
+          },
           deleteVersions: async (ids: number[]) => {
             lineage.writes.push(`delete:${ids.join(',')}`);
           },
-          insertNextVersion: async (id: number, draft: ClassDraft) => {
-            repo.versioned.push({ id, draft });
+          insertVersion: async (fields: { lineageId?: string; ownerUserId?: string }, draft: ClassDraft) => {
+            if (!fields.lineageId) {
+              if (repo.createThrows) {
+                throw repo.createThrows;
+              }
+              repo.created.push({ owner: fields.ownerUserId!, draft });
+              return 42;
+            }
+            repo.versioned.push({ id: repo.found?.id ?? 0, draft });
             if (repo.found) {
               repo.found = { ...repo.found, id: 8, version: repo.found.version + 1, playingCount: 0, draft };
             }
@@ -109,8 +128,9 @@ mock.module('../../src/repositories/custom-class-repository.js', {
             return 8;
           },
         }),
-      findWithText: async (id: number) =>
-        repo.detail ?? repo.found ?? {
+      findWithText: async (id: number) => ({
+        source: 'user',
+        ...(repo.detail ?? repo.found ?? {
           id,
           lineageId: 'l',
           ownerUserId: 'gm-1',
@@ -120,8 +140,9 @@ mock.module('../../src/repositories/custom-class-repository.js', {
           isLatest: true,
           playingCount: 0,
           draft: repo.created.at(-1)?.draft,
-        },
-      findLatestWithText: async () => repo.detail,
+        }),
+      }),
+      findLatestWithText: async () => repo.detail && { source: 'user', ...(repo.detail as object) },
       isVisibleToPartyMember: async () => false,
       listOwned: async () => [],
       deleteDraftsUpdatedBefore: async () => {},
@@ -219,7 +240,9 @@ beforeEach(() => {
     publishedToday: 0,
     versionIds: [7],
     played: new Set<number>(),
+    moderated: new Set<number>(),
     restorable: 1,
+    takenDownMidSave: false,
     writes: [],
   });
 });
@@ -231,6 +254,33 @@ test('a GM saves a complete class as their own', async () => {
   assert.equal(result.ok && result.value.id, 42);
   assert.equal(result.ok && result.value.draft.name.en, 'Bog Witch');
   assert.equal(repo.created[0].owner, 'gm-1');
+});
+
+test('saving discards the autosaved draft it completes and returns each new item’s saved key', async () => {
+  const autosaved = await service.saveDraft({ session: GM, classId: null, draft: ready() });
+  assert.ok(autosaved.ok);
+  const draft: ClassDraft = {
+    ...ready(),
+    abilities: [
+      {
+        random: false,
+        name: { en: 'Hook Hand', pl: '' },
+        text: { en: 'Catch.', pl: '' },
+        modifiers: [],
+        grantItem: 'new:hook',
+        grantPet: null,
+        table: null,
+      },
+    ],
+    items: [{ ...blankClassItem('weapon'), ref: 'new:hook', name: { en: 'Hook', pl: '' } }],
+  };
+  repo.found = null;
+
+  const result = await service.create({ session: GM, draft, draftId: autosaved.value.id });
+
+  assert.equal(result.ok, true, JSON.stringify(!result.ok && result.error));
+  assert.deepEqual(repo.drafts, []);
+  assert.deepEqual(result.ok && Object.keys(result.value.savedRefs), ['new:hook']);
 });
 
 test('a creation ban rejects new drafts and saved classes but keeps owned edits and publishing', async () => {
@@ -417,6 +467,12 @@ test('saving a class drops leftover drafts linked to it', async () => {
   assert.equal(result.ok, true);
   assert.deepEqual(repo.drafts.map((draft) => draft.classId), [null]);
 });
+test('publishing refuses a class taken down after the request was checked', async () => {
+  lineage.takenDownMidSave = true;
+  const refused = await service.setVisibility({ session: GM, id: 7, visibility: 'public' });
+  assert.equal(!refused.ok && refused.error.code, 'CLASS_TAKEN_DOWN');
+  assert.deepEqual(lineage.writes, []);
+});
 test('an owner can publish and unpublish only the latest active class', async () => {
   const published = await service.setVisibility({
     session: GM,
@@ -500,6 +556,58 @@ test('removing a played class archives it and the owner can restore it', async (
   assert.equal(removed.ok && removed.value.archived, true);
   assert.equal(restored.ok && restored.value.restored, true);
   assert.deepEqual(lineage.writes, ['pools-except:none', 'status:archived', 'status:active']);
+});
+test('saving never deletes a version the moderation record refers to', async () => {
+  repo.found = {
+    id: 7,
+    lineageId: 'l',
+    ownerUserId: 'gm-1',
+    version: 3,
+    status: 'active',
+    takenDownAt: null,
+    isLatest: true,
+    playingCount: 1,
+    draft: ready(),
+  };
+  lineage.versionIds = [5, 6, 7];
+  lineage.played = new Set([7]);
+  lineage.moderated = new Set([5]);
+
+  const saved = await service.update({ session: GM, id: 7, draft: ready() });
+
+  assert.equal(saved.ok, true);
+  assert.deepEqual(lineage.writes, ['delete:6']);
+});
+test('a save refuses a class taken down after it was loaded, and forks a reported version', async () => {
+  repo.found = {
+    id: 7,
+    lineageId: 'l',
+    ownerUserId: 'gm-1',
+    version: 1,
+    status: 'active',
+    takenDownAt: null,
+    isLatest: true,
+    playingCount: 0,
+    draft: ready(),
+  };
+  lineage.takenDownMidSave = true;
+  const refused = await service.update({ session: GM, id: 7, draft: ready() });
+  assert.equal(!refused.ok && refused.error.code, 'CLASS_TAKEN_DOWN');
+
+  lineage.takenDownMidSave = false;
+  lineage.moderated = new Set([7]);
+  const forked = await service.update({ session: GM, id: 7, draft: ready() });
+  assert.equal(forked.ok && forked.value.id, 8);
+  assert.equal(repo.updated.length, 0);
+});
+test('removing a reported but unplayed class archives it instead of deleting', async () => {
+  lineage.versionIds = [6, 7];
+  lineage.moderated = new Set([6]);
+
+  const removed = await service.remove({ session: GM, id: 7 });
+
+  assert.equal(removed.ok && removed.value.archived, true);
+  assert.deepEqual(lineage.writes, ['pools-except:none', 'status:archived']);
 });
 test('removing an unplayed class deletes every version', async () => {
   lineage.versionIds = [6, 7];

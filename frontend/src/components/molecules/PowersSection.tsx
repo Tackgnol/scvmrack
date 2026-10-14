@@ -41,10 +41,10 @@ export default function PowersSection({ showLabel = true }: PowersSectionProps) 
             uses={uses}
             isUsePending={(useIndex) => isPipPending(equipmentIndex, useIndex)}
             createPipLabel={(useIndex, used) =>
-              t(
-                'powers.usePip',
-                `${used ? 'Mark unused' : 'Mark used'}: ${item.name ?? t('powers.unknownScroll')} use ${useIndex + 1}`,
-              )
+              t(used ? 'powers.usePipUnused' : 'powers.usePipUsed', {
+                name: item.name ?? t('powers.unknownScroll'),
+                use: useIndex + 1,
+              })
             }
             onToggleUse={(useIndex) => markPipPending(equipmentIndex, useIndex)}
             pipTestId="power-pip"

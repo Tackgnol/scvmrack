@@ -367,6 +367,8 @@ model ModerationReport {
   explanation   String                 @db.VarChar(4000)
   reporterName  String?                @map("reporter_name") @db.VarChar(200)
   reporterEmail String?                @map("reporter_email") @db.VarChar(320)
+  /// The language the reporter used, so decision mail reaches them in it.
+  reporterLocale String               @default("en") @map("reporter_locale") @db.VarChar(5)
   goodFaith     Boolean                @map("good_faith")
   status        ModerationReportStatus @default(open)
   resolvedAt    DateTime?              @map("resolved_at")
@@ -405,10 +407,12 @@ model ModerationLog {
   action      String   @db.VarChar(40)
   reason      String?  @db.VarChar(4000)
   evidence    Json?
+  /// The category a takedown or removal was decided under; shown as the statement of reasons' ground.
+  ground      ModerationReportReason?
   createdAt   DateTime @default(now()) @map("created_at")
 
   class  Class?            @relation(fields: [classId], references: [id], onDelete: Restrict)
-  report ModerationReport? @relation(fields: [reportId], references: [id], onDelete: SetNull)
+  report ModerationReport? @relation(fields: [reportId], references: [id], onDelete: Restrict)
 
   @@index([classId, createdAt])
   @@index([reportId])

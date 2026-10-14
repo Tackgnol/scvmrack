@@ -1,19 +1,11 @@
 import type { ModerationReportReason, ModerationReportStatus, Prisma } from '@prisma/client';
+import { IN_FORCE_STATUSES } from '../lib/moderation-model.js';
 import prisma from '../lib/prisma.js';
-import { customClassKeyRoot } from '../lib/class-model.js';
-
-const REMOVED = '[removed by moderation]';
+import type { VersionContent } from '../lib/class-version.js';
+import { advisoryLock, lineageTxOps, snapshotLineage, writeLineageContent } from './class-version-repository.js';
 
 /** The class content a removal blanked, kept on the log so a restore can put it back. */
-export type RemovalEvidence = {
-  versions: Array<{
-    id: number;
-    name: string;
-    appendix: string | null;
-    translations: Array<{ locale: string; key: string; value: string }>;
-    modifiers: Array<{ id: number; source: string }>;
-  }>;
-};
+export type RemovalEvidence = VersionContent;
 
 export type CreateModerationReportInput = {
   classId: number;
@@ -21,20 +13,27 @@ export type CreateModerationReportInput = {
   explanation: string;
   reporterName: string | null;
   reporterEmail: string | null;
+  reporterLocale: string;
 };
 
 type Tx = Prisma.TransactionClient;
 
+const evidenceOf = (log: { evidence: Prisma.JsonValue } | null): RemovalEvidence | null => {
+  const evidence = log?.evidence as RemovalEvidence | null | undefined;
+  return evidence?.versions ? evidence : null;
+};
+
 const reportWithClass = {
-  class: { select: { id: true, name: true, lineageId: true, owner: { select: { email: true } } } },
+  class: { select: { id: true, name: true, lineageId: true, source: true, owner: { select: { email: true } } } },
 } as const;
 
 /** Report reads and writes bound to one transaction, so a service can combine them atomically. */
 function reportOps(tx: Tx) {
   return {
+    ...lineageTxOps(tx),
     /** Serializes work on `key` until the transaction ends. */
     async lock(key: string): Promise<void> {
-      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${key}))`;
+      await advisoryLock(tx, 'report', key);
     },
 
     async findReportSince(classId: number, reporterEmail: string, since: Date) {
@@ -53,13 +52,13 @@ function reportOps(tx: Tx) {
     },
 
     /** The owner's newest report in `statuses` against any version of the class's lineage. */
-    async findLatestOwnerReport(classId: number, ownerUserId: string, statuses: ModerationReportStatus[]) {
+    async findLatestOwnerReport(classId: number, ownerUserId: string, statuses: readonly ModerationReportStatus[]) {
       const cls = await tx.class.findUnique({ where: { id: classId }, select: { lineageId: true } });
       if (!cls) {
         return null;
       }
       return tx.moderationReport.findFirst({
-        where: { status: { in: statuses }, class: { lineageId: cls.lineageId, ownerUserId } },
+        where: { status: { in: [...statuses] }, class: { lineageId: cls.lineageId, ownerUserId } },
         orderBy: { resolvedAt: 'desc' },
         include: reportWithClass,
       });
@@ -76,12 +75,12 @@ function reportOps(tx: Tx) {
     /** Moves the report to `to` only while it is still in `from`; false when another decision won. */
     async claimReport(
       id: string,
-      from: ModerationReportStatus[],
+      from: readonly ModerationReportStatus[],
       to: ModerationReportStatus,
       resolvedAt?: Date
     ): Promise<boolean> {
       const claimed = await tx.moderationReport.updateMany({
-        where: { id, status: { in: from } },
+        where: { id, status: { in: [...from] } },
         data: { status: to, resolvedAt },
       });
       return claimed.count > 0;
@@ -93,6 +92,7 @@ function reportOps(tx: Tx) {
       actorUserId: string;
       action: ModerationReportStatus;
       reason: string;
+      ground?: ModerationReportReason;
       evidence?: RemovalEvidence;
     }): Promise<void> {
       await tx.moderationLog.create({ data: entry });
@@ -110,41 +110,46 @@ function reportOps(tx: Tx) {
       });
     },
 
-    async removeFromPools(lineageId: string): Promise<void> {
-      await tx.partyClassPool.deleteMany({ where: { lineageId } });
+    async clearContentRemoved(lineageId: string): Promise<void> {
+      await tx.class.updateMany({ where: { lineageId }, data: { contentRemovedAt: null } });
     },
 
-    /** Every version's authored text and modifier sources, as a removal blanks them. */
-    async snapshotContent(lineageId: string): Promise<RemovalEvidence> {
-      const versions = await tx.class.findMany({
-        where: { lineageId },
-        select: { id: true, name: true, appendix: true },
+    /** The statuses of the lineage's reports that are in `statuses`. */
+    async lineageReportStatuses(
+      lineageId: string,
+      statuses: readonly ModerationReportStatus[]
+    ): Promise<ModerationReportStatus[]> {
+      const rows = await tx.moderationReport.findMany({
+        where: { status: { in: [...statuses] }, class: { lineageId } },
+        select: { status: true },
       });
-      return {
-        versions: await Promise.all(versions.map(async (version) => ({
-          ...version,
-          translations: await tx.translation.findMany({
-            where: { key: { startsWith: `${customClassKeyRoot(version.id)}.` } },
-            select: { locale: true, key: true, value: true },
-          }),
-          modifiers: await tx.classAbilityModifier.findMany({
-            where: { classId: version.id },
-            select: { id: true, source: true },
-          }),
-        }))),
-      };
+      return rows.map((row) => row.status);
     },
 
-    /** Replaces the snapshotted versions' text with the removal marker. */
-    async blankContent(evidence: RemovalEvidence, at: Date): Promise<void> {
-      for (const version of evidence.versions) {
-        await tx.translation.updateMany({
-          where: { key: { startsWith: `${customClassKeyRoot(version.id)}.` } },
-          data: { value: REMOVED },
-        });
-        await tx.classAbilityModifier.updateMany({ where: { classId: version.id }, data: { source: REMOVED } });
-        await tx.class.update({ where: { id: version.id }, data: { appendix: REMOVED, contentRemovedAt: at } });
-      }
+    snapshotContent(lineageId: string): Promise<RemovalEvidence> {
+      return snapshotLineage(tx, lineageId);
+    },
+
+    /** Writes the blanked content over the lineage and records when it was removed. */
+    async blankContent(blanked: RemovalEvidence, at: Date): Promise<void> {
+      await writeLineageContent(tx, blanked);
+      await tx.class.updateMany({
+        where: { id: { in: blanked.versions.map((version) => version.id) } },
+        data: { contentRemovedAt: at },
+      });
+    },
+
+    /** The newest removal evidence logged for a lineage report that is still in one of `statuses`. */
+    async findLineageRemovalEvidence(
+      lineageId: string,
+      statuses: readonly ModerationReportStatus[]
+    ): Promise<RemovalEvidence | null> {
+      const log = await tx.moderationLog.findFirst({
+        where: { action: 'content_removed', report: { status: { in: [...statuses] }, class: { lineageId } } },
+        orderBy: { createdAt: 'desc' },
+        select: { evidence: true },
+      });
+      return evidenceOf(log);
     },
 
     /** The content a removal decision on this report recorded, if any. */
@@ -154,24 +159,11 @@ function reportOps(tx: Tx) {
         orderBy: { createdAt: 'desc' },
         select: { evidence: true },
       });
-      const evidence = log?.evidence as RemovalEvidence | null | undefined;
-      return evidence?.versions ? evidence : null;
+      return evidenceOf(log);
     },
 
-    async restoreContent(evidence: RemovalEvidence): Promise<void> {
-      for (const version of evidence.versions) {
-        await tx.class.update({ where: { id: version.id }, data: { name: version.name, appendix: version.appendix } });
-        for (const translation of version.translations) {
-          await tx.translation.upsert({
-            where: { locale_key: { locale: translation.locale, key: translation.key } },
-            create: translation,
-            update: { value: translation.value },
-          });
-        }
-        for (const modifier of version.modifiers) {
-          await tx.classAbilityModifier.update({ where: { id: modifier.id }, data: { source: modifier.source } });
-        }
-      }
+    restoreContent(evidence: RemovalEvidence): Promise<void> {
+      return writeLineageContent(tx, evidence);
     },
   };
 }
@@ -188,12 +180,12 @@ export const moderationRepository = {
   async findClass(id: number) {
     return prisma.class.findUnique({
       where: { id },
-      select: { id: true, name: true, source: true, visibility: true },
+      select: { id: true, name: true, source: true, visibility: true, takenDownAt: true },
     });
   },
   async listOpenReports() {
     const reports = await prisma.moderationReport.findMany({
-      where: { OR: [{ status: 'open' }, { disputes: { some: {} } }] },
+      where: { OR: [{ status: 'open' }, { status: { in: [...IN_FORCE_STATUSES] }, disputes: { some: {} } }] },
       orderBy: { createdAt: 'desc' },
       include: {
         class: {
@@ -202,6 +194,7 @@ export const moderationRepository = {
             name: true,
             lineageId: true,
             version: true,
+            source: true,
             ownerUserId: true,
             owner: { select: { email: true } },
           },
@@ -233,17 +226,36 @@ export const moderationRepository = {
         });
     return { reports, versions, removalLogs };
   },
-  async anonymizeResolvedReports(before: Date) {
+  /** The newest `limit` moderation log entries with the class they concern. */
+  async listLog(limit: number) {
+    return prisma.moderationLog.findMany({
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+      select: {
+        id: true,
+        action: true,
+        reason: true,
+        ground: true,
+        actorUserId: true,
+        reportId: true,
+        targetUserId: true,
+        createdAt: true,
+        class: { select: { id: true, name: true } },
+      },
+    });
+  },
+  /** Clears reporter details on reports in `statuses` resolved before `before`, replacing the explanation. */
+  async anonymizeReports(input: { statuses: readonly ModerationReportStatus[]; before: Date; explanation: string }) {
     return prisma.moderationReport.updateMany({
       where: {
-        status: { not: 'open' },
-        resolvedAt: { lt: before },
+        status: { in: [...input.statuses] },
+        resolvedAt: { lt: input.before },
         reporterDetailsRemovedAt: null,
       },
       data: {
         reporterName: null,
         reporterEmail: null,
-        explanation: '[reporter details removed]',
+        explanation: input.explanation,
         reporterDetailsRemovedAt: new Date(),
       },
     });

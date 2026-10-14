@@ -1,6 +1,6 @@
 import { useStableIds } from "@/hooks/useStableIds";
 import { ModifierRow } from "../ModifierRow/ModifierRow";
-import { GroupHeading, Stack } from "../classCreator.styles";
+import { GroupHeading, Stack } from "../creatorShared.styles";
 import type { ModifierListProps } from "./ModifierList.models";
 
 /** The modifiers an ability or Class Item carries, each editable and removable; nothing when empty. */

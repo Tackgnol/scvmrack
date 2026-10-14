@@ -6,10 +6,10 @@ import {
   type ClassDraft,
   type StoredClassDraft,
 } from "@/api/classes";
-import { getApiErrorCode } from "@/utils/errorUtils";
+import { getApiErrorCode, getApiErrorStatus } from "@/utils/errorUtils";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-export type DraftSaveState = "idle" | "saving" | "saved" | "offline" | "conflict" | "banned";
+export type DraftSaveState = "idle" | "saving" | "saved" | "offline" | "conflict" | "banned" | "limit" | "unsaved";
 
 type UseDraftAutosaveInput = {
   classId: number | null;
@@ -20,6 +20,11 @@ type UseDraftAutosaveInput = {
 };
 
 const RETRY_MS = 5_000;
+
+const isClientError = (error: unknown) => {
+  const status = getApiErrorStatus(error);
+  return status !== undefined && status >= 400 && status < 500;
+};
 
 type PersistAttempt =
   | { saved: StoredClassDraft; error: null }
@@ -103,6 +108,11 @@ export function useDraftAutosave({ classId, draft, revision, initialDraft, repla
       setState("conflict");
     } else if (getApiErrorCode(result.error) === "CLASS_CREATION_BANNED") {
       setState("banned");
+    } else if (getApiErrorCode(result.error) === "DRAFT_LIMIT_REACHED") {
+      setState("limit");
+    } else if (isClientError(result.error)) {
+      // Retrying a refused request (including a 429) can't succeed; the next edit tries again.
+      setState("unsaved");
     } else {
       setState("offline");
       setRetryAttempt((attempt) => attempt + 1);
@@ -179,10 +189,15 @@ export function useDraftAutosave({ classId, draft, revision, initialDraft, repla
       .finally(() => { discarding.current = false; });
   }, []);
 
-  const complete = useCallback(async () => {
+  /**
+   * Forgets the draft after a save. The server discarded `discardedId` with the save; a record
+   * the save didn't name (its first autosave was still in flight) is deleted here.
+   */
+  const complete = useCallback((discardedId?: number) => {
     completedRevision.current = latest.current.revision;
-    if (recordRef.current) {
-      await deleteClassDraft(recordRef.current.id);
+    const leftover = recordRef.current;
+    if (leftover && leftover.id !== discardedId) {
+      void deleteClassDraft(leftover.id).catch(() => undefined);
     }
     recordRef.current = null;
     setRecord(null);

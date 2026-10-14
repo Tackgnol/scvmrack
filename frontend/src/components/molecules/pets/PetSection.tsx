@@ -36,10 +36,10 @@ export default function PetSection({ showLabel = true }: PetSectionProps) {
             uses={uses}
             isUsePending={(useIndex) => isPipPending(equipmentIndex, useIndex)}
             createPipLabel={(useIndex, used) =>
-              t(
-                'pets.hpPip',
-                `${used ? 'Mark hit point empty' : 'Mark hit point filled'}: ${item.name ?? t('pets.unknown')} point ${useIndex + 1}`,
-              )
+              t(used ? 'pets.hpPipEmpty' : 'pets.hpPipFill', {
+                name: item.name ?? t('pets.unknown'),
+                point: useIndex + 1,
+              })
             }
             onToggleUse={(useIndex) => markPipPending(equipmentIndex, useIndex)}
           />

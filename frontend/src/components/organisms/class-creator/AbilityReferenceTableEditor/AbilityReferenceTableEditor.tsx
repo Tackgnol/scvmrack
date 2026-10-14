@@ -1,31 +1,20 @@
-import type { AbilityDraft, ClassDraft, ClassLanguage } from "@/api/classes";
+import type { AbilityDraft } from "@/api/classes";
 import { NumberStepper } from "@/components/atoms/NumberStepper/NumberStepper";
 import { Select } from "@/components/atoms/Select/Select";
 import { LocalizedField } from "@/components/molecules/LocalizedField/LocalizedField";
 import { useRef, useState } from "react";
 import { useStableIds } from "@/hooks/useStableIds";
 import { useTranslation } from "react-i18next";
-import { fieldId, LIMIT_TEXT } from "../classCreator.utils";
+import { fieldId, LIMIT_TEXT, TABLE_DICE } from "../creatorShared.utils";
 import { Reorderable } from "../Reorderable/Reorderable";
 import { moveEntry } from "../reorder.utils";
 import { RemoveConfirm } from "../RemoveConfirm/RemoveConfirm";
-import { SmallAction } from "../classCreator.styles";
-
-type Props = {
-  ability: AbilityDraft;
-  base: string;
-  draft: ClassDraft;
-  index: number;
-  language: ClassLanguage;
-  onChange: (recipe: (ability: AbilityDraft) => AbilityDraft) => void;
-  showMissing: (path: string) => boolean;
-  touch: (path: string) => void;
-};
+import { SmallAction } from "../creatorShared.styles";
+import type { AbilityReferenceTableEditorProps } from "./AbilityReferenceTableEditor.models";
 
 type PendingPaste = { roll: number; lines: string[] };
 
 const emptyRow = () => ({ text: { en: "", pl: "" }, itemRef: null });
-const TABLE_DICE = [2, 3, 4, 6, 8, 10, 12] as const;
 
 function pastedRows(value: string): string[] {
   const rows = value.split(/\r?\n/).map((line) => line.replace(/^\s*(?:\d+\s*(?:[.):]|-)|[-*•])\s*/, "").trim()).filter(Boolean);
@@ -33,7 +22,7 @@ function pastedRows(value: string): string[] {
 }
 
 /** Edits one ability’s optional dN reference table and its Class Item row links. */
-export function AbilityReferenceTableEditor({ ability, base, draft, index, language, onChange, showMissing, touch }: Props) {
+export function AbilityReferenceTableEditor({ ability, base, draft, index, language, onChange, showMissing, touch }: AbilityReferenceTableEditorProps) {
   const { t } = useTranslation();
   const parkedRows = useRef<NonNullable<AbilityDraft["table"]>["rows"]>([]);
   const [confirmingRemoval, setConfirmingRemoval] = useState(false);

@@ -1,6 +1,9 @@
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
-import { useEffect, useRef, useState } from "react";
+import { Alert } from "@mui/material";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { classKeys } from "@/api/classes";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSnackbar } from "@/SnackbarContext/SnackbarProvider";
 import MorkBorgModal, { ModalButton } from "@/components/molecules/modal/MorkBorgModal";
@@ -17,10 +20,11 @@ import type {
   CreatorIssue,
   CreatorStep,
   StepProps,
-} from "../classCreator.models";
-import { Hint, SmallAction } from "../classCreator.styles";
-import { focusAfterRender, STEP_TITLE_ID, STEPS } from "../classCreator.utils";
-import { isEditable, isMac, reorderableCount } from "./ClassCreator.utils";
+} from "../creatorShared.models";
+import { Hint, SmallAction } from "../creatorShared.styles";
+import { focusAfterRender, STEP_TITLE_ID, STEPS } from "../creatorShared.utils";
+import { reorderableCount } from "./ClassCreator.utils";
+import { useCreatorShortcuts } from "./useCreatorShortcuts";
 import type { ClassCreatorProps } from "./ClassCreator.models";
 import {
   BackButton,
@@ -50,54 +54,18 @@ export function ClassCreator({
 }: ClassCreatorProps) {
   const { t } = useTranslation();
   const { showError } = useSnackbar();
+  const queryClient = useQueryClient();
   const creator = useClassCreator(classId, initialDraft, initialDraftRecord);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
-  const [discarding, setDiscarding] = useState(false);
-  const discardDraft = () => {
-    setDiscarding(true);
-    void creator.draftAutosave.discard()
-      .then(() => setConfirmDiscard(false))
-      .catch(() => showError(t("creator.draftDiscardFailed", "The draft couldn't be discarded. Try again.")))
-      .finally(() => setDiscarding(false));
-  };
-  const moveRef = useRef(creator.move);
-  useEffect(() => {
-    moveRef.current = creator.move;
+  const discard = useMutation({
+    mutationFn: creator.draftAutosave.discard,
+    onSuccess: () => {
+      setConfirmDiscard(false);
+      void queryClient.invalidateQueries({ queryKey: classKeys.drafts() });
+    },
+    onError: () => showError(t("creator.draftDiscardFailed", "The draft couldn't be discarded. Try again.")),
   });
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && !isEditable(event.target)) {
-        if (creator.openAbility !== null) {
-          event.preventDefault();
-          creator.setOpenAbility(null);
-          focusAfterRender(`abilities.${creator.openAbility}`);
-        } else if (creator.openItem !== null) {
-          event.preventDefault();
-          creator.setOpenItem(null);
-          focusAfterRender(`items.${creator.openItem}`);
-        }
-        return;
-      }
-      const modifier = event.ctrlKey || event.metaKey;
-      const redo =
-        event.key.toLowerCase() === "y" ||
-        (event.key.toLowerCase() === "z" && event.shiftKey);
-      const undo = event.key.toLowerCase() === "z" && !event.shiftKey;
-      // Inside a field the browser's own undo applies.
-      if (!modifier || (!undo && !redo) || isEditable(event.target)) {
-        return;
-      }
-      event.preventDefault();
-      if (redo) {
-        creator.redo();
-      } else {
-        creator.undo();
-      }
-    };
-    window.addEventListener("keydown", onKey, { capture: true });
-    return () =>
-      window.removeEventListener("keydown", onKey, { capture: true });
-  }, [creator]);
+  useCreatorShortcuts(creator);
   useEffect(() => {
     const warn = (event: BeforeUnloadEvent) => {
       if (!creator.canUndo || creator.saved) {
@@ -116,28 +84,6 @@ export function ClassCreator({
   const previous = STEPS[index - 1];
   const next = STEPS[index + 1];
 
-  useEffect(() => {
-    // Alt+←/→ moves between steps and must never reach the browser's Back/Forward.
-    const onKey = (event: KeyboardEvent) => {
-      if (
-        !event.altKey ||
-        (event.key !== "ArrowLeft" && event.key !== "ArrowRight")
-      ) {
-        return;
-      }
-      // On macOS Option+arrow jumps words in a text field and never navigates; leave it be.
-      if (isMac() && isEditable(event.target)) {
-        return;
-      }
-      event.preventDefault();
-      if (moveRef.current(event.key === "ArrowLeft" ? -1 : 1)) {
-        focusAfterRender(null);
-      }
-    };
-    window.addEventListener("keydown", onKey, { capture: true });
-    return () =>
-      window.removeEventListener("keydown", onKey, { capture: true });
-  }, []);
 
   const goTo = (step: CreatorStep) => {
     creator.setStep(step);
@@ -206,16 +152,20 @@ export function ClassCreator({
                 {creator.draftAutosave.state === "saving" &&
                   t("creator.draftSaving", "Saving…")}
                 {creator.draftAutosave.state === "saved" &&
-                  t(
-                    "creator.draftSaved",
-                    "Draft saved · kept 90 days after your last edit",
-                  )}
+                  creator.draftAutosave.record &&
+                  t("creator.draftSaved", "Draft saved · kept until {{date}} unless you edit it again", {
+                    date: new Date(creator.draftAutosave.record.expiresAt).toLocaleDateString(),
+                  })}
                 {creator.draftAutosave.state === "offline" &&
                   t("creator.draftOffline", "Offline, will retry")}
                 {creator.draftAutosave.state === "conflict" &&
                   t("creator.draftConflict", "Draft changed elsewhere")}
                 {creator.draftAutosave.state === "banned" &&
                   t("creator.draftBanned", "New class creation restricted")}
+                {creator.draftAutosave.state === "limit" &&
+                  t("creator.draftLimit", "Not saved as a draft: you already keep 3 unfinished new classes. Save this class or discard a draft.")}
+                {creator.draftAutosave.state === "unsaved" &&
+                  t("creator.draftUnsaved", "Draft not saved. Your next edit tries again.")}
                 {creator.draftAutosave.record &&
                   creator.draftAutosave.state !== "conflict" && (
                     <DiscardDraft
@@ -258,6 +208,9 @@ export function ClassCreator({
               </div>
             </div>
           </ConflictPanel>
+        )}
+        {versionWarning && creator.step !== "review" && (
+          <Alert severity="info">{versionWarning}</Alert>
         )}
         <Paper>
           <Hint>{t(`creator.steps.${creator.step}.hint`)}</Hint>
@@ -360,7 +313,7 @@ export function ClassCreator({
             <ModalButton variant="secondary" onClick={() => setConfirmDiscard(false)}>
               {t("actions.cancel", "Cancel")}
             </ModalButton>
-            <ModalButton variant="danger" disabled={discarding} onClick={discardDraft}>
+            <ModalButton variant="danger" disabled={discard.isPending} onClick={() => discard.mutate()}>
               {t("creator.draftDiscard", "Discard")}
             </ModalButton>
           </>

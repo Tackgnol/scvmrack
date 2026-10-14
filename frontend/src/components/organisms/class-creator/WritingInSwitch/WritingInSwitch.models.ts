@@ -1,5 +1,5 @@
 import type { ClassLanguage } from "@/api/classes";
-import type { CreatorIssue, CreatorStep } from "../classCreator.models";
+import type { CreatorIssue, CreatorStep } from "../creatorShared.models";
 
 export type WritingInSwitchProps = {
   languages: ClassLanguage[];

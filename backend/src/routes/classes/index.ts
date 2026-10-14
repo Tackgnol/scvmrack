@@ -8,6 +8,7 @@ import {
   ClassIdParamsSchema,
   ClassLocaleQuerySchema,
   ClassWithDraftSchema,
+  SavedClassSchema,
   ClassVisibilityResponseSchema,
   DraftCreateBodySchema,
   DraftIdParamsSchema,
@@ -23,7 +24,12 @@ import { sendServiceError } from '../../errors.js';
 import { createCustomClassService } from '../../services/custom-class-service.js';
 import { createModerationService } from '../../services/moderation-service.js';
 import { createCreationBanService } from '../../services/creation-ban-service.js';
-import { limitMax } from '../../lib/rate-limits.js';
+import { limitMax, reportLimit } from '../../lib/rate-limits.js';
+import {
+  CreationBanStatusSchema,
+  DisputeBodySchema,
+  ModerationReportResponseSchema,
+} from '../../schemas/moderation.js';
 
 const saveLimit = {
   rateLimit: {
@@ -41,16 +47,12 @@ const draftSaveLimit = {
 
 const classes: FastifyPluginAsync = async (fastify): Promise<void> => {
   const app = fastify.withTypeProvider<JsonSchemaToTsProvider>();
-  const service = (request: {
-    log: Parameters<typeof createCustomClassService>[0];
-  }) => createCustomClassService(request.log);
-
   app.get('/creation-ban', {
     schema: {
       description: 'Read your Custom Class creation restriction',
       tags: ['classes'],
       response: {
-        200: { type: 'object', required: ['banned'], properties: { banned: { type: 'boolean' } } },
+        200: CreationBanStatusSchema,
         401: ErrorSchema,
         500: ErrorSchema,
       },
@@ -80,7 +82,7 @@ const classes: FastifyPluginAsync = async (fastify): Promise<void> => {
       },
     },
     async (request, reply) => {
-      const result = await service(request).listMine({
+      const result = await createCustomClassService(request.log).listMine({
         session: request.appSession,
         locale: request.query.locale ?? 'en',
       });
@@ -106,13 +108,13 @@ const classes: FastifyPluginAsync = async (fastify): Promise<void> => {
       },
     },
     async (request, reply) => {
-      const result = await service(request).listDrafts({
+      const result = await createCustomClassService(request.log).listDrafts({
         session: request.appSession,
       });
       if (!result.ok) {
         return sendServiceError(reply, request, result.error);
       }
-      return reply.send(result.value as never);
+      return reply.send(result.value);
     }
   );
 
@@ -137,15 +139,15 @@ const classes: FastifyPluginAsync = async (fastify): Promise<void> => {
       },
     },
     async (request, reply) => {
-      const result = await service(request).saveDraft({
+      const result = await createCustomClassService(request.log).saveDraft({
         session: request.appSession,
         classId: request.body.classId ?? null,
-        draft: request.body.draft as ClassDraft,
+        draft: request.body.draft,
       });
       if (!result.ok) {
         return sendServiceError(reply, request, result.error);
       }
-      return reply.code(201).send(result.value as never);
+      return reply.code(201).send(result.value);
     }
   );
 
@@ -167,14 +169,14 @@ const classes: FastifyPluginAsync = async (fastify): Promise<void> => {
       },
     },
     async (request, reply) => {
-      const result = await service(request).getDraft({
+      const result = await createCustomClassService(request.log).getDraft({
         session: request.appSession,
         id: request.params.draftId,
       });
       if (!result.ok) {
         return sendServiceError(reply, request, result.error);
       }
-      return reply.send(result.value as never);
+      return reply.send(result.value);
     }
   );
 
@@ -200,18 +202,18 @@ const classes: FastifyPluginAsync = async (fastify): Promise<void> => {
       },
     },
     async (request, reply) => {
-      const result = await service(request).saveDraft({
+      const result = await createCustomClassService(request.log).saveDraft({
         session: request.appSession,
         id: request.params.draftId,
         classId: null,
-        draft: request.body.draft as ClassDraft,
+        draft: request.body.draft,
         revision: request.body.revision,
         force: request.body.force,
       });
       if (!result.ok) {
         return sendServiceError(reply, request, result.error);
       }
-      return reply.send(result.value as never);
+      return reply.send(result.value);
     }
   );
 
@@ -233,7 +235,7 @@ const classes: FastifyPluginAsync = async (fastify): Promise<void> => {
       },
     },
     async (request, reply) => {
-      const result = await service(request).deleteDraft({
+      const result = await createCustomClassService(request.log).deleteDraft({
         session: request.appSession,
         id: request.params.draftId,
       });
@@ -253,7 +255,7 @@ const classes: FastifyPluginAsync = async (fastify): Promise<void> => {
         tags: ['classes'],
         body: ClassDraftBodySchema,
         response: {
-          201: ClassWithDraftSchema,
+          201: SavedClassSchema,
           400: ErrorSchema,
           401: ErrorSchema,
           409: ErrorSchema,
@@ -263,14 +265,15 @@ const classes: FastifyPluginAsync = async (fastify): Promise<void> => {
       },
     },
     async (request, reply) => {
-      const result = await service(request).create({
+      const result = await createCustomClassService(request.log).create({
         session: request.appSession,
-        draft: request.body.draft as ClassDraft,
+        draft: request.body.draft,
+        draftId: request.body.draftId,
       });
       if (!result.ok) {
         return sendServiceError(reply, request, result.error);
       }
-      return reply.code(201).send(result.value as never);
+      return reply.code(201).send(result.value);
     }
   );
 
@@ -299,9 +302,9 @@ const classes: FastifyPluginAsync = async (fastify): Promise<void> => {
       },
     },
     async (request, reply) => {
-      const result = await service(request).testRoll({
+      const result = await createCustomClassService(request.log).testRoll({
         session: request.appSession,
-        draft: request.body.draft as ClassDraft,
+        draft: request.body.draft,
         language: request.body.language,
         locale: request.query.locale ?? 'en',
       });
@@ -325,26 +328,21 @@ const classes: FastifyPluginAsync = async (fastify): Promise<void> => {
       },
     },
     async (request, reply) => {
-      const result = await service(request).getDetail({ session: request.appSession, id: request.params.id });
+      const result = await createCustomClassService(request.log).getDetail({ session: request.appSession, id: request.params.id });
       if (!result.ok) {
         return sendServiceError(reply, request, result.error);
       }
-      return reply.send(result.value as never);
+      return reply.send(result.value);
     }
   );
 app.post(
     '/:id/disputes',
     {
-      config: saveLimit,
+      config: reportLimit,
       schema: {
         params: ClassIdParamsSchema,
-        body: {
-          type: 'object',
-          additionalProperties: false,
-          required: ['text'],
-          properties: { text: { type: 'string', minLength: 1, maxLength: 4000 } },
-        },
-        response: { 201: { type: 'object', required: ['id'], properties: { id: { type: 'string', format: 'uuid' } } }, 401: ErrorSchema, 404: ErrorSchema, 429: ErrorSchema, 500: ErrorSchema },
+        body: DisputeBodySchema,
+        response: { 201: ModerationReportResponseSchema, 401: ErrorSchema, 404: ErrorSchema, 429: ErrorSchema, 500: ErrorSchema },
       },
     },
     async (request, reply) => {
@@ -382,7 +380,7 @@ app.post(
       },
     },
     async (request, reply) => {
-      const result = await service(request).setVisibility({
+      const result = await createCustomClassService(request.log).setVisibility({
         session: request.appSession,
         id: request.params.id,
         visibility: 'public',
@@ -415,7 +413,7 @@ app.post(
       },
     },
     async (request, reply) => {
-      const result = await service(request).setVisibility({
+      const result = await createCustomClassService(request.log).setVisibility({
         session: request.appSession,
         id: request.params.id,
         visibility: 'private',
@@ -444,7 +442,7 @@ app.post(
       },
     },
     async (request, reply) => {
-      const result = await service(request).get({
+      const result = await createCustomClassService(request.log).get({
         session: request.appSession,
         id: request.params.id,
       });
@@ -452,7 +450,7 @@ app.post(
         return sendServiceError(reply, request, result.error);
       }
       // The stored draft passed the same schema on save; its dice are plain numbers to TypeScript.
-      return reply.send(result.value as never);
+      return reply.send(result.value);
     }
   );
 
@@ -467,7 +465,7 @@ app.post(
         params: ClassIdParamsSchema,
         body: ClassDraftBodySchema,
         response: {
-          200: ClassWithDraftSchema,
+          200: SavedClassSchema,
           400: ErrorSchema,
           401: ErrorSchema,
           404: ErrorSchema,
@@ -478,15 +476,16 @@ app.post(
       },
     },
     async (request, reply) => {
-      const result = await service(request).update({
+      const result = await createCustomClassService(request.log).update({
         session: request.appSession,
         id: request.params.id,
-        draft: request.body.draft as ClassDraft,
+        draft: request.body.draft,
+        draftId: request.body.draftId,
       });
       if (!result.ok) {
         return sendServiceError(reply, request, result.error);
       }
-      return reply.send(result.value as never);
+      return reply.send(result.value);
     }
   );
   // DELETE /api/classes/:id - remove an unused class or archive a played lineage
@@ -515,7 +514,7 @@ app.post(
       },
     },
     async (request, reply) => {
-      const result = await service(request).remove({
+      const result = await createCustomClassService(request.log).remove({
         session: request.appSession,
         id: request.params.id,
       });
@@ -550,7 +549,7 @@ app.post(
       },
     },
     async (request, reply) => {
-      const result = await service(request).restore({
+      const result = await createCustomClassService(request.log).restore({
         session: request.appSession,
         id: request.params.id,
       });

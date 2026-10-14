@@ -2,16 +2,16 @@ import { CLASS_ITEM_TYPES, type ClassItemType } from "@/api/classes";
 import type { ItemSearchHit } from "@/hooks/useEquipmentSearch";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { CatalogGrantPicker } from "./CatalogGrantPicker";
-import { LinkLine, SmallAction, Stack } from "../classCreator.styles";
+import { CatalogGrantPicker } from "../CatalogGrantPicker/CatalogGrantPicker";
+import { LinkLine, SmallAction, Stack } from "../creatorShared.styles";
 import {
   fieldId,
   granterOf,
   itemStamp,
   randomPoolSize,
   slotFor,
-} from "../classCreator.utils";
-import type { GrantSlot } from "../classCreator.models";
+} from "../creatorShared.utils";
+import type { GrantSlot } from "../creatorShared.models";
 import type { AbilityGrantsProps } from "./AbilityGrants.models";
 import { ForgeRow } from "./AbilityGrants.styles";
 

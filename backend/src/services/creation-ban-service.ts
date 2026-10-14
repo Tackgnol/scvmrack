@@ -1,10 +1,8 @@
 import { apiError, notFound, unauthorized } from '../errors.js';
-import { isModerationAdmin } from '../lib/moderation-admin.js';
+import { hiddenAdminResource, isModerationAdmin, moderatorId, reasonRequired } from './moderation-admin.js';
 import { creationBanRepository } from '../repositories/creation-ban-repository.js';
 import { fail, ok, unexpected, type ServiceLogger } from './result.js';
 import { sessionUserId, type AppSession } from './session.js';
-
-const hidden = () => fail(notFound('MODERATION_NOT_FOUND', 'Moderation resource not found'));
 
 /** Own status is readable by the GM; decisions and history require the moderation allowlist. */
 export function createCreationBanService(log: ServiceLogger) {
@@ -23,7 +21,7 @@ export function createCreationBanService(log: ServiceLogger) {
     },
     async inspect(input: { session: AppSession; userId: string }) {
       if (!isModerationAdmin(input.session)) {
-        return hidden();
+        return hiddenAdminResource();
       }
       try {
         const user = await creationBanRepository.findUser(input.userId);
@@ -50,16 +48,25 @@ export function createCreationBanService(log: ServiceLogger) {
       }
     },
     async ban(input: { session: AppSession; userId: string; reason: string }) {
-      const actorUserId = sessionUserId(input.session);
-      if (!isModerationAdmin(input.session) || !actorUserId) {
-        return hidden();
+      const actorUserId = moderatorId(input.session);
+      if (!actorUserId) {
+        return hiddenAdminResource();
       }
       const reason = input.reason.trim();
       if (!reason) {
-        return fail(apiError(400, 'MODERATION_REASON_REQUIRED', 'A reason is required'));
+        return fail(reasonRequired());
       }
       try {
-        const result = await creationBanRepository.ban(input.userId, actorUserId, reason);
+        const result = await creationBanRepository.transaction(async (ops) => {
+          if (!(await ops.userExists(input.userId))) {
+            return 'missing' as const;
+          }
+          if (!(await ops.addBan(input.userId, actorUserId, reason))) {
+            return 'already' as const;
+          }
+          await ops.appendLog({ targetUserId: input.userId, actorUserId, action: 'class_creation_banned', reason });
+          return 'banned' as const;
+        });
         if (result === 'missing') {
           return fail(notFound('USER_NOT_FOUND', 'User not found'));
         }
@@ -72,16 +79,22 @@ export function createCreationBanService(log: ServiceLogger) {
       }
     },
     async unban(input: { session: AppSession; userId: string; reason: string }) {
-      const actorUserId = sessionUserId(input.session);
-      if (!isModerationAdmin(input.session) || !actorUserId) {
-        return hidden();
+      const actorUserId = moderatorId(input.session);
+      if (!actorUserId) {
+        return hiddenAdminResource();
       }
       const reason = input.reason.trim();
       if (!reason) {
-        return fail(apiError(400, 'MODERATION_REASON_REQUIRED', 'A reason is required'));
+        return fail(reasonRequired());
       }
       try {
-        const removed = await creationBanRepository.unban(input.userId, actorUserId, reason);
+        const removed = await creationBanRepository.transaction(async (ops) => {
+          if (!(await ops.removeBan(input.userId))) {
+            return false;
+          }
+          await ops.appendLog({ targetUserId: input.userId, actorUserId, action: 'class_creation_unbanned', reason });
+          return true;
+        });
         return removed ? ok({ banned: false }) : fail(notFound('CLASS_CREATION_BAN_NOT_FOUND', 'No active creation ban found'));
       } catch (err) {
         return fail(unexpected(log, err, 'CREATION_UNBAN_SAVE_FAILED', 'Failed to lift class creation ban'));

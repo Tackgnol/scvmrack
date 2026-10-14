@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { STEPS } from "../classCreator.utils";
+import { STEPS } from "../creatorShared.utils";
 import type { CreatorRailProps } from "./CreatorRail.models";
 import { Rail, RailWrap, Status, StepButton } from "./CreatorRail.styles";
 

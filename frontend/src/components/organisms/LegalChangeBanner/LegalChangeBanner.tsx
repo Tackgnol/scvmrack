@@ -1,3 +1,4 @@
+import { getApiLocale } from "@/hooks/utils";
 import { Alert, Box, Button, Typography } from '@mui/material';
 import { Link } from '@tanstack/react-router';
 import { useState } from 'react';
@@ -21,7 +22,7 @@ export function LegalChangeBanner({ notice }: LegalChangeBannerProps) {
     return null;
   }
 
-  const locale = i18n.language.startsWith('pl') ? 'pl' : 'en';
+  const locale = getApiLocale(i18n.language);
   const formatDate = (date: string) => new Intl.DateTimeFormat(locale === 'pl' ? 'pl-PL' : 'en-GB', {
     day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC',
   }).format(new Date(`${date}T00:00:00Z`));

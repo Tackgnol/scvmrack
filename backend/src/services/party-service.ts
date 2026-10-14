@@ -1,3 +1,4 @@
+import { translatedClassTexts } from '../lib/class-translations.js';
 import crypto from 'node:crypto';
 import {
   partyRepository,
@@ -52,7 +53,8 @@ export type PartyMemberPayload = {
   maxHp: number;
   joinedAt: Date | null;
   owned: boolean;
-  olderRules: boolean;
+  /** Set when the scvm plays an older version than its lineage's newest one. */
+  olderRules: { version: number; latestVersion: number } | null;
 };
 
 export type PartyManageViewPayload = {
@@ -86,8 +88,9 @@ export type PartyInviteSummaryPayload = {
 function toMemberPayload(
   member: PartyMemberRow,
   session: AppSession,
-  olderClassIds: ReadonlySet<number>
+  classVersions: ReadonlyMap<number, { version: number; latestVersion: number }>
 ): PartyMemberPayload {
+  const versions = member.classId === null ? undefined : classVersions.get(member.classId);
   return {
     characterId: member.id,
     name: member.name,
@@ -96,7 +99,7 @@ function toMemberPayload(
     maxHp: member.maxHp,
     joinedAt: member.joinedAt,
     owned: ownsCharacter(session, member),
-    olderRules: member.classId !== null && olderClassIds.has(member.classId),
+    olderRules: versions && versions.version < versions.latestVersion ? versions : null,
   };
 }
 
@@ -104,13 +107,13 @@ async function memberPayloads(
   party: PartyWithMembers,
   session: AppSession
 ): Promise<PartyMemberPayload[]> {
-  const olderClassIds = await partyRepository.findOlderClassIds(
+  const classVersions = await partyRepository.findClassVersions(
     party.members.flatMap((member) =>
       member.classId === null ? [] : [member.classId]
     )
   );
   return party.members.map((member) =>
-    toMemberPayload(member, session, olderClassIds)
+    toMemberPayload(member, session, classVersions)
   );
 }
 
@@ -193,11 +196,13 @@ export function createPartyService(
     if (!pool) {
       throw new Error(`Party ${partyId} vanished while loading its class pool`);
     }
-    const rows = await classPoolRepository.findCatalogRows(
-      pool.ownerUserId,
-      pool.poolLineageIds,
-      locale
-    );
+    const sources = await classPoolRepository.findCatalogRows(pool.ownerUserId, pool.poolLineageIds);
+    const texts = await translatedClassTexts(locale, sources);
+    const rows = sources.map(({ nameKey: _nameKey, descriptionKey: _descriptionKey, appendix, ...row }, i) => ({
+      ...row,
+      name: texts[i].name,
+      blurb: texts[i].description ?? appendix,
+    }));
     return buildClassPoolView({
       rows,
       poolLineageIds: pool.poolLineageIds,

@@ -1,13 +1,8 @@
 import { Button } from "@mui/material";
 import { gettingBetterStyles as styles } from "./GettingBetterPanel.styles";
+import type { SectionButtonProps } from "./SectionButton.models";
 
-type Props = {
-  label: string;
-  onClick: () => void;
-  disabled: boolean;
-};
-
-export function SectionButton({ label, onClick, disabled }: Props) {
+export function SectionButton({ label, onClick, disabled }: SectionButtonProps) {
   return (
     <Button
       size="small"

@@ -75,7 +75,9 @@
       "binding": "Binding",
       "openInScvmrack": "Open in scvmrack",
       "openingInScvmrack": "Opening",
-      "openInScvmrackFailed": "Could not open in scvmrack"
+      "openInScvmrackFailed": "Could not open in scvmrack",
+      "bindMetadataWarning": "Saved binding, but the token label did not update.",
+      "forgeFailed": "Could not open the forge. Allow popups and try again."
     },
     "gm": {
       "region": "GM view",
@@ -119,7 +121,15 @@
       "mods": "Mods",
       "showMods": "Show mods {{count}}",
       "hideMods": "Hide mods {{count}}",
-      "noActiveModifiers": "No active modifiers."
+      "noActiveModifiers": "No active modifiers.",
+      "bindSelectedToken": "Bind selected token",
+      "missingCard": "Scvm not found {{id}}",
+      "missingCardName": "Missing scvm {{id}}",
+      "removeFromRoster": "Remove from roster",
+      "removingFromRoster": "Removing",
+      "roomPoolList": "Classes this room rolls: {{classes}}.",
+      "roomPoolClassless": "Classless only",
+      "roomPoolReadOnly": "Only the party's owner can change them."
     },
     "card": {
       "missingId": "Missing scvm id",
@@ -488,7 +498,8 @@
     "advancedTooltip": "Advanced modifier options",
     "shiftNegative": "Curses shift",
     "shiftPositive": "Blessings shift",
-    "shiftNeutral": "Fates shift"
+    "shiftNeutral": "Fates shift",
+    "removeModifier": "Remove modifier"
   },
   "attributes": {
     "agility": "Agility",
@@ -643,7 +654,8 @@
     "wretch": "wretch",
     "classless": "Classless",
     "classContentRemoved": "Some of this class's text was removed by moderation.",
-    "noSpecialAbilities": "No special abilities"
+    "noSpecialAbilities": "No special abilities",
+    "classWrittenIn": "This class is written in {{language}}."
   },
   "traits": {
     "title": "Traits & Afflictions",
@@ -669,7 +681,8 @@
   "footer": {
     "worldEnding": "The World Is Ending",
     "legalNotice": "MÖRK BORG is copyright Ockult Örtmästare Games and Stockholm Kartell. Scvmrack is an independent production by Adam Kościelniak, built as part of the <rpgtoolsLink>rpgtools.co</rpgtoolsLink> suite, and is not affiliated with Ockult Örtmästare Games or Stockholm Kartell. It is published under the MÖRK BORG Third Party License. <privacyLink>Review your privacy settings</privacyLink>",
-    "translationCredit": "Official Polish translation provided by Nerd Sirens"
+    "translationCredit": "Official Polish translation provided by Nerd Sirens",
+    "terms": "Terms"
   },
   "actions": {
     "print": "Print Sheet",
@@ -681,7 +694,10 @@
     "killConfirmDontAskAgain": "Don't show this again",
     "testModal": "Test Modal",
     "cancel": "Cancel",
-    "retry": "Retry"
+    "retry": "Retry",
+    "back": "Back",
+    "killConfirmPartyDesc": "The replacement will crawl back into this party before the old body is removed.",
+    "loading": "Loading..."
   },
   "gettingBetter": {
     "title": "Get better",
@@ -744,12 +760,16 @@
   "powers": {
     "title": "Powers",
     "noScrollsOrPowers": "No scrolls or powers",
-    "unknownScroll": "Unknown Scroll"
+    "unknownScroll": "Unknown Scroll",
+    "usePipUsed": "Mark used: {{name}} use {{use}}",
+    "usePipUnused": "Mark unused: {{name}} use {{use}}"
   },
   "pets": {
     "title": "Pets",
     "actionDie": "Action Die",
-    "unknown": "Unknown Pet"
+    "unknown": "Unknown Pet",
+    "hpPipFill": "Mark hit point filled: {{name}} point {{point}}",
+    "hpPipEmpty": "Mark hit point empty: {{name}} point {{point}}"
   },
   "consumables": {
     "title": "Consumables",
@@ -855,7 +875,13 @@
     "apply": "Apply",
     "loading": "Loading...",
     "increaseHitPoints": "Increase hit points",
-    "decreaseHitPoints": "Decrease hit points"
+    "decreaseHitPoints": "Decrease hit points",
+    "decreaseArmorTier": "Decrease armor tier",
+    "decreaseStat": "Decrease {{stat}}",
+    "increaseArmorTier": "Increase armor tier",
+    "increaseStat": "Increase {{stat}}",
+    "openMenu": "Open menu",
+    "retry": "Retry"
   },
   "nav": {
     "start": "Start",
@@ -1421,7 +1447,10 @@
       "silverDice": "Silver dice",
       "silverSides": "Silver sides",
       "silverMultiplier": "Silver multiplier",
-      "silverHint": "Silver is the dice total times this. The book default is 2d6 × 10."
+      "silverHint": "Silver is the dice total times this. The book default is 2d6 × 10.",
+      "bookDefault": "Book default",
+      "change": "Change",
+      "done": "Done"
     },
     "origins": {
       "add": "Add origin",
@@ -1464,7 +1493,9 @@
       "saved": "Saved",
       "forged": "Forged",
       "forgedNote": "“{{name}}” is saved to your classes. Any edit here re-arms Save.",
-      "goToClasses": "Go to my classes"
+      "goToClasses": "Go to my classes",
+      "versionWarning_one": "{{count}} scvm plays version {{version}}. Saving creates version {{nextVersion}}: it keeps version {{version}}; new rolls use version {{nextVersion}}.",
+      "versionWarning_other": "{{count}} scvm play version {{version}}. Saving creates version {{nextVersion}}: they keep version {{version}}; new rolls use version {{nextVersion}}."
     },
     "issues": {
       "missingName": "{{language}} missing: class name",
@@ -1522,7 +1553,16 @@
       },
       "removeGranter": "Only this ability grants {{items}}. Remove the item too, or keep it waiting for another ability?",
       "removeBoth": "Remove both",
-      "keepItem": "Keep the item, ungranted"
+      "keepItem": "Keep the item, ungranted",
+      "addTable": "Add reference table",
+      "pasteTableRows": "Replace {{count}} table rows? Paste the other language separately.",
+      "referenceTable": "Reference table",
+      "removeTable": "Remove reference table",
+      "removeTableWithItems": "This table gives {{items}}. Remove the table and its links?",
+      "replaceRows": "Replace rows",
+      "tableDie": "Table die",
+      "tableHint": "The row number is the die result.",
+      "tableRow": "Result {{roll}}"
     },
     "items": {
       "question": "Does this class carry its own gear or beasts?",
@@ -1629,7 +1669,32 @@
       "keepIt": "Keep it"
     },
     "cancel": "Cancel",
-    "confirmRemoval": "Confirm removal"
+    "confirmRemoval": "Confirm removal",
+    "archivedLocked": "This class is archived. Restore it on My classes before changing it.",
+    "backToClasses": "Back to My classes",
+    "discardDraft": "Discard unsaved changes",
+    "discardDraftShort": "Discard",
+    "discardFailed": "The changes weren't discarded. Try again.",
+    "draftDiscard": "Discard",
+    "draftLoadFailed": "This draft wouldn't load.",
+    "draftOffline": "Offline, will retry",
+    "draftSaved": "Draft saved · kept until {{date}} unless you edit it again",
+    "draftSaving": "Saving…",
+    "history": {
+      "label": "Edit history",
+      "redo": "Redo",
+      "undo": "Undo"
+    },
+    "referenceTable": {
+      "rolled": "Roll {{roll}}: {{text}}"
+    },
+    "resumeDraft": "Resume",
+    "takenDownLocked": "This class was taken down by moderation and can't be changed. You can appeal from My classes.",
+    "titleResume": "Resume a class",
+    "unsavedChanges": "Unsaved changes from {{date}}. Resume or discard?",
+    "draftLimit": "Not saved as a draft: you already keep 3 unfinished new classes. Save this class or discard a draft.",
+    "draftUnsaved": "Draft not saved. Your next edit tries again.",
+    "takedownReason": "Reason:"
   },
   "classes": {
     "unsavedEdits": "Unsaved edits to a saved class",
@@ -1666,7 +1731,27 @@
     "disputeText": "Why should we review this decision?",
     "submitDispute": "Send dispute",
     "appealEmail": "Or email your appeal to",
-    "appealEmailLink": "Appeal by email"
+    "appealEmailLink": "Appeal by email",
+    "archived": "Archived",
+    "discardFailed": "The draft wasn't discarded. Try again.",
+    "disputeFailed": "The dispute wasn't sent. Try again.",
+    "disputeSent": "Dispute sent. A person will review it and answer by email.",
+    "draft": "Unfinished draft",
+    "expiresIn_one": "Expires in {{count}} day",
+    "expiresIn_other": "Expires in {{count}} days",
+    "lastEdited": "Last edited {{date}}",
+    "moderationTerms": "How moderation works",
+    "publishFailed": "The class wasn't published. Try again.",
+    "removeFailed": "The class wasn't removed. Try again.",
+    "restore": "Restore",
+    "restoreFailed": "The class wasn't restored. Try again.",
+    "resume": "Resume",
+    "showActive": "Show active classes",
+    "showArchived": "Archived ({{count}})",
+    "unpublishFailed": "The class is still public. Try again.",
+    "untitled": "Untitled class",
+    "draftLimit": "You keep 3 unfinished new classes. Finish or discard one to forge another.",
+    "loadFailed": "Your classes failed to load."
   },
   "report": {
     "thisClass": "Report this class",
@@ -1687,8 +1772,8 @@
     "goodFaith": "I am submitting this report in good faith.",
     "submit": "Submit report",
     "sending": "Sending...",
-    "sent": "Your report was recorded for human review. You can challenge the outcome at scvmrack-appeal@rpgtools.co.",
-    "appeal": "You may challenge the outcome by emailing scvmrack-appeal@rpgtools.co.",
+    "sent": "Your report was recorded for human review. You can challenge the outcome at {{appealAddress}}.",
+    "appeal": "You may challenge the outcome by emailing {{appealAddress}}.",
     "reasons": {
       "copyright": "Copyright — I own this and do not want it on Scvm Rack",
       "child_sexual_abuse_material": "Child sexual abuse material",
@@ -1698,7 +1783,9 @@
       "abusive_or_hateful": "Abusive or hateful content",
       "owner_removal": "I no longer want this shown",
       "other": "Other"
-    }
+    },
+    "classIdHint": "The number or link of the class page, such as /classes/12.",
+    "submitFailed": "Your report could not be submitted."
   },
   "moderation": {
     "classVersions": "Class versions",
@@ -1725,7 +1812,37 @@
     "liftCreationBan": "Lift creation ban",
     "creationBanHistory": "Ban history",
     "noBanHistory": "No ban decisions yet.",
-    "byActor": "By {{actor}}"
+    "byActor": "By {{actor}}",
+    "anonymous": "Anonymous",
+    "authority": "Needs authority report",
+    "decisionFailed": "The decision didn't save. Try again.",
+    "decisionReason": "Decision reason",
+    "dismiss": "Dismiss",
+    "disputes": "Author disputes",
+    "empty": "No open reports.",
+    "ground": "Ground for the statement of reasons",
+    "hide": "Hide",
+    "intro": "Open reports require a human decision.",
+    "log": {
+      "empty": "No decisions yet.",
+      "loadFailed": "The moderation log didn't load.",
+      "title": "Moderation log",
+      "actions": {
+        "dismissed": "Dismissed",
+        "taken_down": "Taken down",
+        "content_removed": "Content removed",
+        "restored": "Restored",
+        "class_creation_banned": "Class creation banned",
+        "class_creation_unbanned": "Class creation ban lifted"
+      }
+    },
+    "removeContent": "Remove content",
+    "restore": "Restore",
+    "takeDown": "Take down",
+    "title": "Moderation",
+    "confirmHideBody": "“{{name}}” stops being offered right away and leaves every party pool. Existing characters keep it.",
+    "confirmHideTitle": "Hide this class?",
+    "loadFailed": "You cannot load moderation reports."
   },
   "party": {
     "pill": "Party",
@@ -1763,8 +1880,6 @@
     "scrollPrev": "Previous scvm",
     "scrollNext": "Next scvm",
     "guildTitle": "Guild",
-    "olderRules": "Older rules",
-    "olderRulesHint": "Rolled with an older version of this class; the pool now offers a newer one.",
     "guildInvite": "Invite guild members",
     "guildWhat": "What are guilds?",
     "guildComingSoon": "Guild invites are coming soon — summon a fellow guild member straight into your warband.",
@@ -1772,7 +1887,19 @@
     "alreadyInThisWarband": "{{name}} is already in this warband",
     "goToSheet": "Go to sheet",
     "leaveParty": "Leave party",
-    "leaving": "Leaving..."
+    "leaving": "Leaving...",
+    "alreadyInParty": "Already in a party",
+    "changedFields": "Updated: {{fields}}",
+    "defaultName": "Untitled Warband",
+    "invalidInvite": "This invite link is no longer valid.",
+    "joinBody": "Pick a scvm from this session or forge a fresh one for the table.",
+    "joinCta": "Join party",
+    "joinTitle": "Join the warband",
+    "joining": "Joining...",
+    "loadingName": "Warband",
+    "preparingSession": "Preparing your session…",
+    "readyToJoin": "Ready to join",
+    "olderRulesVersions": "Rolled with v{{version}} · class now v{{latestVersion}}"
   },
   "owlbear": {
     "title": "Owlbear Rodeo",

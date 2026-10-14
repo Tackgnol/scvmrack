@@ -35,6 +35,13 @@ const fakeCharacterData = {
   equippedArmor: null,
 };
 
+mock.module('../../src/lib/class-translations.js', {
+  namedExports: {
+    // The rows these tests use already carry their text.
+    translatedClassTexts: async (_locale: string, rows: Array<{ name: string; description?: string | null; blurb?: string | null }>) =>
+      rows.map((row) => ({ name: row.name, description: row.description ?? row.blurb ?? null })),
+  },
+});
 mock.module('../../src/lib/generate-character.js', {
   namedExports: {
     buildCharacterData: async (classId: number | null, rollerFor: unknown, options: unknown) => {

@@ -1,7 +1,7 @@
 import { render } from 'vitest-browser-react';
 import { describe, expect, it, vi } from 'vitest';
 import { page, userEvent } from 'vitest/browser';
-import { CatalogGrantPicker } from '@/components/organisms/class-creator/AbilityGrants/CatalogGrantPicker';
+import { CatalogGrantPicker } from '@/components/organisms/class-creator/CatalogGrantPicker/CatalogGrantPicker';
 import * as itemSearch from '@/hooks/useEquipmentSearch';
 import BrowserTestProvider from '../BrowserTestProvider';
 

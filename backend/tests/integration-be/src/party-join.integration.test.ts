@@ -772,9 +772,9 @@ test('a moderator bans new class creation without blocking existing classes, the
     }
     return ids;
   });
-  await expectStatus(await request(`/api/admin/reports/${reportIds[0]}/take-down`, { method: 'POST', json: { reason: 'Earlier violation' }, jar: admin.jar, csrf: true }), 200);
+  await expectStatus(await request(`/api/admin/reports/${reportIds[0]}/take-down`, { method: 'POST', json: { reason: 'Earlier violation', ground: 'abusive_or_hateful' }, jar: admin.jar, csrf: true }), 200);
   await expectStatus(await request(`/api/admin/reports/${reportIds[0]}/restore`, { method: 'POST', json: { reason: 'Appeal upheld' }, jar: admin.jar, csrf: true }), 200);
-  await expectStatus(await request(`/api/admin/reports/${reportIds[1]}/take-down`, { method: 'POST', json: { reason: 'Repeated violation' }, jar: admin.jar, csrf: true }), 200);
+  await expectStatus(await request(`/api/admin/reports/${reportIds[1]}/take-down`, { method: 'POST', json: { reason: 'Repeated violation', ground: 'abusive_or_hateful' }, jar: admin.jar, csrf: true }), 200);
   await expectStatus(await request('/api/admin/reports', { jar: gm.jar }), 404);
 
   const queue = await request('/api/admin/reports', { jar: admin.jar });

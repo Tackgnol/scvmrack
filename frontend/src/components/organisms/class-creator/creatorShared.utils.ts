@@ -14,11 +14,29 @@ import type {
   CreatorIssue,
   CreatorStep,
   GrantSlot,
-} from "./classCreator.models";
+} from "./creatorShared.models";
 
+// Mirrors backend/src/lib/class-draft.ts so the creator can warn as the GM types; the server enforces them
+// and backendParity.test.ts fails if the two drift.
 export const LIMIT_LIST = 20;
 export const LIMIT_TEXT = 1500;
 export const LIMIT_NAME = 100;
+/** Dice an ability's reference table can use; the table has one row per face. */
+export const TABLE_DICE = [2, 3, 4, 6, 8, 10, 12] as const satisfies readonly NonNullable<ClassDraft["abilities"][number]["table"]>["die"][];
+/** Dice a stat can roll. */
+export const STAT_DIE_FACES = [4, 6, 8, 10, 12] as const satisfies readonly ClassDraft["stats"]["strength"]["faces"][];
+/** Dice the omen roll can use. */
+export const OMEN_DICE = [2, 4, 6] as const satisfies readonly ClassDraft["omenDie"][];
+/** Dice a starting weapon roll can use. */
+export const WEAPON_DICE = [4, 6, 8, 10] as const satisfies readonly ClassDraft["weaponDie"][];
+/** Dice a starting armor roll can use. */
+export const ARMOR_DICE = [2, 3, 4] as const satisfies readonly ClassDraft["armorDie"][];
+/** Dice the starting silver roll can use. */
+export const SILVER_DICE = [4, 6] as const satisfies readonly ClassDraft["silver"]["faces"][];
+/** Dice a pet's action can roll. */
+export const PET_ACTION_DICE = [2, 4, 6, 8, 10] as const satisfies readonly ClassDraft["items"][number]["pet"]["actionDie"][];
+/** Armor tiers: light, medium, heavy. */
+export const ARMOR_TIERS = [1, 2, 3] as const satisfies readonly ClassDraft["items"][number]["armor"]["tier"][];
 
 /** The creator's steps in order: Class Items come before Abilities, so abilities can grant them. */
 export const STEPS: CreatorStep[] = [
@@ -32,8 +50,6 @@ export const STEPS: CreatorStep[] = [
 ];
 
 export const MAX_MODIFIERS = 6;
-/** Dice a weapon, gear effect or hit points can roll. */
-export const DIE_FACES = [2, 4, 6, 8, 10, 12] as const;
 /** Turns a pasted zine list into clean rows, dropping common roll-table headers and numbering. */
 export function zineRows(value: string): string[] {
   const rows = value
@@ -327,12 +343,13 @@ export function blankAbility(random = false): AbilityDraft {
 }
 
 /**
- * The draft with the keys the save gave its new origins and abilities, matched by
- * position; an entry already keyed, or moved since, keeps what it has.
+ * The draft with the keys the save gave it: new origins and abilities by position (an entry
+ * already keyed keeps its key), new Class Items and their grants by the server's `savedRefs`.
  */
 export function withSavedKeys(
   current: ClassDraft,
   saved: ClassDraft,
+  savedRefs: Record<string, string>,
 ): ClassDraft {
   const fill = <T extends { key?: string }>(
     list: T[],
@@ -341,21 +358,8 @@ export function withSavedKeys(
     list.map((entry, i) =>
       entry.key || !keyed[i]?.key ? entry : { ...entry, key: keyed[i].key },
     );
-  const savedItemRefs = new Map<string, string>();
-  const items = current.items.map((item, i) => {
-    const savedItem = saved.items[i];
-    if (
-      !item.ref.startsWith("new:") ||
-      !savedItem ||
-      item.type !== savedItem.type
-    ) {
-      return item;
-    }
-    savedItemRefs.set(item.ref, savedItem.ref);
-    return { ...item, ref: savedItem.ref };
-  });
-  const savedRef = (ref: string | null) =>
-    ref ? (savedItemRefs.get(ref) ?? ref) : null;
+  const savedRef = (ref: string | null) => (ref ? (savedRefs[ref] ?? ref) : null);
+  const items = current.items.map((item) => ({ ...item, ref: savedRef(item.ref) ?? item.ref }));
   return {
     ...current,
     origins: fill(current.origins, saved.origins),

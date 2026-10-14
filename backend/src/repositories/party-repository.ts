@@ -185,9 +185,10 @@ export const partyRepository = {
   },
 
   /** Class ids whose lineage now has a newer version. */
-  async findOlderClassIds(classIds: number[]): Promise<Set<number>> {
+  /** Each class version's number and the newest version number of its lineage. */
+  async findClassVersions(classIds: number[]): Promise<Map<number, { version: number; latestVersion: number }>> {
     if (classIds.length === 0) {
-      return new Set();
+      return new Map();
     }
     const rows = await prisma.class.findMany({
       where: { id: { in: classIds } },
@@ -198,16 +199,9 @@ export const partyRepository = {
       where: { lineageId: { in: rows.map((row) => row.lineageId) } },
       _max: { version: true },
     });
-    const latestByLineage = new Map(
-      latest.map((row) => [row.lineageId, row._max.version])
-    );
-    return new Set(
-      rows
-        .filter(
-          (row) =>
-            row.version < (latestByLineage.get(row.lineageId) ?? row.version)
-        )
-        .map((row) => row.id)
+    const latestByLineage = new Map(latest.map((row) => [row.lineageId, row._max.version ?? 0]));
+    return new Map(
+      rows.map((row) => [row.id, { version: row.version, latestVersion: latestByLineage.get(row.lineageId) ?? row.version }])
     );
   },
   /** The party behind an invite link, with its Party Class Pool. */

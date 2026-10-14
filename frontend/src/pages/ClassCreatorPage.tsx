@@ -1,6 +1,6 @@
 import { ClassCreator } from "@/components/organisms/class-creator/ClassCreator/ClassCreator";
 import { SavedClassCreator } from "@/components/organisms/class-creator/SavedClassCreator/SavedClassCreator";
-import { blankDraft } from "@/components/organisms/class-creator/classCreator.utils";
+import { blankDraft } from "@/components/organisms/class-creator/creatorShared.utils";
 import { classKeys, getClass, getClassDraft, getMyCreationBan } from "@/api/classes";
 import { useAuth } from "@/hooks/useAuth";
 import { CenterRow, Page, Spinner, Stamp, Title } from "@/pages/gmPages.styles";

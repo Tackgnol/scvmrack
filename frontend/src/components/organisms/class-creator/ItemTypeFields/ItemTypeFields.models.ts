@@ -1,5 +1,5 @@
 import type { ClassItemDraft, ClassLanguage } from "@/api/classes";
-import type { ClassItemChange } from "../classCreator.models";
+import type { ClassItemChange } from "../creatorShared.models";
 
 export type ItemTypeFieldsProps = {
   path: string;

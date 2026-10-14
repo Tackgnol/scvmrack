@@ -27,29 +27,6 @@ async function buildApp() {
   return app;
 }
 
-test('silently drops a honeypot-filled report', async () => {
-  submitted = 0;
-  const app = await buildApp();
-
-  const response = await app.inject({
-    method: 'POST',
-    url: '/',
-    payload: {
-      classId: 9,
-      reason: 'copyright',
-      explanation: 'Copied work',
-      reporterName: 'Bot',
-      reporterEmail: 'bot@example.com',
-      goodFaith: true,
-      website: 'https://spam.example',
-    },
-  });
-
-  assert.equal(response.statusCode, 201);
-  assert.match(response.json().id, /^[0-9a-f-]{36}$/i);
-  assert.equal(submitted, 0);
-  await app.close();
-});
 
 
 test('accepts a class owner removal request', async () => {

@@ -5,9 +5,10 @@ import { ABILITY_STATS } from "@/utils/stats";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { StatLine } from "../StatLine/StatLine";
-import type { StepProps } from "../classCreator.models";
-import { Stack } from "../classCreator.styles";
-import { fieldId, DIE_FACES } from "../classCreator.utils";
+import type { StepProps } from "../creatorShared.models";
+import { Stack } from "../creatorShared.styles";
+import { ARMOR_DICE, fieldId, OMEN_DICE, SILVER_DICE, WEAPON_DICE } from "../creatorShared.utils";
+import { DIE_FACES } from "@/utils/rollDie";
 import { DiceGrid } from "./StatsStep.styles";
 
 /** Step 2: how each stat is rolled, plus HP, omens, starting gear dice and silver. */
@@ -39,7 +40,7 @@ export function StatsStep({ draft, update }: Pick<StepProps, "draft" | "update">
           id={fieldId("omenDie")}
           label={t("creator.stats.omenDie", "Omen die")}
           value={draft.omenDie}
-          options={[2, 4, 6]}
+          options={OMEN_DICE}
           hint={t("creator.stats.omenHint", "Omens the scvm starts with. Book classes use d2 or d4.")}
           onChange={(omenDie) => update((d) => ({ ...d, omenDie }))}
         />
@@ -47,7 +48,7 @@ export function StatsStep({ draft, update }: Pick<StepProps, "draft" | "update">
           id={fieldId("weaponDie")}
           label={t("creator.stats.weaponDie", "Starting weapon die")}
           value={draft.weaponDie}
-          options={[4, 6, 8, 10]}
+          options={WEAPON_DICE}
           hint={t("creator.stats.weaponHint", "Rolls on the book’s starting weapon table (d10: femur to zweihänder).")}
           onChange={(weaponDie) => update((d) => ({ ...d, weaponDie }))}
         />
@@ -55,7 +56,7 @@ export function StatsStep({ draft, update }: Pick<StepProps, "draft" | "update">
           id={fieldId("armorDie")}
           label={t("creator.stats.armorDie", "Starting armor die")}
           value={draft.armorDie}
-          options={[2, 3, 4]}
+          options={ARMOR_DICE}
           hint={t("creator.stats.armorHint", "Rolls on the book’s starting armor table (d4: none to heavy armor).")}
           onChange={(armorDie) => update((d) => ({ ...d, armorDie }))}
         />
@@ -73,7 +74,7 @@ export function StatsStep({ draft, update }: Pick<StepProps, "draft" | "update">
           id={fieldId("silver.faces")}
           label={t("creator.stats.silverSides", "Silver sides")}
           value={draft.silver.faces}
-          options={[4, 6]}
+          options={SILVER_DICE}
           onChange={(faces) => update((d) => ({ ...d, silver: { ...d.silver, faces } }))}
         />
         <NumberStepper

@@ -14,8 +14,8 @@ import {
   Head,
   OpenCard,
   SmallAction,
-} from "../classCreator.styles";
-import { fieldId, LIMIT_LIST, LIMIT_NAME, LIMIT_TEXT, MAX_MODIFIERS } from "../classCreator.utils";
+} from "../creatorShared.styles";
+import { fieldId, LIMIT_LIST, LIMIT_NAME, LIMIT_TEXT, MAX_MODIFIERS } from "../creatorShared.utils";
 import type { AbilityEditorProps } from "./AbilityEditor.models";
 
 /** The open ability card: Fixed or Random, name, rules text, grants, modifiers; Remove, Duplicate and Done at the foot. */

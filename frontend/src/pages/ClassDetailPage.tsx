@@ -1,21 +1,19 @@
 import { getClassDetail, classKeys, type Localized } from '@/api/classes';
 import { CenterRow, Lede, Spinner, Stamp, Title } from '@/pages/gmPages.styles';
 import { Seo } from '@/seo/Seo';
+import { getApiLocale } from '@/hooks/utils';
+import { localizedText } from '@/utils/localizedText';
 import { Box, Container, Divider, Paper, Stack, Typography } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { useParams } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { ReportLink, SectionHeading, Sheet } from './ClassDetailPage.styles';
 
-function localized(value: Localized, language: 'en' | 'pl', authored: 'en' | 'pl') {
-  return value[language].trim() || value[authored].trim();
-}
-
 /** Public read-only view of a published Custom Class. */
 export function ClassDetailPage() {
   const { classId } = useParams({ from: '/classes/$classId' });
   const { t, i18n } = useTranslation();
-  const language = i18n.language.startsWith('pl') ? 'pl' : 'en';
+  const language = getApiLocale(i18n.language);
   const query = useQuery({
     queryKey: classKeys.detail(Number(classId)),
     queryFn: () => getClassDetail(Number(classId)),
@@ -39,8 +37,7 @@ export function ClassDetailPage() {
   }
 
   const { draft, attribution } = query.data;
-  const authored = draft.languages[0];
-  const text = (value: Localized) => localized(value, language, authored);
+  const text = (value: Localized) => localizedText(value, language);
 
   return (
     <>

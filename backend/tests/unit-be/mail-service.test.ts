@@ -117,7 +117,7 @@ test('the statement of reasons carries what the DSA requires, in Polish too', as
     measure: 'taken_down' as const,
     reportId: 'report-42',
     followedNotice: true,
-    ground: 'Regulamin §5: treści naruszające prawa autorskie',
+    ground: 'copyright',
     explanation: 'Tekst skopiowany z podręcznika.',
   };
 
@@ -126,7 +126,7 @@ test('the statement of reasons carries what the DSA requires, in Polish too', as
   const [mail] = state.sent;
   assert.equal(mail.to, 'author@example.com');
   assert.match(mail.text, /Bonecutter/);
-  assert.match(mail.text, /Regulamin §5/);
+  assert.match(mail.text, /Podstawa: treść nielegalna: naruszenie praw autorskich/);
   assert.match(mail.text, /Tekst skopiowany z podręcznika\./);
   assert.match(mail.text, /zgłoszeni/i, 'says it followed a notice');
   assert.match(mail.text, /bez użycia środków zautomatyzowanych/, 'says no automated means');

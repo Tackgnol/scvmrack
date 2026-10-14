@@ -20,7 +20,7 @@ import {
   SmallAction,
   Spread,
   Stack,
-} from "../classCreator.styles";
+} from "../creatorShared.styles";
 import {
   blankAbility,
   blankClassItem,
@@ -30,7 +30,7 @@ import {
   LIMIT_LIST,
   removeItem,
   slotFor,
-} from "../classCreator.utils";
+} from "../creatorShared.utils";
 import type { GateAnswer, ItemsStepProps } from "./ItemsStep.models";
 import { Gate, GateNo } from "./ItemsStep.styles";
 

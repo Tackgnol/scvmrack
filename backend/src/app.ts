@@ -1,4 +1,5 @@
 import './instrument.js';
+import { DAY_MS } from './lib/time.js';
 import * as Sentry from '@sentry/node';
 import { join } from 'node:path';
 import AutoLoad, { AutoloadPluginOptions } from '@fastify/autoload';
@@ -45,7 +46,7 @@ const app: FastifyPluginAsync<AppOptions> = async (fastify, opts) => {
     await runModerationRetention();
     moderationRetentionTimer = setInterval(() => {
       void runModerationRetention();
-    }, 24 * 60 * 60 * 1000);
+    }, DAY_MS);
     moderationRetentionTimer.unref();
   });
 

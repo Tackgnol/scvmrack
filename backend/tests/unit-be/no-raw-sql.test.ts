@@ -18,10 +18,10 @@ const ALLOWLIST = new Set<string>([
   // serializes concurrent joins to one party so the member cap can't overflow.
   // Not expressible via the typed Prisma client; all other access stays typed.
   'repositories/party-repository.ts',
-  // Serialize one GM's first-publish quota check across concurrent requests.
+  // lockVersion: a FOR UPDATE row lock stops a scvm being rolled on a version mid-save.
   'repositories/custom-class-repository.ts',
-  // Serialize same-reporter/same-class deduplication across concurrent reports.
-  'repositories/moderation-repository.ts',
+  // advisoryLock: the namespaced transaction lock behind lineage, owner and report serialization.
+  'repositories/class-version-repository.ts',
 ]);
 
 function walkTs(dir: string): string[] {

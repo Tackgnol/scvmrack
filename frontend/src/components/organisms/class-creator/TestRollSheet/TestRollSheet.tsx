@@ -1,7 +1,7 @@
 import { ABILITY_STATS, statToModifier } from "@/utils/stats";
 import { signed } from "@/utils/signed";
 import { useTranslation } from "react-i18next";
-import { Interrupt } from "../classCreator.styles";
+import { Interrupt } from "../creatorShared.styles";
 import { gearCounts, namedCounts } from "./TestRollSheet.utils";
 import type { TestRollSheetProps } from "./TestRollSheet.models";
 import { Chip, Chips, Micro, Muted, Origin, Sheet, SmallTitle, StatBox, StatRow } from "./TestRollSheet.styles";

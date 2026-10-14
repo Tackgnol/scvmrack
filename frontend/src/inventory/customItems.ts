@@ -53,7 +53,6 @@ type ArmorPresetConfig = {
   tags: string[];
 };
 
-export const CUSTOM_DAMAGE_DICE = [2, 4, 6, 8, 10, 12] as const;
 export const CUSTOM_ARMOR_DICE = [2, 4, 6] as const;
 const DEFAULT_AMMO_TYPES = ['Arrow', 'Bolt'] as const;
 

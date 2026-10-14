@@ -1,8 +1,12 @@
 import { MODIFIER_CONTEXTS } from '../lib/ability-modifiers.js';
 import {
+  WEAPON_DICE,
+  SILVER_DICE,
+  PET_ACTION_DICE,
+  OMEN_DICE,
+  ARMOR_TIERS,
+  ARMOR_DICE,
   CLASS_ITEM_TYPES,
-  CLASS_LANGUAGES,
-  CLASS_STATS,
   DIE_FACES,
   GEAR_EFFECTS,
   GEAR_KINDS,
@@ -15,6 +19,8 @@ import {
   WEAPON_AMMO,
   WEAPON_REACHES,
 } from '../lib/class-draft.js';
+import { SUPPORTED_LOCALES } from '../config/locales.js';
+import { ABILITY_STATS } from '../lib/ability-modifiers.js';
 import { CLASS_ITEM_KEY } from '../lib/class-items.js';
 import {
   CLASS_STATUSES,
@@ -22,7 +28,7 @@ import {
   customClassKeyPattern,
   GETTING_BETTER_RULES,
 } from '../lib/class-model.js';
-import { MAX_DB_INT } from './character.js';
+import { IdSchema, NullableIdSchema } from './character.js';
 import { DraftPreviewSchema } from './draft.js';
 
 export { ErrorSchema } from './character.js';
@@ -32,15 +38,14 @@ const localized = <const N extends number>(maxLength: N) =>
   ({
     type: 'object',
     additionalProperties: false,
-    required: CLASS_LANGUAGES,
+    required: SUPPORTED_LOCALES,
     properties: Object.fromEntries(
-      CLASS_LANGUAGES.map((language) => [language, { type: 'string', maxLength }])
-    ) as Record<(typeof CLASS_LANGUAGES)[number], { type: 'string'; maxLength: N }>,
+      SUPPORTED_LOCALES.map((language) => [language, { type: 'string', maxLength }])
+    ) as Record<(typeof SUPPORTED_LOCALES)[number], { type: 'string'; maxLength: N }>,
   }) as const;
 
 const LocalizedSchema = localized(LIMIT_TEXT);
 const NameSchema = localized(LIMIT_NAME);
-const IdSchema = { type: 'integer', minimum: 1, maximum: MAX_DB_INT } as const;
 
 const OriginSchema = {
   ...LocalizedSchema,
@@ -65,7 +70,7 @@ const AbilityTableSchema = {
   required: ['die', 'rows'],
   properties: {
     die: { type: 'integer', enum: TABLE_DICE },
-    rows: { type: 'array', minItems: 2, maxItems: 12, items: TableRowSchema },
+    rows: { type: 'array', minItems: 2, maxItems: Math.max(...TABLE_DICE), items: TableRowSchema },
   },
 } as const;
 
@@ -79,7 +84,7 @@ const ModifiersSchema = {
     properties: {
       statistic: {
         type: 'string',
-        enum: CLASS_STATS,
+        enum: ABILITY_STATS,
       },
       value: { type: 'integer', minimum: -10, maximum: 10 },
       exclude: {
@@ -141,7 +146,7 @@ const ClassItemSchema = {
       additionalProperties: false,
       required: ['tier', 'modifiers'],
       properties: {
-        tier: { type: 'integer', enum: [1, 2, 3] },
+        tier: { type: 'integer', enum: ARMOR_TIERS },
         modifiers: ModifiersSchema,
       },
     },
@@ -163,7 +168,7 @@ const ClassItemSchema = {
       required: ['hp', 'actionDie', 'action', 'humanoid', 'buffs'],
       properties: {
         hp: { type: 'integer', minimum: 1, maximum: 99 },
-        actionDie: { type: 'integer', enum: [2, 4, 6, 8, 10] },
+        actionDie: { type: 'integer', enum: PET_ACTION_DICE },
         action: { type: 'string', enum: PET_ACTIONS },
         humanoid: { type: 'boolean' },
         buffs: ModifiersSchema,
@@ -234,30 +239,30 @@ export const ClassDraftSchema = {
       minItems: 1,
       maxItems: 2,
       uniqueItems: true,
-      items: { type: 'string', enum: CLASS_LANGUAGES },
+      items: { type: 'string', enum: SUPPORTED_LOCALES },
     },
     name: NameSchema,
     description: LocalizedSchema,
     stats: {
       type: 'object',
       additionalProperties: false,
-      required: CLASS_STATS,
-      properties: Object.fromEntries(CLASS_STATS.map((stat) => [stat, StatDiceSchema])) as Record<
-        (typeof CLASS_STATS)[number],
+      required: ABILITY_STATS,
+      properties: Object.fromEntries(ABILITY_STATS.map((stat) => [stat, StatDiceSchema])) as Record<
+        (typeof ABILITY_STATS)[number],
         typeof StatDiceSchema
       >,
     },
     hpDie: { type: 'integer', enum: DIE_FACES },
-    omenDie: { type: 'integer', enum: [2, 4, 6] },
-    weaponDie: { type: 'integer', enum: [4, 6, 8, 10] },
-    armorDie: { type: 'integer', enum: [2, 3, 4] },
+    omenDie: { type: 'integer', enum: OMEN_DICE },
+    weaponDie: { type: 'integer', enum: WEAPON_DICE },
+    armorDie: { type: 'integer', enum: ARMOR_DICE },
     silver: {
       type: 'object',
       additionalProperties: false,
       required: ['count', 'faces', 'multiplier'],
       properties: {
         count: { type: 'integer', minimum: 1, maximum: 6 },
-        faces: { type: 'integer', enum: [4, 6] },
+        faces: { type: 'integer', enum: SILVER_DICE },
         multiplier: { type: 'integer', minimum: 1, maximum: 100 },
       },
     },
@@ -277,7 +282,11 @@ export const ClassDraftBodySchema = {
   type: 'object',
   additionalProperties: false,
   required: ['draft'],
-  properties: { draft: ClassDraftSchema },
+  properties: {
+    draft: ClassDraftSchema,
+    /** The autosaved draft this save completes; the server discards it with the save. */
+    draftId: IdSchema,
+  },
 } as const;
 
 export const TestRollBodySchema = {
@@ -286,7 +295,7 @@ export const TestRollBodySchema = {
   required: ['draft', 'language'],
   properties: {
     draft: ClassDraftSchema,
-    language: { type: 'string', enum: CLASS_LANGUAGES },
+    language: { type: 'string', enum: SUPPORTED_LOCALES },
   },
 } as const;
 
@@ -306,7 +315,7 @@ export const DraftCreateBodySchema = {
   additionalProperties: false,
   required: ['draft'],
   properties: {
-    classId: { ...IdSchema, type: ['integer', 'null'] },
+    classId: NullableIdSchema,
     draft: ClassDraftSchema,
   },
 } as const;
@@ -325,13 +334,15 @@ export const DraftUpdateBodySchema = {
 export const StoredClassDraftSchema = {
   type: 'object',
   additionalProperties: false,
-  required: ['id', 'classId', 'draft', 'revision', 'updatedAt'],
+  required: ['id', 'classId', 'draft', 'revision', 'updatedAt', 'expiresAt'],
   properties: {
     id: { type: 'integer' },
     classId: { type: ['integer', 'null'] },
     draft: ClassDraftSchema,
     revision: { type: 'integer' },
     updatedAt: { type: 'string', format: 'date-time' },
+    /** When the draft is deleted if left untouched. */
+    expiresAt: { type: 'string', format: 'date-time' },
   },
 } as const;
 
@@ -341,7 +352,7 @@ export const ClassDraftListSchema = {
 } as const;
 export const ClassLocaleQuerySchema = {
   type: 'object',
-  properties: { locale: { type: 'string', enum: CLASS_LANGUAGES, default: 'en' } },
+  properties: { locale: { type: 'string', enum: SUPPORTED_LOCALES, default: 'en' } },
 } as const;
 
 export const PublishClassBodySchema = {
@@ -360,16 +371,29 @@ export const ClassVisibilityResponseSchema = {
 export const ClassWithDraftSchema = {
   type: 'object',
   additionalProperties: false,
-  required: ['id', 'draft', 'version', 'playingCount', 'status'],
+  required: ['id', 'draft', 'version', 'playingCount', 'status', 'takenDownAt', 'takedownReason'],
   properties: {
     id: { type: 'integer' },
     draft: ClassDraftSchema,
     version: { type: 'integer', minimum: 1 },
     playingCount: { type: 'integer', minimum: 0 },
     status: { type: 'string', enum: CLASS_STATUSES },
+    takenDownAt: { type: ['string', 'null'], format: 'date-time' },
+    /** The moderator's statement of reasons while the class is taken down. */
+    takedownReason: { type: ['string', 'null'] },
   },
 } as const;
 
+
+/** A saved class plus the saved key each `new:` Class Item ref became. */
+export const SavedClassSchema = {
+  ...ClassWithDraftSchema,
+  required: [...ClassWithDraftSchema.required, 'savedRefs'],
+  properties: {
+    ...ClassWithDraftSchema.properties,
+    savedRefs: { type: 'object', additionalProperties: { type: 'string' } },
+  },
+} as const;
 
 export const ClassDetailSchema = {
   ...ClassWithDraftSchema,
@@ -396,8 +420,10 @@ export const OwnClassListSchema = {
       'originCount',
       'takenDownAt',
       'takedownReason',
+      'everPublished',
     ],
     properties: {
+      everPublished: { type: 'boolean' },
       id: { type: 'integer' },
       lineageId: { type: 'string' },
       name: { type: 'string' },

@@ -1,5 +1,5 @@
 import type { ClassItemType } from "@/api/classes";
-import type { ClassItemChange, StepProps } from "../classCreator.models";
+import type { ClassItemChange, StepProps } from "../creatorShared.models";
 
 export type ItemEditorProps = Omit<StepProps, "update" | "jump"> & {
   index: number;

@@ -1,3 +1,4 @@
+import { APPEAL_ADDRESS } from "@/legal/contact";
 export interface LegalSection {
   id?: string;
   title: string;
@@ -72,7 +73,7 @@ export const termsCopy: Record<LegalLocale, LegalDocument> = {
         id: "disputes",
         title: "Decisions and appeals",
         paragraphs: [
-          "When we restrict your content or account, we email you the reason if we have an email address for you. To ask for a review, reply to that email or write to scvmrack-appeal@rpgtools.co. A person reviews every appeal. This does not limit your right to go to court.",
+          `When we restrict your content or account, we email you the reason if we have an email address for you. To ask for a review, reply to that email or write to ${APPEAL_ADDRESS}. A person reviews every appeal. This does not limit your right to go to court.`,
         ],
       },
       {
@@ -169,7 +170,7 @@ export const termsCopy: Record<LegalLocale, LegalDocument> = {
         id: "disputes",
         title: "Decyzje i odwołania",
         paragraphs: [
-          "Gdy ograniczymy Twoją treść lub konto, prześlemy Ci e-mailem uzasadnienie, jeśli mamy Twój adres e-mail. Aby poprosić o ponowne rozpatrzenie, odpowiedz na tę wiadomość albo napisz na scvmrack-appeal@rpgtools.co. Każde odwołanie rozpatruje człowiek. Nie ogranicza to Twojego prawa do drogi sądowej.",
+          `Gdy ograniczymy Twoją treść lub konto, prześlemy Ci e-mailem uzasadnienie, jeśli mamy Twój adres e-mail. Aby poprosić o ponowne rozpatrzenie, odpowiedz na tę wiadomość albo napisz na ${APPEAL_ADDRESS}. Każde odwołanie rozpatruje człowiek. Nie ogranicza to Twojego prawa do drogi sądowej.`,
         ],
       },
       {
@@ -246,7 +247,7 @@ export const privacyCopy: Record<LegalLocale, LegalDocument> = {
       {
         title: "Cookies and browser storage",
         paragraphs: [
-          "We use a session cookie to keep you signed in, and browser storage for your preferences, privacy choice, last opened character, and unsaved class drafts. These are needed for the service to work. Google Analytics cookies are set only after you opt in. You can block or delete cookies in your browser settings, but the service cannot work without the session cookie.",
+          "We use a session cookie to keep you signed in, and browser storage for your preferences, privacy choice and last opened character. These are needed for the service to work. Google Analytics cookies are set only after you opt in. You can block or delete cookies in your browser settings, but the service cannot work without the session cookie.",
         ],
       },
       {
@@ -254,7 +255,7 @@ export const privacyCopy: Record<LegalLocale, LegalDocument> = {
         paragraphs: [
           "Characters and parties, including guest characters, are kept until you delete them or ask us to. Generating a replacement guest character removes the previous one. Account data is kept until you ask us to remove the account.",
           "Removed classes still used by characters are archived, with their content retained for those characters. Public classes may remain available after account removal; you can request their takedown through /report.",
-          "Unfinished server drafts with no edits for more than 90 days are deleted when you next open your draft list. Until then, they may remain stored. Browser recovery copies are stored separately on your device and have no automatic expiry; you can remove them by clearing the site's browser storage.",
+          "Unfinished server drafts with no edits for more than 90 days are deleted when you next open your draft list. Until then, they may remain stored.",
           "Reporter-identifying details are anonymised two years after a decision. Moderation records and removed content are kept as evidence of decisions and for legal claims. Error reports are deleted after 90 days.",
         ],
       },
@@ -315,7 +316,7 @@ export const privacyCopy: Record<LegalLocale, LegalDocument> = {
       {
         title: "Pliki cookie i magazyn przeglądarki",
         paragraphs: [
-          "Używamy pliku cookie sesji, aby utrzymać logowanie, oraz magazynu przeglądarki na ustawienia, wybór dotyczący prywatności, ostatnio otwartą postać i niezapisane szkice klas. Są one potrzebne do działania usługi. Pliki cookie Google Analytics są zapisywane dopiero po wyrażeniu zgody. Pliki cookie możesz blokować lub usuwać w ustawieniach przeglądarki, ale bez pliku cookie sesji usługa nie może działać.",
+          "Używamy pliku cookie sesji, aby utrzymać logowanie, oraz magazynu przeglądarki na ustawienia, wybór dotyczący prywatności i ostatnio otwartą postać. Są one potrzebne do działania usługi. Pliki cookie Google Analytics są zapisywane dopiero po wyrażeniu zgody. Pliki cookie możesz blokować lub usuwać w ustawieniach przeglądarki, ale bez pliku cookie sesji usługa nie może działać.",
         ],
       },
       {
@@ -323,7 +324,7 @@ export const privacyCopy: Record<LegalLocale, LegalDocument> = {
         paragraphs: [
           "Postacie i drużyny, także postacie gościa, przechowujemy do czasu ich usunięcia przez Ciebie lub na Twoją prośbę. Wygenerowanie nowej postaci gościa w miejsce poprzedniej usuwa poprzednią. Dane konta przechowujemy, dopóki nie poprosisz o usunięcie konta.",
           "Usuwane klasy nadal używane przez postacie archiwizujemy, zachowując ich treść dla tych postaci. Publiczne klasy mogą pozostać dostępne po usunięciu konta; możesz poprosić o ich zdjęcie przez /report.",
-          "Niedokończone szkice na serwerze, nieedytowane przez ponad 90 dni, usuwamy przy następnym otwarciu listy szkiców. Do tego czasu mogą pozostać zapisane. Kopie odzyskiwania w przeglądarce są zapisane osobno na Twoim urządzeniu i nie wygasają automatycznie; możesz je usunąć, czyszcząc dane witryny w przeglądarce.",
+          "Niedokończone szkice na serwerze, nieedytowane przez ponad 90 dni, usuwamy przy następnym otwarciu listy szkiców. Do tego czasu mogą pozostać zapisane.",
           "Dane identyfikujące zgłaszającego anonimizujemy dwa lata po decyzji. Zapisy moderacji i usunięte treści zachowujemy jako dowód decyzji i na potrzeby roszczeń. Raporty błędów usuwamy po 90 dniach.",
         ],
       },
@@ -374,7 +375,7 @@ export const legalCopy: Record<LegalLocale, LegalDocument> = {
       {
         title: "Appeals and disputes",
         paragraphs: [
-          "scvmrack-appeal@rpgtools.co handles disputes and appeals of moderation decisions.",
+          `${APPEAL_ADDRESS} handles disputes and appeals of moderation decisions.`,
         ],
       },
       {
@@ -405,7 +406,7 @@ export const legalCopy: Record<LegalLocale, LegalDocument> = {
       {
         title: "Odwołania i spory",
         paragraphs: [
-          "scvmrack-appeal@rpgtools.co obsługuje spory i odwołania od decyzji moderacyjnych.",
+          `${APPEAL_ADDRESS} obsługuje spory i odwołania od decyzji moderacyjnych.`,
         ],
       },
       {

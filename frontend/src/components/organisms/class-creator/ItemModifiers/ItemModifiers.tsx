@@ -1,8 +1,8 @@
 import { scopeToExclude } from "@/components/modifiers/utils";
 import { useTranslation } from "react-i18next";
 import { ModifierList } from "../ModifierList/ModifierList";
-import { Extras, SmallAction } from "../classCreator.styles";
-import { MAX_MODIFIERS, fieldId } from "../classCreator.utils";
+import { Extras, SmallAction } from "../creatorShared.styles";
+import { MAX_MODIFIERS, fieldId } from "../creatorShared.utils";
 import type { ItemModifiersProps } from "./ItemModifiers.models";
 import { itemModifierState } from "./ItemModifiers.utils";
 

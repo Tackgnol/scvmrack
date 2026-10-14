@@ -1,4 +1,4 @@
-import type { CreatorIssue, CreatorStep } from "../classCreator.models";
+import type { CreatorIssue, CreatorStep } from "../creatorShared.models";
 
 export type CreatorRailProps = {
   current: CreatorStep;

@@ -1,6 +1,6 @@
 import type { GettingBetterRule } from '../lib/getting-better-types.js';
 import type { PoolCatalogRow } from '../repositories/class-pool-repository.js';
-import { byLineage, canOffer } from './class-offer.js';
+import { byLineage, mayOffer } from '../lib/class-model.js';
 
 export type PoolGroup = 'book' | 'zine' | 'rack' | 'mine' | 'public';
 
@@ -66,7 +66,7 @@ export function buildClassPoolView(input: {
   const classes: PoolClass[] = [];
   const removed: RemovedPoolClass[] = [];
   for (const { latest: row } of byLineage(input.rows)) {
-    if (canOffer(row, input.partyOwnerId)) {
+    if (mayOffer(row, input.partyOwnerId)) {
       const group = poolGroup(row, input.partyOwnerId);
       classes.push({
         lineageId: row.lineageId,

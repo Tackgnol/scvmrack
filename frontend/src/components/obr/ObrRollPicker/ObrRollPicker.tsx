@@ -1,4 +1,4 @@
-import { fetchClasses, type ClassSummary } from "@/api/draft";
+import { useRoomClasses } from "@/obr/useRoomClasses";
 import {
   Alert,
   Button,
@@ -10,7 +10,6 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { ObrRollPickerProps } from "./ObrRollPicker.models";
 
@@ -22,26 +21,9 @@ export function ObrRollPicker({
   onChoose,
 }: ObrRollPickerProps) {
   const { t } = useTranslation();
-  const [classes, setClasses] = useState<ClassSummary[] | null>(null);
-  const [failed, setFailed] = useState(false);
-  const [attempt, setAttempt] = useState(0);
-
-  useEffect(() => {
-    if (!open) {
-      return;
-    }
-    const controller = new AbortController();
-    setClasses(null);
-    setFailed(false);
-    void fetchClasses(locale, controller.signal, undefined, roomId)
-      .then(setClasses)
-      .catch((error: unknown) => {
-        if (!(error instanceof DOMException && error.name === "AbortError")) {
-          setFailed(true);
-        }
-      });
-    return () => controller.abort();
-  }, [attempt, locale, open, roomId]);
+  const query = useRoomClasses(roomId, locale, open);
+  const classes = query.data;
+  const failed = query.isError;
 
   return (
     <Popover
@@ -68,7 +50,7 @@ export function ObrRollPicker({
             <Button
               color="inherit"
               size="small"
-              onClick={() => setAttempt((value) => value + 1)}
+              onClick={() => void query.refetch()}
             >
               {t("common.retry", "Retry")}
             </Button>

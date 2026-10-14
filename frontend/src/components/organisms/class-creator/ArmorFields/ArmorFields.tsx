@@ -1,8 +1,8 @@
 import { SegmentedChoice } from "@/components/atoms/SegmentedChoice/SegmentedChoice";
 import { useTranslation } from "react-i18next";
-import type { ItemFieldsProps } from "../classCreator.models";
-import { Controls } from "../classCreator.styles";
-import { fieldId } from "../classCreator.utils";
+import type { ItemFieldsProps } from "../creatorShared.models";
+import { Controls } from "../creatorShared.styles";
+import { fieldId } from "../creatorShared.utils";
 
 /** An armor's tier: 1 light (d2), 2 medium (d4), 3 heavy (d6). */
 export function ArmorFields({ path, item, onChange }: ItemFieldsProps<"armor">) {

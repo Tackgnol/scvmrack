@@ -22,7 +22,7 @@ import { snakeToCamel } from '../utils.js';
 import { statToModifier } from './ability-modifiers.js';
 import { findTranslationsWithAuthoredFallback } from './class-translations.js';
 import { classAttribution } from './class-attribution.js';
-import { isCustomClassKey } from './class-model.js';
+import { isCustomClassKey, isReportable } from './class-model.js';
 
 // ── Internal types ─────────────────────────────────────────────────────────────
 
@@ -928,7 +928,8 @@ export async function hydrateCharacterRow(
     classAttribution: cls ? classAttribution(cls) : null,
     classAuthoredLanguage,
     classContentRemoved: Boolean(cls?.contentRemovedAt),
-    classReportable: cls?.source === 'user' && cls.visibility === 'public',
+    classReportable: cls ? isReportable(cls) : false,
+    classCustom: cls?.source === 'user',
     origin:           translate(translations, row.origin)          ?? row.origin          ?? null,
     strength:         row.strength,
     agility:          row.agility,

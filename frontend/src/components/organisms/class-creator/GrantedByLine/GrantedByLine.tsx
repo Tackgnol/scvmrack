@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
-import { LinkLine, SmallAction } from "../classCreator.styles";
-import { fieldId, granterOf, randomPoolSize } from "../classCreator.utils";
+import { LinkLine, SmallAction } from "../creatorShared.styles";
+import { fieldId, granterOf, randomPoolSize } from "../creatorShared.utils";
 import type { GrantedByLineProps } from "./GrantedByLine.models";
 
 /** Which ability gets this Class Item to a scvm, and how often; or that none does yet. */

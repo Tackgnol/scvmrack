@@ -2,9 +2,9 @@ import { DiePicker } from "@/components/atoms/DiePicker/DiePicker";
 import { NumberStepper } from "@/components/atoms/NumberStepper/NumberStepper";
 import { SegmentedChoice } from "@/components/atoms/SegmentedChoice/SegmentedChoice";
 import { useTranslation } from "react-i18next";
-import type { ItemFieldsProps } from "../classCreator.models";
-import { Controls } from "../classCreator.styles";
-import { fieldId } from "../classCreator.utils";
+import type { ItemFieldsProps } from "../creatorShared.models";
+import { Controls } from "../creatorShared.styles";
+import { fieldId, PET_ACTION_DICE } from "../creatorShared.utils";
 
 /** A pet's HP, action die, whether it attacks or buffs allies, and whether it is a beast or humanoid. */
 export function PetFields({ path, item, onChange }: ItemFieldsProps<"pet">) {
@@ -25,7 +25,7 @@ export function PetFields({ path, item, onChange }: ItemFieldsProps<"pet">) {
         id={fieldId(`${base}.actionDie`)}
         label={t("creator.items.actionDie", "Action die")}
         value={p.actionDie}
-        options={[2, 4, 6, 8, 10]}
+        options={PET_ACTION_DICE}
         onChange={(actionDie) => onChange({ ...p, actionDie })}
       />
       <SegmentedChoice<"attack" | "buff">

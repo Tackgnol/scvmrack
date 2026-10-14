@@ -7,7 +7,7 @@ import { ClassCreator } from "@/components/organisms/class-creator/ClassCreator/
 import {
   blankClassItem,
   blankDraft,
-} from "@/components/organisms/class-creator/classCreator.utils";
+} from "@/components/organisms/class-creator/creatorShared.utils";
 import { deleteClassDraft, getClassDraft, saveClass, testRollClass, updateClassDraft, type ClassDraft, type StoredClassDraft } from "@/api/classes";
 
 vi.mock("@/api/classes", async (importOriginal) => ({
@@ -60,7 +60,7 @@ describe("ClassCreator", () => {
     renderCreator();
 
     await expect.element(title()).toHaveTextContent("Identity");
-    await page.getByRole("button", { name: "Stats & dice" }).last().click();
+    await userEvent.click(page.getByRole("button", { name: "Stats & dice" }).last());
     await expect.element(title()).toHaveTextContent("Stats & dice");
     await expect
       .element(page.getByRole("button", { name: "Class Items" }).last())
@@ -74,24 +74,24 @@ describe("ClassCreator", () => {
 
   it("stamps a stat in book notation as its dice change", async () => {
     renderCreator();
-    await page
+    await userEvent.click(page
       .getByRole("button", { name: /Stats & dice/ })
       .first()
-      .click();
+      );
 
     const strength = page.getByRole("region", { name: "STR dice" });
     await expect.element(strength.getByText("Book default")).toBeVisible();
-    await strength.getByRole("button", { name: "Change" }).click();
-    await strength.getByRole("radio", { name: "Dropped" }).click();
-    await strength.getByRole("spinbutton", { name: "Dice" }).click();
+    await userEvent.click(strength.getByRole("button", { name: "Change" }));
+    await userEvent.click(strength.getByRole("radio", { name: "Dropped" }));
+    await userEvent.click(strength.getByRole("spinbutton", { name: "Dice" }));
     await userEvent.keyboard("{ArrowUp}");
-    await strength.getByRole("spinbutton", { name: "Modifier" }).click();
+    await userEvent.click(strength.getByRole("spinbutton", { name: "Modifier" }));
     await userEvent.keyboard("{ArrowDown}");
 
     await expect.element(strength.getByText("best 3 of 4d6 −1")).toBeVisible();
     await expect.element(strength.getByText("score 2–17")).toBeVisible();
     await expect.element(strength.getByText("Book default")).not.toBeInTheDocument();
-    await strength.getByRole("button", { name: "Done" }).click();
+    await userEvent.click(strength.getByRole("button", { name: "Done" }));
     await expect.element(strength.getByRole("spinbutton", { name: "Dice" })).not.toBeInTheDocument();
   });
 
@@ -101,13 +101,13 @@ describe("ClassCreator", () => {
     await expect
       .element(page.getByRole("radio", { name: /Polish 2 missing/ }))
       .toBeVisible();
-    await page
+    await userEvent.click(page
       .getByRole("button", { name: /Test roll & save/ })
       .first()
-      .click();
-    await page
+      );
+    await userEvent.click(page
       .getByRole("button", { name: /Polish missing: class description/ })
-      .click();
+      );
 
     await expect.element(title()).toHaveTextContent("Identity");
     await expect
@@ -125,10 +125,10 @@ describe("ClassCreator", () => {
 
   it("explains a blocked save as one pink interrupt", async () => {
     renderCreator();
-    await page
+    await userEvent.click(page
       .getByRole("button", { name: /Test roll & save/ })
       .first()
-      .click();
+      );
 
     const save = page.getByRole("button", { name: "Fix 3 things first" });
     await expect.element(save).toBeVisible();
@@ -145,7 +145,7 @@ describe("ClassCreator", () => {
     const earlier = complete();
     const newer = { ...earlier, name: { en: "Newer version", pl: "" } };
     const record: StoredClassDraft = {
-      id: 5, classId: 7, draft: earlier, revision: 1, updatedAt: "2026-10-12T00:00:00.000Z",
+      id: 5, classId: 7, draft: earlier, revision: 1, updatedAt: "2026-10-12T00:00:00.000Z", expiresAt: "2027-01-10T00:00:00.000Z",
     };
     vi.mocked(updateClassDraft).mockRejectedValue({ payload: { code: "DRAFT_STALE" } });
     vi.mocked(getClassDraft).mockResolvedValue({ ...record, draft: newer, revision: 2 });
@@ -161,7 +161,7 @@ describe("ClassCreator", () => {
 
   it("discards an unfinished new class and clears the editor", async () => {
     const record: StoredClassDraft = {
-      id: 5, classId: null, draft: complete(), revision: 1, updatedAt: "2026-10-12T00:00:00.000Z",
+      id: 5, classId: null, draft: complete(), revision: 1, updatedAt: "2026-10-12T00:00:00.000Z", expiresAt: "2027-01-10T00:00:00.000Z",
     };
     vi.mocked(deleteClassDraft).mockResolvedValue();
     renderCreator(record.draft, null, record);
@@ -171,12 +171,12 @@ describe("ClassCreator", () => {
     await userEvent.click(page.getByRole("alertdialog").getByRole("button", { name: "Discard" }));
 
     await expect.element(page.getByRole("textbox", { name: "Class name" })).toHaveValue("");
-    expect(deleteClassDraft).toHaveBeenCalledWith(5);
+    await expect.poll(() => deleteClassDraft).toHaveBeenCalledWith(5);
   });
 
   it("keeps a draft open when discard cannot reach the server", async () => {
     const record: StoredClassDraft = {
-      id: 5, classId: null, draft: complete(), revision: 1, updatedAt: "2026-10-12T00:00:00.000Z",
+      id: 5, classId: null, draft: complete(), revision: 1, updatedAt: "2026-10-12T00:00:00.000Z", expiresAt: "2027-01-10T00:00:00.000Z",
     };
     vi.mocked(deleteClassDraft).mockRejectedValue(new Error("Offline"));
     renderCreator(record.draft, null, record);
@@ -194,7 +194,7 @@ describe("ClassCreator", () => {
     const saved = complete();
     const unfinished = { ...saved, name: { en: "Unfinished edit", pl: "" } };
     const record: StoredClassDraft = {
-      id: 5, classId: 7, draft: unfinished, revision: 1, updatedAt: "2026-10-12T00:00:00.000Z",
+      id: 5, classId: 7, draft: unfinished, revision: 1, updatedAt: "2026-10-12T00:00:00.000Z", expiresAt: "2027-01-10T00:00:00.000Z",
     };
     vi.mocked(deleteClassDraft).mockResolvedValue();
     renderCreator(saved, 7, record);
@@ -203,18 +203,18 @@ describe("ClassCreator", () => {
     await userEvent.click(page.getByRole("alertdialog").getByRole("button", { name: "Discard" }));
 
     await expect.element(page.getByRole("textbox", { name: "Class name" })).toHaveValue("Bog Witch");
-    expect(deleteClassDraft).toHaveBeenCalledWith(5);
+    await expect.poll(() => deleteClassDraft).toHaveBeenCalledWith(5);
   });
 
   it("saves a complete class, stamps it FORGED and offers the way to my classes", async () => {
-    vi.mocked(saveClass).mockResolvedValue({ id: 12, draft: complete() });
+    vi.mocked(saveClass).mockResolvedValue({ id: 12, draft: complete(), version: 1, playingCount: 0, status: "active", takenDownAt: null, takedownReason: null, savedRefs: {} });
     renderCreator(complete());
-    await page
+    await userEvent.click(page
       .getByRole("button", { name: /Test roll & save/ })
       .first()
-      .click();
+      );
 
-    await page.getByRole("button", { name: "Save class" }).click();
+    await userEvent.click(page.getByRole("button", { name: "Save class" }));
 
     await expect.element(page.getByText("Forged")).toBeVisible();
     await expect
@@ -223,7 +223,7 @@ describe("ClassCreator", () => {
     await expect
       .element(page.getByRole("button", { name: "Saved" }))
       .toBeDisabled();
-    expect(saveClass).toHaveBeenCalledWith({ id: null, draft: complete() });
+    await expect.poll(() => saveClass).toHaveBeenCalledWith({ id: null, draft: complete() });
   });
 
   it("says when the draft changed since the test roll", async () => {
@@ -241,25 +241,25 @@ describe("ClassCreator", () => {
       abilities: [{ key: "Bone-Reader", name: "Bone-Reader" }],
     });
     renderCreator(complete());
-    await page
+    await userEvent.click(page
       .getByRole("button", { name: /Test roll & save/ })
       .first()
-      .click();
+      );
 
-    await page.getByRole("button", { name: "Roll a test scvm" }).click();
+    await userEvent.click(page.getByRole("button", { name: "Roll a test scvm" }));
     await expect.element(page.getByText("Nameless Wretch")).toBeVisible();
     await expect.element(page.getByText("Femur")).toBeVisible();
     await expect.element(page.getByText("Bone-Reader")).toBeVisible();
 
-    await page
+    await userEvent.click(page
       .getByRole("button", { name: /Origins/ })
       .first()
-      .click();
-    await page.getByRole("button", { name: "Add origin" }).click();
-    await page
+      );
+    await userEvent.click(page.getByRole("button", { name: "Add origin" }));
+    await userEvent.click(page
       .getByRole("button", { name: /Test roll & save/ })
       .first()
-      .click();
+      );
 
     await expect
       .element(
@@ -268,7 +268,7 @@ describe("ClassCreator", () => {
         ),
       )
       .toBeVisible();
-    expect(testRollClass).toHaveBeenCalledWith({
+    await expect.poll(() => testRollClass).toHaveBeenCalledWith({
       draft: complete(),
       language: "en",
       locale: "en",
@@ -289,16 +289,16 @@ describe("ClassCreator", () => {
         },
       ),
     );
-    vi.mocked(saveClass).mockResolvedValueOnce({ id: 7, draft: complete() });
+    vi.mocked(saveClass).mockResolvedValueOnce({ id: 7, draft: complete(), version: 1, playingCount: 0, status: "active", takenDownAt: null, takedownReason: null, savedRefs: {} });
     renderCreator(complete(), 7);
-    await page
+    await userEvent.click(page
       .getByRole("button", { name: /Test roll & save/ })
       .first()
-      .click();
+      );
 
-    await page.getByRole("button", { name: "Save class" }).click();
+    await userEvent.click(page.getByRole("button", { name: "Save class" }));
     await expect.element(page.getByText(/You have 50 classes/)).toBeVisible();
-    await page.getByRole("button", { name: "Save class" }).click();
+    await userEvent.click(page.getByRole("button", { name: "Save class" }));
 
     await expect.element(page.getByText("Forged")).toBeVisible();
     expect(vi.mocked(saveClass).mock.calls.map(([input]) => input.id)).toEqual([
@@ -308,16 +308,16 @@ describe("ClassCreator", () => {
 
   it("only lets a stat drop its lowest die when it rolls two or more", async () => {
     renderCreator();
-    await page
+    await userEvent.click(page
       .getByRole("button", { name: /Stats & dice/ })
       .first()
-      .click();
+      );
     const strength = page.getByRole("region", { name: "STR dice" });
-    await strength.getByRole("button", { name: "Change" }).click();
+    await userEvent.click(strength.getByRole("button", { name: "Change" }));
 
-    await strength.getByRole("radio", { name: "Dropped" }).click();
-    await strength.getByRole("button", { name: "Decrease Dice" }).click();
-    await strength.getByRole("button", { name: "Decrease Dice" }).click();
+    await userEvent.click(strength.getByRole("radio", { name: "Dropped" }));
+    await userEvent.click(strength.getByRole("button", { name: "Decrease Dice" }));
+    await userEvent.click(strength.getByRole("button", { name: "Decrease Dice" }));
 
     await expect
       .element(strength.getByRole("radio", { name: "Dropped" }))
@@ -329,12 +329,12 @@ describe("ClassCreator", () => {
 
   it("writes an ability with a tests-only modifier, and the closed card shows it", async () => {
     renderCreator(complete());
-    await page
+    await userEvent.click(page
       .getByRole("button", { name: /Abilities/ })
       .first()
-      .click();
+      );
 
-    await page.getByRole("button", { name: "Add ability" }).click();
+    await userEvent.click(page.getByRole("button", { name: "Add ability" }));
     await expect
       .element(page.getByLabelText("Name", { exact: true }))
       .toHaveFocus();
@@ -342,13 +342,13 @@ describe("ClassCreator", () => {
     await page
       .getByLabelText("Rules text")
       .fill("Smell the dead through walls.");
-    await page.getByRole("radio", { name: "Random" }).click();
-    await page.getByRole("button", { name: "Add modifier" }).click();
-    await page.getByRole("radio", { name: "PRE" }).click();
+    await userEvent.click(page.getByRole("radio", { name: "Random" }));
+    await userEvent.click(page.getByRole("button", { name: "Add modifier" }));
+    await userEvent.click(page.getByRole("radio", { name: "PRE" }));
     await page.getByRole("spinbutton", { name: "Value" }).fill("2");
     await userEvent.keyboard("{Enter}");
-    await page.getByRole("radio", { name: "Tests only" }).click();
-    await page.getByRole("button", { name: "Done" }).click();
+    await userEvent.click(page.getByRole("radio", { name: "Tests only" }));
+    await userEvent.click(page.getByRole("button", { name: "Done" }));
 
     const card = page.getByRole("button", { name: /Grave Sense/ });
     await expect.element(card).toHaveTextContent("Random 1");
@@ -368,30 +368,31 @@ describe("ClassCreator", () => {
           modifiers: [],
           grantItem: null,
           grantPet: null,
+          table: null,
         },
       ],
     });
-    await page
+    await userEvent.click(page
       .getByRole("button", { name: /Abilities/ })
       .first()
-      .click();
+      );
 
     const rolled = page.getByRole("spinbutton", {
       name: "Random abilities rolled",
     });
-    await rolled.click();
+    await userEvent.click(rolled);
     await userEvent.keyboard("{ArrowUp}{ArrowUp}");
     await expect.element(rolled).toHaveAttribute("aria-valuenow", "1");
 
-    await page
+    await userEvent.click(page
       .getByRole("button", { name: /Test roll & save/ })
       .first()
-      .click();
-    await page
+      );
+    await userEvent.click(page
       .getByRole("button", {
         name: /English missing: “Grave Sense” rules text/,
       })
-      .click();
+      );
 
     await expect.element(page.getByLabelText("Rules text")).toHaveFocus();
     await expect
@@ -410,6 +411,7 @@ describe("ClassCreator", () => {
           modifiers: [],
           grantItem: null,
           grantPet: null,
+          table: null,
         },
         {
           random: true,
@@ -418,6 +420,7 @@ describe("ClassCreator", () => {
           modifiers: [],
           grantItem: null,
           grantPet: null,
+          table: null,
         },
       ],
     });
@@ -445,18 +448,19 @@ describe("ClassCreator", () => {
           modifiers: [],
           grantItem: null,
           grantPet: null,
+          table: null,
         },
       ],
     });
-    await page
+    await userEvent.click(page
       .getByRole("button", { name: /Abilities/ })
       .first()
-      .click();
-    await page.getByRole("button", { name: /Bone-Reader/ }).click();
+      );
+    await userEvent.click(page.getByRole("button", { name: /Bone-Reader/ }));
 
-    await page.getByRole("button", { name: "Duplicate" }).click();
+    await userEvent.click(page.getByRole("button", { name: "Duplicate" }));
     await expect.element(page.getByText("2 of 20 abilities")).toBeVisible();
-    await page.getByRole("button", { name: "Remove" }).click();
+    await userEvent.click(page.getByRole("button", { name: "Remove" }));
 
     await expect.element(page.getByText("1 of 20 abilities")).toBeVisible();
     await expect
@@ -542,6 +546,7 @@ describe("ClassCreator", () => {
           modifiers: [],
           grantItem: snuff.ref,
           grantPet: null,
+          table: null,
         },
       ],
     });
@@ -571,6 +576,7 @@ describe("ClassCreator", () => {
         modifiers: [],
         grantItem: null,
         grantPet: null,
+        table: null,
       }],
     });
     await userEvent.click(page.getByRole("button", { name: /Abilities/ }).first());
@@ -607,6 +613,7 @@ describe("ClassCreator", () => {
           modifiers: [],
           grantItem: "new:flail",
           grantPet: null,
+          table: null,
         },
       ],
     });
@@ -656,6 +663,7 @@ describe("ClassCreator", () => {
           modifiers: [],
           grantItem: "new:flail",
           grantPet: null,
+          table: null,
         },
       ],
     });
@@ -685,12 +693,12 @@ describe("ClassCreator", () => {
 
   it("adds origins up to the cap and focuses the new one", async () => {
     renderCreator();
-    await page
+    await userEvent.click(page
       .getByRole("button", { name: /Origins/ })
       .first()
-      .click();
+      );
 
-    await page.getByRole("button", { name: "Add origin" }).click();
+    await userEvent.click(page.getByRole("button", { name: "Add origin" }));
 
     await expect
       .element(page.getByLabelText("Origin 1", { exact: true }))

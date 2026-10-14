@@ -1,4 +1,4 @@
-import type { Class, ClassSource, ClassStatus, ClassVisibility, GettingBetterRule } from '@prisma/client';
+import type { Class, ClassSource, ClassStatus, ClassVisibility, GettingBetterRule, Prisma } from '@prisma/client';
 
 export type { ClassSource, ClassStatus, ClassVisibility, GettingBetterRule };
 
@@ -6,7 +6,7 @@ export type { ClassSource, ClassStatus, ClassVisibility, GettingBetterRule };
  * Lists every value of a database enum as a tuple JSON schemas can use.
  * Compiles only when the tuple names exactly the enum's values, so the API cannot drift from the schema.
  */
-const enumValues =
+export const enumValues =
   <T extends string>() =>
   <const A extends readonly T[]>(values: A & ([T] extends [A[number]] ? unknown : never)): A =>
     values;
@@ -40,6 +40,24 @@ export type ClassVersionRef = Pick<
   'id' | 'lineageId' | 'version' | 'source' | 'status' | 'visibility' | 'ownerUserId' | 'takenDownAt'
 >;
 
+/** The text a moderation removal puts in place of a class's user-written content. */
+export const REMOVAL_MARKER = '[removed by moderation]';
+
+/**
+ * Who may do what with a class version. Every read, offer and report check goes through
+ * these, so a change to the rules (such as a new status) lands in one place.
+ */
+
+/** `isAvailable` as a database filter, for queries that must agree with it. */
+export const availableWhere = { status: 'active', takenDownAt: null } satisfies Prisma.ClassWhereInput;
+
+/** `mayUse` as a database filter, for queries that must agree with it. */
+export function usableByWhere(viewerId: string) {
+  return {
+    OR: [{ source: { not: 'user' } }, { visibility: 'public' }, { ownerUserId: viewerId }],
+  } satisfies Prisma.ClassWhereInput;
+}
+
 /** Whether a class version can be used at all: active and not taken down. */
 export function isAvailable(row: Pick<ClassVersionRef, 'status' | 'takenDownAt'>): boolean {
   return row.status === 'active' && row.takenDownAt === null;
@@ -51,4 +69,46 @@ export function mayUse(
   viewerId: string | null
 ): boolean {
   return row.source !== 'user' || row.visibility === 'public' || (viewerId !== null && row.ownerUserId === viewerId);
+}
+
+/** Whether a party may offer a class version: available, and usable by the party's owner. */
+export function mayOffer(row: ClassVersionRef, partyOwnerId: string | null): boolean {
+  return isAvailable(row) && mayUse(row, partyOwnerId);
+}
+
+/**
+ * Whether a viewer may open a class version's detail page: moderators always; others while it is
+ * available and theirs to use, or enabled in the pool of a party they play in. `pooledForViewer`
+ * is only asked when nothing else decides.
+ */
+export async function mayRead(
+  row: ClassVersionRef,
+  viewer: { userId: string | null; moderator: boolean; pooledForViewer: () => Promise<boolean> }
+): Promise<boolean> {
+  if (viewer.moderator) {
+    return true;
+  }
+  if (!isAvailable(row)) {
+    return false;
+  }
+  return mayUse(row, viewer.userId) || viewer.pooledForViewer();
+}
+
+/** Whether anyone may report a class version: any Built-in Class, or a Public Custom Class still up. */
+export function isReportable(row: Pick<ClassVersionRef, 'source' | 'visibility' | 'takenDownAt'>): boolean {
+  return row.source !== 'user' || (row.visibility === 'public' && row.takenDownAt === null);
+}
+
+/** Every version of each lineage, with its latest one. */
+export function byLineage<T extends Pick<ClassVersionRef, 'lineageId' | 'version'>>(
+  rows: T[]
+): Array<{ latest: T; versions: T[] }> {
+  const groups = new Map<string, T[]>();
+  for (const row of rows) {
+    groups.set(row.lineageId, [...(groups.get(row.lineageId) ?? []), row]);
+  }
+  return [...groups.values()].map((versions) => ({
+    latest: versions.reduce((a, b) => (b.version > a.version ? b : a)),
+    versions,
+  }));
 }

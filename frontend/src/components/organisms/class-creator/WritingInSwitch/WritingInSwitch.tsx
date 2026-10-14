@@ -1,6 +1,6 @@
 import { moveInRadioGroup } from "@/utils/radioGroupKeys";
 import { useTranslation } from "react-i18next";
-import { missingCount } from "../classCreator.utils";
+import { missingCount } from "../creatorShared.utils";
 import type { WritingInSwitchProps } from "./WritingInSwitch.models";
 import { Caption, Option, Wrap } from "./WritingInSwitch.styles";
 

@@ -7,7 +7,7 @@ import {
   type StoredClassDraft,
 } from "@/api/classes";
 import { getApiLocale } from "@/hooks/utils";
-import type { CreatorIssue, CreatorStep } from "../classCreator.models";
+import type { CreatorIssue, CreatorStep } from "../creatorShared.models";
 import {
   abilityIndexOf,
   blankDraft,
@@ -15,7 +15,7 @@ import {
   itemIndexOf,
   STEPS,
   withSavedKeys,
-} from "../classCreator.utils";
+} from "../creatorShared.utils";
 import {
   getApiErrorCode,
   getApiErrorStatus,
@@ -26,9 +26,12 @@ import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDraftAutosave } from "./useDraftAutosave";
 
-type HistoryEntry = { before: ClassDraft; after: ClassDraft; at: number };
+type HistoryEntry = { before: ClassDraft; after: ClassDraft; at: number; control: string | null };
 const HISTORY_LIMIT = 30;
-/** Edits closer together than this undo as one step, so typing and nudging aren't undone a keystroke at a time. */
+/**
+ * Edits to the same control closer together than this undo as one step, so typing and
+ * nudging aren't undone a keystroke at a time.
+ */
 const MERGE_MS = 1000;
 const sameDraft = (left: ClassDraft, right: ClassDraft) =>
   JSON.stringify(left) === JSON.stringify(right);
@@ -115,13 +118,15 @@ export function useClassCreator(
     if (sameDraft(before, after)) {
       return;
     }
+    const focused = document.activeElement;
     const entry: HistoryEntry = {
       before: structuredClone(before),
       after: structuredClone(after),
       at: Date.now(),
+      control: focused instanceof HTMLElement && focused.id ? focused.id : null,
     };
     const last = historyRef.current.undo[historyRef.current.undo.length - 1];
-    if (last && entry.at - last.at <= MERGE_MS) {
+    if (last && entry.control !== null && last.control === entry.control && entry.at - last.at <= MERGE_MS) {
       last.after = entry.after;
       last.at = entry.at;
     } else {
@@ -163,18 +168,18 @@ export function useClassCreator(
   };
 
   const save = useMutation({
-    mutationFn: (input: { draft: ClassDraft; revision: number }) =>
-      saveClass({ id: savedId, draft: input.draft }),
+    mutationFn: (input: { draft: ClassDraft; revision: number; draftId?: number }) =>
+      saveClass({ id: savedId, draft: input.draft, draftId: input.draftId }),
     onSuccess: (result, input) => {
       setSavedId(result.id);
       setSavedRevision(input.revision);
-      setDraft((current) => withSavedKeys(current, result.draft));
-      void queryClient.invalidateQueries({ queryKey: ["classes"] });
+      setDraft((current) => withSavedKeys(current, result.draft, result.savedRefs));
+      void queryClient.invalidateQueries({ queryKey: classKeys.all() });
       queryClient.setQueryData(classKeys.one(result.id), result);
-      draftRef.current = withSavedKeys(draftRef.current, result.draft);
+      draftRef.current = withSavedKeys(draftRef.current, result.draft, result.savedRefs);
       historyRef.current = { undo: [], redo: [] };
       publishHistory();
-      void autosave.complete();
+      autosave.complete(input.draftId);
     },
     onError: (error) =>
       setBlocked(
@@ -294,7 +299,7 @@ export function useClassCreator(
         return;
       }
       setBlocked(null);
-      save.mutate({ draft, revision });
+      save.mutate({ draft, revision, draftId: autosave.record?.id });
     },
   };
 }

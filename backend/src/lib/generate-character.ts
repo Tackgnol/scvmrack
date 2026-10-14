@@ -105,7 +105,7 @@ export const CLASSLESS_DEFAULTS = {
   weaponDie: 10,
   armorDie: 4,
   omenDie: 2,
-};
+} as const;
 
 /** How one stat is rolled: `count`d`faces` + `modifier`, optionally dropping the lowest die. */
 export type StatDice = { count: number; faces: number; modifier: number; dropLowest: boolean };

@@ -19,3 +19,6 @@ const scale = rateLimitScale();
 export function limitMax(max: number): number {
   return Math.ceil(max * scale);
 }
+
+/** Public reports and author disputes: 5 per visitor per hour. */
+export const reportLimit = { rateLimit: { max: limitMax(5), timeWindow: '1 hour' } };

@@ -1,4 +1,5 @@
-import { Box, Button, Paper, Typography } from '@mui/material';
+import { Box, Link as MuiLink, Paper, Typography } from '@mui/material';
+import { Link } from '@tanstack/react-router';
 import { customStyles } from '@/theme/morkBorgTheme';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -11,6 +12,8 @@ interface CharacterClassSummaryProps {
   classAuthoredLanguage?: 'en' | 'pl' | null;
   classContentRemoved?: boolean;
   reportClassId?: number;
+  /** A Custom Class's id; its name then links to the class's detail page. */
+  detailClassId?: number;
   action?: ReactNode;
 }
 
@@ -22,6 +25,7 @@ export default function CharacterClassSummary({
   classAuthoredLanguage,
   classContentRemoved,
   reportClassId,
+  detailClassId,
   action,
 }: CharacterClassSummaryProps) {
   const { t } = useTranslation();
@@ -43,7 +47,13 @@ export default function CharacterClassSummary({
       <Typography
         sx={{ ...customStyles.characterClassText, ...(action ? { pr: 12 } : {}) }}
       >
-        {className}
+        {detailClassId ? (
+          <MuiLink component={Link} to={`/classes/${detailClassId}`} color="inherit">
+            {className}
+          </MuiLink>
+        ) : (
+          className
+        )}
       </Typography>
       {classAttribution && (
         <Typography variant="caption" display="block" sx={{ opacity: 0.8 }}>
@@ -52,7 +62,9 @@ export default function CharacterClassSummary({
       )}
       {classAuthoredLanguage && (
         <Typography variant="caption" display="block" sx={{ opacity: 0.8 }}>
-          This class is written in {classAuthoredLanguage === 'en' ? 'English' : 'Polish'}.
+          {t('character.classWrittenIn', 'This class is written in {{language}}.', {
+            language: t(`classes.languages.${classAuthoredLanguage}`),
+          })}
         </Typography>
       )}
       {classContentRemoved && (
@@ -66,9 +78,15 @@ export default function CharacterClassSummary({
         </Typography>
       )}
       {reportClassId && (
-        <Button component="a" href={`/report?classId=${reportClassId}`} size="small" sx={{ mt: 1 }}>
+        <MuiLink
+          component={Link}
+          to="/report"
+          search={{ classId: String(reportClassId) } as never}
+          variant="body2"
+          sx={{ display: 'inline-block', mt: 1 }}
+        >
           {t('report.link', 'Report a class')}
-        </Button>
+        </MuiLink>
       )}
     </Paper>
   );

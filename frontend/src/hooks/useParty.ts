@@ -12,7 +12,7 @@ export type PartyMember = {
   /** A recent SSE event touched this member — drives the quiet "changed" pulse. */
   changed?: boolean;
   /** Rolled with an older version of their class than the one now offered. */
-  olderRules?: boolean;
+  olderRules?: { version: number; latestVersion: number } | null;
 };
 
 // The warband takeover shows the GM-owned party the player's scvm is bound to — every

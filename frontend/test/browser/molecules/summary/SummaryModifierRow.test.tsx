@@ -22,7 +22,7 @@ describe('SummaryModifierRow Browser', () => {
     );
 
     await expect.element(page.getByText('Agility')).toBeVisible();
-    await expect.element(page.getByText('-1')).toBeVisible();
+    await expect.element(page.getByText('−1')).toBeVisible();
     await expect.element(page.getByText('Strength')).not.toBeInTheDocument();
     await expect.element(page.getByText('+2')).not.toBeInTheDocument();
 
@@ -35,6 +35,6 @@ describe('SummaryModifierRow Browser', () => {
     await expect.element(page.getByText('Presence')).toBeVisible();
     await expect.element(page.getByText('0')).toBeVisible();
     await expect.element(page.getByText('Agility')).not.toBeInTheDocument();
-    await expect.element(page.getByText('-1')).not.toBeInTheDocument();
+    await expect.element(page.getByText('−1')).not.toBeInTheDocument();
   });
 });

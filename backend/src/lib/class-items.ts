@@ -1,3 +1,4 @@
+import { issueKeys } from './stable-keys.js';
 import type {
   AbilityModifierDraft,
   ClassItemDraft,
@@ -40,19 +41,13 @@ export function stableItemKeys(
     const match = KEY.exec(key);
     return match && Number(match[2]) === classId ? Number(match[3]) : 0;
   };
-  let next =
-    Math.max(0, ...inUse.map(numberOf), ...items.map((i) => numberOf(i.ref))) +
-    1;
-  const used = new Set<string>();
-  return items.map((item) => {
-    const prefix = ITEM_TABLES[item.type].prefix;
-    const kept =
-      numberOf(item.ref) > 0 &&
-      item.ref.startsWith(prefix) &&
-      !used.has(item.ref);
-    const key = kept ? item.ref : `${prefix}cc-${classId}-${next++}`;
-    used.add(key);
-    return key;
+  const prefixOf = (index: number) => ITEM_TABLES[items[index].type].prefix;
+  return issueKeys({
+    draftKeys: items.map((item) => item.ref),
+    inUse,
+    numberOf,
+    keeps: (key, index) => numberOf(key) > 0 && key.startsWith(prefixOf(index)),
+    keyFor: (n, index) => `${prefixOf(index)}cc-${classId}-${n}`,
   });
 }
 
@@ -78,7 +73,7 @@ const fromCatalog = (raw: unknown): AbilityModifierDraft[] =>
   (Array.isArray(raw) ? raw : []).map((m: CatalogModifier) => ({
     statistic: m.statistic as AbilityModifierDraft['statistic'],
     value: m.value,
-    exclude: Array.isArray(m.exclude) ? m.exclude : [],
+    exclude: (Array.isArray(m.exclude) ? m.exclude : []) as AbilityModifierDraft['exclude'],
   }));
 
 /** The catalog row a Class Item is stored as. `source` labels its modifiers on the sheet. */
@@ -209,7 +204,7 @@ export function itemFromRow(
         : 'none';
     item.weapon = {
       diceCount: row.dice?.length || 1,
-      diceFaces: row.dice?.[0] ?? 6,
+      diceFaces: (row.dice?.[0] ?? 6) as ClassItemDraft['weapon']['diceFaces'],
       damageModifier: row.damageModifier ?? 0,
       reach: row.tags.includes('ranged') ? 'ranged' : 'melee',
       ammo,
@@ -220,7 +215,7 @@ export function itemFromRow(
     };
   } else if (type === 'armor') {
     item.armor = {
-      tier: row.maxTier ?? 1,
+      tier: (row.maxTier ?? 1) as ClassItemDraft['armor']['tier'],
       modifiers: fromCatalog(row.modifiers),
     };
   } else if (type === 'gear') {
@@ -237,13 +232,13 @@ export function itemFromRow(
         : 'carried',
       uses: row.defaultAmount ?? 0,
       effect: effect.damageDie ? 'damage' : effect.effectDie ? 'die' : 'text',
-      effectDie: effect.damageDie ?? effect.effectDie ?? 6,
+      effectDie: (effect.damageDie ?? effect.effectDie ?? 6) as ClassItemDraft['gear']['effectDie'],
       statuses: fromCatalog(effect.statuses),
     };
   } else {
     item.pet = {
       hp: row.hp ?? 4,
-      actionDie: row.actionDie?.[0] ?? 4,
+      actionDie: (row.actionDie?.[0] ?? 4) as ClassItemDraft['pet']['actionDie'],
       action: row.actionType === 'buff' ? 'buff' : 'attack',
       humanoid: row.tags.includes('humanoid'),
       buffs: fromCatalog(row.buff),

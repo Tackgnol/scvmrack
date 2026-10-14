@@ -18,7 +18,7 @@ type WarbandStripRowViewProps = {
   /** A recent SSE event touched this member — flashes the quiet "changed" pulse. */
   changed?: boolean;
   /** Rolled with an older version of their class than the one now offered. */
-  olderRules?: boolean;
+  olderRules?: { version: number; latestVersion: number } | null;
   actions?: ReactNode;
 };
 
@@ -318,7 +318,7 @@ export function WarbandStripRowView({
   onToggle,
   disconnected = false,
   changed = false,
-  olderRules = false,
+  olderRules = null,
   actions,
 }: WarbandStripRowViewProps) {
   const { t } = useTranslation();
@@ -342,13 +342,11 @@ export function WarbandStripRowView({
               </DisconnectedTag>
             )}
             {olderRules && (
-              <OlderRulesTag
-                title={t(
-                  "party.olderRulesHint",
-                  "Rolled with an older version of this class; the pool now offers a newer one.",
-                )}
-              >
-                {t("party.olderRules", "Older rules")}
+              <OlderRulesTag>
+                {t("party.olderRulesVersions", "Rolled with v{{version}} · class now v{{latestVersion}}", {
+                  version: olderRules.version,
+                  latestVersion: olderRules.latestVersion,
+                })}
               </OlderRulesTag>
             )}
           </NameRow>

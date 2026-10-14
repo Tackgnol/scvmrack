@@ -1,7 +1,8 @@
 import { render } from 'vitest-browser-react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { page } from 'vitest/browser';
+import { page, userEvent } from 'vitest/browser';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import type { ReactNode } from 'react';
 import BrowserTestProvider from '../BrowserTestProvider';
 import { ClassPoolPanel } from '@/components/organisms/class-pool/ClassPoolPanel/ClassPoolPanel';
 import {
@@ -12,6 +13,22 @@ import {
   type PoolClass,
 } from '@/api/classPool';
 
+vi.mock('@tanstack/react-router', () => ({
+  Link: ({ children, to, params, search, className }: {
+    children: ReactNode;
+    to: string;
+    params?: Record<string, string>;
+    search?: Record<string, string>;
+    className?: string;
+  }) => (
+    <a
+      className={className}
+      href={(params ? to.replace('$classId', params.classId) : to) + (search ? `?${new URLSearchParams(search)}` : '')}
+    >
+      {children}
+    </a>
+  ),
+}));
 vi.mock('@/api/classPool', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/api/classPool')>()),
   getClassPool: vi.fn(),
@@ -91,10 +108,10 @@ describe('ClassPoolPanel', () => {
     renderPanel();
 
     const hermit = page.getByRole('switch', { name: 'Esoteric Hermit in the pool' });
-    await hermit.click();
+    await userEvent.click(hermit);
 
     await expect.element(hermit).toBeChecked();
-    expect(setPoolClass).toHaveBeenCalledWith({
+    await expect.poll(() => setPoolClass).toHaveBeenCalledWith({
       partyId: 'p1',
       lineageId: 'lin-Esoteric Hermit',
       enabled: true,
@@ -110,7 +127,7 @@ describe('ClassPoolPanel', () => {
     renderPanel();
 
     const deserter = page.getByRole('switch', { name: 'Fanged Deserter in the pool' });
-    await deserter.click();
+    await userEvent.click(deserter);
 
     await expect.element(page.getByText("That change didn't save. Try again.")).toBeVisible();
     await expect.element(deserter).toBeChecked();
@@ -119,7 +136,7 @@ describe('ClassPoolPanel', () => {
   it('opens the sections a filter shows', async () => {
     renderPanel();
 
-    await page.getByRole('button', { name: 'Zine & Rack' }).click();
+    await userEvent.click(page.getByRole('button', { name: 'Zine & Rack' }));
 
     await expect.element(page.getByText('Ossuary Knight').first()).toBeVisible();
     await expect.element(page.getByText('from Terrible Dungeons by Toby').first()).toBeVisible();
@@ -132,7 +149,7 @@ describe('ClassPoolPanel', () => {
     await page.getByRole('searchbox', { name: 'Search classes' }).fill('toby');
     await expect.element(page.getByText('Ossuary Knight').first()).toBeVisible();
 
-    await page.getByRole('button', { name: /Zine Classes/ }).click();
+    await userEvent.click(page.getByRole('button', { name: /Zine Classes/ }));
     await expect.element(page.getByText('Ossuary Knight')).not.toBeInTheDocument();
   });
 
@@ -148,10 +165,13 @@ describe('ClassPoolPanel', () => {
     vi.mocked(getClassPool).mockResolvedValue(withPublic);
     renderPanel();
 
-    await page.getByRole('button', { name: /Other GMs' public classes/ }).click();
+    await userEvent.click(page.getByRole('button', { name: /Other GMs' public classes/ }));
     await expect
       .element(page.getByRole('link', { name: 'Report a class' }))
       .toHaveAttribute('href', '/report?classId=77');
+    await expect
+      .element(page.getByRole('link', { name: 'Public Wretch' }))
+      .toHaveAttribute('href', '/classes/77');
   });
 
   it('a class whose author is gone is not called taken down', async () => {
@@ -174,11 +194,11 @@ describe('ClassPoolPanel', () => {
 
     const deserter = page.getByRole('switch', { name: 'Fanged Deserter in the pool' });
     const hermit = page.getByRole('switch', { name: 'Esoteric Hermit in the pool' });
-    await deserter.click();
-    await hermit.click();
+    await userEvent.click(deserter);
+    await userEvent.click(hermit);
     await expect.element(hermit).toBeChecked();
     // switches save one at a time: the second waits for the first
-    expect(setPoolClass).toHaveBeenCalledTimes(1);
+    await expect.poll(() => setPoolClass).toHaveBeenCalledTimes(1);
 
     failFirst(new Error('nope'));
 
@@ -213,10 +233,10 @@ describe('ClassPoolPanel', () => {
       .toHaveTextContent(
         "“Grave Warden's Due” has been removed by Morbid Marta (archived by its author)."
       );
-    await page.getByRole('button', { name: 'Got it' }).click();
+    await userEvent.click(page.getByRole('button', { name: 'Got it' }));
 
     await expect.element(page.getByTestId('removed-class-notice')).not.toBeInTheDocument();
-    expect(setPoolClass).toHaveBeenCalledWith(
+    await expect.poll(() => setPoolClass).toHaveBeenCalledWith(
       expect.objectContaining({ lineageId: 'lin-gone', enabled: false })
     );
   });
@@ -226,9 +246,9 @@ describe('ClassPoolPanel', () => {
     renderPanel();
 
     const classless = page.getByRole('switch', { name: 'Classless scvm in the pool' });
-    await classless.click();
+    await userEvent.click(classless);
 
     await expect.element(classless).not.toBeChecked();
-    expect(setPoolClassless).toHaveBeenCalledWith({ partyId: 'p1', enabled: false, locale: 'en' });
+    await expect.poll(() => setPoolClassless).toHaveBeenCalledWith({ partyId: 'p1', enabled: false, locale: 'en' });
   });
 });

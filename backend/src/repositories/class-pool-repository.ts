@@ -1,7 +1,15 @@
 import prisma from '../lib/prisma.js';
-import { translatedClassTexts } from '../lib/class-translations.js';
+import { usableByWhere } from '../lib/class-model.js';
 import type { GettingBetterRule } from '../lib/getting-better-types.js';
 import type { ClassVersionRef } from '../lib/class-model.js';
+
+/** One version of a class as stored, with its text still as translation keys. */
+export type PoolCatalogSource = Omit<PoolCatalogRow, 'name' | 'blurb'> & {
+  name: string;
+  nameKey: string | null;
+  descriptionKey: string | null;
+  appendix: string | null;
+};
 
 /** One version of a class, as the GM's pool panel needs it. */
 export type PoolCatalogRow = ClassVersionRef & {
@@ -48,23 +56,13 @@ export const classPoolRepository = {
 
   /**
    * Every version of the classes a GM's panel can show: built-in, the GM's own,
-   * other GMs' public ones, and whatever is pooled already. A database pre-filter for
-   * `mayUse` in lib/class-model.ts; keep the two in step.
+   * other GMs' public ones, and whatever is pooled already.
    */
   // ponytail: loads every public class; page or search server-side once public classes number in the hundreds.
-  async findCatalogRows(
-    ownerUserId: string,
-    poolLineageIds: string[],
-    locale: string
-  ): Promise<PoolCatalogRow[]> {
+  async findCatalogRows(ownerUserId: string, poolLineageIds: string[]): Promise<PoolCatalogSource[]> {
     const classes = await prisma.class.findMany({
       where: {
-        OR: [
-          { source: { not: 'user' } },
-          { ownerUserId },
-          { visibility: 'public' },
-          { lineageId: { in: poolLineageIds } },
-        ],
+        OR: [...usableByWhere(ownerUserId).OR, { lineageId: { in: poolLineageIds } }],
       },
       select: {
         id: true,
@@ -109,32 +107,30 @@ export const classPoolRepository = {
       }
     }
 
-    const texts = await translatedClassTexts(locale, classes);
-    return classes.map((c, i) => {
-      const text = texts[i];
-      return {
-        id: c.id,
-        lineageId: c.lineageId,
-        version: c.version,
-        source: c.source,
-        status: c.status,
-        visibility: c.visibility,
-        ownerUserId: c.ownerUserId,
-        ownerName: c.owner?.name ?? null,
-        takenDownAt: c.takenDownAt,
-        name: text.name,
-        blurb: text.description ?? c.appendix,
-        languages: c.languages,
-        credit:
-          c.creditWork && c.creditAuthor
-            ? { work: c.creditWork, author: c.creditAuthor, url: c.creditUrl }
-            : null,
-        abilityCount: countByClass.get(c.id) ?? 0,
-        classItemCount: itemsByClass.get(c.id) ?? 0,
-        randomAbilityCount: c.randomAbilityCount ?? 0,
-        gettingBetterRule: c.gettingBetterRule,
-      };
-    });
+    return classes.map((c) => ({
+      id: c.id,
+      lineageId: c.lineageId,
+      version: c.version,
+      source: c.source,
+      status: c.status,
+      visibility: c.visibility,
+      ownerUserId: c.ownerUserId,
+      ownerName: c.owner?.name ?? null,
+      takenDownAt: c.takenDownAt,
+      name: c.name,
+      nameKey: c.nameKey,
+      descriptionKey: c.descriptionKey,
+      appendix: c.appendix,
+      languages: c.languages,
+      credit:
+        c.creditWork && c.creditAuthor
+          ? { work: c.creditWork, author: c.creditAuthor, url: c.creditUrl }
+          : null,
+      abilityCount: countByClass.get(c.id) ?? 0,
+      classItemCount: itemsByClass.get(c.id) ?? 0,
+      randomAbilityCount: c.randomAbilityCount ?? 0,
+      gettingBetterRule: c.gettingBetterRule,
+    }));
   },
 
   async setLineage(partyId: string, lineageId: string, enabled: boolean): Promise<void> {

@@ -1,4 +1,4 @@
-import type { ClassDraft, ClassItemDraft, ClassLanguage } from "@/api/classes";
+import type { ClassDraft, ClassItemDraft, ClassItemType, ClassLanguage } from "@/api/classes";
 
 /** Changes one Class Item while preserving the rest of the draft. */
 export type ClassItemChange = (
@@ -23,7 +23,6 @@ export type CreatorIssue = {
   /** Draft path of the field to focus, e.g. `origins.2.pl`. */
   path: string;
 };
-/** Context for a draft edit, used to name and coalesce creator history. */
 /** An ability's two grant slots: a Class Item, and a pet. */
 export type GrantSlot = "grantItem" | "grantPet";
 
@@ -43,7 +42,7 @@ export type StepProps = {
 };
 
 /** What each Class Item type's field set gets: the item and a way to change its type's fields. */
-export type ItemFieldsProps<K extends "weapon" | "armor" | "gear" | "pet"> = {
+export type ItemFieldsProps<K extends ClassItemType> = {
   /** Draft path of the item, e.g. `items.2`. */
   path: string;
   item: ClassItemDraft;

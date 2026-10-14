@@ -3,16 +3,7 @@ import { useItemSearch } from '@/hooks/useEquipmentSearch.ts';
 import { Autocomplete, TextField, Typography } from '@mui/material';
 import { useState, type SyntheticEvent } from 'react';
 import { useTranslation } from 'react-i18next';
-
-type CatalogGrantPickerProps = {
-  id: string;
-  label: string;
-  pinnedOptions: ItemSearchHit[];
-  disabledPinnedKeys: string[];
-  pet: boolean;
-  onSelect: (key: string) => void;
-  onClear: () => void;
-};
+import type { CatalogGrantPickerProps } from './CatalogGrantPicker.models';
 
 /** Searches the shared catalog while keeping this class's own matching items at the top. */
 export function CatalogGrantPicker({ id, label, pinnedOptions, disabledPinnedKeys, pet, onSelect, onClear }: CatalogGrantPickerProps) {

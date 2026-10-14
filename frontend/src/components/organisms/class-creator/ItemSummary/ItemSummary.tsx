@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
-import { Chip, Chips, Edit, Kind, Name, Summary } from "../classCreator.styles";
-import { itemStamp } from "../classCreator.utils";
+import { Chip, Chips, Edit, Kind, Name, Summary } from "../creatorShared.styles";
+import { itemStamp } from "../creatorShared.utils";
 import type { ItemSummaryProps } from "./ItemSummary.models";
 
 /** A closed Class Item card: its type, name, stamp, who grants it, what it still misses, and Edit. */

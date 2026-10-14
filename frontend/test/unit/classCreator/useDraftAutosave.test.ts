@@ -140,3 +140,26 @@ describe('useDraftAutosave after the class is saved', () => {
     expect(api.updateClassDraft).not.toHaveBeenCalled();
   });
 });
+
+describe('useDraftAutosave completing a save', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.clearAllMocks();
+    api.deleteClassDraft.mockResolvedValue(undefined);
+  });
+  afterEach(() => vi.useRealTimers());
+
+  it('leaves the draft the server discarded alone and deletes one the save did not name', () => {
+    const named = renderHook(() =>
+      useDraftAutosave({ classId: null, draft, revision: 1, initialDraft: { ...stored(5), classId: null }, replaceDraft: vi.fn() })
+    );
+    act(() => named.result.current.complete(5));
+    expect(api.deleteClassDraft).not.toHaveBeenCalled();
+
+    const unnamed = renderHook(() =>
+      useDraftAutosave({ classId: null, draft, revision: 1, initialDraft: { ...stored(6), classId: null }, replaceDraft: vi.fn() })
+    );
+    act(() => unnamed.result.current.complete(undefined));
+    expect(api.deleteClassDraft).toHaveBeenCalledWith(6);
+  });
+});
