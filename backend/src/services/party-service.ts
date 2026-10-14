@@ -1,8 +1,6 @@
-import { translatedClassTexts } from '../lib/class-translations.js';
 import crypto from 'node:crypto';
 import {
   partyRepository,
-  PartyFullError,
   type PartyMemberRow,
   type PartyWithMembers,
 } from '../repositories/party-repository.js';
@@ -30,10 +28,9 @@ import {
 } from './session.js';
 
 export type { AppSession } from './session.js';
-import { PARTY_MAX_MEMBERS } from '../lib/party-limits.js';
-import { classPoolRepository } from '../repositories/class-pool-repository.js';
-import { buildClassPoolView } from './class-pool-view.js';
-import type { ClassPoolView } from '../schemas/party.js';
+import { PARTY_MAX_MEMBERS, partyFull } from '../lib/party-limits.js';
+import { characterRepository } from '../repositories/character-repository.js';
+import { defaultPoolLineageIds } from './party-class-pool-service.js';
 
 const OBR_ROOM_SYSTEM_OWNER_ID = 'system:obr-room';
 const OBR_ROOM_SYSTEM_OWNER_EMAIL = 'obr-room@system.scvmrack.local';
@@ -189,30 +186,6 @@ export function createPartyService(
     return null;
   }
 
-  async function loadClassPool(
-    partyId: string,
-    locale: string
-  ): Promise<ClassPoolView> {
-    const pool = await classPoolRepository.findPartyPool(partyId);
-    if (!pool) {
-      throw new Error(`Party ${partyId} vanished while loading its class pool`);
-    }
-    const sources = await classPoolRepository.findCatalogRows(pool.ownerUserId, pool.poolLineageIds);
-    const texts = await translatedClassTexts(locale, sources);
-    const rows = sources.map(({ nameKey: _nameKey, descriptionKey: _descriptionKey, appendix, ...row }, i) => ({
-      ...row,
-      name: texts[i].name,
-      blurb: texts[i].description ?? appendix,
-    }));
-    return buildClassPoolView({
-      rows,
-      poolLineageIds: pool.poolLineageIds,
-      classlessEnabled: pool.classlessEnabled,
-      partyOwnerId: pool.ownerUserId,
-      memberClassIds: pool.memberClassIds,
-    });
-  }
-
   return {
     maxMembers: PARTY_MAX_MEMBERS,
 
@@ -235,6 +208,7 @@ export function createPartyService(
           ownerUserId,
           name,
           inviteToken: newInviteToken(),
+          poolLineageIds: await defaultPoolLineageIds(),
         });
         return ok({
           id: party.id,
@@ -314,6 +288,7 @@ export function createPartyService(
           name,
           inviteToken: newInviteToken(),
           obrRoomId,
+          poolLineageIds: await defaultPoolLineageIds(),
         });
 
         // System-owned auto-setup: whichever OBR client races to /promote
@@ -378,11 +353,20 @@ export function createPartyService(
         if (existing && existing.id !== input.id) {
           if (existing.ownerUserId === OBR_ROOM_SYSTEM_OWNER_ID) {
             if (existing.members.length === 0) {
-              const replaced = await partyRepository.replaceEmptySystemPartyInRoom({
-                roomId: obrRoomId,
-                systemPartyId: existing.id,
-                partyId: input.id,
-                systemOwnerUserId: OBR_ROOM_SYSTEM_OWNER_ID,
+              // Re-checked under the transaction: the room's party may have changed since it was read.
+              const replaced = await partyRepository.roomTransaction(async (ops) => {
+                const roomParty = await ops.findRoomParty(obrRoomId);
+                if (
+                  !roomParty ||
+                  roomParty.id !== existing.id ||
+                  roomParty.ownerUserId !== OBR_ROOM_SYSTEM_OWNER_ID ||
+                  roomParty._count.members > 0
+                ) {
+                  return false;
+                }
+                await ops.deleteParty(roomParty.id);
+                await ops.setPartyRoom(input.id, obrRoomId);
+                return true;
               });
               if (replaced) {
                 return ok({ id: input.id, obrRoomId });
@@ -577,103 +561,6 @@ export function createPartyService(
       }
     },
 
-    async getClassPool(input: {
-      session: AppSession;
-      id: string;
-      locale: string;
-    }): Promise<ServiceResult<ClassPoolView>> {
-      const denied = await ensureOwner(input.session, input.id);
-      if (denied) {
-        return fail(denied);
-      }
-      try {
-        return ok(await loadClassPool(input.id, input.locale));
-      } catch (err) {
-        return fail(
-          unexpected(
-            log,
-            err,
-            'CLASS_POOL_LOAD_FAILED',
-            'Failed to load the class pool'
-          )
-        );
-      }
-    },
-
-    async setPoolClass(input: {
-      session: AppSession;
-      id: string;
-      lineageId: string;
-      enabled: boolean;
-      locale: string;
-    }): Promise<ServiceResult<ClassPoolView>> {
-      const denied = await ensureOwner(input.session, input.id);
-      if (denied) {
-        return fail(denied);
-      }
-      try {
-        if (!input.enabled) {
-          await classPoolRepository.setLineage(
-            input.id,
-            input.lineageId,
-            false
-          );
-          return ok(await loadClassPool(input.id, input.locale));
-        }
-        const view = await loadClassPool(input.id, input.locale);
-        if (!view.classes.some((c) => c.lineageId === input.lineageId)) {
-          return fail(
-            apiError(
-              409,
-              'CLASS_NOT_AVAILABLE',
-              'This class cannot be added to the pool'
-            )
-          );
-        }
-        await classPoolRepository.setLineage(input.id, input.lineageId, true);
-        return ok({
-          ...view,
-          classes: view.classes.map((c) =>
-            c.lineageId === input.lineageId ? { ...c, enabled: true } : c
-          ),
-        });
-      } catch (err) {
-        return fail(
-          unexpected(
-            log,
-            err,
-            'CLASS_POOL_UPDATE_FAILED',
-            'Failed to update the class pool'
-          )
-        );
-      }
-    },
-
-    async setPoolClassless(input: {
-      session: AppSession;
-      id: string;
-      enabled: boolean;
-      locale: string;
-    }): Promise<ServiceResult<ClassPoolView>> {
-      const denied = await ensureOwner(input.session, input.id);
-      if (denied) {
-        return fail(denied);
-      }
-      try {
-        await classPoolRepository.setClassless(input.id, input.enabled);
-        return ok(await loadClassPool(input.id, input.locale));
-      } catch (err) {
-        return fail(
-          unexpected(
-            log,
-            err,
-            'CLASS_POOL_UPDATE_FAILED',
-            'Failed to update the class pool'
-          )
-        );
-      }
-    },
-
     async setMiseries(input: {
       session: AppSession;
       id: string;
@@ -858,13 +745,18 @@ export function createPartyService(
           );
         }
 
-        // Cap is enforced inside the transaction so concurrent joins can't
-        // overflow it.
-        await partyRepository.joinInTransaction({
-          characterId: character.id,
-          partyId: party.id,
-          cap: PARTY_MAX_MEMBERS,
+        // The cap is checked under the party lock so concurrent joins can't overflow it.
+        const joined = await characterRepository.transaction(async (ops) => {
+          await ops.lockParty(party.id);
+          if ((await ops.countPartyMembers(party.id)) >= PARTY_MAX_MEMBERS) {
+            return false;
+          }
+          await ops.joinParty(character.id, party.id);
+          return true;
         });
+        if (!joined) {
+          return fail(partyFull());
+        }
         partyBus?.publish(party.id, {
           type: 'character.joined',
           characterId: character.id,
@@ -875,9 +767,6 @@ export function createPartyService(
           redirect: `/party/${party.id}/character/${character.id}`,
         });
       } catch (err) {
-        if (err instanceof PartyFullError) {
-          return fail(apiError(409, 'PARTY_FULL', 'This party is full'));
-        }
         return fail(
           unexpected(log, err, 'PARTY_JOIN_FAILED', 'Failed to join party')
         );

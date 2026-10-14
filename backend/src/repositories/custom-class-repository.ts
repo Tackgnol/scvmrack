@@ -1,7 +1,7 @@
 import type { Prisma } from '@prisma/client';
 import prisma from '../lib/prisma.js';
+import { advisoryLock } from './advisory-lock.js';
 import {
-  advisoryLock,
   deleteVersion,
   lineageTxOps,
   readVersionDraft,

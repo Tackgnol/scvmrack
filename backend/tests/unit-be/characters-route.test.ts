@@ -214,29 +214,33 @@ mock.module('../../src/lib/prisma.js', {
 
 mock.module('../../src/lib/generate-character.js', {
   namedExports: {
-    generateCharacter: async (classId: number | null, roller: unknown, userId?: string) => {
-      generateCalls.push({ classId, roller, userId });
-      return generatedCharacterId;
-    },
-    createCharacterFromDraft: async (draft: unknown, userId: string) => {
-      createFromDraftCalls.push({ draft, userId });
-      return generatedCharacterId;
-    },
-    characterCreateDataFromDraft: async () => ({}),
-    randomCharacterCreateData: async () => ({}),
+    characterCreateDataFromDraft: async (draft: unknown, userId: string) => ({ fromDraft: draft, userId }),
+    randomCharacterCreateData: async (classId: number, roller: unknown, userId?: string) => ({ fromRandom: classId, roller, userId }),
   },
 });
 
 mock.module('../../src/repositories/character-repository.js', {
   namedExports: {
-    characterRepository: {},
+    characterRepository: {
+      transaction: async (work: (ops: unknown) => Promise<unknown>) =>
+        work({
+          createCharacter: async (data: { fromDraft?: unknown; fromRandom?: number; roller?: unknown; userId: string }) => {
+            if ('fromDraft' in data) {
+              createFromDraftCalls.push({ draft: data.fromDraft, userId: data.userId });
+            } else {
+              generateCalls.push({ classId: data.fromRandom ?? null, roller: data.roller, userId: data.userId });
+            }
+            return generatedCharacterId;
+          },
+        }),
+    },
   },
 });
 
 const scopeTokens: Array<string | null | undefined> = [];
-mock.module('../../src/services/class-scope-service.js', {
+mock.module('../../src/services/party-class-pool-service.js', {
   namedExports: {
-    resolveClassScope: async (token: string | null | undefined) => {
+    resolvePartyClassPool: async (token: string | null | undefined) => {
       scopeTokens.push(token);
       return { ok: true, value: { classIds: [1, 2, 3, 4, 5, 6], acceptedClassIds: [1, 2, 3, 4, 5, 6], classlessEnabled: true, party: null } };
     },

@@ -1,6 +1,6 @@
 import prisma from '../lib/prisma.js';
+import { advisoryLock } from './advisory-lock.js';
 import { Prisma } from '@prisma/client';
-import type { ClassVersionRef } from '../lib/class-model.js';
 
 /**
  * Character data-access layer. The ONLY place that talks to Prisma for character
@@ -32,16 +32,56 @@ export type CharacterPartyAccessRow = {
   } | null;
 };
 
-const scopeClassSelect = {
-  id: true,
-  lineageId: true,
-  version: true,
-  source: true,
-  status: true,
-  visibility: true,
-  ownerUserId: true,
-  takenDownAt: true,
-} as const;
+/** Character writes bound to one transaction, so a service can combine them atomically. */
+function characterTxOps(tx: Prisma.TransactionClient) {
+  return {
+    /** Serializes work on one party (joins against its member cap) until the transaction ends. */
+    lockParty(partyId: string): Promise<void> {
+      return advisoryLock(tx, 'party', partyId);
+    },
+
+    /** How many scvm are in the party, not counting `excludingUserId`'s. */
+    countPartyMembers(partyId: string, excludingUserId?: string): Promise<number> {
+      return tx.character.count({
+        where: { partyId, ...(excludingUserId ? { NOT: { userId: excludingUserId } } : {}) },
+      });
+    },
+
+    async deleteCharactersOf(userId: string): Promise<void> {
+      await tx.character.deleteMany({ where: { userId } });
+    },
+
+    async createCharacter(data: Prisma.CharacterUncheckedCreateInput): Promise<string> {
+      const character = await tx.character.create({ data, select: { id: true } });
+      return character.id;
+    },
+
+    async joinParty(characterId: string, partyId: string): Promise<void> {
+      await tx.character.update({ where: { id: characterId }, data: { partyId, joinedAt: new Date() } });
+    },
+
+    /** Binds the Owlbear player's seat in the room to the character. */
+    async bindObrPlayer(binding: { roomId: string; playerId: string }, characterId: string): Promise<void> {
+      await tx.obrRoomBinding.upsert({
+        where: { obrRoomId: binding.roomId },
+        create: { obrRoomId: binding.roomId },
+        update: { updatedAt: new Date() },
+      });
+      await tx.obrPlayerCharacterBinding.upsert({
+        where: { obrRoomId_obrPlayerId: { obrRoomId: binding.roomId, obrPlayerId: binding.playerId } },
+        create: {
+          obrRoomId: binding.roomId,
+          obrPlayerId: binding.playerId,
+          characterId,
+          assignedByPlayerId: binding.playerId,
+        },
+        update: { characterId, assignedByPlayerId: binding.playerId },
+      });
+    },
+  };
+}
+
+export type CharacterTxOps = ReturnType<typeof characterTxOps>;
 
 export const characterRepository = {
   /** Owner lookup for ownership checks. `null` when the row does not exist. */
@@ -115,46 +155,11 @@ export const characterRepository = {
     return prisma.character.deleteMany({ where: { id } });
   },
 
-  /** Creates and binds a room-scoped scvm in one transaction. */
-  async createWithObrBindingInTransaction(input: {
-    data: Prisma.CharacterUncheckedCreateInput;
-    obrBinding: { roomId: string; playerId: string };
-    replaceUserId?: string;
-  }): Promise<string> {
-    return prisma.$transaction(async (tx) => {
-      if (input.replaceUserId) {
-        await tx.character.deleteMany({ where: { userId: input.replaceUserId } });
-      }
-      const character = await tx.character.create({
-        data: input.data,
-        select: { id: true },
-      });
-      await tx.obrRoomBinding.upsert({
-        where: { obrRoomId: input.obrBinding.roomId },
-        create: { obrRoomId: input.obrBinding.roomId },
-        update: { updatedAt: new Date() },
-      });
-      await tx.obrPlayerCharacterBinding.upsert({
-        where: {
-          obrRoomId_obrPlayerId: {
-            obrRoomId: input.obrBinding.roomId,
-            obrPlayerId: input.obrBinding.playerId,
-          },
-        },
-        create: {
-          obrRoomId: input.obrBinding.roomId,
-          obrPlayerId: input.obrBinding.playerId,
-          characterId: character.id,
-          assignedByPlayerId: input.obrBinding.playerId,
-        },
-        update: {
-          characterId: character.id,
-          assignedByPlayerId: input.obrBinding.playerId,
-        },
-      });
-      return character.id;
-    });
+  /** Runs `work` in one transaction with the character write operations bound to it. */
+  transaction<T>(work: (ops: CharacterTxOps) => Promise<T>): Promise<T> {
+    return prisma.$transaction((tx) => work(characterTxOps(tx)));
   },
+
   /** True if the user already owns at least one character. */
   async userHasCharacters(userId: string): Promise<boolean> {
     const row = await prisma.character.findFirst({
@@ -181,19 +186,6 @@ export const characterRepository = {
 
   count(): Promise<number> {
     return prisma.character.count();
-  },
-
-  /** Every Book Class row, for the solo (no-party) class scope. */
-  findBookClassRows(): Promise<ClassVersionRef[]> {
-    return prisma.class.findMany({ where: { source: 'main_book' }, select: scopeClassSelect });
-  },
-
-  /** Every version of the given class lineages, for a Party Class Pool. */
-  findClassRowsByLineage(lineageIds: string[]): Promise<ClassVersionRef[]> {
-    if (lineageIds.length === 0) {
-      return Promise.resolve([]);
-    }
-    return prisma.class.findMany({ where: { lineageId: { in: lineageIds } }, select: scopeClassSelect });
   },
 
   /** Classes for the creation gate with their untranslated text keys, in id order. */

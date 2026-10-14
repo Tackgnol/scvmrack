@@ -2,7 +2,8 @@ import type { ModerationReportReason, ModerationReportStatus, Prisma } from '@pr
 import { IN_FORCE_STATUSES } from '../lib/moderation-model.js';
 import prisma from '../lib/prisma.js';
 import type { VersionContent } from '../lib/class-version.js';
-import { advisoryLock, lineageTxOps, snapshotLineage, writeLineageContent } from './class-version-repository.js';
+import { advisoryLock } from './advisory-lock.js';
+import { lineageTxOps, snapshotLineage, writeLineageContent } from './class-version-repository.js';
 
 /** The class content a removal blanked, kept on the log so a restore can put it back. */
 export type RemovalEvidence = VersionContent;

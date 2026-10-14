@@ -25,18 +25,34 @@ export type PoolCatalogRow = ClassVersionRef & {
 };
 
 export type PartyPoolRow = {
+  id: string;
   ownerUserId: string;
   classlessEnabled: boolean;
   poolLineageIds: string[];
   memberClassIds: Array<number | null>;
 };
 
+const poolClassSelect = {
+  id: true,
+  lineageId: true,
+  version: true,
+  source: true,
+  status: true,
+  visibility: true,
+  ownerUserId: true,
+  takenDownAt: true,
+} as const;
+
 /** Party Class Pool data access. */
 export const classPoolRepository = {
-  async findPartyPool(partyId: string): Promise<PartyPoolRow | null> {
+  /** A party's pool, found by its id, invite token or Owlbear room. */
+  async findPool(
+    where: { id: string } | { inviteToken: string } | { obrRoomId: string }
+  ): Promise<PartyPoolRow | null> {
     const party = await prisma.party.findUnique({
-      where: { id: partyId },
+      where,
       select: {
+        id: true,
         ownerUserId: true,
         classlessEnabled: true,
         classPool: { select: { lineageId: true } },
@@ -47,11 +63,33 @@ export const classPoolRepository = {
       return null;
     }
     return {
+      id: party.id,
       ownerUserId: party.ownerUserId,
       classlessEnabled: party.classlessEnabled,
       poolLineageIds: party.classPool.map((row) => row.lineageId),
       memberClassIds: party.members.map((member) => member.classId),
     };
+  },
+
+  findBookClassRows(): Promise<ClassVersionRef[]> {
+    return prisma.class.findMany({ where: { source: 'main_book' }, select: poolClassSelect });
+  },
+
+  /** Every version of the given class lineages. */
+  findClassRowsByLineage(lineageIds: string[]): Promise<ClassVersionRef[]> {
+    if (lineageIds.length === 0) {
+      return Promise.resolve([]);
+    }
+    return prisma.class.findMany({ where: { lineageId: { in: lineageIds } }, select: poolClassSelect });
+  },
+
+  async findBookLineageIds(): Promise<string[]> {
+    const rows = await prisma.class.findMany({
+      where: { source: 'main_book' },
+      select: { lineageId: true },
+      distinct: ['lineageId'],
+    });
+    return rows.map((row) => row.lineageId);
   },
 
   /**

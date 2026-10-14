@@ -6,13 +6,6 @@ const OTHER_PARTY_ID = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
 const CHAR_ID = '11111111-1111-4111-8111-111111111111';
 const OBR_ROOM_ID = 'obr-room-1';
 
-class PartyFullError extends Error {
-  constructor() {
-    super('Party is full');
-    this.name = 'PartyFullError';
-  }
-}
-
 // ---- Mutable mock state ----
 type PartyRow = {
   id: string;
@@ -64,9 +57,12 @@ const state = {
     name: string;
     inviteToken: string;
     obrRoomId?: string | null;
+    poolLineageIds: string[];
   }>,
   setCalls: [] as Array<{ characterId: string; partyId: string | null }>,
-  joinCalls: [] as Array<{ characterId: string; partyId: string; cap: number }>,
+  joinCalls: [] as Array<{ characterId: string; partyId: string }>,
+  memberCount: 0,
+  roomMoves: [] as Array<{ id: string; roomId: string }>,
   rotateCalls: [] as Array<{ id: string; token: string }>,
   deleteCalls: [] as string[],
   renameCalls: [] as Array<{ id: string; name: string }>,
@@ -74,13 +70,6 @@ const state = {
   setMiseryCalls: [] as Array<{ partyId: string; miseryCount: number }>,
   setPartyOwnerCalls: [] as Array<{ id: string; ownerUserId: string }>,
   setObrRoomCalls: [] as Array<{ id: string; obrRoomId: string | null }>,
-  replaceEmptySystemPartyCalls: [] as Array<{
-    roomId: string;
-    systemPartyId: string;
-    partyId: string;
-    systemOwnerUserId: string;
-  }>,
-  replaceEmptySystemPartyResult: true,
   createdToken: 'created-token',
 };
 
@@ -103,6 +92,8 @@ function resetState(): void {
   state.createCalls = [];
   state.setCalls = [];
   state.joinCalls = [];
+  state.memberCount = 0;
+  state.roomMoves = [];
   state.rotateCalls = [];
   state.deleteCalls = [];
   state.renameCalls = [];
@@ -110,8 +101,6 @@ function resetState(): void {
   state.setMiseryCalls = [];
   state.setPartyOwnerCalls = [];
   state.setObrRoomCalls = [];
-  state.replaceEmptySystemPartyCalls = [];
-  state.replaceEmptySystemPartyResult = true;
   state.createdToken = 'created-token';
   publishedEvents.length = 0;
 }
@@ -125,7 +114,6 @@ mock.module('../../src/lib/class-translations.js', {
 });
 mock.module('../../src/repositories/party-repository.js', {
   namedExports: {
-    PartyFullError,
     partyRepository: {
       ensureSystemUser: async (input: {
         id: string;
@@ -139,6 +127,7 @@ mock.module('../../src/repositories/party-repository.js', {
         name: string;
         inviteToken: string;
         obrRoomId?: string | null;
+        poolLineageIds: string[];
       }) => {
         if (state.createThrows) {
           throw state.createThrows;
@@ -173,16 +162,6 @@ mock.module('../../src/repositories/party-repository.js', {
       ) => {
         state.setCalls.push({ characterId, partyId });
       },
-      joinInTransaction: async (input: {
-        characterId: string;
-        partyId: string;
-        cap: number;
-      }) => {
-        state.joinCalls.push(input);
-        if (state.joinThrows) {
-          throw state.joinThrows;
-        }
-      },
       rotateInviteToken: async (id: string, token: string) => {
         state.rotateCalls.push({ id, token });
       },
@@ -202,78 +181,45 @@ mock.module('../../src/repositories/party-repository.js', {
       setPartyObrRoom: async (id: string, obrRoomId: string | null) => {
         state.setObrRoomCalls.push({ id, obrRoomId });
       },
-      replaceEmptySystemPartyInRoom: async (input: {
-        roomId: string;
-        systemPartyId: string;
-        partyId: string;
-        systemOwnerUserId: string;
-      }) => {
-        state.replaceEmptySystemPartyCalls.push(input);
-        return state.replaceEmptySystemPartyResult;
-      },
+      roomTransaction: async (work: (ops: unknown) => Promise<unknown>) =>
+        work({
+          findRoomParty: async () =>
+            state.partyByObrRoomId && {
+              id: state.partyByObrRoomId.id,
+              ownerUserId: state.partyByObrRoomId.ownerUserId,
+              _count: { members: state.partyByObrRoomId.members.length },
+            },
+          deleteParty: async (id: string) => {
+            state.deleteCalls.push(id);
+          },
+          setPartyRoom: async (id: string, roomId: string) => {
+            state.roomMoves.push({ id, roomId });
+          },
+        }),
     },
   },
 });
 
-const pool = {
-  party: null as null | {
-    ownerUserId: string;
-    classlessEnabled: boolean;
-    poolLineageIds: string[];
-    memberClassIds: Array<number | null>;
-  },
-  rows: [] as Array<Record<string, unknown>>,
-  setLineageCalls: [] as Array<{
-    partyId: string;
-    lineageId: string;
-    enabled: boolean;
-  }>,
-  setClasslessCalls: [] as Array<{ partyId: string; enabled: boolean }>,
-};
-const poolRow = (id: number, overrides: Record<string, unknown> = {}) => ({
-  id,
-  lineageId: `lineage-${id}`,
-  version: 1,
-  source: 'main_book',
-  status: 'active',
-  visibility: 'public',
-  ownerUserId: null,
-  ownerName: null,
-  takenDownAt: null,
-  name: `Class ${id}`,
-  blurb: null,
-  languages: ['en'],
-  credit: null,
-  abilityCount: 6,
-  randomAbilityCount: 1,
-  gettingBetterRule: 'book',
-  ...overrides,
-});
-
 mock.module('../../src/repositories/class-pool-repository.js', {
   namedExports: {
-    classPoolRepository: {
-      findPartyPool: async () => pool.party,
-      findCatalogRows: async () => pool.rows,
-      setLineage: async (
-        partyId: string,
-        lineageId: string,
-        enabled: boolean
-      ) => {
-        pool.setLineageCalls.push({ partyId, lineageId, enabled });
-        if (!pool.party) {
-          return;
-        }
-        pool.party.poolLineageIds = enabled
-          ? [...new Set([...pool.party.poolLineageIds, lineageId])]
-          : pool.party.poolLineageIds.filter((id) => id !== lineageId);
-      },
-      setClassless: async (partyId: string, enabled: boolean) => {
-        pool.setClasslessCalls.push({ partyId, enabled });
-        if (pool.party) {
-          pool.party.classlessEnabled = enabled;
-        }
-      },
+    classPoolRepository: { findBookLineageIds: async () => ['lineage-1', 'lineage-2'] },
+  },
+});
+
+mock.module('../../src/repositories/character-repository.js', {
+  namedExports: {
+    characterRepository: {
+      transaction: async (work: (ops: unknown) => Promise<unknown>) =>
+        work({
+          lockParty: async () => {},
+          countPartyMembers: async () => state.memberCount,
+          joinParty: async (characterId: string, partyId: string) => {
+            if (state.joinThrows) {
+              throw state.joinThrows;
+            }
+            state.joinCalls.push({ characterId, partyId });
+          },
+        }),
     },
   },
 });
@@ -360,6 +306,7 @@ test('createParty succeeds for a GM and returns an invite path', async () => {
   assert.equal(typeof v.inviteToken, 'string');
   assert.equal(v.invitePath, `/join/${v.inviteToken}`);
   assert.equal(v.memberCount, 0);
+  assert.deepEqual(state.createCalls[0].poolLineageIds, ['lineage-1', 'lineage-2'], 'a new pool starts with every Book Class');
 });
 
 test('createParty defaults the name when blank', async () => {
@@ -853,7 +800,7 @@ test('join when cap is full (tx sentinel) → 409', async () => {
     sessionId: null,
     partyId: null,
   };
-  state.joinThrows = new PartyFullError();
+  state.memberCount = 10;
   const r = await service().joinParty({
     session: account('player-1'),
     token: 'tok',
@@ -887,7 +834,6 @@ test('join happy path binds via the transaction and returns redirect', async () 
   assert.equal(state.joinCalls.length, 1);
   assert.equal(state.joinCalls[0].characterId, CHAR_ID);
   assert.equal(state.joinCalls[0].partyId, PARTY_ID);
-  assert.equal(state.joinCalls[0].cap, 10);
   assert.equal(
     (r as any).value.redirect,
     `/party/${PARTY_ID}/character/${CHAR_ID}`
@@ -1453,14 +1399,8 @@ test('attachRoom replaces an empty system room party with the GM warband', async
   });
 
   assert.equal(r.ok, true);
-  assert.deepEqual(state.replaceEmptySystemPartyCalls, [
-    {
-      roomId: 'system-room',
-      systemPartyId: OTHER_PARTY_ID,
-      partyId: PARTY_ID,
-      systemOwnerUserId: 'system:obr-room',
-    },
-  ]);
+  assert.deepEqual(state.deleteCalls, [OTHER_PARTY_ID]);
+  assert.deepEqual(state.roomMoves, [{ id: PARTY_ID, roomId: 'system-room' }]);
   assert.deepEqual(state.setObrRoomCalls, []);
 });
 
@@ -1482,7 +1422,7 @@ test('attachRoom tells the GM to claim a populated system room party', async () 
   assert.equal((r as any).error.statusCode, 409);
   assert.equal((r as any).error.code, 'ROOM_PARTY_HAS_MEMBERS');
   assert.match((r as any).error.message, /Claim it instead/);
-  assert.deepEqual(state.replaceEmptySystemPartyCalls, []);
+  assert.deepEqual(state.roomMoves, []);
 });
 
 test('attachRoom rejects a room already claimed by another party with 409 ROOM_ALREADY_PROMOTED', async () => {
@@ -1544,139 +1484,3 @@ test('detachRoom clears the pointer', async () => {
   assert.deepEqual(state.setObrRoomCalls, [{ id: PARTY_ID, obrRoomId: null }]);
 });
 
-function resetPool(): void {
-  state.party = partyWith([], 'gm-1');
-  pool.party = {
-    ownerUserId: 'gm-1',
-    classlessEnabled: true,
-    poolLineageIds: ['lineage-1'],
-    memberClassIds: [1],
-  };
-  pool.rows = [
-    poolRow(1),
-    poolRow(2),
-    poolRow(300, {
-      source: 'user',
-      ownerUserId: 'gm-2',
-      ownerName: 'Marta',
-      visibility: 'private',
-    }),
-  ];
-  pool.setLineageCalls = [];
-  pool.setClasslessCalls = [];
-}
-
-test('getClassPool shows the owner every class they can offer, with what is on', async () => {
-  resetPool();
-
-  const r = await service().getClassPool({
-    session: gm('gm-1'),
-    id: PARTY_ID,
-    locale: 'en',
-  });
-
-  assert.equal(r.ok, true);
-  const view = (r as any).value;
-  assert.deepEqual(
-    view.classes.map(
-      (c: { classId: number; enabled: boolean; playingHere: number }) => [
-        c.classId,
-        c.enabled,
-        c.playingHere,
-      ]
-    ),
-    [
-      [1, true, 1],
-      [2, false, 0],
-    ]
-  );
-  assert.equal(view.classlessEnabled, true);
-});
-
-test('only the party owner sees or changes its pool', async () => {
-  resetPool();
-
-  const read = await service().getClassPool({
-    session: gm('gm-2'),
-    id: PARTY_ID,
-    locale: 'en',
-  });
-  const write = await service().setPoolClass({
-    session: gm('gm-2'),
-    id: PARTY_ID,
-    lineageId: 'lineage-2',
-    enabled: true,
-    locale: 'en',
-  });
-
-  assert.equal((read as any).error.statusCode, 404);
-  assert.equal((write as any).error.statusCode, 404);
-  assert.deepEqual(pool.setLineageCalls, []);
-});
-
-test('setPoolClass switches a class on or off and returns the fresh pool', async () => {
-  resetPool();
-
-  const on = await service().setPoolClass({
-    session: gm('gm-1'),
-    id: PARTY_ID,
-    lineageId: 'lineage-2',
-    enabled: true,
-    locale: 'en',
-  });
-  const off = await service().setPoolClass({
-    session: gm('gm-1'),
-    id: PARTY_ID,
-    lineageId: 'lineage-1',
-    enabled: false,
-    locale: 'en',
-  });
-
-  assert.equal(on.ok && off.ok, true);
-  assert.deepEqual(pool.setLineageCalls, [
-    { partyId: PARTY_ID, lineageId: 'lineage-2', enabled: true },
-    { partyId: PARTY_ID, lineageId: 'lineage-1', enabled: false },
-  ]);
-  assert.deepEqual(
-    (off as any).value.classes.map(
-      (c: { classId: number; enabled: boolean }) => [c.classId, c.enabled]
-    ),
-    [
-      [1, false],
-      [2, true],
-    ]
-  );
-});
-
-test("setPoolClass refuses a class the GM can't offer", async () => {
-  resetPool();
-
-  const r = await service().setPoolClass({
-    session: gm('gm-1'),
-    id: PARTY_ID,
-    lineageId: 'lineage-300',
-    enabled: true,
-    locale: 'en',
-  });
-
-  assert.equal((r as any).error.statusCode, 409);
-  assert.equal((r as any).error.code, 'CLASS_NOT_AVAILABLE');
-  assert.deepEqual(pool.setLineageCalls, []);
-});
-
-test('setPoolClassless switches Classless and returns the fresh pool', async () => {
-  resetPool();
-
-  const r = await service().setPoolClassless({
-    session: gm('gm-1'),
-    id: PARTY_ID,
-    enabled: false,
-    locale: 'en',
-  });
-
-  assert.equal(r.ok, true);
-  assert.equal((r as any).value.classlessEnabled, false);
-  assert.deepEqual(pool.setClasslessCalls, [
-    { partyId: PARTY_ID, enabled: false },
-  ]);
-});

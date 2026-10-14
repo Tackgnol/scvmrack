@@ -14,14 +14,10 @@ const RAW_SQL_PATTERN = /\$queryRaw|\$executeRaw/;
 // Add an entry here (and document why) when introducing a new sanctioned exception.
 // Remove the entry when the raw SQL is replaced with a typed Prisma query.
 const ALLOWLIST = new Set<string>([
-  // party-repository: a single `pg_advisory_xact_lock` in joinInTransaction
-  // serializes concurrent joins to one party so the member cap can't overflow.
-  // Not expressible via the typed Prisma client; all other access stays typed.
-  'repositories/party-repository.ts',
+  // advisoryLock: the namespaced transaction lock behind lineage, owner, report and party serialization.
+  'repositories/advisory-lock.ts',
   // lockVersion: a FOR UPDATE row lock stops a scvm being rolled on a version mid-save.
   'repositories/custom-class-repository.ts',
-  // advisoryLock: the namespaced transaction lock behind lineage, owner and report serialization.
-  'repositories/class-version-repository.ts',
 ]);
 
 function walkTs(dir: string): string[] {

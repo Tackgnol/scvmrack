@@ -88,8 +88,6 @@ mock.module('../../src/lib/generate-character.js', {
           : {}),
       };
     },
-    createCharacterFromDraft: async () => 'unused-here',
-    generateCharacter: async () => 'unused-here',
   },
 });
 
@@ -114,9 +112,9 @@ mock.module('../../src/repositories/character-repository.js', {
   },
 });
 
-mock.module('../../src/services/class-scope-service.js', {
+mock.module('../../src/services/party-class-pool-service.js', {
   namedExports: {
-    resolveClassScope: async (token: string | null | undefined) => {
+    resolvePartyClassPool: async (token: string | null | undefined) => {
       scopeCalls.push(token);
       if ('gone' in scope) {
         return {
