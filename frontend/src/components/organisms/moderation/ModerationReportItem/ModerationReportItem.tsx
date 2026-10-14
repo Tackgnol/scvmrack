@@ -1,9 +1,9 @@
-import { ModalButton } from "@/components/molecules/modal/MorkBorgModal";
-import { partyColors } from "@/theme/partyTokens";
-import { Box, Button, Stack, TextField, Typography } from "@mui/material";
+import { Box, Stack, TextField, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
+import { DecisionButtons } from "../DecisionButtons/DecisionButtons";
+import { DecisionConsequences } from "../DecisionConsequences/DecisionConsequences";
+import { ReportDisputes } from "../ReportDisputes/ReportDisputes";
 import type { ModerationReportItemProps } from "./ModerationReportItem.models";
-import { Consequences } from "./ModerationReportItem.styles";
 
 /** One report in the moderation queue: what was reported, any author disputes, and the decision controls. */
 export function ModerationReportItem({
@@ -39,17 +39,7 @@ export function ModerationReportItem({
         <Typography variant="body2">
           {report.reporterName ?? t("moderation.anonymous", "Anonymous")} · {report.reporterEmail ?? "—"}
         </Typography>
-        {report.disputes.length > 0 && (
-          <Stack spacing={1} sx={{ border: "2px solid", borderColor: "secondary.main", p: 2 }}>
-            <Typography variant="subtitle2">{t("moderation.disputes", "Author disputes")}</Typography>
-            {report.disputes.map((dispute) => (
-              <Box key={dispute.id}>
-                <Typography sx={{ whiteSpace: "pre-wrap" }}>{dispute.text}</Typography>
-                <Typography variant="caption">{new Date(dispute.createdAt).toLocaleString()}</Typography>
-              </Box>
-            ))}
-          </Stack>
-        )}
+        {report.disputes.length > 0 && <ReportDisputes disputes={report.disputes} />}
         {reviewable && (
           <>
             <TextField
@@ -66,60 +56,16 @@ export function ModerationReportItem({
                 {t("moderation.reasonRequired", "Write a decision reason to act.")}
               </Typography>
             )}
-            {open && (
-              <Consequences id={`consequences-${report.id}`}>
-                <li>
-                  <strong>{t("moderation.dismiss", "Dismiss")}</strong>:{" "}
-                  {t("moderation.dismissEffect", "the class stays public and this report closes.")}
-                </li>
-                <li>
-                  <strong>{builtIn ? t("moderation.hide", "Hide") : t("moderation.takeDown", "Take down")}</strong>:{" "}
-                  {t(
-                    "moderation.takeDownEffect",
-                    "hidden from search, pickers and party pools; no new characters. Existing characters keep it.",
-                  )}
-                </li>
-                {!builtIn && (
-                  <li>
-                    <strong>{t("moderation.removeContent", "Remove content")}</strong>:{" "}
-                    {t(
-                      "moderation.removeContentEffect",
-                      "its text becomes \u201c[removed by moderation]\u201d everywhere, including existing characters.",
-                    )}
-                  </li>
-                )}
-              </Consequences>
-            )}
-            <Stack
-              direction={{ xs: "column", sm: "row" }}
-              spacing={1}
-              sx={{ "& .MuiButton-root": { minHeight: 44 }, "& .MuiButton-root.Mui-disabled": { color: partyColors.mutedText } }}
-            >
-              {open ? (
-                <>
-                  <Button aria-describedby={describedBy} disabled={disabled} onClick={onDismiss}>
-                    {t("moderation.dismiss", "Dismiss")}
-                  </Button>
-                  <ModalButton variant="danger" aria-describedby={describedBy} disabled={disabled} onClick={() => onConfirm("takeDown")}>
-                    {builtIn ? t("moderation.hide", "Hide") : t("moderation.takeDown", "Take down")}
-                  </ModalButton>
-                  {!builtIn && (
-                    <ModalButton
-                      variant="danger"
-                      aria-describedby={describedBy}
-                      disabled={disabled}
-                      onClick={() => onConfirm("removeContent")}
-                    >
-                      {t("moderation.removeContent", "Remove content")}
-                    </ModalButton>
-                  )}
-                </>
-              ) : (
-                <Button color="success" variant="contained" aria-describedby={describedBy} disabled={disabled} onClick={onRestore}>
-                  {t("moderation.restore", "Restore")}
-                </Button>
-              )}
-            </Stack>
+            {open && <DecisionConsequences id={`consequences-${report.id}`} builtIn={builtIn} />}
+            <DecisionButtons
+              open={open}
+              builtIn={builtIn}
+              disabled={disabled}
+              describedBy={describedBy}
+              onDismiss={onDismiss}
+              onRestore={onRestore}
+              onConfirm={onConfirm}
+            />
           </>
         )}
       </Stack>

@@ -1,10 +1,11 @@
 import { disputeClassDecision } from "@/api/classes";
+import { moderationKeys } from "@/api/moderation";
 import MorkBorgModal, { ModalButton } from "@/components/molecules/modal/MorkBorgModal";
 import { APPEAL_ADDRESS } from "@/legal/contact";
 import { useSnackbar } from "@/SnackbarContext/SnackbarProvider";
 import { getUserFacingApiErrorMessage } from "@/utils/errorUtils";
 import { Alert, TextField, Typography } from "@mui/material";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { DisputeDialogProps } from "./DisputeDialog.models";
@@ -14,9 +15,12 @@ export function DisputeDialog({ classId, onClose }: DisputeDialogProps) {
   const { t } = useTranslation();
   const { showSuccess } = useSnackbar();
   const [text, setText] = useState("");
+  const queryClient = useQueryClient();
   const dispute = useMutation({
     mutationFn: disputeClassDecision,
     onSuccess: () => {
+      // A disputed report rejoins the moderation queue.
+      void queryClient.invalidateQueries({ queryKey: moderationKeys.reports });
       setText("");
       onClose();
       showSuccess(t("classes.disputeSent", "Dispute sent. A person will review it and answer by email."));
