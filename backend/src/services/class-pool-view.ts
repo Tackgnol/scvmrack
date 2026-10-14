@@ -1,45 +1,14 @@
-import type { GettingBetterRule } from '../lib/getting-better-types.js';
 import type { PoolCatalogRow } from '../repositories/class-pool-repository.js';
 import { byLineage, mayOffer } from '../lib/class-model.js';
+import {
+  POOL_GROUPS,
+  type ClassPoolView,
+  type PoolAttribution,
+  type PoolClass,
+  type PoolGroup,
+  type RemovedPoolClass,
+} from '../schemas/party.js';
 
-export type PoolGroup = 'book' | 'zine' | 'rack' | 'mine' | 'public';
-
-export type PoolAttribution =
-  | { kind: 'credit'; work: string; author: string; url: string | null }
-  | { kind: 'owner'; name: string | null; private: boolean };
-
-export type PoolClass = {
-  lineageId: string;
-  classId: number;
-  group: PoolGroup;
-  name: string;
-  blurb: string | null;
-  languages: string[];
-  attribution: PoolAttribution | null;
-  abilityCount: number;
-  randomAbilityCount: number;
-  classItemCount: number;
-  gettingBetterRule: GettingBetterRule;
-  version: number;
-  playingHere: number;
-  enabled: boolean;
-};
-
-export type RemovedPoolClass = {
-  lineageId: string;
-  name: string;
-  /** Who removed it; null when moderation took it down. */
-  by: string | null;
-  reason: 'archived' | 'unpublished' | 'taken_down';
-};
-
-export type ClassPoolView = {
-  classlessEnabled: boolean;
-  classes: PoolClass[];
-  removed: RemovedPoolClass[];
-};
-
-const GROUP_ORDER: PoolGroup[] = ['book', 'zine', 'rack', 'mine', 'public'];
 
 /**
  * The GM's view of a party's pool: every class the GM may offer (latest version,
@@ -90,7 +59,7 @@ export function buildClassPoolView(input: {
   }
 
   classes.sort(
-    (a, b) => GROUP_ORDER.indexOf(a.group) - GROUP_ORDER.indexOf(b.group) || a.classId - b.classId
+    (a, b) => POOL_GROUPS.indexOf(a.group) - POOL_GROUPS.indexOf(b.group) || a.classId - b.classId
   );
   return { classlessEnabled: input.classlessEnabled, classes, removed };
 }

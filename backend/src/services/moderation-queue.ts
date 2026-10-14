@@ -1,17 +1,8 @@
 import { SERIOUS_REPORT_REASONS } from '../lib/moderation-model.js';
 import type { moderationRepository } from '../repositories/moderation-repository.js';
+import type { ModerationQueueGroup, ModerationQueueReport, RemovalHistoryEntry } from '../schemas/moderation.js';
 
 type QueueRows = Awaited<ReturnType<typeof moderationRepository.listOpenReports>>;
-type ClassVersion = QueueRows['versions'][number];
-
-/** One earlier takedown or removal of a GM's class, for judging repeat offences. */
-export type RemovalHistoryEntry = {
-  id: string;
-  className: string;
-  date: string;
-  reason: string | null;
-  restored: boolean;
-};
 
 /** Each GM's earlier takedowns and removals, newest first, marked when a later restore undid them. */
 function removalHistoryByOwner(logs: QueueRows['removalLogs']): Map<string, RemovalHistoryEntry[]> {
@@ -42,15 +33,7 @@ function removalHistoryByOwner(logs: QueueRows['removalLogs']): Map<string, Remo
  */
 export function buildModerationQueue({ reports, versions, removalLogs }: QueueRows) {
   const historyByOwner = removalHistoryByOwner(removalLogs);
-  const groups = new Map<string, {
-    lineageId: string;
-    latest: ClassVersion;
-    versions: ClassVersion[];
-    reports: Array<ReturnType<typeof toQueueReport>>;
-    ownerUserId: string | null;
-    builtIn: boolean;
-    removalHistory: RemovalHistoryEntry[] | null;
-  }>();
+  const groups = new Map<string, ModerationQueueGroup>();
   for (const report of reports) {
     const { lineageId, ownerUserId } = report.class;
     const group = groups.get(lineageId);
@@ -77,7 +60,7 @@ export function buildModerationQueue({ reports, versions, removalLogs }: QueueRo
   return [...groups.values()].sort((a, b) => Number(serious(b)) - Number(serious(a)));
 }
 
-function toQueueReport(report: QueueRows['reports'][number]) {
+function toQueueReport(report: QueueRows['reports'][number]): ModerationQueueReport {
   return {
     id: report.id,
     classId: report.classId,

@@ -27,21 +27,6 @@ export type CustomClassRows = ClassVersionRef & {
   draft: ClassDraft;
 };
 
-export type OwnClassSummary = {
-  id: number;
-  lineageId: string;
-  name: string;
-  description: string | null;
-  languages: string[];
-  visibility: ClassVisibility;
-  status: ClassStatus;
-  originCount: number;
-  takenDownAt: string | null;
-  takedownReason: string | null;
-  /** Whether the class was ever public; republishing it skips the first-publish confirmation. */
-  everPublished: boolean;
-};
-
 export type StoredClassDraft = {
   id: number;
   classId: number | null;

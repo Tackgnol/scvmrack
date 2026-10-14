@@ -59,8 +59,8 @@ _Avoid_: Scum rule, Gutterborn rule
 ### Parties
 
 **Party Class Pool**:
-The set of classes (Book and Custom) enabled for one party; the only classes its join flows can roll or forge.
-_Avoid_: class list, enabled classes, class setup
+The set of classes (Book and Custom) enabled for one party, and whether it allows classless scvm; the only classes its join flows can roll or forge. A new party's pool starts with every Book Class. Outside a party, the Book Classes take its place. The pool says what a table may roll; character creation decides whether a given choice is allowed and makes the random pick from it.
+_Avoid_: class list, enabled classes, class setup, class scope
 
 **Takedown**:
 An admin removing a Public Custom Class after a report.

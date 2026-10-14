@@ -1,7 +1,14 @@
 // JSON schema definitions for the party routes. Mirrors the shape used by the
 // character schemas: shared params/bodies, an error schema reused per route.
 
+import type { FromSchema } from 'json-schema-to-ts';
+import { SUPPORTED_LOCALES } from '../config/locales.js';
+import { GETTING_BETTER_RULES } from '../lib/class-model.js';
+
 export { ErrorSchema } from './character.js';
+
+/** Where a pooled class comes from, in the order the GM's pool view lists them. */
+export const POOL_GROUPS = ['book', 'zine', 'rack', 'mine', 'public'] as const;
 
 export const PartyIdParamsSchema = {
   type: 'object',
@@ -123,7 +130,7 @@ export const ClassPoolLineageParamsSchema = {
 export const ClassPoolLocaleQuerySchema = {
   type: 'object',
   properties: {
-    locale: { type: 'string', enum: ['en', 'pl'], default: 'en' },
+    locale: { type: 'string', enum: SUPPORTED_LOCALES, default: 'en' },
   },
 } as const;
 
@@ -182,7 +189,7 @@ export const ClassPoolViewSchema = {
         properties: {
           lineageId: { type: 'string' },
           classId: { type: 'integer' },
-          group: { type: 'string', enum: ['book', 'zine', 'rack', 'mine', 'public'] },
+          group: { type: 'string', enum: POOL_GROUPS },
           name: { type: 'string' },
           blurb: { type: ['string', 'null'] },
           languages: { type: 'array', items: { type: 'string' } },
@@ -190,7 +197,7 @@ export const ClassPoolViewSchema = {
           abilityCount: { type: 'integer' },
           randomAbilityCount: { type: 'integer' },
           classItemCount: { type: 'integer' },
-          gettingBetterRule: { type: 'string', enum: ['book', 'book_plus_ability', 'specialist'] },
+          gettingBetterRule: { type: 'string', enum: GETTING_BETTER_RULES },
           version: { type: 'integer' },
           playingHere: { type: 'integer' },
           enabled: { type: 'boolean' },
@@ -213,3 +220,9 @@ export const ClassPoolViewSchema = {
     },
   },
 } as const;
+
+export type ClassPoolView = FromSchema<typeof ClassPoolViewSchema>;
+export type PoolClass = ClassPoolView['classes'][number];
+export type RemovedPoolClass = ClassPoolView['removed'][number];
+export type PoolGroup = PoolClass['group'];
+export type PoolAttribution = NonNullable<PoolClass['attribution']>;

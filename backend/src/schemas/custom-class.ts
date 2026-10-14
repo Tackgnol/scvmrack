@@ -1,3 +1,4 @@
+import type { FromSchema } from 'json-schema-to-ts';
 import { MODIFIER_CONTEXTS } from '../lib/ability-modifiers.js';
 import {
   WEAPON_DICE,
@@ -437,5 +438,10 @@ export const OwnClassListSchema = {
     },
   },
 } as const;
+
+export type OwnClassSummary = FromSchema<typeof OwnClassListSchema>[number];
+export type SavedClass = FromSchema<typeof ClassWithDraftSchema>;
+export type SavedClassWithRefs = FromSchema<typeof SavedClassSchema>;
+export type ClassDetail = FromSchema<typeof ClassDetailSchema>;
 
 export const TestRollResponseSchema = DraftPreviewSchema;

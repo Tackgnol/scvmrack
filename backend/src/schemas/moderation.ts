@@ -1,3 +1,4 @@
+import type { FromSchema } from 'json-schema-to-ts';
 import { SUPPORTED_LOCALES } from '../config/locales.js';
 import {
   MODERATION_REPORT_REASONS,
@@ -149,6 +150,11 @@ export const AdminReportGroupsSchema = {
     },
   },
 } as const;
+
+export type ModerationQueueGroup = FromSchema<typeof AdminReportGroupsSchema>[number];
+export type ModerationQueueReport = ModerationQueueGroup['reports'][number];
+/** One earlier takedown or removal of a GM's class, for judging repeat offences. */
+export type RemovalHistoryEntry = NonNullable<ModerationQueueGroup['removalHistory']>[number];
 
 /** The newest moderation log entries: every decision, who made it, when and why. */
 export const ModerationLogSchema = {

@@ -32,7 +32,8 @@ import {
 export type { AppSession } from './session.js';
 import { PARTY_MAX_MEMBERS } from '../lib/party-limits.js';
 import { classPoolRepository } from '../repositories/class-pool-repository.js';
-import { buildClassPoolView, type ClassPoolView } from './class-pool-view.js';
+import { buildClassPoolView } from './class-pool-view.js';
+import type { ClassPoolView } from '../schemas/party.js';
 
 const OBR_ROOM_SYSTEM_OWNER_ID = 'system:obr-room';
 const OBR_ROOM_SYSTEM_OWNER_EMAIL = 'obr-room@system.scvmrack.local';

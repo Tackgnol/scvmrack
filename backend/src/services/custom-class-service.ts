@@ -1,3 +1,4 @@
+import type { ClassDetail, OwnClassSummary, SavedClass, SavedClassWithRefs } from '../schemas/custom-class.js';
 import {
   CUSTOM_CLASS_DAILY_PUBLISH_LIMIT,
   CUSTOM_CLASS_MAX_PER_GM,
@@ -20,7 +21,6 @@ import {
   customClassRepository,
   type CustomClassRows,
   type LineageOps,
-  type OwnClassSummary,
   type StoredClassDraft,
 } from '../repositories/custom-class-repository.js';
 import { catalogRepository } from '../repositories/catalog-repository.js';
@@ -128,12 +128,6 @@ async function saveProblems(draft: ClassDraft): Promise<string[]> {
   return [...classDraftProblems(draft), ...(await catalogGrantProblems(draft))];
 }
 
-type SavedClass = Pick<CustomClassRows, 'id' | 'draft' | 'version' | 'playingCount' | 'status'> & {
-  takenDownAt: string | null;
-  takedownReason: string | null;
-};
-type ClassDetail = SavedClass & { attribution: string; reportable: boolean };
-type SavedClassWithRefs = SavedClass & { savedRefs: Record<string, string> };
 
 /**
  * The saved key each `new:` Class Item ref became. Items are saved and reloaded in draft order,
