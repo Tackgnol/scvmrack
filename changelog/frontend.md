@@ -78,6 +78,7 @@
   print lists the whole table and lets the section flow onto the next page
 - Inventory with equipped bar, on-hand vs. storage sections, ammo tracking,
   consumables, pets, and custom-item creation
+- The app should no longer create a nameless carried item or overcount encumbrance when you equip armor into an empty slot.
 - Equipment lookup/add-item flow keeps the add controls stable while search and
   add calls are pending, reducing layout jumps when items enter the sheet
 - Kill & Replace flow (death modal at 0 HP)

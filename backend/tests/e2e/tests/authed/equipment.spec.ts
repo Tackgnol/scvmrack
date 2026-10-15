@@ -2,6 +2,36 @@ import { expect, test } from '../../fixtures';
 import { selectSearchResult } from '../utils/character-sheet.js';
 import { waitForCharacterSave } from '../utils/save.js';
 
+test('equipping armor into an empty slot never creates a phantom carried item', async ({ page, seededCharacter }) => {
+  await page.goto(`/character/${seededCharacter.id}`);
+  await expect(page.getByText('Synced', { exact: true })).toBeVisible();
+  await page.evaluate(async (id) => {
+    const { token } = await (await fetch('/api/csrf-token')).json();
+    const response = await fetch(`/api/characters/${id}`, {
+      method: 'PATCH', headers: { 'content-type': 'application/json', 'x-csrf-token': token },
+      body: JSON.stringify({ equipment: [{ key: 'equipment.rope' }], equippedArmor: null, equippedWeapons: [], storage: [] }),
+    });
+    if (!response.ok) throw new Error(`Inventory setup failed: ${response.status}`);
+  }, seededCharacter.id);
+  await page.reload();
+  await waitForCharacterSave(page, () => selectSearchResult(page, 'leather', /^Leather Armor\b/i));
+
+  for (let cycle = 0; cycle < 2; cycle += 1) {
+    await page.getByTestId('inventory-item-slot').filter({ hasText: 'Leather Armor' }).click();
+    await waitForCharacterSave(page, () => page.getByTestId('equip-armor-slot').click());
+    await page.reload();
+    await expect(page.getByTestId('equipped-armor-slot')).toContainText('Leather Armor');
+    await expect(page.getByTestId('inventory-item-slot')).toHaveCount(1);
+    await expect(page.getByTestId('inventory-item-slot')).toContainText('Rope');
+    await expect(page.getByRole('button', { name: /^Encumbrance 2 \/ / })).toBeVisible();
+    if (cycle === 0) {
+      await page.getByTestId('equipped-armor-slot').click();
+      await waitForCharacterSave(page, () => page.getByTestId('unequip-armor-option').click());
+      await page.reload();
+    }
+  }
+});
+
 test('equipment can be searched, equipped, and unequipped', async ({ page, seededCharacter }) => {
   await page.goto(`/character/${seededCharacter.id}`);
   await expect(page.getByTestId('generate-new-button')).toBeVisible({ timeout: 30000 });
