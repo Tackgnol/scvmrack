@@ -67,6 +67,8 @@
 
 ## Character editing
 
+- The app should no longer show Synced when you edit a character deleted in another tab. The missing-character screen explains what happened and lets you recover to a surviving character.
+
 - The app should no longer silently discard your last edit when you reload before autosave finishes. A browser warning lets you stay until it is saved.
 
 - Optimistic updates with debounced autosave (`useCharacterEditor`):

@@ -454,6 +454,36 @@ test('reports repeated 5xx saves after the retry tolerance and keeps a manual re
   );
 });
 
+test('a deleted character discards all queued edits and stale visible snapshots', () => {
+  const queryClient = makeQueryClient({ id: 'char-1', name: 'Original' });
+  (useQueryClient as any).mockReturnValue(queryClient);
+  const mutation = noopMutation();
+  const { result } = renderHook(() =>
+    useCharacterEditor('char-1', mutation, (id) => ['char', id])
+  );
+  act(() => result.current.updateField('name', 'Saved before deletion'));
+  act(() => result.current.flush());
+  const saved = mutation.mutate.mock.calls[0][1];
+  act(() => {
+    saved.onSuccess({ id: 'char-1', name: 'Saved before deletion', updatedAt: '2026-10-15T10:00:00Z' });
+    saved.onSettled();
+  });
+  act(() => result.current.updateField('name', 'Rejected edit'));
+  act(() => result.current.flush());
+  act(() => result.current.updateField('currentHp', 1));
+  const failed = mutation.mutate.mock.calls[1][1];
+  act(() => {
+    failed.onError({ statusCode: 404, code: 'CHARACTER_NOT_FOUND' }, undefined, {});
+    failed.onSettled();
+  });
+  expect(result.current.isSaving).toBe(false);
+  expect(result.current.getVisibleCharacter(undefined)).toBeUndefined();
+  act(() => result.current.flush());
+  expect(mutation.mutate).toHaveBeenCalledTimes(2);
+  const surviving = { id: 'char-2', name: 'Survivor', updatedAt: '2026-10-14T10:00:00Z' };
+  expect(result.current.getVisibleCharacter(surviving)).toBe(surviving);
+});
+
 test('rolls back and drops the batch on a terminal client (4xx) error', () => {
   const previous = { id: 'char-1', name: 'A0' };
   const queryClient = makeQueryClient({ id: 'char-1', name: 'A' });

@@ -17,7 +17,7 @@ import type { CharacterResponse } from '@/hooks/models';
 import { usePrivacyAcknowledged } from '@/privacy/privacyConsent';
 import { useSnackbar } from '@/SnackbarContext/SnackbarProvider.tsx';
 import { useErrorFeedback } from '@/components/molecules/feedback/ErrorFeedbackProvider';
-import { getUserFacingApiErrorMessage } from '@/utils/errorUtils';
+import { getUserFacingApiErrorMessage, isApiNotFound } from '@/utils/errorUtils';
 
 import { useCallback, useEffect, useRef, useSyncExternalStore } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -117,8 +117,14 @@ export function useCurrentCharacter() {
     validationIssueHandlers,
     { readOnly: isReadOnly }
   );
-  const visibleCharacter =
-    editor.getVisibleCharacter?.(repo.character) ?? repo.character;
+  const missingCharacterError =
+    isApiNotFound(repo.updateCharacter?.error) &&
+    repo.updateCharacter.variables?.params?.path?.id === characterId
+      ? repo.updateCharacter.error
+      : null;
+  const visibleCharacter = missingCharacterError
+    ? undefined
+    : editor.getVisibleCharacter?.(repo.character) ?? repo.character;
 
   // Per-instance in-flight controller, shared between the auto-create flow and
   // manual generation so they cancel each other — never a module-level singleton.
@@ -231,7 +237,7 @@ export function useCurrentCharacter() {
     lastCharacterId,
     character: visibleCharacter,
     isReadOnly,
-    error: repo.error,
+    error: missingCharacterError ?? repo.error,
     isLoading:
       repo.isLoading ||
       repo.createCharacter.isPending ||

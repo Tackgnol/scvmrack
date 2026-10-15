@@ -26,6 +26,7 @@ import { customStyles } from '@theme/morkBorgTheme';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { $api } from '@/api';
+import { isApiNotFound } from '@/utils/errorUtils';
 
 export default function Header() {
   const { t } = useTranslation();
@@ -39,6 +40,7 @@ export default function Header() {
   });
   const {
     isSaving,
+    error,
     character,
     characterId,
     lastCharacterId,
@@ -57,7 +59,7 @@ export default function Header() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const homeUrl = buildHomeCallbackUrl(characterId || lastCharacterId);
-  const isSheetRoute = isSheetRoutePath(pathname);
+  const isSheetRoute = isSheetRoutePath(pathname) && !isApiNotFound(error);
   const activeCharacterId = characterId || lastCharacterId || undefined;
   const validationSummary = validationIssues
     .map(({ message }) => message)

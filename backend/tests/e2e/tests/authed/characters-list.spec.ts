@@ -4,6 +4,44 @@ function characterNewResponse(url: string): boolean {
   return /\/api\/characters\/new(?:\?.*)?$/.test(new URL(url).pathname + new URL(url).search);
 }
 
+test('a stale deleted sheet shows missing-character recovery and preserves another character', async ({ page, seedCharacter }) => {
+  const keep = await seedCharacter({ name: 'Surviving Scvm' });
+  const doomed = await seedCharacter({ name: 'Deleted Scvm' });
+  await page.goto(`/character/${keep.id}`);
+  const originalHabit = await page.getByTestId('habit-input').inputValue();
+  await page.goto(`/character/${doomed.id}`);
+  await expect(page.getByTestId('habit-input')).toBeVisible();
+
+  const deletingTab = await page.context().newPage();
+  await deletingTab.goto('/characters');
+  await deletingTab.getByTestId(`delete-character-${doomed.id}`).click();
+  const deleted = deletingTab.waitForResponse((response) =>
+    response.request().method() === 'DELETE' && new URL(response.url()).pathname === `/api/characters/${doomed.id}`
+  );
+  await deletingTab.getByTestId('confirm-delete-character').click();
+  expect((await deleted).status()).toBe(204);
+
+  const rejected = page.waitForResponse((response) =>
+    response.request().method() === 'PATCH' && new URL(response.url()).pathname === `/api/characters/${doomed.id}`
+  );
+  await page.getByTestId('habit-input').fill('This edit cannot be saved');
+  await page.getByTestId('habit-input').blur();
+  expect((await rejected).status()).toBe(404);
+  const missing = page.getByRole('dialog', { name: /scvm not found/i });
+  await expect(missing).toBeVisible();
+  await expect(missing).toContainText('This character no longer exists.');
+  await expect(page.getByTestId('habit-input')).not.toBeVisible();
+  await expect(page.getByTestId('synced-chip')).not.toBeVisible();
+  await expect(page.getByTestId('saving-chip')).not.toBeVisible();
+  await missing.getByRole('button', { name: 'Generate new Scvm', exact: true }).click();
+  await expect(page).toHaveURL(new RegExp(`/character/${keep.id}$`));
+  await expect(page.getByText('Surviving Scvm', { exact: true })).toBeVisible();
+  await expect(page.getByTestId('habit-input')).toHaveValue(originalHabit);
+  await page.reload();
+  await expect(page.getByTestId('habit-input')).toHaveValue(originalHabit);
+  await deletingTab.close();
+});
+
 test('authenticated user can list, create, open, and delete characters', async ({
   page,
   seedCharacter,
