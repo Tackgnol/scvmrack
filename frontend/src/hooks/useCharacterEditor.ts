@@ -252,6 +252,19 @@ export function useCharacterEditor(
 
   const debouncedFlush = useDebouncedCallback(flush, 1000);
 
+  const hasPendingEdits = pendingCount > 0;
+  useEffect(() => {
+    if (!hasPendingEdits) {
+      return;
+    }
+    const warnBeforeLeaving = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', warnBeforeLeaving);
+    return () => window.removeEventListener('beforeunload', warnBeforeLeaving);
+  }, [hasPendingEdits]);
+
   // Flush any queued edit if we unmount mid-debounce (route change, logout) so
   // the last edit isn't silently dropped.
   useEffect(

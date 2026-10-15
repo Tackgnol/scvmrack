@@ -63,6 +63,8 @@
 
 ## Character editing
 
+- The app should no longer silently discard your last edit when you reload before autosave finishes. A browser warning lets you stay until it is saved.
+
 - Optimistic updates with debounced autosave (`useCharacterEditor`):
   changes queue as patches → instant UI update via `queryClient.setQueryData`
   → flush after ~1s idle → retry up to 3× with user notification

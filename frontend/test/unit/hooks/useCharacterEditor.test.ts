@@ -107,6 +107,31 @@ test('queues patches and applies them optimistically to the cache', () => {
   expect(updater({ name: 'Old' })).toEqual({ name: 'New Name' });
 });
 
+test('warns on reload while an edit is queued or saving, then stops after it is saved', () => {
+  const queryClient = makeQueryClient({ id: 'char-1', habit: 'Old habit' });
+  (useQueryClient as any).mockReturnValue(queryClient);
+  const mutation = noopMutation();
+  const { result } = renderHook(() =>
+    useCharacterEditor('char-1', mutation, (id) => ['char', id])
+  );
+  const attemptsToLeave = () => {
+    const event = new Event('beforeunload', { cancelable: true });
+    window.dispatchEvent(event);
+    return event.defaultPrevented;
+  };
+  expect(attemptsToLeave()).toBe(false);
+  act(() => result.current.updateField('habit', 'Pending habit'));
+  expect(attemptsToLeave()).toBe(true);
+  act(() => result.current.flush());
+  expect(attemptsToLeave()).toBe(true);
+  const callbacks = mutation.mutate.mock.calls[0][1];
+  act(() => {
+    callbacks.onSuccess({ id: 'char-1', habit: 'Pending habit' });
+    callbacks.onSettled();
+  });
+  expect(attemptsToLeave()).toBe(false);
+});
+
 test('flushes the queued patch to the server', () => {
   const queryClient = makeQueryClient({ id: 'char-1', name: 'Old' });
   (useQueryClient as any).mockReturnValue(queryClient);
