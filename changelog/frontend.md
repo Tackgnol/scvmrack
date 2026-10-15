@@ -67,6 +67,8 @@
 
 ## Character editing
 
+- The app should no longer stay on Saving when automatic save retries run out. A persistent Unsaved · Retry control saves the queued edit without another change.
+
 - The app should no longer silently discard your last edit when you reload before autosave finishes. A browser warning lets you stay until it is saved.
 
 - Optimistic updates with debounced autosave (`useCharacterEditor`):

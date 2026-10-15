@@ -12,6 +12,7 @@ import { isSheetRoutePath } from '@/router/routeClassification';
 import { BoneIcon } from '@components/molecules/header/BoneIcon';
 import { HeaderDesktopBar } from '@components/molecules/header/HeaderDesktopBar';
 import { HeaderMobileDrawer } from '@components/molecules/header/HeaderMobileDrawer';
+import { HeaderStatusChip } from '@components/molecules/header/HeaderStatusChip';
 import MiseryHeaderLink from '@/components/molecules/character/MiseryHeaderLink';
 import {
   Box,
@@ -39,6 +40,8 @@ export default function Header() {
   });
   const {
     isSaving,
+    saveFailed,
+    retrySave,
     character,
     characterId,
     lastCharacterId,
@@ -147,6 +150,7 @@ export default function Header() {
               isAuthenticated={isAuthenticated}
               authButtonHref={authButtonHref}
               showSaving={showSaving}
+              onRetrySave={saveFailed ? retrySave : undefined}
               validationSummary={validationSummary}
               validationLabel={validationLabel}
               homeUrl={homeUrl}
@@ -158,6 +162,11 @@ export default function Header() {
             />
           )}
         </Box>
+        {isMobile && isSheetRoute && saveFailed && (
+          <Box sx={{ px: 2, pb: 1, textAlign: 'right' }}>
+            <HeaderStatusChip saving={false} onRetrySave={retrySave} />
+          </Box>
+        )}
       </Paper>
 
       <HeaderMobileDrawer
@@ -167,6 +176,7 @@ export default function Header() {
         isAuthenticated={isAuthenticated}
         authButtonHref={authButtonHref}
         showSaving={showSaving}
+        onRetrySave={saveFailed ? retrySave : undefined}
         validationSummary={validationSummary}
         validationLabel={validationLabel}
         homeUrl={homeUrl}

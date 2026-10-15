@@ -13,6 +13,7 @@ type HeaderMobileDrawerProps = {
   isAuthenticated: boolean;
   authButtonHref: string;
   showSaving: boolean;
+  onRetrySave?: () => void;
   validationSummary: string;
   validationLabel: string;
   homeUrl: string;
@@ -28,6 +29,7 @@ export function HeaderMobileDrawer({
   isAuthenticated,
   authButtonHref,
   showSaving,
+  onRetrySave,
   validationSummary,
   validationLabel,
   homeUrl,
@@ -71,6 +73,7 @@ export function HeaderMobileDrawer({
         isAuthenticated={isAuthenticated}
         authButtonHref={authButtonHref}
         showSaving={showSaving}
+        onRetrySave={onRetrySave}
         validationSummary={validationSummary}
         validationLabel={validationLabel}
         onClose={onClose}
