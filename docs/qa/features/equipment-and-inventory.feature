@@ -55,3 +55,12 @@ Feature: Equipment and inventory
     Then the second tab explains that the character changed in another tab
     And a reload keeps the hammer and the last saved rope quantity
 
+  # RPG-305: backend/tests/e2e/tests/authed/catalog-consumables.spec.ts
+  Scenario: Torches added from the catalog have persistent use controls
+    Given I am signed in
+    And I have a seeded character
+    When I add torches from equipment search
+    And I spend one torch use in Consumables
+    And I wait for the sheet to sync and reload the page
+    Then the torches still show that use spent
+
