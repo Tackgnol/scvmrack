@@ -2,6 +2,8 @@
 
 `scvmgrinder_be` — Fastify 5 + TypeScript API for the MÖRK BORG character sheet.
 
+- The app should no longer reject a first Logto sign-in when the account has a preferred username. New accounts can sign in and keep their profile name.
+
 ## Custom Classes (0.7.0)
 
 - Owner-only Custom Class drafts, explicit saves, immutable versions for used classes, archive/restore, and configurable account/daily-public-class limits
