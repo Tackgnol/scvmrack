@@ -147,8 +147,19 @@ export const characterRepository = {
     return rows.map((row) => row.id);
   },
 
-  update(id: string, data: Prisma.CharacterUpdateInput): Promise<unknown> {
-    return prisma.character.update({ where: { id }, data });
+  update(id: string, data: Prisma.CharacterUpdateInput, expectedUpdatedAt?: Date): Promise<unknown> {
+    if (!expectedUpdatedAt) {
+      return prisma.character.update({ where: { id }, data });
+    }
+    const nextMillisecond = new Date(expectedUpdatedAt.getTime() + 1);
+    return prisma.character.update({
+      // SQL-era timestamps have microseconds; API dates serialize milliseconds.
+      where: { id, updatedAt: { gte: expectedUpdatedAt, lt: nextMillisecond } },
+      data: {
+        ...data,
+        updatedAt: new Date(Math.max(Date.now(), nextMillisecond.getTime())),
+      },
+    });
   },
 
   deleteById(id: string): Promise<{ count: number }> {

@@ -82,6 +82,42 @@ function makeQueryClient(initial?: Store) {
 
 const noopMutation = () => ({ mutate: vi.fn(), isPending: false }) as any;
 
+test('sends the loaded version with a collection edit', () => {
+  const updatedAt = '2026-10-15T09:00:00.000Z';
+  const queryClient = makeQueryClient({ id: 'char-1', updatedAt, equipment: [] });
+  (useQueryClient as any).mockReturnValue(queryClient);
+  const mutation = noopMutation();
+  const { result } = renderHook(() =>
+    useCharacterEditor('char-1', mutation, (id) => ['char', id])
+  );
+  act(() => result.current.addEquipmentItem({ key: 'hammer', name: 'Hammer' }));
+  act(() => result.current.flush());
+  expect(mutation.mutate.mock.calls[0][0].body.expectedUpdatedAt).toBe(updatedAt);
+});
+
+test('a conflict discards stale queued edits and refreshes the authoritative character', () => {
+  const queryClient = makeQueryClient({ id: 'char-1', equipment: [] });
+  (useQueryClient as any).mockReturnValue(queryClient);
+  const mutation = noopMutation();
+  const { result } = renderHook(() =>
+    useCharacterEditor('char-1', mutation, (id) => ['char', id])
+  );
+  act(() => result.current.addEquipmentItem({ key: 'rope' }));
+  act(() => result.current.flush());
+  act(() => result.current.addEquipmentItem({ key: 'sword' }));
+  const callbacks = mutation.mutate.mock.calls[0][1];
+  act(() => {
+    callbacks.onError({ status: 409 }, {}, {});
+    callbacks.onSettled();
+  });
+  expect(queryClient.invalidateQueries).toHaveBeenCalledWith({ queryKey: ['char', 'char-1'], exact: true });
+  expect(snackbarMocks.showError).toHaveBeenCalledWith(expect.stringContaining('another tab'));
+  expect(result.current.isSaving).toBe(false);
+  expect(result.current.getVisibleCharacter({ id: 'char-1', equipment: [{ key: 'hammer' }] })?.equipment).toEqual([{ key: 'hammer' }]);
+  act(() => result.current.flush());
+  expect(mutation.mutate).toHaveBeenCalledTimes(1);
+});
+
 beforeEach(() => {
   vi.clearAllMocks();
   errorFeedbackMocks.showUnexpectedError.mockReturnValue(true);

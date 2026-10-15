@@ -635,6 +635,7 @@
     }
   },
   "character": {
+    "saveConflict": "Ta postać została zmieniona w innej karcie. Ostatnie zmiany nie zostały zapisane. Odśwież stronę przed dalszą edycją.",
     "name": "Imię",
     "class": "Klasa",
     "origin": "Pochodzenie",

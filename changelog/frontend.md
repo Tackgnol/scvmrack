@@ -8,6 +8,10 @@
 - Party Class Pools, read-only public class details, authored-language and creator attribution, and character/party rendering support Custom Classes at the table
 - Signed-out reporting, owner appeals by form or email, an allowlisted moderation review page with GM removal and creation-ban history, Terms, Contact, Privacy, and report pages, plus FAQ guidance
 
+## Bug fixes
+
+- The app should no longer erase an item saved in another tab when you edit an older inventory. Conflicting edits are rejected with an explanation.
+
 ## Stack
 
 - **UI:** React 19 + React Compiler, MUI 7 with a custom Mörk Borg theme

@@ -157,6 +157,7 @@ export type Character = {
 export type CharacterResponse = Character;
 
 export type CharacterUpdateRequest = Partial<{
+    expectedUpdatedAt: string;
     name: string;
     currentHp: number;
     maxHp: number;

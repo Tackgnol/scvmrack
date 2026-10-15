@@ -171,6 +171,19 @@ export function useCharacterEditor(
           // Both are worth retrying; the queued batch is kept and onSettled
           // re-flushes it until we run out of attempts.
           const status = getApiErrorStatus(error);
+          if (status === 409) {
+            // Index-based edits cannot be replayed safely on a different inventory.
+            retryCountRef.current = 0;
+            haltRef.current = true;
+            setPending(() => []);
+            optimisticCharacterRef.current = undefined;
+            lastSavedCharacterRef.current = undefined;
+            if (key) {
+              void queryClient.invalidateQueries({ queryKey: key, exact: true });
+            }
+            showError(t('character.saveConflict', 'This character changed in another tab. Your latest edits were not saved. Reload before editing again.'));
+            return;
+          }
           const isTransient = status === undefined || status >= 500;
           if (isTransient) {
             retryCountRef.current++;

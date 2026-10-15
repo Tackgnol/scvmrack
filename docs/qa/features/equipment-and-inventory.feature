@@ -44,3 +44,14 @@ Feature: Equipment and inventory
     Then the item shows the spent use
     And a reload keeps the use spent
 
+
+  # RPG-301: backend/tests/e2e/tests/authed/equipment.spec.ts
+  Scenario: A stale inventory edit cannot erase an item saved in another tab
+    Given I am signed in
+    And I have a seeded character with two carried ropes
+    And I have opened that character in two tabs
+    When I add a hammer in the first tab and wait for it to save
+    And I increase the rope quantity in the stale second tab
+    Then the second tab explains that the character changed in another tab
+    And a reload keeps the hammer and the last saved rope quantity
+
