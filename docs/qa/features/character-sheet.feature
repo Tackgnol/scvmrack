@@ -105,4 +105,3 @@ Feature: Character sheet
     When I cancel leaving and wait for the sheet to sync
     And I reload the page
     Then the edited habit is still shown
-
