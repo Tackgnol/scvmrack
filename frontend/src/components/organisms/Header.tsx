@@ -27,6 +27,7 @@ import { customStyles } from '@theme/morkBorgTheme';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { $api } from '@/api';
+import './Header.styles.css';
 
 export default function Header() {
   const { t } = useTranslation();
@@ -163,7 +164,7 @@ export default function Header() {
           )}
         </Box>
         {isMobile && isSheetRoute && saveFailed && (
-          <Box sx={{ px: 2, pb: 1, textAlign: 'right' }}>
+          <Box className="header-save-failure">
             <HeaderStatusChip saving={false} onRetrySave={retrySave} />
           </Box>
         )}
