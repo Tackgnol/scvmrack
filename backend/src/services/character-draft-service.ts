@@ -1,3 +1,4 @@
+import { OSRandomEngine, Roller } from '@tackgnol/rpg-tools-roller';
 import { translatedClassTexts } from '../lib/class-translations.js';
 import { buildCharacterData } from '../lib/generate-character.js';
 import { hydrateCharacterRow } from '../lib/get-character-full.js';
@@ -13,9 +14,9 @@ import {
   seededRollerFor,
 } from '../lib/draft-seeds.js';
 import { characterRepository } from '../repositories/character-repository.js';
-import { apiError, unauthorized } from '../errors.js';
-import { classChoiceError } from './class-choice.js';
-import { resolveClassScope } from './class-scope-service.js';
+import { unauthorized } from '../errors.js';
+import { classChoiceError, pickPoolClass } from './character-class-choice.js';
+import { resolvePartyClassPool } from './party-class-pool-service.js';
 import {
   fail,
   ok,
@@ -101,14 +102,14 @@ export function createCharacterDraftService(log: ServiceLogger) {
       }
 
       try {
-        const scope = await resolveClassScope(input.inviteToken, input.obrRoomId);
-        if (!scope.ok) {
-          return fail(scope.error);
+        const pool = await resolvePartyClassPool(input.inviteToken, input.obrRoomId);
+        if (!pool.ok) {
+          return fail(pool.error);
         }
         const classless = input.classless === true;
         let classId: number | null = classless ? null : (input.classId ?? null);
 
-        const unavailable = classChoiceError(scope.value, classless, classId);
+        const unavailable = classChoiceError(pool.value, classless, classId);
         if (unavailable) {
           return fail(unavailable);
         }
@@ -116,11 +117,11 @@ export function createCharacterDraftService(log: ServiceLogger) {
         // Random class is a one-time choice recorded in the draft, not a
         // seeded section. Rehydrating the same draft keeps the chosen class.
         if (classId === null && !classless) {
-          const { classIds } = scope.value;
-          if (classIds.length === 0) {
-            return fail(apiError(409, 'CLASS_NOT_AVAILABLE', 'No classes are available here'));
+          const picked = await pickPoolClass(pool.value, new Roller({ engine: new OSRandomEngine() }));
+          if (!picked.ok) {
+            return picked;
           }
-          classId = classIds[Math.floor(Math.random() * classIds.length)];
+          classId = picked.value;
         }
 
         const name = normalizedDraftName(input.name);
@@ -155,13 +156,13 @@ export function createCharacterDraftService(log: ServiceLogger) {
       }
 
       try {
-        const scope = await resolveClassScope(input.inviteToken, input.obrRoomId);
-        if (!scope.ok) {
-          return fail(scope.error);
+        const pool = await resolvePartyClassPool(input.inviteToken, input.obrRoomId);
+        if (!pool.ok) {
+          return fail(pool.error);
         }
         // A draft without a class rolls classless, so it needs Classless allowed.
         const classless = input.draft.classless || input.draft.classId === null;
-        const unavailable = classChoiceError(scope.value, classless, classless ? null : input.draft.classId);
+        const unavailable = classChoiceError(pool.value, classless, classless ? null : input.draft.classId);
         if (unavailable) {
           return fail(unavailable);
         }
@@ -193,11 +194,11 @@ export function createCharacterDraftService(log: ServiceLogger) {
       obrRoomId?: string | null;
     }): Promise<ServiceResult<ClassSummary[]>> {
       try {
-        const scope = await resolveClassScope(input.inviteToken, input.obrRoomId);
-        if (!scope.ok) {
-          return fail(scope.error);
+        const pool = await resolvePartyClassPool(input.inviteToken, input.obrRoomId);
+        if (!pool.ok) {
+          return fail(pool.error);
         }
-        const classes = await characterRepository.listClassesByIds(scope.value.classIds);
+        const classes = await characterRepository.listClassesByIds(pool.value.classIds);
         const texts = await translatedClassTexts(input.locale, classes);
         return ok(classes.map((c, i) => ({ id: c.id, ...texts[i] })));
       } catch (err) {

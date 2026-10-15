@@ -30,13 +30,6 @@ export type PartyMemberRow = {
 
 export type PartyWithMembers = PartyRow & { members: PartyMemberRow[] };
 
-export type PartyInviteRow = {
-  id: string;
-  ownerUserId: string;
-  classlessEnabled: boolean;
-  poolLineageIds: string[];
-};
-
 /** Minimal character shape the join/leave/kick flows reason about. */
 export type CharacterForJoinRow = {
   id: string;
@@ -45,33 +38,27 @@ export type CharacterForJoinRow = {
   partyId: string | null;
 };
 
-/** Thrown by {@link joinInTransaction} when the cap is hit inside the tx. */
-/**
- * Serializes all joins to one party (a transaction-scoped advisory lock keyed on
- * its id, held until commit) and throws {@link PartyFullError} at the cap.
- */
-async function lockPartyBelowCap(
-  tx: Prisma.TransactionClient,
-  partyId: string,
-  cap: number,
-  replaceUserId?: string
-): Promise<void> {
-  await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${partyId}, 0))`;
-  if (replaceUserId) {
-    await tx.character.deleteMany({ where: { userId: replaceUserId } });
-  }
-  const count = await tx.character.count({ where: { partyId } });
-  if (count >= cap) {
-    throw new PartyFullError();
-  }
+/** Room-party reads and writes bound to one transaction, so a service can combine them atomically. */
+function roomOps(tx: Prisma.TransactionClient) {
+  return {
+    findRoomParty(roomId: string) {
+      return tx.party.findUnique({
+        where: { obrRoomId: roomId },
+        select: { id: true, ownerUserId: true, _count: { select: { members: true } } },
+      });
+    },
+
+    async deleteParty(id: string): Promise<void> {
+      await tx.party.delete({ where: { id } });
+    },
+
+    async setPartyRoom(id: string, roomId: string): Promise<void> {
+      await tx.party.update({ where: { id }, data: { obrRoomId: roomId } });
+    },
+  };
 }
 
-export class PartyFullError extends Error {
-  constructor() {
-    super('Party is full');
-    this.name = 'PartyFullError';
-  }
-}
+export type RoomOps = ReturnType<typeof roomOps>;
 
 const MEMBER_SELECT = {
   id: true,
@@ -103,39 +90,33 @@ export const partyRepository = {
     });
   },
 
-  /** Creates a party with the default Party Class Pool: every Book Class lineage. */
+  /** Creates a party with `poolLineageIds` as its Party Class Pool. */
   createParty(input: {
     ownerUserId: string;
     name: string;
     inviteToken: string;
     obrRoomId?: string | null;
+    poolLineageIds: string[];
   }): Promise<PartyRow> {
-    return prisma.$transaction(async (tx) => {
-      const bookLineages = await tx.class.findMany({
-        where: { source: 'main_book' },
-        select: { lineageId: true },
-        distinct: ['lineageId'],
-      });
-      return tx.party.create({
-        data: {
-          ownerUserId: input.ownerUserId,
-          name: input.name,
-          inviteToken: input.inviteToken,
-          obrRoomId: input.obrRoomId ?? undefined,
-          classPool: {
-            create: bookLineages.map(({ lineageId }) => ({ lineageId })),
-          },
+    return prisma.party.create({
+      data: {
+        ownerUserId: input.ownerUserId,
+        name: input.name,
+        inviteToken: input.inviteToken,
+        obrRoomId: input.obrRoomId ?? undefined,
+        classPool: {
+          create: input.poolLineageIds.map((lineageId) => ({ lineageId })),
         },
-        select: {
-          id: true,
-          name: true,
-          ownerUserId: true,
-          inviteToken: true,
-          obrRoomId: true,
-          createdAt: true,
-          updatedAt: true,
-        },
-      });
+      },
+      select: {
+        id: true,
+        name: true,
+        ownerUserId: true,
+        inviteToken: true,
+        obrRoomId: true,
+        createdAt: true,
+        updatedAt: true,
+      },
     });
   },
 
@@ -184,7 +165,6 @@ export const partyRepository = {
     });
   },
 
-  /** Class ids whose lineage now has a newer version. */
   /** Each class version's number and the newest version number of its lineage. */
   async findClassVersions(classIds: number[]): Promise<Map<number, { version: number; latestVersion: number }>> {
     if (classIds.length === 0) {
@@ -204,42 +184,6 @@ export const partyRepository = {
       rows.map((row) => [row.id, { version: row.version, latestVersion: latestByLineage.get(row.lineageId) ?? row.version }])
     );
   },
-  /** The party behind an invite link, with its Party Class Pool. */
-  async findPartyForInvite(token: string): Promise<PartyInviteRow | null> {
-    const party = await prisma.party.findUnique({
-      where: { inviteToken: token },
-      select: {
-        id: true,
-        ownerUserId: true,
-        classlessEnabled: true,
-        classPool: { select: { lineageId: true } },
-      },
-    });
-    if (!party) {
-      return null;
-    }
-    const { classPool, ...rest } = party;
-    return { ...rest, poolLineageIds: classPool.map((row) => row.lineageId) };
-  },
-
-  /** The Party Class Pool attached to an Owlbear room, if that room has a party. */
-  async findPartyForObrRoom(obrRoomId: string): Promise<PartyInviteRow | null> {
-    const party = await prisma.party.findUnique({
-      where: { obrRoomId },
-      select: {
-        id: true,
-        ownerUserId: true,
-        classlessEnabled: true,
-        classPool: { select: { lineageId: true } },
-      },
-    });
-    if (!party) {
-      return null;
-    }
-    const { classPool, ...rest } = party;
-    return { ...rest, poolLineageIds: classPool.map((row) => row.lineageId) };
-  },
-
   getPartyByInviteToken(token: string): Promise<PartyRow | null> {
     return prisma.party.findUnique({
       where: { inviteToken: token },
@@ -315,67 +259,6 @@ export const partyRepository = {
    * lock auto-releases at transaction end. Throws {@link PartyFullError} when
    * the cap is reached (the service maps that to a 409).
    */
-  async joinInTransaction(input: {
-    characterId: string;
-    partyId: string;
-    cap: number;
-  }): Promise<void> {
-    await prisma.$transaction(async (tx) => {
-      await lockPartyBelowCap(tx, input.partyId, input.cap);
-      await tx.character.update({
-        where: { id: input.characterId },
-        data: { partyId: input.partyId, joinedAt: new Date() },
-      });
-    });
-  },
-
-  /**
-   * Creates a character already bound to the party, under the same advisory
-   * lock and cap check as {@link joinInTransaction}: a full party creates
-   * nothing. Throws {@link PartyFullError} at the cap.
-   */
-  async createMemberInTransaction(input: {
-    partyId: string;
-    cap: number;
-    data: Prisma.CharacterUncheckedCreateInput;
-    obrBinding?: { roomId: string; playerId: string };
-    replaceUserId?: string;
-  }): Promise<string> {
-    return prisma.$transaction(async (tx) => {
-      await lockPartyBelowCap(tx, input.partyId, input.cap, input.replaceUserId);
-      const character = await tx.character.create({
-        data: { ...input.data, partyId: input.partyId, joinedAt: new Date() },
-        select: { id: true },
-      });
-      if (input.obrBinding) {
-        await tx.obrRoomBinding.upsert({
-          where: { obrRoomId: input.obrBinding.roomId },
-          create: { obrRoomId: input.obrBinding.roomId },
-          update: { updatedAt: new Date() },
-        });
-        await tx.obrPlayerCharacterBinding.upsert({
-          where: {
-            obrRoomId_obrPlayerId: {
-              obrRoomId: input.obrBinding.roomId,
-              obrPlayerId: input.obrBinding.playerId,
-            },
-          },
-          create: {
-            obrRoomId: input.obrBinding.roomId,
-            obrPlayerId: input.obrBinding.playerId,
-            characterId: character.id,
-            assignedByPlayerId: input.obrBinding.playerId,
-          },
-          update: {
-            characterId: character.id,
-            assignedByPlayerId: input.obrBinding.playerId,
-          },
-        });
-      }
-      return character.id;
-    });
-  },
-
   async rotateInviteToken(id: string, token: string): Promise<void> {
     await prisma.party.update({
       where: { id },
@@ -383,37 +266,9 @@ export const partyRepository = {
     });
   },
 
-  /** Replaces an empty system-owned room party without dropping the room's Party Class Pool on the incoming party. */
-  async replaceEmptySystemPartyInRoom(input: {
-    roomId: string;
-    systemPartyId: string;
-    partyId: string;
-    systemOwnerUserId: string;
-  }): Promise<boolean> {
-    return prisma.$transaction(async (tx) => {
-      const systemParty = await tx.party.findUnique({
-        where: { obrRoomId: input.roomId },
-        select: {
-          id: true,
-          ownerUserId: true,
-          _count: { select: { members: true } },
-        },
-      });
-      if (
-        !systemParty ||
-        systemParty.id !== input.systemPartyId ||
-        systemParty.ownerUserId !== input.systemOwnerUserId ||
-        systemParty._count.members > 0
-      ) {
-        return false;
-      }
-      await tx.party.delete({ where: { id: systemParty.id } });
-      await tx.party.update({
-        where: { id: input.partyId },
-        data: { obrRoomId: input.roomId },
-      });
-      return true;
-    });
+  /** Runs `work` in one transaction with the room-party operations bound to it. */
+  roomTransaction<T>(work: (ops: RoomOps) => Promise<T>): Promise<T> {
+    return prisma.$transaction((tx) => work(roomOps(tx)));
   },
 
   /** Transfer party ownership (used when a signed-in GM claims a system-owned room party). */

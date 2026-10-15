@@ -5,16 +5,10 @@ import {
   type CharacterPartyAccessRow,
   type CharacterSummaryRow,
 } from '../repositories/character-repository.js';
-import {
-  characterCreateDataFromDraft,
-  createCharacterFromDraft,
-  generateCharacter,
-  randomCharacterCreateData,
-} from '../lib/generate-character.js';
-import { PARTY_MAX_MEMBERS } from '../lib/party-limits.js';
-import { PartyFullError, partyRepository } from '../repositories/party-repository.js';
-import { classChoiceError } from './class-choice.js';
-import { resolveClassScope } from './class-scope-service.js';
+import { characterCreateDataFromDraft, randomCharacterCreateData } from '../lib/generate-character.js';
+import { PARTY_MAX_MEMBERS, partyFull } from '../lib/party-limits.js';
+import { classChoiceError, pickPoolClass } from './character-class-choice.js';
+import { resolvePartyClassPool } from './party-class-pool-service.js';
 import { getCharacterFull } from '../lib/get-character-full.js';
 import { hydrateInventoryUses } from '../lib/inventory.js';
 import {
@@ -98,6 +92,40 @@ function resolveListLocale(rawLocale: unknown, acceptLanguage: unknown): 'en' | 
  * after logging the raw error, so the controller can hand them to the central
  * error handler (which reports 5xx to Sentry).
  */
+/**
+ * Inserts the scvm as a party member, an Owlbear player's seat, or on its own. A guest replacing
+ * their scvm loses the old one in the same transaction. Null when the party is already full.
+ */
+function insertCharacter(
+  data: Prisma.CharacterUncheckedCreateInput,
+  target: {
+    party: { id: string } | null;
+    obrBinding?: { roomId: string; playerId: string };
+    replaceUserId?: string;
+  }
+): Promise<string | null> {
+  const { party, obrBinding, replaceUserId } = target;
+  return characterRepository.transaction(async (ops) => {
+    if (party) {
+      await ops.lockParty(party.id);
+      // The guest's old scvm leaves as the new one joins, so it doesn't count against the cap.
+      if ((await ops.countPartyMembers(party.id, replaceUserId)) >= PARTY_MAX_MEMBERS) {
+        return null;
+      }
+    }
+    if (replaceUserId) {
+      await ops.deleteCharactersOf(replaceUserId);
+    }
+    const characterId = await ops.createCharacter(
+      party ? { ...data, partyId: party.id, joinedAt: new Date() } : data
+    );
+    if (obrBinding) {
+      await ops.bindObrPlayer(obrBinding, characterId);
+    }
+    return characterId;
+  });
+}
+
 export function createCharacterService(
   log: ServiceLogger,
   partyBus?: PartyEventBus
@@ -202,11 +230,11 @@ export function createCharacterService(
       }
 
       try {
-        const scope = await resolveClassScope(input.inviteToken, input.obrRoomId);
-        if (!scope.ok) {
-          return fail(scope.error);
+        const pool = await resolvePartyClassPool(input.inviteToken, input.obrRoomId);
+        if (!pool.ok) {
+          return fail(pool.error);
         }
-        const party = scope.value.party;
+        const party = pool.value.party;
         const obrBinding =
           !input.inviteToken && input.obrRoomId && input.obrPlayerId
             ? { roomId: input.obrRoomId, playerId: input.obrPlayerId }
@@ -237,7 +265,7 @@ export function createCharacterService(
           }
         }
 
-        let characterId: string;
+        let data: Prisma.CharacterUncheckedCreateInput;
         if (input.draft) {
           if (
             input.draft.classless &&
@@ -253,7 +281,7 @@ export function createCharacterService(
           // A draft without a class rolls classless, so it needs Classless allowed.
           const classless = input.draft.classless || input.draft.classId === null;
           const unavailable = classChoiceError(
-            scope.value,
+            pool.value,
             classless,
             classless ? null : input.draft.classId
           );
@@ -261,62 +289,37 @@ export function createCharacterService(
             return fail(unavailable);
           }
 
-          const data = await characterCreateDataFromDraft(input.draft, userId);
-          if (party) {
-            characterId = await partyRepository.createMemberInTransaction({
-              partyId: party.id,
-              cap: PARTY_MAX_MEMBERS,
-              data,
-              ...(obrBinding ? { obrBinding } : {}),
-              ...(isGuest && input.replace ? { replaceUserId: userId } : {}),
-            });
-            partyBus?.publish(party.id, { type: 'character.joined', characterId });
-          } else if (obrBinding) {
-            characterId = await characterRepository.createWithObrBindingInTransaction({
-              data,
-              obrBinding,
-              ...(isGuest && input.replace ? { replaceUserId: userId } : {}),
-            });
-          } else {
-            characterId = await createCharacterFromDraft(input.draft, userId);
-          }
+          data = await characterCreateDataFromDraft(input.draft, userId);
         } else {
           const roller = new Roller({ engine: new OSRandomEngine() });
           let classId = input.classId ?? null;
-          if (classId === null && party) {
-            if (scope.value.classIds.length === 0) {
-              return fail(badRequest('NO_CLASS_AVAILABLE', 'No classes are available for this party'));
+          if (classId === null) {
+            const picked = await pickPoolClass(pool.value, roller);
+            if (!picked.ok) {
+              return picked;
             }
-            classId = scope.value.classIds[
-              (await roller.roll(`1d${scope.value.classIds.length}`)).total - 1
-            ];
+            classId = picked.value;
           }
-          const unavailable = classChoiceError(scope.value, false, classId);
+          const unavailable = classChoiceError(pool.value, false, classId);
           if (unavailable) {
             return fail(unavailable);
           }
-
-          if (party) {
-            if (!obrBinding) {
-              return fail(badRequest('DRAFT_REQUIRED', 'Forge a scvm to join a party'));
-            }
-            characterId = await partyRepository.createMemberInTransaction({
-              partyId: party.id,
-              cap: PARTY_MAX_MEMBERS,
-              data: await randomCharacterCreateData(classId, roller, userId),
-              obrBinding,
-              ...(isGuest && input.replace ? { replaceUserId: userId } : {}),
-            });
-            partyBus?.publish(party.id, { type: 'character.joined', characterId });
-          } else if (obrBinding) {
-            characterId = await characterRepository.createWithObrBindingInTransaction({
-              data: await randomCharacterCreateData(classId, roller, userId),
-              obrBinding,
-              ...(isGuest && input.replace ? { replaceUserId: userId } : {}),
-            });
-          } else {
-            characterId = await generateCharacter(classId, roller, userId);
+          if (party && !obrBinding) {
+            return fail(badRequest('DRAFT_REQUIRED', 'Forge a scvm to join a party'));
           }
+          data = await randomCharacterCreateData(classId, roller, userId);
+        }
+        const characterId = await insertCharacter(data, {
+          party,
+          obrBinding,
+          // Inside a party or room the guest's old scvm goes in the same transaction; alone, it is pruned below.
+          replaceUserId: isGuest && input.replace && (party || obrBinding) ? userId : undefined,
+        });
+        if (!characterId) {
+          return fail(partyFull());
+        }
+        if (party) {
+          partyBus?.publish(party.id, { type: 'character.joined', characterId });
         }
         const character = await getCharacterFull(characterId, input.locale);
         if (!character) {
@@ -343,9 +346,6 @@ export function createCharacterService(
 
         return ok(character);
       } catch (err) {
-        if (err instanceof PartyFullError) {
-          return fail(apiError(409, 'PARTY_FULL', 'This party is full'));
-        }
         return fail(
           unexpected(log, err,'CHARACTER_GENERATION_FAILED', 'Failed to generate character')
         );

@@ -8,6 +8,12 @@ const PARTY_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 
 // ---- Mutable mock state ----
 type OwnerRow = { userId: string | null } | null;
+type Insert = {
+  partyId?: string;
+  data: Record<string, unknown>;
+  obrBinding?: { roomId: string; playerId: string };
+  replaceUserId?: string;
+};
 
 const state = {
   ownerRow: null as OwnerRow,
@@ -23,12 +29,10 @@ const state = {
     | { classIds: number[]; acceptedClassIds: number[]; classlessEnabled: boolean; party: null | { id: string; ownerUserId: string } }
     | { gone: true },
   scopeCalls: [] as Array<string | null | undefined>,
-  memberCalls: [] as Array<{ partyId: string; cap: number; data: unknown; obrBinding?: { roomId: string; playerId: string }; replaceUserId?: string }>,
-  roomCreateCalls: [] as Array<{ data: unknown; obrBinding: { roomId: string; playerId: string }; replaceUserId?: string }>,
+  inserts: [] as Insert[],
   partyFull: false,
   updateError: null as unknown,
   generateError: null as unknown,
-  createFromDraftError: null as unknown,
   fullError: null as unknown,
   countError: null as unknown,
   listError: null as unknown,
@@ -45,8 +49,26 @@ const state = {
   generatedId: 'generated-id',
   fullResult: { id: VALID_ID, name: 'Hero' } as Record<string, unknown> | null,
   updateCalls: [] as Array<{ id: string; data: unknown }>,
-  generateCalls: [] as Array<{ classId: number | null; userId?: string }>,
-  createFromDraftCalls: [] as Array<{ draft: unknown; userId: string }>,
+  /** Scvm created in a party, as the transaction wrote them. */
+  get memberCalls() {
+    return this.inserts.filter((i) => i.partyId);
+  },
+  /** Scvm bound to an Owlbear player outside a party. */
+  get roomCreateCalls() {
+    return this.inserts.filter((i) => !i.partyId && i.obrBinding);
+  },
+  /** Scvm confirmed from a draft on their own. */
+  get createFromDraftCalls() {
+    return this.inserts
+      .filter((i) => !i.partyId && !i.obrBinding && 'fromDraft' in i.data)
+      .map((i) => ({ draft: i.data.fromDraft, userId: i.data.userId }));
+  },
+  /** Scvm rolled at random on their own. */
+  get generateCalls() {
+    return this.inserts
+      .filter((i) => !i.partyId && !i.obrBinding && 'fromRandom' in i.data)
+      .map((i) => ({ classId: i.data.fromRandom, userId: i.data.userId }));
+  },
   hydrateCalls: 0,
 };
 
@@ -62,12 +84,10 @@ function resetState(): void {
   state.classNameMapCalls = [];
   state.scope = { classIds: [1, 2, 3, 4, 5, 6], acceptedClassIds: [1, 2, 3, 4, 5, 6], classlessEnabled: true, party: null };
   state.scopeCalls = [];
-  state.memberCalls = [];
-  state.roomCreateCalls = [];
+  state.inserts = [];
   state.partyFull = false;
   state.updateError = null;
   state.generateError = null;
-  state.createFromDraftError = null;
   state.fullError = null;
   state.countError = null;
   state.listError = null;
@@ -81,8 +101,6 @@ function resetState(): void {
   state.generatedId = 'generated-id';
   state.fullResult = { id: VALID_ID, name: 'Hero' };
   state.updateCalls = [];
-  state.generateCalls = [];
-  state.createFromDraftCalls = [];
   state.hydrateCalls = 0;
 }
 
@@ -127,9 +145,33 @@ mock.module('../../src/repositories/character-repository.js', {
         return state.deleteOthersResult;
       },
       userHasCharacters: async () => state.userHasCharactersResult,
-      createWithObrBindingInTransaction: async (input: { data: unknown; obrBinding: { roomId: string; playerId: string }; replaceUserId?: string }) => {
-        state.roomCreateCalls.push(input);
-        return 'room-character-id';
+      transaction: async (work: (ops: unknown) => Promise<unknown>) => {
+        const insert: Partial<Insert> = {};
+        const result = await work({
+          lockParty: async () => {},
+          countPartyMembers: async () => (state.partyFull ? 10 : 0),
+          deleteCharactersOf: async (userId: string) => {
+            insert.replaceUserId = userId;
+          },
+          createCharacter: async ({ partyId, joinedAt: _joinedAt, ...data }: Record<string, unknown>) => {
+            if (state.generateError) {
+              throw state.generateError;
+            }
+            insert.data = data;
+            if (partyId) {
+              insert.partyId = partyId as string;
+              return 'member-id';
+            }
+            return state.generatedId;
+          },
+          bindObrPlayer: async (obrBinding: { roomId: string; playerId: string }) => {
+            insert.obrBinding = obrBinding;
+          },
+        });
+        if (insert.data) {
+          state.inserts.push(insert as Insert);
+        }
+        return result;
       },
       count: async () => {
         if (state.countError) {
@@ -151,9 +193,9 @@ mock.module('../../src/repositories/character-repository.js', {
   },
 });
 
-mock.module('../../src/services/class-scope-service.js', {
+mock.module('../../src/services/party-class-pool-service.js', {
   namedExports: {
-    resolveClassScope: async (token: string | null | undefined) => {
+    resolvePartyClassPool: async (token: string | null | undefined) => {
       state.scopeCalls.push(token);
       if ('gone' in state.scope) {
         return { ok: false, error: { statusCode: 410, code: 'PARTY_INVITE_INVALID', message: 'gone' } };
@@ -163,41 +205,10 @@ mock.module('../../src/services/class-scope-service.js', {
   },
 });
 
-class FakePartyFullError extends Error {}
-
-mock.module('../../src/repositories/party-repository.js', {
-  namedExports: {
-    PartyFullError: FakePartyFullError,
-    partyRepository: {
-      createMemberInTransaction: async (input: { partyId: string; cap: number; data: unknown; obrBinding?: { roomId: string; playerId: string }; replaceUserId?: string }) => {
-        state.memberCalls.push(input);
-        if (state.partyFull) {
-          throw new FakePartyFullError('full');
-        }
-        return 'member-id';
-      },
-    },
-  },
-});
-
 mock.module('../../src/lib/generate-character.js', {
   namedExports: {
-    generateCharacter: async (classId: number | null, _roller: unknown, userId?: string) => {
-      state.generateCalls.push({ classId, userId });
-      if (state.generateError) {
-        throw state.generateError;
-      }
-      return state.generatedId;
-    },
-    randomCharacterCreateData: async (classId: number | null, _roller: unknown, userId?: string) => ({ fromRandom: classId, userId }),
+    randomCharacterCreateData: async (classId: number, _roller: unknown, userId?: string) => ({ fromRandom: classId, userId }),
     characterCreateDataFromDraft: async (draft: unknown, userId: string) => ({ fromDraft: draft, userId }),
-    createCharacterFromDraft: async (draft: unknown, userId: string) => {
-      state.createFromDraftCalls.push({ draft, userId });
-      if (state.createFromDraftError) {
-        throw state.createFromDraftError;
-      }
-      return 'draft-character-id';
-    },
   },
 });
 
@@ -273,6 +284,24 @@ test('generate binds ownership at creation and returns the full character', asyn
   assert.deepEqual(state.generateCalls, [{ classId: 2, userId: 'user-1' }]);
   assert.deepEqual(state.createFromDraftCalls, []);
   assert.deepEqual((r as { value: unknown }).value, state.fullResult);
+});
+
+test('a roll without a class picks from the pool it was handed', async () => {
+  state.scope = { classIds: [4], acceptedClassIds: [4], classlessEnabled: true, party: null };
+
+  const r = await service().generate({ session: session('user-1'), locale: 'en' });
+
+  assert.equal(r.ok, true);
+  assert.deepEqual(state.generateCalls, [{ classId: 4, userId: 'user-1' }]);
+});
+
+test('a roll from an empty pool creates nothing', async () => {
+  state.scope = { classIds: [], acceptedClassIds: [], classlessEnabled: true, party: null };
+
+  const r = await service().generate({ session: session('user-1'), locale: 'en' });
+
+  assert.equal((r as any).error.code, 'CLASS_NOT_AVAILABLE');
+  assert.deepEqual(state.inserts, []);
 });
 
 test('generate with a draft rebuilds from seeds and persists via createCharacterFromDraft', async () => {
@@ -360,7 +389,7 @@ test('generate with an invite creates the scvm inside its party in one step', as
   assert.equal(result.ok, true);
   assert.deepEqual(state.scopeCalls, ['invite-1']);
   assert.deepEqual(state.memberCalls, [
-    { partyId: 'party-1', cap: 10, data: { fromDraft: draft, userId: 'user-1' } },
+    { partyId: 'party-1', data: { fromDraft: draft, userId: 'user-1' } },
   ]);
   assert.deepEqual(state.createFromDraftCalls, []);
   assert.deepEqual(publishedEvents, [
@@ -385,7 +414,6 @@ test('generate binds a room-scoped forge to its Owlbear player in the party tran
   assert.deepEqual(state.memberCalls, [
     {
       partyId: 'party-1',
-      cap: 10,
       data: { fromDraft: draft, userId: 'user-1' },
       obrBinding: { roomId: 'obr-room-1', playerId: 'obr-player-1' },
     },
@@ -405,7 +433,6 @@ test('a room roll creates, joins, and binds in one transaction', async () => {
   assert.equal(result.ok, true);
   assert.deepEqual(state.memberCalls, [{
     partyId: 'party-1',
-    cap: 10,
     data: { fromRandom: 7, userId: 'user-1' },
     obrBinding: { roomId: 'obr-room-1', playerId: 'obr-player-1' },
   }]);

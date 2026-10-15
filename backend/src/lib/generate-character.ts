@@ -24,7 +24,6 @@ import type { Roller } from '@tackgnol/rpg-tools-roller';
 import { sanitizeString } from '../utils.js';
 import { statToModifier } from './ability-modifiers.js';
 import { abilityGrantedItems, type AbilityGrants } from './class-grants.js';
-import { bookClasses } from './class-scope.js';
 import { byClassOrder } from './ability-order.js';
 import { hydrateInventoryUses } from './inventory.js';
 import type {
@@ -600,7 +599,7 @@ async function pickPersonality(roller: Roller) {
  * seeded engine for deterministic results.
  */
 export async function generateCharacter(
-  classId: number | null,
+  classId: number,
   roller: Roller,
   userId?: string,
 ): Promise<string> {
@@ -613,27 +612,11 @@ export async function generateCharacter(
 
 /** Builds one random scvm row without persisting it, for an atomic party join. */
 export async function randomCharacterCreateData(
-  classId: number | null,
+  classId: number,
   roller: Roller,
   userId?: string,
 ): Promise<Prisma.CharacterUncheckedCreateInput> {
-  // 1. Resolve class (random if not supplied) — rolls on the caller's roller
-  //    BEFORE any section roll, preserving the legacy sequence.
-  let resolvedClassId: number;
-  if (classId !== null) {
-    resolvedClassId = classId;
-  } else {
-    const classes = await prisma.class.findMany({ where: bookClasses, select: { id: true } });
-    const picked = await pickRandom(classes, roller);
-    if (!picked) {
-      throw new Error('No classes found in database');
-    }
-    resolvedClassId = picked.id;
-  }
-
-  // Shared roller for every section: identical roll sequence to the
-  // pre-refactor implementation.
-  const data = await buildCharacterData(resolvedClassId, () => roller);
+  const data = await buildCharacterData(classId, () => roller);
   const { classlessStatOptions: _classlessStatOptions, ...persistedData } = data;
   return {
     ...(userId ? { userId } : {}),
@@ -643,21 +626,6 @@ export async function randomCharacterCreateData(
     equippedWeapons: persistedData.equippedWeapons as object[],
     equippedArmor: (persistedData.equippedArmor as object | null) ?? Prisma.DbNull,
   };
-}
-
-/**
- * Deterministically rebuild a character from a confirmed draft and persist it.
- * The client only ever supplies seeds, so the server is the sole roller.
- */
-export async function createCharacterFromDraft(
-  draft: CharacterDraft,
-  userId: string,
-): Promise<string> {
-  const character = await prisma.character.create({
-    data: await characterCreateDataFromDraft(draft, userId),
-    select: { id: true },
-  });
-  return character.id;
 }
 
 /** The row a confirmed draft rebuilds to, ready to insert (alone or as a party member). */

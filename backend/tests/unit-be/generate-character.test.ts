@@ -508,7 +508,7 @@ test('generateCharacter lets rolled scrolls reduce starting weapon and armor dic
   ]);
 });
 
-test('generateCharacter can pick a random class and grant a pet from a random ability', async () => {
+test('generateCharacter grants a pet from a random ability', async () => {
   const next = baseFixture();
   next.classes = [
     next.classes[0],
@@ -558,7 +558,6 @@ test('generateCharacter can pick a random class and grant a pet from a random ab
   resetFixture(next);
 
   const roller = new ScriptedRoller([
-    { notation: '1d2', total: 2 },
     { notation: '3d6', total: 10 },
     { notation: '3d6', total: 10 },
     { notation: '3d6', total: 10 },
@@ -575,7 +574,7 @@ test('generateCharacter can pick a random class and grant a pet from a random ab
     { notation: '1d2', total: 1 },
   ]);
 
-  await generateCharacter(null, roller as unknown as Roller);
+  await generateCharacter(2, roller as unknown as Roller);
 
   roller.assertComplete();
   const created = fixture.createdCharacters[0];
@@ -595,34 +594,6 @@ test('generateCharacter can pick a random class and grant a pet from a random ab
     { key: 'equipment.tent', tags: ['shelter'] },
     { key: 'pets.hawk', tags: ['pet', 'companion'] },
   ]);
-});
-
-test('generateCharacter fails clearly when random class generation has no classes', async () => {
-  const next = baseFixture();
-  next.classes = [];
-  resetFixture(next);
-
-  const roller = new ScriptedRoller([]);
-
-  await assert.rejects(
-    () => generateCharacter(null, roller as unknown as Roller),
-    /No classes found in database/,
-  );
-  assert.deepEqual(roller.calls, []);
-  assert.deepEqual(fixture.createdCharacters, []);
-});
-
-test('generateCharacter never rolls a Custom Class as the random class', async () => {
-  const next = baseFixture();
-  next.classes = [{ ...next.classes[0], source: 'user' }];
-  resetFixture(next);
-
-  const roller = new ScriptedRoller([]);
-
-  await assert.rejects(
-    () => generateCharacter(null, roller as unknown as Roller),
-    /No classes found in database/,
-  );
 });
 
 test('a fixed ability grants its item and pet to every character of the class', async () => {
@@ -901,19 +872,16 @@ test('buildCharacterData(null) exposes classless min/max stats and applies two s
   gearRoller.assertComplete();
 });
 
-test('createCharacterFromDraft persists exactly what buildCharacterData produces', async () => {
+test('characterCreateDataFromDraft builds exactly what buildCharacterData produces', async () => {
   resetFixture();
   const seeds = randomSectionSeeds();
   const draft = { classId: 1, classless: false, seeds };
 
   const expected = await buildCharacterData(1, seededRollerFor(seeds));
-  fixture.createdCharacters.length = 0;
 
-  const { createCharacterFromDraft } = await import('../../src/lib/generate-character.js');
-  const id = await createCharacterFromDraft(draft, 'user-123');
+  const { characterCreateDataFromDraft } = await import('../../src/lib/generate-character.js');
+  const created = (await characterCreateDataFromDraft(draft, 'user-123')) as Record<string, unknown>;
 
-  assert.equal(id, 'generated-character-id');
-  const created = fixture.createdCharacters[0] as Record<string, unknown>;
   assert.equal(created.userId, 'user-123');
   const { userId: _userId, ...rest } = created;
   assert.deepEqual(
@@ -925,31 +893,28 @@ test('createCharacterFromDraft persists exactly what buildCharacterData produces
   );
 });
 
-test('createCharacterFromDraft persists a sanitized draft name override', async () => {
+test('characterCreateDataFromDraft keeps a sanitized draft name override', async () => {
   resetFixture();
   const seeds = randomSectionSeeds();
   const draft = { classId: 1, classless: false, seeds, name: '  Rotmaw  ' };
 
-  const { createCharacterFromDraft } = await import('../../src/lib/generate-character.js');
-  await createCharacterFromDraft(draft, 'user-123');
-
-  const created = fixture.createdCharacters[0] as Record<string, unknown>;
+  const { characterCreateDataFromDraft } = await import('../../src/lib/generate-character.js');
+  const created = (await characterCreateDataFromDraft(draft, 'user-123')) as Record<string, unknown>;
   assert.equal(created.name, 'Rotmaw');
 });
 
-test('createCharacterFromDraft with classless=true ignores classId', async () => {
+test('characterCreateDataFromDraft with classless=true ignores classId', async () => {
   resetFixture();
   const seeds = randomSectionSeeds();
-  const { createCharacterFromDraft } = await import('../../src/lib/generate-character.js');
+  const { characterCreateDataFromDraft } = await import('../../src/lib/generate-character.js');
 
-  await createCharacterFromDraft({
+  const created = (await characterCreateDataFromDraft({
     classId: 1,
     classless: true,
     seeds,
     dropLowestAbilities: ['strength', 'presence'],
-  }, 'user-123');
+  }, 'user-123')) as Record<string, unknown>;
 
-  const created = fixture.createdCharacters[0] as Record<string, unknown>;
   assert.equal(created.classId, null);
   assert.deepEqual(created.abilities, []);
   assert.equal(created.classlessStatOptions, undefined);

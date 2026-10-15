@@ -20,6 +20,7 @@ import {
   SetPoolSwitchBodySchema,
 } from '../../schemas/party.js';
 import { sendServiceError } from '../../errors.js';
+import { createPartyClassPoolService } from '../../services/party-class-pool-service.js';
 import { createPartyService } from '../../services/party-service.js';
 import type { PartyEvent } from '../../plugins/party-bus.js';
 import partyEnemies from './enemies.js';
@@ -463,7 +464,7 @@ const parties: FastifyPluginAsync = async (fastify): Promise<void> => {
       },
     },
     async (request, reply) => {
-      const result = await partyService(request).getClassPool({
+      const result = await createPartyClassPoolService(request.log).getClassPool({
         session: request.appSession,
         id: request.params.id,
         locale: request.query.locale ?? 'en',
@@ -503,7 +504,7 @@ const parties: FastifyPluginAsync = async (fastify): Promise<void> => {
       },
     },
     async (request, reply) => {
-      const result = await partyService(request).setPoolClass({
+      const result = await createPartyClassPoolService(request.log).setPoolClass({
         session: request.appSession,
         id: request.params.id,
         lineageId: request.params.lineageId,
@@ -544,7 +545,7 @@ const parties: FastifyPluginAsync = async (fastify): Promise<void> => {
       },
     },
     async (request, reply) => {
-      const result = await partyService(request).setPoolClassless({
+      const result = await createPartyClassPoolService(request.log).setPoolClassless({
         session: request.appSession,
         id: request.params.id,
         enabled: request.body.enabled,

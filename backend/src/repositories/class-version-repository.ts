@@ -17,6 +17,7 @@ import {
   type VersionContent,
   type VersionRow,
 } from '../lib/class-version.js';
+import { advisoryLock } from './advisory-lock.js';
 
 type Tx = Prisma.TransactionClient;
 
@@ -233,11 +234,6 @@ export async function writeLineageContent(tx: Tx, content: VersionContent): Prom
       }
     }
   }
-}
-
-/** Holds a transaction-scoped advisory lock on `namespace:key`, released when the transaction ends. */
-export async function advisoryLock(tx: Tx, namespace: 'lineage' | 'owner' | 'report', key: string): Promise<void> {
-  await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`${namespace}:${key}`}))`;
 }
 
 /** Serializes saves and moderation decisions on one lineage until the transaction ends. */

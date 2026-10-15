@@ -123,6 +123,25 @@ const poolView = {
   removed: [],
 };
 
+mock.module('../../src/services/party-class-pool-service.js', {
+  namedExports: {
+    createPartyClassPoolService: () => ({
+      getClassPool: async (input: Record<string, unknown>) => {
+        poolCalls.push({ method: 'get', input });
+        return { ok: true, value: poolView };
+      },
+      setPoolClass: async (input: Record<string, unknown>) => {
+        poolCalls.push({ method: 'class', input });
+        return { ok: true, value: poolView };
+      },
+      setPoolClassless: async (input: Record<string, unknown>) => {
+        poolCalls.push({ method: 'classless', input });
+        return { ok: true, value: poolView };
+      },
+    }),
+  },
+});
+
 mock.module('../../src/services/party-service.js', {
   namedExports: {
     createPartyService: () => ({
@@ -146,18 +165,6 @@ mock.module('../../src/services/party-service.js', {
       detachRoom: async (input: { session: AppSession; id: string }) => {
         detachRoomCalls.push(input);
         return detachRoomResult;
-      },
-      getClassPool: async (input: Record<string, unknown>) => {
-        poolCalls.push({ method: 'get', input });
-        return { ok: true, value: poolView };
-      },
-      setPoolClass: async (input: Record<string, unknown>) => {
-        poolCalls.push({ method: 'class', input });
-        return { ok: true, value: poolView };
-      },
-      setPoolClassless: async (input: Record<string, unknown>) => {
-        poolCalls.push({ method: 'classless', input });
-        return { ok: true, value: poolView };
       },
       setMiseries: async (input: {
         session: AppSession;
@@ -381,7 +388,7 @@ test('POST /:id/detach-room forwards to the party service and returns 200 for th
   await app.close();
 });
 
-test('the class pool routes forward to the party service', async () => {
+test('the class pool routes forward to the pool module', async () => {
   resetState();
   poolCalls.length = 0;
   const app = await buildApp();
