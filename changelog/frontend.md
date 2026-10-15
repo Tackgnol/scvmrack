@@ -67,8 +67,6 @@
 
 ## Character editing
 
-- The app should no longer show Synced when you edit a character deleted in another tab. The missing-character screen explains what happened and lets you recover to a surviving character.
-
 - The app should no longer silently discard your last edit when you reload before autosave finishes. A browser warning lets you stay until it is saved.
 
 - Optimistic updates with debounced autosave (`useCharacterEditor`):
@@ -89,6 +87,7 @@
 - Equipment lookup/add-item flow keeps the add controls stable while search and
   add calls are pending, reducing layout jumps when items enter the sheet
 - Kill & Replace flow (death modal at 0 HP)
+- The app should no longer show Synced when you edit a character deleted in another tab. The missing-character screen explains what happened and lets you recover to a surviving character.
 - Character bootstrap and route synchronization avoid render-phase state writes
   and coalesce duplicate character-id navigation, preventing recovery loops and
   stack overflows during rapid route changes

@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useCharacter } from '@/CharacterContext/CharacterContext';
 import { useErrorFeedback } from '@/components/molecules/feedback/ErrorFeedbackProvider';
 import { useSavingIndicator } from '@/hooks/useSavingIndicator';
+import { isApiNotFound } from '@/utils/errorUtils';
 import {
   buildHomeCallbackUrl,
   buildPrintCallbackUrl,
@@ -26,7 +27,6 @@ import { customStyles } from '@theme/morkBorgTheme';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { $api } from '@/api';
-import { isApiNotFound } from '@/utils/errorUtils';
 
 export default function Header() {
   const { t } = useTranslation();
@@ -40,10 +40,10 @@ export default function Header() {
   });
   const {
     isSaving,
-    error,
     character,
     characterId,
     lastCharacterId,
+    error,
     validationIssues = [],
   } = useCharacter();
   const { showBugReport } = useErrorFeedback();
