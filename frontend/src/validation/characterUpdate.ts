@@ -301,6 +301,7 @@ const abilitySchema = z.object({
 });
 
 export const characterUpdateSchema = z.object({
+  expectedUpdatedAt: z.string().datetime().optional(),
   name: limitedString(255).optional(),
   currentHp: boundedInteger(-100, 1000, 0).optional(),
   maxHp: boundedInteger(1, 1000, 1).optional(),

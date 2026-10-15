@@ -638,6 +638,7 @@
     }
   },
   "character": {
+    "saveConflict": "This character changed in another tab. Your latest edits were not saved. Reload before editing again.",
     "name": "Name",
     "class": "Class",
     "origin": "Origin",

@@ -470,7 +470,10 @@ export function createCharacterService(
 
         await characterRepository.update(
           input.id,
-          updates as Prisma.CharacterUpdateInput
+          updates as Prisma.CharacterUpdateInput,
+          typeof input.body.expectedUpdatedAt === 'string'
+            ? new Date(input.body.expectedUpdatedAt)
+            : undefined
         );
 
         const character = await getCharacterFull(input.id, locale);
@@ -490,6 +493,9 @@ export function createCharacterService(
           err instanceof Prisma.PrismaClientKnownRequestError &&
           err.code === 'P2025'
         ) {
+          if (input.body.expectedUpdatedAt && await characterRepository.getOwnerId(input.id)) {
+            return fail(conflict('CHARACTER_CHANGED', 'Character changed in another tab. Reload before editing again.'));
+          }
           return fail(notFound('CHARACTER_NOT_FOUND', 'Character not found'));
         }
         return fail(

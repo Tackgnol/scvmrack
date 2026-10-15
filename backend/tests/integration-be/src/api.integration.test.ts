@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { Client } from 'pg';
 import test from 'node:test';
 
 const baseUrl = process.env.E2E_BASE_URL ?? 'http://localhost:3000';
@@ -248,6 +249,59 @@ test('cookie-less bearer session can create and edit its character without CSRF'
   });
   await expectStatus(updated, 200);
   assert.equal((await updated.json() as { name: string }).name, 'Tab-only scvm');
+});
+
+for (const [name, firstKeys, staleKeys] of [
+  ['a stale quantity PATCH cannot erase a saved Hammer', ['rope', 'rope', 'hammer'], ['rope', 'rope', 'rope']],
+  ['a stale add-item PATCH cannot undo a saved quantity', ['rope', 'rope', 'rope'], ['rope', 'rope', 'hammer']],
+] as const) {
+test(name, async () => {
+  const jar = await bootstrapAnonymousSession();
+  const id = await createCharacter(jar);
+  const csrf = await fetchCsrfToken(jar);
+  const headers = { 'x-csrf-token': csrf };
+  const path = `/api/characters/${id}`;
+  const seeded = await request(path, {
+    method: 'PATCH', jar, headers, json: { equipment: [{ key: 'rope' }, { key: 'rope' }] },
+  });
+  await expectStatus(seeded, 200);
+  const baseline = await seeded.json() as { updatedAt: string };
+  const first = await request(path, {
+    method: 'PATCH', jar, headers,
+    json: { expectedUpdatedAt: baseline.updatedAt, equipment: firstKeys.map((key) => ({ key })) },
+  });
+  await expectStatus(first, 200);
+  const stale = await request(path, {
+    method: 'PATCH', jar, headers,
+    json: { expectedUpdatedAt: baseline.updatedAt, equipment: staleKeys.map((key) => ({ key })) },
+  });
+  await expectApiError(stale, 409, 'CHARACTER_CHANGED', 'Character changed in another tab. Reload before editing again.');
+  const reloaded = await request(path, { jar });
+  const saved = await reloaded.json() as { equipment: Array<{ key: string }> };
+  assert.deepEqual(saved.equipment.map(({ key }) => key), firstKeys);
+});
+}
+
+test('an unchanged SQL-era timestamp accepts one save and rejects a replay', async () => {
+  const jar = await bootstrapAnonymousSession();
+  const id = await createCharacter(jar);
+  const database = new Client({ connectionString: process.env.DATABASE_URL });
+  await database.connect();
+  try {
+    await database.query("UPDATE characters SET updated_at = '2030-01-01 09:00:00.123456' WHERE id = $1", [id]);
+  } finally {
+    await database.end();
+  }
+  const path = `/api/characters/${id}`;
+  const baseline = await (await request(path, { jar })).json() as { updatedAt: string };
+  const headers = { 'x-csrf-token': await fetchCsrfToken(jar) };
+  const json = { expectedUpdatedAt: baseline.updatedAt, equipment: [{ key: 'hammer' }] };
+  const saved = await request(path, { method: 'PATCH', jar, headers, json });
+  await expectStatus(saved, 200);
+  const updated = await saved.json() as { updatedAt: string };
+  assert.ok(Date.parse(updated.updatedAt) > Date.parse(baseline.updatedAt));
+  const replay = await request(path, { method: 'PATCH', jar, headers, json });
+  await expectStatus(replay, 409);
 });
 
 test('CSRF protection rejects state-changing requests without token', async () => {

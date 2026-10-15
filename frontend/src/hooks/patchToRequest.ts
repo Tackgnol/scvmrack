@@ -153,5 +153,11 @@ export function buildRequestFromPatches(
         result.equippedArmor = currentCharacter.equippedArmor;
     }
 
+    if (Object.keys(result).some((field) =>
+        ['equipment', 'storage', 'equippedWeapons', 'equippedArmor', 'abilities', 'modifiers'].includes(field)
+    )) {
+        result.expectedUpdatedAt = currentCharacter.updatedAt;
+    }
+
     return sanitizeCharacterUpdateRequest(result);
 }
