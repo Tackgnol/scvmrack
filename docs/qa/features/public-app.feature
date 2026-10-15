@@ -28,3 +28,12 @@ Feature: Public app surfaces
     And I have accepted the storage notice
     When I open the navigation menu
     Then I can navigate to the FAQ page
+
+  # RPG-304: backend/tests/e2e/tests/authed/polish-accessibility.spec.ts
+  Scenario: Polish character controls announce Polish actions
+    Given I have a seeded character with a pet
+    And I am using the sheet in Polish
+    When I use the sheet and open an item dialog with the keyboard
+    Then attribute, armor, item-search, pet and dialog controls have Polish accessible names
+    When I close the item dialog
+    Then focus returns to its opening control
