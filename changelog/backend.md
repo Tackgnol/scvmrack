@@ -2,6 +2,8 @@
 
 `scvmgrinder_be` — Fastify 5 + TypeScript API for the MÖRK BORG character sheet.
 
+- The app should no longer reject a first Logto sign-in when the account has a preferred username. New accounts can sign in and keep their profile name.
+
 ## Stack
 
 - **Runtime:** Fastify 5.x (ESM, TypeScript), autoloaded plugins & routes
