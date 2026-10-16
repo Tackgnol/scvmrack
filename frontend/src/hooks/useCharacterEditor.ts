@@ -3,6 +3,7 @@ import { $api } from '@/api';
 import { applyOptimisticPatch } from '@/hooks/applyOptimisticPatch.ts';
 import {
   CharacterResponse,
+  CharacterUpdateRequest,
   CustomModifier,
   EquipmentItem,
   OptimisticPatch,
@@ -10,6 +11,7 @@ import {
 } from '@/hooks/models.ts';
 import { buildRequestFromPatches } from '@/hooks/patchToRequest.ts';
 import { getApiLocale } from '@/hooks/utils.ts';
+import { createRandomId } from '@/utils/randomId';
 import {
   getSimpleFieldLimitMessage,
   sanitizeSimpleFieldValue,
@@ -74,6 +76,8 @@ export function useCharacterEditor(
   // once we've given up / hit a client error, so we never busy-loop the server.
   const flushingRef = useRef(false);
   const haltRef = useRef(false);
+  // A save that failed in transit may still have landed, so retries resend exactly it, save id included.
+  const unconfirmedSaveRef = useRef<{ batch: OptimisticPatch[]; body: CharacterUpdateRequest } | null>(null);
   const maxRetries = 3;
 
   const retrySave = () => {
@@ -127,7 +131,8 @@ export function useCharacterEditor(
       return;
     }
 
-    const batch = [...pendingRef.current];
+    const unconfirmed = unconfirmedSaveRef.current;
+    const batch = unconfirmed ? unconfirmed.batch : [...pendingRef.current];
     if (batch.length === 0) {
       return;
     }
@@ -139,7 +144,9 @@ export function useCharacterEditor(
     }
 
     // Build request body from the queued patches + the current optimistic state.
-    const body = buildRequestFromPatches(batch, currentCharacter);
+    const body: CharacterUpdateRequest = unconfirmed
+      ? unconfirmed.body
+      : { ...buildRequestFromPatches(batch, currentCharacter), saveId: createRandomId() };
     flushingRef.current = true;
 
     updateCharacter.mutate(
@@ -153,6 +160,7 @@ export function useCharacterEditor(
       },
       {
         onSuccess: (serverCharacter: unknown) => {
+          unconfirmedSaveRef.current = null;
           setSaveFailed(false);
           retryCountRef.current = 0;
           haltRef.current = false;
@@ -200,6 +208,7 @@ export function useCharacterEditor(
           // re-flushes it until we run out of attempts.
           const status = getApiErrorStatus(error);
           if (status === 404 || status === 409) {
+            unconfirmedSaveRef.current = null;
             retryCountRef.current = 0;
             haltRef.current = true;
             setPending(() => []);
@@ -217,6 +226,7 @@ export function useCharacterEditor(
           }
           const isTransient = status === undefined || status >= 500;
           if (isTransient) {
+            unconfirmedSaveRef.current = { batch, body };
             retryCountRef.current++;
             if (retryCountRef.current < maxRetries) {
               // Patches stay queued; onSettled re-flushes them (auto-retry).
@@ -250,6 +260,7 @@ export function useCharacterEditor(
 
           // Client error (e.g. 4xx validation): retrying can't help. Drop the
           // bad batch, roll the cache back to the pre-patch snapshot, notify.
+          unconfirmedSaveRef.current = null;
           retryCountRef.current = 0;
           haltRef.current = true;
           setPending((prev) => prev.slice(batch.length));

@@ -197,6 +197,7 @@ model Character {
   storage         Json?    @default("[]")
   notes           String?  @default("")
   miseryCount     Int      @default(0) @map("misery_count")
+  lastSaveId      String?  @map("last_save_id")
   sessionId       String?  @map("session_id")
   userId          String?  @map("user_id")
   modifiers       Json     @default("[]") @map("modifiers")

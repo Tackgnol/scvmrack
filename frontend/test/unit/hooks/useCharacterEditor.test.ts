@@ -186,6 +186,39 @@ test('REGRESSION: a newer server copy that lands mid-flight is kept over the old
   expect(mutation.mutate.mock.calls[1][0].body.expectedUpdatedAt).toBe(improved.updatedAt);
 });
 
+test('REGRESSION: a save whose response was lost is resent unchanged, and later edits wait for the next save', () => {
+  const hammer = { key: 'hammer', name: 'Hammer' };
+  const torch = { key: 'torch', name: 'Torch' };
+  const queryClient = makeQueryClient({ id: 'char-1', updatedAt: '2026-10-16T09:00:00.000Z', equipment: [] });
+  (useQueryClient as any).mockReturnValue(queryClient);
+  const mutation = noopMutation();
+  const { result } = renderHook(() =>
+    useCharacterEditor('char-1', mutation, (id) => ['char', id])
+  );
+  act(() => result.current.addEquipmentItem(hammer as any));
+  act(() => result.current.flush());
+  act(() => {
+    mutation.mutate.mock.calls[0][1].onError(new TypeError('Failed to fetch'), {}, {});
+    mutation.mutate.mock.calls[0][1].onSettled();
+  });
+  act(() => result.current.addEquipmentItem(torch as any));
+  act(() => result.current.flush());
+
+  const first = mutation.mutate.mock.calls[0][0].body;
+  expect(mutation.mutate.mock.calls[1][0].body).toEqual(first);
+
+  // The server recognises the save id and reads the character back.
+  act(() => {
+    mutation.mutate.mock.calls[1][1].onSuccess({ id: 'char-1', updatedAt: '2026-10-16T09:00:01.000Z', equipment: [hammer] });
+    mutation.mutate.mock.calls[1][1].onSettled();
+  });
+  act(() => result.current.flush());
+  const next = mutation.mutate.mock.calls[2][0].body;
+  expect(next.equipment).toEqual([hammer, torch]);
+  expect(next.expectedUpdatedAt).toBe('2026-10-16T09:00:01.000Z');
+  expect(next.saveId).not.toBe(first.saveId);
+});
+
 beforeEach(() => {
   vi.clearAllMocks();
   errorFeedbackMocks.showUnexpectedError.mockReturnValue(true);
@@ -249,7 +282,7 @@ test('flushes the queued patch to the server', () => {
   act(() => result.current.flush());
 
   expect(mutation.mutate).toHaveBeenCalledWith(
-    expect.objectContaining({ body: { name: 'New Name' } }),
+    expect.objectContaining({ body: { name: 'New Name', saveId: expect.any(String) } }),
     expect.any(Object)
   );
 });
@@ -667,7 +700,7 @@ test('REGRESSION: flushes a pending edit on unmount instead of dropping it', () 
   unmount();
 
   expect(mutation.mutate).toHaveBeenCalledWith(
-    expect.objectContaining({ body: { name: 'A' } }),
+    expect.objectContaining({ body: { name: 'A', saveId: expect.any(String) } }),
     expect.any(Object)
   );
 });

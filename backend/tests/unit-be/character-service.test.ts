@@ -32,6 +32,7 @@ const state = {
   inserts: [] as Insert[],
   partyFull: false,
   updateError: null as unknown,
+  lastSaveId: null as string | null,
   generateError: null as unknown,
   fullError: null as unknown,
   countError: null as unknown,
@@ -87,6 +88,7 @@ function resetState(): void {
   state.inserts = [];
   state.partyFull = false;
   state.updateError = null;
+  state.lastSaveId = null;
   state.generateError = null;
   state.fullError = null;
   state.countError = null;
@@ -108,6 +110,7 @@ mock.module('../../src/repositories/character-repository.js', {
   namedExports: {
     characterRepository: {
       getOwnerId: async () => state.ownerRow,
+      getLastSaveId: async () => (state.ownerRow ? { lastSaveId: state.lastSaveId } : null),
       getPartyAccessContext: async () => {
         if (state.accessRow !== null) {
           return state.accessRow;
@@ -846,6 +849,32 @@ test('update maps a Prisma P2025 to a 404 not-found', async () => {
   });
   assert.equal((r as any).error.statusCode, 404);
   assert.equal((r as any).error.code, 'CHARACTER_NOT_FOUND');
+});
+
+test('a guarded update that fails the version check is a 409 conflict', async () => {
+  state.updateError = new Prisma.PrismaClientKnownRequestError('stale', { code: 'P2025', clientVersion: '6.19.3' });
+  state.lastSaveId = 'another-save';
+  const r = await service().update({
+    id: VALID_ID,
+    session: session('user-1'),
+    body: { equipment: [], expectedUpdatedAt: '2026-10-16T09:00:00.000Z', saveId: 'this-save' },
+    rawLocale: 'en',
+  });
+  assert.equal((r as any).error.statusCode, 409);
+  assert.equal((r as any).error.code, 'CHARACTER_CHANGED');
+});
+
+test('retrying a save that already landed returns the character instead of a conflict', async () => {
+  state.updateError = new Prisma.PrismaClientKnownRequestError('stale', { code: 'P2025', clientVersion: '6.19.3' });
+  state.lastSaveId = 'this-save';
+  const r = await service().update({
+    id: VALID_ID,
+    session: session('user-1'),
+    body: { equipment: [], expectedUpdatedAt: '2026-10-16T09:00:00.000Z', saveId: 'this-save' },
+    rawLocale: 'en',
+  });
+  assert.equal(r.ok, true);
+  assert.deepEqual((r as any).value, state.fullResult);
 });
 
 // ---- list ----

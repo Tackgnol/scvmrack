@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import assert from 'node:assert/strict';
 import { Client } from 'pg';
 import test from 'node:test';
@@ -651,6 +652,22 @@ function buildTableEditedImprovement(preview: ImprovementPreview): {
 }
 
 // ── PATCH /api/characters/:id ─────────────────────────────────────────────────────
+
+test('replaying a landed save with its save id reads back instead of conflicting', async () => {
+  const jar = await bootstrapAnonymousSession();
+  const id = await createCharacter(jar);
+  const path = `/api/characters/${id}`;
+  const baseline = await (await request(path, { jar })).json() as { updatedAt: string };
+  const headers = { 'x-csrf-token': await fetchCsrfToken(jar) };
+  const json = { expectedUpdatedAt: baseline.updatedAt, saveId: randomUUID(), equipment: [{ key: 'hammer' }] };
+  await expectStatus(await request(path, { method: 'PATCH', jar, headers, json }), 200);
+
+  const replay = await request(path, { method: 'PATCH', jar, headers, json });
+  await expectStatus(replay, 200);
+  assert.deepEqual((await replay.json() as { equipment: Array<{ key: string }> }).equipment.map(({ key }) => key), ['hammer']);
+  const otherSave = await request(path, { method: 'PATCH', jar, headers, json: { ...json, saveId: randomUUID() } });
+  await expectStatus(otherSave, 409);
+});
 
 test('PATCH /api/characters/:id updates character fields and returns updated character', async () => {
   const jar = await bootstrapAnonymousSession();
