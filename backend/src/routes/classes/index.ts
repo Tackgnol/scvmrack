@@ -1,0 +1,564 @@
+import type { FastifyPluginAsync } from 'fastify';
+import type { JsonSchemaToTsProvider } from '@fastify/type-provider-json-schema-to-ts';
+import type { ClassDraft } from '../../lib/class-draft.js';
+import {
+  ClassDetailSchema,
+  ClassDraftBodySchema,
+  ClassDraftListSchema,
+  ClassIdParamsSchema,
+  ClassLocaleQuerySchema,
+  ClassWithDraftSchema,
+  SavedClassSchema,
+  ClassVisibilityResponseSchema,
+  DraftCreateBodySchema,
+  DraftIdParamsSchema,
+  DraftUpdateBodySchema,
+  ErrorSchema,
+  OwnClassListSchema,
+  PublishClassBodySchema,
+  StoredClassDraftSchema,
+  TestRollBodySchema,
+  TestRollResponseSchema,
+} from '../../schemas/custom-class.js';
+import { sendServiceError } from '../../errors.js';
+import { createCustomClassService } from '../../services/custom-class-service.js';
+import { createModerationService } from '../../services/moderation-service.js';
+import { createCreationBanService } from '../../services/creation-ban-service.js';
+import { limitMax, reportLimit } from '../../lib/rate-limits.js';
+import {
+  CreationBanStatusSchema,
+  DisputeBodySchema,
+  ModerationReportResponseSchema,
+} from '../../schemas/moderation.js';
+
+const saveLimit = {
+  rateLimit: {
+    max: limitMax(10),
+    timeWindow: '1 minute',
+  },
+};
+
+const draftSaveLimit = {
+  rateLimit: {
+    max: limitMax(120),
+    timeWindow: '1 minute',
+  },
+};
+
+const classes: FastifyPluginAsync = async (fastify): Promise<void> => {
+  const app = fastify.withTypeProvider<JsonSchemaToTsProvider>();
+  app.get('/creation-ban', {
+    schema: {
+      description: 'Read your Custom Class creation restriction',
+      tags: ['classes'],
+      response: {
+        200: CreationBanStatusSchema,
+        401: ErrorSchema,
+        500: ErrorSchema,
+      },
+    },
+  }, async (request, reply) => {
+    const result = await createCreationBanService(request.log).own({ session: request.appSession });
+    if (!result.ok) {
+      return sendServiceError(reply, request, result.error);
+    }
+    return reply.send(result.value);
+  });
+
+  // GET /api/classes/mine - the GM's own Custom Classes, newest first
+  app.get(
+    '/mine',
+    {
+      schema: {
+        description:
+          "The signed-in GM's Custom Classes at their latest version",
+        tags: ['classes'],
+        querystring: ClassLocaleQuerySchema,
+        response: {
+          200: OwnClassListSchema,
+          401: ErrorSchema,
+          500: ErrorSchema,
+        },
+      },
+    },
+    async (request, reply) => {
+      const result = await createCustomClassService(request.log).listMine({
+        session: request.appSession,
+        locale: request.query.locale ?? 'en',
+      });
+      if (!result.ok) {
+        return sendServiceError(reply, request, result.error);
+      }
+      return result.value;
+    }
+  );
+
+  // GET /api/classes/drafts - private, unfinished creator work
+  app.get(
+    '/drafts',
+    {
+      schema: {
+        description: "The signed-in GM's unfinished Custom Class drafts",
+        tags: ['classes'],
+        response: {
+          200: ClassDraftListSchema,
+          401: ErrorSchema,
+          500: ErrorSchema,
+        },
+      },
+    },
+    async (request, reply) => {
+      const result = await createCustomClassService(request.log).listDrafts({
+        session: request.appSession,
+      });
+      if (!result.ok) {
+        return sendServiceError(reply, request, result.error);
+      }
+      return reply.send(result.value);
+    }
+  );
+
+  // POST /api/classes/drafts - persist unfinished work without validating it as a class
+  app.post(
+    '/drafts',
+    {
+      config: draftSaveLimit,
+      schema: {
+        description: 'Create an unfinished private Custom Class draft',
+        tags: ['classes'],
+        body: DraftCreateBodySchema,
+        response: {
+          201: StoredClassDraftSchema,
+          400: ErrorSchema,
+          401: ErrorSchema,
+          404: ErrorSchema,
+          409: ErrorSchema,
+          429: ErrorSchema,
+          500: ErrorSchema,
+        },
+      },
+    },
+    async (request, reply) => {
+      const result = await createCustomClassService(request.log).saveDraft({
+        session: request.appSession,
+        classId: request.body.classId ?? null,
+        draft: request.body.draft,
+      });
+      if (!result.ok) {
+        return sendServiceError(reply, request, result.error);
+      }
+      return reply.code(201).send(result.value);
+    }
+  );
+
+  // GET /api/classes/drafts/:draftId - load one private draft
+  app.get(
+    '/drafts/:draftId',
+    {
+      schema: {
+        description: 'Load one unfinished private Custom Class draft',
+        tags: ['classes'],
+        params: DraftIdParamsSchema,
+        response: {
+          200: StoredClassDraftSchema,
+          400: ErrorSchema,
+          401: ErrorSchema,
+          404: ErrorSchema,
+          500: ErrorSchema,
+        },
+      },
+    },
+    async (request, reply) => {
+      const result = await createCustomClassService(request.log).getDraft({
+        session: request.appSession,
+        id: request.params.draftId,
+      });
+      if (!result.ok) {
+        return sendServiceError(reply, request, result.error);
+      }
+      return reply.send(result.value);
+    }
+  );
+
+  // PUT /api/classes/drafts/:draftId - revision-checked autosave
+  app.put(
+    '/drafts/:draftId',
+    {
+      config: draftSaveLimit,
+      schema: {
+        description: 'Update an unfinished private Custom Class draft',
+        tags: ['classes'],
+        params: DraftIdParamsSchema,
+        body: DraftUpdateBodySchema,
+        response: {
+          200: StoredClassDraftSchema,
+          400: ErrorSchema,
+          401: ErrorSchema,
+          404: ErrorSchema,
+          409: ErrorSchema,
+          429: ErrorSchema,
+          500: ErrorSchema,
+        },
+      },
+    },
+    async (request, reply) => {
+      const result = await createCustomClassService(request.log).saveDraft({
+        session: request.appSession,
+        id: request.params.draftId,
+        classId: null,
+        draft: request.body.draft,
+        revision: request.body.revision,
+        force: request.body.force,
+      });
+      if (!result.ok) {
+        return sendServiceError(reply, request, result.error);
+      }
+      return reply.send(result.value);
+    }
+  );
+
+  // DELETE /api/classes/drafts/:draftId - discard unfinished private work
+  app.delete(
+    '/drafts/:draftId',
+    {
+      schema: {
+        description: 'Discard one unfinished private Custom Class draft',
+        tags: ['classes'],
+        params: DraftIdParamsSchema,
+        response: {
+          204: { type: 'null' },
+          400: ErrorSchema,
+          401: ErrorSchema,
+          404: ErrorSchema,
+          500: ErrorSchema,
+        },
+      },
+    },
+    async (request, reply) => {
+      const result = await createCustomClassService(request.log).deleteDraft({
+        session: request.appSession,
+        id: request.params.draftId,
+      });
+      if (!result.ok) {
+        return sendServiceError(reply, request, result.error);
+      }
+      return reply.code(204).send(null);
+    }
+  );
+  // POST /api/classes - save a new Custom Class
+  app.post(
+    '/',
+    {
+      config: saveLimit,
+      schema: {
+        description: 'Save a new Custom Class from the creator',
+        tags: ['classes'],
+        body: ClassDraftBodySchema,
+        response: {
+          201: SavedClassSchema,
+          400: ErrorSchema,
+          401: ErrorSchema,
+          409: ErrorSchema,
+          429: ErrorSchema,
+          500: ErrorSchema,
+        },
+      },
+    },
+    async (request, reply) => {
+      const result = await createCustomClassService(request.log).create({
+        session: request.appSession,
+        draft: request.body.draft,
+        draftId: request.body.draftId,
+      });
+      if (!result.ok) {
+        return sendServiceError(reply, request, result.error);
+      }
+      return reply.code(201).send(result.value);
+    }
+  );
+
+  // POST /api/classes/test-roll - roll a scvm from a draft, keeping nothing
+  app.post(
+    '/test-roll',
+    {
+      config: {
+        rateLimit: {
+          max: limitMax(30),
+          timeWindow: '1 minute',
+        },
+      },
+      schema: {
+        description: 'Roll a test scvm from a class draft (not persisted)',
+        tags: ['classes'],
+        body: TestRollBodySchema,
+        querystring: ClassLocaleQuerySchema,
+        response: {
+          200: TestRollResponseSchema,
+          400: ErrorSchema,
+          401: ErrorSchema,
+          429: ErrorSchema,
+          500: ErrorSchema,
+        },
+      },
+    },
+    async (request, reply) => {
+      const result = await createCustomClassService(request.log).testRoll({
+        session: request.appSession,
+        draft: request.body.draft,
+        language: request.body.language,
+        locale: request.query.locale ?? 'en',
+      });
+      if (!result.ok) {
+        return sendServiceError(reply, request, result.error);
+      }
+      return result.value;
+    }
+  );
+
+
+  // GET /api/classes/details/:id - latest readable version, or the exact version for allowlisted moderators
+  app.get(
+    '/details/:id',
+    {
+      schema: {
+        description: 'Load the latest readable Custom Class version for display',
+        tags: ['classes'],
+        params: ClassIdParamsSchema,
+        response: { 200: ClassDetailSchema, 401: ErrorSchema, 404: ErrorSchema, 500: ErrorSchema },
+      },
+    },
+    async (request, reply) => {
+      const result = await createCustomClassService(request.log).getDetail({ session: request.appSession, id: request.params.id });
+      if (!result.ok) {
+        return sendServiceError(reply, request, result.error);
+      }
+      return reply.send(result.value);
+    }
+  );
+app.post(
+    '/:id/disputes',
+    {
+      config: reportLimit,
+      schema: {
+        params: ClassIdParamsSchema,
+        body: DisputeBodySchema,
+        response: { 201: ModerationReportResponseSchema, 401: ErrorSchema, 404: ErrorSchema, 429: ErrorSchema, 500: ErrorSchema },
+      },
+    },
+    async (request, reply) => {
+      const result = await createModerationService(request.log).dispute({
+        session: request.appSession,
+        classId: request.params.id,
+        text: request.body.text,
+      });
+      if (!result.ok) {
+        return sendServiceError(reply, request, result.error);
+      }
+      return reply.code(201).send(result.value);
+    }
+  );
+  // POST /api/classes/:id/publish - make the current class version publicly readable
+  app.post(
+    '/:id/publish',
+    {
+      config: saveLimit,
+      schema: {
+        description: 'Publish a Custom Class after the creator confirms sharing rights',
+        tags: ['classes'],
+        params: ClassIdParamsSchema,
+        body: PublishClassBodySchema,
+        response: {
+          200: ClassVisibilityResponseSchema,
+          400: ErrorSchema,
+          401: ErrorSchema,
+          404: ErrorSchema,
+          409: ErrorSchema,
+          410: ErrorSchema,
+          429: ErrorSchema,
+          500: ErrorSchema,
+        },
+      },
+    },
+    async (request, reply) => {
+      const result = await createCustomClassService(request.log).setVisibility({
+        session: request.appSession,
+        id: request.params.id,
+        visibility: 'public',
+      });
+      if (!result.ok) {
+        return sendServiceError(reply, request, result.error);
+      }
+      return reply.send(result.value);
+    }
+  );
+
+  // POST /api/classes/:id/unpublish - keep the class private and remove public pools
+  app.post(
+    '/:id/unpublish',
+    {
+      config: saveLimit,
+      schema: {
+        description: 'Unpublish a Custom Class lineage',
+        tags: ['classes'],
+        params: ClassIdParamsSchema,
+        response: {
+          200: ClassVisibilityResponseSchema,
+          400: ErrorSchema,
+          401: ErrorSchema,
+          404: ErrorSchema,
+          409: ErrorSchema,
+          410: ErrorSchema,
+          500: ErrorSchema,
+        },
+      },
+    },
+    async (request, reply) => {
+      const result = await createCustomClassService(request.log).setVisibility({
+        session: request.appSession,
+        id: request.params.id,
+        visibility: 'private',
+      });
+      if (!result.ok) {
+        return sendServiceError(reply, request, result.error);
+      }
+      return reply.send(result.value);
+    }
+  );
+  // GET /api/classes/:id - one of the GM's classes, as the creator edits it
+  app.get(
+    '/:id',
+    {
+      schema: {
+        description: 'Load one of your Custom Classes into the creator',
+        tags: ['classes'],
+        params: ClassIdParamsSchema,
+        response: {
+          200: ClassWithDraftSchema,
+          400: ErrorSchema,
+          401: ErrorSchema,
+          404: ErrorSchema,
+          500: ErrorSchema,
+        },
+      },
+    },
+    async (request, reply) => {
+      const result = await createCustomClassService(request.log).get({
+        session: request.appSession,
+        id: request.params.id,
+      });
+      if (!result.ok) {
+        return sendServiceError(reply, request, result.error);
+      }
+      // The stored draft passed the same schema on save; its dice are plain numbers to TypeScript.
+      return reply.send(result.value);
+    }
+  );
+
+  // PUT /api/classes/:id - save edits to one of the GM's classes
+  app.put(
+    '/:id',
+    {
+      config: saveLimit,
+      schema: {
+        description: 'Save edits to one of your Custom Classes',
+        tags: ['classes'],
+        params: ClassIdParamsSchema,
+        body: ClassDraftBodySchema,
+        response: {
+          200: SavedClassSchema,
+          400: ErrorSchema,
+          401: ErrorSchema,
+          404: ErrorSchema,
+          409: ErrorSchema,
+          429: ErrorSchema,
+          500: ErrorSchema,
+        },
+      },
+    },
+    async (request, reply) => {
+      const result = await createCustomClassService(request.log).update({
+        session: request.appSession,
+        id: request.params.id,
+        draft: request.body.draft,
+        draftId: request.body.draftId,
+      });
+      if (!result.ok) {
+        return sendServiceError(reply, request, result.error);
+      }
+      return reply.send(result.value);
+    }
+  );
+  // DELETE /api/classes/:id - remove an unused class or archive a played lineage
+  app.delete(
+    '/:id',
+    {
+      schema: {
+        description:
+          'Remove an unused Custom Class, or archive it when scvm still use it',
+        tags: ['classes'],
+        params: ClassIdParamsSchema,
+        response: {
+          200: {
+            type: 'object',
+            additionalProperties: false,
+            required: ['archived'],
+            properties: { archived: { type: 'boolean' } },
+          },
+          400: ErrorSchema,
+          401: ErrorSchema,
+          404: ErrorSchema,
+          409: ErrorSchema,
+          410: ErrorSchema,
+          500: ErrorSchema,
+        },
+      },
+    },
+    async (request, reply) => {
+      const result = await createCustomClassService(request.log).remove({
+        session: request.appSession,
+        id: request.params.id,
+      });
+      if (!result.ok) {
+        return sendServiceError(reply, request, result.error);
+      }
+      return reply.send(result.value);
+    }
+  );
+
+  // POST /api/classes/:id/restore - make an owner-archived lineage available again
+  app.post(
+    '/:id/restore',
+    {
+      schema: {
+        description: 'Restore an owner-archived Custom Class lineage',
+        tags: ['classes'],
+        params: ClassIdParamsSchema,
+        response: {
+          200: {
+            type: 'object',
+            additionalProperties: false,
+            required: ['restored'],
+            properties: { restored: { type: 'boolean' } },
+          },
+          400: ErrorSchema,
+          401: ErrorSchema,
+          404: ErrorSchema,
+          410: ErrorSchema,
+          500: ErrorSchema,
+        },
+      },
+    },
+    async (request, reply) => {
+      const result = await createCustomClassService(request.log).restore({
+        session: request.appSession,
+        id: request.params.id,
+      });
+      if (!result.ok) {
+        return sendServiceError(reply, request, result.error);
+      }
+      return reply.send(result.value);
+    }
+  );
+};
+
+export default classes;

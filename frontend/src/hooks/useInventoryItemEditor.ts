@@ -121,7 +121,9 @@ export function useInventoryItemEditor(
   const sellTotal = sellPrice.perUnit * localQuantity;
 
   const save = () => {
-    if (!item) return;
+    if (!item) {
+      return;
+    }
     // Strip `amount` so new slots get amount: 1 — important for ammo items
     // where the existing amount on the item would otherwise be spread onto
     // newly-created slots.

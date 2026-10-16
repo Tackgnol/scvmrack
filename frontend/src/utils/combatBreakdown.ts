@@ -36,8 +36,12 @@ export const buildCombatBreakdown = (
   context: CombatContext,
 ): CombatBreakdown => {
   const applicable = allModifiers.filter((modifier) => {
-    if ((modifier.value ?? 0) === 0) return false;
-    if (modifier.statistic !== stat) return false;
+    if ((modifier.value ?? 0) === 0) {
+      return false;
+    }
+    if (modifier.statistic !== stat) {
+      return false;
+    }
     return !(modifier.exclude ?? []).includes(context);
   });
 

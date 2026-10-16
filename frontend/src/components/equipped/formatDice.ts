@@ -1,5 +1,7 @@
 export function formatDice(dice?: number[]): string {
-  if (!dice || dice.length === 0) return '';
+  if (!dice || dice.length === 0) {
+    return '';
+  }
 
   const counts: Record<number, number> = {};
   dice.forEach((die) => {

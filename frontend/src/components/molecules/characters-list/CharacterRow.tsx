@@ -6,9 +6,13 @@ import { useTranslation } from 'react-i18next';
 import { getCharacterViewTransitionName } from '@/router/routeClassification';
 
 const formatDate = (dateString?: string, locale = 'en') => {
-  if (!dateString) return '-';
+  if (!dateString) {
+    return '-';
+  }
   const date = new Date(dateString);
-  if (Number.isNaN(date.getTime())) return '-';
+  if (Number.isNaN(date.getTime())) {
+    return '-';
+  }
   return date.toLocaleDateString(locale, {
     year: 'numeric',
     month: 'short',

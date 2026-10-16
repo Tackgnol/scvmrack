@@ -1,6 +1,6 @@
 {
   "name": "scvmgrinder_be",
-  "version": "0.6.2",
+  "version": "0.7.0",
   "description": "This project was bootstrapped with Fastify-CLI.",
   "main": "app.ts",
   "type": "module",
@@ -30,12 +30,15 @@
     "deploy:env": "node scripts/parse-env.js",
     "migrate": "node scripts/migrate.js",
     "migrate:local": "node scripts/migrate-local.js",
+    "anonymize:moderation-reports": "node --import tsx scripts/anonymize-moderation-reports.ts",
     "postinstall": "prisma generate",
     "prisma:generate": "prisma generate",
     "prisma:push": "prisma db push",
     "prisma:migrate": "prisma migrate deploy",
     "prisma:baseline": "prisma migrate resolve --applied 20260603000000_init_full",
-    "prisma:seed": "node --import tsx prisma/seed.ts"
+    "prisma:seed": "node --import tsx prisma/seed.ts",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
   },
   "prisma": {
     "seed": "node --import tsx prisma/seed.ts"
@@ -44,18 +47,19 @@
   "author": "Adam Kościelniak",
   "license": "MIT",
   "dependencies": {
+    "@aws-sdk/client-sesv2": "^3.1146.0",
     "@fastify/autoload": "^6.0.0",
     "@fastify/sensible": "^6.0.0",
     "@fastify/swagger": "^9.0.0",
-    "@fastify/swagger-ui": "^5.0.0",
+    "@fastify/swagger-ui": "^6.1.2",
     "@prisma/adapter-pg": "^6.19.3",
     "@prisma/client": "6.19.3",
     "@sentry/node": "^10.50.0",
     "@tackgnol/rpg-tools-roller": "^0.0.1",
     "@tackgnol/rpgtools-owlbear": "^0.1.1",
-    "@tackgnol/rpgtools-shared-auth": "^1.7.2",
+    "@tackgnol/rpgtools-shared-auth": "^1.8.1",
     "dotenv": "^17.3.1",
-    "fastify": "5.8.5",
+    "fastify": "5.12.5",
     "fastify-cli": "^7.4.1",
     "fastify-plugin": "^5.1.0",
     "minisearch": "^7.2.0",
@@ -68,12 +72,17 @@
     "@types/node": "^24.0.8",
     "@types/pg": "^8.16.0",
     "@types/validator": "^13.15.10",
+    "@typescript-eslint/parser": "^8.60.0",
     "c8": "^10.1.2",
     "concurrently": "^9.0.0",
+    "eslint": "^9.39.5",
     "fastify-tsconfig": "^3.0.0",
     "prisma": "6.19.3",
     "ts-node": "^10.4.0",
     "tsx": "^4.21.0",
     "typescript": "~5.9.2"
+  },
+  "overrides": {
+    "better-auth": "1.6.23"
   }
 }

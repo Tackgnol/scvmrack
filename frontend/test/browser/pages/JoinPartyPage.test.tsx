@@ -126,15 +126,13 @@ describe('JoinPartyPage', () => {
     );
   });
 
-  it('offers forge/roll linking to the dedicated join routes', async () => {
+  it('offers only the forge, which goes through the class screen', async () => {
     characters([]);
     await renderPage();
     const forge = page.getByRole('link', { name: /forge a scvm/i });
-    const roll = page.getByRole('link', { name: /roll and join/i });
     await expect.element(forge).toBeVisible();
-    await expect.element(roll).toBeVisible();
     await expect.element(forge).toHaveAttribute('href', '/join/tok123/forge');
-    await expect.element(roll).toHaveAttribute('href', '/join/tok123/roll');
+    await expect.element(page.getByRole('link', { name: /roll and join/i })).not.toBeInTheDocument();
   });
 
   it('does not bootstrap or fetch characters for a fresh invite visitor', async () => {

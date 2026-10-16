@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import test from 'node:test';
 
 const baseUrl = process.env.E2E_BASE_URL ?? 'http://localhost:3000';
@@ -10,15 +11,21 @@ class CookieJar {
       ? response.headers.getSetCookie() : [];
     if (setCookies.length === 0) {
       const single = response.headers.get('set-cookie');
-      if (single) setCookies.push(single);
+      if (single) {
+        setCookies.push(single);
+      }
     }
     for (const rawCookie of setCookies) {
       const firstChunk = rawCookie.split(';')[0];
       const separator = firstChunk.indexOf('=');
-      if (separator <= 0) continue;
+      if (separator <= 0) {
+        continue;
+      }
       const key = firstChunk.slice(0, separator).trim();
       const value = firstChunk.slice(separator + 1).trim();
-      if (!key || !value) continue;
+      if (!key || !value) {
+        continue;
+      }
       this.cookies.set(key, value);
     }
   }
@@ -30,11 +37,15 @@ class CookieJar {
 async function request(path: string, options: { method?: string; json?: unknown; headers?: Record<string, string>; jar?: CookieJar } = {}): Promise<Response> {
   const { method = 'GET', json, headers = {}, jar } = options;
   const requestHeaders: Record<string, string> = { ...headers };
-  if (jar) { const h = jar.header(); if (h) requestHeaders.cookie = h; }
+  if (jar) { const h = jar.header(); if (h) {
+    requestHeaders.cookie = h;
+  } }
   let body: string | undefined;
   if (json !== undefined) { requestHeaders['content-type'] = 'application/json'; body = JSON.stringify(json); }
   const response = await fetch(new URL(path, baseUrl), { method, headers: requestHeaders, body });
-  if (jar) jar.capture(response);
+  if (jar) {
+    jar.capture(response);
+  }
   return response;
 }
 
@@ -162,4 +173,131 @@ test('GET /api/characters returns localized className via Accept-Language header
     enCharacter.className,
     'locale query should override Accept-Language for list className'
   );
+});
+
+const bookClasses = [
+  { id: 1, name: 'Fanged Deserter', omenDie: 2 },
+  { id: 2, name: 'Gutterborn Scum', omenDie: 2 },
+  { id: 3, name: 'Esoteric Hermit', omenDie: 4 },
+  { id: 4, name: 'Wretched Royalty', omenDie: 2 },
+  { id: 5, name: 'Heretical Priest', omenDie: 4 },
+  { id: 6, name: 'Occult Herbmaster', omenDie: 2 },
+];
+
+test('GET /api/characters/classes lists exactly the six Book Classes', async () => {
+  const response = await request('/api/characters/classes?locale=en');
+  assert.equal(response.status, 200);
+  const classes = (await response.json()) as Array<{ id: number; name: string }>;
+  assert.deepEqual(
+    classes.map(({ id, name }) => ({ id, name })),
+    bookClasses.map(({ id, name }) => ({ id, name })),
+  );
+});
+
+for (const bookClass of bookClasses) {
+  test(`${bookClass.name} generates and loads in both locales`, async () => {
+    const jar = await bootstrapAnonymousSession();
+    const id = await createCharacterWithClass(jar, bookClass.id);
+
+    for (const locale of ['en', 'pl']) {
+      const response = await request(`/api/characters/${id}?locale=${locale}`, { jar });
+      assert.equal(response.status, 200, `${locale} fetch should succeed`);
+      const character = (await response.json()) as {
+        classId: number;
+        className: string;
+        classDescription: string;
+        omens: number;
+        abilities: Array<{
+          key?: string;
+          name: string;
+          table?: { die: number; rows: Array<{ roll: number; text: string; itemKey: string | null }> };
+        }>;
+      };
+      assert.equal(character.classId, bookClass.id);
+      assert.ok(
+        character.omens >= 1 && character.omens <= bookClass.omenDie,
+        `${bookClass.name} omens ${character.omens} should come from a d${bookClass.omenDie}`,
+      );
+      if (locale === 'en') {
+        assert.equal(character.className, bookClass.name);
+      }
+      assert.ok(character.classDescription.length > 0, `${locale} classDescription`);
+      if (bookClass.id === 6) {
+        const laboratory = character.abilities.find(
+          (ability) => ability.key === 'abilities.occult_herbmaster.decoctions',
+        );
+        assert.equal(laboratory?.table?.die, 8, `${locale} decoctions table`);
+        assert.deepEqual(laboratory?.table?.rows.map((row) => row.roll), [1, 2, 3, 4, 5, 6, 7, 8]);
+        for (const row of laboratory?.table?.rows ?? []) {
+          assert.notEqual(row.text, '', `${locale} decoction ${row.roll} text`);
+          assert.ok(!row.text.startsWith('abilities.'), `${locale} decoction ${row.roll} translated`);
+          assert.ok(row.itemKey?.startsWith('equipment.'), `${locale} decoction ${row.roll} item`);
+        }
+      }
+      for (const ability of character.abilities) {
+        assert.ok(ability.key, `${locale} ability should keep its key`);
+        assert.notEqual(ability.name, ability.key, `${locale} ability ${ability.key} should be translated`);
+      }
+    }
+  });
+}
+
+// What each Book ability grants (RPG-258); mirrors the unit golden table.
+const bookGrants: Record<string, string[]> = {
+  'abilities.esoteric_hermit.hawk': ['pets.hawk'],
+  'abilities.fanged_deserter.hound': ['pets.gore-hound'],
+  'abilities.fanged_deserter.mask': ['equipment.crumpled-monster-mask'],
+  'abilities.fanged_deserter.scimitar': ['weapons.brown-scimitar'],
+  'abilities.fanged_deserter.shoe': ['weapons.shoe-of-death'],
+  'abilities.fanged_deserter.sling': ['weapons.sigurd-sling'],
+  'abilities.fanged_deserter.teeth': ['equipment.wizard-teeth'],
+  'abilities.gutterborn_scum.fingersmith': ['equipment.lockpicks'],
+  'abilities.heretical_priest.crook': ['weapons.sacred-shepherds-crook'],
+  'abilities.wretched_royalty.barbarister': ['pets.barbarister'],
+  'abilities.wretched_royalty.blade': ['weapons.blade-of-ancestors'],
+  'abilities.wretched_royalty.gift': ['weapons.snake-skin-gift'],
+  'abilities.wretched_royalty.hamfund': ['pets.hamfund'],
+};
+
+const draftSections = ['name', 'stats', 'omens', 'silver', 'origin', 'abilities', 'gear', 'personality'];
+
+function fixedSeeds(label: string): Record<string, string> {
+  return Object.fromEntries(
+    draftSections.map((section) => [
+      section,
+      createHash('sha256').update(`${label}:${section}`).digest('hex'),
+    ])
+  );
+}
+
+test('every Book Class grant reaches the rolled inventory', async () => {
+  const jar = await bootstrapAnonymousSession();
+  const unseen = new Set(Object.keys(bookGrants));
+
+  for (const { id: classId } of bookClasses) {
+    for (let i = 0; i < 60; i++) {
+      const csrf = await fetchCsrfToken(jar);
+      const response = await request('/api/characters/draft', {
+        method: 'POST',
+        json: { classId, classless: false, seeds: fixedSeeds(`grants:${classId}:${i}`) },
+        headers: { 'x-csrf-token': csrf },
+        jar,
+      });
+      assert.equal(response.status, 200, 'draft should roll');
+      const { preview } = (await response.json()) as {
+        preview: { abilities: Array<{ key?: string }>; equipment: Array<{ key?: string }> };
+      };
+      const inventory = new Set(preview.equipment.map((item) => item.key));
+      for (const { key } of preview.abilities) {
+        for (const granted of (key && bookGrants[key]) || []) {
+          assert.ok(inventory.has(granted), `${key} should grant ${granted}`);
+        }
+        if (key) {
+          unseen.delete(key);
+        }
+      }
+    }
+  }
+
+  assert.deepEqual([...unseen], [], 'every granting ability should be rolled at least once');
 });

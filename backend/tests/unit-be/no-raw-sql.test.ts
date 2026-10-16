@@ -14,10 +14,10 @@ const RAW_SQL_PATTERN = /\$queryRaw|\$executeRaw/;
 // Add an entry here (and document why) when introducing a new sanctioned exception.
 // Remove the entry when the raw SQL is replaced with a typed Prisma query.
 const ALLOWLIST = new Set<string>([
-  // party-repository: a single `pg_advisory_xact_lock` in joinInTransaction
-  // serializes concurrent joins to one party so the member cap can't overflow.
-  // Not expressible via the typed Prisma client; all other access stays typed.
-  'repositories/party-repository.ts',
+  // advisoryLock: the namespaced transaction lock behind lineage, owner, report and party serialization.
+  'repositories/advisory-lock.ts',
+  // lockVersion: a FOR UPDATE row lock stops a scvm being rolled on a version mid-save.
+  'repositories/custom-class-repository.ts',
 ]);
 
 function walkTs(dir: string): string[] {
@@ -40,7 +40,9 @@ test('no $queryRaw or $executeRaw outside the allowlist', () => {
 
   for (const file of walkTs(srcDir)) {
     const rel = relative(srcDir, file).replace(/\\/g, '/');
-    if (ALLOWLIST.has(rel)) continue;
+    if (ALLOWLIST.has(rel)) {
+      continue;
+    }
     const content = readFileSync(file, 'utf-8');
     if (RAW_SQL_PATTERN.test(content)) {
       violations.push(`  ${rel} — contains raw Prisma SQL ($queryRaw/$executeRaw)`);

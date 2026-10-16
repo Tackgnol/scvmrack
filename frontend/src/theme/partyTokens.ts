@@ -24,6 +24,12 @@ export const partyColors = {
   // Muted text for the *yellow* page surface: a darker shade of the page's own
   // hue (≈5.6:1 on #FFE900). Grey would wash out; this stays in the brand.
   mutedInk: '#6b5800',
+  // Class Pool rows: blurb text, and the dimmed name/blurb of a switched-off class.
+  blurbText: '#bbbbbb',
+  offText: '#9a9a9a',
+  offBlurb: '#777777',
+  // Form field edge: 3:1 on cards (#1a1a1a) and on the black paper (WCAG 1.4.11).
+  fieldEdge: '#6e6e6e',
   // Aged-parchment tan for affliction lines on dark surfaces.
   afflictionText: '#c9b27a',
 } as const;

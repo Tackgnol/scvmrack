@@ -1,5 +1,8 @@
 import { Prisma } from '@prisma/client';
 import prisma from '../lib/prisma.js';
+import type { AbilityGrants } from '../lib/class-grants.js';
+import type { AbilityOrder } from '../lib/ability-order.js';
+import type { GettingBetterRule } from '../lib/getting-better-types.js';
 
 export type ImprovementCharacterRow = {
   id: string;
@@ -30,10 +33,19 @@ export type CharacterImprovementRow = {
   appliedAt: Date | null;
 };
 
-export type ScumSpecialtyRow = {
+export type ClassAbilityRow = AbilityGrants & AbilityOrder & {
   key: string;
-  rollValue: number | null;
   isRandom: boolean | null;
+};
+
+export type ClassGettingBetterRow = {
+  gettingBetterRule: GettingBetterRule;
+  gettingBetterNoteKey: string | null;
+  languages: string[];
+};
+
+export type LatestClassImprovementCatalogRow = ClassGettingBetterRow & {
+  abilities: ClassAbilityRow[];
 };
 
 export type ScrollCatalogRow = {
@@ -138,12 +150,32 @@ export const characterImprovementRepository = {
     }) as Promise<ScrollCatalogRow[]>;
   },
 
-  findClassAbilities(classId: number): Promise<ScumSpecialtyRow[]> {
-    return prisma.ability.findMany({
-      where: { classId },
-      select: { key: true, rollValue: true, isRandom: true },
-      orderBy: [{ isRandom: 'asc' }, { rollValue: 'asc' }, { key: 'asc' }],
-    }) as Promise<ScumSpecialtyRow[]>;
+  async findLatestClassCatalog(
+    classId: number
+  ): Promise<LatestClassImprovementCatalogRow | null> {
+    const current = await prisma.class.findUnique({
+      where: { id: classId },
+      select: { lineageId: true },
+    });
+    if (!current) {
+      return null;
+    }
+
+    const latest = await prisma.class.findFirst({
+      where: { lineageId: current.lineageId },
+      orderBy: { version: 'desc' },
+      select: { id: true, gettingBetterRule: true, gettingBetterNoteKey: true, languages: true },
+    });
+    if (!latest) {
+      return null;
+    }
+
+    const abilities = await prisma.ability.findMany({
+      where: { classId: latest.id },
+      select: { key: true, position: true, id: true, isRandom: true, grantItemKey: true, grantPetKey: true },
+      orderBy: [{ position: 'asc' }, { id: 'asc' }],
+    }) as ClassAbilityRow[];
+    return { ...latest, abilities };
   },
 
   async applyInTransaction(input: ApplyImprovementInput): Promise<

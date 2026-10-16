@@ -31,7 +31,7 @@ test('Game Master sets the Misery count for every player', async ({
     inviteToken: string;
   };
 
-  const guestContext = await browser.newContext();
+  const guestContext = await browser.newContext({ storageState: { cookies: [], origins: [] } });
   await guestContext.addInitScript(() => {
     localStorage.setItem(
       'scvmgrinder-privacy-settings-v1',
@@ -42,7 +42,7 @@ test('Game Master sets the Misery count for every player', async ({
   const signedInCharacter = await createSeededCharacter(signedIn.userId, {
     name: 'Signed-in Scvm',
   });
-  const signedInContext = await browser.newContext();
+  const signedInContext = await browser.newContext({ storageState: { cookies: [], origins: [] } });
   await prepareActorContext(signedInContext, signedIn.sessionCookie);
 
   try {
@@ -52,11 +52,7 @@ test('Game Master sets the Misery count for every player', async ({
       timeout: 30000,
     });
     await guestPage.goto(`/join/${party.inviteToken}`);
-    const guestStream = guestPage.waitForResponse((response) =>
-      isPath(response.url(), new RegExp(`^/api/parties/${party.id}/stream$`))
-    );
     await guestPage.getByRole('button', { name: /join party/i }).click();
-    await guestStream;
     await expect(guestPage).toHaveURL(
       new RegExp(`/party/${party.id}/character/[^/]+$`)
     );
@@ -66,11 +62,7 @@ test('Game Master sets the Misery count for every player', async ({
     await expect(signedInPage.getByText('Signed-in Scvm')).toBeVisible({
       timeout: 30000,
     });
-    const signedInStream = signedInPage.waitForResponse((response) =>
-      isPath(response.url(), new RegExp(`^/api/parties/${party.id}/stream$`))
-    );
     await signedInPage.getByRole('button', { name: /join party/i }).click();
-    await signedInStream;
     await expect(signedInPage).toHaveURL(
       new RegExp(`/party/${party.id}/character/${signedInCharacter.id}$`)
     );

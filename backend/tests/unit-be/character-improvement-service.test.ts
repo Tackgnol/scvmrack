@@ -71,9 +71,15 @@ let applyCalls: Array<{
 }> = [];
 let classAbilities: Array<{
   key: string;
-  rollValue: number | null;
+  id: number;
+  position: number | null;
   isRandom: boolean | null;
+  grantItemKey?: string | null;
+  grantPetKey?: string | null;
 }> = [];
+let classRule: 'book' | 'book_plus_ability' | 'specialist' = 'book';
+let classNoteKey: string | null = null;
+let latestClassLookup: number | null = null;
 let rollQueue: RollResult[] = [];
 let rollCalls: string[] = [];
 let getFullCalls: Array<{ id: string; locale: string }> = [];
@@ -86,6 +92,9 @@ function resetState(): void {
   createCalls = 0;
   applyCalls = [];
   classAbilities = [];
+  classRule = 'book';
+  classNoteKey = null;
+  latestClassLookup = null;
   rollQueue = [];
   rollCalls = [];
   getFullCalls = [];
@@ -177,7 +186,15 @@ mock.module('../../src/repositories/character-improvement-repository.js', {
         { key: `${kind}-one`, roll: 1, tags: ['scroll', kind] },
         { key: `${kind}-two`, roll: 2, tags: ['scroll', kind] },
       ],
-      findClassAbilities: async () => classAbilities,
+      findLatestClassCatalog: async (classId: number) => {
+        latestClassLookup = classId;
+        return {
+          gettingBetterRule: classRule,
+          gettingBetterNoteKey: classNoteKey,
+          languages: ['en', 'pl'],
+          abilities: classAbilities,
+        };
+      },
       applyInTransaction: async (input: {
         characterId: string;
         improvementId: string;
@@ -209,6 +226,9 @@ mock.module('../../src/repositories/catalog-repository.js', {
           value: `${locale}:${key}`,
         }));
       },
+      findPetsByKeys: async (keys: string[]) =>
+        keys.filter((key) => key === 'pets.rat').map((key) => ({ key, hp: 2 })),
+      findEquipmentByKeys: async () => [],
     },
   },
 });
@@ -260,6 +280,33 @@ test('getOrCreatePreview creates once and returns the active preview on reopen',
     '1d6',
     '1d6',
   ]);
+});
+
+test('getOrCreatePreview returns backend-translated sacred scroll names', async () => {
+  resetState();
+  rollQueue = [
+    { total: 12 },
+    { total: 4 },
+    { total: 6 },
+    { total: 2 },
+    { total: 2 },
+    { total: 2 },
+    { total: 2 },
+    { total: 2 },
+  ];
+  const service = createCharacterImprovementService(log);
+
+  const result = await service.getOrCreatePreview({
+    id: characterId,
+    session,
+    rawLocale: 'pl',
+  });
+
+  assert.equal(result.ok, true);
+  assert.deepEqual(result.ok && result.value.scrollNames, {
+    'sacred-one': 'pl:sacred-one',
+    'sacred-two': 'pl:sacred-two',
+  });
 });
 
 test('rerollSection replaces only the requested section', async () => {
@@ -348,6 +395,39 @@ test('preview creation requires ownership', async () => {
   assert.equal(createCalls, 0);
 });
 
+test('Getting Better uses the latest Custom Class settings and stable ability keys', async () => {
+  resetState();
+  assert.ok(characterRow);
+  characterRow = {
+    ...characterRow,
+    classId: 1,
+    abilities: [{ key: 'cc.lineage.ability.held' }],
+  };
+  classRule = 'specialist';
+  classNoteKey = 'cc.latest.getting_better_note';
+  classAbilities = [
+    { key: 'cc.lineage.ability.held', id: 11, position: 1, isRandom: true },
+    { key: 'cc.latest.ability.new', id: 12, position: 2, isRandom: true },
+  ];
+  enqueuePreviewRolls();
+  rollQueue.push({ total: 2 });
+  const service = createCharacterImprovementService(log);
+
+  const preview = await service.getOrCreatePreview({ id: characterId, session, rawLocale: 'en' });
+
+  assert.equal(latestClassLookup, 1);
+  assert.equal(preview.ok && preview.value.rulesNote, 'en:cc.latest.getting_better_note');
+  assert.deepEqual(preview.ok && (preview.value.rolledDraft as ImprovementDraft).classAbility, {
+    kind: 'firstSpecialty',
+    existing: [{ key: 'cc.lineage.ability.held', rollValue: 1 }],
+    added: {
+      key: 'cc.latest.ability.new',
+      rollValue: 2,
+      roll: { source: 'server', total: 2 },
+    },
+  });
+});
+
 test('getOrCreatePreview builds Scum first and later specialty drafts', async () => {
   resetState();
   assert.ok(characterRow);
@@ -359,10 +439,11 @@ test('getOrCreatePreview builds Scum first and later specialty drafts', async ()
       { key: 'scum.one', comment: 'first note' },
     ],
   };
+  classRule = 'specialist';
   classAbilities = [
-    { key: 'scum.fixed', rollValue: null, isRandom: false },
-    { key: 'scum.one', rollValue: 1, isRandom: true },
-    { key: 'scum.two', rollValue: 2, isRandom: true },
+    { key: 'scum.fixed', id: 1, position: 1, isRandom: false },
+    { key: 'scum.one', id: 2, position: 2, isRandom: true },
+    { key: 'scum.two', id: 3, position: 3, isRandom: true },
   ];
   enqueuePreviewRolls();
   rollQueue.push({ total: 2 });
@@ -372,12 +453,12 @@ test('getOrCreatePreview builds Scum first and later specialty drafts', async ()
 
   assert.equal(first.ok, true);
   const firstDraft = activeImprovement?.rolledDraft as ImprovementDraft;
-  assert.equal(firstDraft.scumSpecialties.kind, 'firstImprovement');
-  if (firstDraft.scumSpecialties.kind === 'firstImprovement') {
-    assert.equal(firstDraft.scumSpecialties.existing.key, 'scum.one');
-    assert.equal(firstDraft.scumSpecialties.added.key, 'scum.two');
+  assert.equal(firstDraft.classAbility.kind, 'firstSpecialty');
+  if (firstDraft.classAbility.kind === 'firstSpecialty') {
+    assert.deepEqual(firstDraft.classAbility.existing.map((slot) => slot.key), ['scum.one']);
+    assert.equal(firstDraft.classAbility.added?.key, 'scum.two');
   }
-  assert.deepEqual(first.ok && first.value.scumSpecialtyNames, {
+  assert.deepEqual(first.ok && first.value.abilityNames, {
     'scum.one': 'pl:scum.one',
     'scum.two': 'pl:scum.two',
   });
@@ -386,7 +467,7 @@ test('getOrCreatePreview builds Scum first and later specialty drafts', async ()
   ]);
 
   const reopened = await service.getOrCreatePreview({ id: characterId, session, rawLocale: 'en' });
-  assert.deepEqual(reopened.ok && reopened.value.scumSpecialtyNames, {
+  assert.deepEqual(reopened.ok && reopened.value.abilityNames, {
     'scum.one': 'en:scum.one',
     'scum.two': 'en:scum.two',
   });
@@ -423,10 +504,143 @@ test('getOrCreatePreview builds Scum first and later specialty drafts', async ()
 
   assert.equal(later.ok, true);
   const laterDraft = activeImprovement?.rolledDraft as ImprovementDraft;
-  assert.equal(laterDraft.scumSpecialties.kind, 'laterImprovement');
-  if (laterDraft.scumSpecialties.kind === 'laterImprovement') {
-    assert.equal(laterDraft.scumSpecialties.primary.key, 'scum.one');
-    assert.equal(laterDraft.scumSpecialties.secondary.key, 'scum.two');
-    assert.equal(laterDraft.scumSpecialties.rerollMode, 'none');
-  }
+  assert.deepEqual(laterDraft.classAbility, {
+    kind: 'specialties',
+    specialties: [
+      { current: { key: 'scum.one', rollValue: 1 }, replacement: null, reroll: false },
+      { current: { key: 'scum.two', rollValue: 2 }, replacement: null, reroll: false },
+    ],
+  });
+});
+
+test('apply grants the item and pet of an ability gained through Getting Better', async () => {
+  resetState();
+  assert.ok(characterRow);
+  characterRow = {
+    ...characterRow,
+    classId: 2,
+    abilities: [{ key: 'scum.one' }],
+    equipment: [{ key: 'equipment.rope' }],
+  };
+  classRule = 'specialist';
+  classAbilities = [
+    { key: 'scum.one', id: 4, position: 1, isRandom: true, grantItemKey: 'equipment.mask' },
+    {
+      key: 'scum.two',
+      id: 99,
+      position: 2,
+      isRandom: true,
+      grantItemKey: 'equipment.lockpicks',
+      grantPetKey: 'pets.rat',
+    },
+  ];
+  enqueuePreviewRolls();
+  rollQueue.push({ total: 2 });
+  const service = createCharacterImprovementService(log);
+
+  await service.getOrCreatePreview({ id: characterId, session });
+  const draft = activeImprovement?.rolledDraft as ImprovementDraft;
+  const applied = await service.apply({
+    id: characterId,
+    improvementId,
+    draft,
+    session,
+    rawLocale: 'en',
+  });
+
+  assert.equal(applied.ok, true);
+  assert.deepEqual(applyCalls[0].characterData.equipment, [
+    { key: 'equipment.rope' },
+    { key: 'equipment.lockpicks', tags: [] },
+    { key: 'pets.rat', tags: [], uses: [true, true] },
+  ]);
+});
+
+test('the class rules note leads the preview in the reader language', async () => {
+  resetState();
+  classNoteKey = 'classes.test.getting_better_note';
+  enqueuePreviewRolls();
+  const service = createCharacterImprovementService(log);
+
+  const preview = await service.getOrCreatePreview({ id: characterId, session, rawLocale: 'pl' });
+
+  assert.equal(preview.ok && preview.value.rulesNote, 'pl:classes.test.getting_better_note');
+  assert.equal(preview.ok && (preview.value.rolledDraft as ImprovementDraft).classAbility.kind, 'none');
+});
+
+test('an active preview saved in the old two-slot shape upgrades to per-specialty toggles on load', async () => {
+  resetState();
+  assert.ok(characterRow);
+  characterRow = { ...characterRow, classId: 2, abilities: [{ key: 'scum.one' }, { key: 'scum.two' }] };
+  classRule = 'specialist';
+  classAbilities = [
+    { key: 'scum.one', id: 5, position: 1, isRandom: true },
+    { key: 'scum.two', id: 6, position: 2, isRandom: true },
+    { key: 'scum.three', id: 7, position: 3, isRandom: true },
+  ];
+  appliedCount = 1;
+  enqueuePreviewRolls();
+  rollQueue.push({ total: 3 }, { total: 3 });
+  const service = createCharacterImprovementService(log);
+  await service.getOrCreatePreview({ id: characterId, session });
+  assert.ok(activeImprovement);
+  const { classAbility: _current, ...rest } = activeImprovement.rolledDraft as ImprovementDraft;
+  activeImprovement = {
+    ...activeImprovement,
+    rolledDraft: {
+      ...rest,
+      scumSpecialties: {
+        kind: 'laterImprovement',
+        primary: { key: 'scum.one', rollValue: 1 },
+        secondary: { key: 'scum.two', rollValue: 2 },
+        rerollMode: 'secondary',
+      },
+    } as unknown as Prisma.InputJsonValue,
+  };
+  rollQueue.push({ total: 3 }, { total: 3 });
+
+  const reopened = await service.getOrCreatePreview({ id: characterId, session });
+
+  assert.equal(reopened.ok, true);
+  const upgraded = (activeImprovement?.rolledDraft as ImprovementDraft).classAbility;
+  assert.deepEqual(upgraded, {
+    kind: 'specialties',
+    specialties: [
+      {
+        current: { key: 'scum.one', rollValue: 1 },
+        replacement: { key: 'scum.three', rollValue: 3, roll: { source: 'server', total: 3 } },
+        reroll: false,
+      },
+      {
+        current: { key: 'scum.two', rollValue: 2 },
+        replacement: { key: 'scum.three', rollValue: 3, roll: { source: 'server', total: 3 } },
+        reroll: true,
+      },
+    ],
+  });
+  assert.equal('scumSpecialties' in (activeImprovement?.rolledDraft as object), false);
+});
+
+test('random abilities are numbered by their place in the pool, fixed ones never', async () => {
+  resetState();
+  assert.ok(characterRow);
+  characterRow = { ...characterRow, classId: 2, abilities: [{ key: 'pool.c' }] };
+  classRule = 'specialist';
+  classAbilities = [
+    { key: 'pool.c', id: 8, position: 7, isRandom: true },
+    { key: 'fixed.a', id: 9, position: 1, isRandom: false },
+    { key: 'pool.b', id: 10, position: 4, isRandom: true },
+  ];
+  enqueuePreviewRolls();
+  rollQueue.push({ total: 1 });
+  const service = createCharacterImprovementService(log);
+
+  await service.getOrCreatePreview({ id: characterId, session });
+
+  assert.deepEqual((activeImprovement?.rolledDraft as ImprovementDraft).classAbility, {
+    kind: 'firstSpecialty',
+    existing: [{ key: 'pool.c', rollValue: 2 }],
+    added: { key: 'pool.b', rollValue: 1, roll: { source: 'server', total: 1 } },
+  });
+  assert.equal(rollCalls.at(-1), '1d2');
 });

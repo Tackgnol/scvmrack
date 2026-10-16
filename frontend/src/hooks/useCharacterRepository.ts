@@ -1,5 +1,4 @@
 import { $api, characterKeys, client } from "@/api";
-import { PathsApiCharactersIdGetParametersQueryLocale } from "@/api/schema.ts";
 
 import { CharacterResponse } from "@/hooks/models.ts";
 import { getApiLocale, getCharacterKey } from "@/hooks/utils.ts";
@@ -12,7 +11,7 @@ export function useCharacterRepository(
     options: { enabled?: boolean } = {}
 ) {
     const queryClient = useQueryClient();
-    const trimmedLocale = getApiLocale<PathsApiCharactersIdGetParametersQueryLocale>(locale);
+    const trimmedLocale = getApiLocale(locale);
     const queryEnabled = options.enabled ?? true;
 
     // ---- Character Query ----
@@ -47,8 +46,8 @@ export function useCharacterRepository(
     // ---- Create Character ----
     const createCharacter = useMutation({
         mutationFn: async (vars: {
-            body: { classId?: number };
-            params: { query: { locale: string } };
+            body: { classId?: number; replace?: boolean };
+            params: { query: { locale: string; obrRoom?: string; obrPlayer?: string } };
             signal?: AbortSignal;
         }) => {
             const { signal, ...request } = vars;
@@ -73,7 +72,9 @@ export function useCharacterRepository(
             return data;
         },
         onSuccess: (character) => {
-            if (!character?.id) return;
+            if (!character?.id) {
+                return;
+            }
             queryClient.setQueryData(
                 getCharacterKey(character.id, locale),
                 character
@@ -117,7 +118,9 @@ export function useCharacterRepository(
 
     // ---- Refetch Character ----
     const refetchCharacter = () => {
-        if (!characterId) return;
+        if (!characterId) {
+            return;
+        }
         queryClient.invalidateQueries({
             queryKey: getCharacterKey(characterId, locale)
         });

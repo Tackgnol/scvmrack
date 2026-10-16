@@ -48,7 +48,9 @@ export function createScvmContextMenu(): ContextMenuItem {
     ],
     onClick: (context, elementId) => {
       const characterId = getContextCharacterId(context);
-      if (!characterId) return;
+      if (!characterId) {
+        return;
+      }
 
       void OBR.popover.open({
         id: SCVM_CARD_POPOVER_ID,
@@ -90,7 +92,9 @@ async function openEnemyPopover(
   elementId: string,
 ): Promise<void> {
   const enemyId = getContextEnemyId(context);
-  if (!enemyId) return;
+  if (!enemyId) {
+    return;
+  }
 
   const role = await OBR.player.getRole().catch(() => "PLAYER" as const);
   const playerCharacterId =

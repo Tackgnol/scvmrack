@@ -13,10 +13,14 @@ export function useObrRole(): ObrRole | null {
     let unsubscribePlayerChange: (() => void) | null = null;
 
     OBR.onReady(async () => {
-      if (!active) return;
+      if (!active) {
+        return;
+      }
 
       const initialRole = await OBR.player.getRole();
-      if (!active) return;
+      if (!active) {
+        return;
+      }
 
       setRole(initialRole);
       unsubscribePlayerChange = OBR.player.onChange((player) => {

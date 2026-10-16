@@ -38,14 +38,20 @@ export async function hydrateInventoryUses(
 
   return Promise.all(
     items.map(async (item) => {
-      if (item === null || typeof item !== 'object') return item;
+      if (item === null || typeof item !== 'object') {
+        return item;
+      }
       const obj = item as InventoryItem;
       const key = typeof obj['key'] === 'string' ? obj['key'] : null;
 
       const existingUses = obj['uses'];
-      if (Array.isArray(existingUses) && existingUses.length > 0) return item;
+      if (Array.isArray(existingUses) && existingUses.length > 0) {
+        return item;
+      }
 
-      if (!key) return item;
+      if (!key) {
+        return item;
+      }
 
       const pet = petMap.get(key);
       if (pet && pet.hp > 0) {

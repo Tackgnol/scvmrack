@@ -5,11 +5,11 @@ import {
   scopeIncludeOptions,
 } from '@components/modifiers/config';
 import {
-  createModifierId,
   excludeToIncludes,
   includesToExclude,
   resolveScopeFromIncludes,
 } from '@components/modifiers/utils';
+import { createRandomId } from '@/utils/randomId';
 import {
   type IncludeContext,
   type LocalStatistic,
@@ -125,7 +125,9 @@ export function useModifiersPanel() {
       return;
     }
 
-    if (computedFingerprintRef.current === computedFingerprint) return;
+    if (computedFingerprintRef.current === computedFingerprint) {
+      return;
+    }
     computedFingerprintRef.current = computedFingerprint;
 
     const label =
@@ -288,7 +290,7 @@ export function useModifiersPanel() {
       (option) => option.value === scope
     );
     const modifier: CustomModifier = {
-      id: createModifierId(),
+      id: createRandomId(),
       name: name.trim(),
       value: quickValue,
       source: 'Player',
@@ -341,7 +343,7 @@ export function useModifiersPanel() {
       updateModifier(editingModifierId, modifierPayload);
     } else {
       addModifier({
-        id: createModifierId(),
+        id: createRandomId(),
         ...modifierPayload,
       });
     }
@@ -350,7 +352,9 @@ export function useModifiersPanel() {
   };
 
   const removeCustomModifier = (modifierId?: string) => {
-    if (!modifierId || removingModifierIds.includes(modifierId)) return;
+    if (!modifierId || removingModifierIds.includes(modifierId)) {
+      return;
+    }
 
     setRemovingModifierIds((previous) => [...previous, modifierId]);
     const timeoutId = window.setTimeout(() => {

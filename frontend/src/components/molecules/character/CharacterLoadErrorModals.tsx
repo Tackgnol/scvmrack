@@ -23,7 +23,9 @@ export function CharacterLoadErrorModals({
 }: CharacterLoadErrorModalsProps) {
   const { t } = useTranslation();
 
-  if (!issue) return null;
+  if (!issue) {
+    return null;
+  }
 
   const title =
     issue === 'not-found'

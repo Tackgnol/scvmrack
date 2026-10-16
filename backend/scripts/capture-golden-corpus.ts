@@ -25,8 +25,12 @@ const BASE_URL = process.env.E2E_BASE_URL ?? 'http://localhost:3000';
 // ── Normalisation ─────────────────────────────────────────────────────────────
 
 function normalize(obj: unknown): unknown {
-  if (typeof obj !== 'object' || obj === null) return obj;
-  if (Array.isArray(obj)) return obj.map(normalize);
+  if (typeof obj !== 'object' || obj === null) {
+    return obj;
+  }
+  if (Array.isArray(obj)) {
+    return obj.map(normalize);
+  }
   const result: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(obj as Record<string, unknown>)) {
     if (k === 'id' && typeof v === 'string' && /^[0-9a-f-]{36}$/i.test(v)) {
@@ -54,16 +58,22 @@ class CookieJar {
 
     if (setCookies.length === 0) {
       const single = response.headers.get('set-cookie');
-      if (single) setCookies.push(single);
+      if (single) {
+        setCookies.push(single);
+      }
     }
 
     for (const rawCookie of setCookies) {
       const firstChunk = rawCookie.split(';')[0];
       const separator = firstChunk.indexOf('=');
-      if (separator <= 0) continue;
+      if (separator <= 0) {
+        continue;
+      }
       const key = firstChunk.slice(0, separator).trim();
       const value = firstChunk.slice(separator + 1).trim();
-      if (!key || !value) continue;
+      if (!key || !value) {
+        continue;
+      }
       this.cookies.set(key, value);
     }
   }
@@ -89,7 +99,9 @@ async function apiRequest(
   const requestHeaders: Record<string, string> = { ...headers };
   if (jar) {
     const cookieHeader = jar.header();
-    if (cookieHeader) requestHeaders.cookie = cookieHeader;
+    if (cookieHeader) {
+      requestHeaders.cookie = cookieHeader;
+    }
   }
 
   let body: string | undefined;
@@ -104,7 +116,9 @@ async function apiRequest(
     body,
   });
 
-  if (jar) jar.capture(response);
+  if (jar) {
+    jar.capture(response);
+  }
   return response;
 }
 

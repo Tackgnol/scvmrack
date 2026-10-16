@@ -23,7 +23,8 @@ import { Prisma } from '@prisma/client';
 import type { Roller } from '@tackgnol/rpg-tools-roller';
 import { sanitizeString } from '../utils.js';
 import { statToModifier } from './ability-modifiers.js';
-import { grantedItemKeyForName, grantedPetKeyForName } from './class-grants.js';
+import { abilityGrantedItems, type AbilityGrants } from './class-grants.js';
+import { byClassOrder } from './ability-order.js';
 import { hydrateInventoryUses } from './inventory.js';
 import type {
   AbilityStat,
@@ -49,6 +50,11 @@ interface PoolItem {
 
 interface AbilityEntry {
   key: string;
+  tableResult?: {
+    roll: number;
+    text: string;
+    itemKey: string | null;
+  };
 }
 
 interface EquipBundle {
@@ -91,14 +97,17 @@ type BuildCharacterOptions = {
  * Classless scvm (MÖRK BORG core rules): no stat modifiers, d8 HP, 2d6×10
  * silver, d10 weapon die, d4 armor die, no class abilities, no origin.
  */
-const CLASSLESS_DEFAULTS = {
+export const CLASSLESS_DEFAULTS = {
   hpDie: 8,
   silverDice: [6, 6],
   silverModifier: 10,
   weaponDie: 10,
   armorDie: 4,
-  statModifiers: {} as Record<string, number>,
-};
+  omenDie: 2,
+} as const;
+
+/** How one stat is rolled: `count`d`faces` + `modifier`, optionally dropping the lowest die. */
+export type StatDice = { count: number; faces: number; modifier: number; dropLowest: boolean };
 
 // ── Roller helpers ─────────────────────────────────────────────────────────────
 
@@ -106,8 +115,18 @@ async function rollDie(faces: number, roller: Roller): Promise<number> {
   return (await roller.roll(`1d${faces}`)).total;
 }
 
-async function roll3d6(roller: Roller): Promise<number> {
-  return (await roller.roll('3d6')).total;
+/** Rolls one stat as its class defines it: `count`d`faces` + `modifier`, optionally dropping the lowest die. */
+async function rollStat(spec: StatDice, roller: Roller): Promise<number> {
+  if (!spec.dropLowest) {
+    const roll = await roller.roll(`${spec.count}d${spec.faces}`);
+    return roll.total + spec.modifier;
+  }
+  const dice: number[] = [];
+  for (let i = 0; i < spec.count; i++) {
+    dice.push(await rollDie(spec.faces, roller));
+  }
+  const total = dice.reduce((sum, die) => sum + die, 0) - Math.min(...dice);
+  return total + spec.modifier;
 }
 
 async function rollClasslessStatOptions(
@@ -146,7 +165,9 @@ async function rollClasslessStatOptions(
 }
 
 async function pickRandom<T>(arr: T[], roller: Roller): Promise<T | null> {
-  if (arr.length === 0) return null;
+  if (arr.length === 0) {
+    return null;
+  }
   const idx = await rollDie(arr.length, roller) - 1;
   return arr[Math.max(0, idx)];
 }
@@ -177,12 +198,14 @@ interface ArmorRow {
   key: string;
   tags: string[];
   maxTier: number | null;
+  classId?: number | null;
 }
 
 interface EquipRow {
   id: number;
   key: string;
   tags: string[];
+  classId?: number | null;
 }
 
 interface PetRow {
@@ -210,12 +233,17 @@ function buildCatalogCache(
   // `weapons` is queried with a stable `orderBy: { id: 'asc' }`, so when two
   // weapons share a roll value the lowest-id one wins deterministically.
   for (const w of weapons) {
-    if (w.roll !== null && !weaponsByRoll.has(w.roll)) weaponsByRoll.set(w.roll, w);
+    if (w.roll !== null && !weaponsByRoll.has(w.roll)) {
+      weaponsByRoll.set(w.roll, w);
+    }
   }
   const armorMap = new Map(armors.map(a => [a.key, a]));
   const armorsByMaxTier = new Map<number, ArmorRow[]>();
+  // The class's armorDie picks the tier; the table it picks from is the shared catalog only.
+  // A Custom Class's own armor (rows with a classId) is granted by its ability, so it stays
+  // off everyone's starting table. Class weapons never get a table roll, so need no filter.
   for (const a of armors) {
-    if (a.maxTier !== null) {
+    if (a.maxTier !== null && a.classId == null) {
       const existing = armorsByMaxTier.get(a.maxTier) ?? [];
       armorsByMaxTier.set(a.maxTier, [...existing, a]);
     }
@@ -238,34 +266,6 @@ function buildPoolItem(
   const p = catalog.petMap.get(key);
   const tags = w?.tags ?? a?.tags ?? e?.tags ?? p?.tags ?? [];
   return { key, tags, ...extra };
-}
-
-// ── Granted items from random abilities ───────────────────────────────────────
-
-// Per-item extras (e.g. tracked uses) keyed by catalog key.
-const GRANTED_ITEM_EXTRAS: Record<string, Partial<PoolItem>> = {
-  'equipment.wizard-teeth': { uses: [false, false, false, false] },
-};
-
-function buildGrantedClassItem(value: string | undefined, catalog: CatalogCache): PoolItem | null {
-  if (!value) return null;
-  // Prefer a stable catalog key if the seed already provides one.
-  if (catalog.weaponMap.has(value) || catalog.equipMap.has(value) || catalog.armorMap.has(value)) {
-    return buildPoolItem(value, catalog, GRANTED_ITEM_EXTRAS[value]);
-  }
-  const key = grantedItemKeyForName(value);
-  if (!key) return null;
-  return buildPoolItem(key, catalog, GRANTED_ITEM_EXTRAS[key]);
-}
-
-function buildGrantedClassPet(value: string | undefined, catalog: CatalogCache): PoolItem | null {
-  if (!value) return null;
-  if (catalog.petMap.has(value)) {
-    return buildPoolItem(value, catalog);
-  }
-  const key = grantedPetKeyForName(value);
-  if (!key) return null;
-  return buildPoolItem(key, catalog);
 }
 
 // ── Starting item tables ───────────────────────────────────────────────────────
@@ -413,7 +413,9 @@ async function rollStartingWeapon(
 ): Promise<PoolItem[]> {
   const roll = await rollDie(weaponDie, roller);
   const weapon = catalog.weaponsByRoll.get(roll);
-  if (!weapon) return [];
+  if (!weapon) {
+    return [];
+  }
 
   let ammoAmount: number | null = null;
   if (weapon.ammoType === 'Arrow' || weapon.ammoType === 'Bolt') {
@@ -434,13 +436,17 @@ async function rollStartingArmor(
   catalog: CatalogCache,
 ): Promise<PoolItem[]> {
   const roll = await rollDie(armorDie, roller);
-  if (roll === 1) return [];
+  if (roll === 1) {
+    return [];
+  }
 
   const tierMap: Record<number, number> = { 2: 1, 3: 2 };
   const tier = tierMap[roll] ?? 3;
   const armorOptions = catalog.armorsByMaxTier.get(tier) ?? [];
   const chosen = await pickRandom(armorOptions, roller);
-  if (!chosen) return [];
+  if (!chosen) {
+    return [];
+  }
 
   return [buildPoolItem(chosen.key, catalog, { autoEquip: true })];
 }
@@ -515,49 +521,48 @@ function autoEquipItems(pool: PoolItem[], catalog: CatalogCache): EquipBundle {
 // ── build_character_ability_bundle ────────────────────────────────────────────
 
 async function buildAbilityBundle(
-  classId: number,
+  spec: ClassSpec,
   roller: Roller,
   catalog: CatalogCache,
 ): Promise<{ abilities: AbilityEntry[]; grantedItems: PoolItem[] }> {
-  const [classRow, allAbilities] = await Promise.all([
-    prisma.class.findUnique({ where: { id: classId } }),
-    prisma.ability.findMany({ where: { classId } }),
-  ]);
-
-  const fixedAbilities = allAbilities
-    .filter(a => !a.isRandom)
-    .map(a => ({ key: a.key }));
-
-  const randomAbilityCount = classRow?.randomAbilityCount ?? 0;
-  const classRandomAbilities = (classRow?.randomAbilities ?? []) as Array<{
-    gainItem?: string;
-    gainPet?: string;
-  }>;
-
-  const randomCandidates = allAbilities.filter(a => a.isRandom);
+  const fixedAbilities = spec.abilities.filter(a => !a.isRandom);
+  const randomCandidates = spec.abilities.filter(a => a.isRandom);
   const shuffled = await shuffle(randomCandidates, roller);
-  const picked = shuffled.slice(0, randomAbilityCount);
+  const picked = shuffled.slice(0, spec.randomAbilityCount);
 
-  const randomAbilities: AbilityEntry[] = [];
+  const gained = [...fixedAbilities, ...picked].sort(byClassOrder);
+  const tagsFor = (key: string) => buildPoolItem(key, catalog).tags;
+  const abilities: AbilityEntry[] = [];
   const grantedItems: PoolItem[] = [];
 
-  for (const ability of picked) {
-    randomAbilities.push({ key: ability.key });
-    const rollIdx = (ability.rollValue ?? 1) - 1;
-    const config = classRandomAbilities[rollIdx];
-    if (config) {
-      const item = buildGrantedClassItem(config.gainItem, catalog);
-      if (item) grantedItems.push(item);
-      else {
-        const pet = buildGrantedClassPet(config.gainPet, catalog);
-        if (pet) grantedItems.push(pet);
-      }
+  for (const ability of gained) {
+    grantedItems.push(...abilityGrantedItems(ability, tagsFor));
+    if (!ability.table) {
+      abilities.push({ key: ability.key });
+      continue;
+    }
+
+    const roll = await rollDie(ability.table.die, roller);
+    const row = ability.table.rows[roll - 1];
+    if (!row) {
+      abilities.push({ key: ability.key });
+      continue;
+    }
+
+    abilities.push({
+      key: ability.key,
+      tableResult: { roll, text: row.text, itemKey: row.itemKey },
+    });
+    if (row.itemKey) {
+      grantedItems.push(...abilityGrantedItems({ grantItemKey: row.itemKey, grantPetKey: null }, tagsFor));
     }
   }
 
-  return { abilities: [...fixedAbilities, ...randomAbilities], grantedItems };
+  return {
+    abilities,
+    grantedItems,
+  };
 }
-
 // ── pick_character_personality ────────────────────────────────────────────────
 
 async function pickPersonality(roller: Roller) {
@@ -594,50 +599,40 @@ async function pickPersonality(roller: Roller) {
  * seeded engine for deterministic results.
  */
 export async function generateCharacter(
-  classId: number | null,
+  classId: number,
   roller: Roller,
   userId?: string,
 ): Promise<string> {
-  // 1. Resolve class (random if not supplied) — rolls on the caller's roller
-  //    BEFORE any section roll, preserving the legacy sequence.
-  let resolvedClassId: number;
-  if (classId !== null) {
-    resolvedClassId = classId;
-  } else {
-    const classes = await prisma.class.findMany({ select: { id: true } });
-    const picked = await pickRandom(classes, roller);
-    if (!picked) throw new Error('No classes found in database');
-    resolvedClassId = picked.id;
-  }
-
-  // Shared roller for every section: identical roll sequence to the
-  // pre-refactor implementation.
-  const data = await buildCharacterData(resolvedClassId, () => roller);
-  const { classlessStatOptions: _classlessStatOptions, ...persistedData } = data;
-
   const character = await prisma.character.create({
-    data: {
-      ...(userId ? { userId } : {}),
-      ...persistedData,
-      abilities: persistedData.abilities as object[],
-      equipment: persistedData.equipment as object[],
-      equippedWeapons: persistedData.equippedWeapons as object[],
-      equippedArmor: (persistedData.equippedArmor as object | null) ?? Prisma.DbNull,
-    },
+    data: await randomCharacterCreateData(classId, roller, userId),
     select: { id: true },
   });
-
   return character.id;
 }
 
-/**
- * Deterministically rebuild a character from a confirmed draft and persist it.
- * The client only ever supplies seeds, so the server is the sole roller.
- */
-export async function createCharacterFromDraft(
+/** Builds one random scvm row without persisting it, for an atomic party join. */
+export async function randomCharacterCreateData(
+  classId: number,
+  roller: Roller,
+  userId?: string,
+): Promise<Prisma.CharacterUncheckedCreateInput> {
+  const data = await buildCharacterData(classId, () => roller);
+  const { classlessStatOptions: _classlessStatOptions, ...persistedData } = data;
+  return {
+    ...(userId ? { userId } : {}),
+    ...persistedData,
+    abilities: persistedData.abilities as object[],
+    equipment: persistedData.equipment as object[],
+    equippedWeapons: persistedData.equippedWeapons as object[],
+    equippedArmor: (persistedData.equippedArmor as object | null) ?? Prisma.DbNull,
+  };
+}
+
+/** The row a confirmed draft rebuilds to, ready to insert (alone or as a party member). */
+export async function characterCreateDataFromDraft(
   draft: CharacterDraft,
   userId: string,
-): Promise<string> {
+): Promise<Prisma.CharacterUncheckedCreateInput> {
   const classId = draft.classless ? null : draft.classId;
   const data = await buildCharacterData(
     classId,
@@ -650,19 +645,14 @@ export async function createCharacterFromDraft(
     persistedData.name = nameOverride;
   }
 
-  const character = await prisma.character.create({
-    data: {
-      userId,
-      ...persistedData,
-      abilities: persistedData.abilities as object[],
-      equipment: persistedData.equipment as object[],
-      equippedWeapons: persistedData.equippedWeapons as object[],
-      equippedArmor: (persistedData.equippedArmor as object | null) ?? Prisma.DbNull,
-    },
-    select: { id: true },
-  });
-
-  return character.id;
+  return {
+    userId,
+    ...persistedData,
+    abilities: persistedData.abilities as object[],
+    equipment: persistedData.equipment as object[],
+    equippedWeapons: persistedData.equippedWeapons as object[],
+    equippedArmor: (persistedData.equippedArmor as object | null) ?? Prisma.DbNull,
+  };
 }
 
 /**
@@ -681,16 +671,68 @@ export async function buildCharacterData(
   rollerFor: RollerFor,
   options: BuildCharacterOptions = {},
 ): Promise<CharacterData> {
-  const cls = classId !== null
-    ? await prisma.class.findUniqueOrThrow({ where: { id: classId } })
-    : null;
+  const spec = classId !== null ? await loadClassSpec(classId) : null;
+  return buildCharacterDataFromSpec(classId, spec, rollerFor, options);
+}
 
-  // Pre-load all catalog data in parallel (origins only exist for classes).
-  const [names, origins, weapons, armors, equips, pets] = await Promise.all([
+/** A class as the generator rolls it, from the database or from a creator draft. */
+export type ClassSpec = {
+  hpDie: number;
+  omenDie: number;
+  weaponDie: number;
+  armorDie: number;
+  silverDice: number[];
+  silverModifier: number;
+  statDice: Record<AbilityStat, StatDice>;
+  /** Origin translation keys; a draft passes the text itself, which hydration shows as is. */
+  originKeys: string[];
+  /** In class order. */
+  abilities: Array<AbilityGrants & {
+    id: number;
+    key: string;
+    isRandom: boolean | null;
+    position: number | null;
+    table?: {
+      die: number;
+      rows: Array<{ text: string; itemKey: string | null }>;
+    } | null;
+  }>;
+  randomAbilityCount: number;
+};
+
+async function loadClassSpec(classId: number): Promise<ClassSpec> {
+  const [cls, origins, abilities] = await Promise.all([
+    prisma.class.findUniqueOrThrow({ where: { id: classId } }),
+    prisma.origin.findMany({ where: { classId }, select: { key: true } }),
+    prisma.ability.findMany({ where: { classId }, orderBy: [{ position: 'asc' }, { id: 'asc' }] }),
+  ]);
+  return {
+    hpDie: cls.hpDie ?? CLASSLESS_DEFAULTS.hpDie,
+    omenDie: cls.omenDie,
+    weaponDie: cls.weaponDie ?? CLASSLESS_DEFAULTS.weaponDie,
+    armorDie: cls.armorDie ?? CLASSLESS_DEFAULTS.armorDie,
+    silverDice: cls.silverDice,
+    silverModifier: cls.silverModifier ?? CLASSLESS_DEFAULTS.silverModifier,
+    statDice: cls.statDice as Record<AbilityStat, StatDice>,
+    originKeys: origins.map((o) => o.key),
+    abilities,
+    randomAbilityCount: cls.randomAbilityCount ?? 0,
+  };
+}
+
+/**
+ * The generator proper. `spec === null` rolls a classless scvm; `classId` is
+ * only recorded on the result (a test roll from a draft passes null with a spec).
+ */
+export async function buildCharacterDataFromSpec(
+  classId: number | null,
+  cls: ClassSpec | null,
+  rollerFor: RollerFor,
+  options: BuildCharacterOptions = {},
+): Promise<CharacterData> {
+  // Pre-load all catalog data in parallel.
+  const [names, weapons, armors, equips, pets] = await Promise.all([
     prisma.name.findMany({ select: { name: true } }),
-    classId !== null
-      ? prisma.origin.findMany({ where: { classId }, select: { key: true } })
-      : Promise.resolve([] as Array<{ key: string }>),
     prisma.weapon.findMany({ orderBy: { id: 'asc' } }),
     prisma.armor.findMany(),
     prisma.equipment.findMany(),
@@ -704,7 +746,7 @@ export async function buildCharacterData(
   const silverModifier = cls?.silverModifier ?? CLASSLESS_DEFAULTS.silverModifier;
   const weaponDie = cls?.weaponDie ?? CLASSLESS_DEFAULTS.weaponDie;
   const armorDie = cls?.armorDie ?? CLASSLESS_DEFAULTS.armorDie;
-  const statModifiers = (cls?.statModifiers ?? CLASSLESS_DEFAULTS.statModifiers) as Record<string, number>;
+  const omenDie = cls?.omenDie ?? CLASSLESS_DEFAULTS.omenDie;
 
   // ── Section: stats (4 stats + HP) ────────────────────────────────────────
   const statsRoller = rollerFor('stats');
@@ -714,7 +756,7 @@ export async function buildCharacterData(
   let presence: number;
   let toughness: number;
 
-  if (classId === null) {
+  if (!cls) {
     const result = await rollClasslessStatOptions(
       statsRoller,
       options.dropLowestAbilities ?? [],
@@ -725,16 +767,18 @@ export async function buildCharacterData(
     presence = result.values.presence;
     toughness = result.values.toughness;
   } else {
-    strength  = (await roll3d6(statsRoller)) + (statModifiers.strength  ?? 0);
-    agility   = (await roll3d6(statsRoller)) + (statModifiers.agility   ?? 0);
-    presence  = (await roll3d6(statsRoller)) + (statModifiers.presence  ?? 0);
-    toughness = (await roll3d6(statsRoller)) + (statModifiers.toughness ?? 0);
+    const statDice = cls.statDice;
+    const rolled = {} as Record<AbilityStat, number>;
+    for (const stat of ABILITY_STATS) {
+      rolled[stat] = await rollStat(statDice[stat], statsRoller);
+    }
+    ({ strength, agility, presence, toughness } = rolled);
   }
   const hpRoll = await rollDie(hpDie, statsRoller);
   const maxHp = Math.max(1, hpRoll + statToModifier(toughness));
 
   // ── Section: omens ───────────────────────────────────────────────────────
-  const omens = await rollDie(2, rollerFor('omens'));
+  const omens = await rollDie(omenDie, rollerFor('omens'));
 
   // ── Section: silver ──────────────────────────────────────────────────────
   const silverRoller = rollerFor('silver');
@@ -748,11 +792,11 @@ export async function buildCharacterData(
   const name = (await pickRandom(names, rollerFor('name')))?.name ?? 'Unknown';
 
   // ── Section: origin (classless has none; empty list rolls nothing) ──────
-  const origin = (await pickRandom(origins, rollerFor('origin')))?.key ?? null;
+  const origin = (await pickRandom(cls?.originKeys ?? [], rollerFor('origin'))) ?? null;
 
   // ── Section: abilities + granted items ──────────────────────────────────
-  const { abilities, grantedItems } = classId !== null
-    ? await buildAbilityBundle(classId, rollerFor('abilities'), catalog)
+  const { abilities, grantedItems } = cls
+    ? await buildAbilityBundle(cls, rollerFor('abilities'), catalog)
     : { abilities: [] as AbilityEntry[], grantedItems: [] as PoolItem[] };
 
   // ── Section: gear (item pool, auto-equip, uses hydration) ───────────────
@@ -763,7 +807,7 @@ export async function buildCharacterData(
     presence,
     gearRoller,
     catalog,
-    equips,
+    equips.filter(e => !e.classId),
     grantedItems,
   );
   const bundle = autoEquipItems(pool, catalog);

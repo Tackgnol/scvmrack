@@ -25,7 +25,9 @@ export function ObrExchangeRedeemGate() {
 
   useEffect(() => {
     const token = getCurrentSearchParamValue(OBR_EXCHANGE_TOKEN_QUERY_PARAM);
-    if (!token) return;
+    if (!token) {
+      return;
+    }
 
     let cancelled = false;
     void (async () => {
@@ -41,7 +43,9 @@ export function ObrExchangeRedeemGate() {
       // so this cleanup runs after the try/catch instead — equivalent here since
       // nothing above returns or re-throws.
       await clearCurrentSearchParam(OBR_EXCHANGE_TOKEN_QUERY_PARAM);
-      if (!cancelled) setIsRedeeming(false);
+      if (!cancelled) {
+        setIsRedeeming(false);
+      }
     })();
 
     return () => {

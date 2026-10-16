@@ -8,7 +8,9 @@ test('anonymous OBR handoff keeps both browser contexts on the same character', 
   await expect(page.getByTestId('generate-new-button')).toBeVisible({ timeout: 30000 });
   await expect(page).toHaveURL(/\/character\/[a-f0-9-]+/, { timeout: 30000 });
   const characterId = new URL(page.url()).pathname.split('/').at(-1);
-  if (!characterId) throw new Error('Character URL has no id');
+  if (!characterId) {
+    throw new Error('Character URL has no id');
+  }
 
   const token = await page.evaluate(async () => {
     const response = await fetch('/api/auth/obr-exchange/issue', {
@@ -16,7 +18,9 @@ test('anonymous OBR handoff keeps both browser contexts on the same character', 
       headers: { 'content-type': 'application/json' },
       body: '{}',
     });
-    if (!response.ok) throw new Error(`Issue failed: ${response.status}`);
+    if (!response.ok) {
+      throw new Error(`Issue failed: ${response.status}`);
+    }
     return ((await response.json()) as { token: string }).token;
   });
 

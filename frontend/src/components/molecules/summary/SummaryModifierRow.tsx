@@ -1,3 +1,4 @@
+import { signed } from "@/utils/signed";
 import { Box, Typography } from '@mui/material';
 import { morkBorgColors } from '@/theme/morkBorgTheme';
 
@@ -5,11 +6,6 @@ interface SummaryModifierRowProps {
   label: string;
   value: number;
 }
-
-const formatSigned = (value: number): string => {
-  if (value > 0) return `+${value}`;
-  return `${value}`;
-};
 
 export default function SummaryModifierRow({
   label,
@@ -47,7 +43,7 @@ export default function SummaryModifierRow({
           letterSpacing: '0.03em',
         }}
       >
-        {formatSigned(value)}
+        {signed(value)}
       </Typography>
     </Box>
   );

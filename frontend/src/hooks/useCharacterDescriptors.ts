@@ -7,7 +7,9 @@ export function useCharacterDescriptors() {
   const { character, isLoading, updateField, updateAbilities } = useCharacter();
 
   const updateAbilityComment = (index: number, ability: Ability, comment: string) => {
-    if (!character?.abilities) return;
+    if (!character?.abilities) {
+      return;
+    }
     const newAbilities = [...character.abilities] as Ability[];
     newAbilities[index] = { ...ability, comment };
     updateAbilities(newAbilities);
@@ -20,7 +22,6 @@ export function useCharacterDescriptors() {
   return {
     character,
     isLoading,
-    isOccultHerbmaster: character?.classId === 6,
     abilities: character?.abilities ?? [],
     updateAbilityComment,
     updateDescriptorField,

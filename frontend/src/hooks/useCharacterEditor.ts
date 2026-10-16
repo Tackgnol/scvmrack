@@ -3,6 +3,7 @@ import { $api } from '@/api';
 import { applyOptimisticPatch } from '@/hooks/applyOptimisticPatch.ts';
 import {
   CharacterResponse,
+  CharacterUpdateRequest,
   CustomModifier,
   EquipmentItem,
   OptimisticPatch,
@@ -10,6 +11,7 @@ import {
 } from '@/hooks/models.ts';
 import { buildRequestFromPatches } from '@/hooks/patchToRequest.ts';
 import { getApiLocale } from '@/hooks/utils.ts';
+import { createRandomId } from '@/utils/randomId';
 import {
   getSimpleFieldLimitMessage,
   sanitizeSimpleFieldValue,
@@ -53,6 +55,7 @@ export function useCharacterEditor(
   // callbacks never read a stale closure; the count drives `isSaving` renders.
   const pendingRef = useRef<OptimisticPatch[]>([]);
   const [pendingCount, setPendingCount] = useState(0);
+  const [saveFailed, setSaveFailed] = useState(false);
   const setPending = (
     updater: (prev: OptimisticPatch[]) => OptimisticPatch[]
   ) => {
@@ -73,7 +76,16 @@ export function useCharacterEditor(
   // once we've given up / hit a client error, so we never busy-loop the server.
   const flushingRef = useRef(false);
   const haltRef = useRef(false);
+  // A save that failed in transit may still have landed, so retries resend exactly it, save id included.
+  const unconfirmedSaveRef = useRef<{ batch: OptimisticPatch[]; body: CharacterUpdateRequest } | null>(null);
   const maxRetries = 3;
+
+  const retrySave = () => {
+    retryCountRef.current = 0;
+    haltRef.current = false;
+    setSaveFailed(false);
+    flushRef.current();
+  };
 
   const getActiveKey = () =>
     characterId ? getCharacterKey(characterId, locale) : undefined;
@@ -90,24 +102,51 @@ export function useCharacterEditor(
     candidate: CharacterResponse | undefined,
     reference: CharacterResponse | undefined
   ) => {
-    if (!candidate?.updatedAt || !reference?.updatedAt) return false;
+    if (!candidate?.updatedAt || !reference?.updatedAt) {
+      return false;
+    }
     return Date.parse(candidate.updatedAt) > Date.parse(reference.updatedAt);
   };
 
-  const flush = () => {
-    if (!characterId || readOnly) return;
-    // One PATCH in flight at a time; onSettled re-flushes whatever remains.
-    if (flushingRef.current || updateCharacter.isPending) return;
+  /**
+   * Takes a newer server copy written to the cache elsewhere (Getting Better, party refetch) as the
+   * editing base, but only with nothing queued: replaying index-based edits onto it could hit the wrong item.
+   */
+  const adoptNewerCachedCharacter = () => {
+    if (pendingRef.current.length > 0 || flushingRef.current || updateCharacter.isPending) {
+      return;
+    }
+    const cached = getActiveCachedCharacter();
+    if (isNewerThan(cached, optimisticCharacterRef.current)) {
+      optimisticCharacterRef.current = cached;
+    }
+  };
 
-    const batch = [...pendingRef.current];
-    if (batch.length === 0) return;
+  const flush = () => {
+    if (!characterId || readOnly) {
+      return;
+    }
+    // One PATCH in flight at a time; onSettled re-flushes whatever remains.
+    if (flushingRef.current || updateCharacter.isPending) {
+      return;
+    }
+
+    const unconfirmed = unconfirmedSaveRef.current;
+    const batch = unconfirmed ? unconfirmed.batch : [...pendingRef.current];
+    if (batch.length === 0) {
+      return;
+    }
 
     const key = getActiveKey();
     const currentCharacter = getLatestOptimisticCharacter();
-    if (!currentCharacter) return;
+    if (!currentCharacter) {
+      return;
+    }
 
     // Build request body from the queued patches + the current optimistic state.
-    const body = buildRequestFromPatches(batch, currentCharacter);
+    const body: CharacterUpdateRequest = unconfirmed
+      ? unconfirmed.body
+      : { ...buildRequestFromPatches(batch, currentCharacter), saveId: createRandomId() };
     flushingRef.current = true;
 
     updateCharacter.mutate(
@@ -121,6 +160,8 @@ export function useCharacterEditor(
       },
       {
         onSuccess: (serverCharacter: unknown) => {
+          unconfirmedSaveRef.current = null;
+          setSaveFailed(false);
           retryCountRef.current = 0;
           haltRef.current = false;
           trackCharacterEdited(batch, locale ?? 'en');
@@ -133,7 +174,12 @@ export function useCharacterEditor(
           // Write it to cache, then re-apply patches that arrived mid-flight so
           // their optimistic state survives.
           const server = serverCharacter as CharacterResponse | undefined;
-          if (server) {
+          const cached = key ? queryClient.getQueryData<CharacterResponse>(key) : undefined;
+          if (server && pendingRef.current.length === 0 && isNewerThan(cached, server)) {
+            // A newer server copy (e.g. Getting Better) landed mid-flight; it already includes this save.
+            lastSavedCharacterRef.current = server;
+            optimisticCharacterRef.current = cached;
+          } else if (server) {
             const remaining = pendingRef.current;
             const optimistic = remaining.reduce(
               (acc, patch) => applyOptimisticPatch(acc, patch),
@@ -161,8 +207,26 @@ export function useCharacterEditor(
           // Both are worth retrying; the queued batch is kept and onSettled
           // re-flushes it until we run out of attempts.
           const status = getApiErrorStatus(error);
+          if (status === 404 || status === 409) {
+            unconfirmedSaveRef.current = null;
+            retryCountRef.current = 0;
+            haltRef.current = true;
+            setPending(() => []);
+            optimisticCharacterRef.current = undefined;
+            lastSavedCharacterRef.current = undefined;
+            if (status === 404) {
+              return;
+            }
+            // Index-based edits cannot be replayed safely on a different inventory.
+            if (key) {
+              void queryClient.invalidateQueries({ queryKey: key, exact: true });
+            }
+            showError(t('character.saveConflict', 'This character changed in another tab. Your latest edits were not saved. Reload before editing again.'));
+            return;
+          }
           const isTransient = status === undefined || status >= 500;
           if (isTransient) {
+            unconfirmedSaveRef.current = { batch, body };
             retryCountRef.current++;
             if (retryCountRef.current < maxRetries) {
               // Patches stay queued; onSettled re-flushes them (auto-retry).
@@ -171,6 +235,7 @@ export function useCharacterEditor(
 
             // Out of retries: stop auto-reflush, surface a manual retry.
             haltRef.current = true;
+            setSaveFailed(true);
             if (isUnexpectedApiError(error)) {
               showUnexpectedError(error, {
                 source: 'character_save',
@@ -187,11 +252,7 @@ export function useCharacterEditor(
               ),
               {
                 label: t('actions.retry', 'Retry'),
-                onClick: () => {
-                  retryCountRef.current = 0;
-                  haltRef.current = false;
-                  flushRef.current();
-                },
+                onClick: retrySave,
               }
             );
             return;
@@ -199,6 +260,7 @@ export function useCharacterEditor(
 
           // Client error (e.g. 4xx validation): retrying can't help. Drop the
           // bad batch, roll the cache back to the pre-patch snapshot, notify.
+          unconfirmedSaveRef.current = null;
           retryCountRef.current = 0;
           haltRef.current = true;
           setPending((prev) => prev.slice(batch.length));
@@ -242,6 +304,19 @@ export function useCharacterEditor(
 
   const debouncedFlush = useDebouncedCallback(flush, 1000);
 
+  const hasPendingEdits = pendingCount > 0;
+  useEffect(() => {
+    if (!hasPendingEdits) {
+      return;
+    }
+    const warnBeforeLeaving = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', warnBeforeLeaving);
+    return () => window.removeEventListener('beforeunload', warnBeforeLeaving);
+  }, [hasPendingEdits]);
+
   // Flush any queued edit if we unmount mid-debounce (route change, logout) so
   // the last edit isn't silently dropped.
   useEffect(
@@ -252,14 +327,18 @@ export function useCharacterEditor(
   );
 
   const applyLocalPatch = (patch: OptimisticPatch) => {
-    if (!characterId || readOnly) return;
+    if (!characterId || readOnly) {
+      return;
+    }
 
     const base = getLatestOptimisticCharacter();
     const optimistic = base ? applyOptimisticPatch(base, patch) : undefined;
     optimisticCharacterRef.current = optimistic;
 
     const key = getActiveKey();
-    if (!key) return;
+    if (!key) {
+      return;
+    }
 
     queryClient.setQueryData(
       key,
@@ -269,10 +348,14 @@ export function useCharacterEditor(
   };
 
   const queuePatch = (patch: OptimisticPatch) => {
-    if (!characterId || readOnly) return;
+    if (!characterId || readOnly) {
+      return;
+    }
 
     // A fresh edit resumes saving even if a prior batch had halted.
     haltRef.current = false;
+    setSaveFailed(false);
+    adoptNewerCachedCharacter();
     setPending((prev) => [...prev, patch]);
     applyLocalPatch(patch);
 
@@ -459,7 +542,9 @@ export function useCharacterEditor(
     updateModifier,
 
     // Saving while patches are queued or a PATCH is in flight.
-    isSaving: pendingCount > 0 || updateCharacter.isPending,
+    isSaving: !saveFailed && (pendingCount > 0 || updateCharacter.isPending),
+    saveFailed,
+    retrySave,
 
     getVisibleCharacter: (character: CharacterResponse | undefined) => {
       if (pendingRef.current.length > 0) {

@@ -25,6 +25,24 @@ export const LocaleQuerySchema = {
   },
 } as const;
 
+/** Upper bound of a Postgres INTEGER id or counter. */
+export const MAX_DB_INT = 2147483647;
+
+/** A positive Postgres INTEGER id. */
+export const IdSchema = { type: 'integer', minimum: 1, maximum: MAX_DB_INT } as const;
+export const NullableIdSchema = { ...IdSchema, type: ['integer', 'null'] } as const;
+
+/** Locale plus an optional party invite token: the party's Party Class Pool scopes the roll. */
+export const InviteLocaleQuerySchema = {
+  type: 'object',
+  properties: {
+    ...LocaleQuerySchema.properties,
+    invite: { type: 'string', minLength: 1, maxLength: 200 },
+    obrRoom: { type: 'string', minLength: 1, maxLength: 256 },
+    obrPlayer: { type: 'string', minLength: 1, maxLength: 256 },
+  },
+} as const;
+
 // Same as LocaleQuerySchema but WITHOUT a default. The character-list route
 // falls back to the Accept-Language header when no explicit ?locale is given;
 // a schema default would populate request.query.locale='en' and silently
@@ -103,7 +121,7 @@ const EquipmentItemSchema = {
           },
           scope: {
             type: 'string',
-            enum: ['all', 'combat', 'defence', 'melee', 'ranged', 'powers'],
+            enum: ['all', 'combat', 'defence', 'tests', 'melee', 'ranged', 'powers'],
           },
           comment: { type: 'string', maxLength: 500 },
         },
@@ -120,6 +138,35 @@ const AbilitySchema = {
     name: { type: 'string', maxLength: 500 },
     description: { type: 'string', maxLength: 2000 },
     comment: { type: 'string', maxLength: 1000 },
+  },
+} as const;
+
+const AbilityResponseSchema = {
+  ...AbilitySchema,
+  properties: {
+    ...AbilitySchema.properties,
+    table: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['die', 'rows'],
+      properties: {
+        die: { type: 'integer' },
+        rows: {
+          type: 'array',
+          items: {
+            type: 'object',
+            additionalProperties: false,
+            required: ['roll', 'text', 'itemKey', 'itemName'],
+            properties: {
+              roll: { type: 'integer' },
+              text: { type: 'string' },
+              itemKey: { type: ['string', 'null'] },
+              itemName: { type: ['string', 'null'] },
+            },
+          },
+        },
+      },
+    },
   },
 } as const;
 
@@ -196,7 +243,7 @@ const ModifierSchemaDefs = {
     },
     scope: {
       type: 'string',
-      enum: ['all', 'combat', 'defence', 'melee', 'ranged', 'powers'],
+      enum: ['all', 'combat', 'defence', 'tests', 'melee', 'ranged', 'powers'],
     },
     comment: { type: 'string', maxLength: 500 },
   },
@@ -232,6 +279,8 @@ export const UpdateBodySchema = {
   type: 'object',
   additionalProperties: false, // Fastify's default Ajv strips unknown fields
   properties: {
+    expectedUpdatedAt: { type: 'string', format: 'date-time' },
+    saveId: { type: 'string', pattern: '^[A-Za-z0-9-]{1,64}$' },
     name: { type: 'string', maxLength: 255 },
     currentHp: { type: 'integer', minimum: -100, maximum: 1000 },
     maxHp: { type: 'integer', minimum: 1, maximum: 1000 },
@@ -293,6 +342,12 @@ export const CharacterSchema = {
     classId: { type: ['integer', 'null'] },
     className: { type: ['string', 'null'] },
     classDescription: { type: ['string', 'null'] },
+    classAttribution: { type: ['string', 'null'] },
+    classAuthoredLanguage: { type: ['string', 'null'], enum: ['en', 'pl', null] },
+    classContentRemoved: { type: "boolean" },
+    classReportable: { type: "boolean" },
+    /** Whether the class is a Custom Class, which has a public detail page. */
+    classCustom: { type: "boolean" },
     origin: { type: ['string', 'null'] },
     strength: { type: 'integer' },
     agility: { type: 'integer' },
@@ -310,7 +365,7 @@ export const CharacterSchema = {
     trait2: { type: ['string', 'null'] },
     notes: { type: 'string' },
     miseryCount: { type: 'integer' },
-    abilities: { type: 'array', items: AbilitySchema },
+    abilities: { type: 'array', items: AbilityResponseSchema },
     equipment: { type: 'array', items: EquipmentItemSchema },
     storage: { type: 'array', items: EquipmentItemSchema },
     equippedWeapons: { type: 'array', items: WeaponSchema },
@@ -357,7 +412,7 @@ export const ErrorSchema = {
 export const GenerateBodySchema = {
   type: 'object',
   properties: {
-    classId: { type: 'integer', minimum: 1, maximum: 6 },
+    classId: IdSchema,
     // Opt-in for guests: replace the single scvm an anonymous session already
     // owns. Without it, creating a second one is a 409 (see character-service).
     replace: { type: 'boolean' },
@@ -366,7 +421,7 @@ export const GenerateBodySchema = {
       additionalProperties: false,
       required: ['classId', 'classless', 'seeds'],
       properties: {
-        classId: { type: ['integer', 'null'], minimum: 1, maximum: 100 },
+        classId: NullableIdSchema,
         classless: { type: 'boolean' },
         name: { type: 'string', maxLength: 255 },
         dropLowestAbilities: {

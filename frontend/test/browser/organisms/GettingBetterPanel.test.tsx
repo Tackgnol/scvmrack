@@ -65,21 +65,25 @@ function draft(overrides: Partial<ImprovementDraft> = {}): ImprovementDraft {
       presence: abilityRoll(),
       toughness: abilityRoll(),
     },
-    scumSpecialties: { kind: 'notScum' },
+    classAbility: { kind: 'none' },
     ...overrides,
   };
 }
 
 function preview(
   rolledDraft: ImprovementDraft,
-  scumSpecialtyNames: Record<string, string> = {},
+  abilityNames: Record<string, string> = {},
+  rulesNote: string | null = null,
+  scrollNames: Record<string, string> = {},
 ): ImprovementPreview {
   return {
     id: 'improvement-1',
     characterId: 'char-1',
     sequence: rolledDraft.sequence,
     rolledDraft,
-    scumSpecialtyNames,
+    abilityNames,
+    rulesNote,
+    scrollNames,
     snapshotHash: rolledDraft.snapshot.snapshotHash,
     createdAt: '2026-07-07T10:00:00.000Z',
     updatedAt: '2026-07-07T10:00:00.000Z',
@@ -95,28 +99,32 @@ type PanelEvents = {
 function sectionDirty(
   rolledDraft: ImprovementDraft,
   workingDraft: ImprovementDraft | null,
-  section: keyof Pick<ImprovementDraft, 'hp' | 'debris' | 'abilities' | 'scumSpecialties'>,
+  section: keyof Pick<ImprovementDraft, 'hp' | 'debris' | 'abilities' | 'classAbility'>,
 ) {
   return JSON.stringify(workingDraft?.[section]) !== JSON.stringify(rolledDraft[section]);
 }
 
 function PanelHarness({
   initialDraft = draft(),
-  scumSpecialtyNames = {},
+  abilityNames = {},
+  rulesNote = null,
+  scrollNames = {},
   events = {},
   onDraftChange,
   staleConflict = false,
 }: {
   initialDraft?: ImprovementDraft;
-  scumSpecialtyNames?: Record<string, string>;
+  abilityNames?: Record<string, string>;
+  rulesNote?: string | null;
+  scrollNames?: Record<string, string>;
   events?: PanelEvents;
   onDraftChange?: (draft: ImprovementDraft | null) => void;
   staleConflict?: boolean;
 }) {
   const rolledDraft = useMemo(() => initialDraft, [initialDraft]);
   const activePreview = useMemo(
-    () => preview(rolledDraft, scumSpecialtyNames),
-    [rolledDraft, scumSpecialtyNames],
+    () => preview(rolledDraft, abilityNames, rulesNote, scrollNames),
+    [rolledDraft, abilityNames, rulesNote, scrollNames],
   );
   const [workingDraft, setWorkingDraft] = useState<ImprovementDraft | null>(
     structuredClone(rolledDraft),
@@ -125,7 +133,7 @@ function PanelHarness({
     hp: sectionDirty(rolledDraft, workingDraft, 'hp'),
     debris: sectionDirty(rolledDraft, workingDraft, 'debris'),
     abilities: sectionDirty(rolledDraft, workingDraft, 'abilities'),
-    scumSpecialties: sectionDirty(rolledDraft, workingDraft, 'scumSpecialties'),
+    classAbility: sectionDirty(rolledDraft, workingDraft, 'classAbility'),
   };
   const isDirty = Object.values(dirtySections).some(Boolean);
 
@@ -164,7 +172,8 @@ describe('GettingBetterPanel Browser', () => {
     );
 
     await expect.element(page.getByTestId('getting-better-panel')).toBeVisible();
-    await expect.element(page.getByText('Scum specialty')).not.toBeInTheDocument();
+    await expect.element(page.getByTestId('class-ability-section')).not.toBeInTheDocument();
+    await expect.element(page.getByTestId('getting-better-rules-note')).not.toBeInTheDocument();
 
     const hpCheck = page.getByRole('spinbutton', { name: '6d10 check' });
     await expect.element(hpCheck).toBeVisible();
@@ -223,11 +232,34 @@ describe('GettingBetterPanel Browser', () => {
     await expect.poll(() => rerollSection).toHaveBeenCalledWith('all');
   });
 
-  it('renders first Gutterborn Scum specialty improvement details', async () => {
+  it('renders a backend-translated sacred scroll name', async () => {
+    const sacredDraft = draft({
+      debris: {
+        roll: serverRoll(6, [6]),
+        kind: 'sacredScroll',
+        scroll: serverRoll(10, [10]),
+        itemKey: 'scroll.sacred.10',
+      },
+    });
+
+    await render(
+      <BrowserTestProvider>
+        <PanelHarness
+          initialDraft={sacredDraft}
+          scrollNames={{ 'scroll.sacred.10': 'Syntaksa enoicka' }}
+        />
+      </BrowserTestProvider>,
+    );
+
+    await expect.element(page.getByText('Syntaksa enoicka')).toBeVisible();
+    await expect.element(page.getByText('scroll.sacred.10')).not.toBeInTheDocument();
+  });
+
+  it('renders a first Specialist improvement', async () => {
     const scumDraft = draft({
-      scumSpecialties: {
-        kind: 'firstImprovement',
-        existing: { key: 'abilities.gutterborn_scum.fingersmith', rollValue: 2 },
+      classAbility: {
+        kind: 'firstSpecialty',
+        existing: [{ key: 'abilities.gutterborn_scum.fingersmith', rollValue: 2 }],
         added: {
           key: 'abilities.gutterborn_scum.jab',
           rollValue: 1,
@@ -244,7 +276,7 @@ describe('GettingBetterPanel Browser', () => {
       <BrowserTestProvider>
         <PanelHarness
           initialDraft={scumDraft}
-          scumSpecialtyNames={{
+          abilityNames={{
             'abilities.gutterborn_scum.fingersmith': existing,
             'abilities.gutterborn_scum.jab': added,
           }}
@@ -270,31 +302,103 @@ describe('GettingBetterPanel Browser', () => {
     expect(existingValue.bottom <= addedLabel.top).toBe(true);
   });
 
-  it('renders later Gutterborn Scum reroll mode details', async () => {
-    const scumDraft = draft({
-      scumSpecialties: {
-        kind: 'laterImprovement',
-        primary: { key: 'abilities.gutterborn_scum.fingersmith', rollValue: 2 },
-        secondary: { key: 'abilities.gutterborn_scum.gob_lobber', rollValue: 3 },
-        rerollMode: 'none',
+  it('toggles each specialty between keep and reroll, disabling reroll when nothing is free', async () => {
+    let latestDraft: ImprovementDraft | null = null;
+    const specialtiesDraft = draft({
+      classAbility: {
+        kind: 'specialties',
+        specialties: [
+          {
+            current: { key: 'abilities.gutterborn_scum.fingersmith', rollValue: 2 },
+            replacement: {
+              key: 'abilities.gutterborn_scum.fate',
+              rollValue: 4,
+              roll: serverRoll(4, [4]),
+            },
+            reroll: false,
+          },
+          {
+            current: { key: 'abilities.gutterborn_scum.gob_lobber', rollValue: 3 },
+            replacement: null,
+            reroll: false,
+          },
+        ],
       },
     });
 
     await render(
       <BrowserTestProvider>
         <PanelHarness
-          initialDraft={scumDraft}
-          scumSpecialtyNames={{
-            'abilities.gutterborn_scum.fingersmith': 'Paskudny Kieszonkowiec: Otwierasz zamki.',
-            'abilities.gutterborn_scum.gob_lobber': 'Wstrętny Miotacz Plwociny: Plujesz.',
+          initialDraft={specialtiesDraft}
+          abilityNames={{
+            'abilities.gutterborn_scum.fingersmith': 'Fingersmith',
+            'abilities.gutterborn_scum.gob_lobber': 'Gob Lobber',
+            'abilities.gutterborn_scum.fate': 'Escaping Fate',
           }}
+          onDraftChange={(nextDraft) => { latestDraft = nextDraft; }}
         />
       </BrowserTestProvider>,
     );
 
-    await expect.element(page.getByText('Scum specialty')).toBeVisible();
-    await expect.element(page.getByText('Paskudny Kieszonkowiec: Otwierasz zamki.')).toBeVisible();
-    await expect.element(page.getByText('Wstrętny Miotacz Plwociny: Plujesz.')).toBeVisible();
-    await expect.element(page.getByText('Keep both')).toBeVisible();
+    await expect.element(page.getByText('Specialties')).toBeVisible();
+    await expect.element(page.getByText('Reroll gives Escaping Fate')).toBeVisible();
+    await expect.element(page.getByText('No ability left to gain')).toBeVisible();
+
+    const fingersmith = page.getByRole('group', { name: 'Fingersmith' });
+    const gobLobber = page.getByRole('group', { name: 'Gob Lobber' });
+    await expect.element(gobLobber.getByRole('button', { name: 'Reroll' })).toBeDisabled();
+
+    await userEvent.click(fingersmith.getByRole('button', { name: 'Reroll' }));
+    await expect
+      .poll(() =>
+        latestDraft?.classAbility.kind === 'specialties'
+          ? latestDraft.classAbility.specialties.map((choice) => choice.reroll)
+          : null,
+      )
+      .toEqual([true, false]);
+  });
+
+  it('lets only one specialty take an offer two specialties share', async () => {
+    const shared = {
+      key: 'abilities.gutterborn_scum.fate',
+      rollValue: 4,
+      roll: serverRoll(4, [4]),
+    };
+    await render(
+      <BrowserTestProvider>
+        <PanelHarness
+          initialDraft={draft({
+            classAbility: {
+              kind: 'specialties',
+              specialties: [
+                { current: { key: 'one', rollValue: 1 }, replacement: shared, reroll: false },
+                { current: { key: 'two', rollValue: 2 }, replacement: shared, reroll: false },
+              ],
+            },
+          })}
+          abilityNames={{ one: 'One', two: 'Two' }}
+        />
+      </BrowserTestProvider>,
+    );
+
+    const one = page.getByRole('group', { name: 'One' });
+    const two = page.getByRole('group', { name: 'Two' });
+    await userEvent.click(one.getByRole('button', { name: 'Reroll' }));
+    await expect.element(two.getByRole('button', { name: 'Reroll' })).toBeDisabled();
+
+    await userEvent.click(one.getByRole('button', { name: 'Keep' }));
+    await expect.element(two.getByRole('button', { name: 'Reroll' })).toBeEnabled();
+  });
+
+  it('shows the class rules note at the top', async () => {
+    await render(
+      <BrowserTestProvider>
+        <PanelHarness rulesNote="Bones knit crooked here: roll twice, keep the worse." />
+      </BrowserTestProvider>,
+    );
+
+    await expect
+      .element(page.getByTestId('getting-better-rules-note'))
+      .toHaveTextContent('Bones knit crooked here: roll twice, keep the worse.');
   });
 });

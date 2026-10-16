@@ -6,7 +6,9 @@ import { createCharacterTestWrapper } from '../helpers/characterHookWrapper.ts';
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string, fallback?: string, values?: Record<string, unknown>) => {
-      if (!fallback) return key;
+      if (!fallback) {
+        return key;
+      }
       return fallback.replace(/\{\{(\w+)}}/g, (_match, token) =>
         String(values?.[token] ?? '')
       );
@@ -366,6 +368,10 @@ test('useModifiersPanel handles modal scope changes and computed modifier detail
     'defence',
     'cast',
     'ability',
+    'test',
+    'heal',
+    'buff',
+    'item',
   ]);
 
   act(() => {

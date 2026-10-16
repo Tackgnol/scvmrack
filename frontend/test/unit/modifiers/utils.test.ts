@@ -3,9 +3,9 @@ import {
   includesToExclude,
   excludeToIncludes,
   resolveScopeFromIncludes,
-  createModifierId,
   getModifierTileSpan,
 } from '../../../src/components/modifiers/utils';
+import { createRandomId } from '../../../src/utils/randomId';
 import { ALL_CONTEXTS } from '../../../src/components/modifiers/config';
 
 describe('modifiers utils', () => {
@@ -23,9 +23,13 @@ describe('modifiers utils', () => {
 
   describe('excludeToIncludes', () => {
     it('should return contexts not excluded in the input', () => {
-      const exclude = ['melee', 'ranged'];
+      const exclude = ['melee', 'ranged', 'heal'];
       const result = excludeToIncludes(exclude);
       expect(result).toEqual(ALL_CONTEXTS.filter(c => !exclude.includes(c)));
+    });
+
+    it('reads a narrowed list saved before test/heal/buff/item as not meaning them', () => {
+      expect(excludeToIncludes(['melee', 'ranged'])).toEqual(['defence', 'cast', 'ability']);
     });
   });
 
@@ -44,10 +48,10 @@ describe('modifiers utils', () => {
     });
   });
 
-  describe('createModifierId', () => {
+  describe('createRandomId', () => {
     it('should create a unique string', () => {
-      const id1 = createModifierId();
-      const id2 = createModifierId();
+      const id1 = createRandomId();
+      const id2 = createRandomId();
       expect(id1).not.toBe(id2);
       expect(typeof id1).toBe('string');
     });

@@ -52,7 +52,7 @@ describe('ComputedModifierDetailsModal', () => {
   it('renders "None" when all contexts are excluded', async () => {
     const modifier: ComputedModifier = {
       ...mockModifier,
-      exclude: ['melee', 'ranged', 'defence', 'cast', 'ability'],
+      exclude: ['melee', 'ranged', 'defence', 'cast', 'ability', 'test', 'heal', 'buff', 'item'],
     };
 
     await render(

@@ -2,6 +2,7 @@ import 'dotenv/config';
 import * as Sentry from '@sentry/node';
 import type { ErrorEvent } from '@sentry/node';
 import { readFileSync } from 'node:fs';
+import { shouldReportFastifyError } from './lib/auth-callback-errors.js';
 
 const packageVersion = (
   JSON.parse(
@@ -18,7 +19,9 @@ const SENSITIVE_REQUEST_HEADERS = new Set([
 
 const redactSensitiveRequestHeaders = (event: ErrorEvent): ErrorEvent => {
   const headers = event.request?.headers;
-  if (!headers) return event;
+  if (!headers) {
+    return event;
+  }
 
   for (const headerName of Object.keys(headers)) {
     if (SENSITIVE_REQUEST_HEADERS.has(headerName.toLowerCase())) {
@@ -36,7 +39,7 @@ const environment =
   process.env.NODE_ENV ||
   'development';
 
-if (process.env.NODE_ENV !== 'test' && dsn) {
+if (dsn) {
   Sentry.init({
     dsn,
     release,
@@ -48,7 +51,7 @@ if (process.env.NODE_ENV !== 'test' && dsn) {
         (integration) => integration.name !== 'ProcessSession'
       ),
       Sentry.fastifyIntegration({
-        shouldHandleError: (_error, _request, reply) => reply.statusCode >= 500,
+        shouldHandleError: shouldReportFastifyError,
       }),
     ],
     beforeSend: redactSensitiveRequestHeaders,

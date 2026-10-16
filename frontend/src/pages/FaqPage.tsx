@@ -80,17 +80,44 @@ export function FaqPage() {
         },
         {
             question: t('faq.guestVsAccount.q', 'Do I need an account?'),
-            answer: t('faq.guestVsAccount.a', 'No! You can use Scvm Rack as a guest. Your character will be saved for 7 days. If you create an account, your characters are saved permanently and you can access them from any device.'),
+            answer: t('faq.guestVsAccount.a', 'No account needed to start. As a guest, you get one character — generating a new one replaces it. Access depends on your browser session. Sign up (free) to keep multiple characters accessible from any device.'),
         },
         {
             question: t('faq.howToSave.q', 'How do I save my character?'),
-            answer: t('faq.howToSave.a', 'Characters are saved automatically as you make changes. As a guest, your character is stored for 7 days. Sign up for a free account to keep your characters forever.'),
+            answer: t('faq.howToSave.a', 'Characters save automatically as you edit. Your guest character is kept until you delete or replace it, or ask us to remove it. Losing your browser session can prevent access to it. Sign up to access your characters across devices and create more.'),
         },
         {
             question: t('faq.multipleCharacters.q', 'Can I have multiple characters?'),
             answer: t('faq.multipleCharacters.a', 'Yes! With an account, you can create and switch between multiple characters. Access your character list from the menu.'),
         },
         {
+            question: t('faq.customClasses.q', 'What are Custom Classes?'),
+            answer: t('faq.customClasses.a', 'Character classes you write yourself, with the same building blocks as Book Classes.'),
+        },
+        {
+            question: t('faq.whoMakesClasses.q', 'Who can make a Custom Class?'),
+            answer: t('faq.whoMakesClasses.a', 'Anyone with a free account, from the GM tab. Drafts save as you write.'),
+        },
+        {
+            question: t('faq.classesInParties.q', 'Where can I use a Custom Class?'),
+            answer: t('faq.classesInParties.a', 'In parties. GMs choose the classes their warband can roll; characters outside a party use Book Classes.'),
+        },
+        {
+            question: t('faq.editingClasses.q', 'What happens when I change a class?'),
+            answer: t('faq.editingClasses.a', 'Existing characters keep the version they rolled. Later changes make a new version for new characters.'),
+        },
+        {
+            question: t('faq.publicClasses.q', 'Can I share my class with other GMs?'),
+            answer: t('faq.publicClasses.a', 'Yes. Publish it from My classes; other GMs can add it to their parties and you can unpublish it later.'),
+        },
+        {
+            question: t('faq.reportClass.q', 'I found a class that copies my work or breaks the rules. What do I do?'),
+            answer: t('faq.reportClass.a', 'Use the Report link on the class or the report page in the footer. No account is needed.'),
+        },
+        {
+            question: t('faq.zineAuthors.q', 'I wrote a zine with classes. Can it be on Scvm Rack?'),
+            answer: t('faq.zineAuthors.a', 'Contact contact@rpgtools.co. Zine classes are added by hand and credited to you and your zine.'),
+        },        {
             question: t('faq.mobileSupport.q', 'Does it work on mobile?'),
             answer: t('faq.mobileSupport.a', 'Yes! Scvm Rack is designed to work on phones, tablets, and desktops. Use it at the table or on the go.'),
         },

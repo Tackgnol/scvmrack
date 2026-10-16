@@ -1,4 +1,4 @@
-import { createRouter, createRootRoute, createRoute, lazyRouteComponent } from '@tanstack/react-router';
+import { createRouter, createRootRoute, createRoute, lazyRouteComponent, redirect } from '@tanstack/react-router';
 import { appHistory } from '@/router/history';
 import { RootLayout } from '@/router/layout';
 import { CharacterCreatePage } from '@/pages/CharacterCreatePage';
@@ -85,10 +85,14 @@ const joinForgeRoute = createRoute({
     component: lazyRouteComponent(() => import('@/pages/JoinForgePage').then(m => ({ default: m.JoinForgePage }))),
 });
 
+// The blind roll is gone (every party scvm goes through the class screen);
+// old shared /roll links land on the forge.
 const joinRollRoute = createRoute({
     getParentRoute: () => rootRoute,
     path: '/join/$token/roll',
-    component: lazyRouteComponent(() => import('@/pages/JoinRollPage').then(m => ({ default: m.JoinRollPage }))),
+    beforeLoad: ({ params }) => {
+        throw redirect({ to: '/join/$token/forge', params: { token: params.token } });
+    },
 });
 
 const printRoute = createRoute({
@@ -103,6 +107,36 @@ const faqRoute = createRoute({
     component: lazyRouteComponent(() => import('@/pages/FaqPage').then(m => ({ default: m.FaqPage }))),
 });
 
+
+const reportRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: '/report',
+    validateSearch: (search: Record<string, unknown>): { classId?: string } => ({
+        classId: typeof search.classId === 'string' || typeof search.classId === 'number' ? String(search.classId) : undefined,
+    }),
+    component: lazyRouteComponent(() => import('@/pages/ReportPage').then(m => ({ default: m.ReportPage }))),
+});
+const moderationRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: '/admin/moderation',
+    component: lazyRouteComponent(() => import('@/pages/ModerationPage').then(m => ({ default: m.ModerationPage }))),
+});
+const privacyRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: '/privacy',
+    component: lazyRouteComponent(() => import('@/pages/PrivacyPage').then(m => ({ default: m.PrivacyPage }))),
+});
+const termsRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: '/terms',
+    component: lazyRouteComponent(() => import('@/pages/TermsPage').then(m => ({ default: m.TermsPage }))),
+});
+
+const legalRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: '/legal',
+    component: lazyRouteComponent(() => import('@/pages/LegalPage').then(m => ({ default: m.LegalPage }))),
+});
 
 const releaseRoute = createRoute({
     getParentRoute: () => rootRoute,
@@ -120,6 +154,38 @@ const gmRoute = createRoute({
     getParentRoute: () => rootRoute,
     path: '/gm',
     component: lazyRouteComponent(() => import('@/pages/GmOverviewPage').then(m => ({ default: m.GmOverviewPage }))),
+});
+
+const classDetailRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: '/classes/$classId',
+    component: lazyRouteComponent(() => import('@/pages/ClassDetailPage').then(m => ({ default: m.ClassDetailPage }))),
+});
+
+const classesRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: '/gm/classes',
+    component: lazyRouteComponent(() => import('@/pages/ClassesPage').then(m => ({ default: m.ClassesPage }))),
+});
+
+const loadClassCreatorPage = () => import('@/pages/ClassCreatorPage').then(m => ({ default: m.ClassCreatorPage }));
+
+const classNewRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: '/gm/classes/new',
+    component: lazyRouteComponent(loadClassCreatorPage),
+});
+
+const classDraftRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: '/gm/classes/draft/$draftId',
+    component: lazyRouteComponent(loadClassCreatorPage),
+});
+
+const classEditRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: '/gm/classes/$classId',
+    component: lazyRouteComponent(loadClassCreatorPage),
 });
 
 // Carries the OBR iframe's session into a new first-party character tab.
@@ -152,9 +218,19 @@ const routeTree = rootRoute.addChildren([
     joinRollRoute,
     printRoute,
     faqRoute,
+    reportRoute,
+    privacyRoute,
+    moderationRoute,
+    termsRoute,
+    legalRoute,
     releaseRoute,
     owlbearRoute,
     gmRoute,
+    classDetailRoute,
+    classesRoute,
+    classNewRoute,
+    classDraftRoute,
+    classEditRoute,
     obrAuthDoneRoute,
     obrOpenRoute,
 ]);

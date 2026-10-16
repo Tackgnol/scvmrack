@@ -44,7 +44,9 @@ vi.mock('@/SnackbarContext/SnackbarProvider', () => ({
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string, fallback?: string, values?: Record<string, unknown>) => {
-      if (!fallback) return key;
+      if (!fallback) {
+        return key;
+      }
       return fallback.replace(/\{\{(\w+)}}/g, (_match, token) =>
         String(values?.[token] ?? '')
       );
@@ -114,7 +116,7 @@ function draft(overrides: Partial<ImprovementDraft> = {}): ImprovementDraft {
       presence: abilityRoll(),
       toughness: abilityRoll(),
     },
-    scumSpecialties: { kind: 'notScum' },
+    classAbility: { kind: 'none' },
     ...overrides,
   };
 }
@@ -126,7 +128,9 @@ function preview(overrides: Partial<ImprovementPreview> = {}): ImprovementPrevie
     characterId: 'char-1',
     sequence: rolledDraft.sequence,
     rolledDraft,
-    scumSpecialtyNames: {},
+    abilityNames: {},
+    rulesNote: null,
+    scrollNames: {},
     snapshotHash: rolledDraft.snapshot.snapshotHash,
     createdAt: '2026-07-07T10:00:00.000Z',
     updatedAt: '2026-07-07T10:00:00.000Z',

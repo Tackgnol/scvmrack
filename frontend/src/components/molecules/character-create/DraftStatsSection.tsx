@@ -502,7 +502,9 @@ function DraftClasslessStatsSection({
   const optionsByAbility = new Map((classlessStatOptions ?? []).map((option) => [option.ability, option]));
 
   const toggleClasslessChoice = (stat: AbilityStat) => {
-    if (busy) return;
+    if (busy) {
+      return;
+    }
     const isSelected = selectedAbilities.includes(stat);
     if (isSelected) {
       onDropLowestAbilitiesChange(selectedAbilities.filter((ability) => ability !== stat));

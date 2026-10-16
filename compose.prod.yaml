@@ -24,6 +24,9 @@
 #   AUTH_BASE_URL
 #   VITE_BACKEND_URL
 #   VITE_LOGTO_ENDPOINT
+#
+# Optional env (feature off when unset):
+#   SES_REGION, SES_ACCESS_KEY_ID, SES_SECRET_ACCESS_KEY  transactional email
 
 x-db-env: &db-env
   DATABASE_USER: p1002_scmgrinder
@@ -85,6 +88,13 @@ services:
       LOGTO_POST_LOGOUT_REDIRECT_URI: ${LOGTO_POST_LOGOUT_REDIRECT_URI:?LOGTO_POST_LOGOUT_REDIRECT_URI is required}
       GLITCHTIP_DSN: ${GLITCHTIP_DSN:-}
       VITE_GLITCHTIP_DSN: ${VITE_GLITCHTIP_DSN:-}
+      SES_REGION: ${SES_REGION:-}
+      SES_ACCESS_KEY_ID: ${SES_ACCESS_KEY_ID:-}
+      SES_SECRET_ACCESS_KEY: ${SES_SECRET_ACCESS_KEY:-}
+      MODERATION_ADMIN_USER_IDS: ${MODERATION_ADMIN_USER_IDS:-}
+      CUSTOM_CLASS_MAX_PER_GM: ${CUSTOM_CLASS_MAX_PER_GM:-50}
+      CUSTOM_CLASS_DAILY_PUBLISH_LIMIT: ${CUSTOM_CLASS_DAILY_PUBLISH_LIMIT:-5}
+      PARTY_MAX_MEMBERS: ${PARTY_MAX_MEMBERS:-10}
       GLITCHTIP_UPSTREAM: ${GLITCHTIP_UPSTREAM:-https://glitchtip.rpgtools.co}
       SENTRY_RELEASE: ${SENTRY_RELEASE:-}
       SENTRY_ENVIRONMENT: ${SENTRY_ENVIRONMENT:-production}
@@ -124,7 +134,7 @@ services:
         SENTRY_RELEASE: ${SENTRY_RELEASE:-}
         SENTRY_URL: ${SENTRY_URL:-https://glitchtip.rpgtools.co}
         SENTRY_ORG: ${SENTRY_ORG:-}
-        # Source maps must target the frontend GlitchTip project, never scvmrack_be.
+        # Prod frontend and backend share one GlitchTip project (scvmrack_be); maps go where the events land.
         SENTRY_PROJECT: ${SENTRY_FRONTEND_PROJECT:-}
         # Public GA4 measurement ID (shipped in the client bundle, not a secret).
         # Override via the runner env; defaults to the project's GA property.

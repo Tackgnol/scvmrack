@@ -18,7 +18,9 @@ import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 
 const handleOpenCharacter = async (id?: string) => {
-    if (!id) return;
+    if (!id) {
+        return;
+    }
     await appHistory.push(buildHomeCallbackUrl(id));
     // History writes are throttled internally; flush to avoid stale route/query reads.
     appHistory.flush();

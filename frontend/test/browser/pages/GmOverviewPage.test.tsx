@@ -66,10 +66,62 @@ describe('GmOverviewPage', () => {
   });
   afterEach(() => vi.clearAllMocks());
 
-  it('shows the guest warning when not logged in', async () => {
+  it('shows a locked GM overview that returns from Logto to this tab', async () => {
+    mockedUseAuth.mockReturnValue({ isAuthenticated: false, isGuest: false, isLoading: false } as never);
+    await renderPage();
+
+    await expect.element(page.getByTestId('gm-overview')).toBeVisible();
+    await expect.element(page.getByRole('heading', { name: 'Party control' })).toBeVisible();
+    await expect.element(page.getByRole('heading', { name: 'This is the GM screen. Sign up to run it.' })).toBeVisible();
+    await expect.element(page.getByText('Choose the classes they roll from, or forge your own.')).toBeVisible();
+    await expect.element(page.getByRole('heading', { name: 'Owlbear Rodeo' })).toBeVisible();
+    await expect.element(page.getByRole('heading', { name: 'Custom Classes' })).toBeVisible();
+    const preview = page.getByTestId('gm-locked-preview');
+    await expect.element(preview).toBeVisible();
+    await expect.element(preview).toHaveAttribute('aria-hidden', 'true');
+    expect((preview.element() as HTMLElement | null)?.inert).toBe(true);
+    expect(preview.element()?.querySelector('form')).not.toBeNull();
+    await expect
+      .element(page.getByRole('link', { name: 'Sign up' }))
+      .toHaveAttribute('href', 'http://localhost:3000/api/auth/oauth2/login/logto?returnTo=%2Fgm');
+    await expect
+      .element(page.getByRole('link', { name: 'Log in' }))
+      .toHaveAttribute('href', 'http://localhost:3000/api/auth/oauth2/login/logto?returnTo=%2Fgm');
+  });
+
+  it('tells guests that their scvm comes with them', async () => {
     mockedUseAuth.mockReturnValue({ isAuthenticated: false, isGuest: true, isLoading: false } as never);
     await renderPage();
-    await expect.element(page.getByTestId('gm-guest-warning')).toBeVisible();
+
+    await expect.element(page.getByText(
+      'Your guest scvm comes with you when you sign up.'
+    )).toBeVisible();
+  });
+
+  it('puts the sign-up slab before the locked preview on a phone', async () => {
+    await page.viewport(375, 812);
+    mockedUseAuth.mockReturnValue({ isAuthenticated: false, isGuest: false, isLoading: false } as never);
+    await renderPage();
+
+    const slab = page.getByRole('region', { name: 'This is the GM screen. Sign up to run it.' });
+    const preview = page.getByTestId('gm-locked-preview');
+    await expect.element(slab).toBeVisible();
+    await expect.element(preview).toBeVisible();
+    expect(slab.element()!.getBoundingClientRect().bottom).toBeLessThan(preview.element()!.getBoundingClientRect().top);
+    expect(getComputedStyle(document.querySelector('.gm-locked-overview__pin')!).display).toBe('none');
+    expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(window.innerWidth);
+    await page.viewport(1280, 720);
+  });
+
+  it('explains the locked GM screen in Polish', async () => {
+    await loadLanguage('pl');
+    await i18n.changeLanguage('pl');
+    mockedUseAuth.mockReturnValue({ isAuthenticated: false, isGuest: false, isLoading: false } as never);
+    await renderPage();
+
+    await expect.element(page.getByRole('heading', { name: 'To ekran MG. Zarejestruj się, by nim dowodzić.' })).toBeVisible();
+    await expect.element(page.getByText('Wybierz klasy, którymi mogą grać, albo stwórz własną.')).toBeVisible();
+    await expect.element(page.getByRole('link', { name: 'Zarejestruj się' })).toBeVisible();
   });
 
   it('shows the empty state with no parties', async () => {

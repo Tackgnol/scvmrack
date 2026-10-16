@@ -35,6 +35,34 @@ const buildReleaseNotes = (t: TFunction): ReleaseNote[] => {
     // newest-first and in sync with that folder when cutting a release.
     return [
         {
+            version: '0.7.0',
+            date: '2026-10-08',
+            type: 'minor',
+            changes: [
+                t('release.v070.customClasses', 'Forge Custom Classes with your own rules, items, abilities, reference tables, and Getting Better settings'),
+                t('release.v070.omenDice', 'Book Class Omen rolls now match the printed book: Esoteric Hermit and Heretical Priest use d4; other Book Classes use d2'),
+                t('release.v070.versions', 'Saving changes keeps existing scvm on their original class rules and creates a new version for future rolls'),
+                t('release.v070.partyPools', 'Party Class Pools let a GM choose the Book and Custom Classes available at their table and in Owlbear'),
+                t('release.v070.gmOverview', 'Everyone can preview the GM dashboard; guests keep their scvm when they sign up to run a warband'),
+                t('release.v070.sharing', 'Publish a class for other GMs, with clear creator attribution and a report link for public content'),
+                t('release.v070.moderation', 'Reports receive human review; authors receive takedown reasons and can dispute a decision in the app or by email'),
+                t('release.v070.legal', 'Terms, contact, privacy, and report pages explain the rules and ways to reach the project'),
+            ],
+        },
+        {
+            version: '0.6.3',
+            date: '2026-10-04',
+            type: 'patch',
+            changes: [
+                t('release.v063.tabSession', 'Opening scvmrack from inside Reddit or Facebook now works for that visit, with a warning and a link to open in your browser to keep your scvm'),
+                t('release.v063.classGrants', "The Heretical Priest now gets the Shepherd's Crook and Poltroon the Court Jester gets his pet, as their class abilities say"),
+                t('release.v063.printModifiers', 'The Modifiers section of the print sheet is now translated'),
+                t('release.v063.printStats', 'Long ability labels such as Wytrzymałość no longer overflow on the print sheet'),
+                t('release.v063.freshShell', 'Returning visitors always get the latest version of the app instead of a stale cached copy'),
+                t('release.v063.monitoring', 'Quieter monitoring: dropped-connection errors from flaky networks are no longer reported'),
+            ],
+        },
+        {
             version: '0.6.2',
             date: '2026-09-19',
             type: 'patch',

@@ -70,6 +70,57 @@ test('manual generate reports rate-limit errors without replacing the current ch
   await expect(page).toHaveURL(new RegExp(`/character/${seededCharacter.id}$`));
 });
 
+for (const width of [1280, 390]) {
+  test(`exhausted saves keep a persistent retry at width ${width}`, async ({ page, seededCharacter }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto(`/character/${seededCharacter.id}`);
+    await expect(page.getByTestId('habit-input')).toBeVisible();
+    let failures = 0;
+    let recovered = false;
+    const feedbackRequests: string[] = [];
+    page.on('request', (request) => {
+      if (request.method() === 'POST' && new URL(request.url()).pathname === '/api/feedback') {
+        feedbackRequests.push(request.url());
+      }
+    });
+    await page.route(`**/api/characters/${seededCharacter.id}**`, async (route) => {
+      if (route.request().method() === 'PATCH' && !recovered) {
+        failures++;
+        await route.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify({
+          statusCode: 503, code: 'QA_OUTAGE', message: 'Temporary QA outage',
+        }) });
+        return;
+      }
+      await route.continue();
+    });
+    await page.getByTestId('habit-input').fill('Habit recovered without another edit');
+    await page.getByTestId('habit-input').blur();
+    const dialog = page.getByRole('dialog', { name: /unexpected error occurred/i });
+    await expect(dialog).toBeVisible();
+    expect(failures).toBe(3);
+    await dialog.getByRole('button', { name: 'Skip', exact: true }).click();
+    expect(feedbackRequests).toEqual([]);
+    await expect(page.getByRole('button', { name: 'Retry', exact: true })).not.toBeVisible({ timeout: 15000 });
+    await expect(page.getByTestId('saving-chip')).not.toBeVisible();
+    await expect(page.getByTestId('synced-chip')).not.toBeVisible();
+    const retry = page.getByRole('button', { name: 'Unsaved · Retry', exact: true });
+    await expect(retry).toBeVisible();
+    recovered = true;
+    const saved = page.waitForResponse((response) =>
+      response.request().method() === 'PATCH' && isCharacterPatch(response.url(), seededCharacter.id)
+    );
+    await retry.click();
+    expect((await saved).ok()).toBe(true);
+    if (width < 900) {
+      await page.getByRole('button', { name: 'Open menu', exact: true }).click();
+    }
+    await expect(page.getByTestId('synced-chip')).toBeVisible();
+    await expect(retry).not.toBeVisible();
+    await page.reload();
+    await expect(page.getByTestId('habit-input')).toHaveValue('Habit recovered without another edit');
+  });
+}
+
 test('offline save failures surface retry UX after repeated failed sync attempts', async ({
   page,
   seededCharacter,
@@ -93,7 +144,7 @@ test('offline save failures surface retry UX after repeated failed sync attempts
   await fillAndWaitForFailedPatch(page, seededCharacter.id, 'notes-input', 'offline failure 3');
 
   await expect(page.getByText(/connection failed/i)).toBeVisible({ timeout: 30000 });
-  await expect(page.getByRole('button', { name: /retry/i })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Unsaved · Retry', exact: true })).toBeVisible();
 });
 
 test('unexpected save errors can be reported via the feedback endpoint', async ({

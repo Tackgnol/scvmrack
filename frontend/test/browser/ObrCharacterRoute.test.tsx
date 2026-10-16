@@ -260,6 +260,15 @@ vi.mock("@/components/organisms/CharacterSheet", () => ({
   CharacterSheet: () => <div>Player sheet</div>,
 }));
 
+vi.mock("@/components/obr/ObrRollPicker/ObrRollPicker", () => ({
+  ObrRollPicker: ({ open, onChoose }: { open: boolean; onChoose: (classId: number | null) => void }) =>
+    open ? (
+      <>
+        <button onClick={() => onChoose(null)}>Random</button>
+        <button onClick={() => onChoose(7)}>Class 7</button>
+      </>
+    ) : null,
+}));
 vi.mock("@owlbear-rodeo/sdk", () => ({
   default: {
     get isAvailable() {
@@ -606,6 +615,40 @@ describe("ObrCharacterRoute", () => {
     expect(routeMocks.useObrSession).toHaveBeenCalled();
   });
 
+  it("rolls through the room-scoped picker", async () => {
+    routeMocks.role = "PLAYER";
+
+    await renderRoute();
+
+    await userEvent.click(page.getByRole("button", { name: "Roll a scvm" }));
+    await expect.element(page.getByRole("button", { name: "Random" })).toBeVisible();
+    await userEvent.click(page.getByRole("button", { name: "Random" }));
+
+    await expect.poll(() => routeMocks.generateNew).toHaveBeenCalledWith(
+      null,
+      expect.objectContaining({
+        replace: true,
+        obrRoomId: "room-test",
+        obrPlayerId: "player-1",
+      }),
+    );
+  });
+
+  it("explains when the room party is full", async () => {
+    routeMocks.role = "PLAYER";
+    routeMocks.generateNew.mockImplementation((_classId, options) => {
+      options.onError({ code: "PARTY_FULL" });
+    });
+
+    await renderRoute();
+
+    await userEvent.click(page.getByRole("button", { name: "Roll a scvm" }));
+    await userEvent.click(page.getByRole("button", { name: "Class 7" }));
+
+    await expect
+      .element(page.getByText("This room's party is full. Ask the GM to make room."))
+      .toBeVisible();
+  });
   it("restores the active OBR scvm from player metadata after a refresh", async () => {
     routeMocks.role = "PLAYER";
     obrMock.state.playerMetadata = {

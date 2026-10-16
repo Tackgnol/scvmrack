@@ -18,7 +18,9 @@ export function ObrAuthDonePage() {
                 window.setTimeout(() => window.close(), 50);
                 return;
             }
-            if (!cancelled) setFailed(true);
+            if (!cancelled) {
+                setFailed(true);
+            }
         })();
         return () => {
             cancelled = true;

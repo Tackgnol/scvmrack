@@ -65,9 +65,13 @@ export default function CustomItemModal({
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
-    if (!canSave) return;
+    if (!canSave) {
+      return;
+    }
     const items = buildBundle();
-    if (items.length === 0) return;
+    if (items.length === 0) {
+      return;
+    }
     onCreate(items);
     onClose();
   };

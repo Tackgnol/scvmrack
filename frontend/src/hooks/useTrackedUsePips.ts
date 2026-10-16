@@ -15,14 +15,18 @@ export function useTrackedUsePips({
   // Clear stale pending markers the moment isSaving transitions to false.
   if (prevIsSaving !== isSaving) {
     setPrevIsSaving(isSaving);
-    if (!isSaving) setPendingPips(new Set());
+    if (!isSaving) {
+      setPendingPips(new Set());
+    }
   }
 
   const markPipPending = (equipmentIndex: number, useIndex: number) => {
     const pipKey = `${equipmentIndex}:${useIndex}`;
 
     setPendingPips((previous) => {
-      if (previous.has(pipKey)) return previous;
+      if (previous.has(pipKey)) {
+        return previous;
+      }
       const next = new Set(previous);
       next.add(pipKey);
       return next;

@@ -49,6 +49,7 @@ export type WarbandMember = {
   id: string;
   name: string;
   cls: string;
+  classAttribution?: string;
   dead: boolean;
 
   hpText: string;
@@ -226,7 +227,9 @@ const weaponLabel = (
   weapon: WeaponLabelSource | null | undefined,
   unarmedLabel = 'Unarmed',
 ): string => {
-  if (!weapon?.name) return `${unarmedLabel} (d2)`;
+  if (!weapon?.name) {
+    return `${unarmedLabel} (d2)`;
+  }
   const die = weapon.dice?.find((d) => typeof d === 'number' && d > 0);
   return die ? `${weapon.name} (d${die})` : weapon.name;
 };
@@ -235,7 +238,9 @@ const armorLabel = (
   armor: ArmorLabelSource | null | undefined,
   noneLabel = 'None',
 ): string => {
-  if (!armor?.name) return noneLabel;
+  if (!armor?.name) {
+    return noneLabel;
+  }
   const die = armorDie(armor);
   return die ? `${armor.name} (${MINUS}d${die})` : armor.name;
 };
@@ -243,7 +248,9 @@ const armorLabel = (
 // Damage reduction the armor soaks — the X in −dX. A quick GM-glance number, 0 bare.
 const armorDie = (armor: ArmorLabelSource | null | undefined): number => {
   const die = armor?.dice?.find((value) => typeof value === 'number' && value > 0);
-  if (die) return die;
+  if (die) {
+    return die;
+  }
 
   const tier = armor?.currentTier ?? armor?.maxTier;
   return tier ? tier * 2 : 0;
@@ -367,7 +374,9 @@ const recordStringArray = (
 const toCompactComputedModifier = (
   value: unknown,
 ): ComputedModifier | null => {
-  if (!isRecord(value)) return null;
+  if (!isRecord(value)) {
+    return null;
+  }
 
   const statistic = recordString(value, 'statistic');
   const origin = recordString(value, 'origin');
@@ -443,6 +452,7 @@ export function toWarbandMember(
     id: character.id ?? '',
     name: character.name?.trim() || labels?.unnamedScvm || 'Unnamed scvm',
     cls: character.className?.trim() || labels?.classless || 'Classless',
+    classAttribution: character.classAttribution ?? undefined,
     dead,
 
     hpText: `${hp}/${character.maxHp ?? 0}`,

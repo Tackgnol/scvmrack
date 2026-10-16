@@ -1,3 +1,15 @@
+@import '@fontsource/bebas-neue/400.css';
+@import '@fontsource/medievalsharp/400.css';
+@import '@fontsource/alegreya/400.css';
+@import '@fontsource/alegreya/700.css';
+@import '@fontsource/alegreya/900.css';
+@import '@fontsource/alegreya/400-italic.css';
+@import '@fontsource/alegreya/700-italic.css';
+@import '@fontsource/antonio/400.css';
+@import '@fontsource/antonio/700.css';
+@import '@fontsource/caveat-brush/400.css';
+@import '@fontsource/black-ops-one/400.css';
+
 /* Mork Borg Global Styles */
 
 /* Noise texture overlay */
@@ -599,6 +611,33 @@ input[type='number'] {
   padding-left: 6mm;
 }
 
+/* Sections that may hold long reference tables flow onto the next A4 page instead of being clipped. */
+.print-native-section.print-native-breakable {
+  break-inside: auto;
+  page-break-inside: auto;
+}
+
+.print-native-list .print-native-ability-table {
+  margin: 0.6mm 0 0;
+  padding: 0;
+  list-style: none;
+  border: 0;
+}
+
+.print-native-list .print-native-ability-table li {
+  grid-template-columns: 5mm minmax(0, 1fr);
+  gap: 1mm;
+  padding: 0.4mm 0;
+  border-bottom: 0;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.print-native-ability-table b {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 8pt;
+}
+
 .print-native-uses li {
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
@@ -958,4 +997,31 @@ input[type='number'] {
   body.print-route-active .scan-line {
     display: none !important;
   }
+}
+
+/* Creator cards open and close as one shared element each: the frame unfolds (or folds back)
+   in place while its content swaps at once, and the cards below slide. Hard cuts, no fades. */
+html:active-view-transition-type(card-open, card-close)::view-transition-group(*) {
+  animation-duration: 320ms;
+  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+html:active-view-transition-type(card-close)::view-transition-group(*) {
+  animation-duration: 220ms;
+}
+
+html:active-view-transition-type(card-open, card-close)::view-transition-image-pair(*) {
+  overflow: clip;
+}
+
+html:active-view-transition-type(card-open, card-close)::view-transition-old(*) {
+  animation: none;
+  display: none;
+}
+
+html:active-view-transition-type(card-open, card-close)::view-transition-new(*) {
+  animation: none;
+  height: 100%;
+  object-fit: none;
+  object-position: top;
 }

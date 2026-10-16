@@ -27,7 +27,9 @@ export function useValuePulse<T>(
   }
 
   useEffect(() => {
-    if (!state.pulse) return;
+    if (!state.pulse) {
+      return;
+    }
 
     const timeoutId = window.setTimeout(() => {
       setState((previous) =>

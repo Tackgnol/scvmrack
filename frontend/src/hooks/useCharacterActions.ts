@@ -14,6 +14,8 @@ export type GenerateNewOptions = {
   onError?: (error: unknown) => void;
   select?: boolean;
   replace?: boolean;
+  obrRoomId?: string;
+  obrPlayerId?: string;
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- matches the $api mutation surface
@@ -75,7 +77,7 @@ export function useCharacterActions({
   t,
   changeLanguage,
 }: Params) {
-  const generateNew = (classId?: number, options?: GenerateNewOptions) => {
+  const generateNew = (classId?: number | null, options?: GenerateNewOptions) => {
     if (isSessionExpired) {
       return;
     }
@@ -85,12 +87,21 @@ export function useCharacterActions({
     setAutoCreateFailed(false);
 
     flushEditor();
-    const id = classId ?? Math.floor(Math.random() * (6 - 1 + 1)) + 1;
+    const id = classId === undefined ? Math.floor(Math.random() * 6) + 1 : classId;
 
     createCharacter.mutate(
       {
-        body: { classId: id, ...(options?.replace ? { replace: true } : {}) },
-        params: { query: { locale: trimmedLocale } },
+        body: {
+          ...(id === null ? {} : { classId: id }),
+          ...(options?.replace ? { replace: true } : {}),
+        },
+        params: {
+          query: {
+            locale: trimmedLocale,
+            ...(options?.obrRoomId ? { obrRoom: options.obrRoomId } : {}),
+            ...(options?.obrPlayerId ? { obrPlayer: options.obrPlayerId } : {}),
+          },
+        },
       },
       {
         onSuccess: (character: { id?: string } | undefined) => {
@@ -103,7 +114,7 @@ export function useCharacterActions({
           trackEvent('generate_character', {
             source: 'manual',
             locale: trimmedLocale,
-            classId: id,
+            ...(id === null ? {} : { classId: id }),
             is_authenticated: isAuthenticated,
             is_guest: isGuest,
           });
@@ -120,7 +131,7 @@ export function useCharacterActions({
                 source: 'character_generate',
                 operation: 'create_character',
                 locale: trimmedLocale,
-                classId: id,
+                ...(id === null ? {} : { classId: id }),
               },
               'Failed to create character'
             );
@@ -250,7 +261,9 @@ export function useCharacterActions({
   };
 
   const changeLocale = async (newLocale: 'en' | 'pl') => {
-    if (newLocale === trimmedLocale) return;
+    if (newLocale === trimmedLocale) {
+      return;
+    }
     await changeLanguage(newLocale);
     trackEvent('language_changed', { from: trimmedLocale, to: newLocale });
   };

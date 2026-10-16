@@ -81,12 +81,16 @@ export function useHpDeathWatch(
   );
 
   useEffect(() => {
-    if (!characterId) return;
+    if (!characterId) {
+      return;
+    }
     dispatch({ type: 'sync', currentHp, characterId, prefersReducedMotion });
   }, [characterId, currentHp, prefersReducedMotion]);
 
   useEffect(() => {
-    if (!state.hpPulse) return;
+    if (!state.hpPulse) {
+      return;
+    }
     const timeoutId = window.setTimeout(
       () => dispatch({ type: 'pulseEnd' }),
       HP_PULSE_DURATION_MS,

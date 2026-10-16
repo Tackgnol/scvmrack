@@ -4,9 +4,9 @@ import {
   normalizeSubmittedHp,
 } from './getting-better-rolls.js';
 import {
-  applyScumSpecialtyDraftToAbilityKeys,
-  normalizeSubmittedScumSpecialties,
-} from './getting-better-scum.js';
+  applyClassAbilityDraft,
+  normalizeSubmittedClassAbility,
+} from './getting-better-class-ability.js';
 import { hasValidImprovementSnapshotHash } from './getting-better-snapshot.js';
 import {
   ABILITY_STATS,
@@ -22,6 +22,7 @@ import {
 export function normalizeSubmittedImprovementDraft(
   draft: ImprovementDraft,
   snapshot: ImprovementCharacterSnapshot,
+  appliedCount: number,
   catalog: GettingBetterCatalog
 ): ImprovementDraft {
   if (!hasValidImprovementSnapshotHash(snapshot)) {
@@ -41,9 +42,10 @@ export function normalizeSubmittedImprovementDraft(
     hp: normalizeSubmittedHp(draft.hp, snapshot),
     debris: normalizeSubmittedDebris(draft.debris, catalog),
     abilities: normalizeSubmittedAbilities(draft.abilities, snapshot),
-    scumSpecialties: normalizeSubmittedScumSpecialties(
-      draft.scumSpecialties,
+    classAbility: normalizeSubmittedClassAbility(
+      draft.classAbility,
       snapshot,
+      appliedCount,
       catalog
     ),
   };
@@ -80,10 +82,9 @@ export function buildAppliedImprovement(
     changes.equipmentAdded = [{ itemKey: draft.debris.itemKey }];
   }
 
-  const nextAbilityKeys = applyScumSpecialtyDraftToAbilityKeys(
+  const nextAbilityKeys = applyClassAbilityDraft(
     character.abilityKeys,
-    draft.scumSpecialties,
-    character.scumSpecialtyKeys
+    draft.classAbility
   );
   if (!arraysEqual(character.abilityKeys, nextAbilityKeys)) {
     changes.abilityKeys = {

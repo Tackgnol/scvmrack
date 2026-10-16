@@ -17,7 +17,7 @@ describe("MiseryTrack Browser", () => {
     vi.mocked(CharacterContextModule.useCharacter).mockReturnValue({
       character: { miseryCount: 3 },
       updateField,
-    } as ReturnType<typeof CharacterContextModule.useCharacter>);
+    } as unknown as ReturnType<typeof CharacterContextModule.useCharacter>);
   });
 
   it("shows the current run of struck miseries", async () => {
@@ -45,7 +45,7 @@ describe("MiseryTrack Browser", () => {
     vi.mocked(CharacterContextModule.useCharacter).mockReturnValue({
       character: { miseryCount: 0 },
       updateField,
-    } as ReturnType<typeof CharacterContextModule.useCharacter>);
+    } as unknown as ReturnType<typeof CharacterContextModule.useCharacter>);
 
     await render(
       <BrowserTestProvider>
@@ -63,7 +63,7 @@ describe("MiseryTrack Browser", () => {
     vi.mocked(CharacterContextModule.useCharacter).mockReturnValue({
       character: { miseryCount: 4 },
       updateField,
-    } as ReturnType<typeof CharacterContextModule.useCharacter>);
+    } as unknown as ReturnType<typeof CharacterContextModule.useCharacter>);
 
     await render(
       <BrowserTestProvider>

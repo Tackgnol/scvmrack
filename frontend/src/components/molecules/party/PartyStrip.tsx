@@ -95,7 +95,9 @@ export function PartyStrip({ children, cardWidth = 300, gap = 18 }: PartyStripPr
 
   useLayoutEffect(() => {
     const el = trackRef.current;
-    if (!el) return;
+    if (!el) {
+      return;
+    }
     const next = getScrollAvailability(el);
     setCanLeft(next.canLeft);
     setCanRight(next.canRight);
@@ -104,7 +106,9 @@ export function PartyStrip({ children, cardWidth = 300, gap = 18 }: PartyStripPr
   useEffect(() => {
     const onResize = () => {
       const el = trackRef.current;
-      if (!el) return;
+      if (!el) {
+        return;
+      }
       const next = getScrollAvailability(el);
       setCanLeft(next.canLeft);
       setCanRight(next.canRight);
@@ -115,7 +119,9 @@ export function PartyStrip({ children, cardWidth = 300, gap = 18 }: PartyStripPr
 
   const handleScroll = () => {
     const el = trackRef.current;
-    if (!el) return;
+    if (!el) {
+      return;
+    }
     const next = getScrollAvailability(el);
     setCanLeft(next.canLeft);
     setCanRight(next.canRight);
@@ -123,7 +129,9 @@ export function PartyStrip({ children, cardWidth = 300, gap = 18 }: PartyStripPr
 
   const page = (direction: 1 | -1) => {
     const el = trackRef.current;
-    if (!el) return;
+    if (!el) {
+      return;
+    }
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     el.scrollBy({
       left: direction * (cardWidth + gap),

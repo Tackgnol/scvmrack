@@ -1,14 +1,6 @@
-import {
-  scopeIncludeOptions,
-} from '@components/modifiers/config';
-import {
-  createModifierId,
-  includesToExclude,
-} from '@components/modifiers/utils';
-import {
-  type IncludeContext,
-  type ScopeOption,
-} from '@components/modifiers/types';
+import { scopeToExclude } from '@components/modifiers/utils';
+import { createRandomId } from '@/utils/randomId';
+import { type ScopeOption } from '@components/modifiers/types';
 import {
   type Character,
   type CustomItemCategory,
@@ -59,7 +51,6 @@ type ArmorPresetConfig = {
   tags: string[];
 };
 
-export const CUSTOM_DAMAGE_DICE = [2, 4, 6, 8, 10, 12] as const;
 export const CUSTOM_ARMOR_DICE = [2, 4, 6] as const;
 const DEFAULT_AMMO_TYPES = ['Arrow', 'Bolt'] as const;
 
@@ -77,21 +68,16 @@ const clampInteger = (value: number, min: number, max: number): number =>
 
 export const buildCustomItemKey = (
   kind: CustomItemKind,
-  id = createModifierId(),
+  id = createRandomId(),
 ): string => `custom.${kind}.${id}`;
-
-const scopeToExclude = (scope: ScopeOption): string[] => {
-  const includes =
-    scopeIncludeOptions.find((option) => option.value === scope)?.include ??
-    [];
-  return includesToExclude(includes as IncludeContext[]);
-};
 
 export const createUsePips = (
   rule: UseCountRule | undefined,
   stats: CharacterStats,
 ): boolean[] => {
-  if (!rule) return [];
+  if (!rule) {
+    return [];
+  }
 
   const base = clampInteger(rule.base ?? 0, 0, 50);
   const modifier =
@@ -115,7 +101,9 @@ export const collectKnownAmmoTypes = (
 
   items.forEach((item) => {
     const ammoType = item?.ammoType?.trim();
-    if (ammoType) known.add(ammoType);
+    if (ammoType) {
+      known.add(ammoType);
+    }
   });
 
   return Array.from(known).sort((a, b) => a.localeCompare(b));
@@ -125,11 +113,13 @@ const createOptionalModifier = (
   input: CustomItemModifierInput | undefined,
   itemName: string,
 ): CustomModifier[] => {
-  if (!input?.enabled) return [];
+  if (!input?.enabled) {
+    return [];
+  }
 
   return [
     {
-      id: createModifierId(),
+      id: createRandomId(),
       name: itemName,
       source: itemName,
       value: clampInteger(input.value, -20, 20),
@@ -166,10 +156,14 @@ const createAmmoStack = (
   name?: string,
 ): EquipmentItem[] => {
   const normalizedAmmoType = ammoType.trim();
-  if (!normalizedAmmoType) return [];
+  if (!normalizedAmmoType) {
+    return [];
+  }
 
   const count = clampInteger(amount, 0, 999);
-  if (count <= 0) return [];
+  if (count <= 0) {
+    return [];
+  }
 
   return [
     {
@@ -190,7 +184,9 @@ export const buildCustomItemBundle = (
   stats: CharacterStats,
 ): EquipmentItem[] => {
   const name = input.name.trim();
-  if (!name) return [];
+  if (!name) {
+    return [];
+  }
 
   const quantity = clampInteger(input.quantity ?? 1, 1, 50);
   const baseItem = createBaseItem(input, input.kind);

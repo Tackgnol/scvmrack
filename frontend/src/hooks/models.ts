@@ -21,11 +21,30 @@ export type SimpleField =
 
 export type Statistic = 'agility' | 'strength' | 'presence' | 'toughness';
 
+export type AbilityTableRow = {
+    roll: number;
+    text: string;
+    itemKey: string | null;
+    itemName: string | null;
+};
+
+/** An ability's dN reference table, read-only on the sheet. */
+export type AbilityTable = {
+    die: number;
+    rows: AbilityTableRow[];
+};
+
 export type Ability = {
     key?: string;
     name?: string;
     description?: string;
     comment?: string;
+    table?: AbilityTable;
+    tableResult?: {
+        roll: number;
+        text: string;
+        itemKey: string | null;
+    };
 };
 
 export type CustomItemCategory =
@@ -74,7 +93,7 @@ export type CustomModifier = {
     // Source-of-truth scope tag for modifiers authored via the custom-item form.
     // `exclude` is the derived form used at calculation time; `scope` lets us
     // recover the original intent if the scope→exclude mapping ever changes.
-    scope?: 'all' | 'combat' | 'defence' | 'melee' | 'ranged' | 'powers';
+    scope?: 'all' | 'combat' | 'defence' | 'tests' | 'melee' | 'ranged' | 'powers';
     comment?: string;
 };
 
@@ -94,6 +113,11 @@ export type Character = {
     classId?: number | null;
     className?: string | null;
     classDescription?: string | null;
+    classAttribution?: string | null;
+    classAuthoredLanguage?: 'en' | 'pl' | null;
+    classContentRemoved?: boolean;
+    classReportable?: boolean;
+    classCustom?: boolean;
     origin?: string | null;
     strength?: number;
     agility?: number;
@@ -133,6 +157,8 @@ export type Character = {
 export type CharacterResponse = Character;
 
 export type CharacterUpdateRequest = Partial<{
+    expectedUpdatedAt: string;
+    saveId: string;
     name: string;
     currentHp: number;
     maxHp: number;

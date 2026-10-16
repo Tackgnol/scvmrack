@@ -44,7 +44,9 @@ function EquippedQuickCard({
     const prefersHover = useMediaQuery('(hover: hover) and (pointer: fine)');
 
     const handleKeyDown = (event: KeyboardEvent<HTMLElement>) => {
-      if (!onClick) return;
+      if (!onClick) {
+        return;
+      }
       if (event.key === 'Enter' || event.key === ' ') {
         event.preventDefault();
         onClick(event as unknown as MouseEvent<HTMLElement>);
@@ -97,10 +99,14 @@ function EquippedQuickCard({
                 aria-label={description}
                 aria-expanded={infoOpen}
                 onMouseEnter={() => {
-                  if (prefersHover) setInfoOpen(true);
+                  if (prefersHover) {
+                    setInfoOpen(true);
+                  }
                 }}
                 onMouseLeave={() => {
-                  if (prefersHover) setInfoOpen(false);
+                  if (prefersHover) {
+                    setInfoOpen(false);
+                  }
                 }}
                 onClick={(e: MouseEvent<HTMLElement>) => {
                   e.stopPropagation();

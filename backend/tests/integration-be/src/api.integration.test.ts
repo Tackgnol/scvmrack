@@ -1,4 +1,6 @@
+import { randomUUID } from 'node:crypto';
 import assert from 'node:assert/strict';
+import { Client } from 'pg';
 import test from 'node:test';
 
 const baseUrl = process.env.E2E_BASE_URL ?? 'http://localhost:3000';
@@ -14,16 +16,22 @@ class CookieJar {
 
     if (setCookies.length === 0) {
       const single = response.headers.get('set-cookie');
-      if (single) setCookies.push(single);
+      if (single) {
+        setCookies.push(single);
+      }
     }
 
     for (const rawCookie of setCookies) {
       const firstChunk = rawCookie.split(';')[0];
       const separator = firstChunk.indexOf('=');
-      if (separator <= 0) continue;
+      if (separator <= 0) {
+        continue;
+      }
       const key = firstChunk.slice(0, separator).trim();
       const value = firstChunk.slice(separator + 1).trim();
-      if (!key || !value) continue;
+      if (!key || !value) {
+        continue;
+      }
       this.cookies.set(key, value);
     }
   }
@@ -53,7 +61,9 @@ async function request(
   const requestHeaders: Record<string, string> = { ...headers };
   if (jar) {
     const cookieHeader = jar.header();
-    if (cookieHeader) requestHeaders.cookie = cookieHeader;
+    if (cookieHeader) {
+      requestHeaders.cookie = cookieHeader;
+    }
   }
 
   let body: string | undefined;
@@ -68,7 +78,9 @@ async function request(
     body,
   });
 
-  if (jar) jar.capture(response);
+  if (jar) {
+    jar.capture(response);
+  }
   return response;
 }
 
@@ -81,7 +93,9 @@ async function fetchCsrfToken(jar: CookieJar): Promise<string> {
 }
 
 async function expectStatus(response: Response, expectedStatus: number): Promise<void> {
-  if (response.status === expectedStatus) return;
+  if (response.status === expectedStatus) {
+    return;
+  }
   const payload = await response.text();
   assert.fail(
     `${response.url} returned ${response.status}, expected ${expectedStatus}. Payload: ${payload}`
@@ -138,27 +152,27 @@ type ImprovementDraft = {
     | { roll: RollValue; kind: 'uncleanScroll'; scroll: RollValue; itemKey: string }
     | { roll: RollValue; kind: 'sacredScroll'; scroll: RollValue; itemKey: string };
   abilities: Record<AbilityStat, ImprovementAbilityRoll>;
-  scumSpecialties:
-    | { kind: 'notScum' }
+  classAbility:
+    | { kind: 'none' }
+    | { kind: 'newAbility'; added: SpecialtyRoll | null }
+    | { kind: 'firstSpecialty'; existing: SpecialtySlot[]; added: SpecialtyRoll | null }
     | {
-        kind: 'firstImprovement';
-        existing: { key: string; rollValue: number };
-        added: { key: string; rollValue: number; roll: RollValue };
-      }
-    | {
-        kind: 'laterImprovement';
-        primary: { key: string; rollValue: number };
-        secondary: { key: string; rollValue: number };
-        rerollMode: 'none' | 'primary' | 'secondary' | 'both';
+        kind: 'specialties';
+        specialties: Array<{ current: SpecialtySlot; replacement: SpecialtyRoll | null; reroll: boolean }>;
       };
 };
+
+type SpecialtySlot = { key: string; rollValue: number };
+type SpecialtyRoll = SpecialtySlot & { roll: RollValue };
 
 type ImprovementPreview = {
   id: string;
   characterId: string;
   sequence: number;
   rolledDraft: ImprovementDraft;
-  scumSpecialtyNames: Record<string, string>;
+  abilityNames: Record<string, string>;
+  rulesNote: string | null;
+  scrollNames: Record<string, string>;
   snapshotHash: string;
   createdAt: string;
   updatedAt: string;
@@ -220,6 +234,99 @@ test('GET /api/health returns service status for proxied checks', async () => {
   assert.equal(payload.status, 'ok');
   assert.equal(typeof payload.timestamp, 'string');
   assert.ok(!Number.isNaN(Date.parse(payload.timestamp)));
+});
+
+test('cookie-less bearer session can create and edit its character without CSRF', async () => {
+  const signIn = await request('/api/auth/sign-in/anonymous', { method: 'POST', json: {} });
+  await expectStatus(signIn, 200);
+  const token = signIn.headers.get('set-auth-token');
+  assert.ok(token);
+  const headers = { Authorization: 'Bearer ' + token };
+  const created = await request('/api/characters/new', { method: 'POST', json: {}, headers });
+  await expectStatus(created, 201);
+  const character = await created.json() as { id: string };
+  const updated = await request('/api/characters/' + character.id, {
+    method: 'PATCH', json: { name: 'Tab-only scvm' }, headers,
+  });
+  await expectStatus(updated, 200);
+  assert.equal((await updated.json() as { name: string }).name, 'Tab-only scvm');
+});
+
+for (const [name, firstKeys, staleKeys] of [
+  ['a stale quantity PATCH cannot erase a saved Hammer', ['rope', 'rope', 'hammer'], ['rope', 'rope', 'rope']],
+  ['a stale add-item PATCH cannot undo a saved quantity', ['rope', 'rope', 'rope'], ['rope', 'rope', 'hammer']],
+] as const) {
+test(name, async () => {
+  const jar = await bootstrapAnonymousSession();
+  const id = await createCharacter(jar);
+  const csrf = await fetchCsrfToken(jar);
+  const headers = { 'x-csrf-token': csrf };
+  const path = `/api/characters/${id}`;
+  const seeded = await request(path, {
+    method: 'PATCH', jar, headers, json: { equipment: [{ key: 'rope' }, { key: 'rope' }] },
+  });
+  await expectStatus(seeded, 200);
+  const baseline = await seeded.json() as { updatedAt: string };
+  const first = await request(path, {
+    method: 'PATCH', jar, headers,
+    json: { expectedUpdatedAt: baseline.updatedAt, equipment: firstKeys.map((key) => ({ key })) },
+  });
+  await expectStatus(first, 200);
+  const stale = await request(path, {
+    method: 'PATCH', jar, headers,
+    json: { expectedUpdatedAt: baseline.updatedAt, equipment: staleKeys.map((key) => ({ key })) },
+  });
+  await expectApiError(stale, 409, 'CHARACTER_CHANGED', 'Character changed in another tab. Reload before editing again.');
+  const reloaded = await request(path, { jar });
+  const saved = await reloaded.json() as { equipment: Array<{ key: string }> };
+  assert.deepEqual(saved.equipment.map(({ key }) => key), firstKeys);
+});
+}
+
+test('scalar edits from two tabs carry no version, so independent fields both persist', async () => {
+  const jar = await bootstrapAnonymousSession();
+  const id = await createCharacter(jar);
+  const headers = { 'x-csrf-token': await fetchCsrfToken(jar) };
+  const path = `/api/characters/${id}`;
+  await expectStatus(await request(path, { method: 'PATCH', jar, headers, json: { habit: 'Tab A habit' } }), 200);
+  await expectStatus(await request(path, { method: 'PATCH', jar, headers, json: { silver: 42 } }), 200);
+  const saved = await (await request(path, { jar })).json() as { habit: string; silver: number };
+  assert.equal(saved.habit, 'Tab A habit');
+  assert.equal(saved.silver, 42);
+});
+
+test('a nameless inventory entry is never stored', async () => {
+  const jar = await bootstrapAnonymousSession();
+  const id = await createCharacter(jar);
+  const headers = { 'x-csrf-token': await fetchCsrfToken(jar) };
+  const path = `/api/characters/${id}`;
+  const phantom = { description: '', uses: [], dice: [], tags: [], modifiers: [] };
+  const saved = await request(path, { method: 'PATCH', jar, headers, json: { equipment: [phantom, { key: 'rope' }] } });
+  await expectStatus(saved, 200);
+  const reloaded = await (await request(path, { jar })).json() as { equipment: Array<{ key?: string }> };
+  assert.deepEqual(reloaded.equipment.map(({ key }) => key), ['rope']);
+});
+
+test('an unchanged SQL-era timestamp accepts one save and rejects a replay', async () => {
+  const jar = await bootstrapAnonymousSession();
+  const id = await createCharacter(jar);
+  const database = new Client({ connectionString: process.env.DATABASE_URL });
+  await database.connect();
+  try {
+    await database.query("UPDATE characters SET updated_at = '2030-01-01 09:00:00.123456' WHERE id = $1", [id]);
+  } finally {
+    await database.end();
+  }
+  const path = `/api/characters/${id}`;
+  const baseline = await (await request(path, { jar })).json() as { updatedAt: string };
+  const headers = { 'x-csrf-token': await fetchCsrfToken(jar) };
+  const json = { expectedUpdatedAt: baseline.updatedAt, equipment: [{ key: 'hammer' }] };
+  const saved = await request(path, { method: 'PATCH', jar, headers, json });
+  await expectStatus(saved, 200);
+  const updated = await saved.json() as { updatedAt: string };
+  assert.ok(Date.parse(updated.updatedAt) > Date.parse(baseline.updatedAt));
+  const replay = await request(path, { method: 'PATCH', jar, headers, json });
+  await expectStatus(replay, 409);
 });
 
 test('CSRF protection rejects state-changing requests without token', async () => {
@@ -430,15 +537,33 @@ function tableRoll(total: number): RollValue {
 }
 
 function scoreToModifier(score: number): number {
-  if (score <= 4) return -3;
-  if (score <= 6) return -2;
-  if (score <= 8) return -1;
-  if (score <= 12) return 0;
-  if (score <= 14) return 1;
-  if (score <= 16) return 2;
-  if (score <= 18) return 3;
-  if (score === 19) return 4;
-  if (score === 20) return 5;
+  if (score <= 4) {
+    return -3;
+  }
+  if (score <= 6) {
+    return -2;
+  }
+  if (score <= 8) {
+    return -1;
+  }
+  if (score <= 12) {
+    return 0;
+  }
+  if (score <= 14) {
+    return 1;
+  }
+  if (score <= 16) {
+    return 2;
+  }
+  if (score <= 18) {
+    return 3;
+  }
+  if (score === 19) {
+    return 4;
+  }
+  if (score === 20) {
+    return 5;
+  }
   return 6;
 }
 
@@ -516,7 +641,7 @@ function buildTableEditedImprovement(preview: ImprovementPreview): {
         amount: 3,
       },
       abilities,
-      scumSpecialties: { kind: 'notScum' },
+      classAbility: { kind: 'none' },
     },
     expected: {
       maxHp: snapshot.maxHp + 1,
@@ -527,6 +652,22 @@ function buildTableEditedImprovement(preview: ImprovementPreview): {
 }
 
 // ── PATCH /api/characters/:id ─────────────────────────────────────────────────────
+
+test('replaying a landed save with its save id reads back instead of conflicting', async () => {
+  const jar = await bootstrapAnonymousSession();
+  const id = await createCharacter(jar);
+  const path = `/api/characters/${id}`;
+  const baseline = await (await request(path, { jar })).json() as { updatedAt: string };
+  const headers = { 'x-csrf-token': await fetchCsrfToken(jar) };
+  const json = { expectedUpdatedAt: baseline.updatedAt, saveId: randomUUID(), equipment: [{ key: 'hammer' }] };
+  await expectStatus(await request(path, { method: 'PATCH', jar, headers, json }), 200);
+
+  const replay = await request(path, { method: 'PATCH', jar, headers, json });
+  await expectStatus(replay, 200);
+  assert.deepEqual((await replay.json() as { equipment: Array<{ key: string }> }).equipment.map(({ key }) => key), ['hammer']);
+  const otherSave = await request(path, { method: 'PATCH', jar, headers, json: { ...json, saveId: randomUUID() } });
+  await expectStatus(otherSave, 409);
+});
 
 test('PATCH /api/characters/:id updates character fields and returns updated character', async () => {
   const jar = await bootstrapAnonymousSession();
@@ -592,7 +733,7 @@ test('POST /api/characters/:id/improvements/:improvementId/apply applies a full 
   const preview = (await previewResponse.json()) as ImprovementPreview;
   assert.equal(preview.characterId, id);
   assert.equal(preview.sequence, 1);
-  assert.equal(preview.rolledDraft.scumSpecialties.kind, 'notScum');
+  assert.equal(preview.rolledDraft.classAbility.kind, 'none');
 
   const reopenCsrf = await fetchCsrfToken(jar);
   const reopenResponse = await request(`/api/characters/${id}/improvements/preview`, {
@@ -653,7 +794,7 @@ test('POST /api/characters/:id/improvements/:improvementId/apply applies a full 
   }
 });
 
-test('POST /api/characters/:id/improvements/preview resolves Scum specialties from database translations', async () => {
+test('Gutterborn Scum is a Specialist: specialties resolve from translations, then turn into toggles', async () => {
   const jar = await bootstrapAnonymousSession();
   const id = await createCharacterWithBody(jar, { classId: 2 });
 
@@ -665,16 +806,17 @@ test('POST /api/characters/:id/improvements/preview resolves Scum specialties fr
   });
   await expectStatus(plResponse, 200);
   const plPreview = (await plResponse.json()) as ImprovementPreview;
-  assert.equal(plPreview.rolledDraft.scumSpecialties.kind, 'firstImprovement');
-  if (plPreview.rolledDraft.scumSpecialties.kind !== 'firstImprovement') return;
+  const first = plPreview.rolledDraft.classAbility;
+  assert.equal(first.kind, 'firstSpecialty');
+  if (first.kind !== 'firstSpecialty' || !first.added) {
+    return;
+  }
+  assert.equal(first.existing.length, 1);
 
-  const keys = [
-    plPreview.rolledDraft.scumSpecialties.existing.key,
-    plPreview.rolledDraft.scumSpecialties.added.key,
-  ];
+  const keys = [first.existing[0].key, first.added.key];
   for (const key of keys) {
-    assert.ok(plPreview.scumSpecialtyNames[key]);
-    assert.notEqual(plPreview.scumSpecialtyNames[key], key);
+    assert.ok(plPreview.abilityNames[key]);
+    assert.notEqual(plPreview.abilityNames[key], key);
   }
 
   const enCsrf = await fetchCsrfToken(jar);
@@ -687,9 +829,38 @@ test('POST /api/characters/:id/improvements/preview resolves Scum specialties fr
   const enPreview = (await enResponse.json()) as ImprovementPreview;
   assert.equal(enPreview.id, plPreview.id);
   for (const key of keys) {
-    assert.ok(enPreview.scumSpecialtyNames[key]);
-    assert.notEqual(enPreview.scumSpecialtyNames[key], plPreview.scumSpecialtyNames[key]);
+    assert.ok(enPreview.abilityNames[key]);
+    assert.notEqual(enPreview.abilityNames[key], plPreview.abilityNames[key]);
   }
+
+  const applyCsrf = await fetchCsrfToken(jar);
+  const applyResponse = await request(
+    `/api/characters/${id}/improvements/${enPreview.id}/apply?locale=en`,
+    {
+      method: 'POST',
+      json: { draft: enPreview.rolledDraft },
+      headers: { 'x-csrf-token': applyCsrf },
+      jar,
+    }
+  );
+  await expectStatus(applyResponse, 200);
+
+  const laterCsrf = await fetchCsrfToken(jar);
+  const laterResponse = await request(`/api/characters/${id}/improvements/preview?locale=en`, {
+    method: 'POST',
+    headers: { 'x-csrf-token': laterCsrf },
+    jar,
+  });
+  await expectStatus(laterResponse, 200);
+  const later = ((await laterResponse.json()) as ImprovementPreview).rolledDraft.classAbility;
+  assert.equal(later.kind, 'specialties');
+  if (later.kind !== 'specialties') {
+    return;
+  }
+  assert.deepEqual(
+    later.specialties.map((choice) => [choice.current.key, choice.reroll]),
+    keys.map((key) => [key, false]),
+  );
 });
 
 // ── Ownership enforcement ─────────────────────────────────────────────────────
@@ -963,7 +1134,9 @@ test('POST /api/characters/new — inventory items with use_effect have boolean 
   const allItems = [...char.equipment, ...char.storage];
 
   for (const item of allItems) {
-    if (!Object.prototype.hasOwnProperty.call(item, 'uses')) continue;
+    if (!Object.prototype.hasOwnProperty.call(item, 'uses')) {
+      continue;
+    }
     assert.ok(
       Array.isArray(item.uses),
       `item.uses should be an array, got ${typeof item.uses} for item: ${JSON.stringify(item)}`

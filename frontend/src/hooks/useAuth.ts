@@ -97,9 +97,10 @@ export function useAuth(options: UseAuthOptions = {}) {
     const effectiveSessionUser = isSessionExpired ? undefined : sessionUser;
     const isAnonymousUser = Boolean(sessionUser?.isAnonymous);
 
+    const scopeUserId = sessionQuery.isSuccess ? sessionUser?.id ?? null : undefined;
     useEffect(() => {
-        synchronizeOwnershipScope(queryClient, sessionUser?.id ?? null);
-    }, [queryClient, sessionUser?.id]);
+        synchronizeOwnershipScope(queryClient, scopeUserId);
+    }, [queryClient, scopeUserId]);
 
     // Record the kind of the live session so the session-expired recovery can
     // tell a real account (prompt to sign in) apart from a guest (silently

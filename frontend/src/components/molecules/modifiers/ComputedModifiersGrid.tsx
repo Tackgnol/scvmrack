@@ -21,7 +21,9 @@ export default function ComputedModifiersGrid({
 }: ComputedModifiersGridProps) {
   const { t } = useTranslation();
 
-  if (modifiers.length === 0) return null;
+  if (modifiers.length === 0) {
+    return null;
+  }
 
   const tileMotion = getModifierTileMotion(reduceMotion);
 

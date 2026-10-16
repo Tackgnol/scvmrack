@@ -8,6 +8,12 @@ const PARTY_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 
 // ---- Mutable mock state ----
 type OwnerRow = { userId: string | null } | null;
+type Insert = {
+  partyId?: string;
+  data: Record<string, unknown>;
+  obrBinding?: { roomId: string; playerId: string };
+  replaceUserId?: string;
+};
 
 const state = {
   ownerRow: null as OwnerRow,
@@ -19,10 +25,15 @@ const state = {
   listRows: [] as Array<Record<string, unknown>>,
   classNameMap: new Map<number, string>(),
   classNameMapCalls: [] as Array<{ classIds: number[]; locale: string }>,
-  classExistsResult: true,
+  scope: { classIds: [1, 2, 3, 4, 5, 6], acceptedClassIds: [1, 2, 3, 4, 5, 6], classlessEnabled: true, party: null } as
+    | { classIds: number[]; acceptedClassIds: number[]; classlessEnabled: boolean; party: null | { id: string; ownerUserId: string } }
+    | { gone: true },
+  scopeCalls: [] as Array<string | null | undefined>,
+  inserts: [] as Insert[],
+  partyFull: false,
   updateError: null as unknown,
+  lastSaveId: null as string | null,
   generateError: null as unknown,
-  createFromDraftError: null as unknown,
   fullError: null as unknown,
   countError: null as unknown,
   listError: null as unknown,
@@ -39,8 +50,26 @@ const state = {
   generatedId: 'generated-id',
   fullResult: { id: VALID_ID, name: 'Hero' } as Record<string, unknown> | null,
   updateCalls: [] as Array<{ id: string; data: unknown }>,
-  generateCalls: [] as Array<{ classId: number | null; userId?: string }>,
-  createFromDraftCalls: [] as Array<{ draft: unknown; userId: string }>,
+  /** Scvm created in a party, as the transaction wrote them. */
+  get memberCalls() {
+    return this.inserts.filter((i) => i.partyId);
+  },
+  /** Scvm bound to an Owlbear player outside a party. */
+  get roomCreateCalls() {
+    return this.inserts.filter((i) => !i.partyId && i.obrBinding);
+  },
+  /** Scvm confirmed from a draft on their own. */
+  get createFromDraftCalls() {
+    return this.inserts
+      .filter((i) => !i.partyId && !i.obrBinding && 'fromDraft' in i.data)
+      .map((i) => ({ draft: i.data.fromDraft, userId: i.data.userId }));
+  },
+  /** Scvm rolled at random on their own. */
+  get generateCalls() {
+    return this.inserts
+      .filter((i) => !i.partyId && !i.obrBinding && 'fromRandom' in i.data)
+      .map((i) => ({ classId: i.data.fromRandom, userId: i.data.userId }));
+  },
   hydrateCalls: 0,
 };
 
@@ -54,10 +83,13 @@ function resetState(): void {
   state.listRows = [];
   state.classNameMap = new Map();
   state.classNameMapCalls = [];
-  state.classExistsResult = true;
+  state.scope = { classIds: [1, 2, 3, 4, 5, 6], acceptedClassIds: [1, 2, 3, 4, 5, 6], classlessEnabled: true, party: null };
+  state.scopeCalls = [];
+  state.inserts = [];
+  state.partyFull = false;
   state.updateError = null;
+  state.lastSaveId = null;
   state.generateError = null;
-  state.createFromDraftError = null;
   state.fullError = null;
   state.countError = null;
   state.listError = null;
@@ -71,8 +103,6 @@ function resetState(): void {
   state.generatedId = 'generated-id';
   state.fullResult = { id: VALID_ID, name: 'Hero' };
   state.updateCalls = [];
-  state.generateCalls = [];
-  state.createFromDraftCalls = [];
   state.hydrateCalls = 0;
 }
 
@@ -80,6 +110,7 @@ mock.module('../../src/repositories/character-repository.js', {
   namedExports: {
     characterRepository: {
       getOwnerId: async () => state.ownerRow,
+      getLastSaveId: async () => (state.ownerRow ? { lastSaveId: state.lastSaveId } : null),
       getPartyAccessContext: async () => {
         if (state.accessRow !== null) {
           return state.accessRow;
@@ -98,55 +129,98 @@ mock.module('../../src/repositories/character-repository.js', {
       getPartyId: async () => state.partyIdRow,
       update: async (id: string, data: unknown) => {
         state.updateCalls.push({ id, data });
-        if (state.updateError) throw state.updateError;
+        if (state.updateError) {
+          throw state.updateError;
+        }
         return {};
       },
       deleteById: async () => {
-        if (state.deleteError) throw state.deleteError;
+        if (state.deleteError) {
+          throw state.deleteError;
+        }
         return state.deleteResult;
       },
       deleteOthersForUser: async (userId: string, keepId: string) => {
         state.deleteOthersCalls.push({ userId, keepId });
-        if (state.deleteOthersError) throw state.deleteOthersError;
+        if (state.deleteOthersError) {
+          throw state.deleteOthersError;
+        }
         return state.deleteOthersResult;
       },
       userHasCharacters: async () => state.userHasCharactersResult,
+      transaction: async (work: (ops: unknown) => Promise<unknown>) => {
+        const insert: Partial<Insert> = {};
+        const result = await work({
+          lockParty: async () => {},
+          countPartyMembers: async () => (state.partyFull ? 10 : 0),
+          deleteCharactersOf: async (userId: string) => {
+            insert.replaceUserId = userId;
+          },
+          createCharacter: async ({ partyId, joinedAt: _joinedAt, ...data }: Record<string, unknown>) => {
+            if (state.generateError) {
+              throw state.generateError;
+            }
+            insert.data = data;
+            if (partyId) {
+              insert.partyId = partyId as string;
+              return 'member-id';
+            }
+            return state.generatedId;
+          },
+          bindObrPlayer: async (obrBinding: { roomId: string; playerId: string }) => {
+            insert.obrBinding = obrBinding;
+          },
+        });
+        if (insert.data) {
+          state.inserts.push(insert as Insert);
+        }
+        return result;
+      },
       count: async () => {
-        if (state.countError) throw state.countError;
+        if (state.countError) {
+          throw state.countError;
+        }
         return state.countValue;
       },
       listSummariesByUser: async () => {
-        if (state.listError) throw state.listError;
+        if (state.listError) {
+          throw state.listError;
+        }
         return state.listRows;
       },
       getClassNameMap: async (classIds: number[], locale: string) => {
         state.classNameMapCalls.push({ classIds, locale });
         return state.classNameMap;
       },
-      classExists: async () => state.classExistsResult,
+    },
+  },
+});
+
+mock.module('../../src/services/party-class-pool-service.js', {
+  namedExports: {
+    resolvePartyClassPool: async (token: string | null | undefined) => {
+      state.scopeCalls.push(token);
+      if ('gone' in state.scope) {
+        return { ok: false, error: { statusCode: 410, code: 'PARTY_INVITE_INVALID', message: 'gone' } };
+      }
+      return { ok: true, value: state.scope };
     },
   },
 });
 
 mock.module('../../src/lib/generate-character.js', {
   namedExports: {
-    generateCharacter: async (classId: number | null, _roller: unknown, userId?: string) => {
-      state.generateCalls.push({ classId, userId });
-      if (state.generateError) throw state.generateError;
-      return state.generatedId;
-    },
-    createCharacterFromDraft: async (draft: unknown, userId: string) => {
-      state.createFromDraftCalls.push({ draft, userId });
-      if (state.createFromDraftError) throw state.createFromDraftError;
-      return 'draft-character-id';
-    },
+    randomCharacterCreateData: async (classId: number, _roller: unknown, userId?: string) => ({ fromRandom: classId, userId }),
+    characterCreateDataFromDraft: async (draft: unknown, userId: string) => ({ fromDraft: draft, userId }),
   },
 });
 
 mock.module('../../src/lib/get-character-full.js', {
   namedExports: {
     getCharacterFull: async () => {
-      if (state.fullError) throw state.fullError;
+      if (state.fullError) {
+        throw state.fullError;
+      }
       return state.fullResult;
     },
   },
@@ -215,6 +289,24 @@ test('generate binds ownership at creation and returns the full character', asyn
   assert.deepEqual((r as { value: unknown }).value, state.fullResult);
 });
 
+test('a roll without a class picks from the pool it was handed', async () => {
+  state.scope = { classIds: [4], acceptedClassIds: [4], classlessEnabled: true, party: null };
+
+  const r = await service().generate({ session: session('user-1'), locale: 'en' });
+
+  assert.equal(r.ok, true);
+  assert.deepEqual(state.generateCalls, [{ classId: 4, userId: 'user-1' }]);
+});
+
+test('a roll from an empty pool creates nothing', async () => {
+  state.scope = { classIds: [], acceptedClassIds: [], classlessEnabled: true, party: null };
+
+  const r = await service().generate({ session: session('user-1'), locale: 'en' });
+
+  assert.equal((r as any).error.code, 'CLASS_NOT_AVAILABLE');
+  assert.deepEqual(state.inserts, []);
+});
+
 test('generate with a draft rebuilds from seeds and persists via createCharacterFromDraft', async () => {
   const seeds = randomSectionSeeds();
   const draft = { classId: 1, classless: false, seeds };
@@ -268,9 +360,7 @@ test('generate with a complete classless draft persists via createCharacterFromD
   assert.deepEqual(state.createFromDraftCalls, [{ draft, userId: 'user-1' }]);
 });
 
-test('generate with a draft rejects an unknown class with 404', async () => {
-  state.classExistsResult = false;
-
+test('generate with a draft rejects a class outside the scope with 409', async () => {
   const result = await service().generate({
     session: session('user-1'),
     draft: { classId: 42, classless: false, seeds: randomSectionSeeds() },
@@ -278,8 +368,222 @@ test('generate with a draft rejects an unknown class with 404', async () => {
   });
 
   assert.equal(result.ok, false);
-  assert.equal((result as any).error.code, 'CLASS_NOT_FOUND');
+  assert.equal((result as any).error.code, 'CLASS_NOT_AVAILABLE');
   assert.deepEqual(state.createFromDraftCalls, []);
+});
+
+const partyScope = () => ({
+  classIds: [1, 7], acceptedClassIds: [1, 7],
+  classlessEnabled: true,
+  party: { id: 'party-1', ownerUserId: 'gm-1' },
+});
+
+test('generate with an invite creates the scvm inside its party in one step', async () => {
+  state.scope = partyScope();
+  const draft = { classId: 7, classless: false, seeds: randomSectionSeeds() };
+
+  const result = await serviceWithBus().generate({
+    session: session('user-1'),
+    inviteToken: 'invite-1',
+    draft,
+    locale: 'en',
+  });
+
+  assert.equal(result.ok, true);
+  assert.deepEqual(state.scopeCalls, ['invite-1']);
+  assert.deepEqual(state.memberCalls, [
+    { partyId: 'party-1', data: { fromDraft: draft, userId: 'user-1' } },
+  ]);
+  assert.deepEqual(state.createFromDraftCalls, []);
+  assert.deepEqual(publishedEvents, [
+    { partyId: 'party-1', event: { type: 'character.joined', characterId: 'member-id' } },
+  ]);
+});
+
+
+test('generate binds a room-scoped forge to its Owlbear player in the party transaction', async () => {
+  state.scope = partyScope();
+  const draft = { classId: 7, classless: false, seeds: randomSectionSeeds() };
+
+  const result = await service().generate({
+    session: session('user-1'),
+    obrRoomId: 'obr-room-1',
+    obrPlayerId: 'obr-player-1',
+    draft,
+    locale: 'en',
+  });
+
+  assert.equal(result.ok, true);
+  assert.deepEqual(state.memberCalls, [
+    {
+      partyId: 'party-1',
+      data: { fromDraft: draft, userId: 'user-1' },
+      obrBinding: { roomId: 'obr-room-1', playerId: 'obr-player-1' },
+    },
+  ]);
+});
+test('a room roll creates, joins, and binds in one transaction', async () => {
+  state.scope = partyScope();
+
+  const result = await service().generate({
+    session: session('user-1'),
+    obrRoomId: 'obr-room-1',
+    obrPlayerId: 'obr-player-1',
+    classId: 7,
+    locale: 'en',
+  });
+
+  assert.equal(result.ok, true);
+  assert.deepEqual(state.memberCalls, [{
+    partyId: 'party-1',
+    data: { fromRandom: 7, userId: 'user-1' },
+    obrBinding: { roomId: 'obr-room-1', playerId: 'obr-player-1' },
+  }]);
+});
+
+test('a room roll without a party binds a Book Class scvm', async () => {
+  const result = await service().generate({
+    session: session('user-1'),
+    obrRoomId: 'obr-room-1',
+    obrPlayerId: 'obr-player-1',
+    classId: 1,
+    locale: 'en',
+  });
+
+  assert.equal(result.ok, true);
+  assert.deepEqual(state.roomCreateCalls, [{
+    data: { fromRandom: 1, userId: 'user-1' },
+    obrBinding: { roomId: 'obr-room-1', playerId: 'obr-player-1' },
+  }]);
+});
+
+test('a guest room roll replaces the old scvm inside the party transaction', async () => {
+  state.scope = partyScope();
+
+  const result = await service().generate({
+    session: guestSession('guest-1'),
+    obrRoomId: 'obr-room-1',
+    obrPlayerId: 'obr-player-1',
+    classId: 7,
+    replace: true,
+    locale: 'en',
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(state.memberCalls[0]?.replaceUserId, 'guest-1');
+  assert.deepEqual(state.deleteOthersCalls, []);
+});
+
+test('a full room party creates no direct roll', async () => {
+  state.scope = partyScope();
+  state.partyFull = true;
+
+  const result = await service().generate({
+    session: session('user-1'),
+    obrRoomId: 'obr-room-1',
+    obrPlayerId: 'obr-player-1',
+    classId: 7,
+    locale: 'en',
+  });
+
+  assert.equal(result.ok, false);
+  assert.equal((result as any).error.code, 'PARTY_FULL');
+  assert.deepEqual(state.roomCreateCalls, []);
+});
+test('a draft rolled on a version the GM has since replaced still joins on that version', async () => {
+  state.scope = {
+    classIds: [11],
+    acceptedClassIds: [10, 11],
+    classlessEnabled: true,
+    party: { id: 'party-1', ownerUserId: 'gm-1' },
+  };
+  const draft = { classId: 10, classless: false, seeds: randomSectionSeeds() };
+
+  const result = await service().generate({
+    session: session('user-1'),
+    inviteToken: 'invite-1',
+    draft,
+    locale: 'en',
+  });
+
+  assert.equal(result.ok, true);
+  assert.deepEqual(state.memberCalls.map((call) => call.data), [{ fromDraft: draft, userId: 'user-1' }]);
+});
+
+test('a full party creates nothing', async () => {
+  state.scope = partyScope();
+  state.partyFull = true;
+
+  const result = await service().generate({
+    session: session('user-1'),
+    inviteToken: 'invite-1',
+    draft: { classId: 1, classless: false, seeds: randomSectionSeeds() },
+    locale: 'en',
+  });
+
+  assert.equal(result.ok, false);
+  assert.equal((result as any).error.code, 'PARTY_FULL');
+  assert.deepEqual(state.createFromDraftCalls, []);
+});
+
+test('a rotated invite creates nothing', async () => {
+  state.scope = { gone: true };
+
+  const result = await service().generate({
+    session: session('user-1'),
+    inviteToken: 'rotated',
+    draft: { classId: 1, classless: false, seeds: randomSectionSeeds() },
+    locale: 'en',
+  });
+
+  assert.equal(result.ok, false);
+  assert.equal((result as any).error.statusCode, 410);
+  assert.deepEqual(state.memberCalls, []);
+});
+
+test('a class switched off mid-forge is re-checked on confirm and creates nothing', async () => {
+  state.scope = partyScope();
+
+  const result = await service().generate({
+    session: session('user-1'),
+    inviteToken: 'invite-1',
+    draft: { classId: 3, classless: false, seeds: randomSectionSeeds() },
+    locale: 'en',
+  });
+
+  assert.equal(result.ok, false);
+  assert.equal((result as any).error.code, 'CLASS_NOT_AVAILABLE');
+  assert.deepEqual(state.memberCalls, []);
+});
+
+test('a GM cannot forge into their own party', async () => {
+  state.scope = partyScope();
+
+  const result = await service().generate({
+    session: session('gm-1'),
+    inviteToken: 'invite-1',
+    draft: { classId: 1, classless: false, seeds: randomSectionSeeds() },
+    locale: 'en',
+  });
+
+  assert.equal(result.ok, false);
+  assert.equal((result as any).error.code, 'PARTY_OWNER_CANNOT_JOIN');
+  assert.deepEqual(state.memberCalls, []);
+});
+
+test('joining a party needs a forged draft, not a blind roll', async () => {
+  state.scope = partyScope();
+
+  const result = await service().generate({
+    session: session('user-1'),
+    inviteToken: 'invite-1',
+    locale: 'en',
+  });
+
+  assert.equal(result.ok, false);
+  assert.equal((result as any).error.statusCode, 400);
+  assert.deepEqual(state.generateCalls, []);
+  assert.deepEqual(state.memberCalls, []);
 });
 
 test('generate returns 409 when a guest already owns a scvm and did not opt into replacing', async () => {
@@ -545,6 +849,32 @@ test('update maps a Prisma P2025 to a 404 not-found', async () => {
   });
   assert.equal((r as any).error.statusCode, 404);
   assert.equal((r as any).error.code, 'CHARACTER_NOT_FOUND');
+});
+
+test('a guarded update that fails the version check is a 409 conflict', async () => {
+  state.updateError = new Prisma.PrismaClientKnownRequestError('stale', { code: 'P2025', clientVersion: '6.19.3' });
+  state.lastSaveId = 'another-save';
+  const r = await service().update({
+    id: VALID_ID,
+    session: session('user-1'),
+    body: { equipment: [], expectedUpdatedAt: '2026-10-16T09:00:00.000Z', saveId: 'this-save' },
+    rawLocale: 'en',
+  });
+  assert.equal((r as any).error.statusCode, 409);
+  assert.equal((r as any).error.code, 'CHARACTER_CHANGED');
+});
+
+test('retrying a save that already landed returns the character instead of a conflict', async () => {
+  state.updateError = new Prisma.PrismaClientKnownRequestError('stale', { code: 'P2025', clientVersion: '6.19.3' });
+  state.lastSaveId = 'this-save';
+  const r = await service().update({
+    id: VALID_ID,
+    session: session('user-1'),
+    body: { equipment: [], expectedUpdatedAt: '2026-10-16T09:00:00.000Z', saveId: 'this-save' },
+    rawLocale: 'en',
+  });
+  assert.equal(r.ok, true);
+  assert.deepEqual((r as any).value, state.fullResult);
 });
 
 // ---- list ----

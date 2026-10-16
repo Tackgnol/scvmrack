@@ -1,3 +1,5 @@
+import { OSRandomEngine, Roller } from '@tackgnol/rpg-tools-roller';
+import { translatedClassTexts } from '../lib/class-translations.js';
 import { buildCharacterData } from '../lib/generate-character.js';
 import { hydrateCharacterRow } from '../lib/get-character-full.js';
 import {
@@ -12,7 +14,9 @@ import {
   seededRollerFor,
 } from '../lib/draft-seeds.js';
 import { characterRepository } from '../repositories/character-repository.js';
-import { notFound, unauthorized } from '../errors.js';
+import { unauthorized } from '../errors.js';
+import { classChoiceError, pickPoolClass } from './character-class-choice.js';
+import { resolvePartyClassPool } from './party-class-pool-service.js';
 import {
   fail,
   ok,
@@ -80,13 +84,12 @@ export function createCharacterDraftService(log: ServiceLogger) {
     };
   }
 
-  async function classNotFound(classId: number): Promise<boolean> {
-    return !(await characterRepository.classExists(classId));
-  }
 
   return {
     async createDraft(input: {
       session: AppSession;
+      inviteToken?: string | null;
+      obrRoomId?: string | null;
       classId?: number | null;
       classless?: boolean;
       seeds?: SectionSeeds;
@@ -99,21 +102,26 @@ export function createCharacterDraftService(log: ServiceLogger) {
       }
 
       try {
+        const pool = await resolvePartyClassPool(input.inviteToken, input.obrRoomId);
+        if (!pool.ok) {
+          return fail(pool.error);
+        }
         const classless = input.classless === true;
         let classId: number | null = classless ? null : (input.classId ?? null);
 
-        if (classId !== null && (await classNotFound(classId))) {
-          return fail(notFound('CLASS_NOT_FOUND', 'Class not found'));
+        const unavailable = classChoiceError(pool.value, classless, classId);
+        if (unavailable) {
+          return fail(unavailable);
         }
 
         // Random class is a one-time choice recorded in the draft, not a
         // seeded section. Rehydrating the same draft keeps the chosen class.
         if (classId === null && !classless) {
-          const classes = await characterRepository.listClasses('en');
-          if (classes.length === 0) {
-            return fail(notFound('CLASS_NOT_FOUND', 'No classes available'));
+          const picked = await pickPoolClass(pool.value, new Roller({ engine: new OSRandomEngine() }));
+          if (!picked.ok) {
+            return picked;
           }
-          classId = classes[Math.floor(Math.random() * classes.length)].id;
+          classId = picked.value;
         }
 
         const name = normalizedDraftName(input.name);
@@ -137,6 +145,8 @@ export function createCharacterDraftService(log: ServiceLogger) {
 
     async rerollSection(input: {
       session: AppSession;
+      inviteToken?: string | null;
+      obrRoomId?: string | null;
       draft: CharacterDraft;
       section: DraftSection;
       locale: string;
@@ -146,16 +156,19 @@ export function createCharacterDraftService(log: ServiceLogger) {
       }
 
       try {
+        const pool = await resolvePartyClassPool(input.inviteToken, input.obrRoomId);
+        if (!pool.ok) {
+          return fail(pool.error);
+        }
+        // A draft without a class rolls classless, so it needs Classless allowed.
+        const classless = input.draft.classless || input.draft.classId === null;
+        const unavailable = classChoiceError(pool.value, classless, classless ? null : input.draft.classId);
+        if (unavailable) {
+          return fail(unavailable);
+        }
         const dropLowestAbilities = input.draft.classless
           ? normalizeDropLowestAbilities(input.draft.dropLowestAbilities)
           : undefined;
-        if (
-          !input.draft.classless &&
-          input.draft.classId !== null &&
-          (await classNotFound(input.draft.classId))
-        ) {
-          return fail(notFound('CLASS_NOT_FOUND', 'Class not found'));
-        }
 
         const name = input.section === 'name'
           ? undefined
@@ -177,9 +190,17 @@ export function createCharacterDraftService(log: ServiceLogger) {
 
     async listClasses(input: {
       locale: string;
+      inviteToken?: string | null;
+      obrRoomId?: string | null;
     }): Promise<ServiceResult<ClassSummary[]>> {
       try {
-        return ok(await characterRepository.listClasses(input.locale));
+        const pool = await resolvePartyClassPool(input.inviteToken, input.obrRoomId);
+        if (!pool.ok) {
+          return fail(pool.error);
+        }
+        const classes = await characterRepository.listClassesByIds(pool.value.classIds);
+        const texts = await translatedClassTexts(input.locale, classes);
+        return ok(classes.map((c, i) => ({ id: c.id, ...texts[i] })));
       } catch (err) {
         return fail(
           unexpected(log, err, 'CLASS_LIST_FAILED', 'Failed to list classes')

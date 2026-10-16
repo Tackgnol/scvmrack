@@ -82,7 +82,9 @@ export type FieldName = keyof typeof FIELD_BOUNDS;
 
 const isOutOfRange = (raw: string, field: FieldName): boolean => {
   const n = Number(raw);
-  if (!Number.isFinite(n)) return true;
+  if (!Number.isFinite(n)) {
+    return true;
+  }
   const { min, max } = FIELD_BOUNDS[field];
   return n < min || n > max;
 };
@@ -192,14 +194,24 @@ export function useCustomItemForm(
   // be outside their (currently irrelevant) bounds.
   const activeFields: ReadonlyArray<FieldName> = (() => {
     const fields: FieldName[] = ['value'];
-    if (showQuantity) fields.push('quantity');
+    if (showQuantity) {
+      fields.push('quantity');
+    }
     if (state.kind === 'weapon') {
       fields.push('damageDie');
-      if (state.ammoType.trim()) fields.push('ammoAmount');
+      if (state.ammoType.trim()) {
+        fields.push('ammoAmount');
+      }
     }
-    if (state.kind === 'ammo') fields.push('ammoAmount');
-    if (state.kind === 'armor') fields.push('armorDie', 'armorTier');
-    if (state.kind === 'consumable') fields.push('consumeBase');
+    if (state.kind === 'ammo') {
+      fields.push('ammoAmount');
+    }
+    if (state.kind === 'armor') {
+      fields.push('armorDie', 'armorTier');
+    }
+    if (state.kind === 'consumable') {
+      fields.push('consumeBase');
+    }
     if (showModifierPanel && state.modifierEnabled) {
       fields.push('modifierValue');
     }
@@ -228,7 +240,9 @@ export function useCustomItemForm(
     state.name.trim().length > 0 && !hasFieldErrors && !hasTextErrors;
 
   const buildBundle = (): EquipmentItem[] => {
-    if (!canSave) return [];
+    if (!canSave) {
+      return [];
+    }
 
     return buildCustomItemBundle(
       {

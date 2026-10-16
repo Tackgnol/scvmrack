@@ -79,7 +79,9 @@ export default function InventoryItemEditorModal({
   useValidationAlert(descriptionErrorMessage);
   useValidationAlert(commentsErrorMessage);
 
-  if (!aggregated || !editor.item) return null;
+  if (!aggregated || !editor.item) {
+    return null;
+  }
 
   const { item, indices, localQuantity, setLocalQuantity } = editor;
   const tags = item.tags ?? [];
@@ -95,7 +97,9 @@ export default function InventoryItemEditorModal({
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
-    if (hasTextErrors) return;
+    if (hasTextErrors) {
+      return;
+    }
     editor.save();
   };
 

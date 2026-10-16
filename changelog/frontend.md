@@ -2,6 +2,16 @@
 
 `mork-borg-character-sheet` — React 19 SPA with a neo-brutalist MÖRK BORG aesthetic.
 
+## Custom Classes (0.7.0)
+
+- Authenticated GMs can forge, autosave, version, archive, restore, publish, and unpublish Custom Classes
+- Party Class Pools, read-only public class details, authored-language and creator attribution, and character/party rendering support Custom Classes at the table
+- Signed-out reporting, owner appeals by form or email, an allowlisted moderation review page with GM removal and creation-ban history, Terms, Contact, Privacy, and report pages, plus FAQ guidance
+
+## Bug fixes
+
+- The app should no longer erase an item saved in another tab when you edit an older inventory. Conflicting edits are rejected with an explanation.
+
 ## Stack
 
 - **UI:** React 19 + React Compiler, MUI 7 with a custom Mörk Borg theme
@@ -26,8 +36,10 @@
   then apply it to the character
 - **Party** — GM party control (`/party/<id>`) with invite link, live warband
   vital strip, and member kick; player party view binds a scvm via an invite link
-  (`/join/<token>`, with `/forge` and `/roll` sub-routes) and shows a live,
-  read-only warband
+  (`/join/<token>`) or forges a new one from the party's class pool
+  (`/join/<token>/forge`, through the class screen; old `/roll` links redirect
+  there), which creates and joins in one step, and shows a live, read-only
+  warband
 - **Owlbear Rodeo extension** — `/obr.html` embeds the in-room scvmrack
   experience: players see their own editable sheet, GMs see a live roster built
   from bound scene tokens, bound tokens expose a compact read-only card peek from
@@ -44,15 +56,20 @@
   are CORS-enabled and non-cacheable for Owlbear installs. OBR and the main
   party view share the same warband projection for combat modifier filtering
   and armor DR display.
-- **GM overview** — `/gm` dashboard to create and open parties; party creation
-  keeps the yellow name input legible with black text and validates names at 100
-  characters before submit
+- **GM overview** — `/gm` shows signed-out visitors and guests an indexable,
+  locked preview of party control with sign-up links returning to `/gm`; signed-in
+  GMs can create and open parties. Party creation keeps the yellow name input
+  legible with black text and validates names at 100 characters before submit
 - **Print** — printer-friendly character layout
 - **FAQ** — help content
 - **Release notes** — in-app changelog at `/release`
 - **404 / Not found** — includes malformed sheet paths such as `/character/`
 
 ## Character editing
+
+- The app should no longer stay on Saving when automatic save retries run out. A persistent Unsaved · Retry control saves the queued edit without another change.
+
+- The app should no longer silently discard your last edit when you reload before autosave finishes. A browser warning lets you stay until it is saved.
 
 - Optimistic updates with debounced autosave (`useCharacterEditor`):
   changes queue as patches → instant UI update via `queryClient.setQueryData`
@@ -61,12 +78,20 @@
 - Owner-only Getting Better workflow: a footer action opens a MÖRK BORG-styled
   inline panel with persistent preview rolls, local table-value edits, undo,
   per-section rerolls, reroll-all conflict prompts, stale-preview messaging, and
-  explicit apply that refreshes the hydrated character cache
+  explicit apply that refreshes the hydrated character cache; the class's rules
+  note leads the panel, and a class-ability section shows a gained ability or a
+  Keep / Reroll toggle per specialty (Reroll disabled when nothing is free)
+- Abilities with a reference table show a collapsible "dN table" (closed by
+  default) with a Roll button that marks the rolled row without applying it;
+  print lists the whole table and lets the section flow onto the next page
 - Inventory with equipped bar, on-hand vs. storage sections, ammo tracking,
   consumables, pets, and custom-item creation
+- The app should no longer create a nameless carried item or overcount encumbrance when you equip armor into an empty slot.
 - Equipment lookup/add-item flow keeps the add controls stable while search and
   add calls are pending, reducing layout jumps when items enter the sheet
+- The app should no longer omit use controls when you add catalog Torches. Each copy keeps its own saved uses.
 - Kill & Replace flow (death modal at 0 HP)
+- The app should no longer show Synced when you edit a character deleted in another tab. The missing-character screen explains what happened and lets you recover to a surviving character.
 - Character bootstrap and route synchronization avoid render-phase state writes
   and coalesce duplicate character-id navigation, preventing recovery loops and
   stack overflows during rapid route changes
@@ -103,6 +128,7 @@
 
 - The header identifies Scvmrack as Beta
 - Localized (en/pl) throughout, including release notes and feedback copy
+- The app should no longer announce English item-search actions when you use the sheet in Polish.
 - SEO metadata per page; privacy-notice drawer gates analytics consent
 - Custom Mörk Borg theme tokens and styles
 

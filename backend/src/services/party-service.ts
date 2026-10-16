@@ -1,7 +1,6 @@
 import crypto from 'node:crypto';
 import {
   partyRepository,
-  PartyFullError,
   type PartyMemberRow,
   type PartyWithMembers,
 } from '../repositories/party-repository.js';
@@ -29,23 +28,12 @@ import {
 } from './session.js';
 
 export type { AppSession } from './session.js';
+import { PARTY_MAX_MEMBERS, lockPartySeat, partyFull } from '../lib/party-limits.js';
+import { characterRepository } from '../repositories/character-repository.js';
+import { defaultPoolLineageIds } from './party-class-pool-service.js';
 
-const DEFAULT_PARTY_MAX_MEMBERS = 10;
 const OBR_ROOM_SYSTEM_OWNER_ID = 'system:obr-room';
 const OBR_ROOM_SYSTEM_OWNER_EMAIL = 'obr-room@system.scvmrack.local';
-
-/** Read the cap once at module load; clamp to a sane positive integer. */
-const PARTY_MAX_MEMBERS = (() => {
-  const raw = process.env.PARTY_MAX_MEMBERS;
-  if (!raw) {
-    return DEFAULT_PARTY_MAX_MEMBERS;
-  }
-  const parsed = Number.parseInt(raw, 10);
-  if (!Number.isInteger(parsed) || parsed < 1) {
-    return DEFAULT_PARTY_MAX_MEMBERS;
-  }
-  return parsed;
-})();
 
 function newInviteToken(): string {
   return crypto.randomBytes(16).toString('base64url');
@@ -63,6 +51,8 @@ export type PartyMemberPayload = {
   maxHp: number;
   joinedAt: Date | null;
   owned: boolean;
+  /** Set when the scvm plays an older version than its lineage's newest one. */
+  olderRules: { version: number; latestVersion: number } | null;
 };
 
 export type PartyManageViewPayload = {
@@ -95,8 +85,10 @@ export type PartyInviteSummaryPayload = {
 
 function toMemberPayload(
   member: PartyMemberRow,
-  session: AppSession
+  session: AppSession,
+  classVersions: ReadonlyMap<number, { version: number; latestVersion: number }>
 ): PartyMemberPayload {
+  const versions = member.classId === null ? undefined : classVersions.get(member.classId);
   return {
     characterId: member.id,
     name: member.name,
@@ -105,13 +97,28 @@ function toMemberPayload(
     maxHp: member.maxHp,
     joinedAt: member.joinedAt,
     owned: ownsCharacter(session, member),
+    olderRules: versions && versions.version < versions.latestVersion ? versions : null,
   };
 }
 
-function manageView(
+async function memberPayloads(
   party: PartyWithMembers,
   session: AppSession
-): PartyManageViewPayload {
+): Promise<PartyMemberPayload[]> {
+  const classVersions = await partyRepository.findClassVersions(
+    party.members.flatMap((member) =>
+      member.classId === null ? [] : [member.classId]
+    )
+  );
+  return party.members.map((member) =>
+    toMemberPayload(member, session, classVersions)
+  );
+}
+
+async function manageView(
+  party: PartyWithMembers,
+  session: AppSession
+): Promise<PartyManageViewPayload> {
   return {
     id: party.id,
     name: party.name,
@@ -120,24 +127,23 @@ function manageView(
     invitePath: invitePathFor(party.inviteToken),
     memberCount: party.members.length,
     maxMembers: PARTY_MAX_MEMBERS,
-    members: party.members.map((member) => toMemberPayload(member, session)),
+    members: await memberPayloads(party, session),
     createdAt: party.createdAt,
     updatedAt: party.updatedAt,
   };
 }
 
-function readView(
+async function readView(
   party: PartyWithMembers,
   session: AppSession
-): PartyReadViewPayload {
-  // Members can see the roster but never the invite token.
+): Promise<PartyReadViewPayload> {
   return {
     id: party.id,
     name: party.name,
     role: 'member' as const,
     memberCount: party.members.length,
     maxMembers: PARTY_MAX_MEMBERS,
-    members: party.members.map((member) => toMemberPayload(member, session)),
+    members: await memberPayloads(party, session),
     createdAt: party.createdAt,
     updatedAt: party.updatedAt,
   };
@@ -202,6 +208,7 @@ export function createPartyService(
           ownerUserId,
           name,
           inviteToken: newInviteToken(),
+          poolLineageIds: await defaultPoolLineageIds(),
         });
         return ok({
           id: party.id,
@@ -248,18 +255,24 @@ export function createPartyService(
         if (existing) {
           const userId = sessionUserId(input.session);
           if (userId && existing.ownerUserId === userId) {
-            return ok(manageView(existing, input.session));
+            return ok(await manageView(existing, input.session));
           }
           // A signed-in GM adopts a party that was auto-created for the room
           // (system owner) so anonymous auto-setup has an upgrade path.
-          if (isGm(input.session) && existing.ownerUserId === OBR_ROOM_SYSTEM_OWNER_ID) {
+          if (
+            isGm(input.session) &&
+            existing.ownerUserId === OBR_ROOM_SYSTEM_OWNER_ID
+          ) {
             await partyRepository.setPartyOwner(existing.id, userId as string);
             return ok(
-              manageView({ ...existing, ownerUserId: userId as string }, input.session)
+              await manageView(
+                { ...existing, ownerUserId: userId as string },
+                input.session
+              )
             );
           }
           // Room-trust callers can use the board but never see the invite token.
-          return ok(readView(existing, input.session));
+          return ok(await readView(existing, input.session));
         }
 
         if (ownerUserId === OBR_ROOM_SYSTEM_OWNER_ID) {
@@ -275,6 +288,7 @@ export function createPartyService(
           name,
           inviteToken: newInviteToken(),
           obrRoomId,
+          poolLineageIds: await defaultPoolLineageIds(),
         });
 
         // System-owned auto-setup: whichever OBR client races to /promote
@@ -329,12 +343,44 @@ export function createPartyService(
       const obrRoomId =
         typeof input.obrRoomId === 'string' ? input.obrRoomId.trim() : '';
       if (obrRoomId.length === 0) {
-        return fail(badRequest('INVALID_OBR_ROOM_ID', 'Owlbear room ID is required'));
+        return fail(
+          badRequest('INVALID_OBR_ROOM_ID', 'Owlbear room ID is required')
+        );
       }
 
       try {
         const existing = await partyRepository.getPartyByObrRoomId(obrRoomId);
         if (existing && existing.id !== input.id) {
+          if (existing.ownerUserId === OBR_ROOM_SYSTEM_OWNER_ID) {
+            if (existing.members.length === 0) {
+              // Re-checked under the transaction: the room's party may have changed since it was read.
+              const replaced = await partyRepository.roomTransaction(async (ops) => {
+                const roomParty = await ops.findRoomParty(obrRoomId);
+                if (
+                  !roomParty ||
+                  roomParty.id !== existing.id ||
+                  roomParty.ownerUserId !== OBR_ROOM_SYSTEM_OWNER_ID ||
+                  roomParty._count.members > 0
+                ) {
+                  return false;
+                }
+                await ops.deleteParty(roomParty.id);
+                await ops.setPartyRoom(input.id, obrRoomId);
+                return true;
+              });
+              if (replaced) {
+                return ok({ id: input.id, obrRoomId });
+              }
+            } else {
+              return fail(
+                apiError(
+                  409,
+                  'ROOM_PARTY_HAS_MEMBERS',
+                  "Players already joined this room's party. Claim it instead, from inside the room."
+                )
+              );
+            }
+          }
           return fail(
             apiError(
               409,
@@ -350,7 +396,12 @@ export function createPartyService(
         return ok({ id: input.id, obrRoomId });
       } catch (err) {
         return fail(
-          unexpected(log, err, 'PARTY_ATTACH_FAILED', 'Failed to attach Owlbear room')
+          unexpected(
+            log,
+            err,
+            'PARTY_ATTACH_FAILED',
+            'Failed to attach Owlbear room'
+          )
         );
       }
     },
@@ -368,7 +419,12 @@ export function createPartyService(
         return ok({ id: input.id, obrRoomId: null });
       } catch (err) {
         return fail(
-          unexpected(log, err, 'PARTY_DETACH_FAILED', 'Failed to detach Owlbear room')
+          unexpected(
+            log,
+            err,
+            'PARTY_DETACH_FAILED',
+            'Failed to detach Owlbear room'
+          )
         );
       }
     },
@@ -420,14 +476,14 @@ export function createPartyService(
 
         const userId = sessionUserId(input.session);
         if (userId && party.ownerUserId === userId) {
-          return ok(manageView(party, input.session));
+          return ok(await manageView(party, input.session));
         }
 
         const isMember = party.members.some((member) =>
           ownsCharacter(input.session, member)
         );
         if (isMember) {
-          return ok(readView(party, input.session));
+          return ok(await readView(party, input.session));
         }
 
         return fail(notFound('PARTY_NOT_FOUND', 'Party not found'));
@@ -509,7 +565,9 @@ export function createPartyService(
       session: AppSession;
       id: string;
       miseryCount: number;
-    }): Promise<ServiceResult<{ miseryCount: number; updatedCharacters: number }>> {
+    }): Promise<
+      ServiceResult<{ miseryCount: number; updatedCharacters: number }>
+    > {
       const denied = await ensureOwner(input.session, input.id);
       if (denied) {
         return fail(denied);
@@ -687,13 +745,17 @@ export function createPartyService(
           );
         }
 
-        // Cap is enforced inside the transaction so concurrent joins can't
-        // overflow it.
-        await partyRepository.joinInTransaction({
-          characterId: character.id,
-          partyId: party.id,
-          cap: PARTY_MAX_MEMBERS,
+        // The cap is checked under the party lock so concurrent joins can't overflow it.
+        const joined = await characterRepository.transaction(async (ops) => {
+          if (!(await lockPartySeat(ops, party.id))) {
+            return false;
+          }
+          await ops.joinParty(character.id, party.id);
+          return true;
         });
+        if (!joined) {
+          return fail(partyFull());
+        }
         partyBus?.publish(party.id, {
           type: 'character.joined',
           characterId: character.id,
@@ -704,9 +766,6 @@ export function createPartyService(
           redirect: `/party/${party.id}/character/${character.id}`,
         });
       } catch (err) {
-        if (err instanceof PartyFullError) {
-          return fail(apiError(409, 'PARTY_FULL', 'This party is full'));
-        }
         return fail(
           unexpected(log, err, 'PARTY_JOIN_FAILED', 'Failed to join party')
         );

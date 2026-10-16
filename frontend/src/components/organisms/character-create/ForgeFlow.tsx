@@ -16,13 +16,19 @@ type ForgeFlowProps = {
   // Called once with the freshly created character. The caller owns what happens
   // next (go to the sheet, or bind to a party and navigate) — this component is
   // deliberately navigation-agnostic so it can back both flows.
-  onCreated: (character: CharacterResponse) => void;
+  onCreated: (character: CharacterResponse) => void | Promise<void>;
+  /** Forge from this party's pool; confirming creates the scvm inside the party. */
+  inviteToken?: string;
+  /** Forge from the Party Class Pool attached to this Owlbear room. */
+  obrRoomId?: string;
+  /** Owlbear player to bind once this room-scoped forge is confirmed. */
+  obrPlayerId?: string;
 };
 
 // The whole forge state machine (class gate → roll/re-roll → confirm) as a
 // presentational unit. Extracted from CharacterCreatePage so the party
 // "forge and join" route can reuse it with a different completion behaviour.
-export function ForgeFlow({ onCreated }: ForgeFlowProps) {
+export function ForgeFlow({ onCreated, inviteToken, obrRoomId, obrPlayerId }: ForgeFlowProps) {
   const { t, i18n } = useTranslation();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -45,7 +51,7 @@ export function ForgeFlow({ onCreated }: ForgeFlowProps) {
     setDropLowestAbilities,
     confirm,
     restart,
-  } = useCharacterDraft(locale, { onCreated });
+  } = useCharacterDraft(locale, { onCreated, inviteToken, obrRoomId, obrPlayerId });
 
   // Guests keep a single scvm: forging replaces the one they already own (the
   // backend prunes it on create). Surface that — a passive notice while drafting
@@ -94,7 +100,7 @@ export function ForgeFlow({ onCreated }: ForgeFlowProps) {
       )}
 
       {phase === 'class-gate' && !isStarting && (
-        <ClassGate onPick={(choice) => void start(choice)} busy={isStarting} />
+        <ClassGate onPick={(choice) => void start(choice)} busy={isStarting} inviteToken={inviteToken} obrRoomId={obrRoomId} />
       )}
 
       {isStarting && (

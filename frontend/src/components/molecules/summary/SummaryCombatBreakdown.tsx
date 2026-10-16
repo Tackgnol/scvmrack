@@ -1,3 +1,4 @@
+import { signed } from "@/utils/signed";
 import { Box, Divider, Typography } from '@mui/material';
 import {
   type CombatBreakdown,
@@ -21,18 +22,19 @@ interface SummaryCombatBreakdownProps {
   finalDrLabel: string;
 }
 
-const formatSigned = (value: number): string => {
-  if (value > 0) return `+${value}`;
-  return `${value}`;
-};
-
 const getModifierName = (
   modifier: DecoratedModifier,
   fallbackLabel: string,
 ): string => {
-  if ('originName' in modifier && modifier.originName) return modifier.originName;
-  if ('name' in modifier && modifier.name) return modifier.name;
-  if (modifier.source) return modifier.source;
+  if ('originName' in modifier && modifier.originName) {
+    return modifier.originName;
+  }
+  if ('name' in modifier && modifier.name) {
+    return modifier.name;
+  }
+  if (modifier.source) {
+    return modifier.source;
+  }
   return fallbackLabel;
 };
 
@@ -91,11 +93,11 @@ export default function SummaryCombatBreakdown({
         <SummaryBreakdownValueRow label={baseDrLabel} value="12" />
         <SummaryBreakdownValueRow
           label={`${statLabel} mod`}
-          value={formatSigned(abilityContribution)}
+          value={signed(abilityContribution)}
         />
         <SummaryBreakdownValueRow
           label={modifiersLabel}
-          value={formatSigned(modifiersContribution)}
+          value={signed(modifiersContribution)}
         />
       </Box>
 

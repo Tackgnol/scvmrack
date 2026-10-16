@@ -84,7 +84,9 @@ export default function AnimatedNumber({
 
     // When the cacheKey identity changes, jump to that key's remembered value.
     useEffect(() => {
-        if (previousCacheKeyRef.current === cacheKey) return;
+        if (previousCacheKeyRef.current === cacheKey) {
+            return;
+        }
 
         previousCacheKeyRef.current = cacheKey;
 

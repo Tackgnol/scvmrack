@@ -25,7 +25,8 @@ const Segment = styled('button', {
   border: 'none',
   margin: 0,
   minWidth: 32,
-  padding: '3px 8px',
+  minHeight: 24,
+  padding: '5px 8px',
   fontFamily: "'Antonio', sans-serif",
   fontWeight: 700,
   fontSize: '0.72rem',
@@ -57,7 +58,9 @@ export function LanguageToggle() {
   const current = (i18n.language || 'en').split('-')[0];
 
   const select = (code: string) => {
-    if (code === current) return;
+    if (code === current) {
+      return;
+    }
     void (async () => {
       await loadLanguage(code);
       await i18n.changeLanguage(code);

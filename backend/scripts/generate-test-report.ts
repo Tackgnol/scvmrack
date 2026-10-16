@@ -96,7 +96,9 @@ function parseJUnit(xml: string): TestGroup[] {
         cases.push(parseTestCase(openTag, inner));
       }
 
-      if (cases.length > 0) groups.push({ name: suiteName, cases });
+      if (cases.length > 0) {
+        groups.push({ name: suiteName, cases });
+      }
     }
     return groups;
   }
@@ -114,7 +116,9 @@ function parseJUnit(xml: string): TestGroup[] {
   const byClass = new Map<string, TestCase[]>();
   for (const tc of allCases) {
     const key = tc.classname || 'tests';
-    if (!byClass.has(key)) byClass.set(key, []);
+    if (!byClass.has(key)) {
+      byClass.set(key, []);
+    }
     byClass.get(key)!.push(tc);
   }
 
@@ -146,9 +150,13 @@ function suiteStats(suite: Suite): Stats {
   for (const g of suite.groups) {
     for (const tc of g.cases) {
       total++;
-      if (tc.status === 'passed') passed++;
-      else if (tc.status === 'failed') failed++;
-      else skipped++;
+      if (tc.status === 'passed') {
+        passed++;
+      } else if (tc.status === 'failed') {
+        failed++;
+      } else {
+        skipped++;
+      }
       duration += tc.time;
     }
   }
@@ -179,13 +187,19 @@ function htmlEsc(s: string): string {
 }
 
 function statusBadge(s: Stats): string {
-  if (s.total === 0) return `<span class="badge badge-skip">NOT RUN</span>`;
-  if (s.failed > 0) return `<span class="badge badge-fail">FAILED</span>`;
+  if (s.total === 0) {
+    return `<span class="badge badge-skip">NOT RUN</span>`;
+  }
+  if (s.failed > 0) {
+    return `<span class="badge badge-fail">FAILED</span>`;
+  }
   return `<span class="badge badge-pass">PASSED</span>`;
 }
 
 function durationStr(seconds: number): string {
-  if (seconds < 1) return `${Math.round(seconds * 1000)}ms`;
+  if (seconds < 1) {
+    return `${Math.round(seconds * 1000)}ms`;
+  }
   return `${seconds.toFixed(2)}s`;
 }
 
@@ -255,11 +269,17 @@ function renderLinks(): string {
   const pwReport = existsSync(resolve(__dirname, '../tests/e2e/playwright-report/index.html'));
   const c8Report = existsSync(resolve(__dirname, '../coverage/index.html'));
 
-  if (!pwReport && !c8Report) return '';
+  if (!pwReport && !c8Report) {
+    return '';
+  }
 
   const links: string[] = [];
-  if (pwReport) links.push(`<a class="ext-link" href="../tests/e2e/playwright-report/index.html">Playwright Report &#8599;</a>`);
-  if (c8Report) links.push(`<a class="ext-link" href="../coverage/index.html">Coverage Report &#8599;</a>`);
+  if (pwReport) {
+    links.push(`<a class="ext-link" href="../tests/e2e/playwright-report/index.html">Playwright Report &#8599;</a>`);
+  }
+  if (c8Report) {
+    links.push(`<a class="ext-link" href="../coverage/index.html">Coverage Report &#8599;</a>`);
+  }
 
   return `<div class="ext-links">${links.join('')}</div>`;
 }
@@ -519,4 +539,6 @@ const runSuites = suites.filter(s => !s.notRun);
 console.log(`\nTest report written to: ${outFile}`);
 console.log(`Suites: ${runSuites.length}/${suites.length} run`);
 console.log(`Results: ${ts.passed} passed, ${ts.failed} failed, ${ts.skipped} skipped (${durationStr(ts.duration)})`);
-if (ts.failed > 0) process.exit(1);
+if (ts.failed > 0) {
+  process.exit(1);
+}

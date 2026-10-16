@@ -61,6 +61,7 @@ export type ImprovementAbilityRoll = {
 
 export type SpecialtySlot = {
   key: string;
+  /** The die result that selects this ability on the class's numbered random list (its 1-based place in pool order); server picks stay uniform. */
   rollValue: number;
 };
 
@@ -68,15 +69,22 @@ export type SpecialtyRoll = SpecialtySlot & {
   roll: RollValue;
 };
 
-export type ScumSpecialtyDraft =
-  | { kind: 'notScum' }
-  | { kind: 'firstImprovement'; existing: SpecialtySlot; added: SpecialtyRoll }
-  | {
-      kind: 'laterImprovement';
-      primary: SpecialtySlot;
-      secondary: SpecialtySlot;
-      rerollMode: 'none' | 'primary' | 'secondary' | 'both';
-    };
+import type { GettingBetterRule } from './class-model.js';
+
+export type { GettingBetterRule };
+
+/** One held specialty: keep it, or swap it for the pre-rolled replacement (null when none is free). */
+export type SpecialtyChoice = {
+  current: SpecialtySlot;
+  replacement: SpecialtyRoll | null;
+  reroll: boolean;
+};
+
+export type ClassAbilityDraft =
+  | { kind: 'none' }
+  | { kind: 'newAbility'; added: SpecialtyRoll | null }
+  | { kind: 'firstSpecialty'; existing: SpecialtySlot[]; added: SpecialtyRoll | null }
+  | { kind: 'specialties'; specialties: SpecialtyChoice[] };
 
 export type ImprovementDraft = {
   sequence: number;
@@ -84,7 +92,7 @@ export type ImprovementDraft = {
   hp: ImprovementHpRoll;
   debris: ImprovementDebrisRoll;
   abilities: Record<AbilityStat, ImprovementAbilityRoll>;
-  scumSpecialties: ScumSpecialtyDraft;
+  classAbility: ClassAbilityDraft;
 };
 
 export type AppliedImprovement = {
@@ -116,17 +124,12 @@ export type ScrollFamily = 'unclean' | 'sacred';
 
 export type GettingBetterCatalog = {
   scrollKeys(family: ScrollFamily): readonly string[];
-  scumSpecialties?(): readonly SpecialtySlot[];
-  scumFixedAbilityKeys?(): readonly string[];
+  classRule?(): GettingBetterRule;
+  classPool?(): readonly SpecialtySlot[];
 };
 
 export type HpImprovementCharacter = {
   maxHp: number;
-};
-
-export type ScumSpecialtyCharacter = {
-  isGutterbornScum: boolean;
-  abilityKeys: readonly string[];
 };
 
 export type AppliedImprovementCharacter = {
@@ -134,7 +137,6 @@ export type AppliedImprovementCharacter = {
   silver: number;
   abilities: Record<AbilityStat, number>;
   abilityKeys: readonly string[];
-  scumSpecialtyKeys?: readonly string[];
 };
 
 export type BuildAppliedImprovementOptions = {

@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { mock, test } from 'node:test';
+import type { AbilityTable } from '../../src/repositories/catalog-repository.js';
 
 type CharacterRow = Record<string, unknown> & {
   id: string;
@@ -44,6 +45,7 @@ type ClassRow = {
   appendix: string;
   nameKey: string | null;
   descriptionKey: string | null;
+  languages: string[];
 };
 
 type TranslationRow = {
@@ -70,6 +72,7 @@ type Fixture = {
   classes: ClassRow[];
   translations: TranslationRow[];
   classAbilityModifiers: ClassAbilityModifierRow[];
+  abilityTables?: AbilityTable[];
 };
 
 function baseFixture(): Fixture {
@@ -213,6 +216,7 @@ function baseFixture(): Fixture {
         appendix: 'Fallback class text',
         nameKey: 'classes.fanged.name',
         descriptionKey: 'classes.fanged.description',
+        languages: ['en', 'pl'],
       },
     ],
     translations: [
@@ -280,6 +284,8 @@ const catalogRepositoryMock = {
     fixture.classes.find((row) => row.id === id) ?? null,
   findTranslations: async (locale: string, keys: string[]) =>
     fixture.translations.filter((row) => row.locale === locale && keys.includes(row.key)),
+  findAbilityTables: async (keys: string[]) =>
+    (fixture.abilityTables ?? []).filter((table) => keys.includes(table.abilityKey)),
   findClassAbilityModifiers: async (classId: number, abilityKeys: string[]) =>
     fixture.classAbilityModifiers.filter(
       (row) => row.classId === classId && abilityKeys.includes(row.abilityKey)
@@ -519,4 +525,84 @@ test('getCharacterFull localizes computed modifier source labels', async () => {
   assert.equal(computedModifiers[3].originName, 'Jastrzab');
   assert.equal(computedModifiers[4].source, 'Stala zdolnosc');
   assert.equal(computedModifiers[4].originName, 'Stala zdolnosc');
+});
+
+test("getCharacterFull falls back to a class's authored language when the reader's locale has no row", async () => {
+  const next = baseFixture();
+  next.classes = [{ ...next.classes[0], languages: ['en'] }];
+  next.translations.push(
+    { locale: 'pl', key: 'abilities.fixed', value: 'Zdolnosc po polsku' },
+    { locale: 'pl', key: 'pets.hawk', value: 'Jastrzab PL' },
+  );
+  resetFixture(next);
+
+  const result = await getCharacterFull('character-1', 'pl');
+
+  assert.ok(result);
+  assert.equal(result.className, 'Klowy dezerter');
+  assert.equal(result.origin, 'Z rowu');
+  const [ability] = result.abilities as Array<Record<string, unknown>>;
+  assert.equal(ability.name, 'Zdolnosc po polsku', 'reader locale wins when it has a row');
+  assert.equal(ability.description, 'Zawsze dziala');
+  const pet = (result.equipment as Array<Record<string, unknown>>).find((i) => i.key === 'pets.hawk');
+  assert.equal(pet?.name, 'Jastrzab PL');
+});
+
+test("getCharacterFull does not fall back for a class written in the reader's locale", async () => {
+  resetFixture();
+
+  const result = await getCharacterFull('character-1', 'pl');
+
+  assert.ok(result);
+  assert.equal(result.className, 'Fanged Deserter');
+  assert.equal(result.origin, 'origin.one');
+});
+
+test('getCharacterFull preserves the saved order of existing abilities', async () => {
+  const next = baseFixture();
+  next.characters[0] = {
+    ...next.characters[0],
+    abilities: [{ key: 'abilities.b' }, { custom: 'loose-note' }, { key: 'abilities.a' }],
+  };
+  resetFixture(next);
+
+  const result = await getCharacterFull('character-1', 'en');
+
+  assert.ok(result);
+  assert.deepEqual(
+    (result.abilities as Array<Record<string, unknown>>).map((ability) => ability.key ?? ability.custom),
+    ['abilities.b', 'loose-note', 'abilities.a'],
+  );
+});
+
+test("getCharacterFull attaches an ability's reference table with translated rows and linked item names", async () => {
+  const next = baseFixture();
+  next.abilityTables = [
+    {
+      abilityKey: 'abilities.fixed',
+      die: 2,
+      rows: [
+        { roll: 1, textKey: 'table.row.one', itemKey: 'equipment.rope' },
+        { roll: 2, textKey: 'table.row.two', itemKey: null },
+      ],
+    },
+  ];
+  next.translations.push(
+    { locale: 'en', key: 'table.row.one', value: 'Jeden' },
+    { locale: 'en', key: 'table.row.two', value: 'Dwa' },
+  );
+  resetFixture(next);
+
+  const result = await getCharacterFull('character-1', 'en');
+
+  assert.ok(result);
+  const [ability, loose] = result.abilities as Array<Record<string, unknown>>;
+  assert.deepEqual(ability.table, {
+    die: 2,
+    rows: [
+      { roll: 1, text: 'Jeden', itemKey: 'equipment.rope', itemName: 'Lina' },
+      { roll: 2, text: 'Dwa', itemKey: null, itemName: null },
+    ],
+  });
+  assert.equal('table' in loose, false);
 });

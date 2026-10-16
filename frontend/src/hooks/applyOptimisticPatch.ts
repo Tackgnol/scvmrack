@@ -16,7 +16,9 @@ export function applyOptimisticPatch(
             };
 
         case 'armor':
-            if (!character.equippedArmor) return character;
+            if (!character.equippedArmor) {
+                return character;
+            }
             return {
                 ...character,
                 equippedArmor: {
@@ -41,7 +43,9 @@ export function applyOptimisticPatch(
 
         case 'equipment-item': {
             const next = [...(character.equipment ?? [])];
-            if (!isValidIndex(patch.index, next.length)) return character;
+            if (!isValidIndex(patch.index, next.length)) {
+                return character;
+            }
             next[patch.index] = patch.item;
             return {...character, equipment: next};
         }
@@ -55,7 +59,9 @@ export function applyOptimisticPatch(
 
         case 'equipment-remove': {
             const next = [...(character.equipment ?? [])];
-            if (!isValidIndex(patch.index, next.length)) return character;
+            if (!isValidIndex(patch.index, next.length)) {
+                return character;
+            }
             next.splice(patch.index, 1);
             return {...character, equipment: next};
         }
@@ -78,7 +84,9 @@ export function applyOptimisticPatch(
 
         case 'storage-item': {
             const next = [...(character.storage ?? [])];
-            if (!isValidIndex(patch.index, next.length)) return character;
+            if (!isValidIndex(patch.index, next.length)) {
+                return character;
+            }
             next[patch.index] = patch.item;
             return {...character, storage: next};
         }
@@ -92,7 +100,9 @@ export function applyOptimisticPatch(
 
         case 'storage-remove': {
             const next = [...(character.storage ?? [])];
-            if (!isValidIndex(patch.index, next.length)) return character;
+            if (!isValidIndex(patch.index, next.length)) {
+                return character;
+            }
             next.splice(patch.index, 1);
             return {...character, storage: next};
         }
@@ -156,7 +166,9 @@ export function applyOptimisticPatch(
             const equipment = [...(character.equipment ?? [])];
             const item = equipment[patch.equipmentIndex];
 
-            if (!item) return character;
+            if (!item) {
+                return character;
+            }
 
             // Initialize uses array if not present (default 4 uses for scrolls)
             const maxUses = 4;
@@ -176,11 +188,15 @@ export function applyOptimisticPatch(
         case 'equip-weapon': {
             const equipment = [...(character.equipment ?? [])];
             const weapons = [...(character.equippedWeapons ?? [])];
-            if (patch.slotIndex < 0) return character;
+            if (patch.slotIndex < 0) {
+                return character;
+            }
 
             // 1. Get the new weapon from inventory
             const newItem = equipment[patch.equipmentIndex];
-            if (!newItem) return character;
+            if (!newItem) {
+                return character;
+            }
 
             // 2. Remove it from inventory
             equipment.splice(patch.equipmentIndex, 1);
@@ -203,7 +219,9 @@ export function applyOptimisticPatch(
             const item = weapons[patch.slotIndex];
 
             // Guard: Only unequip if it's a real item
-            if (!item || (!item.name && !item.key)) return character;
+            if (!item || (!item.name && !item.key)) {
+                return character;
+            }
 
             // 1. Remove the item from the array (don't just null it)
             weapons.splice(patch.slotIndex, 1);
@@ -220,19 +238,25 @@ export function applyOptimisticPatch(
         case 'equip-armor': {
             const equipment = [...(character.equipment ?? [])];
             const newItem = equipment[patch.equipmentIndex];
-            if (!newItem) return character;
+            if (!newItem) {
+                return character;
+            }
 
             equipment.splice(patch.equipmentIndex, 1);
 
             const oldArmor = character.equippedArmor;
-            const nextEquipment = oldArmor ? [...equipment, oldArmor] : equipment;
+            const nextEquipment = oldArmor && (oldArmor.name || oldArmor.key)
+                ? [...equipment, oldArmor]
+                : equipment;
 
             return { ...character, equipment: nextEquipment, equippedArmor: newItem };
         }
 
         case 'unequip-armor': {
             const item = character.equippedArmor;
-            if (!item) return character;
+            if (!item || !(item.name || item.key)) {
+                return character;
+            }
 
             return {
                 ...character,
@@ -263,7 +287,9 @@ export function applyOptimisticPatch(
         case 'ammo-use': {
             const equipment = [...(character.equipment ?? [])];
             const item = equipment[patch.equipmentIndex];
-            if (!item) return character;
+            if (!item) {
+                return character;
+            }
 
             if ((item.amount ?? 1) > 1) {
                 equipment[patch.equipmentIndex] = {

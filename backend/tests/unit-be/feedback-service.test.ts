@@ -27,7 +27,9 @@ mock.module('../../src/feedback.js', {
   namedExports: {
     recordFeedback: () => {
       state.recordCalls++;
-      if (state.recordError) throw state.recordError;
+      if (state.recordError) {
+        throw state.recordError;
+      }
       return { eventId: 'feedback-event-id' };
     },
   },

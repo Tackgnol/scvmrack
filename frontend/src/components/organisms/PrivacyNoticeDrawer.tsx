@@ -1,3 +1,4 @@
+import { Link } from '@tanstack/react-router';
 import { setAnalyticsEnabled } from '@/analytics/googleAnalytics';
 import {
     getPrivacySettings,
@@ -125,6 +126,9 @@ export function PrivacyNoticeDrawer({ openOnMount = false }: PrivacyNoticeDrawer
                 ))}
             </Box>
 
+            <Button component={Link} to="/privacy" variant="text" sx={{ color: morkBorgColors.yellow, alignSelf: 'flex-start' }}>
+                {t('privacy.readFull', 'Read the full privacy notice')}
+            </Button>
             <Divider sx={{ borderColor: `${morkBorgColors.yellow}66` }} />
 
             <FormControlLabel

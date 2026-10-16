@@ -17,6 +17,10 @@
 #   auth_base_url
 #   vite_backend_url
 #   vite_logto_endpoint
+#   ses_region, ses_access_key_id, ses_secret_access_key  (email via SES)
+#   moderation_admin_user_ids  (comma-separated signed-in admin ids)
+#   sentry_auth_token, sentry_org, sentry_project  (frontend source map upload to GlitchTip;
+#     sentry_project is the slug holding prod frontend events: scvmrack_be)
 
 when:
   - event: [push]
@@ -51,6 +55,16 @@ steps:
         from_secret: glitchtip_dsn
       VITE_GLITCHTIP_DSN:
         from_secret: vite_glitchtip_dsn
+      SES_REGION:
+        from_secret: ses_region
+      SES_ACCESS_KEY_ID:
+        from_secret: ses_access_key_id
+      SES_SECRET_ACCESS_KEY:
+        from_secret: ses_secret_access_key
+      MODERATION_ADMIN_USER_IDS:
+        from_secret: moderation_admin_user_ids
+      CUSTOM_CLASS_MAX_PER_GM: "50"
+      CUSTOM_CLASS_DAILY_PUBLISH_LIMIT: "5"
       CLIENT_ORIGIN:
         from_secret: client_origin
       CLIENT_GATEWAY:
@@ -63,6 +77,12 @@ steps:
         from_secret: vite_backend_url
       VITE_LOGTO_ENDPOINT:
         from_secret: vite_logto_endpoint
+      SENTRY_AUTH_TOKEN:
+        from_secret: sentry_auth_token
+      SENTRY_ORG:
+        from_secret: sentry_org
+      SENTRY_FRONTEND_PROJECT:
+        from_secret: sentry_project
 
     commands:
       - |
@@ -84,7 +104,10 @@ steps:
         # fine here because no DB connection is attempted at this stage.
         export DATABASE_URL="postgresql://p1002_scmgrinder:placeholder@db:5432/p1002_scmgrinder"
 
-        docker compose -f compose.prod.yaml build backend frontend db
+        # Release name ties uploaded source maps to the events the browser reports.
+        export SENTRY_RELEASE="scvmrack@$(printf '%s' "$CI_COMMIT_SHA" | cut -c1-8)"
+
+        docker compose -f compose.prod.yaml -f compose.build.yaml build backend frontend db
 
         # Always deploy the stack so the latest service specs (image, mounts,
         # ports, env) get applied — including for the db service. Use
@@ -236,7 +259,8 @@ steps:
         # INSERT of the canonical set, so it is idempotent and converges any
         # database to exactly the right rows (no duplicates, no stale entries).
         echo "Reapplying authoritative reference seeds..."
-        for f in 009_sync_class_ability_modifiers.sql; do
+        # Existing catalogs can retain lighting refill labels that hide use controls.
+        for f in 009_sync_class_ability_modifiers.sql 012_clear_lantern_torch_ammo_type.sql; do
           echo "  -> $f"
           docker cp "backend/init/05-seed/$f" "$db_container_id:/tmp/$f"
           docker exec "$db_container_id" psql \

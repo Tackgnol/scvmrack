@@ -55,7 +55,7 @@ describe('useCharacterDraft', () => {
     const { result } = renderHook(() => useCharacterDraft('en'));
     await act(() => result.current.start({ classId: 1 }));
 
-    expect(draftApi.createDraft).toHaveBeenCalledWith({ classId: 1 }, 'en', expect.anything());
+    expect(draftApi.createDraft).toHaveBeenCalledWith({ classId: 1 }, 'en', expect.anything(), undefined, undefined, undefined);
     expect(result.current.phase).toBe('sheet');
     expect(result.current.preview).toEqual(preview);
     expect(JSON.parse(sessionStorage.getItem(DRAFT_STORAGE_KEY)!)).toEqual(draft);
@@ -67,9 +67,9 @@ describe('useCharacterDraft', () => {
 
     await waitFor(() => expect(result.current.phase).toBe('sheet'));
     expect(draftApi.createDraft).toHaveBeenCalledWith(
-      { classId: 1, classless: false, seeds },
+      { classId: 1, classless: false, dropLowestAbilities: undefined, seeds },
       'en',
-      expect.anything(),
+      expect.anything(), undefined, undefined, undefined,
     );
   });
 
@@ -79,9 +79,9 @@ describe('useCharacterDraft', () => {
 
     await waitFor(() => expect(result.current.phase).toBe('sheet'));
     expect(draftApi.createDraft).toHaveBeenCalledWith(
-      { classId: 1, classless: false, name: 'Rotmaw', seeds },
+      { classId: 1, classless: false, dropLowestAbilities: undefined, name: 'Rotmaw', seeds },
       'en',
-      expect.anything(),
+      expect.anything(), undefined, undefined, undefined,
     );
   });
 
@@ -105,7 +105,7 @@ describe('useCharacterDraft', () => {
     await act(() => pending);
 
     expect(result.current.rollingSection).toBeNull();
-    expect(draftApi.rerollDraftSection).toHaveBeenCalledWith(draft, 'stats', 'en', expect.anything());
+    expect(draftApi.rerollDraftSection).toHaveBeenCalledWith(draft, 'stats', 'en', expect.anything(), undefined, undefined, undefined);
     expect(JSON.parse(sessionStorage.getItem(DRAFT_STORAGE_KEY)!).seeds.stats).toBe('b'.repeat(64));
   });
 
@@ -120,7 +120,7 @@ describe('useCharacterDraft', () => {
       { classId: 1, classless: false, seeds },
       'name',
       'en',
-      expect.anything(),
+      expect.anything(), undefined, undefined, undefined,
     );
   });
 
@@ -139,7 +139,7 @@ describe('useCharacterDraft', () => {
       { classId: null, classless: true, dropLowestAbilities: ['strength'], seeds },
       'name',
       'en',
-      expect.anything(),
+      expect.anything(), undefined, undefined, undefined,
     );
   });
 
@@ -166,7 +166,7 @@ describe('useCharacterDraft', () => {
     });
     expect(result.current.isChoosingStats).toBe(true);
     expect(result.current.rollingSection).toBeNull();
-    expect(draftApi.createDraft).toHaveBeenLastCalledWith(nextDraft, 'en', expect.anything());
+    expect(draftApi.createDraft).toHaveBeenLastCalledWith(nextDraft, 'en', expect.anything(), undefined, undefined, undefined);
 
     resolveChoice({ draft: nextDraft, preview, classlessStatOptions });
     await act(() => pending);
@@ -206,7 +206,7 @@ describe('useCharacterDraft', () => {
     await act(() => result.current.start({ classId: 1 }));
     await act(() => result.current.confirm());
 
-    expect(draftApi.confirmDraft).toHaveBeenCalledWith(draft, 'en', expect.anything(), false);
+    expect(draftApi.confirmDraft).toHaveBeenCalledWith(draft, 'en', expect.anything(), false, undefined, undefined, undefined);
     expect(onCreated).toHaveBeenCalledWith({ id: 'char-9' });
     expect(sessionStorage.getItem(DRAFT_STORAGE_KEY)).toBeNull();
   });
@@ -217,7 +217,7 @@ describe('useCharacterDraft', () => {
     await act(() => result.current.start({ classId: 1 }));
     await act(() => result.current.confirm(true));
 
-    expect(draftApi.confirmDraft).toHaveBeenCalledWith(draft, 'en', expect.anything(), true);
+    expect(draftApi.confirmDraft).toHaveBeenCalledWith(draft, 'en', expect.anything(), true, undefined, undefined, undefined);
     expect(onCreated).toHaveBeenCalledWith({ id: 'char-9' });
   });
 
@@ -237,7 +237,7 @@ describe('useCharacterDraft', () => {
       { ...draft, name: 'Rotmaw' },
       'en',
       expect.anything(),
-      false,
+      false, undefined, undefined, undefined,
     );
   });
 
@@ -251,6 +251,57 @@ describe('useCharacterDraft', () => {
     expect(result.current.error).toBeTruthy();
     expect(result.current.preview).toEqual(preview);
     expect(result.current.phase).toBe('sheet');
+  });
+
+  it('a party forge sends its invite on every call and keeps its own saved draft', async () => {
+    const onCreated = vi.fn();
+    const { result } = renderHook(() => useCharacterDraft('en', { onCreated, inviteToken: 'tok-1' }));
+    await act(() => result.current.start({ classId: 1 }));
+    await act(() => result.current.reroll('stats'));
+    await act(() => result.current.confirm());
+
+    expect(draftApi.createDraft).toHaveBeenCalledWith({ classId: 1 }, 'en', expect.anything(), 'tok-1', undefined, undefined);
+    expect(draftApi.rerollDraftSection).toHaveBeenCalledWith(
+      expect.anything(),
+      'stats',
+      'en',
+      expect.anything(),
+      'tok-1',
+      undefined,
+      undefined,
+    );
+    expect(draftApi.confirmDraft).toHaveBeenCalledWith(
+      expect.anything(),
+      'en',
+      expect.anything(),
+      false,
+      'tok-1',
+      undefined,
+      undefined,
+    );
+    expect(sessionStorage.getItem(DRAFT_STORAGE_KEY)).toBeNull();
+  });
+
+  it('a class taken out of the pool mid-forge sends the player back to the class screen', async () => {
+    const onCreated = vi.fn();
+    const { result } = renderHook(() => useCharacterDraft('en', { onCreated, inviteToken: 'tok-1' }));
+    await act(() => result.current.start({ classId: 1 }));
+    expect(sessionStorage.getItem(`${DRAFT_STORAGE_KEY}:tok-1`)).not.toBeNull();
+
+    vi.mocked(draftApi.confirmDraft).mockRejectedValueOnce(
+      Object.assign(new Error('This class is no longer available here'), {
+        status: 409,
+        code: 'CLASS_NOT_AVAILABLE',
+      }),
+    );
+    await act(() => result.current.confirm());
+
+    expect(onCreated).not.toHaveBeenCalled();
+    expect(result.current.phase).toBe('class-gate');
+    expect(result.current.draft).toBeNull();
+    expect(result.current.preview).toBeNull();
+    expect(result.current.error).toMatch(/no longer available/i);
+    expect(sessionStorage.getItem(`${DRAFT_STORAGE_KEY}:tok-1`)).toBeNull();
   });
 
   it('restart() returns to the class gate and clears storage', async () => {

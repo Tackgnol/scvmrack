@@ -22,8 +22,6 @@ test('useCharacterDescriptors updates ability comments and descriptor fields', (
   const { result } = renderHook(() => useCharacterDescriptors(), {
     wrapper: wrapperState.wrapper,
   });
-
-  expect(result.current.isOccultHerbmaster).toBe(true);
   expect(result.current.abilities).toHaveLength(1);
 
   act(() => {
@@ -62,8 +60,6 @@ test('useCharacterDescriptors skips ability update when abilities are missing', 
   act(() => {
     result.current.updateAbilityComment(0, { name: 'Ghost Step' }, 'note');
   });
-
-  expect(result.current.isOccultHerbmaster).toBe(false);
   expect(result.current.abilities).toEqual([]);
   expect(updateAbilitiesCalls).toHaveLength(0);
 });

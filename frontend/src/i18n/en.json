@@ -1,4 +1,16 @@
 {
+  "abilityTable": {
+    "toggle": "d{{die}} table",
+    "roll": "Roll d{{die}}",
+    "rolled": "Rolled {{roll}}",
+    "gives": "Gives {{item}}"
+  },
+  "tabSession": {
+    "warning": "This app’s built-in browser won’t save your session. Your scvm will be lost when you close it. Open scvmrack in Safari or Chrome to keep it.",
+    "copyLink": "Copy link",
+    "copied": "Copied",
+    "copyFailed": "Copy the address from your browser’s address bar."
+  },
   "app": {
     "title": "Scvmrack",
     "betaBadge": "Beta",
@@ -17,6 +29,11 @@
       "unnamedScvm": "Unnamed scvm",
       "classless": "Classless"
     },
+    "forgeComplete": {
+      "title": "Forged. Back to Owlbear",
+      "body": "Your new scvm is bound to this Owlbear room.",
+      "back": "Back to Owlbear"
+    },
     "stats": {
       "agilityShort": "AGI",
       "presenceShort": "PRE",
@@ -34,6 +51,10 @@
       "emptyHint": "Roll a wretch to play right now, or sign in to load your warband.",
       "rollScvm": "Roll a scvm",
       "rollNew": "Roll new",
+      "rollPickerTitle": "Choose a class",
+      "rollPickerLoadError": "Could not load room classes.",
+      "partyFull": "This room's party is full. Ask the GM to make room.",
+      "rollFailed": "Could not roll a scvm. Try again.",
       "forgeScvm": "Forge scvm",
       "signIn": "Login",
       "popupBlocked": "Allow the sign-in popup, then try again.",
@@ -54,7 +75,9 @@
       "binding": "Binding",
       "openInScvmrack": "Open in scvmrack",
       "openingInScvmrack": "Opening",
-      "openInScvmrackFailed": "Could not open in scvmrack"
+      "openInScvmrackFailed": "Could not open in scvmrack",
+      "bindMetadataWarning": "Saved binding, but the token label did not update.",
+      "forgeFailed": "Could not open the forge. Allow popups and try again."
     },
     "gm": {
       "region": "GM view",
@@ -98,7 +121,15 @@
       "mods": "Mods",
       "showMods": "Show mods {{count}}",
       "hideMods": "Hide mods {{count}}",
-      "noActiveModifiers": "No active modifiers."
+      "noActiveModifiers": "No active modifiers.",
+      "bindSelectedToken": "Bind selected token",
+      "missingCard": "Scvm not found {{id}}",
+      "missingCardName": "Missing scvm {{id}}",
+      "removeFromRoster": "Remove from roster",
+      "removingFromRoster": "Removing",
+      "roomPoolList": "Classes this room rolls: {{classes}}.",
+      "roomPoolClassless": "Classless only",
+      "roomPoolReadOnly": "Only the party's owner can change them."
     },
     "card": {
       "missingId": "Missing scvm id",
@@ -403,19 +434,7 @@
     }
   },
   "abilities": {
-    "ability": "Ability",
-    "occult_herbmaster": {
-      "view_decoctions": "View decoctions",
-      "decoctions_title": "Occult Herbmaster Decoctions (d8)",
-      "red_poison": "Red Poison: Toughness DR12 or -D10 HP.",
-      "ezumiel": "Ezumiel's Vapor: Pass a DR14 test or severe (and arguably fun) hallucinations for D4 hours.",
-      "frog": "Southern Frog Stew: Vomit for D4 hours, pass a DR14 test or you can do nothing else.",
-      "vitalis": "Elixir Vitalis: Heals D6 HP and stops infection. Can be habit-forming.",
-      "soup": "Spider-Owl Soup: See in darkness, climb on walls for 30 minutes.",
-      "philtre": "Fernor's Philtre: Translucent oil, must be dabbed right into the eye. Heals infection and gives +2 on Presence tests for D4 hours.",
-      "hyphos": "Hyphos' Enervating Snuff: Berserk! Two attacks per round but defend with DR14. Lasts one fight. Must be snorted, causes sneezing.",
-      "black_poison": "Black Poison: Toughness DR14 or -D6 HP and blinded for one hour."
-    }
+    "ability": "Ability"
   },
   "modifiers": {
     "title": "Modifiers",
@@ -434,11 +453,14 @@
       "all": "All tests",
       "combat": "Combat only",
       "defence": "Defence only",
+      "tests": "Tests only",
       "melee": "Melee only",
       "ranged": "Ranged only",
       "powers": "Powers only"
     },
     "excludes": "Excludes: {{list}}",
+    "more": "More",
+    "fewer": "Fewer",
     "exclude": {
       "title": "Applies To",
       "description": "This modifier applies to:",
@@ -476,7 +498,8 @@
     "advancedTooltip": "Advanced modifier options",
     "shiftNegative": "Curses shift",
     "shiftPositive": "Blessings shift",
-    "shiftNeutral": "Fates shift"
+    "shiftNeutral": "Fates shift",
+    "removeModifier": "Remove modifier"
   },
   "attributes": {
     "agility": "Agility",
@@ -530,6 +553,9 @@
     "searchPlaceholder": "Search equipment...",
     "typeToSearch": "Type 2 characters to search",
     "searching": "Searching...",
+    "openSearch": "Open item search",
+    "closeSearch": "Close item search",
+    "clearSearch": "Clear item search",
     "addingItem": "Adding {{item}}...",
     "noResults": "No equipment found",
     "unequip": "Unequip",
@@ -615,6 +641,7 @@
     }
   },
   "character": {
+    "saveConflict": "This character changed in another tab. Your latest edits were not saved. Reload before editing again.",
     "name": "Name",
     "class": "Class",
     "origin": "Origin",
@@ -630,7 +657,9 @@
     "unknown": "unknown",
     "wretch": "wretch",
     "classless": "Classless",
-    "noSpecialAbilities": "No special abilities"
+    "classContentRemoved": "Some of this class's text was removed by moderation.",
+    "noSpecialAbilities": "No special abilities",
+    "classWrittenIn": "This class is written in {{language}}."
   },
   "traits": {
     "title": "Traits & Afflictions",
@@ -656,7 +685,8 @@
   "footer": {
     "worldEnding": "The World Is Ending",
     "legalNotice": "MÖRK BORG is copyright Ockult Örtmästare Games and Stockholm Kartell. Scvmrack is an independent production by Adam Kościelniak, built as part of the <rpgtoolsLink>rpgtools.co</rpgtoolsLink> suite, and is not affiliated with Ockult Örtmästare Games or Stockholm Kartell. It is published under the MÖRK BORG Third Party License. <privacyLink>Review your privacy settings</privacyLink>",
-    "translationCredit": "Official Polish translation provided by Nerd Sirens"
+    "translationCredit": "Official Polish translation provided by Nerd Sirens",
+    "terms": "Terms"
   },
   "actions": {
     "print": "Print Sheet",
@@ -668,7 +698,10 @@
     "killConfirmDontAskAgain": "Don't show this again",
     "testModal": "Test Modal",
     "cancel": "Cancel",
-    "retry": "Retry"
+    "retry": "Retry",
+    "back": "Back",
+    "killConfirmPartyDesc": "The replacement will crawl back into this party before the old body is removed.",
+    "loading": "Loading..."
   },
   "gettingBetter": {
     "title": "Get better",
@@ -717,30 +750,30 @@
       "title": "Abilities",
       "from": "From {{value}}"
     },
-    "scum": {
-      "title": "Scum specialty",
-      "existing": "Existing",
-      "added": "Added",
-      "primary": "Primary",
-      "secondary": "Secondary",
-      "rerollMode": "Mode",
-      "modes": {
-        "none": "Keep both",
-        "primary": "Reroll primary",
-        "secondary": "Reroll secondary",
-        "both": "Reroll both"
-      }
+    "classAbility": {
+      "newTitle": "New ability",
+      "specialtiesTitle": "Specialties",
+      "existing": "Your specialties",
+      "added": "Gained",
+      "keep": "Keep",
+      "reroll": "Reroll",
+      "becomes": "Reroll gives {{name}}",
+      "noneLeft": "No ability left to gain"
     }
   },
   "powers": {
     "title": "Powers",
     "noScrollsOrPowers": "No scrolls or powers",
-    "unknownScroll": "Unknown Scroll"
+    "unknownScroll": "Unknown Scroll",
+    "usePipUsed": "Mark used: {{name}} use {{use}}",
+    "usePipUnused": "Mark unused: {{name}} use {{use}}"
   },
   "pets": {
     "title": "Pets",
     "actionDie": "Action Die",
-    "unknown": "Unknown Pet"
+    "unknown": "Unknown Pet",
+    "hpPipFill": "Mark hit point filled: {{name}} point {{point}}",
+    "hpPipEmpty": "Mark hit point empty: {{name}} point {{point}}"
   },
   "consumables": {
     "title": "Consumables",
@@ -762,6 +795,7 @@
   },
   "status": {
     "saving": "Saving...",
+    "unsavedRetry": "Unsaved · Retry",
     "saved": "Saved",
     "synced": "Synced",
     "guest": "Guest",
@@ -838,6 +872,7 @@
     "stamp": "Page Not Found"
   },
   "common": {
+    "closeDialog": "Close dialog",
     "close": "Close",
     "back": "Back",
     "backToHome": "Back to Home",
@@ -845,7 +880,13 @@
     "apply": "Apply",
     "loading": "Loading...",
     "increaseHitPoints": "Increase hit points",
-    "decreaseHitPoints": "Decrease hit points"
+    "decreaseHitPoints": "Decrease hit points",
+    "decreaseArmorTier": "Decrease armor tier",
+    "decreaseStat": "Decrease {{stat}}",
+    "increaseArmorTier": "Increase armor tier",
+    "increaseStat": "Increase {{stat}}",
+    "openMenu": "Open menu",
+    "retry": "Retry"
   },
   "nav": {
     "start": "Start",
@@ -854,6 +895,9 @@
     "faq": "FAQ",
     "release": "Updates",
     "owlbear": "Owlbear",
+    "privacy": "Privacy",
+    "terms": "Terms",
+    "legal": "Contact",
     "gm": "GM"
   },
   "characters": {
@@ -908,17 +952,23 @@
     },
     "guestVsAccount": {
       "q": "Do I need an account?",
-      "a": "No account needed to start. As a guest, you get one character — generating a new one replaces it. Characters are kept for 7 days. Sign up (free) to keep unlimited characters permanently, accessible from any device."
+      "a": "No account needed to start. As a guest, you get one character — generating a new one replaces it. Access depends on your browser session. Sign up (free) to keep multiple characters accessible from any device."
     },
     "howToSave": {
       "q": "How do I save my character?",
-      "a": "Characters save automatically as you edit. As a guest, your single character is stored for 7 days. Sign up to keep it permanently and create more."
+      "a": "Characters save automatically as you edit. Your guest character is kept until you delete or replace it, or ask us to remove it. Losing your browser session can prevent access to it. Sign up to access your characters across devices and create more."
     },
     "multipleCharacters": {
       "q": "Can I have multiple characters?",
       "a": "With an account, yes — create and switch between as many characters as you like from the Scvms menu. As a guest, you get exactly one. Generating a new scvm replaces the current one."
     },
-    "mobileSupport": {
+    "customClasses": { "q": "What are Custom Classes?", "a": "Character classes you write yourself, with the same building blocks as Book Classes." },
+    "whoMakesClasses": { "q": "Who can make a Custom Class?", "a": "Anyone with a free account, from the GM tab. Drafts save as you write." },
+    "classesInParties": { "q": "Where can I use a Custom Class?", "a": "In parties. GMs choose the classes their warband can roll; characters outside a party use Book Classes." },
+    "editingClasses": { "q": "What happens when I change a class?", "a": "Existing characters keep the version they rolled. Later changes make a new version for new characters." },
+    "publicClasses": { "q": "Can I share my class with other GMs?", "a": "Yes. Publish it from My classes; other GMs can add it to their parties and you can unpublish it later." },
+    "reportClass": { "q": "I found a class that copies my work or breaks the rules. What do I do?", "a": "Use the Report link on the class or the report page in the footer. No account is needed." },
+    "zineAuthors": { "q": "I wrote a zine with classes. Can it be on Scvm Rack?", "a": "Contact contact@rpgtools.co. Zine classes are added by hand and credited to you and your zine." },    "mobileSupport": {
       "q": "Does it work on mobile?",
       "a": "Yes! Scvm Rack is designed to work on phones, tablets, and desktops. Use it at the table or on the go."
     },
@@ -950,6 +1000,7 @@
       "analytics": "If analytics is enabled below, Google Analytics is used to process usage events and page activity. You can disable analytics at any time without losing core app functionality.",
       "sensitiveData": "Do not enter sensitive personal data in character fields. By continuing to use this app, you acknowledge and accept this notice."
     },
+    "readFull": "Read the full privacy notice",
     "analyticsToggle": "Enable Google Analytics tracking",
     "analyticsEnabledState": "Analytics is currently enabled. You may disable it now or later in this panel.",
     "analyticsDisabledState": "Analytics is currently disabled. Core app features continue to work.",
@@ -960,12 +1011,37 @@
       "close": "Close"
     }
   },
+  "legalNotice": {
+    "termsChanged": "Our terms changed on {{date}}: what changed",
+    "privacyChanged": "Our privacy notice changed on {{date}}: what changed",
+    "effective": "Takes effect on {{date}}.",
+    "read": "Read the notice",
+    "dismiss": "Dismiss"
+  },
   "release": {
     "title": "Release Notes",
     "typeMajor": "Major",
     "typeMinor": "Minor",
     "typePatch": "Patch",
     "moreUpdates": "More updates coming soon. The world is ending, but we keep shipping.",
+    "v070": {
+      "customClasses": "Forge Custom Classes with your own rules, items, abilities, reference tables, and Getting Better settings",
+      "omenDice": "Book Class Omen rolls now match the printed book: Esoteric Hermit and Heretical Priest use d4; other Book Classes use d2",
+      "versions": "Saving changes keeps existing scvm on their original class rules and creates a new version for future rolls",
+      "partyPools": "Party Class Pools let a GM choose the Book and Custom Classes available at their table and in Owlbear",
+      "gmOverview": "Everyone can preview the GM dashboard; guests keep their scvm when they sign up to run a warband",
+      "sharing": "Publish a class for other GMs, with clear creator attribution and a report link for public content",
+      "moderation": "Reports receive human review; authors can dispute takedowns, while moderators can review prior removals and restrict new class creation without blocking existing classes",
+      "legal": "Terms, contact, privacy, and report pages explain the rules and ways to reach the project"
+    },
+    "v063": {
+      "tabSession": "Opening scvmrack from inside Reddit or Facebook now works for that visit, with a warning and a link to open in your browser to keep your scvm",
+      "classGrants": "The Heretical Priest now gets the Shepherd's Crook and Poltroon the Court Jester gets his pet, as their class abilities say",
+      "printModifiers": "The Modifiers section of the print sheet is now translated",
+      "printStats": "Long ability labels such as Wytrzymałość no longer overflow on the print sheet",
+      "freshShell": "Returning visitors always get the latest version of the app instead of a stale cached copy",
+      "monitoring": "Quieter monitoring: dropped-connection errors from flaky networks are no longer reported"
+    },
     "v062": {
       "guestSignIn": "Guest sign-in on phones and in-app browsers now recovers on its own instead of showing an error",
       "noStale": "Session and security-token responses are never cached, so a stale \"not signed in\" answer is no longer reused",
@@ -1101,6 +1177,678 @@
   "header": {
     "scvmCount": "{{count}} scvms... and counting"
   },
+  "classPool": {
+    "title": "Classes this warband can roll",
+    "hint": "Players who join through the invite link or this Owlbear room pick from this pool. Changes save at once; scvm already playing a class keep it. Hover or focus a class for details.",
+    "loadError": "The class pool wouldn't load.",
+    "tally": {
+      "summary_one": "Pool summary: {{count}} class on",
+      "summary_other": "Pool summary: {{count}} classes on",
+      "plusClasslessSummary": ", plus Classless",
+      "lead_one": "class on",
+      "lead_other": "classes on"
+    },
+    "short": {
+      "book": "Book",
+      "zine": "Zine",
+      "rack": "Rack",
+      "mine": "mine",
+      "public": "public"
+    },
+    "groups": {
+      "book": {
+        "title": "Book Classes",
+        "desc": "The six from the MÖRK BORG book."
+      },
+      "zine": {
+        "title": "Zine Classes",
+        "desc": "From third-party zines, credited to their authors."
+      },
+      "rack": {
+        "title": "Rack Classes",
+        "desc": "Made by scvmrack for the community."
+      },
+      "mine": {
+        "title": "My classes",
+        "desc": "Forged by you. Private ones only reach your own warbands."
+      },
+      "public": {
+        "title": "Other GMs' public classes",
+        "desc": "Shared by other GMs; they always use the latest version."
+      },
+      "fraction": "{{on}} of {{total}} on",
+      "on": "on"
+    },
+    "search": {
+      "placeholder": "Search classes, authors or blurbs",
+      "label": "Search classes"
+    },
+    "filters": {
+      "label": "Show",
+      "all": "All",
+      "book": "Book",
+      "zr": "Zine & Rack",
+      "mine": "My classes only",
+      "public": "Public"
+    },
+    "languages": {
+      "label": "Language",
+      "any": "Any language",
+      "en": "EN",
+      "pl": "PL"
+    },
+    "languageNames": {
+      "en": "English",
+      "pl": "Polish"
+    },
+    "languageJoin": " and ",
+    "attribution": {
+      "credit": "from {{work}} by {{author}}",
+      "mine": "created by you",
+      "minePrivate": "created by you · private",
+      "owner": "created by {{name}}",
+      "ownerFormer": "created by a former GM"
+    },
+    "stats": {
+      "abilities_one": "ability",
+      "abilities_other": "abilities",
+      "classItems_one": "Class Item",
+      "classItems_other": "Class Items"
+    },
+    "gettingBetter": "Getting Better: {{rule}}",
+    "rules": {
+      "book": "Book rules",
+      "book_plus_ability": "Book rules + a new ability",
+      "specialist": "Specialist"
+    },
+    "playing_one": "{{count}} scvm plays it here",
+    "playing_other": "{{count}} scvm play it here",
+    "switchLabel": "{{name}} in the pool",
+    "classless": {
+      "name": "Classless",
+      "blurb": "Plain scvm: no class, no abilities. Players can pick it; Random never does.",
+      "switchLabel": "Classless scvm in the pool"
+    },
+    "info": {
+      "source": {
+        "book": "Book class",
+        "zine": "Zine class",
+        "rack": "Rack class",
+        "mine": "Your class",
+        "public": "Public class"
+      },
+      "abilities": "Abilities",
+      "abilitiesRandom": "{{count}}, {{random}} rolled from the random pool",
+      "classItems": "Class Items",
+      "none": "none",
+      "gettingBetter": "Getting Better",
+      "writtenIn": "Written in",
+      "version": "Version",
+      "versionLatest": "{{version}} (you always get the latest)",
+      "here": "Here",
+      "playing_one": "{{count}} scvm in this warband plays it",
+      "playing_other": "{{count}} scvm in this warband play it",
+      "nobody": "nobody in this warband plays it"
+    },
+    "status": {
+      "added": "{{name}} added to the pool. Saved.",
+      "removed": "{{name}} removed from the pool. Saved.",
+      "classlessOn": "Classless on. Saved.",
+      "classlessOff": "Classless off. Saved.",
+      "failed": "That change didn't save. Try again."
+    },
+    "removed": {
+      "byAuthor": "“{{name}}” has been removed by {{by}} ({{why}}). It's no longer in this pool; scvm already playing it keep it.",
+      "byUnknown": "“{{name}}” has been removed by its author ({{why}}). It's no longer in this pool; scvm already playing it keep it.",
+      "takenDown": "“{{name}}” has been taken down. It's no longer in this pool; scvm already playing it keep it.",
+      "why": {
+        "archived": "archived by its author",
+        "unpublished": "made private by its author",
+        "taken_down": "taken down"
+      },
+      "dismiss": "Got it"
+    },
+    "empty": "Nobody can roll a scvm with an empty pool. Keep at least one class or Classless on.",
+    "noMatch": "Nothing matches that search.",
+    "footer_one": "Players see {{count}} class. Random picks it.",
+    "footer_other": "Players see {{count}} classes. Random picks evenly among them.",
+    "footerClassless_one": "Players see {{count}} class and Classless. Random picks the class; it never picks Classless.",
+    "footerClassless_other": "Players see {{count}} classes and Classless. Random picks evenly among the classes; it never picks Classless."
+  },
+  "classDetail": {
+    "notFound": "Class not found.",
+    "loadFailed": "This class wouldn't load. Try again in a moment."
+  },
+  "creator": {
+    "stamp": "Game Master · Forge",
+    "titleNew": "Forge a class",
+    "titleEdit": "Edit a class",
+    "creationBanned": "You cannot create new Custom Classes while a moderation restriction is active. Your existing classes remain available.",
+    "creationStatusFailed": "Class creation status couldn't load. Try again later.",
+    "draftBanned": "New class creation restricted",
+    "draftConflict": "Draft changed elsewhere",
+    "draftConflictTitle": "Draft conflict",
+    "draftConflictBody": "This draft changed on another device. Choose which version to keep.",
+    "draftLoadNewer": "Load newer one",
+    "draftLoadNewerLoss": "Your edits here since the last save will be lost.",
+    "draftKeepMine": "Keep mine",
+    "draftKeepMineLoss": "This overwrites the newer draft from the other device.",
+    "draftDiscardConfirm": "Discard this unfinished draft?",
+    "draftDiscardLoss": "This unfinished draft will be permanently deleted.",
+    "draftDiscardFailed": "The draft couldn't be discarded. Try again.",
+    "untitled": "Untitled class",
+    "rail": "Class creator steps",
+    "steps": {
+      "identity": {
+        "label": "Identity",
+        "hint": "What the class is called and how a player first meets it."
+      },
+      "stats": {
+        "label": "Stats & dice",
+        "hint": "How each stat is rolled, plus HP, omens, silver and starting gear dice. The book rolls every score on 3d6, and book classes shift some by −1 to +2. “Lowest die: Dropped” throws the lowest die away, so 4 dice read “best 3 of 4d6”."
+      },
+      "items": {
+        "label": "Class Items",
+        "hint": "Gear and beasts only this class has. They never appear in item search."
+      },
+      "abilities": {
+        "label": "Abilities",
+        "hint": "Fixed abilities every scvm gets, and the pool random ones are rolled from."
+      },
+      "origins": {
+        "label": "Origins",
+        "hint": "Where this wretch came from. One is picked at random for each scvm."
+      },
+      "gettingBetter": {
+        "label": "Getting Better",
+        "hint": "What happens when a scvm of this class gets better."
+      },
+      "review": {
+        "label": "Test roll & save",
+        "hint": "Roll a scvm from the draft as it stands, then save the class."
+      }
+    },
+    "stepCount": "Step {{n}} of {{total}}",
+    "back": "Back",
+    "ok": "OK",
+    "complete": "Complete",
+    "toDo_one": "{{count}} to do",
+    "toDo_other": "{{count}} to do",
+    "toFix_one": "{{count}} to fix",
+    "toFix_other": "{{count}} to fix",
+    "writingIn": "Writing in",
+    "missingCount_one": "{{count}} missing",
+    "missingCount_other": "{{count}} missing",
+    "languageNames": {
+      "en": "English",
+      "pl": "Polish"
+    },
+    "onlyLanguage": {
+      "en": "English only",
+      "pl": "Polish only"
+    },
+    "missingText": {
+      "en": "English text missing",
+      "pl": "Polish text missing"
+    },
+    "charCount": "{{count}} of {{max}} characters",
+    "remove": "Remove",
+    "stepper": {
+      "decrease": "Decrease {{label}}",
+      "increase": "Increase {{label}}"
+    },
+    "zineContact": "Zine author? Want to add your class to the roster? <mail>Get in touch (contact@rpgtools.co)</mail>",
+    "zinePaste": {
+      "title": "Porting a zine?",
+      "abilities": "Paste an ability list into a Name field: one “Name: rules” entry per line.",
+      "origins": "Porting a zine? Paste one origin per line to add them all at once."
+    },
+    "reorder": {
+      "grip": "Move {{label}}",
+      "up": "Move up",
+      "down": "Move down",
+      "top": "To the top",
+      "bottom": "To the bottom",
+      "abilitiesHint": "This is the order on the sheet, in print, and in the random pool.",
+      "itemsHint": "This is the order Class Items appear wherever this class lists them.",
+      "originsHint": "Order is the numbered origin list used when a scvm is created.",
+      "shortcut": "Alt+↑/↓ moves the focused card or table row."
+    },
+    "identity": {
+      "languages": "Languages this class is written in",
+      "englishOnly": "English only",
+      "polishOnly": "Polish only",
+      "both": "Both",
+      "bothHint": "Every text field needs both languages. Players see their own. “Writing in” at the top only switches which one you are editing.",
+      "oneHint": "Players in either language see the {{language}} text. Text you wrote in the other language is kept, only hidden.",
+      "name": "Class name",
+      "description": "Description"
+    },
+    "stats": {
+      "short": {
+        "strength": "STR",
+        "agility": "AGI",
+        "presence": "PRE",
+        "toughness": "TOU"
+      },
+      "lineLabel": "{{stat}} dice",
+      "dice": "Dice",
+      "sides": "Sides",
+      "modifier": "Modifier",
+      "lowestDie": "Lowest die",
+      "kept": "Kept",
+      "dropped": "Dropped",
+      "dropNeedsTwo": "Dropping the lowest die needs at least two dice.",
+      "scoreRange": "score {{low}}–{{high}}",
+      "modRange": "mod {{low}} to {{high}}",
+      "hpDie": "HP die (+ TOU)",
+      "hpHint": "Starting HP is this die plus Toughness, at least 1. Book classes use d4 to d10.",
+      "omenDie": "Omen die",
+      "omenHint": "Omens the scvm starts with. Book classes use d2 or d4.",
+      "weaponDie": "Starting weapon die",
+      "weaponHint": "Rolls on the book’s starting weapon table (d10: femur to zweihänder).",
+      "armorDie": "Starting armor die",
+      "armorHint": "Rolls on the book’s starting armor table (d4: none to heavy armor).",
+      "silverDice": "Silver dice",
+      "silverSides": "Silver sides",
+      "silverMultiplier": "Silver multiplier",
+      "silverHint": "Silver is the dice total times this. The book default is 2d6 × 10.",
+      "bookDefault": "Book default",
+      "change": "Change",
+      "done": "Done"
+    },
+    "origins": {
+      "add": "Add origin",
+      "count": "{{count}} of {{max}} origins",
+      "empty": "No origins yet. Add the places this class’s wretches crawl out of.",
+      "full": "A class holds at most {{max}} origins.",
+      "label": "Origin {{n}}",
+      "removeLabel": "Remove origin {{n}}"
+    },
+    "gettingBetter": {
+      "rule": "Rule",
+      "note": "Rules note for the player (optional)",
+      "specialistDisabled": "Specialist needs a random ability pool with at least one more ability than each scvm rolls. Add random abilities first.",
+      "explain": {
+        "book": "Book rules: max HP may grow, each ability score may rise or fall, and the scvm searches the debris for silver or scrolls.",
+        "book_plus_ability": "Book rules, and every improvement also rolls one random ability from this class’s pool that the scvm doesn’t have yet, with anything it grants.",
+        "specialist": "Book rules. The scvm’s random abilities are its specialties: the first improvement adds one more, and each later improvement may reroll any of them."
+      }
+    },
+    "review": {
+      "roll": "Roll a test scvm",
+      "rollAgain": "Roll again",
+      "noRoll": "No test roll yet. A test roll uses the draft exactly as it is and keeps nothing.",
+      "testScvm": "Test scvm · {{name}}",
+      "stale": "The draft changed since this roll. Roll again to see it.",
+      "hp": "HP {{hp}}",
+      "omens": "Omens {{omens}}",
+      "silver": "{{silver}} silver",
+      "gear": "Starts with",
+      "origin": "Origin",
+      "none": "Nothing",
+      "beforeSave": "Before you save",
+      "ready": "Nothing missing. This class is ready to save.",
+      "fix": "Fix",
+      "save": "Save class",
+      "fixFirst_one": "Fix {{count}} thing first",
+      "fixFirst_few": "Fix {{count}} things first",
+      "fixFirst_many": "Fix {{count}} things first",
+      "fixFirst_other": "Fix {{count}} things first",
+      "saved": "Saved",
+      "forged": "Forged",
+      "forgedNote": "“{{name}}” is saved to your classes. Any edit here re-arms Save.",
+      "goToClasses": "Go to my classes",
+      "versionWarning_one": "{{count}} scvm plays version {{version}}. Saving creates version {{nextVersion}}: it keeps version {{version}}; new rolls use version {{nextVersion}}.",
+      "versionWarning_other": "{{count}} scvm play version {{version}}. Saving creates version {{nextVersion}}: they keep version {{version}}; new rolls use version {{nextVersion}}."
+    },
+    "issues": {
+      "missingName": "{{language}} missing: class name",
+      "missingDescription": "{{language}} missing: class description",
+      "missingOrigin": "{{language}} missing: origin {{n}}",
+      "noOrigin": "Add at least one origin",
+      "specialistPool": "Specialist needs at least one more random ability than each scvm rolls",
+      "missingAbilityName": "{{language}} missing: ability {{n}} name",
+      "missingAbilityTextUnnamed": "{{language}} missing: ability {{n}} rules text",
+      "duplicateModifier": "“{{name}}” carries the same modifier twice",
+      "missingTableRow": "{{language}} missing: “{{name}}” table result {{roll}}",
+      "missingAbilityText": "{{language}} missing: “{{name}}” rules text",
+      "poolTooSmall_one": "Rolls {{count}} random ability, but the pool has {{pool}}",
+      "poolTooSmall_other": "Rolls {{count}} random abilities, but the pool has {{pool}}",
+      "missingItemName": "{{language}} missing: Class Item {{n}} name",
+      "itemNotGranted": "Class Item “{{name}}” is not granted by any ability"
+    },
+    "blocked_one": "Save is blocked: {{count}} thing to fix. It has a Fix button below.",
+    "blocked_other": "Save is blocked: {{count}} things to fix. Each has a Fix button below.",
+    "saveFailed": "The class didn't save. Try again.",
+    "saveRateLimited": "You've saved 10 times this minute. Wait a minute, then save again.",
+    "abilities": {
+      "rolled": "Random abilities rolled",
+      "rolledHint": "Every scvm gets all Fixed abilities, plus this many from the Random pool ({{pool}} in it). A zine's “roll d6 for your ability” is a pool of 6 with 1 rolled.",
+      "count": "{{count}} of {{max}} abilities",
+      "empty": "No abilities yet. Add a fixed one every scvm gets, or build a random pool.",
+      "add": "Add ability",
+      "full": "A class holds at most {{max}} abilities.",
+      "emptyChip": "Empty",
+      "emptyLabel": "No abilities yet",
+      "fixed": "Fixed",
+      "random": "Random",
+      "randomN": "Random {{n}}",
+      "untitled": "Unnamed ability",
+      "edit": "Edit",
+      "kind": "Every scvm gets it, or it is in the random pool",
+      "name": "Name",
+      "text": "Rules text",
+      "modifiers": "Modifiers",
+      "modifierN": "Modifier {{n}}",
+      "stat": "Stat",
+      "value": "Value",
+      "appliesTo": "Applies to",
+      "extras": "Extras",
+      "addModifier": "Add modifier",
+      "duplicate": "Duplicate",
+      "done": "Done",
+      "scopeWord": {
+        "combat": "combat",
+        "defence": "defence",
+        "tests": "tests",
+        "melee": "melee",
+        "ranged": "ranged",
+        "powers": "powers"
+      },
+      "removeGranter": "Only this ability grants {{items}}. Remove the item too, or keep it waiting for another ability?",
+      "removeBoth": "Remove both",
+      "keepItem": "Keep the item, ungranted",
+      "addTable": "Add reference table",
+      "pasteTableRows": "Replace {{count}} table rows? Paste the other language separately.",
+      "referenceTable": "Reference table",
+      "removeTable": "Remove reference table",
+      "removeTableWithItems": "This table gives {{items}}. Remove the table and its links?",
+      "replaceRows": "Replace rows",
+      "tableDie": "Table die",
+      "tableHint": "The row number is the die result.",
+      "tableRow": "Result {{roll}}"
+    },
+    "items": {
+      "question": "Does this class carry its own gear or beasts?",
+      "questionHint": "Class Items are weapons, armor, gear or pets only this class has, like the Fanged Deserter's Brown Scimitar. Each one reaches a scvm through one ability.",
+      "yes": "Yes, forge a Class Item",
+      "no": "No, only catalog gear",
+      "none": "No Class Items. Abilities can still grant gear from the shared catalog.",
+      "change": "Change",
+      "noneChip": "Optional",
+      "noneLabel": "No Class Items, which is fine",
+      "forge": "Forge",
+      "count": "{{count}} of {{max}} Class Items",
+      "full": "A class holds at most {{max}} Class Items.",
+      "empty": "No Class Items yet. Pick a kind above.",
+      "untitled": "Unnamed Class Item",
+      "type": {
+        "weapon": "Weapon",
+        "armor": "Armor",
+        "gear": "Gear",
+        "pet": "Pet"
+      },
+      "typeLower": {
+        "weapon": "weapon",
+        "armor": "armor",
+        "gear": "gear",
+        "pet": "pet"
+      },
+      "typeLabel": "Type",
+      "name": "Name",
+      "description": "Description (optional)",
+      "value": "Value in silver",
+      "damageDice": "Damage dice",
+      "reach": "Reach",
+      "melee": "Melee",
+      "ranged": "Ranged",
+      "ammo": "Ammo",
+      "ammoNone": "None",
+      "ammoCounted": "Counted",
+      "ammoEndless": "Endless",
+      "ammoCount": "Starting ammo",
+      "ammoName": "Ammo name (optional)",
+      "tier": "Armor tier",
+      "tierN": "Tier {{n}}",
+      "kind": "Kind",
+      "consumable": "Consumable",
+      "wearable": "Wearable",
+      "carried": "Carried",
+      "uses": "Uses",
+      "onUse": "On use",
+      "effectText": "Text only",
+      "effectDamage": "Deals damage",
+      "effectDie": "Effect die",
+      "damageDie": "Damage die",
+      "effectDieLabel": "Effect die",
+      "hp": "HP",
+      "actionDie": "Action die",
+      "action": "Action",
+      "attacks": "Attacks",
+      "buffs": "Buffs allies",
+      "beast": "Beast",
+      "humanoid": "Humanoid",
+      "whileWielded": "Modifiers while wielded",
+      "whileWorn": "Modifiers while worn",
+      "buffsGiven": "Buffs it gives",
+      "temporaryStatuses": "Temporary status effects",
+      "stamp": {
+        "melee": "melee",
+        "ranged": "ranged",
+        "endless": "endless ammo",
+        "ammo": "ammo",
+        "armorTier": "armor tier {{tier}}",
+        "hp": "{{hp}} HP",
+        "attack": "d{{die}} attack",
+        "buff": "d{{die}} buff",
+        "humanoid": "humanoid",
+        "consumable": "consumable",
+        "wearable": "wearable",
+        "carried": "carried",
+        "uses": "{{count}} uses",
+        "damage": "d{{die}} damage",
+        "effect": "d{{die}} effect"
+      },
+      "grantedBy": "Granted by",
+      "everyScvm": "every scvm",
+      "ifRolled": "if rolled, {{n}} of {{m}}",
+      "goToAbility": "Go to ability",
+      "notGranted": "Not granted yet",
+      "grantFromNew": "Grant from a new ability",
+      "grantFromNewLabel": "Grant {{name}} from a new ability",
+      "grantedByChip": "granted by {{name}}",
+      "waits": "waits for an ability",
+      "waitingTitle": "Class Items waiting for an ability",
+      "grantsItem": "Grants an item",
+      "grantsPet": "Grants a pet",
+      "thisClass": "This class",
+      "nothing": "Nothing",
+      "grantedElsewhere": "{{name}} (granted by {{by}})",
+      "editStats": "Edit stats",
+      "forgeFor": "Forge a Class Item for this ability",
+      "slotTaken": "This ability already grants “{{name}}”",
+      "grantWaiting": "Grant the waiting {{type}} “{{name}}”",
+      "removeGranted": "“{{name}}” is granted by the ability “{{by}}”. Remove the item and clear that grant?",
+      "removeAndClear": "Remove and clear",
+      "keepIt": "Keep it"
+    },
+    "cancel": "Cancel",
+    "confirmRemoval": "Confirm removal",
+    "archivedLocked": "This class is archived. Restore it on My classes before changing it.",
+    "backToClasses": "Back to My classes",
+    "discardDraft": "Discard unsaved changes",
+    "discardDraftShort": "Discard",
+    "discardFailed": "The changes weren't discarded. Try again.",
+    "draftDiscard": "Discard",
+    "draftLoadFailed": "This draft wouldn't load.",
+    "draftOffline": "Offline, will retry",
+    "draftSaved": "Draft saved · kept until {{date}} unless you edit it again",
+    "draftSaving": "Saving…",
+    "history": {
+      "label": "Edit history",
+      "redo": "Redo",
+      "undo": "Undo"
+    },
+    "referenceTable": {
+      "rolled": "Roll {{roll}}: {{text}}"
+    },
+    "resumeDraft": "Resume",
+    "takenDownLocked": "This class was taken down by moderation and can't be changed. You can appeal from My classes.",
+    "titleResume": "Resume a class",
+    "unsavedChanges": "Unsaved changes from {{date}}. Resume or discard?",
+    "draftLimit": "Not saved as a draft: you already keep 3 unfinished new classes. Save this class or discard a draft.",
+    "draftUnsaved": "Draft not saved. Your next edit tries again.",
+    "takedownReason": "Reason:"
+  },
+  "classes": {
+    "unsavedEdits": "Unsaved edits to a saved class",
+    "stamp": "Game Master · Classes",
+    "title": "My classes",
+    "forge": "Forge a class",
+    "loginRequired": "You need to be logged in to forge classes.",
+    "empty": "No classes yet. Forge one, then switch it on in a party's pool.",
+    "languages": { "en": "English", "pl": "Polish" },
+    "visibility": {
+      "private": "Private",
+      "public": "Public"
+    },
+    "origins_one": "{{count}} origin",
+    "origins_other": "{{count}} origins",
+    "edit": "Edit",
+    "editLabel": "Edit {{name}}",
+    "discard": "Discard",
+    "discardConfirm": "Discard this unfinished draft?",
+    "discardLoss": "“{{name}}” will be permanently deleted.",
+    "remove": "Remove",
+    "removeConfirm": "Remove this class?",
+    "removeLoss": "“{{name}}” will be deleted if unused. If scvm still use it, it will be archived and their rules will stay intact.",
+    "publish": "Publish",
+    "unpublish": "Unpublish",
+    "publishTitle": "Publish this class?",
+    "publishing": "Publishing...",
+    "publishImmediate": "“{{name}}” will be public immediately and other GMs can add it to their party pools.",
+    "publishRights": "I made this class or have the right to share it.",
+    "moderationTakenDown": "This class was taken down by moderation.",
+    "appeal": "Appeal this decision",
+    "takenDown": "Taken down",
+    "disputeTitle": "Dispute this decision",
+    "disputeText": "Why should we review this decision?",
+    "submitDispute": "Send dispute",
+    "appealEmail": "Or email your appeal to",
+    "appealEmailLink": "Appeal by email",
+    "archived": "Archived",
+    "discardFailed": "The draft wasn't discarded. Try again.",
+    "disputeFailed": "The dispute wasn't sent. Try again.",
+    "disputeSent": "Dispute sent. A person will review it and answer by email.",
+    "draft": "Unfinished draft",
+    "expiresIn_one": "Expires in {{count}} day",
+    "expiresIn_other": "Expires in {{count}} days",
+    "lastEdited": "Last edited {{date}}",
+    "moderationTerms": "How moderation works",
+    "publishFailed": "The class wasn't published. Try again.",
+    "removeFailed": "The class wasn't removed. Try again.",
+    "restore": "Restore",
+    "restoreFailed": "The class wasn't restored. Try again.",
+    "resume": "Resume",
+    "showActive": "Show active classes",
+    "showArchived": "Archived ({{count}})",
+    "unpublishFailed": "The class is still public. Try again.",
+    "untitled": "Untitled class",
+    "draftLimit": "You keep 3 unfinished new classes. Finish or discard one to forge another.",
+    "loadFailed": "Your classes failed to load."
+  },
+  "report": {
+    "thisClass": "Report this class",
+    "otherClass": "Report a different class",
+    "link": "Report a class",
+    "title": "Report a class",
+    "stamp": "Notice & action",
+    "description": "Report a class for human review.",
+    "intro": "Anyone can report public content. A person reviews every report and will explain the outcome.",
+    "classId": "Class reference",
+    "goodFaithShort": "Good-faith confirmation",
+    "missing": "Still needed: {{fields}}",
+    "reportingClass": "Reporting: {{name}}",
+    "reason": "Reason",
+    "explanation": "Explain what happened",
+    "name": "Your name",
+    "email": "Your email",
+    "goodFaith": "I am submitting this report in good faith.",
+    "submit": "Submit report",
+    "sending": "Sending...",
+    "sent": "Your report was recorded for human review. You can challenge the outcome at {{appealAddress}}.",
+    "appeal": "You may challenge the outcome by emailing {{appealAddress}}.",
+    "reasons": {
+      "copyright": "Copyright — I own this and do not want it on Scvm Rack",
+      "child_sexual_abuse_material": "Child sexual abuse material",
+      "threat_to_life_or_safety": "Threat to someone's life or safety",
+      "terrorist_content": "Terrorist content",
+      "other_illegal_content": "Other illegal content",
+      "abusive_or_hateful": "Abusive or hateful content",
+      "owner_removal": "I no longer want this shown",
+      "other": "Other"
+    },
+    "classIdHint": "The number or link of the class page, such as /classes/12.",
+    "submitFailed": "Your report could not be submitted."
+  },
+  "moderation": {
+    "classVersions": "Class versions",
+    "stamp": "Admin",
+    "confirmBody": "“{{name}}” version {{version}} stops being visible right away, every version of it leaves party pools, and the GM gets your reason as the statement of reasons.",
+    "confirmRemoveTitle": "Remove this content?",
+    "confirmTakeDownTitle": "Take this class down?",
+    "previewLatest": "Preview latest version",
+    "version": "Version {{version}}",
+    "removalHistory": "GM removal decisions: {{count}}",
+    "restored": "Restored",
+    "notRestored": "Not restored",
+    "creationBans": "Class creation bans",
+    "gmUserId": "GM user ID",
+    "gmUserIdCopy": "GM user ID · copy for ban lookup",
+    "dismissEffect": "the class stays public and this report closes.",
+    "takeDownEffect": "hidden from search, pickers and party pools; no new characters. Existing characters keep it.",
+    "removeContentEffect": "its text becomes “[removed by moderation]” everywhere, including existing characters.",
+    "reasonRequired": "Write a decision reason to act.",
+    "lookUp": "Look up",
+    "creationBanActive": "Creation banned",
+    "creationBanInactive": "Creation allowed",
+    "banCreation": "Ban class creation",
+    "liftCreationBan": "Lift creation ban",
+    "creationBanHistory": "Ban history",
+    "noBanHistory": "No ban decisions yet.",
+    "byActor": "By {{actor}}",
+    "anonymous": "Anonymous",
+    "authority": "Needs authority report",
+    "decisionFailed": "The decision didn't save. Try again.",
+    "decisionReason": "Decision reason",
+    "dismiss": "Dismiss",
+    "disputes": "Author disputes",
+    "empty": "No open reports.",
+    "ground": "Ground for the statement of reasons",
+    "hide": "Hide",
+    "intro": "Open reports require a human decision.",
+    "log": {
+      "empty": "No decisions yet.",
+      "loadFailed": "The moderation log didn't load.",
+      "title": "Moderation log",
+      "actions": {
+        "dismissed": "Dismissed",
+        "taken_down": "Taken down",
+        "content_removed": "Content removed",
+        "restored": "Restored",
+        "class_creation_banned": "Class creation banned",
+        "class_creation_unbanned": "Class creation ban lifted"
+      }
+    },
+    "removeContent": "Remove content",
+    "restore": "Restore",
+    "takeDown": "Take down",
+    "title": "Moderation",
+    "confirmHideBody": "“{{name}}” stops being offered right away and leaves every party pool. Existing characters keep it.",
+    "confirmHideTitle": "Hide this class?",
+    "loadFailed": "You cannot load moderation reports."
+  },
   "party": {
     "pill": "Party",
     "looks": "Looks",
@@ -1144,7 +1892,19 @@
     "alreadyInThisWarband": "{{name}} is already in this warband",
     "goToSheet": "Go to sheet",
     "leaveParty": "Leave party",
-    "leaving": "Leaving..."
+    "leaving": "Leaving...",
+    "alreadyInParty": "Already in a party",
+    "changedFields": "Updated: {{fields}}",
+    "defaultName": "Untitled Warband",
+    "invalidInvite": "This invite link is no longer valid.",
+    "joinBody": "Pick a scvm from this session or forge a fresh one for the table.",
+    "joinCta": "Join party",
+    "joinTitle": "Join the warband",
+    "joining": "Joining...",
+    "loadingName": "Warband",
+    "preparingSession": "Preparing your session…",
+    "readyToJoin": "Ready to join",
+    "olderRulesVersions": "Rolled with v{{version}} · class now v{{latestVersion}}"
   },
   "owlbear": {
     "title": "Owlbear Rodeo",
@@ -1195,6 +1955,7 @@
     "morkBorgCredit": "MÖRK BORG is copyright Ockult Örtmästare Games and Stockholm Kartell. This is an independent fan project."
   },
   "gm": {
+    "myClasses": "My classes",
     "stamp": "Game Master · Overview",
     "dashboardTitle": "Party control",
     "partyNameLabel": "Party name",
@@ -1206,7 +1967,25 @@
     "manageParty": "Manage",
     "vitalStrip": "C · Vital Strip",
     "vitalStripSubtitle": "Tablet at the table · big HP · tap a strip to expand.",
-    "loginRequired": "You need to be logged in to run the GM overview.",
+    "loginRequired": "Sign in to create and run a warband.",
+    "guestCarriesOver": "Your guest scvm comes with you when you sign up.",
+    "previewPartyOne": "The Grave Wardens",
+    "previewPartyTwo": "Galgenbeck Night Watch",
+    "pinMakeParty": "Make a party",
+    "pinSendLink": "Send its link",
+    "pinWatchVitals": "Watch them bleed",
+    "overviewHeading": "This is the GM screen. Sign up to run it.",
+    "overviewIntro": "The GM side of scvmrack is free with an rpgtools.co account.",
+    "overviewParty": "Make a party and hand your table one invite link.",
+    "overviewVitals": "Follow every scvm’s HP, Omens and armour live.",
+    "overviewClasses": "Choose the classes they roll from, or forge your own.",
+    "overviewMore": "More GM tools",
+    "overviewOwlbearTitle": "Owlbear Rodeo",
+    "overviewOwlbear": "The live roster, token binding and an enemy board inside your Owlbear room.",
+    "overviewCustomClassesTitle": "Custom Classes",
+    "overviewCustomClasses": "Forge classes with abilities, Class Items and tables; keep them or publish them.",
+    "signUp": "Sign up",
+    "logIn": "Log in",
     "loadError": "The warband roster failed to load.",
     "empty": "No scvms in the warband yet. Forge one to fill the table.",
     "disconnected": "Disconnected",

@@ -45,6 +45,7 @@ export function WarbandVitalStrip({
             name={member.name}
             disconnected={member.disconnected}
             changed={member.changed}
+            olderRules={member.olderRules}
             active={active}
             renderActions={renderActions}
           />

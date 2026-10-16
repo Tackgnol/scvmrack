@@ -4,6 +4,7 @@ import { page, userEvent } from 'vitest/browser';
 import ResourceRow from '@/components/molecules/ResourceRow';
 import BrowserTestProvider from '../BrowserTestProvider';
 import * as CharacterContextModule from '@/CharacterContext/CharacterContext';
+import i18n, { loadLanguage } from '@/i18n';
 
 vi.mock('@/CharacterContext/CharacterContext', () => ({
     useCharacter: vi.fn(),
@@ -43,6 +44,15 @@ describe('ResourceRow Component', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+    });
+
+    it('announces armor tier actions in Polish', async () => {
+        await loadLanguage('pl');
+        await i18n.changeLanguage('pl');
+        await renderWithCharacter({});
+        await expect.element(page.getByRole('button', { name: 'Obniż poziom pancerza' })).toBeVisible();
+        await expect.element(page.getByRole('button', { name: 'Podnieś poziom pancerza' })).toBeVisible();
+        await expect.element(page.getByRole('button', { name: /armor tier/ })).not.toBeInTheDocument();
     });
 
     it('handles HP increases and decreases', async () => {

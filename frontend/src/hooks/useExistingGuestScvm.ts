@@ -24,6 +24,8 @@ export function useExistingGuestScvm(enabled: boolean): CharacterListEntry | nul
     refetchOnWindowFocus: false,
   });
 
-  if (!enabled) return null;
+  if (!enabled) {
+    return null;
+  }
   return data?.[0] ?? null;
 }

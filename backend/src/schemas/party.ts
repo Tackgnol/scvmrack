@@ -1,7 +1,14 @@
 // JSON schema definitions for the party routes. Mirrors the shape used by the
 // character schemas: shared params/bodies, an error schema reused per route.
 
+import type { FromSchema } from 'json-schema-to-ts';
+import { SUPPORTED_LOCALES } from '../config/locales.js';
+import { GETTING_BETTER_RULES } from '../lib/class-model.js';
+
 export { ErrorSchema } from './character.js';
+
+/** Where a pooled class comes from, in the order the GM's pool view lists them. */
+export const POOL_GROUPS = ['book', 'zine', 'rack', 'mine', 'public'] as const;
 
 export const PartyIdParamsSchema = {
   type: 'object',
@@ -110,3 +117,112 @@ export const ReplaceMemberBodySchema = {
     newCharacterId: { type: 'string', format: 'uuid' },
   },
 } as const;
+
+export const ClassPoolLineageParamsSchema = {
+  type: 'object',
+  required: ['id', 'lineageId'],
+  properties: {
+    id: { type: 'string', format: 'uuid' },
+    lineageId: { type: 'string', format: 'uuid' },
+  },
+} as const;
+
+export const ClassPoolLocaleQuerySchema = {
+  type: 'object',
+  properties: {
+    locale: { type: 'string', enum: SUPPORTED_LOCALES, default: 'en' },
+  },
+} as const;
+
+export const SetPoolSwitchBodySchema = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['enabled'],
+  properties: {
+    enabled: { type: 'boolean' },
+  },
+} as const;
+
+const PoolAttributionSchema = {
+  anyOf: [
+    {
+      type: 'object',
+      additionalProperties: false,
+      required: ['kind', 'work', 'author', 'url'],
+      properties: {
+        kind: { const: 'credit' },
+        work: { type: 'string' },
+        author: { type: 'string' },
+        url: { type: ['string', 'null'] },
+      },
+    },
+    {
+      type: 'object',
+      additionalProperties: false,
+      required: ['kind', 'name', 'private'],
+      properties: {
+        kind: { const: 'owner' },
+        name: { type: ['string', 'null'] },
+        private: { type: 'boolean' },
+      },
+    },
+    { type: 'null' },
+  ],
+} as const;
+
+export const ClassPoolViewSchema = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['classlessEnabled', 'classes', 'removed'],
+  properties: {
+    classlessEnabled: { type: 'boolean' },
+    classes: {
+      type: 'array',
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        required: [
+          'lineageId', 'classId', 'group', 'name', 'blurb', 'languages', 'attribution',
+          'abilityCount', 'randomAbilityCount', 'classItemCount', 'gettingBetterRule',
+          'version', 'playingHere', 'enabled',
+        ],
+        properties: {
+          lineageId: { type: 'string' },
+          classId: { type: 'integer' },
+          group: { type: 'string', enum: POOL_GROUPS },
+          name: { type: 'string' },
+          blurb: { type: ['string', 'null'] },
+          languages: { type: 'array', items: { type: 'string' } },
+          attribution: PoolAttributionSchema,
+          abilityCount: { type: 'integer' },
+          randomAbilityCount: { type: 'integer' },
+          classItemCount: { type: 'integer' },
+          gettingBetterRule: { type: 'string', enum: GETTING_BETTER_RULES },
+          version: { type: 'integer' },
+          playingHere: { type: 'integer' },
+          enabled: { type: 'boolean' },
+        },
+      },
+    },
+    removed: {
+      type: 'array',
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['lineageId', 'name', 'by', 'reason'],
+        properties: {
+          lineageId: { type: 'string' },
+          name: { type: 'string' },
+          by: { type: ['string', 'null'] },
+          reason: { type: 'string', enum: ['archived', 'unpublished', 'taken_down'] },
+        },
+      },
+    },
+  },
+} as const;
+
+export type ClassPoolView = FromSchema<typeof ClassPoolViewSchema>;
+export type PoolClass = ClassPoolView['classes'][number];
+export type RemovedPoolClass = ClassPoolView['removed'][number];
+export type PoolGroup = PoolClass['group'];
+export type PoolAttribution = NonNullable<PoolClass['attribution']>;

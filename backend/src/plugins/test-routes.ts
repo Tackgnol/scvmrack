@@ -3,6 +3,8 @@ import type { FastifyInstance } from 'fastify';
 import prisma from '../lib/prisma.js';
 import { apiError, badRequest, sendApiError } from '../errors.js';
 import { generateCharacter } from '../lib/generate-character.js';
+import { pickPoolClass } from '../services/character-class-choice.js';
+import { resolvePartyClassPool } from '../services/party-class-pool-service.js';
 import { Roller, OSRandomEngine } from '@tackgnol/rpg-tools-roller';
 
 interface CreateUserBody {
@@ -17,7 +19,9 @@ interface CreateCharacterBody {
 }
 
 export default fp(async function testRoutesPlugin(fastify: FastifyInstance) {
-  if (process.env.ENABLE_TEST_ROUTES !== '1') return;
+  if (process.env.ENABLE_TEST_ROUTES !== '1') {
+    return;
+  }
 
   fastify.log.warn('ENABLE_TEST_ROUTES=1 — registering /test/* fixture routes');
 
@@ -87,7 +91,12 @@ export default fp(async function testRoutesPlugin(fastify: FastifyInstance) {
     const roller = new Roller({ engine: new OSRandomEngine() });
     let characterId: string;
     try {
-      characterId = await generateCharacter(null, roller);
+      const pool = await resolvePartyClassPool(null);
+      const classId = pool.ok ? await pickPoolClass(pool.value, roller) : pool;
+      if (!classId.ok) {
+        throw new Error('No Book Class to roll');
+      }
+      characterId = await generateCharacter(classId.value, roller);
     } catch {
       return sendApiError(
         reply,

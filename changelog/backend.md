@@ -2,6 +2,15 @@
 
 `scvmgrinder_be` — Fastify 5 + TypeScript API for the MÖRK BORG character sheet.
 
+- The app should no longer reject a first Logto sign-in when the account has a preferred username. New accounts can sign in and keep their profile name.
+
+## Custom Classes (0.7.0)
+
+- Owner-only Custom Class drafts, explicit saves, immutable versions for used classes, archive/restore, and configurable account/daily-public-class limits
+- Party Class Pools drive the classes that a party and its Owlbear room can roll
+- Public class discovery and read-only details, signed-out reports, rate limits and honeypot protection, human moderation, GM removal history, user-based creation bans, takedown disputes, admin restoration, and two-year reporter-detail anonymization
+- Book Class omen rolls follow the printed book: Esoteric Hermit and Heretical Priest use d4; the other Book Classes use d2
+
 ## Stack
 
 - **Runtime:** Fastify 5.x (ESM, TypeScript), autoloaded plugins & routes
@@ -17,9 +26,13 @@ All application routes are mounted under the `/api` prefix.
 ### Characters (`/api/characters`)
 
 - `POST /new` — generate a new random character or confirm a seeded creation
-  draft (TypeScript generator)
-- `GET /classes` — localized class list for the creation gate
+  draft (TypeScript generator); with `?invite=` the draft is forged into that
+  party in one transaction (a full party, rotated invite or class gone from the
+  pool creates nothing)
+- `GET /classes` — the classes a roll may use: the `?invite=` party's Party
+  Class Pool, or Book Classes without one
 - `POST /draft` — build or rehydrate a stateless draft preview without a DB write
+  (scoped by `?invite=` like `/classes`; Random picks evenly, never Classless)
 - `POST /draft/reroll/:section` — replace one draft section seed and rebuild the
   preview
 - `GET /` — list characters owned by the current session user (optional `locale` query param; falls back to `Accept-Language`)
@@ -31,7 +44,8 @@ All application routes are mounted under the `/api` prefix.
   Better preview section or the full preview without applying character changes
 - `POST /:id/improvements/:improvementId/apply` — validate a submitted Getting
   Better draft, reject stale snapshots, and atomically apply max HP, silver,
-  ability, equipment, and Scum specialty changes
+  ability, equipment, and class-ability changes (gained abilities bring their
+  item and pet grants)
 - `PATCH /:id` — update a character (plain-text sanitization, length limits, bounds clamping)
 - `DELETE /:id` — delete a character (ownership-enforced)
 - `POST /:id/improvements/preview` — roll a Getting Better preview (pure rule
@@ -47,6 +61,9 @@ All application routes are mounted under the `/api` prefix.
 
 - `GET /search` — fuzzy, locale-aware item search (PostgreSQL trigram indexes)
 - `GET /:itemType/:id` — fetch a full item by type and id
+- The app should no longer hide Torch or Lantern use controls when an existing
+  database retains outdated ammo labels. Deployments repair the catalog and
+  affected inventory/storage entries while preserving their uses and quantities.
 
 ### OBR (`/api/obr`)
 
@@ -128,6 +145,7 @@ Centralized, structured error pipeline (`src/errors.ts` + `plugins/error-handler
 - 5xx responses return a generic message (no internal leakage) and are reported
   to Sentry; 4xx responses are logged at info level
 - Custom 404 handler returns the same structured payload
+- The app should no longer miss error reports when a Logto callback fails inside Better Auth. Unexpected failures reach GlitchTip once with an error code and request ID, without OAuth tokens or profile data; normal sign-in rejections stay quiet.
 
 ## Security controls
 
@@ -148,9 +166,25 @@ Centralized, structured error pipeline (`src/errors.ts` + `plugins/error-handler
 - **Repository-only Prisma access.** All direct Prisma calls have been removed from `src/lib/`. A new `catalog-repository.ts` centralises catalog reads (weapons, armors, equipment, pets, classes, translations, class ability modifiers). Library files (`inventory.ts`, `get-character-full.ts`, `item-search-service.ts`) now call the repository layer, restoring the Repository → Service → Controller invariant.
 - **Getting Better command drafts.** Character improvements are stored as typed
   active/applied `CharacterImprovement` rows with one active preview per
-  character. Pure rule functions compute HP, debris, ability, and Gutterborn
-  Scum specialty outcomes; the service normalizes submitted table values before
-  writing through the repository transaction.
+  character. Pure rule functions compute HP, debris, ability, and class-ability
+  outcomes from each class's Getting Better rule (book, book plus a new
+  ability, or Specialist with per-specialty Keep/Reroll); the service
+  normalizes submitted table values before writing through the repository
+  transaction. Previews saved in the old two-slot Scum shape upgrade on load.
+- **Class rules are data.** Each class row carries its source, Credit, owner,
+  lifecycle and Class Version lineage; per-stat dice (`count`d`faces` ±
+  modifier, optional drop-lowest) and an omen die; and abilities name the item
+  and pet they grant. Generation and Getting Better read these instead of
+  hardcoded 3d6, d2 omens and name-to-key grant maps. Abilities keep an
+  explicit order and may carry a dN reference table (rows with text and an
+  optional item link), returned with the character; the Occult Herbmaster's
+  decoctions are one.
+- **Transactional email.** `mail-repository` is the only code that calls
+  Amazon SES (v2 API, as in roster); `mail-service` renders the moderation
+  emails (reporter receipt, decision, statement of reasons, dispute copy) in
+  English or Polish, from `scvmrack@rpgtools.co` with Reply-To
+  `contact@rpgtools.co`. Without `SES_REGION`, `SES_ACCESS_KEY_ID` and
+  `SES_SECRET_ACCESS_KEY` nothing is sent and callers get "not sent".
 - **Structured error logging.** The `unexpected()` helper in `src/services/result.ts` logs unexpected errors via `{ err: error }` so Pino's error serializer captures the full stack trace.
 - **SSE half-open socket fix.** The party stream route (`GET /api/parties/:id/stream`) calls `reply.raw.end()` in its cleanup path to close the socket when a write error fires before the client disconnects.
 

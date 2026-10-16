@@ -2,22 +2,22 @@ import { useAuth } from '@/hooks/useAuth';
 import { useCreateParty, usePartyList } from '@/hooks/usePartyRepository';
 import { appHistory } from '@/router/history';
 import { Seo } from '@/seo/Seo';
-import { customStyles } from '@/theme/morkBorgTheme';
 import { getUserFacingApiErrorMessage } from '@/utils/errorUtils';
 import { PartyCreateForm } from '@/components/organisms/party/PartyCreateForm';
+import { GmLockedOverview } from '@/components/organisms/GmLockedOverview/GmLockedOverview';
 import {
   CenterRow,
   EmptyText,
   Meta,
   Page,
-  PartyActionButton,
-  PartyCard,
-  PartyGrid,
-  PartyName,
+  CardAction,
+  Card,
+  CardGrid,
+  CardName,
   Spinner,
   Stamp,
   Title,
-} from '@/pages/GmOverviewPage.styles';
+} from '@/pages/gmPages.styles';
 import {
   Alert,
   Box,
@@ -53,23 +53,15 @@ export function GmOverviewPage() {
     }
   };
 
-  if (isGuest) {
+  if (!isAuthenticated) {
     return (
       <>
-        <Seo
-          title="GM Dashboard"
-          description="Private game-master party dashboard."
-          path="/gm"
-          noIndex
-        />
-        <Box sx={{ py: 4 }}>
-          <Alert data-testid="gm-guest-warning" severity="warning" sx={customStyles.alerts.warning}>
-            {t('gm.loginRequired', 'You need to be logged in to run the GM dashboard.')}
-          </Alert>
-          <Button component={Link} to="/" variant="contained" sx={customStyles.charactersListPage.loginButton}>
-            {t('common.backToHome', 'Back to Home')}
-          </Button>
-        </Box>
+        <Seo title="GM Dashboard" description="Run a MÖRK BORG warband." path="/gm" />
+        <Page data-testid="gm-overview">
+          <Stamp>{t('gm.stamp', 'Game Master')}</Stamp>
+          <Title component="h1">{t('gm.dashboardTitle', 'Party control')}</Title>
+          <GmLockedOverview isGuest={isGuest} />
+        </Page>
       </>
     );
   }
@@ -86,6 +78,12 @@ export function GmOverviewPage() {
       <Page>
         <Stamp>{t('gm.stamp', 'Game Master')}</Stamp>
         <Title component="h1">{t('gm.dashboardTitle', 'Party control')}</Title>
+
+        <Box>
+          <CardAction component={Link} to="/gm/classes">
+            {t('gm.myClasses', 'My classes')}
+          </CardAction>
+        </Box>
 
         <PartyCreateForm
           isAuthLoading={authLoading}
@@ -126,11 +124,11 @@ export function GmOverviewPage() {
           </EmptyText>
         )}
 
-        <PartyGrid>
+        <CardGrid>
           {(partiesQuery.data ?? []).map((party) => (
-            <PartyCard key={party.id}>
+            <Card key={party.id}>
               <Box>
-                <PartyName>{party.name}</PartyName>
+                <CardName>{party.name}</CardName>
                 <Meta>
                   {t('gm.partyCardMeta', '{{count}}/{{max}} scvms', {
                     count: party.memberCount,
@@ -138,12 +136,12 @@ export function GmOverviewPage() {
                   })}
                 </Meta>
               </Box>
-              <PartyActionButton component={Link} to={`/party/${party.id}`}>
+              <CardAction component={Link} to={`/party/${party.id}`}>
                 {t('gm.manageParty', 'Manage')}
-              </PartyActionButton>
-            </PartyCard>
+              </CardAction>
+            </Card>
           ))}
-        </PartyGrid>
+        </CardGrid>
       </Page>
     </>
   );

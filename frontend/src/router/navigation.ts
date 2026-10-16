@@ -84,7 +84,9 @@ export const getCurrentSearchParamValue = (queryParam: string): string | null =>
 
 export const getCurrentCharacterIdParam = (): string | null => {
     const queryId = getCurrentSearchParamValue(CHARACTER_ID_QUERY_PARAM);
-    if (queryId) return queryId;
+    if (queryId) {
+        return queryId;
+    }
 
     const pathname = appHistory.location.pathname;
     const partyMatch = pathname.match(PARTY_CHARACTER_PATH_PATTERN);

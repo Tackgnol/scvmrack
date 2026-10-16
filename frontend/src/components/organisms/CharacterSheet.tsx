@@ -106,7 +106,9 @@ export function CharacterSheet({
     const gettingBetterPanelRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        if (!gettingBetter.isOpen || !gettingBetterReady) return;
+        if (!gettingBetter.isOpen || !gettingBetterReady) {
+            return;
+        }
 
         const frame = requestAnimationFrame(() => {
             gettingBetterPanelRef.current?.scrollIntoView({

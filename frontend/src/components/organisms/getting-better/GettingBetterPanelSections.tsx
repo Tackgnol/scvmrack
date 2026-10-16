@@ -1,6 +1,5 @@
 import {
   Box,
-  Button,
   MenuItem,
   Select,
   TextField,
@@ -15,6 +14,8 @@ import type {
 } from "@/api/characterImprovementTypes";
 import { ABILITY_STATS } from "@/utils/stats";
 import { gettingBetterStyles as styles } from "./GettingBetterPanel.styles";
+import { ClassAbilitySection } from "./ClassAbilitySection";
+import { SectionButton } from "./SectionButton";
 import {
   deriveAbility,
   deriveDebris,
@@ -28,37 +29,17 @@ import {
 type Props = {
   draft: ImprovementDraft;
   busy: boolean;
-  specialtyName: (key: string) => string;
+  abilityName: (key: string) => string;
+  scrollName: (key: string) => string;
   updateDraft: (updater: (draft: ImprovementDraft) => ImprovementDraft) => void;
   rerollSection: (section: ImprovementRerollSection) => void;
 };
 
-function SectionButton({
-  label,
-  onClick,
-  disabled,
-}: {
-  label: string;
-  onClick: () => void;
-  disabled: boolean;
-}) {
-  return (
-    <Button
-      size="small"
-      variant="outlined"
-      onClick={onClick}
-      disabled={disabled}
-      sx={styles.actionButton}
-    >
-      {label}
-    </Button>
-  );
-}
-
 export function GettingBetterPanelSections({
   draft,
   busy,
-  specialtyName,
+  abilityName,
+  scrollName,
   updateDraft,
   rerollSection,
 }: Props) {
@@ -91,7 +72,9 @@ export function GettingBetterPanelSections({
 
   const setDebrisSilver = (value: string) => {
     updateDraft((current) => {
-      if (current.debris.kind !== "silver") return current;
+      if (current.debris.kind !== "silver") {
+        return current;
+      }
       const silver = tableRoll(numberValue(value));
       return {
         ...current,
@@ -105,8 +88,9 @@ export function GettingBetterPanelSections({
       if (
         current.debris.kind !== "sacredScroll" &&
         current.debris.kind !== "uncleanScroll"
-      )
+      ) {
         return current;
+      }
       const total = Math.max(1, Math.min(10, numberValue(value)));
       const kind =
         current.debris.kind === "sacredScroll" ? "sacred" : "unclean";
@@ -126,8 +110,9 @@ export function GettingBetterPanelSections({
       if (
         current.debris.kind !== "sacredScroll" &&
         current.debris.kind !== "uncleanScroll"
-      )
+      ) {
         return current;
+      }
       return {
         ...current,
         debris: { ...current.debris, itemKey: event.target.value },
@@ -145,18 +130,18 @@ export function GettingBetterPanelSections({
     }));
   };
 
-  const setScumRerollMode = (event: SelectChangeEvent<string>) => {
+  const setSpecialtyReroll = (index: number, reroll: boolean) => {
     updateDraft((current) => {
-      if (current.scumSpecialties.kind !== "laterImprovement") return current;
+      if (current.classAbility.kind !== "specialties") {
+        return current;
+      }
       return {
         ...current,
-        scumSpecialties: {
-          ...current.scumSpecialties,
-          rerollMode: event.target.value as
-            | "none"
-            | "primary"
-            | "secondary"
-            | "both",
+        classAbility: {
+          ...current.classAbility,
+          specialties: current.classAbility.specialties.map((choice, at) =>
+            at === index ? { ...choice, reroll } : choice,
+          ),
         },
       };
     });
@@ -316,7 +301,7 @@ export function GettingBetterPanelSections({
                   const key = scrollKey(kind, roll);
                   return (
                     <MenuItem key={key} value={key}>
-                      {key}
+                      {scrollName(key)}
                     </MenuItem>
                   );
                 })}
@@ -371,65 +356,14 @@ export function GettingBetterPanelSections({
         </Box>
       </Box>
 
-      {draft.scumSpecialties.kind !== "notScum" && (
-        <Box sx={styles.section}>
-          <Box sx={styles.sectionHeader}>
-            <Typography sx={styles.sectionTitle}>
-              {t("gettingBetter.scum.title", "Scum specialty")}
-            </Typography>
-            <SectionButton
-              label={rerollLabel}
-              onClick={() => rerollSection("scumSpecialties")}
-              disabled={busy}
-            />
-          </Box>
-          {draft.scumSpecialties.kind === "firstImprovement" ? (
-            <Box sx={styles.specialtyGrid}>
-              <Typography sx={styles.label}>
-                {t("gettingBetter.scum.existing", "Existing")}
-              </Typography>
-              <Typography sx={styles.specialtyValue}>
-                {specialtyName(draft.scumSpecialties.existing.key)}
-              </Typography>
-              <Typography sx={styles.label}>
-                {t("gettingBetter.scum.added", "Added")}
-              </Typography>
-              <Typography sx={styles.specialtyValue}>
-                {specialtyName(draft.scumSpecialties.added.key)}
-              </Typography>
-            </Box>
-          ) : (
-            <Box sx={styles.specialtyGrid}>
-              <Typography sx={styles.label}>
-                {t("gettingBetter.scum.primary", "Primary")}
-              </Typography>
-              <Typography sx={styles.specialtyValue}>
-                {specialtyName(draft.scumSpecialties.primary.key)}
-              </Typography>
-              <Typography sx={styles.label}>
-                {t("gettingBetter.scum.secondary", "Secondary")}
-              </Typography>
-              <Typography sx={styles.specialtyValue}>
-                {specialtyName(draft.scumSpecialties.secondary.key)}
-              </Typography>
-              <Typography sx={styles.label}>
-                {t("gettingBetter.scum.rerollMode", "Mode")}
-              </Typography>
-              <Select
-                size="small"
-                value={draft.scumSpecialties.rerollMode}
-                onChange={setScumRerollMode}
-                sx={styles.select}
-              >
-                {["none", "primary", "secondary", "both"].map((mode) => (
-                  <MenuItem key={mode} value={mode}>
-                    {t(`gettingBetter.scum.modes.${mode}`, mode)}
-                  </MenuItem>
-                ))}
-              </Select>
-            </Box>
-          )}
-        </Box>
+      {draft.classAbility.kind !== "none" && (
+        <ClassAbilitySection
+          classAbility={draft.classAbility}
+          busy={busy}
+          abilityName={abilityName}
+          onReroll={() => rerollSection("classAbility")}
+          onToggle={setSpecialtyReroll}
+        />
       )}
     </Box>
   );

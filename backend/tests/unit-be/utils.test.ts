@@ -50,6 +50,16 @@ test('sanitizeCharacterUpdate keeps known fields and clamps numeric bounds', () 
   });
 });
 
+test('sanitizeCharacterUpdate drops keyless, nameless inventory entries', () => {
+  const phantom = { description: '', uses: [], dice: [], tags: [], modifiers: [] };
+  const sanitized = sanitizeCharacterUpdate({
+    equipment: [phantom, { key: 'equipment.rope' }, { name: 'Lucky coin' }, { name: '  ' }],
+    storage: [phantom],
+  });
+
+  assert.deepEqual(sanitized, { equipment: [{ key: 'equipment.rope' }, { name: 'Lucky coin' }], storage: [] });
+});
+
 test('camelCaseJsonbFields normalizes top-level and nested snake_case keys', () => {
   const createdAt = new Date('2026-03-26T10:11:12.000Z');
   const normalized = camelCaseJsonbFields({

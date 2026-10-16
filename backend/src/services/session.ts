@@ -22,6 +22,11 @@ export function isGm(session: AppSession): boolean {
   return Boolean(sessionUserId(session)) && session?.user?.isAnonymous !== true;
 }
 
+/** The GM's account id, or null when the caller is not a GM. */
+export function gmUserId(session: AppSession): string | null {
+  return isGm(session) ? sessionUserId(session) : null;
+}
+
 /** Any session (account or anonymous) that may write OBR room bindings. */
 export function hasObrWriteSession(session: AppSession): boolean {
   return Boolean(sessionUserId(session) || sessionId(session));

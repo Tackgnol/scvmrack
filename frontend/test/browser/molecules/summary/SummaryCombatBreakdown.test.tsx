@@ -37,7 +37,7 @@ describe('SummaryCombatBreakdown Browser', () => {
     await expect.element(page.getByText('12 - Agility modifier - active modifiers')).toBeVisible();
     await expect.element(page.getByText('Agility mod', { exact: true })).toBeVisible();
     // abilityContribution = -abilityModifier = -2
-    await expect.element(page.getByText('-2')).toBeVisible();
+    await expect.element(page.getByText('−2')).toBeVisible();
 
   });
 
@@ -62,8 +62,8 @@ describe('SummaryCombatBreakdown Browser', () => {
     await expect.element(page.getByText('Spell')).toBeVisible();
     
     // modifiersContribution = -breakdown.modifierTotal = -1
-    // We expect two "-1" elements: one for the "Modifiers" total and one for the "Shield" row
-    const minusOnes = await page.getByText('-1').all();
+    // We expect two "−1" elements: one for the "Modifiers" total and one for the "Shield" row
+    const minusOnes = await page.getByText('−1').all();
     expect(minusOnes).toHaveLength(2);
     for (const minusOne of minusOnes) {
       await expect.element(minusOne).toBeVisible();

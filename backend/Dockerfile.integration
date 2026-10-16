@@ -10,6 +10,7 @@ USER node
 
 RUN npm ci && rm -f .npmrc
 COPY --chown=node:node tsconfig.json ./
+COPY --chown=node:node src ./src
 COPY --chown=node:node tests/integration-be ./tests/integration-be
 
 CMD ["npm", "--prefix", "tests/integration-be", "run", "test"]

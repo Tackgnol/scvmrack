@@ -75,6 +75,14 @@ async function unwrap<T>(
   return data as T;
 }
 
+/** Query string for a creation call: the locale, plus its party or Owlbear room scope. */
+function creationQuery(locale: string, inviteToken?: string, obrRoomId?: string, obrPlayerId?: string): string {
+  const invite = inviteToken ? `&invite=${encodeURIComponent(inviteToken)}` : "";
+  const room = obrRoomId ? `&obrRoom=${encodeURIComponent(obrRoomId)}` : "";
+  const player = obrPlayerId ? `&obrPlayer=${encodeURIComponent(obrPlayerId)}` : "";
+  return `?locale=${encodeURIComponent(locale)}${invite}${room}${player}`;
+}
+
 export function createDraft(
   input: {
     classId?: number | null;
@@ -85,9 +93,12 @@ export function createDraft(
   },
   locale: string,
   signal?: AbortSignal,
+  inviteToken?: string,
+  obrRoomId?: string,
+  obrPlayerId?: string,
 ): Promise<DraftResponse> {
   return unwrap<DraftResponse>(
-    loose.POST(`/api/characters/draft?locale=${encodeURIComponent(locale)}`, {
+    loose.POST(`/api/characters/draft${creationQuery(locale, inviteToken, obrRoomId, obrPlayerId)}`, {
       body: input,
       signal,
     }),
@@ -101,12 +112,13 @@ export function rerollDraftSection(
   section: DraftSection,
   locale: string,
   signal?: AbortSignal,
+  inviteToken?: string,
+  obrRoomId?: string,
+  obrPlayerId?: string,
 ): Promise<DraftResponse> {
   return unwrap<DraftResponse>(
     loose.POST(
-      `/api/characters/draft/reroll/${section}?locale=${encodeURIComponent(
-        locale,
-      )}`,
+      `/api/characters/draft/reroll/${section}${creationQuery(locale, inviteToken, obrRoomId, obrPlayerId)}`,
       { body: { draft }, signal },
     ),
     "Failed to re-roll",
@@ -119,9 +131,12 @@ export function confirmDraft(
   locale: string,
   signal?: AbortSignal,
   replace = false,
+  inviteToken?: string,
+  obrRoomId?: string,
+  obrPlayerId?: string,
 ): Promise<CharacterResponse> {
   return unwrap<CharacterResponse>(
-    loose.POST(`/api/characters/new?locale=${encodeURIComponent(locale)}`, {
+    loose.POST(`/api/characters/new${creationQuery(locale, inviteToken, obrRoomId, obrPlayerId)}`, {
       body: replace ? { draft, replace: true } : { draft },
       signal,
     }),
@@ -130,28 +145,15 @@ export function confirmDraft(
   );
 }
 
-// Roll-and-keep: create a fully random character in one shot (no draft preview).
-// Used by the "roll and join" flow so it can create + join imperatively.
-export function createRandomCharacter(
-  locale: string,
-  signal?: AbortSignal,
-): Promise<CharacterResponse> {
-  return unwrap<CharacterResponse>(
-    loose.POST(`/api/characters/new?locale=${encodeURIComponent(locale)}`, {
-      body: {},
-      signal,
-    }),
-    "Failed to roll a character",
-    signal,
-  );
-}
-
 export function fetchClasses(
   locale: string,
   signal?: AbortSignal,
+  inviteToken?: string,
+  obrRoomId?: string,
+  obrPlayerId?: string,
 ): Promise<ClassSummary[]> {
   return unwrap<ClassSummary[]>(
-    loose.GET(`/api/characters/classes?locale=${encodeURIComponent(locale)}`, {
+    loose.GET(`/api/characters/classes${creationQuery(locale, inviteToken, obrRoomId, obrPlayerId)}`, {
       signal,
     }),
     "Failed to load classes",

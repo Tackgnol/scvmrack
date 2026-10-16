@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import prisma from '../lib/prisma.js';
 
 /**
@@ -37,13 +38,27 @@ export type CharacterForJoinRow = {
   partyId: string | null;
 };
 
-/** Thrown by {@link joinInTransaction} when the cap is hit inside the tx. */
-export class PartyFullError extends Error {
-  constructor() {
-    super('Party is full');
-    this.name = 'PartyFullError';
-  }
+/** Room-party reads and writes bound to one transaction, so a service can combine them atomically. */
+function roomOps(tx: Prisma.TransactionClient) {
+  return {
+    findRoomParty(roomId: string) {
+      return tx.party.findUnique({
+        where: { obrRoomId: roomId },
+        select: { id: true, ownerUserId: true, _count: { select: { members: true } } },
+      });
+    },
+
+    async deleteParty(id: string): Promise<void> {
+      await tx.party.delete({ where: { id } });
+    },
+
+    async setPartyRoom(id: string, roomId: string): Promise<void> {
+      await tx.party.update({ where: { id }, data: { obrRoomId: roomId } });
+    },
+  };
 }
+
+export type RoomOps = ReturnType<typeof roomOps>;
 
 const MEMBER_SELECT = {
   id: true,
@@ -75,11 +90,13 @@ export const partyRepository = {
     });
   },
 
+  /** Creates a party with `poolLineageIds` as its Party Class Pool. */
   createParty(input: {
     ownerUserId: string;
     name: string;
     inviteToken: string;
     obrRoomId?: string | null;
+    poolLineageIds: string[];
   }): Promise<PartyRow> {
     return prisma.party.create({
       data: {
@@ -87,6 +104,9 @@ export const partyRepository = {
         name: input.name,
         inviteToken: input.inviteToken,
         obrRoomId: input.obrRoomId ?? undefined,
+        classPool: {
+          create: input.poolLineageIds.map((lineageId) => ({ lineageId })),
+        },
       },
       select: {
         id: true,
@@ -145,6 +165,25 @@ export const partyRepository = {
     });
   },
 
+  /** Each class version's number and the newest version number of its lineage. */
+  async findClassVersions(classIds: number[]): Promise<Map<number, { version: number; latestVersion: number }>> {
+    if (classIds.length === 0) {
+      return new Map();
+    }
+    const rows = await prisma.class.findMany({
+      where: { id: { in: classIds } },
+      select: { id: true, lineageId: true, version: true },
+    });
+    const latest = await prisma.class.groupBy({
+      by: ['lineageId'],
+      where: { lineageId: { in: rows.map((row) => row.lineageId) } },
+      _max: { version: true },
+    });
+    const latestByLineage = new Map(latest.map((row) => [row.lineageId, row._max.version ?? 0]));
+    return new Map(
+      rows.map((row) => [row.id, { version: row.version, latestVersion: latestByLineage.get(row.lineageId) ?? row.version }])
+    );
+  },
   getPartyByInviteToken(token: string): Promise<PartyRow | null> {
     return prisma.party.findUnique({
       where: { inviteToken: token },
@@ -179,7 +218,9 @@ export const partyRepository = {
     });
   },
 
-  getCharacterForJoin(characterId: string): Promise<CharacterForJoinRow | null> {
+  getCharacterForJoin(
+    characterId: string
+  ): Promise<CharacterForJoinRow | null> {
     return prisma.character.findUnique({
       where: { id: characterId },
       select: { id: true, userId: true, sessionId: true, partyId: true },
@@ -204,47 +245,16 @@ export const partyRepository = {
     });
   },
 
-  /**
-   * Bind a character to a party with the cap enforced inside a transaction so
-   * concurrent joins can never overflow it.
-   *
-   * The count→insert is a classic check-then-act race: under the default READ
-   * COMMITTED isolation, two joins of different characters both read `cap - 1`,
-   * both pass the guard, and each updates its own distinct row — no write-write
-   * conflict, so both commit and the party overflows. We close the race with a
-   * transaction-scoped Postgres advisory lock keyed on the party id: concurrent
-   * joiners to the same party serialize on the lock (they queue rather than
-   * abort/retry), so each runs its count→insert with an up-to-date count. The
-   * lock auto-releases at transaction end. Throws {@link PartyFullError} when
-   * the cap is reached (the service maps that to a 409).
-   */
-  async joinInTransaction(input: {
-    characterId: string;
-    partyId: string;
-    cap: number;
-  }): Promise<void> {
-    await prisma.$transaction(async (tx) => {
-      // Serialize all joins to THIS party. hashtextextended → a stable bigint
-      // key from the party UUID; the lock is held until the tx commits.
-      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${input.partyId}, 0))`;
-      const count = await tx.character.count({
-        where: { partyId: input.partyId },
-      });
-      if (count >= input.cap) {
-        throw new PartyFullError();
-      }
-      await tx.character.update({
-        where: { id: input.characterId },
-        data: { partyId: input.partyId, joinedAt: new Date() },
-      });
-    });
-  },
-
   async rotateInviteToken(id: string, token: string): Promise<void> {
     await prisma.party.update({
       where: { id },
       data: { inviteToken: token },
     });
+  },
+
+  /** Runs `work` in one transaction with the room-party operations bound to it. */
+  roomTransaction<T>(work: (ops: RoomOps) => Promise<T>): Promise<T> {
+    return prisma.$transaction((tx) => work(roomOps(tx)));
   },
 
   /** Transfer party ownership (used when a signed-in GM claims a system-owned room party). */

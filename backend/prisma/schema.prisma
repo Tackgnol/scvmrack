@@ -15,6 +15,7 @@ model User {
   image         String?
   isAnonymous   Boolean?    @default(false)
   logto_sub     String?
+  preferred_username String?
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
 
@@ -22,6 +23,8 @@ model User {
   accounts   Account[]
   characters Character[]
   parties    Party[]
+  classes    Class[]
+  classDrafts ClassDraftRecord[]
 
   @@map("user")
 }
@@ -32,6 +35,7 @@ model Party {
   ownerUserId String   @map("owner_user_id")
   inviteToken String   @unique @map("invite_token")
   obrRoomId   String?  @unique @map("obr_room_id")
+  classlessEnabled Boolean @default(true) @map("classless_enabled")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
@@ -39,9 +43,20 @@ model Party {
   members Character[]
   enemies Enemy[]
   obrRoomBindings ObrRoomBinding[]
+  classPool PartyClassPool[]
 
   @@index([ownerUserId])
   @@map("parties")
+}
+
+/// One class lineage enabled in a party's Party Class Pool; rolls use the lineage's latest version.
+model PartyClassPool {
+  partyId   String @map("party_id") @db.Uuid
+  party     Party  @relation(fields: [partyId], references: [id], onDelete: Cascade)
+  lineageId String @map("lineage_id") @db.Uuid
+
+  @@id([partyId, lineageId])
+  @@map("party_class_pools")
 }
 
 model Session {
@@ -182,6 +197,7 @@ model Character {
   storage         Json?    @default("[]")
   notes           String?  @default("")
   miseryCount     Int      @default(0) @map("misery_count")
+  lastSaveId      String?  @map("last_save_id")
   sessionId       String?  @map("session_id")
   userId          String?  @map("user_id")
   modifiers       Json     @default("[]") @map("modifiers")
@@ -245,9 +261,66 @@ model Enemy {
   @@map("enemies")
 }
 
+enum ClassSource {
+  main_book
+  zine
+  the_rack
+  user
+
+  @@map("class_source")
+}
+
+enum ClassVisibility {
+  private
+  public
+
+  @@map("class_visibility")
+}
+
+enum GettingBetterRule {
+  book
+  book_plus_ability
+  specialist
+
+  @@map("getting_better_rule")
+}
+
+enum ClassStatus {
+  draft
+  active
+  archived
+
+  @@map("class_status")
+}
+
+enum ModerationReportReason {
+  copyright
+  child_sexual_abuse_material
+  threat_to_life_or_safety
+  terrorist_content
+  other_illegal_content
+  abusive_or_hateful
+  owner_removal
+  other
+
+  @@map("moderation_report_reason")
+}
+
+enum ModerationReportStatus {
+  open
+  dismissed
+  taken_down
+  content_removed
+  restored
+
+  @@map("moderation_report_status")
+}
+
+/// One immutable Class Version (ADR 0001). Names are unique per owner via the
+/// `classes_name_per_owner` exclusion constraint, which Prisma cannot express.
 model Class {
   id                  Int      @id @default(autoincrement())
-  name                String   @unique @db.VarChar(255)
+  name                String   @db.VarChar(255)
   roll                Int?
   appendix            String?
   hpDie               Int?     @default(8) @map("hp_die")
@@ -255,24 +328,151 @@ model Class {
   armorDie            Int?     @default(4) @map("armor_die")
   silverDice          Int[]    @default([6, 6]) @map("silver_dice")
   silverModifier      Int?     @default(10) @map("silver_modifier")
-  statModifiers       Json?    @default("{}") @map("stat_modifiers")
+  statDice            Json     @default("{\"strength\": {\"count\": 3, \"faces\": 6, \"modifier\": 0, \"dropLowest\": false}, \"agility\": {\"count\": 3, \"faces\": 6, \"modifier\": 0, \"dropLowest\": false}, \"presence\": {\"count\": 3, \"faces\": 6, \"modifier\": 0, \"dropLowest\": false}, \"toughness\": {\"count\": 3, \"faces\": 6, \"modifier\": 0, \"dropLowest\": false}}") @map("stat_dice")
   classAbilities      Json?    @default("[]") @map("class_abilities")
   randomAbilities     Json?    @default("[]") @map("random_abilities")
   randomAbilityCount  Int?     @default(1) @map("random_ability_count")
   nameKey             String?  @db.VarChar(255) @map("name_key")
   descriptionKey      String?  @db.VarChar(255) @map("description_key")
+  source              ClassSource     @default(main_book)
+  creditWork          String?         @map("credit_work")
+  creditAuthor        String?         @map("credit_author")
+  creditUrl           String?         @map("credit_url")
+  ownerUserId         String?         @map("owner_user_id")
+  owner               User?           @relation(fields: [ownerUserId], references: [id], onDelete: SetNull)
+  languages           String[]        @default(["en", "pl"]) @db.VarChar(2)
+  visibility          ClassVisibility @default(public)
+  firstPublishedAt    DateTime?       @map("first_published_at")
+  status              ClassStatus     @default(active)
+  takenDownAt         DateTime?       @map("taken_down_at")
+  contentRemovedAt    DateTime?       @map("content_removed_at")
+  takedownReason      String?         @map("takedown_reason")
+  lineageId           String          @default(dbgenerated("gen_random_uuid()")) @map("lineage_id") @db.Uuid
+  version             Int             @default(1)
+  omenDie             Int             @default(2) @map("omen_die")
+  gettingBetterRule   GettingBetterRule @default(book) @map("getting_better_rule")
+  gettingBetterNoteKey String?        @db.VarChar(255) @map("getting_better_note_key")
+  drafts              ClassDraftRecord[]
+  moderationReports   ModerationReport[]
+  moderationLogs      ModerationLog[]
 
+  @@unique([lineageId, version])
+  @@index([ownerUserId])
+  @@index([ownerUserId, firstPublishedAt])
   @@map("classes")
 }
 
+model ModerationReport {
+  id            String                 @id @default(uuid()) @db.Uuid
+  classId       Int                    @map("class_id")
+  reason        ModerationReportReason
+  explanation   String                 @db.VarChar(4000)
+  reporterName  String?                @map("reporter_name") @db.VarChar(200)
+  reporterEmail String?                @map("reporter_email") @db.VarChar(320)
+  /// The language the reporter used, so decision mail reaches them in it.
+  reporterLocale String               @default("en") @map("reporter_locale") @db.VarChar(5)
+  goodFaith     Boolean                @map("good_faith")
+  status        ModerationReportStatus @default(open)
+  resolvedAt    DateTime?              @map("resolved_at")
+  reporterDetailsRemovedAt DateTime?   @map("reporter_details_removed_at")
+  createdAt     DateTime               @default(now()) @map("created_at")
+  updatedAt     DateTime               @updatedAt @map("updated_at")
+
+  class Class           @relation(fields: [classId], references: [id], onDelete: Restrict)
+  logs  ModerationLog[]
+  disputes ModerationDispute[]
+
+  @@index([classId, status, createdAt])
+  @@index([status, createdAt])
+  @@index([resolvedAt, reporterDetailsRemovedAt])
+  @@map("moderation_reports")
+}
+
+model ModerationDispute {
+  id           String   @id @default(uuid()) @db.Uuid
+  reportId     String   @map("report_id") @db.Uuid
+  authorUserId String   @map("author_user_id")
+  text         String   @db.VarChar(4000)
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  report ModerationReport @relation(fields: [reportId], references: [id], onDelete: Restrict)
+
+  @@index([reportId, createdAt])
+  @@map("moderation_disputes")
+}
+model ModerationLog {
+  id          String   @id @default(uuid()) @db.Uuid
+  classId     Int?     @map("class_id")
+  targetUserId String? @map("target_user_id")
+  reportId    String?  @map("report_id") @db.Uuid
+  actorUserId String?  @map("actor_user_id")
+  action      String   @db.VarChar(40)
+  reason      String?  @db.VarChar(4000)
+  evidence    Json?
+  /// The category a takedown or removal was decided under; shown as the statement of reasons' ground.
+  ground      ModerationReportReason?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  class  Class?            @relation(fields: [classId], references: [id], onDelete: Restrict)
+  report ModerationReport? @relation(fields: [reportId], references: [id], onDelete: Restrict)
+
+  @@index([classId, createdAt])
+  @@index([reportId])
+  @@index([targetUserId, createdAt])
+  @@map("moderation_log")
+}
+model ClassCreationBan {
+  userId      String   @id @map("user_id")
+  reason      String   @db.VarChar(4000)
+  actorUserId String   @map("actor_user_id")
+  bannedAt    DateTime @default(now()) @map("banned_at")
+
+  @@map("class_creation_bans")
+}
+/// An unvalidated, private Custom Class work-in-progress. Drafts never feed class rows or pools.
+model ClassDraftRecord {
+  id          Int      @id @default(autoincrement())
+  ownerUserId String   @map("owner_user_id")
+  classId     Int?     @map("class_id")
+  payload     Json
+  revision    Int      @default(1)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  owner User   @relation(fields: [ownerUserId], references: [id], onDelete: Cascade)
+  class Class? @relation(fields: [classId], references: [id], onDelete: SetNull)
+
+  @@unique([ownerUserId, classId])
+  @@index([ownerUserId, updatedAt])
+  @@index([classId])
+  @@map("class_drafts")
+}
 model Ability {
   id        Int      @id @default(autoincrement())
   classId   Int?     @map("class_id")
   key       String   @unique @db.VarChar(255)
   isRandom  Boolean? @default(false) @map("is_random")
-  rollValue Int?     @map("roll_value")
+  /// Order within the class; read by (position, id). Nullable only because the positional seed INSERTs write it before seed 017 backfills.
+  position  Int?
+  grantItemKey String? @db.VarChar(255) @map("grant_item_key")
+  grantPetKey  String? @db.VarChar(255) @map("grant_pet_key")
+  tableDie     Int?    @map("table_die")
+  tableRows    AbilityTableRow[]
 
   @@map("abilities")
+}
+
+/// One row of an ability's dN reference table; `roll` is the die result that gives it.
+model AbilityTableRow {
+  id        Int     @id @default(autoincrement())
+  abilityId Int     @map("ability_id")
+  ability   Ability @relation(fields: [abilityId], references: [id], onDelete: Cascade)
+  roll      Int
+  textKey   String  @db.VarChar(255) @map("text_key")
+  itemKey   String? @db.VarChar(255) @map("item_key")
+
+  @@unique([abilityId, roll])
+  @@map("ability_table_rows")
 }
 
 model Origin {
@@ -302,6 +502,12 @@ model Weapon {
   ammoType       String? @db.VarChar(50) @map("ammo_type")
   defaultAmount  Int?    @map("default_amount")
 
+  /// The Custom Class that owns this Class Item; null for the shared catalog.
+  classId        Int?     @map("class_id")
+  position       Int?
+
+  @@index([classId])
+  @@index([classId, position])
   @@map("weapons")
 }
 
@@ -316,6 +522,12 @@ model Armor {
   maxTier   Int?     @default(1) @map("max_tier")
   modifiers Json?    @default("[]")
 
+  /// The Custom Class that owns this Class Item; null for the shared catalog.
+  classId        Int?     @map("class_id")
+  position       Int?
+
+  @@index([classId])
+  @@index([classId, position])
   @@map("armors")
 }
 
@@ -337,6 +549,12 @@ model Equipment {
   defaultAmount Int?     @map("default_amount")
   useEffect     Json?    @map("use_effect")
 
+  /// The Custom Class that owns this Class Item; null for the shared catalog.
+  classId        Int?     @map("class_id")
+  position       Int?
+
+  @@index([classId])
+  @@index([classId, position])
   @@map("equipment")
 }
 
@@ -353,6 +571,12 @@ model Pet {
   buff       Json?    @default("[]")
   value      Int?     @default(0)
 
+  /// The Custom Class that owns this Class Item; null for the shared catalog.
+  classId        Int?     @map("class_id")
+  position       Int?
+
+  @@index([classId])
+  @@index([classId, position])
   @@map("pets")
 }
 

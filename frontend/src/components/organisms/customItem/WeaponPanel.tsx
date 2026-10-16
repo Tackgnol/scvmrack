@@ -1,6 +1,6 @@
 import { Autocomplete, Box, MenuItem, TextField } from '@mui/material';
 import { useTranslation } from 'react-i18next';
-import { CUSTOM_DAMAGE_DICE } from '@/inventory/customItems';
+import { DIE_FACES } from '@/utils/rollDie';
 import { BoundedTextField } from './BoundedTextField';
 import PanelHeading from './PanelHeading';
 import { type CustomItemPanelProps } from './panelProps';
@@ -30,7 +30,7 @@ export default function WeaponPanel({
           helperText={t('equipment.customItem.damageDieHint', 'Rolled when this weapon hits')}
           sx={modalInputStyles}
         >
-          {CUSTOM_DAMAGE_DICE.map((die) => (
+          {DIE_FACES.map((die) => (
             <MenuItem key={die} value={String(die)}>
               d{die}
             </MenuItem>

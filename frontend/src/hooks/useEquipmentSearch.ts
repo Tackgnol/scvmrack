@@ -19,7 +19,9 @@ type RawItemSearchHit = ItemSearchHit & {
 };
 
 function isRawItemSearchHit(value: unknown): value is RawItemSearchHit {
-    if (!value || typeof value !== 'object') return false;
+    if (!value || typeof value !== 'object') {
+        return false;
+    }
 
     const candidate = value as Partial<RawItemSearchHit>;
     return (

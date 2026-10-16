@@ -61,7 +61,6 @@ export { default as ComputedModifierDetailsModal } from './molecules/modifiers/C
 export { default as UsePipsGroup } from './molecules/uses/UsePipsGroup';
 export { default as TrackedUseRow } from './molecules/uses/TrackedUseRow';
 export { default as UseSectionLabel } from './molecules/uses/UseSectionLabel';
-export { default as DecoctionsModal } from './molecules/modal/DecoctionsModal';
 export { default as FeedbackDialog } from './molecules/feedback/FeedbackDialog';
 export { ErrorFeedbackProvider, useErrorFeedback } from './molecules/feedback/ErrorFeedbackProvider';
 export { StampContainer } from './molecules/stamp/StampContainer';

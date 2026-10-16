@@ -4,6 +4,7 @@ import { page, userEvent } from 'vitest/browser';
 import PetSection from '@/components/molecules/pets/PetSection';
 import BrowserTestProvider from '../../BrowserTestProvider';
 import * as petHook from '@/hooks/usePetSection';
+import i18n, { loadLanguage } from '@/i18n';
 
 vi.mock('@/hooks/usePetSection', () => ({
   usePetSection: vi.fn(),
@@ -16,6 +17,19 @@ describe('PetSection Component', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockIsPipPending.mockReturnValue(false);
+  });
+
+  it('announces pet hit point actions in Polish', async () => {
+    await loadLanguage('pl');
+    await i18n.changeLanguage('pl');
+    vi.mocked(petHook.usePetSection).mockReturnValue({
+      petsWithIndices: [{ item: { name: 'Jastrząb', key: 'pet.hawk' }, equipmentIndex: 0, uses: [false, true] }],
+      hasPendingPipSave: false, isPipPending: mockIsPipPending, markPipPending: mockMarkPipPending,
+    } as ReturnType<typeof petHook.usePetSection>);
+    await render(<BrowserTestProvider><PetSection /></BrowserTestProvider>);
+    await expect.element(page.getByRole('button', { name: 'Zaznacz punkt życia jako pełny: Jastrząb, punkt 1' })).toBeVisible();
+    await expect.element(page.getByRole('button', { name: 'Zaznacz punkt życia jako pusty: Jastrząb, punkt 2' })).toBeVisible();
+    await expect.element(page.getByRole('button', { name: /^Mark hit point/ }).first()).not.toBeInTheDocument();
   });
 
   it('renders null when there are no pets', async () => {

@@ -11,6 +11,7 @@ export type PartyMemberSummary = {
   maxHp: number;
   joinedAt: string | null;
   owned?: boolean;
+  olderRules: { version: number; latestVersion: number } | null;
 };
 
 export type OwnedPartySummary = {

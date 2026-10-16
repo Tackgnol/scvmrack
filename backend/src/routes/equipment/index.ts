@@ -3,6 +3,7 @@ import type { JsonSchemaToTsProvider } from '@fastify/type-provider-json-schema-
 import { ErrorSchema } from '../../schemas/equipment.js';
 import { sendServiceError } from '../../errors.js';
 import { createEquipmentService } from '../../services/equipment-service.js';
+import { limitMax } from '../../lib/rate-limits.js';
 
 const equipment: FastifyPluginAsync = async (fastify) => {
   const app = fastify.withTypeProvider<JsonSchemaToTsProvider>();
@@ -12,7 +13,7 @@ const equipment: FastifyPluginAsync = async (fastify) => {
     {
       config: {
         rateLimit: {
-          max: process.env.NODE_ENV === 'test' ? 10000 : 50,
+          max: limitMax(50),
           timeWindow: '1 minute',
         },
       },

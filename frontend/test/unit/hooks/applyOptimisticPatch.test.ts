@@ -26,6 +26,21 @@ test('applyOptimisticPatch handles armor field patches', () => {
   expect(applyOptimisticPatch(noArmorChar, { kind: 'armor', field: 'name', value: 'X' })).toBe(noArmorChar);
 });
 
+test.each([null, {}, { description: '', dice: [], maxTier: 0, currentTier: 0 }])(
+  'equipping armor into an empty projection (%j) does not create a carried item',
+  (equippedArmor) => {
+    const armor = { key: 'armor.leather', name: 'Leather Armor' };
+    const rope = { key: 'equipment.rope', name: 'Rope' };
+    const character: CharacterResponse = {
+      ...baseCharacter, equippedArmor, equipment: [armor, rope],
+    };
+    const result = applyOptimisticPatch(character, { kind: 'equip-armor', equipmentIndex: 0 });
+    expect(result.equippedArmor).toEqual(armor);
+    expect(result.equipment).toEqual([rope]);
+    expect(character.equipment).toEqual([armor, rope]);
+  }
+);
+
 test('applyOptimisticPatch handles weapon field patches', () => {
   const result = applyOptimisticPatch(baseCharacter, { kind: 'weapon', index: 0, field: 'name', value: 'Silver Dagger' });
   expect(result.equippedWeapons![0]?.name).toBe('Silver Dagger');
@@ -166,6 +181,11 @@ test('applyOptimisticPatch handles armor equip/unequip', () => {
     expect(r2.equippedArmor).toBeNull();
     expect(r2.equipment).toHaveLength(2);
     expect(r2.equipment![1].key).toBe('rags');
+});
+
+test('unequipping an empty armor slot adds nothing to inventory', () => {
+    const emptySlot = { ...baseCharacter, equippedArmor: { description: '', uses: [], tags: [] } as any };
+    expect(applyOptimisticPatch(emptySlot, { kind: 'unequip-armor' }).equipment).toEqual(baseCharacter.equipment);
 });
 
 test('applyOptimisticPatch handles modifiers', () => {

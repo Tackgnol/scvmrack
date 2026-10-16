@@ -1,4 +1,5 @@
 import prisma from '../lib/prisma.js';
+import { advisoryLock } from './advisory-lock.js';
 import { Prisma } from '@prisma/client';
 
 /**
@@ -31,12 +32,75 @@ export type CharacterPartyAccessRow = {
   } | null;
 };
 
+/** Character writes bound to one transaction, so a service can combine them atomically. */
+function characterTxOps(tx: Prisma.TransactionClient) {
+  return {
+    /** Serializes work on one party (joins against its member cap) until the transaction ends. */
+    lockParty(partyId: string): Promise<void> {
+      return advisoryLock(tx, 'party', partyId);
+    },
+
+    /** How many scvm are in the party, not counting `excludingUserId`'s. */
+    countPartyMembers(partyId: string, excludingUserId?: string): Promise<number> {
+      return tx.character.count({
+        where: {
+          partyId,
+          // NOT alone would also skip owner-less scvm (user_id NULL), which still hold a seat.
+          ...(excludingUserId ? { OR: [{ userId: null }, { NOT: { userId: excludingUserId } }] } : {}),
+        },
+      });
+    },
+
+    async deleteCharactersOf(userId: string): Promise<void> {
+      await tx.character.deleteMany({ where: { userId } });
+    },
+
+    async createCharacter(data: Prisma.CharacterUncheckedCreateInput): Promise<string> {
+      const character = await tx.character.create({ data, select: { id: true } });
+      return character.id;
+    },
+
+    async joinParty(characterId: string, partyId: string): Promise<void> {
+      await tx.character.update({ where: { id: characterId }, data: { partyId, joinedAt: new Date() } });
+    },
+
+    /** Binds the Owlbear player's seat in the room to the character. */
+    async bindObrPlayer(binding: { roomId: string; playerId: string }, characterId: string): Promise<void> {
+      await tx.obrRoomBinding.upsert({
+        where: { obrRoomId: binding.roomId },
+        create: { obrRoomId: binding.roomId },
+        update: { updatedAt: new Date() },
+      });
+      await tx.obrPlayerCharacterBinding.upsert({
+        where: { obrRoomId_obrPlayerId: { obrRoomId: binding.roomId, obrPlayerId: binding.playerId } },
+        create: {
+          obrRoomId: binding.roomId,
+          obrPlayerId: binding.playerId,
+          characterId,
+          assignedByPlayerId: binding.playerId,
+        },
+        update: { characterId, assignedByPlayerId: binding.playerId },
+      });
+    },
+  };
+}
+
+export type CharacterTxOps = ReturnType<typeof characterTxOps>;
+
 export const characterRepository = {
   /** Owner lookup for ownership checks. `null` when the row does not exist. */
   getOwnerId(id: string): Promise<{ userId: string | null } | null> {
     return prisma.character.findUnique({
       where: { id },
       select: { userId: true },
+    });
+  },
+
+  /** The save id of the last guarded update, or null when the character is gone. */
+  getLastSaveId(id: string): Promise<{ lastSaveId: string | null } | null> {
+    return prisma.character.findUnique({
+      where: { id },
+      select: { lastSaveId: true },
     });
   },
 
@@ -95,12 +159,36 @@ export const characterRepository = {
     return rows.map((row) => row.id);
   },
 
-  update(id: string, data: Prisma.CharacterUpdateInput): Promise<unknown> {
-    return prisma.character.update({ where: { id }, data });
+  update(
+    id: string,
+    data: Prisma.CharacterUpdateInput,
+    guard?: { expectedUpdatedAt?: Date; saveId?: string }
+  ): Promise<unknown> {
+    const { expectedUpdatedAt, saveId } = guard ?? {};
+    if (saveId) {
+      data = { ...data, lastSaveId: saveId };
+    }
+    if (!expectedUpdatedAt) {
+      return prisma.character.update({ where: { id }, data });
+    }
+    const nextMillisecond = new Date(expectedUpdatedAt.getTime() + 1);
+    return prisma.character.update({
+      // SQL-era timestamps have microseconds; API dates serialize milliseconds.
+      where: { id, updatedAt: { gte: expectedUpdatedAt, lt: nextMillisecond } },
+      data: {
+        ...data,
+        updatedAt: new Date(Math.max(Date.now(), nextMillisecond.getTime())),
+      },
+    });
   },
 
   deleteById(id: string): Promise<{ count: number }> {
     return prisma.character.deleteMany({ where: { id } });
+  },
+
+  /** Runs `work` in one transaction with the character write operations bound to it. */
+  transaction<T>(work: (ops: CharacterTxOps) => Promise<T>): Promise<T> {
+    return prisma.$transaction((tx) => work(characterTxOps(tx)));
   },
 
   /** True if the user already owns at least one character. */
@@ -131,43 +219,16 @@ export const characterRepository = {
     return prisma.character.count();
   },
 
-  async classExists(id: number): Promise<boolean> {
-    const row = await prisma.class.findUnique({
-      where: { id },
-      select: { id: true },
-    });
-    return row !== null;
-  },
-
-  /**
-   * Classes for the creation gate: id + localized name/description.
-   * Mirrors getClassNameMap's translation lookup.
-   */
-  async listClasses(
-    locale: string
-  ): Promise<Array<{ id: number; name: string | null; description: string | null }>> {
-    const classes = await prisma.class.findMany({
-      select: { id: true, nameKey: true, descriptionKey: true },
+  /** Classes for the creation gate with their untranslated text keys, in id order. */
+  async listClassesByIds(ids: number[]) {
+    if (ids.length === 0) {
+      return [];
+    }
+    return prisma.class.findMany({
+      where: { id: { in: ids } },
+      select: { id: true, name: true, nameKey: true, descriptionKey: true, languages: true },
       orderBy: { id: 'asc' },
     });
-
-    const keys = classes.flatMap((c) =>
-      [c.nameKey, c.descriptionKey].filter((k): k is string => k !== null)
-    );
-    const translations =
-      keys.length > 0
-        ? await prisma.translation.findMany({
-            where: { locale, key: { in: keys } },
-            select: { key: true, value: true },
-          })
-        : [];
-    const map = new Map(translations.map((t) => [t.key, t.value]));
-
-    return classes.map((c) => ({
-      id: c.id,
-      name: c.nameKey ? (map.get(c.nameKey) ?? null) : null,
-      description: c.descriptionKey ? (map.get(c.descriptionKey) ?? null) : null,
-    }));
   },
 
   listSummariesByUser(userId: string): Promise<CharacterSummaryRow[]> {

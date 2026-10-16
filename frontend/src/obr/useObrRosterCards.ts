@@ -9,7 +9,6 @@ import { useKickPartyMember, useObrRoomParty } from "@/hooks/usePartyRepository"
 import { getApiLocale } from "@/hooks/utils";
 import type {
   ObrCard,
-  ObrLocale,
   ObrPlayerCharacterBinding,
   ObrTokenCharacterBinding,
 } from "@/api/obr";
@@ -61,7 +60,7 @@ export { toRosterRows } from "@tackgnol/rpgtools-owlbear/react-query";
 export function useObrRosterCards(): ObrRosterState {
   const queryClient = useQueryClient();
   const { t, i18n } = useTranslation();
-  const locale = getApiLocale<ObrLocale>(i18n.language);
+  const locale = getApiLocale(i18n.language);
   const roomId = useObrRoomId();
   const roomParty = useObrRoomParty(roomId);
 

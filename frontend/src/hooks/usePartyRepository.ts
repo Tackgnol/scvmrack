@@ -47,25 +47,12 @@ export function usePartyDetail(partyId: string | null | undefined, enabled = tru
 }
 
 export function useObrRoomParty(roomId: string | null | undefined) {
-  const queryClient = useQueryClient();
-
-  return useQuery<PartyDetail | null>({
+  return useQuery({
     queryKey: roomId
       ? partyKeys.obrRoom(roomId)
       : ['party', 'obr-room', 'none'],
-    queryFn: () =>
-      Promise.resolve(
-        roomId
-          ? queryClient.getQueryData<PartyDetail>(partyKeys.obrRoom(roomId)) ??
-              null
-          : null,
-      ),
-    enabled: false,
-    initialData: () =>
-      roomId
-        ? queryClient.getQueryData<PartyDetail>(partyKeys.obrRoom(roomId)) ??
-          null
-        : null,
+    queryFn: () => promoteObrRoom({ obrRoomId: roomId as string }),
+    enabled: !!roomId,
   });
 }
 

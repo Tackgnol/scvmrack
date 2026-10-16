@@ -6,7 +6,20 @@ import {
     obrCharacterAccessHeaders,
 } from '@/obr/obrCharacterAccess';
 import { embeddedSessionHeaders } from '@/utils/embed';
+import { authHeaders } from '@/utils/tabSession';
 import type { paths } from "./schema.ts";
+
+/** The JSON body a GET route answers 200 with. */
+export type ApiOk<P extends keyof paths> = paths[P] extends {
+    get: { responses: { 200: { content: { "application/json": infer T } } } };
+}
+    ? T
+    : never;
+
+/** A locale the API accepts. */
+export type ApiLocale = NonNullable<
+    NonNullable<paths["/api/characters/{id}"]["get"]["parameters"]["query"]>["locale"]
+>;
 // ============================================
 // Auth Query Keys
 // ============================================
@@ -47,7 +60,9 @@ export function resetRedirectControl() {
 }
 
 function redirectToSessionExpired() {
-    if (isRedirecting) return;
+    if (isRedirecting) {
+        return;
+    }
     isRedirecting = true;
 
     setTimeout(() => {
@@ -61,7 +76,7 @@ function redirectToSessionExpired() {
 async function fetchCsrfToken(): Promise<string> {
     const res = await fetch(
         `${import.meta.env.VITE_BACKEND_URL || ""}/api/csrf-token`,
-        { credentials: "include", headers: embeddedSessionHeaders() }
+        { credentials: "include", headers: { ...embeddedSessionHeaders(), ...authHeaders() } }
     );
     if (!res.ok) {
         throw new Error("Failed to fetch CSRF token");
@@ -160,6 +175,9 @@ export function isAuthPath(pathname: string): boolean {
 
 export const authMiddleware: Middleware = {
     async onRequest({ request, id }) {
+        for (const [key, value] of Object.entries(authHeaders())) {
+            request.headers.set(key, value);
+        }
         if (request.credentials === "include") {
             rememberRetryRequest(authRetryRequests, id, request);
             return request;

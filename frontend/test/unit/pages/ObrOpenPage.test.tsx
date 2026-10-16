@@ -5,6 +5,7 @@ import { beforeEach, expect, test, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
     navigate: vi.fn(async (_path: string) => {}),
     redeem: vi.fn(async (_token: string) => {}),
+    signOut: vi.fn(async () => {}),
     useAuth: vi.fn((_options: { bootstrapAnonymous: boolean }) => ({})),
 }));
 
@@ -12,6 +13,7 @@ vi.mock('@/api', () => ({
     authKeys: { session: () => ['auth', 'session'] },
 }));
 
+vi.mock('@/auth', () => ({ signOut: mocks.signOut }));
 vi.mock('@/auth/obrAuthClient', () => ({
     obrAuthClient: { redeemObrExchangeToken: mocks.redeem },
 }));
@@ -39,7 +41,10 @@ beforeEach(() => {
     mocks.navigate.mockClear();
     mocks.redeem.mockClear();
     mocks.redeem.mockResolvedValue(undefined);
+    mocks.signOut.mockClear();
+    mocks.signOut.mockResolvedValue(undefined);
     mocks.useAuth.mockClear();
+    mocks.useAuth.mockImplementation(() => ({}));
 });
 
 test('redeems the token, scrubs it, and opens the carried character', async () => {
@@ -84,4 +89,38 @@ test('does not redeem an incomplete handoff URL', async () => {
     });
     expect(mocks.redeem).not.toHaveBeenCalled();
     expect(mocks.navigate).not.toHaveBeenCalled();
+});
+
+test('redeems a forge handoff and carries its Owlbear room context', async () => {
+    window.history.replaceState(
+        {},
+        '',
+        '/obr-open?token=exchange-token&to=forge&obrRoom=room-1&obrPlayer=player-1',
+    );
+
+    renderPage();
+
+    await waitFor(() => {
+        expect(mocks.navigate).toHaveBeenCalledWith(
+            '/character/create?obrRoom=room-1&obrPlayer=player-1',
+        );
+    });
+    expect(mocks.redeem).toHaveBeenCalledWith('exchange-token');
+});
+
+test('lets a player explicitly replace a mismatched forge-tab identity', async () => {
+    window.history.replaceState({}, '', '/obr-open?token=exchange-token&to=forge&obrRoom=room-1&obrPlayer=player-1');
+    mocks.useAuth.mockReturnValue({ isAnonymous: false, isLoading: false, user: { id: 'different-account' } });
+
+    renderPage();
+
+    await screen.findByRole('button', { name: 'Forge as the Owlbear identity' });
+    expect(mocks.redeem).not.toHaveBeenCalled();
+    screen.getByRole('button', { name: 'Forge as the Owlbear identity' }).click();
+
+    await waitFor(() => {
+        expect(mocks.signOut).toHaveBeenCalledOnce();
+        expect(mocks.redeem).toHaveBeenCalledWith('exchange-token');
+        expect(mocks.navigate).toHaveBeenCalledWith('/character/create?obrRoom=room-1&obrPlayer=player-1');
+    });
 });

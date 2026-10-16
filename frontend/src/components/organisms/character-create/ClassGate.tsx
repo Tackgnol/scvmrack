@@ -18,18 +18,22 @@ const CLASS_LOAD_TIMEOUT_MS = 10_000;
 type ClassGateProps = {
   onPick: (choice: StartChoice) => void;
   busy: boolean;
+  /** Lists the classes of this party's pool instead of the Book Classes. */
+  inviteToken?: string;
+  /** Lists the classes of the party attached to this Owlbear room. */
+  obrRoomId?: string;
 };
 
 type ClassLoadState =
   | { key: string; status: 'loaded'; classes: ClassSummary[] }
   | { key: string; status: 'failed' };
 
-export function ClassGate({ onPick, busy }: ClassGateProps) {
+export function ClassGate({ onPick, busy, inviteToken, obrRoomId }: ClassGateProps) {
   const { t, i18n } = useTranslation();
   const locale = (i18n.language ?? 'en').split('-')[0];
   const [loadAttempt, setLoadAttempt] = useState(0);
   const [loadState, setLoadState] = useState<ClassLoadState | null>(null);
-  const requestKey = `${locale}:${loadAttempt}`;
+  const requestKey = `${locale}:${inviteToken ?? ''}:${obrRoomId ?? ''}:${loadAttempt}`;
   const classes = loadState?.key === requestKey && loadState.status === 'loaded'
     ? loadState.classes
     : null;
@@ -48,12 +52,14 @@ export function ClassGate({ onPick, busy }: ClassGateProps) {
       controller.abort();
     }, CLASS_LOAD_TIMEOUT_MS);
 
-    fetchClasses(locale, controller.signal)
+    fetchClasses(locale, controller.signal, inviteToken, obrRoomId)
       .then((result) => {
         setLoadState({ key: requestKey, status: 'loaded', classes: result });
       })
       .catch((e) => {
-        if (e instanceof DOMException && e.name === 'AbortError' && !timedOut) return;
+        if (e instanceof DOMException && e.name === 'AbortError' && !timedOut) {
+          return;
+        }
 
         const error = timedOut ? new Error('Class catalog request timed out') : e;
         setLoadState({ key: requestKey, status: 'failed' });
@@ -80,7 +86,7 @@ export function ClassGate({ onPick, busy }: ClassGateProps) {
       window.clearTimeout(timeout);
       controller.abort();
     };
-  }, [locale, requestKey]);
+  }, [locale, inviteToken, obrRoomId, requestKey]);
 
   return (
     <Box sx={styles.root}>

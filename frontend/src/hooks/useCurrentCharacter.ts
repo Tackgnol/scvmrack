@@ -1,4 +1,3 @@
-import { PathsApiCharactersNewPostParametersQueryLocale } from '@/api/schema.ts';
 import { useAuth } from '@/hooks/useAuth.ts';
 import { useCharacterActions } from '@/hooks/useCharacterActions.ts';
 import { useAutoCreateCharacter } from '@/hooks/useAutoCreateCharacter.ts';
@@ -18,7 +17,7 @@ import type { CharacterResponse } from '@/hooks/models';
 import { usePrivacyAcknowledged } from '@/privacy/privacyConsent';
 import { useSnackbar } from '@/SnackbarContext/SnackbarProvider.tsx';
 import { useErrorFeedback } from '@/components/molecules/feedback/ErrorFeedbackProvider';
-import { getUserFacingApiErrorMessage } from '@/utils/errorUtils';
+import { getUserFacingApiErrorMessage, isApiNotFound } from '@/utils/errorUtils';
 
 import { useCallback, useEffect, useRef, useSyncExternalStore } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -62,7 +61,7 @@ export function useCurrentCharacter() {
     i18n: { changeLanguage, language: locale },
   } = useTranslation();
   const trimmedLocale =
-    getApiLocale<PathsApiCharactersNewPostParametersQueryLocale>(locale);
+    getApiLocale(locale);
   const { showError } = useSnackbar();
   const { showUnexpectedError } = useErrorFeedback();
   const queryClient = useQueryClient();
@@ -118,8 +117,14 @@ export function useCurrentCharacter() {
     validationIssueHandlers,
     { readOnly: isReadOnly }
   );
-  const visibleCharacter =
-    editor.getVisibleCharacter?.(repo.character) ?? repo.character;
+  const missingCharacterError =
+    isApiNotFound(repo.updateCharacter?.error) &&
+    repo.updateCharacter.variables?.params?.path?.id === characterId
+      ? repo.updateCharacter.error
+      : null;
+  const visibleCharacter = missingCharacterError
+    ? undefined
+    : editor.getVisibleCharacter?.(repo.character) ?? repo.character;
 
   // Per-instance in-flight controller, shared between the auto-create flow and
   // manual generation so they cancel each other — never a module-level singleton.
@@ -177,7 +182,9 @@ export function useCurrentCharacter() {
 
   const adoptCreatedCharacter = useCallback(
     (character: CharacterResponse) => {
-      if (!character?.id) return;
+      if (!character?.id) {
+        return;
+      }
       // Enter through the same door as generateNew: seed the detail cache and
       // refresh the list (mirroring repo.createCharacter.onSuccess), record the
       // create intent, then navigate. push+flush (not setCharacterId) avoids the
@@ -196,7 +203,9 @@ export function useCurrentCharacter() {
 
   const recoverInvalidCharacter = useCallback(async () => {
     const invalidCharacterId = characterId;
-    if (!invalidCharacterId) return;
+    if (!invalidCharacterId) {
+      return;
+    }
 
     await setCharacterId(null);
     queryClient.removeQueries({
@@ -206,7 +215,9 @@ export function useCurrentCharacter() {
 
   // ---- Handle logout side effects ----
   useEffect(() => {
-    if (!isJustLoggedOut) return;
+    if (!isJustLoggedOut) {
+      return;
+    }
 
     setAutoCreateFailed(false);
     if (characterId || lastCharacterId) {
@@ -226,7 +237,7 @@ export function useCurrentCharacter() {
     lastCharacterId,
     character: visibleCharacter,
     isReadOnly,
-    error: repo.error,
+    error: missingCharacterError ?? repo.error,
     isLoading:
       repo.isLoading ||
       repo.createCharacter.isPending ||

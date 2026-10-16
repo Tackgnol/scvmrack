@@ -77,7 +77,9 @@ function patchToField(patch: OptimisticPatch): string {
  * so it reflects real committed data rather than in-flight keystrokes.
  */
 export function trackCharacterEdited(patches: OptimisticPatch[], locale: string): void {
-    if (patches.length === 0) return;
+    if (patches.length === 0) {
+        return;
+    }
 
     const fields = Array.from(new Set(patches.map(patchToField)))
         .sort()

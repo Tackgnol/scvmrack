@@ -9,7 +9,7 @@ const PRIVACY_SETTINGS_STORAGE_KEY = 'scvmgrinder-privacy-settings-v1';
 
 const DEFAULT_PRIVACY_SETTINGS: PrivacySettings = {
     acknowledged: false,
-    analyticsEnabled: true,
+    analyticsEnabled: false,
 };
 
 const isPrivacySettings = (value: unknown): value is PrivacySettings => {

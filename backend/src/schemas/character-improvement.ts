@@ -176,60 +176,57 @@ const ImprovementAbilityRollSchema = {
   },
 };
 
-const ScumSpecialtyDraftSchema = {
+const NullableSpecialtyRollSchema = {
+  anyOf: [SpecialtyRollSchema, { type: 'null' }],
+};
+
+const SpecialtyChoiceSchema = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['current', 'replacement', 'reroll'],
+  properties: {
+    current: SpecialtySlotSchema,
+    replacement: NullableSpecialtyRollSchema,
+    reroll: { type: 'boolean' },
+  },
+};
+
+// One object with every variant's fields: Fastify's Ajv strips additional
+// properties while trying oneOf branches, so each branch only adds rules.
+const ClassAbilityDraftSchema = {
   type: 'object',
   additionalProperties: false,
   required: ['kind'],
   properties: {
     kind: {
       type: 'string',
-      enum: ['notScum', 'firstImprovement', 'laterImprovement'],
+      enum: ['none', 'newAbility', 'firstSpecialty', 'specialties'],
     },
-    existing: SpecialtySlotSchema,
-    added: SpecialtyRollSchema,
-    primary: SpecialtySlotSchema,
-    secondary: SpecialtySlotSchema,
-    rerollMode: {
-      type: 'string',
-      enum: ['none', 'primary', 'secondary', 'both'],
-    },
+    existing: { type: 'array', maxItems: 20, items: SpecialtySlotSchema },
+    added: NullableSpecialtyRollSchema,
+    specialties: { type: 'array', maxItems: 20, items: SpecialtyChoiceSchema },
   },
   oneOf: [
     {
-      properties: {
-        kind: { const: 'notScum' },
-      },
+      properties: { kind: { const: 'none' } },
       not: {
-        anyOf: [
-          { required: ['existing'] },
-          { required: ['added'] },
-          { required: ['primary'] },
-          { required: ['secondary'] },
-          { required: ['rerollMode'] },
-        ],
+        anyOf: [{ required: ['existing'] }, { required: ['added'] }, { required: ['specialties'] }],
       },
+    },
+    {
+      required: ['added'],
+      properties: { kind: { const: 'newAbility' } },
+      not: { anyOf: [{ required: ['existing'] }, { required: ['specialties'] }] },
     },
     {
       required: ['existing', 'added'],
-      properties: {
-        kind: { const: 'firstImprovement' },
-      },
-      not: {
-        anyOf: [
-          { required: ['primary'] },
-          { required: ['secondary'] },
-          { required: ['rerollMode'] },
-        ],
-      },
+      properties: { kind: { const: 'firstSpecialty' } },
+      not: { required: ['specialties'] },
     },
     {
-      required: ['primary', 'secondary', 'rerollMode'],
-      properties: {
-        kind: { const: 'laterImprovement' },
-      },
-      not: {
-        anyOf: [{ required: ['existing'] }, { required: ['added'] }],
-      },
+      required: ['specialties'],
+      properties: { kind: { const: 'specialties' } },
+      not: { anyOf: [{ required: ['existing'] }, { required: ['added'] }] },
     },
   ],
 };
@@ -237,7 +234,7 @@ const ScumSpecialtyDraftSchema = {
 export const ImprovementDraftSchema = {
   type: 'object',
   additionalProperties: false,
-  required: ['sequence', 'snapshot', 'hp', 'debris', 'abilities', 'scumSpecialties'],
+  required: ['sequence', 'snapshot', 'hp', 'debris', 'abilities', 'classAbility'],
   properties: {
     sequence: { type: 'integer', minimum: 1, maximum: 1000 },
     snapshot: ImprovementCharacterSnapshotSchema,
@@ -254,7 +251,7 @@ export const ImprovementDraftSchema = {
         toughness: ImprovementAbilityRollSchema,
       },
     },
-    scumSpecialties: ScumSpecialtyDraftSchema,
+    classAbility: ClassAbilityDraftSchema,
   },
 };
 
@@ -266,7 +263,9 @@ export const ImprovementPreviewResponseSchema = {
     'characterId',
     'sequence',
     'rolledDraft',
-    'scumSpecialtyNames',
+    'abilityNames',
+    'rulesNote',
+    'scrollNames',
     'snapshotHash',
     'createdAt',
     'updatedAt',
@@ -276,7 +275,12 @@ export const ImprovementPreviewResponseSchema = {
     characterId: { type: 'string', format: 'uuid' },
     sequence: { type: 'integer' },
     rolledDraft: ImprovementDraftSchema,
-    scumSpecialtyNames: {
+    abilityNames: {
+      type: 'object',
+      additionalProperties: { type: 'string' },
+    },
+    rulesNote: { type: ['string', 'null'] },
+    scrollNames: {
       type: 'object',
       additionalProperties: { type: 'string' },
     },
@@ -294,7 +298,7 @@ export const RerollSectionParamsSchema = {
     improvementId: { type: 'string', format: 'uuid' },
     section: {
       type: 'string',
-      enum: ['hp', 'debris', 'abilities', 'scumSpecialties', 'all'],
+      enum: ['hp', 'debris', 'abilities', 'classAbility', 'all'],
     },
   },
 };

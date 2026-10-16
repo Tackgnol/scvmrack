@@ -1,4 +1,16 @@
 {
+  "abilityTable": {
+    "toggle": "Tabela k{{die}}",
+    "roll": "Rzuć k{{die}}",
+    "rolled": "Wyrzucono {{roll}}",
+    "gives": "Daje: {{item}}"
+  },
+  "tabSession": {
+    "warning": "Wbudowana przeglądarka tej aplikacji nie zapisze Twojej sesji. Twój scvm przepadnie po jej zamknięciu. Otwórz scvmrack w Safari lub Chrome, aby go zachować.",
+    "copyLink": "Kopiuj link",
+    "copied": "Skopiowano",
+    "copyFailed": "Skopiuj adres z paska adresu przeglądarki."
+  },
   "app": {
     "title": "Scvmrack",
     "betaBadge": "Beta",
@@ -17,6 +29,11 @@
       "unnamedScvm": "Scvm bez imienia",
       "classless": "Bez klasy"
     },
+    "forgeComplete": {
+      "title": "Wykuto. Wróć do Owlbear",
+      "body": "Nowy scvm jest przypisany do tego pokoju Owlbear.",
+      "back": "Wróć do Owlbear"
+    },
     "stats": {
       "agilityShort": "ZWI",
       "presenceShort": "OPA",
@@ -34,6 +51,10 @@
       "emptyHint": "Wylosuj nędznika do gry albo zaloguj się, by wczytać swoją katownię.",
       "rollScvm": "Losuj scvma",
       "rollNew": "Losuj nowego",
+      "rollPickerTitle": "Wybierz klasę",
+      "rollPickerLoadError": "Nie udało się wczytać klas pokoju.",
+      "partyFull": "Drużyna w tym pokoju jest pełna. Poproś MG o zwolnienie miejsca.",
+      "rollFailed": "Nie udało się wylosować scvma. Spróbuj ponownie.",
       "forgeScvm": "Stwórz scvma",
       "signIn": "Zaloguj",
       "popupBlocked": "Zezwól na okno logowania i spróbuj ponownie.",
@@ -54,7 +75,9 @@
       "binding": "Przypisywanie",
       "openInScvmrack": "Otwórz w scvmrack",
       "openingInScvmrack": "Otwieranie",
-      "openInScvmrackFailed": "Nie udało się otworzyć w scvmrack"
+      "openInScvmrackFailed": "Nie udało się otworzyć w scvmrack",
+      "bindMetadataWarning": "Zapisano powiązanie, ale etykieta żetonu się nie zaktualizowała.",
+      "forgeFailed": "Nie udało się otworzyć kuźni. Zezwól na wyskakujące okna i spróbuj ponownie."
     },
     "gm": {
       "region": "Widok MG",
@@ -98,7 +121,15 @@
       "mods": "Mody",
       "showMods": "Pokaż mody {{count}}",
       "hideMods": "Ukryj mody {{count}}",
-      "noActiveModifiers": "Brak aktywnych."
+      "noActiveModifiers": "Brak aktywnych.",
+      "bindSelectedToken": "Powiąż zaznaczony żeton",
+      "missingCard": "Nie znaleziono scvm {{id}}",
+      "missingCardName": "Brakujący scvm {{id}}",
+      "removeFromRoster": "Usuń z listy",
+      "removingFromRoster": "Usuwanie",
+      "roomPoolList": "Klasy losowane w tym pokoju: {{classes}}.",
+      "roomPoolClassless": "Tylko bez klasy",
+      "roomPoolReadOnly": "Zmienić je może tylko właściciel drużyny."
     },
     "card": {
       "missingId": "Brak ID scvma",
@@ -400,19 +431,7 @@
     }
   },
   "abilities": {
-    "ability": "Zdolność",
-    "occult_herbmaster": {
-      "view_decoctions": "Pokaż wywary",
-      "decoctions_title": "Wywary okultystycznego zielarza (k8)",
-      "red_poison": "czerwona trucizna: Wytrzymałość ST12 lub -k10 PŻ.",
-      "ezumiel": "Inhalacje Ezumielskie: Zdaj test o ST14 lub doświadczasz poważnych (i nawet zabawnych) halucynacji przez k4 godziny.",
-      "frog": "Potrawka z Żaby Południowej: Rzygasz przez k4 godziny. Zdaj test o DR14 albo nie możesz robić nic innego.",
-      "vitalis": "Eliksir Życia: Leczy k6 PŻ i usuwa infekcję. Potencjalnie uzależniający.",
-      "soup": "Rosół z Sowopająka: Widzisz w ciemności i możesz łazić po ścianach przez pół godziny.",
-      "philtre": "Ekstrakt Fernora: Bezbarwny olejek aplikowany bezpośrednio na oko. Leczy infekcję i dodaje +2 do rzutów na Opanowanie przez k4 godziny.",
-      "hyphos": "Ożywcza Tabaka Hyphosa: Furia! Dwa ataki na rundę, ale bronisz się na ST14. Trwa jedną walkę. Wciągana nosem, powoduje kichanie.",
-      "black_poison": "Czarna Trucizna: Wytrzymałość ST14 lub -k6 PŻ i ślepota przez godzinę."
-    }
+    "ability": "Zdolność"
   },
   "modifiers": {
     "title": "Modyfikatory",
@@ -431,11 +450,14 @@
       "all": "Wszystkie testy",
       "combat": "Tylko walka",
       "defence": "Tylko obrona",
+      "tests": "Tylko testy",
       "melee": "Tylko walka wręcz",
       "ranged": "Tylko dystansowe",
       "powers": "Tylko Moce"
     },
     "excludes": "Nie dotyczy: {{list}}",
+    "more": "Więcej",
+    "fewer": "Mniej",
     "exclude": {
       "title": "Zastosowanie",
       "description": "Gdzie ten modyfikator ma zastosowanie:",
@@ -473,7 +495,8 @@
     "advancedTooltip": "Zaawansowane opcje modyfikatora",
     "shiftNegative": "Klątwy drgnęły",
     "shiftPositive": "Błogosławieństwa drgnęły",
-    "shiftNeutral": "Losy drgnęły"
+    "shiftNeutral": "Losy drgnęły",
+    "removeModifier": "Usuń modyfikator"
   },
   "attributes": {
     "agility": "Zwinność",
@@ -527,6 +550,9 @@
     "searchPlaceholder": "Szukaj wyposażenia...",
     "typeToSearch": "Wpisz 2 znaki, aby szukać",
     "searching": "Szukam...",
+    "openSearch": "Otwórz wyszukiwanie przedmiotów",
+    "closeSearch": "Zamknij wyszukiwanie przedmiotów",
+    "clearSearch": "Wyczyść wyszukiwanie przedmiotów",
     "addingItem": "Dodaję {{item}}...",
     "noResults": "Nie znaleziono przedmiotów",
     "unequip": "Zdejmij",
@@ -612,6 +638,7 @@
     }
   },
   "character": {
+    "saveConflict": "Ta postać została zmieniona w innej karcie. Ostatnie zmiany nie zostały zapisane. Odśwież stronę przed dalszą edycją.",
     "name": "Imię",
     "class": "Klasa",
     "origin": "Pochodzenie",
@@ -627,7 +654,9 @@
     "unknown": "nieznany",
     "wretch": "nieszczęśnik",
     "classless": "Bez klasy",
-    "noSpecialAbilities": "Brak specjalnych zdolności"
+    "classContentRemoved": "Część tekstu tej klasy usunęła moderacja.",
+    "noSpecialAbilities": "Brak specjalnych zdolności",
+    "classWrittenIn": "Ta klasa jest napisana w języku: {{language}}."
   },
   "traits": {
     "title": "Cechy i Dolegliwości",
@@ -653,7 +682,8 @@
   "footer": {
     "worldEnding": "Świat Się Kończy",
     "legalNotice": "MÖRK BORG jest chroniony prawem autorskim Ockult Örtmästare Games oraz Stockholm Kartell. Scvmrack to niezależna produkcja Adama Kościelniaka, rozwijana jako część pakietu <rpgtoolsLink>rpgtools.co</rpgtoolsLink>; nie jest ona powiązana z Ockult Örtmästare Games ani Stockholm Kartell. Została opublikowana na mocy licencji MÖRK BORG Third Party License. <privacyLink>Sprawdź ustawienia prywatności</privacyLink>",
-    "translationCredit": "Oficjalne polskie tłumaczenie dostarczone przez Nerd Sirens"
+    "translationCredit": "Oficjalne polskie tłumaczenie dostarczone przez Nerd Sirens",
+    "terms": "Regulamin"
   },
   "actions": {
     "print": "Drukuj kartę",
@@ -665,7 +695,10 @@
     "killConfirmDontAskAgain": "Nie pokazuj tego ponownie",
     "testModal": "Testuj Modal",
     "cancel": "Anuluj",
-    "retry": "Ponów"
+    "retry": "Ponów",
+    "back": "Wstecz",
+    "killConfirmPartyDesc": "Zastępca wczołga się do tej drużyny, zanim stare ciało zostanie usunięte.",
+    "loading": "Wczytywanie..."
   },
   "gettingBetter": {
     "title": "Rozwój",
@@ -714,30 +747,30 @@
       "title": "Cechy",
       "from": "Z {{value}}"
     },
-    "scum": {
-      "title": "Specjalność Scvma",
-      "existing": "Obecna",
-      "added": "Dodana",
-      "primary": "Pierwsza",
-      "secondary": "Druga",
-      "rerollMode": "Tryb",
-      "modes": {
-        "none": "Zachowaj obie",
-        "primary": "Przerzuć pierwszą",
-        "secondary": "Przerzuć drugą",
-        "both": "Przerzuć obie"
-      }
+    "classAbility": {
+      "newTitle": "Nowa zdolność",
+      "specialtiesTitle": "Specjalności",
+      "existing": "Twoje specjalności",
+      "added": "Zyskana",
+      "keep": "Zachowaj",
+      "reroll": "Przerzuć",
+      "becomes": "Przerzut daje: {{name}}",
+      "noneLeft": "Brak zdolności do zdobycia"
     }
   },
   "powers": {
     "title": "Moce",
     "noScrollsOrPowers": "Brak zwojów i mocy",
-    "unknownScroll": "Nieznany Zwój"
+    "unknownScroll": "Nieznany Zwój",
+    "usePipUsed": "Oznacz jako użyte: {{name}}, użycie {{use}}",
+    "usePipUnused": "Oznacz jako nieużyte: {{name}}, użycie {{use}}"
   },
   "pets": {
     "title": "Zwierzęta",
     "actionDie": "Kości akcji",
-    "unknown": "Nieznane zwierzę"
+    "unknown": "Nieznane zwierzę",
+    "hpPipFill": "Zaznacz punkt życia jako pełny: {{name}}, punkt {{point}}",
+    "hpPipEmpty": "Zaznacz punkt życia jako pusty: {{name}}, punkt {{point}}"
   },
   "consumables": {
     "title": "Zużywalne",
@@ -758,6 +791,7 @@
     "createNewCharacter": "Stwórz nową postać"
   },
   "status": {
+    "unsavedRetry": "Niezapisane · Ponów",
     "saving": "Zapisywanie...",
     "saved": "Zapisano",
     "synced": "Zsynchronizowano",
@@ -835,6 +869,7 @@
     "stamp": "Strona Zaginiona"
   },
   "common": {
+    "closeDialog": "Zamknij okno",
     "close": "Zamknij",
     "back": "Wróć",
     "backToHome": "Powrót do strony głównej",
@@ -842,7 +877,13 @@
     "apply": "Zastosuj",
     "loading": "Ładowanie...",
     "increaseHitPoints": "Zwiększ punkty życia",
-    "decreaseHitPoints": "Zmniejsz punkty życia"
+    "decreaseHitPoints": "Zmniejsz punkty życia",
+    "decreaseArmorTier": "Obniż poziom pancerza",
+    "decreaseStat": "Zmniejsz {{stat}}",
+    "increaseArmorTier": "Podnieś poziom pancerza",
+    "increaseStat": "Zwiększ {{stat}}",
+    "openMenu": "Otwórz menu",
+    "retry": "Ponów"
   },
   "nav": {
     "start": "Start",
@@ -851,6 +892,9 @@
     "faq": "FAQ",
     "release": "Zmiany",
     "owlbear": "Owlbear",
+    "privacy": "Prywatność",
+    "terms": "Regulamin",
+    "legal": "Kontakt",
     "gm": "MG"
   },
   "characters": {
@@ -905,17 +949,23 @@
     },
     "guestVsAccount": {
       "q": "Czy potrzebuję konta?",
-      "a": "Nie potrzebujesz konta, żeby zacząć. Jako gość masz jedną postać — wygenerowanie nowej zastępuje poprzednią. Postacie są przechowywane 7 dni. Zarejestruj się (za darmo), żeby trzymać dowolną liczbę postaci na stałe, z każdego urządzenia."
+      "a": "Nie potrzebujesz konta, żeby zacząć. Jako gość masz jedną postać — wygenerowanie nowej zastępuje poprzednią. Dostęp zależy od sesji przeglądarki. Zarejestruj się (za darmo), żeby mieć wiele postaci dostępnych z każdego urządzenia."
     },
     "howToSave": {
       "q": "Jak zapisać moją postać?",
-      "a": "Postacie są zapisywane automatycznie. Jako gość twoja jedyna postać jest przechowywana 7 dni. Zarejestruj się, żeby ją zachować na stałe i tworzyć więcej."
+      "a": "Postacie zapisują się automatycznie podczas edycji. Postać gościa przechowujemy, dopóki jej nie usuniesz, nie zastąpisz nową lub nie poprosisz nas o usunięcie. Utrata sesji przeglądarki może uniemożliwić dostęp do niej. Zarejestruj się, żeby mieć dostęp do postaci z różnych urządzeń i tworzyć kolejne."
     },
     "multipleCharacters": {
       "q": "Czy mogę mieć wiele postaci?",
       "a": "Z kontem tak — twórz dowolną liczbę postaci i przełączaj się między nimi z menu Scvmy. Jako gość masz dokładnie jedną. Wygenerowanie nowego scvma zastępuje poprzedniego."
     },
-    "mobileSupport": {
+    "customClasses": { "q": "Czym są Klasy Własne?", "a": "To klasy postaci, które piszesz sam, z tymi samymi elementami co klasy z podręcznika." },
+    "whoMakesClasses": { "q": "Kto może stworzyć Klasę Własną?", "a": "Każdy z darmowym kontem, w zakładce MG. Szkice zapisują się w trakcie pisania." },
+    "classesInParties": { "q": "Gdzie mogę użyć Klasy Własnej?", "a": "W drużynach. MG wybiera klasy dla kompanii, a postacie poza drużyną korzystają z klas z podręcznika." },
+    "editingClasses": { "q": "Co się dzieje z postaciami, gdy zmienię klasę?", "a": "Istniejące postacie zachowują wersję, z którą zostały wylosowane. Zmiany tworzą nową wersję dla nowych postaci." },
+    "publicClasses": { "q": "Czy mogę udostępnić swoją klasę innym MG?", "a": "Tak. Opublikuj ją w Moich klasach; inni MG mogą dodać ją do drużyny, a Ty możesz ją później wycofać." },
+    "reportClass": { "q": "Znalazłem klasę, która kopiuje moją pracę albo łamie zasady. Co zrobić?", "a": "Użyj linku Zgłoś przy klasie albo strony zgłoszeń w stopce. Konto nie jest potrzebne." },
+    "zineAuthors": { "q": "Napisałem zina z klasami. Czy mogą trafić do Scvm Rack?", "a": "Napisz na contact@rpgtools.co. Klasy z zinów dodajemy ręcznie, z podaniem Ciebie i zina jako źródła." },    "mobileSupport": {
       "q": "Czy działa na telefonie?",
       "a": "Tak! Scvm Rack jest zaprojektowany do działania na telefonach, tabletach i komputerach. Używaj go przy stole lub w podróży."
     },
@@ -947,6 +997,7 @@
       "analytics": "Jeśli poniżej włączysz analitykę, Google Analytics będzie przetwarzać zdarzenia użycia i aktywność stron. Możesz wyłączyć analitykę w dowolnym momencie bez utraty podstawowych funkcji aplikacji.",
       "sensitiveData": "Nie wpisuj danych wrażliwych w polach postaci. Dalsze korzystanie z aplikacji oznacza potwierdzenie i akceptację tej informacji."
     },
+    "readFull": "Przeczytaj pełną informację o prywatności",
     "analyticsToggle": "Włącz śledzenie Google Analytics",
     "analyticsEnabledState": "Analityka jest obecnie włączona. Możesz ją wyłączyć teraz lub później w tym panelu.",
     "analyticsDisabledState": "Analityka jest obecnie wyłączona. Podstawowe funkcje aplikacji nadal działają.",
@@ -957,12 +1008,37 @@
       "close": "Zamknij"
     }
   },
+  "legalNotice": {
+    "termsChanged": "Regulamin zmienił się {{date}}: co się zmieniło",
+    "privacyChanged": "Informacja o prywatności zmieniła się {{date}}: co się zmieniło",
+    "effective": "Zmiany wejdą w życie {{date}}.",
+    "read": "Przeczytaj informację",
+    "dismiss": "Zamknij"
+  },
   "release": {
     "title": "Historia Zmian",
     "typeMajor": "Duża",
     "typeMinor": "Mała",
     "typePatch": "Poprawka",
     "moreUpdates": "Więcej aktualizacji wkrótce. Świat się kończy, ale my dalej dostarczamy.",
+    "v070": {
+      "customClasses": "Twórz własne Klasy z własnymi zasadami, przedmiotami, zdolnościami, tabelami i ustawieniami Getting Better",
+      "omenDice": "Rzuty na omeny Klas z Księgi odpowiadają podręcznikowi: Hermetyczny pustelnik i Heretycki Kaznodzieja używają k4, a pozostałe Klasy z Księgi k2",
+      "versions": "Zapisywanie zmian pozostawia istniejące scvmy przy ich pierwotnych zasadach klasy i tworzy nową wersję dla przyszłych rzutów",
+      "partyPools": "Pule Klas Drużyny pozwalają MG wybrać Klasy z Księgi i własne Klasy dostępne przy stole oraz w Owlbear",
+      "gmOverview": "Każdy może obejrzeć ekran MG; goście zachowają swojego scvma po rejestracji do prowadzenia kompanii",
+      "sharing": "Opublikuj klasę dla innych MG z jasnym oznaczeniem autora i linkiem do zgłoszenia publicznej treści",
+      "moderation": "Zgłoszenia są sprawdzane przez człowieka; autorzy mogą kwestionować decyzje, a moderatorzy przeglądać wcześniejsze usunięcia i blokować tworzenie nowych klas bez blokowania istniejących",
+      "legal": "Strony zasad, kontaktu, prywatności i zgłoszeń wyjaśniają reguły oraz sposoby kontaktu z projektem"
+    },
+    "v063": {
+      "tabSession": "Scvmrack otwarty w aplikacji Reddit lub Facebook działa podczas tej wizyty i wyświetla ostrzeżenie oraz link do otwarcia w przeglądarce, aby zachować scvma",
+      "classGrants": "Heretycki Kapłan dostaje teraz Pasterską Laskę, a Poltroon Błazen Dworski swojego zwierzaka, zgodnie z opisem zdolności klasowych",
+      "printModifiers": "Sekcja Modyfikatorów na karcie do druku jest teraz przetłumaczona",
+      "printStats": "Długie nazwy cech, takie jak Wytrzymałość, nie wychodzą już poza ramkę na karcie do druku",
+      "freshShell": "Wracający użytkownicy zawsze dostają najnowszą wersję aplikacji zamiast nieaktualnej kopii z pamięci podręcznej",
+      "monitoring": "Cichszy monitoring: błędy zerwanego połączenia przy niestabilnej sieci nie są już zgłaszane"
+    },
     "v062": {
       "guestSignIn": "Logowanie gościa na telefonach i w przeglądarkach wbudowanych w aplikacje odzyskuje się teraz samo, zamiast pokazywać błąd",
       "noStale": "Odpowiedzi o sesji i tokenie bezpieczeństwa nie są już cache'owane, więc nieaktualna odpowiedź „niezalogowany” nie jest ponownie używana",
@@ -1098,6 +1174,710 @@
   "header": {
     "scvmCount": "{{count}} scvmów... i wciąż przybywa"
   },
+  "classPool": {
+    "title": "Klasy, które ta banda może wylosować",
+    "hint": "Gracze dołączający przez link zaproszenia lub ten pokój Owlbear wybierają z tej puli. Zmiany zapisują się od razu; scvm, które już grają daną klasą, zachowują ją. Najedź lub ustaw fokus na klasie, by zobaczyć szczegóły.",
+    "loadError": "Nie udało się wczytać puli klas.",
+    "tally": {
+      "summary_one": "Podsumowanie puli: {{count}} klasa włączona",
+      "summary_few": "Podsumowanie puli: {{count}} klasy włączone",
+      "summary_many": "Podsumowanie puli: {{count}} klas włączonych",
+      "summary_other": "Podsumowanie puli: {{count}} klas włączonych",
+      "plusClasslessSummary": ", plus Bez klasy",
+      "lead_one": "klasa włączona",
+      "lead_few": "klasy włączone",
+      "lead_many": "klas włączonych",
+      "lead_other": "klas włączonych"
+    },
+    "short": {
+      "book": "Podręcznik",
+      "zine": "Zin",
+      "rack": "Rack",
+      "mine": "moje",
+      "public": "publiczne"
+    },
+    "groups": {
+      "book": {
+        "title": "Klasy z podręcznika",
+        "desc": "Szóstka z podręcznika MÖRK BORG."
+      },
+      "zine": {
+        "title": "Klasy z zinów",
+        "desc": "Z zinów innych wydawców, z podaniem autorów."
+      },
+      "rack": {
+        "title": "Klasy z Racka",
+        "desc": "Stworzone przez scvmrack dla społeczności."
+      },
+      "mine": {
+        "title": "Moje klasy",
+        "desc": "Wykute przez ciebie. Prywatne trafiają tylko do twoich band."
+      },
+      "public": {
+        "title": "Publiczne klasy innych MG",
+        "desc": "Udostępnione przez innych MG; zawsze w najnowszej wersji."
+      },
+      "fraction": "{{on}} z {{total}} włączonych",
+      "on": "wł."
+    },
+    "search": {
+      "placeholder": "Szukaj klas, autorów lub opisów",
+      "label": "Szukaj klas"
+    },
+    "filters": {
+      "label": "Pokaż",
+      "all": "Wszystkie",
+      "book": "Podręcznik",
+      "zr": "Ziny i Rack",
+      "mine": "Tylko moje",
+      "public": "Publiczne"
+    },
+    "languages": {
+      "label": "Język",
+      "any": "Dowolny język",
+      "en": "EN",
+      "pl": "PL"
+    },
+    "languageNames": {
+      "en": "angielski",
+      "pl": "polski"
+    },
+    "languageJoin": " i ",
+    "attribution": {
+      "credit": "z {{work}}, autor: {{author}}",
+      "mine": "stworzona przez ciebie",
+      "minePrivate": "stworzona przez ciebie · prywatna",
+      "owner": "stworzona przez {{name}}",
+      "ownerFormer": "stworzona przez byłego MG"
+    },
+    "stats": {
+      "abilities_one": "zdolność",
+      "abilities_few": "zdolności",
+      "abilities_many": "zdolności",
+      "abilities_other": "zdolności",
+      "classItems_one": "przedmiot klasowy",
+      "classItems_few": "przedmioty klasowe",
+      "classItems_many": "przedmiotów klasowych",
+      "classItems_other": "przedmiotów klasowych"
+    },
+    "gettingBetter": "Rozwój: {{rule}}",
+    "rules": {
+      "book": "Zasady z podręcznika",
+      "book_plus_ability": "Zasady z podręcznika + nowa zdolność",
+      "specialist": "Specjalista"
+    },
+    "playing_one": "{{count}} scvm gra nią tutaj",
+    "playing_few": "{{count}} scvm grają nią tutaj",
+    "playing_many": "{{count}} scvm gra nią tutaj",
+    "playing_other": "{{count}} scvm gra nią tutaj",
+    "switchLabel": "{{name}} w puli",
+    "classless": {
+      "name": "Bez klasy",
+      "blurb": "Zwykły scvm: bez klasy, bez zdolności. Gracze mogą go wybrać; Losowanie nigdy.",
+      "switchLabel": "Scvm bez klasy w puli"
+    },
+    "info": {
+      "source": {
+        "book": "Klasa z podręcznika",
+        "zine": "Klasa z zina",
+        "rack": "Klasa z Racka",
+        "mine": "Twoja klasa",
+        "public": "Klasa publiczna"
+      },
+      "abilities": "Zdolności",
+      "abilitiesRandom": "{{count}}, {{random}} losowane z puli losowej",
+      "classItems": "Przedmioty klasowe",
+      "none": "brak",
+      "gettingBetter": "Rozwój",
+      "writtenIn": "Język",
+      "version": "Wersja",
+      "versionLatest": "{{version}} (zawsze dostajesz najnowszą)",
+      "here": "Tutaj",
+      "playing_one": "{{count}} scvm z tej bandy gra nią",
+      "playing_few": "{{count}} scvm z tej bandy grają nią",
+      "playing_many": "{{count}} scvm z tej bandy gra nią",
+      "playing_other": "{{count}} scvm z tej bandy gra nią",
+      "nobody": "nikt z tej bandy nią nie gra"
+    },
+    "status": {
+      "added": "{{name}} dodana do puli. Zapisano.",
+      "removed": "{{name}} usunięta z puli. Zapisano.",
+      "classlessOn": "Bez klasy włączone. Zapisano.",
+      "classlessOff": "Bez klasy wyłączone. Zapisano.",
+      "failed": "Ta zmiana się nie zapisała. Spróbuj ponownie."
+    },
+    "removed": {
+      "byAuthor": "„{{name}}” usunął(-ęła) {{by}} ({{why}}). Nie ma jej już w tej puli; scvm, które nią grają, zachowują ją.",
+      "byUnknown": "„{{name}}” została usunięta przez autora ({{why}}). Nie ma jej już w tej puli; scvm, które nią grają, zachowują ją.",
+      "takenDown": "„{{name}}” została zdjęta. Nie ma jej już w tej puli; scvm, które nią grają, zachowują ją.",
+      "why": {
+        "archived": "zarchiwizowana przez autora",
+        "unpublished": "ukryta przez autora",
+        "taken_down": "zdjęta"
+      },
+      "dismiss": "Rozumiem"
+    },
+    "empty": "Z pustej puli nikt nie wylosuje scvm. Zostaw włączoną co najmniej jedną klasę lub Bez klasy.",
+    "noMatch": "Nic nie pasuje do wyszukiwania.",
+    "footer_one": "Gracze widzą {{count}} klasę. Losowanie wybiera ją.",
+    "footer_few": "Gracze widzą {{count}} klasy. Losowanie wybiera równo spośród nich.",
+    "footer_many": "Gracze widzą {{count}} klas. Losowanie wybiera równo spośród nich.",
+    "footer_other": "Gracze widzą {{count}} klas. Losowanie wybiera równo spośród nich.",
+    "footerClassless_one": "Gracze widzą {{count}} klasę i Bez klasy. Losowanie wybiera klasę; nigdy Bez klasy.",
+    "footerClassless_few": "Gracze widzą {{count}} klasy i Bez klasy. Losowanie wybiera równo spośród klas; nigdy Bez klasy.",
+    "footerClassless_many": "Gracze widzą {{count}} klas i Bez klasy. Losowanie wybiera równo spośród klas; nigdy Bez klasy.",
+    "footerClassless_other": "Gracze widzą {{count}} klas i Bez klasy. Losowanie wybiera równo spośród klas; nigdy Bez klasy."
+  },
+  "classDetail": {
+    "notFound": "Nie znaleziono klasy.",
+    "loadFailed": "Nie udało się wczytać klasy. Spróbuj ponownie za chwilę."
+  },
+  "creator": {
+    "stamp": "Mistrz Gry · Kuźnia",
+    "titleNew": "Wykuj klasę",
+    "titleEdit": "Edytuj klasę",
+    "creationBanned": "Nie możesz tworzyć nowych własnych klas, dopóki obowiązuje ograniczenie moderacyjne. Twoje istniejące klasy pozostają dostępne.",
+    "creationStatusFailed": "Nie udało się sprawdzić uprawnień do tworzenia klas. Spróbuj ponownie później.",
+    "draftBanned": "Tworzenie nowych klas zablokowane",
+    "draftConflict": "Szkic zmieniono gdzie indziej",
+    "draftConflictTitle": "Konflikt szkicu",
+    "draftConflictBody": "Szkic zmienił się na innym urządzeniu. Wybierz wersję, którą chcesz zachować.",
+    "draftLoadNewer": "Wczytaj nowszy",
+    "draftLoadNewerLoss": "Zmiany na tym urządzeniu od ostatniego zapisu zostaną utracone.",
+    "draftKeepMine": "Zachowaj moje",
+    "draftKeepMineLoss": "Nowszy szkic z innego urządzenia zostanie nadpisany.",
+    "draftDiscardConfirm": "Odrzucić ten niedokończony szkic?",
+    "draftDiscardLoss": "Ten niedokończony szkic zostanie trwale usunięty.",
+    "draftDiscardFailed": "Nie udało się odrzucić szkicu. Spróbuj ponownie.",
+    "untitled": "Klasa bez nazwy",
+    "rail": "Kroki kreatora klasy",
+    "steps": {
+      "identity": {
+        "label": "Tożsamość",
+        "hint": "Jak nazywa się klasa i jak gracz ją poznaje."
+      },
+      "stats": {
+        "label": "Cechy i kości",
+        "hint": "Jak rzuca się na każdą cechę, do tego PŻ, omeny, srebro i kości startowego ekwipunku. Podręcznik rzuca każdą cechę 3k6, a klasy z podręcznika przesuwają niektóre o −1 do +2. „Najniższa kość: Odrzucona” wyrzuca najniższą kość, więc 4 kości to „najlepsze 3 z 4k6”."
+      },
+      "items": {
+        "label": "Przedmioty klasowe",
+        "hint": "Sprzęt i bestie, które ma tylko ta klasa. Nigdy nie pojawiają się w wyszukiwarce przedmiotów."
+      },
+      "abilities": {
+        "label": "Zdolności",
+        "hint": "Stałe zdolności, które dostaje każdy scvm, i pula, z której losuje się pozostałe."
+      },
+      "origins": {
+        "label": "Pochodzenie",
+        "hint": "Skąd pochodzi ten nędznik. Każdy scvm dostaje jedno losowo."
+      },
+      "gettingBetter": {
+        "label": "Rozwój",
+        "hint": "Co się dzieje, gdy scvm tej klasy staje się lepszy."
+      },
+      "review": {
+        "label": "Próbny rzut i zapis",
+        "hint": "Wylosuj scvm z obecnego szkicu, potem zapisz klasę."
+      }
+    },
+    "stepCount": "Krok {{n}} z {{total}}",
+    "back": "Wstecz",
+    "ok": "OK",
+    "complete": "Gotowe",
+    "toDo_one": "{{count}} do zrobienia",
+    "toDo_few": "{{count}} do zrobienia",
+    "toDo_many": "{{count}} do zrobienia",
+    "toDo_other": "{{count}} do zrobienia",
+    "toFix_one": "{{count}} do poprawy",
+    "toFix_few": "{{count}} do poprawy",
+    "toFix_many": "{{count}} do poprawy",
+    "toFix_other": "{{count}} do poprawy",
+    "writingIn": "Piszesz po",
+    "missingCount_one": "brak {{count}}",
+    "missingCount_few": "brak {{count}}",
+    "missingCount_many": "brak {{count}}",
+    "missingCount_other": "brak {{count}}",
+    "languageNames": {
+      "en": "angielsku",
+      "pl": "polsku"
+    },
+    "onlyLanguage": {
+      "en": "Tylko po angielsku",
+      "pl": "Tylko po polsku"
+    },
+    "missingText": {
+      "en": "Brak tekstu po angielsku",
+      "pl": "Brak tekstu po polsku"
+    },
+    "charCount": "{{count}} z {{max}} znaków",
+    "remove": "Usuń",
+    "stepper": {
+      "decrease": "Zmniejsz: {{label}}",
+      "increase": "Zwiększ: {{label}}"
+    },
+    "zineContact": "Autor zina? Chcesz dodać swoją klasę do listy? <mail>Napisz do nas (contact@rpgtools.co)</mail>",
+    "zinePaste": {
+      "title": "Przenosisz zina?",
+      "abilities": "Wklej listę zdolności w pole Nazwa: po jednym wpisie „Nazwa: zasady” w linii.",
+      "origins": "Przenosisz zina? Wklej po jednym pochodzeniu w linii, aby dodać je wszystkie naraz."
+    },
+    "reorder": {
+      "grip": "Przenieś: {{label}}",
+      "up": "Przenieś wyżej",
+      "down": "Przenieś niżej",
+      "top": "Na początek",
+      "bottom": "Na koniec",
+      "abilitiesHint": "Ta kolejność jest używana na karcie, wydruku i w puli losowych zdolności.",
+      "itemsHint": "Ta kolejność Class Items jest używana wszędzie, gdzie klasa je wyświetla.",
+      "originsHint": "Kolejność to numerowana lista pochodzeń, z której losuje się przy tworzeniu scvma.",
+      "shortcut": "Alt+↑/↓ przenosi aktywną kartę lub wiersz tabeli."
+    },
+    "identity": {
+      "languages": "Języki, w których napisano klasę",
+      "englishOnly": "Tylko angielski",
+      "polishOnly": "Tylko polski",
+      "both": "Oba",
+      "bothHint": "Każde pole tekstowe potrzebuje obu języków. Gracze widzą swój. „Piszesz po” na górze przełącza tylko to, który edytujesz.",
+      "oneHint": "Gracze w obu językach widzą tekst po {{language}}. Tekst napisany w drugim języku zostaje, tylko jest ukryty.",
+      "name": "Nazwa klasy",
+      "description": "Opis"
+    },
+    "stats": {
+      "short": {
+        "strength": "SIŁ",
+        "agility": "ZRĘ",
+        "presence": "PRE",
+        "toughness": "WYT"
+      },
+      "lineLabel": "Kości: {{stat}}",
+      "dice": "Kości",
+      "sides": "Ścianki",
+      "modifier": "Modyfikator",
+      "lowestDie": "Najniższa kość",
+      "kept": "Zostaje",
+      "dropped": "Odrzucona",
+      "dropNeedsTwo": "Odrzucenie najniższej kości wymaga co najmniej dwóch kości.",
+      "scoreRange": "wynik {{low}}–{{high}}",
+      "modRange": "mod. od {{low}} do {{high}}",
+      "hpDie": "Kość PŻ (+ WYT)",
+      "hpHint": "Startowe PŻ to ta kość plus Wytrzymałość, co najmniej 1. Klasy z podręcznika używają k4 do k10.",
+      "omenDie": "Kość omenów",
+      "omenHint": "Omeny, z którymi scvm zaczyna. Klasy z podręcznika używają k2 lub k4.",
+      "weaponDie": "Kość startowej broni",
+      "weaponHint": "Rzut na tabelę startowej broni z podręcznika (k10: od kości udowej po zweihänder).",
+      "armorDie": "Kość startowego pancerza",
+      "armorHint": "Rzut na tabelę startowego pancerza z podręcznika (k4: od braku po ciężki pancerz).",
+      "silverDice": "Kości srebra",
+      "silverSides": "Ścianki srebra",
+      "silverMultiplier": "Mnożnik srebra",
+      "silverHint": "Srebro to suma kości razy ta liczba. Domyślnie w podręczniku 2k6 × 10.",
+      "bookDefault": "Domyślnie z podręcznika",
+      "change": "Zmień",
+      "done": "Gotowe"
+    },
+    "origins": {
+      "add": "Dodaj pochodzenie",
+      "count": "{{count}} z {{max}} pochodzeń",
+      "empty": "Brak pochodzeń. Dodaj miejsca, z których wypełzają nędznicy tej klasy.",
+      "full": "Klasa ma najwyżej {{max}} pochodzeń.",
+      "label": "Pochodzenie {{n}}",
+      "removeLabel": "Usuń pochodzenie {{n}}"
+    },
+    "gettingBetter": {
+      "rule": "Zasada",
+      "note": "Notatka o zasadach dla gracza (opcjonalna)",
+      "specialistDisabled": "Specjalista potrzebuje puli losowych zdolności większej o co najmniej jedną od liczby losowanych. Najpierw dodaj losowe zdolności.",
+      "explain": {
+        "book": "Zasady z podręcznika: maks. PŻ może wzrosnąć, każda cecha może wzrosnąć lub spaść, a scvm przeszukuje gruzy w poszukiwaniu srebra lub zwojów.",
+        "book_plus_ability": "Zasady z podręcznika, a każde ulepszenie losuje też jedną zdolność z puli tej klasy, której scvm jeszcze nie ma, razem z tym, co daje.",
+        "specialist": "Zasady z podręcznika. Losowe zdolności scvm to jego specjalności: pierwsze ulepszenie dodaje jedną, a każde kolejne może przelosować dowolną z nich."
+      }
+    },
+    "review": {
+      "roll": "Wylosuj próbnego scvm",
+      "rollAgain": "Rzuć ponownie",
+      "noRoll": "Jeszcze bez próbnego rzutu. Próbny rzut używa szkicu dokładnie takim, jaki jest, i niczego nie zapisuje.",
+      "testScvm": "Próbny scvm · {{name}}",
+      "stale": "Szkic zmienił się od tego rzutu. Rzuć ponownie, żeby go zobaczyć.",
+      "hp": "PŻ {{hp}}",
+      "omens": "Omeny {{omens}}",
+      "silver": "{{silver}} srebra",
+      "gear": "Zaczyna z",
+      "origin": "Pochodzenie",
+      "none": "Nic",
+      "beforeSave": "Zanim zapiszesz",
+      "ready": "Niczego nie brakuje. Ta klasa jest gotowa do zapisu.",
+      "fix": "Popraw",
+      "save": "Zapisz klasę",
+      "fixFirst_one": "Najpierw popraw {{count}} problem",
+      "fixFirst_few": "Najpierw popraw {{count}} problemy",
+      "fixFirst_many": "Najpierw popraw {{count}} problemów",
+      "fixFirst_other": "Najpierw popraw {{count}} problemów",
+      "saved": "Zapisano",
+      "forged": "Wykuta",
+      "forgedNote": "„{{name}}” jest zapisana w twoich klasach. Każda zmiana tutaj znów odblokuje zapis.",
+      "goToClasses": "Przejdź do moich klas",
+      "versionWarning_one": "{{count}} scvm gra wersją {{version}}. Zapis utworzy wersję {{nextVersion}}: on zostaje przy wersji {{version}}, a nowe rzuty użyją wersji {{nextVersion}}.",
+      "versionWarning_other": "{{count}} scvm gra wersją {{version}}. Zapis utworzy wersję {{nextVersion}}: zostają przy wersji {{version}}, a nowe rzuty użyją wersji {{nextVersion}}.",
+      "versionWarning_few": "{{count}} scvm grają wersją {{version}}. Zapis utworzy wersję {{nextVersion}}: zostają przy wersji {{version}}, a nowe rzuty użyją wersji {{nextVersion}}.",
+      "versionWarning_many": "{{count}} scvm gra wersją {{version}}. Zapis utworzy wersję {{nextVersion}}: zostają przy wersji {{version}}, a nowe rzuty użyją wersji {{nextVersion}}."
+    },
+    "issues": {
+      "missingName": "Brak tekstu po {{language}}: nazwa klasy",
+      "missingDescription": "Brak tekstu po {{language}}: opis klasy",
+      "missingOrigin": "Brak tekstu po {{language}}: pochodzenie {{n}}",
+      "noOrigin": "Dodaj co najmniej jedno pochodzenie",
+      "specialistPool": "Specjalista potrzebuje co najmniej jednej losowej zdolności więcej, niż losuje każdy scvm",
+      "missingAbilityName": "Brak tekstu po {{language}}: nazwa zdolności {{n}}",
+      "missingAbilityTextUnnamed": "Brak tekstu po {{language}}: treść zdolności {{n}}",
+      "duplicateModifier": "„{{name}}” ma dwa razy ten sam modyfikator",
+      "missingTableRow": "Brak tekstu po {{language}}: wynik {{roll}} tabeli „{{name}}”",
+      "missingAbilityText": "Brak tekstu po {{language}}: treść „{{name}}”",
+      "poolTooSmall_one": "Losuje {{count}} zdolność, a w puli jest {{pool}}",
+      "poolTooSmall_few": "Losuje {{count}} zdolności, a w puli jest {{pool}}",
+      "poolTooSmall_many": "Losuje {{count}} zdolności, a w puli jest {{pool}}",
+      "poolTooSmall_other": "Losuje {{count}} zdolności, a w puli jest {{pool}}",
+      "missingItemName": "Brak tekstu po {{language}}: nazwa przedmiotu klasowego {{n}}",
+      "itemNotGranted": "Przedmiotu klasowego „{{name}}” nie daje żadna zdolność"
+    },
+    "blocked_one": "Zapis zablokowany: {{count}} rzecz do poprawy. Ma przycisk Popraw poniżej.",
+    "blocked_few": "Zapis zablokowany: {{count}} rzeczy do poprawy. Każda ma przycisk Popraw poniżej.",
+    "blocked_many": "Zapis zablokowany: {{count}} rzeczy do poprawy. Każda ma przycisk Popraw poniżej.",
+    "blocked_other": "Zapis zablokowany: {{count}} rzeczy do poprawy. Każda ma przycisk Popraw poniżej.",
+    "saveFailed": "Klasa się nie zapisała. Spróbuj ponownie.",
+    "saveRateLimited": "Zapisano 10 razy w tej minucie. Odczekaj minutę i zapisz ponownie.",
+    "abilities": {
+      "rolled": "Losowane zdolności",
+      "rolledHint": "Każdy scvm dostaje wszystkie Stałe zdolności i tyle z puli Losowych (jest w niej {{pool}}). „Rzuć k6 na zdolność” z zina to pula 6 z 1 losowaną.",
+      "count": "{{count}} z {{max}} zdolności",
+      "empty": "Brak zdolności. Dodaj stałą, którą dostaje każdy scvm, albo zbuduj pulę losowych.",
+      "add": "Dodaj zdolność",
+      "full": "Klasa ma najwyżej {{max}} zdolności.",
+      "emptyChip": "Puste",
+      "emptyLabel": "Brak zdolności",
+      "fixed": "Stała",
+      "random": "Losowa",
+      "randomN": "Losowa {{n}}",
+      "untitled": "Zdolność bez nazwy",
+      "edit": "Edytuj",
+      "kind": "Dostaje ją każdy scvm albo jest w puli losowych",
+      "name": "Nazwa",
+      "text": "Treść zasady",
+      "modifiers": "Modyfikatory",
+      "modifierN": "Modyfikator {{n}}",
+      "stat": "Cecha",
+      "value": "Wartość",
+      "appliesTo": "Dotyczy",
+      "extras": "Dodatki",
+      "addModifier": "Dodaj modyfikator",
+      "duplicate": "Powiel",
+      "done": "Gotowe",
+      "scopeWord": {
+        "combat": "walka",
+        "defence": "obrona",
+        "tests": "testy",
+        "melee": "wręcz",
+        "ranged": "dystans",
+        "powers": "moce"
+      },
+      "removeGranter": "Tylko ta zdolność daje {{items}}. Usunąć też przedmiot, czy zostawić go dla innej zdolności?",
+      "removeBoth": "Usuń oba",
+      "keepItem": "Zostaw przedmiot bez nadania",
+      "addTable": "Dodaj tabelę",
+      "pasteTableRows": "Zastąpić {{count}} wierszy tabeli? Drugi język wklej osobno.",
+      "referenceTable": "Tabela",
+      "removeTable": "Usuń tabelę",
+      "removeTableWithItems": "Ta tabela daje {{items}}. Usunąć tabelę i jej powiązania?",
+      "replaceRows": "Zastąp wiersze",
+      "tableDie": "Kość tabeli",
+      "tableHint": "Numer wiersza to wynik rzutu kością.",
+      "tableRow": "Wynik {{roll}}"
+    },
+    "items": {
+      "question": "Czy ta klasa ma własny sprzęt albo bestie?",
+      "questionHint": "Przedmioty klasowe to broń, pancerz, sprzęt albo zwierzęta, które ma tylko ta klasa, jak Brązowy Bułat Kłującego Dezertera. Każdy trafia do scvm przez jedną zdolność.",
+      "yes": "Tak, wykuj przedmiot klasowy",
+      "no": "Nie, tylko sprzęt z katalogu",
+      "none": "Brak przedmiotów klasowych. Zdolności mogą nadal dawać sprzęt ze wspólnego katalogu.",
+      "change": "Zmień",
+      "noneChip": "Opcjonalne",
+      "noneLabel": "Brak przedmiotów klasowych, i to w porządku",
+      "forge": "Wykuj",
+      "count": "{{count}} z {{max}} przedmiotów klasowych",
+      "full": "Klasa ma najwyżej {{max}} przedmiotów klasowych.",
+      "empty": "Brak przedmiotów klasowych. Wybierz rodzaj powyżej.",
+      "untitled": "Przedmiot bez nazwy",
+      "type": {
+        "weapon": "Broń",
+        "armor": "Pancerz",
+        "gear": "Sprzęt",
+        "pet": "Zwierzę"
+      },
+      "typeLower": {
+        "weapon": "broń",
+        "armor": "pancerz",
+        "gear": "sprzęt",
+        "pet": "zwierzę"
+      },
+      "typeLabel": "Rodzaj",
+      "name": "Nazwa",
+      "description": "Opis (opcjonalny)",
+      "value": "Wartość w srebrze",
+      "damageDice": "Kości obrażeń",
+      "reach": "Zasięg",
+      "melee": "Wręcz",
+      "ranged": "Dystansowa",
+      "ammo": "Amunicja",
+      "ammoNone": "Brak",
+      "ammoCounted": "Liczona",
+      "ammoEndless": "Bez końca",
+      "ammoCount": "Startowa amunicja",
+      "ammoName": "Nazwa amunicji (opcjonalna)",
+      "tier": "Poziom pancerza",
+      "tierN": "Poziom {{n}}",
+      "kind": "Rodzaj",
+      "consumable": "Zużywalny",
+      "wearable": "Noszony",
+      "carried": "Niesiony",
+      "uses": "Użycia",
+      "onUse": "Przy użyciu",
+      "effectText": "Tylko opis",
+      "effectDamage": "Zadaje obrażenia",
+      "effectDie": "Kość efektu",
+      "damageDie": "Kość obrażeń",
+      "effectDieLabel": "Kość efektu",
+      "hp": "PŻ",
+      "actionDie": "Kość akcji",
+      "action": "Akcja",
+      "attacks": "Atakuje",
+      "buffs": "Wzmacnia sojuszników",
+      "beast": "Bestia",
+      "humanoid": "Humanoid",
+      "whileWielded": "Modyfikatory w dłoni",
+      "whileWorn": "Modyfikatory na sobie",
+      "buffsGiven": "Wzmocnienia, które daje",
+      "temporaryStatuses": "Tymczasowe efekty statusu",
+      "stamp": {
+        "melee": "wręcz",
+        "ranged": "dystans",
+        "endless": "amunicja bez końca",
+        "ammo": "amunicja",
+        "armorTier": "pancerz, poziom {{tier}}",
+        "hp": "{{hp}} PŻ",
+        "attack": "atak k{{die}}",
+        "buff": "wzmocnienie k{{die}}",
+        "humanoid": "humanoid",
+        "consumable": "zużywalny",
+        "wearable": "noszony",
+        "carried": "niesiony",
+        "uses": "użycia: {{count}}",
+        "damage": "obrażenia k{{die}}",
+        "effect": "efekt k{{die}}"
+      },
+      "grantedBy": "Daje go",
+      "everyScvm": "każdy scvm",
+      "ifRolled": "jeśli wylosowana, {{n}} z {{m}}",
+      "goToAbility": "Przejdź do zdolności",
+      "notGranted": "Jeszcze nikt go nie daje",
+      "grantFromNew": "Daj przez nową zdolność",
+      "grantFromNewLabel": "Daj {{name}} przez nową zdolność",
+      "grantedByChip": "daje: {{name}}",
+      "waits": "czeka na zdolność",
+      "waitingTitle": "Przedmioty klasowe czekające na zdolność",
+      "grantsItem": "Daje przedmiot",
+      "grantsPet": "Daje zwierzę",
+      "thisClass": "Ta klasa",
+      "nothing": "Nic",
+      "grantedElsewhere": "{{name}} (daje: {{by}})",
+      "editStats": "Edytuj parametry",
+      "forgeFor": "Wykuj przedmiot klasowy dla tej zdolności",
+      "slotTaken": "Ta zdolność już daje „{{name}}”",
+      "grantWaiting": "Daj czekający przedmiot ({{type}}) „{{name}}”",
+      "removeGranted": "„{{name}}” daje zdolność „{{by}}”. Usunąć przedmiot i wyczyścić to nadanie?",
+      "removeAndClear": "Usuń i wyczyść",
+      "keepIt": "Zostaw"
+    },
+    "cancel": "Anuluj",
+    "confirmRemoval": "Potwierdź usunięcie",
+    "archivedLocked": "Ta klasa jest zarchiwizowana. Przywróć ją w Moich klasach, zanim ją zmienisz.",
+    "backToClasses": "Wróć do Moich klas",
+    "discardDraft": "Odrzuć niezapisane zmiany",
+    "discardDraftShort": "Odrzuć",
+    "discardFailed": "Nie udało się odrzucić zmian. Spróbuj ponownie.",
+    "draftDiscard": "Odrzuć",
+    "draftLoadFailed": "Nie udało się wczytać szkicu.",
+    "draftOffline": "Brak połączenia, ponowimy próbę",
+    "draftSaved": "Szkic zapisany · przechowywany do {{date}}, chyba że znów go edytujesz",
+    "draftSaving": "Zapisywanie…",
+    "history": {
+      "label": "Historia edycji",
+      "redo": "Ponów",
+      "undo": "Cofnij"
+    },
+    "referenceTable": {
+      "rolled": "Rzut {{roll}}: {{text}}"
+    },
+    "resumeDraft": "Wznów",
+    "takenDownLocked": "Ta klasa została zdjęta przez moderację i nie można jej zmienić. Możesz się odwołać w Moich klasach.",
+    "titleResume": "Wznów klasę",
+    "unsavedChanges": "Niezapisane zmiany z {{date}}. Wznowić czy odrzucić?",
+    "draftLimit": "Nie zapisano szkicu: masz już 3 niedokończone nowe klasy. Zapisz tę klasę albo odrzuć któryś szkic.",
+    "draftUnsaved": "Szkic nie został zapisany. Następna edycja spróbuje ponownie.",
+    "takedownReason": "Uzasadnienie:"
+  },
+  "classes": {
+    "unsavedEdits": "Niezapisane zmiany zapisanej klasy",
+    "stamp": "Mistrz Gry · Klasy",
+    "title": "Moje klasy",
+    "forge": "Wykuj klasę",
+    "loginRequired": "Musisz być zalogowany, żeby wykuwać klasy.",
+    "empty": "Brak klas. Wykuj jedną, a potem włącz ją w puli drużyny.",
+    "languages": { "en": "angielski", "pl": "polski" },
+    "visibility": {
+      "private": "Prywatna",
+      "public": "Publiczna"
+    },
+    "origins_one": "{{count}} pochodzenie",
+    "origins_few": "{{count}} pochodzenia",
+    "origins_many": "{{count}} pochodzeń",
+    "origins_other": "{{count}} pochodzeń",
+    "edit": "Edytuj",
+    "editLabel": "Edytuj {{name}}",
+    "discard": "Odrzuć",
+    "discardConfirm": "Odrzucić ten niedokończony szkic?",
+    "discardLoss": "„{{name}}” zostanie trwale usunięty.",
+    "remove": "Usuń",
+    "removeConfirm": "Usunąć tę klasę?",
+    "removeLoss": "„{{name}}” zostanie usunięta, jeśli nikt jej nie używa. Jeśli grają nią scvm, zostanie zarchiwizowana, a ich zasady pozostaną bez zmian.",
+    "publish": "Opublikuj",
+    "unpublish": "Cofnij publikację",
+    "publishTitle": "Opublikować tę klasę?",
+    "publishing": "Publikowanie...",
+    "publishImmediate": "„{{name}}” będzie od razu publiczna, a inni MG będą mogli dodać ją do pul swoich drużyn.",
+    "publishRights": "Stworzyłem(-am) tę klasę albo mam prawo ją udostępnić.",
+    "moderationTakenDown": "Ta klasa została zdjęta przez moderację.",
+    "appeal": "Odwołaj się od tej decyzji",
+    "takenDown": "Zdjęta",
+    "disputeTitle": "Zakwestionuj tę decyzję",
+    "disputeText": "Dlaczego powinniśmy ponownie rozpatrzyć tę decyzję?",
+    "submitDispute": "Wyślij odwołanie",
+    "appealEmail": "Możesz też wysłać odwołanie na",
+    "appealEmailLink": "Odwołanie e-mailem",
+    "archived": "Zarchiwizowana",
+    "discardFailed": "Nie udało się odrzucić szkicu. Spróbuj ponownie.",
+    "disputeFailed": "Nie udało się wysłać odwołania. Spróbuj ponownie.",
+    "disputeSent": "Odwołanie wysłane. Rozpatrzy je człowiek, a odpowiedź przyjdzie e-mailem.",
+    "draft": "Niedokończony szkic",
+    "expiresIn_one": "Wygasa za {{count}} dzień",
+    "expiresIn_other": "Wygasa za {{count}} dni",
+    "lastEdited": "Ostatnia edycja {{date}}",
+    "moderationTerms": "Jak działa moderacja",
+    "publishFailed": "Nie udało się opublikować klasy. Spróbuj ponownie.",
+    "removeFailed": "Nie udało się usunąć klasy. Spróbuj ponownie.",
+    "restore": "Przywróć",
+    "restoreFailed": "Nie udało się przywrócić klasy. Spróbuj ponownie.",
+    "resume": "Wznów",
+    "showActive": "Pokaż aktywne klasy",
+    "showArchived": "Zarchiwizowane ({{count}})",
+    "unpublishFailed": "Klasa nadal jest publiczna. Spróbuj ponownie.",
+    "untitled": "Klasa bez nazwy",
+    "expiresIn_few": "Wygasa za {{count}} dni",
+    "expiresIn_many": "Wygasa za {{count}} dni",
+    "draftLimit": "Masz 3 niedokończone nowe klasy. Dokończ albo odrzuć jedną, aby wykuć kolejną.",
+    "loadFailed": "Nie udało się wczytać Twoich klas."
+  },
+  "report": {
+    "thisClass": "Zgłoś tę klasę",
+    "otherClass": "Zgłoś inną klasę",
+    "link": "Zgłoś klasę",
+    "title": "Zgłoś klasę",
+    "stamp": "Zgłoszenie treści",
+    "description": "Zgłoś klasę do weryfikacji przez człowieka.",
+    "intro": "Każdy może zgłosić publiczną treść. Każde zgłoszenie sprawdza człowiek i wyjaśnia wynik.",
+    "classId": "Identyfikator klasy",
+    "goodFaithShort": "Potwierdzenie dobrej wiary",
+    "missing": "Jeszcze potrzebne: {{fields}}",
+    "reportingClass": "Zgłaszasz: {{name}}",
+    "reason": "Powód",
+    "explanation": "Wyjaśnij, co się stało",
+    "name": "Twoje imię i nazwisko",
+    "email": "Twój e-mail",
+    "goodFaith": "Składam to zgłoszenie w dobrej wierze.",
+    "submit": "Wyślij zgłoszenie",
+    "sending": "Wysyłanie...",
+    "sent": "Zgłoszenie zapisano do weryfikacji przez człowieka. Wynik możesz zakwestionować pod adresem {{appealAddress}}.",
+    "appeal": "Wynik możesz zakwestionować, pisząc na {{appealAddress}}.",
+    "reasons": {
+      "copyright": "Prawo autorskie — jestem właścicielem(-ką) i nie chcę tego w Scvm Rack",
+      "child_sexual_abuse_material": "Materiały przedstawiające seksualne wykorzystywanie dzieci",
+      "threat_to_life_or_safety": "Groźba dla życia lub bezpieczeństwa",
+      "terrorist_content": "Treść terrorystyczna",
+      "other_illegal_content": "Inna nielegalna treść",
+      "abusive_or_hateful": "Treść obraźliwa lub nienawistna",
+      "owner_removal": "Nie chcę już, aby to było wyświetlane",
+      "other": "Inne"
+    },
+    "classIdHint": "Numer lub link strony klasy, np. /classes/12.",
+    "submitFailed": "Nie udało się wysłać zgłoszenia."
+  },
+  "moderation": {
+    "classVersions": "Wersje klasy",
+    "stamp": "Administrator",
+    "confirmBody": "„{{name}}” w wersji {{version}} od razu przestaje być widoczna, wszystkie jej wersje znikają z pul drużyn, a MG dostaje Twój powód jako uzasadnienie decyzji.",
+    "confirmRemoveTitle": "Usunąć tę treść?",
+    "confirmTakeDownTitle": "Zdjąć tę klasę?",
+    "previewLatest": "Podgląd najnowszej wersji",
+    "version": "Wersja {{version}}",
+    "removalHistory": "Decyzje o usunięciu klas MG: {{count}}",
+    "restored": "Przywrócona",
+    "notRestored": "Nieprzywrócona",
+    "creationBans": "Blokady tworzenia klas",
+    "gmUserId": "Identyfikator użytkownika MG",
+    "gmUserIdCopy": "ID MG · skopiuj, aby sprawdzić blokadę",
+    "dismissEffect": "klasa zostaje publiczna, a zgłoszenie zostaje zamknięte.",
+    "takeDownEffect": "znika z wyszukiwania, wyboru klas i pul drużyn; nie można losować nowych postaci. Istniejące postacie ją zachowują.",
+    "removeContentEffect": "jej tekst wszędzie zmienia się w „[usunięte przez moderację]”, także w istniejących postaciach.",
+    "reasonRequired": "Wpisz uzasadnienie decyzji, aby działać.",
+    "lookUp": "Wyszukaj",
+    "creationBanActive": "Tworzenie zablokowane",
+    "creationBanInactive": "Tworzenie dozwolone",
+    "banCreation": "Zablokuj tworzenie klas",
+    "liftCreationBan": "Znieś blokadę tworzenia",
+    "creationBanHistory": "Historia blokad",
+    "noBanHistory": "Brak decyzji o blokadzie.",
+    "byActor": "Decyzja: {{actor}}",
+    "anonymous": "Anonimowo",
+    "authority": "Wymaga zgłoszenia do organów",
+    "decisionFailed": "Nie udało się zapisać decyzji. Spróbuj ponownie.",
+    "decisionReason": "Uzasadnienie decyzji",
+    "dismiss": "Odrzuć zgłoszenie",
+    "disputes": "Odwołania autora",
+    "empty": "Brak otwartych zgłoszeń.",
+    "ground": "Podstawa w uzasadnieniu decyzji",
+    "hide": "Ukryj",
+    "intro": "Otwarte zgłoszenia wymagają decyzji człowieka.",
+    "log": {
+      "empty": "Brak decyzji.",
+      "loadFailed": "Nie udało się wczytać dziennika moderacji.",
+      "title": "Dziennik moderacji",
+      "actions": {
+        "dismissed": "Odrzucono",
+        "taken_down": "Zdjęto",
+        "content_removed": "Usunięto treść",
+        "restored": "Przywrócono",
+        "class_creation_banned": "Zablokowano tworzenie klas",
+        "class_creation_unbanned": "Zdjęto blokadę tworzenia klas"
+      }
+    },
+    "removeContent": "Usuń treść",
+    "restore": "Przywróć",
+    "takeDown": "Zdejmij",
+    "title": "Moderacja",
+    "confirmHideBody": "„{{name}}” od razu przestaje być dostępna i znika ze wszystkich pul drużyn. Istniejące postacie ją zachowują.",
+    "confirmHideTitle": "Ukryć tę klasę?",
+    "loadFailed": "Nie możesz wczytać zgłoszeń moderacyjnych."
+  },
   "party": {
     "pill": "Drużyna",
     "looks": "Wygląd",
@@ -1141,7 +1921,19 @@
     "alreadyInThisWarband": "{{name}} jest już w tej kompanii",
     "goToSheet": "Przejdź do karty",
     "leaveParty": "Opuść drużynę",
-    "leaving": "Opuszczanie..."
+    "leaving": "Opuszczanie...",
+    "alreadyInParty": "Już w drużynie",
+    "changedFields": "Zaktualizowano: {{fields}}",
+    "defaultName": "Banda bez nazwy",
+    "invalidInvite": "Ten link z zaproszeniem jest już nieważny.",
+    "joinBody": "Wybierz scvm z tej sesji albo wykuj nowego dla stołu.",
+    "joinCta": "Dołącz do drużyny",
+    "joinTitle": "Dołącz do bandy",
+    "joining": "Dołączanie...",
+    "loadingName": "Banda",
+    "preparingSession": "Przygotowujemy Twoją sesję…",
+    "readyToJoin": "Gotowy do dołączenia",
+    "olderRulesVersions": "Wylosowano z v{{version}} · klasa jest teraz w v{{latestVersion}}"
   },
   "owlbear": {
     "title": "Owlbear Rodeo",
@@ -1192,6 +1984,7 @@
     "morkBorgCredit": "MÖRK BORG jest chroniony prawem autorskim Ockult Örtmästare Games oraz Stockholm Kartell. To jest niezależny projekt fanowski."
   },
   "gm": {
+    "myClasses": "Moje klasy",
     "stamp": "Mistrz Gry · Przegląd",
     "dashboardTitle": "Kontrola kompanii",
     "partyNameLabel": "Nazwa kompanii",
@@ -1203,7 +1996,25 @@
     "manageParty": "Zarządzaj",
     "vitalStrip": "C · Pasek Życia",
     "vitalStripSubtitle": "Tablet na stole · duże PŻ · dotknij paska, by rozwinąć.",
-    "loginRequired": "Musisz być zalogowany, aby uruchomić przegląd MG.",
+    "loginRequired": "Zaloguj się, aby tworzyć kompanię i nią zarządzać.",
+    "guestCarriesOver": "Twój gościnny scvm przejdzie z tobą po rejestracji.",
+    "previewPartyOne": "Strażnicy Grobów",
+    "previewPartyTwo": "Nocna Straż Galgenbeck",
+    "pinMakeParty": "Utwórz kompanię",
+    "pinSendLink": "Wyślij link",
+    "pinWatchVitals": "Patrz, jak krwawią",
+    "overviewHeading": "To ekran MG. Zarejestruj się, by nim dowodzić.",
+    "overviewIntro": "Narzędzia MG w scvmrack są darmowe z kontem rpgtools.co.",
+    "overviewParty": "Utwórz kompanię i przekaż graczom jeden link z zaproszeniem.",
+    "overviewVitals": "Śledź na żywo PŻ, Omeny i pancerz każdego scvma.",
+    "overviewClasses": "Wybierz klasy, którymi mogą grać, albo stwórz własną.",
+    "overviewMore": "Więcej narzędzi MG",
+    "overviewOwlbearTitle": "Owlbear Rodeo",
+    "overviewOwlbear": "Lista postaci na żywo, przypisywanie pionków i tablica wrogów w pokoju Owlbear.",
+    "overviewCustomClassesTitle": "Własne klasy",
+    "overviewCustomClasses": "Twórz klasy ze zdolnościami, własnymi przedmiotami i tabelami; zachowaj je lub opublikuj.",
+    "signUp": "Zarejestruj się",
+    "logIn": "Zaloguj się",
     "loadError": "Nie udało się wczytać kompanii.",
     "empty": "Brak scvmów w kompanii. Stwórz jednego, by zapełnić stół.",
     "disconnected": "Rozłączony",

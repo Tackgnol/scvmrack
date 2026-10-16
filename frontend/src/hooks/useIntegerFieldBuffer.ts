@@ -30,14 +30,18 @@ export function useIntegerFieldBuffer(
     setDraft(digits);
     // A rejected character (e.g. "e") filters back to the same digits as
     // before — nothing was actually edited, so don't re-commit.
-    if (digits === '' || digits === previous) return;
+    if (digits === '' || digits === previous) {
+      return;
+    }
     onCommit(digits);
   };
 
   const onBlur = () => setDraft(null);
 
   const onKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === 'Enter') event.currentTarget.blur();
+    if (event.key === 'Enter') {
+      event.currentTarget.blur();
+    }
   };
 
   return { value, onChange, onBlur, onKeyDown };

@@ -57,7 +57,9 @@ function stringValue(value: unknown): string | undefined {
 }
 
 function detailsValue(value: unknown): ApiErrorDetail[] | undefined {
-  if (!Array.isArray(value)) return undefined;
+  if (!Array.isArray(value)) {
+    return undefined;
+  }
 
   const details: ApiErrorDetail[] = [];
 
@@ -122,7 +124,9 @@ export function getApiErrorStatus(error: unknown): number | undefined {
     numberValue(error.status) ??
     numberValue(error.statusCode) ??
     getApiErrorPayload(error)?.statusCode;
-  if (direct) return direct;
+  if (direct) {
+    return direct;
+  }
 
   const response = error.response;
   if (isRecord(response)) {
@@ -146,8 +150,12 @@ export function getApiErrorCode(error: unknown): string | undefined {
 
 function getApiErrorMessage(error: unknown): string | undefined {
   const payload = getApiErrorPayload(error);
-  if (payload?.message) return payload.message;
-  if (payload?.error) return payload.error;
+  if (payload?.message) {
+    return payload.message;
+  }
+  if (payload?.error) {
+    return payload.error;
+  }
 
   if (error instanceof Error && error.message) {
     return error.message;

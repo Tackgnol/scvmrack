@@ -17,13 +17,14 @@ import { characterImprovementRepository } from '../repositories/character-improv
 import type { ImprovementCharacterRow } from '../repositories/character-improvement-repository.js';
 import { isValidLocale, isValidUUID } from '../utils.js';
 import type { PartyEventBus } from '../plugins/party-bus.js';
-import { characterUpdateFromApplied } from './character-improvement-apply.js';
+import { characterUpdateFromApplied, gainedAbilityItems } from './character-improvement-apply.js';
 import {
   buildDraft,
   loadCatalog,
   rerollDraftSection,
   sameSnapshot,
   toPreviewResponse,
+  upgradeActiveDraft,
   type ImprovementRerollSection,
   type PreviewResponse,
 } from './character-improvement-preview.js';
@@ -95,17 +96,22 @@ export function createCharacterImprovementService(
       try {
         const locale = isValidLocale(input.rawLocale) ? input.rawLocale : 'en';
         const owned = await loadOwnedCharacter(input.id, input.session);
-        if (!owned.ok) return fail(owned.error);
+        if (!owned.ok) {
+          return fail(owned.error);
+        }
 
+        const { catalog, classSettings } = await loadCatalog(owned.row);
         const active = await characterImprovementRepository.findActive(
           input.id
         );
-        if (active) return ok(await toPreviewResponse(active, locale));
+        if (active) {
+          const current = await upgradeActiveDraft(active, catalog);
+          return ok(await toPreviewResponse(current, locale, classSettings));
+        }
 
         const appliedCount = await characterImprovementRepository.countApplied(
           input.id
         );
-        const { catalog } = await loadCatalog(owned.row);
         const draft = await buildDraft(
           owned.row,
           appliedCount + 1,
@@ -118,10 +124,12 @@ export function createCharacterImprovementService(
           draft as unknown as Prisma.InputJsonValue,
           draft.snapshot.snapshotHash
         );
-        return ok(await toPreviewResponse(created, locale));
+        return ok(await toPreviewResponse(created, locale, classSettings));
       } catch (err) {
         const ruleError = mapRuleError(err);
-        if (ruleError) return fail(ruleError);
+        if (ruleError) {
+          return fail(ruleError);
+        }
         return fail(
           unexpected(
             log,
@@ -147,7 +155,9 @@ export function createCharacterImprovementService(
       try {
         const locale = isValidLocale(input.rawLocale) ? input.rawLocale : 'en';
         const owned = await loadOwnedCharacter(input.id, input.session);
-        if (!owned.ok) return fail(owned.error);
+        if (!owned.ok) {
+          return fail(owned.error);
+        }
 
         const active = await characterImprovementRepository.findActiveById(
           input.id,
@@ -162,9 +172,10 @@ export function createCharacterImprovementService(
         const appliedCount = await characterImprovementRepository.countApplied(
           input.id
         );
-        const { catalog } = await loadCatalog(owned.row);
+        const { catalog, classSettings } = await loadCatalog(owned.row);
+        const current = await upgradeActiveDraft(active, catalog);
         const draft = await rerollDraftSection({
-          activeDraft: active.rolledDraft as ImprovementDraft,
+          activeDraft: current.rolledDraft as ImprovementDraft,
           section: input.section,
           row: owned.row,
           appliedCount,
@@ -181,10 +192,12 @@ export function createCharacterImprovementService(
             notFound('IMPROVEMENT_NOT_FOUND', 'Improvement preview not found')
           );
         }
-        return ok(await toPreviewResponse(updated, locale));
+        return ok(await toPreviewResponse(updated, locale, classSettings));
       } catch (err) {
         const ruleError = mapRuleError(err);
-        if (ruleError) return fail(ruleError);
+        if (ruleError) {
+          return fail(ruleError);
+        }
         return fail(
           unexpected(
             log,
@@ -210,7 +223,9 @@ export function createCharacterImprovementService(
 
       try {
         const owned = await loadOwnedCharacter(input.id, input.session);
-        if (!owned.ok) return fail(owned.error);
+        if (!owned.ok) {
+          return fail(owned.error);
+        }
 
         const active = await characterImprovementRepository.findActiveById(
           input.id,
@@ -223,10 +238,14 @@ export function createCharacterImprovementService(
         }
 
         const persistedDraft = active.rolledDraft as ImprovementDraft;
-        const { catalog, scumSpecialtyKeys } = await loadCatalog(owned.row);
+        const { catalog, classAbilities } = await loadCatalog(owned.row);
+        const appliedCount = await characterImprovementRepository.countApplied(
+          input.id
+        );
         const normalizedDraft = normalizeSubmittedImprovementDraft(
           input.draft,
           persistedDraft.snapshot,
+          appliedCount,
           catalog
         );
         if (!sameSnapshot(owned.row, normalizedDraft.snapshot)) {
@@ -245,14 +264,14 @@ export function createCharacterImprovementService(
             silver: owned.row.silver ?? 0,
             abilities: normalizedDraft.snapshot.abilities,
             abilityKeys: normalizedDraft.snapshot.abilityKeys,
-            scumSpecialtyKeys,
           },
           { draftId: active.id, appliedAt: new Date().toISOString() }
         );
         const data = characterUpdateFromApplied(
           owned.row,
           normalizedDraft,
-          applied
+          applied,
+          await gainedAbilityItems(owned.row, classAbilities, applied)
         );
         const result = await characterImprovementRepository.applyInTransaction({
           characterId: input.id,
@@ -280,7 +299,9 @@ export function createCharacterImprovementService(
         return ok(character);
       } catch (err) {
         const ruleError = mapRuleError(err);
-        if (ruleError) return fail(ruleError);
+        if (ruleError) {
+          return fail(ruleError);
+        }
         return fail(
           unexpected(
             log,

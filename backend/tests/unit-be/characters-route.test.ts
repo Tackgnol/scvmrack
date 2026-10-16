@@ -168,7 +168,7 @@ function defaultImprovementDraft() {
       presence: defaultAbilityImprovement(),
       toughness: defaultAbilityImprovement(),
     },
-    scumSpecialties: { kind: 'notScum' },
+    classAbility: { kind: 'none' },
   };
 }
 
@@ -178,7 +178,9 @@ function defaultImprovementPreview() {
     characterId: generatedCharacterId,
     sequence: 1,
     rolledDraft: defaultImprovementDraft(),
-    scumSpecialtyNames: {},
+    abilityNames: {},
+    rulesNote: null,
+    scrollNames: {},
     snapshotHash: 'snapshot-hash',
     createdAt: '2026-03-01T10:00:00.000Z',
     updatedAt: '2026-03-01T10:00:00.000Z',
@@ -212,21 +214,35 @@ mock.module('../../src/lib/prisma.js', {
 
 mock.module('../../src/lib/generate-character.js', {
   namedExports: {
-    generateCharacter: async (classId: number | null, roller: unknown, userId?: string) => {
-      generateCalls.push({ classId, roller, userId });
-      return generatedCharacterId;
-    },
-    createCharacterFromDraft: async (draft: unknown, userId: string) => {
-      createFromDraftCalls.push({ draft, userId });
-      return generatedCharacterId;
-    },
+    characterCreateDataFromDraft: async (draft: unknown, userId: string) => ({ fromDraft: draft, userId }),
+    randomCharacterCreateData: async (classId: number, roller: unknown, userId?: string) => ({ fromRandom: classId, roller, userId }),
   },
 });
 
 mock.module('../../src/repositories/character-repository.js', {
   namedExports: {
     characterRepository: {
-      classExists: async () => true,
+      transaction: async (work: (ops: unknown) => Promise<unknown>) =>
+        work({
+          createCharacter: async (data: { fromDraft?: unknown; fromRandom?: number; roller?: unknown; userId: string }) => {
+            if ('fromDraft' in data) {
+              createFromDraftCalls.push({ draft: data.fromDraft, userId: data.userId });
+            } else {
+              generateCalls.push({ classId: data.fromRandom ?? null, roller: data.roller, userId: data.userId });
+            }
+            return generatedCharacterId;
+          },
+        }),
+    },
+  },
+});
+
+const scopeTokens: Array<string | null | undefined> = [];
+mock.module('../../src/services/party-class-pool-service.js', {
+  namedExports: {
+    resolvePartyClassPool: async (token: string | null | undefined) => {
+      scopeTokens.push(token);
+      return { ok: true, value: { classIds: [1, 2, 3, 4, 5, 6], acceptedClassIds: [1, 2, 3, 4, 5, 6], classlessEnabled: true, party: null } };
     },
   },
 });
@@ -429,6 +445,24 @@ test('POST /draft forwards classless drop-lowest choices', async () => {
   await app.close();
 });
 
+test('POST /new hands the invite to the class scope', async () => {
+  resetState();
+  scopeTokens.length = 0;
+  currentSession = { user: { id: 'user-1' } };
+  const app = await buildApp();
+
+  const response = await app.inject({
+    method: 'POST',
+    url: '/new?locale=en&invite=invite-token-1',
+    payload: { classId: 2 },
+  });
+
+  assert.equal(response.statusCode, 201);
+  assert.deepEqual(scopeTokens, ['invite-token-1']);
+
+  await app.close();
+});
+
 test('POST /draft/reroll/:section rejects unknown sections with 400', async () => {
   resetState();
   currentSession = { user: { id: 'user-1' } };
@@ -475,7 +509,7 @@ test('GET /classes returns the localized class list', async () => {
 
   assert.equal(response.statusCode, 200);
   assert.deepEqual(response.json(), [{ id: 1, name: 'Gutterborn Scvm', description: null }]);
-  assert.deepEqual(listClassCalls, [{ locale: 'en' }]);
+  assert.deepEqual(listClassCalls, [{ locale: 'en', inviteToken: undefined, obrRoomId: undefined }]);
 
   await app.close();
 });
@@ -552,7 +586,7 @@ test('POST /:id/improvements/preview forwards character id and session', async (
     ok: true,
     value: {
       ...defaultImprovementPreview(),
-      scumSpecialtyNames: { 'abilities.gutterborn_scum.jab': 'Frajerskie Dźgnięcie' },
+      abilityNames: { 'abilities.gutterborn_scum.jab': 'Frajerskie Dźgnięcie' },
     },
   };
   const app = await buildApp();
@@ -565,7 +599,7 @@ test('POST /:id/improvements/preview forwards character id and session', async (
   assert.equal(response.statusCode, 200);
   assert.equal(response.json().id, 'd24ac091-af57-47b8-9a1f-003cf4f274b9');
   assert.equal(
-    response.json().scumSpecialtyNames['abilities.gutterborn_scum.jab'],
+    response.json().abilityNames['abilities.gutterborn_scum.jab'],
     'Frajerskie Dźgnięcie'
   );
   assert.equal(improvementCalls[0].method, 'preview');
@@ -652,14 +686,45 @@ test('POST /:id/improvements/:improvementId/apply accepts populated improvement 
       silver: { source: 'table', total: 3 },
       amount: 3,
     },
-    scumSpecialties: {
-      kind: 'firstImprovement',
-      existing: { key: 'old-specialty', rollValue: 1 },
+    classAbility: {
+      kind: 'firstSpecialty',
+      existing: [{ key: 'old-specialty', rollValue: 1 }],
       added: {
         key: 'new-specialty',
         rollValue: 2,
         roll: { source: 'table', total: 2 },
       },
+    },
+  };
+
+  const response = await app.inject({
+    method: 'POST',
+    url: `/${generatedCharacterId}/improvements/d24ac091-af57-47b8-9a1f-003cf4f274b9/apply?locale=en`,
+    payload: { draft },
+  });
+
+  assert.equal(response.statusCode, 200);
+  assert.deepEqual(improvementCalls[0].input.draft, draft);
+
+  await app.close();
+});
+
+test('POST /:id/improvements/:improvementId/apply accepts per-specialty toggles', async () => {
+  resetState();
+  currentSession = { user: { id: 'user-1' } };
+  const app = await buildApp();
+  const draft = {
+    ...defaultImprovementDraft(),
+    classAbility: {
+      kind: 'specialties',
+      specialties: [
+        {
+          current: { key: 'held-one', rollValue: 1 },
+          replacement: { key: 'free-one', rollValue: 3, roll: { source: 'server', total: 3 } },
+          reroll: true,
+        },
+        { current: { key: 'held-two', rollValue: 2 }, replacement: null, reroll: false },
+      ],
     },
   };
 

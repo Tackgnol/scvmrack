@@ -26,8 +26,12 @@ const MAX_TRANSFORM_DEPTH = 8;
  * Arrays are traversed, primitives are left as-is. Bounded depth.
  */
 export function transformKeys(obj: unknown, keyFn: (key: string) => string, depth = 0): unknown {
-  if (depth >= MAX_TRANSFORM_DEPTH) return obj;
-  if (Array.isArray(obj)) return obj.map((item) => transformKeys(item, keyFn, depth + 1));
+  if (depth >= MAX_TRANSFORM_DEPTH) {
+    return obj;
+  }
+  if (Array.isArray(obj)) {
+    return obj.map((item) => transformKeys(item, keyFn, depth + 1));
+  }
   if (obj !== null && typeof obj === 'object') {
     const prototype = Object.getPrototypeOf(obj);
     if (prototype !== Object.prototype && prototype !== null) {
@@ -45,7 +49,9 @@ export function transformKeys(obj: unknown, keyFn: (key: string) => string, dept
  * HTML escaping belongs at render boundaries, not in persisted API values.
  */
 export function sanitizeString(input: unknown, maxLength = 10000): string {
-  if (typeof input !== 'string') return '';
+  if (typeof input !== 'string') {
+    return '';
+  }
 
   return input.trim().slice(0, maxLength);
 }
@@ -94,6 +100,15 @@ export function sanitizeJsonb(obj: unknown): unknown {
   }
 
   return obj;
+}
+
+/** False for the keyless, nameless entries an empty armor slot once left behind in inventory; non-objects pass through to `sanitizeJsonb`. */
+export function isNamedItem(item: unknown): boolean {
+  if (!item || typeof item !== 'object') {
+    return true;
+  }
+  const { key, name } = item as { key?: unknown; name?: unknown };
+  return Boolean(key) || (typeof name === 'string' && name.trim() !== '');
 }
 
 /**
@@ -161,7 +176,11 @@ export function sanitizeCharacterUpdate(
         );
       }
     } else if (jsonbFields.includes(key)) {
-      sanitized[key] = sanitizeJsonb(value);
+      sanitized[key] = sanitizeJsonb(
+        (key === 'equipment' || key === 'storage') && Array.isArray(value)
+          ? value.filter(isNamedItem)
+          : value
+      );
     }
     // Unknown fields are silently dropped
   }

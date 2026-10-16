@@ -13,6 +13,10 @@ export const allIncludeOptions: IncludeOption[] = [
   { value: 'defence', labelKey: 'modifiers.exclude.defence' },
   { value: 'cast', labelKey: 'modifiers.exclude.cast' },
   { value: 'ability', labelKey: 'modifiers.exclude.ability' },
+  { value: 'test', labelKey: 'modifiers.exclude.test' },
+  { value: 'heal', labelKey: 'modifiers.exclude.heal', more: true },
+  { value: 'buff', labelKey: 'modifiers.exclude.buff', more: true },
+  { value: 'item', labelKey: 'modifiers.exclude.item', more: true },
 ];
 
 export const ALL_CONTEXTS: IncludeContext[] = allIncludeOptions.map(
@@ -35,7 +39,12 @@ export const scopeIncludeOptions: ScopeIncludeOption[] = [
     labelKey: 'modifiers.scopes.defence',
     include: ['defence'],
   },
-  { value: 'melee', labelKey: 'modifiers.scopes.melee', include: ['melee'] },
-  { value: 'ranged', labelKey: 'modifiers.scopes.ranged', include: ['ranged'] },
-  { value: 'powers', labelKey: 'modifiers.scopes.powers', include: ['cast'] },
+  {
+    value: 'tests',
+    labelKey: 'modifiers.scopes.tests',
+    include: ['ability', 'test'],
+  },
+  { value: 'melee', labelKey: 'modifiers.scopes.melee', include: ['melee'], more: true },
+  { value: 'ranged', labelKey: 'modifiers.scopes.ranged', include: ['ranged'], more: true },
+  { value: 'powers', labelKey: 'modifiers.scopes.powers', include: ['cast'], more: true },
 ];

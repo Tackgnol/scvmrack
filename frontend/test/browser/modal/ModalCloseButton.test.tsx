@@ -3,8 +3,16 @@ import { page, userEvent } from 'vitest/browser';
 import { describe, it, expect, vi } from 'vitest';
 import ModalCloseButton from '@/components/atoms/modal/ModalCloseButton';
 import BrowserTestProvider from '../BrowserTestProvider';
+import i18n, { loadLanguage } from '@/i18n';
 
 describe('ModalCloseButton Browser', () => {
+  it('announces the close action in Polish', async () => {
+    await loadLanguage('pl');
+    await i18n.changeLanguage('pl');
+    await render(<BrowserTestProvider><ModalCloseButton onClick={vi.fn()} /></BrowserTestProvider>);
+    await expect.element(page.getByRole('button', { name: 'Zamknij okno' })).toBeVisible();
+    await expect.element(page.getByRole('button', { name: 'Close modal' })).not.toBeInTheDocument();
+  });
   it('renders correctly and handles click', async () => {
     const onClick = vi.fn();
     await render(
@@ -13,7 +21,7 @@ describe('ModalCloseButton Browser', () => {
       </BrowserTestProvider>
     );
 
-    const button = page.getByRole('button', { name: 'Close modal' });
+    const button = page.getByRole('button', { name: 'Close dialog' });
     await expect.element(button).toBeVisible();
     await userEvent.click(button);
 

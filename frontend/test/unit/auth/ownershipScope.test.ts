@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it } from 'vitest';
-import { QueryClient } from '@tanstack/react-query';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { QueryClient, QueryObserver } from '@tanstack/react-query';
 import { synchronizeOwnershipScope } from '@/auth/ownershipScope';
 
 describe('synchronizeOwnershipScope', () => {
@@ -42,5 +42,38 @@ describe('synchronizeOwnershipScope', () => {
     expect(
       queryClient.getQueryData(['get', '/api/characters', 'detail'])
     ).toBeUndefined();
+  });
+
+  it('treats a still-loading session as no baseline', () => {
+    const queryClient = new QueryClient();
+    queryClient.setQueryData(['classes', 'detail', 7], { id: 7 });
+
+    expect(synchronizeOwnershipScope(queryClient, undefined)).toBe(false);
+    expect(synchronizeOwnershipScope(queryClient, 'user-a')).toBe(false);
+    expect(queryClient.getQueryData(['classes', 'detail', 7])).toEqual({ id: 7 });
+  });
+
+  it('refetches a mounted query on identity change instead of orphaning it', async () => {
+    const queryClient = new QueryClient();
+    const results: Array<{ id: number; as: string }> = [];
+    let user = 'user-a';
+    const observer = new QueryObserver(queryClient, {
+      queryKey: ['classes', 'detail', 7],
+      queryFn: async () => ({ id: 7, as: user }),
+    });
+    const unsubscribe = observer.subscribe((result) => {
+      if (result.data) {
+        results.push(result.data);
+      }
+    });
+    await vi.waitFor(() => expect(results).toHaveLength(1));
+
+    synchronizeOwnershipScope(queryClient, 'user-a');
+    user = 'user-b';
+    synchronizeOwnershipScope(queryClient, 'user-b');
+
+    await vi.waitFor(() => expect(observer.getCurrentResult().data).toEqual({ id: 7, as: 'user-b' }));
+    expect(observer.getCurrentResult().fetchStatus).toBe('idle');
+    unsubscribe();
   });
 });

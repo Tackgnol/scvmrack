@@ -3,6 +3,7 @@ import { AppFooter } from '@/components/molecules/AppFooter';
 import { NetworkActivityIndicator } from '@/components/atoms/NetworkActivityIndicator';
 import { CharacterSheetSkeleton } from '@/components/molecules/character/CharacterSheetSkeleton';
 import Header from '@/components/organisms/Header';
+import { TabSessionBanner } from '@/components/organisms/TabSessionBanner/TabSessionBanner';
 import { PartyHost } from '@/components/organisms/party/PartyHost';
 import { SessionExpiredGate } from '@components/molecules/session/SessionExpiredGate';
 import { Outlet, useRouterState } from '@tanstack/react-router';
@@ -10,6 +11,8 @@ import { Box, Container, CssBaseline, ThemeProvider } from '@mui/material';
 import { customStyles, morkBorgTheme } from '@/theme/morkBorgTheme';
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { getPrivacySettings } from '@/privacy/privacySettings';
+import { activeLegalNotices } from '@/legal/legalNotices';
+import { LegalChangeBanner } from '@/components/organisms/LegalChangeBanner/LegalChangeBanner';
 import { subscribeOpenPrivacyDrawer } from '@/privacy/privacyDrawerBus';
 import { isPartyCharacterRoutePath, isSheetRoutePath } from '@/router/routeClassification';
 
@@ -62,6 +65,7 @@ export function RootLayout() {
                     {!isPrintRoute && (
                         <Box className="print-hidden">
                             <Header />
+                            <TabSessionBanner />
                         </Box>
                     )}
                     <Box
@@ -75,6 +79,9 @@ export function RootLayout() {
                             viewTransitionName: isPrintRoute ? 'none' : 'scvm-main',
                         }}
                     >
+                        {!isPrintRoute && activeLegalNotices.map((notice) => (
+                            <LegalChangeBanner key={`${notice.kind}:${notice.date}`} notice={notice} />
+                        ))}
                         <Suspense fallback={isSheetRoute ? <CharacterSheetSkeleton /> : null}>
                             <Outlet />
                         </Suspense>

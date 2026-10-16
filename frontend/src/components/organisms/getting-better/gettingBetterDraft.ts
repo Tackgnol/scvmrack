@@ -72,7 +72,9 @@ export function deriveDebris(
   rollTotal: number,
 ): ImprovementDebrisRoll {
   const roll = tableRoll(rollTotal);
-  if (rollTotal <= 3) return { roll, kind: "nothing" };
+  if (rollTotal <= 3) {
+    return { roll, kind: "nothing" };
+  }
 
   if (rollTotal === 4) {
     const silver =

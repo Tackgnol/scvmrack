@@ -10,7 +10,7 @@ import {
   type DraftSection,
 } from '@/api/draft';
 import type { CharacterResponse } from '@/hooks/models';
-import { getUserFacingApiErrorMessage } from '@/utils/errorUtils';
+import { getApiErrorCode, getUserFacingApiErrorMessage } from '@/utils/errorUtils';
 
 export const DRAFT_STORAGE_KEY = 'scvmrack.character-draft';
 
@@ -23,8 +23,23 @@ export type StartChoice = {
 };
 
 type Options = {
-  onCreated?: (character: CharacterResponse) => void;
+  onCreated?: (character: CharacterResponse) => void | Promise<void>;
+  /** A party invite: rolls come from its Party Class Pool and confirming joins the party. */
+  inviteToken?: string;
+  /** An Owlbear room rolls from its attached party pool and joins it on confirm. */
+  obrRoomId?: string;
+  /** The Owlbear player receiving the completed scvm binding. */
+  obrPlayerId?: string;
 };
+
+const UNAVAILABLE_CLASS_CODES = new Set(['CLASS_NOT_AVAILABLE', 'CLASSLESS_NOT_AVAILABLE']);
+const UNAVAILABLE_CLASS_MESSAGE =
+  'That class is no longer available here. Pick again from the classes on offer.';
+
+function isUnavailableClass(error: unknown): boolean {
+  const code = getApiErrorCode(error);
+  return code !== undefined && UNAVAILABLE_CLASS_CODES.has(code);
+}
 
 function fallbackT(_key: string, fallback: string): string {
   return fallback;
@@ -49,6 +64,26 @@ export function useCharacterDraft(locale: string, options: Options = {}) {
   const abortRef = useRef<AbortController | null>(null);
   const onCreatedRef = useRef(options.onCreated);
   onCreatedRef.current = options.onCreated;
+  const { inviteToken, obrRoomId, obrPlayerId } = options;
+  // A scoped forge keeps its own saved draft so a solo draft never leaks into it.
+  const scopeKey = inviteToken ?? obrRoomId;
+  const storageKey = scopeKey ? `${DRAFT_STORAGE_KEY}:${scopeKey}` : DRAFT_STORAGE_KEY;
+
+  // A class switched off, archived or taken down mid-forge: back to the class
+  // screen, which reloads the pool. The landed roll is dropped, never swapped.
+  const backToClassGate = useCallback((message: string) => {
+    abortRef.current?.abort();
+    try {
+      sessionStorage.removeItem(storageKey);
+    } catch {
+      // ignore unavailable storage
+    }
+    setDraft(null);
+    setPreview(null);
+    setClasslessStatOptions(null);
+    setPhase('class-gate');
+    setError(message);
+  }, [storageKey]);
 
   const applyResponse = useCallback((response: DraftResponse) => {
     setDraft(response.draft);
@@ -56,23 +91,25 @@ export function useCharacterDraft(locale: string, options: Options = {}) {
     setClasslessStatOptions(response.classlessStatOptions ?? null);
     setPhase('sheet');
     try {
-      sessionStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(response.draft));
+      sessionStorage.setItem(storageKey, JSON.stringify(response.draft));
     } catch {
       // The flow still works without storage; refresh will restart it.
     }
-  }, []);
+  }, [storageKey]);
 
   const clearStored = useCallback(() => {
     try {
-      sessionStorage.removeItem(DRAFT_STORAGE_KEY);
+      sessionStorage.removeItem(storageKey);
     } catch {
       // ignore unavailable storage
     }
-  }, []);
+  }, [storageKey]);
 
   const start = useCallback(
     async (choice: StartChoice, seeds?: CharacterDraft['seeds']) => {
-      if (busyRef.current) return;
+      if (busyRef.current) {
+        return;
+      }
       busyRef.current = true;
       setIsStarting(true);
       setError(null);
@@ -86,10 +123,15 @@ export function useCharacterDraft(locale: string, options: Options = {}) {
           seeds ? { ...choice, seeds } : choice,
           locale,
           controller.signal,
+          inviteToken,
+          obrRoomId,
+          obrPlayerId,
         );
         applyResponse(response);
       } catch (e) {
-        if (e instanceof DOMException && e.name === 'AbortError') return;
+        if (e instanceof DOMException && e.name === 'AbortError') {
+          return;
+        }
         clearStored();
         setPhase('class-gate');
         setError(getUserFacingApiErrorMessage(e, fallbackT, 'Failed to roll a draft'));
@@ -98,12 +140,14 @@ export function useCharacterDraft(locale: string, options: Options = {}) {
         setIsStarting(false);
       }
     },
-    [locale, applyResponse, clearStored],
+    [locale, inviteToken, obrRoomId, obrPlayerId, applyResponse, clearStored],
   );
 
   const reroll = useCallback(
     async (section: DraftSection) => {
-      if (busyRef.current || !draft) return;
+      if (busyRef.current || !draft) {
+        return;
+      }
       busyRef.current = true;
       setRollingSection(section);
       setError(null);
@@ -120,37 +164,55 @@ export function useCharacterDraft(locale: string, options: Options = {}) {
               seeds: draft.seeds,
             }
           : draft;
-        const response = await rerollDraftSection(draftForReroll, section, locale, controller.signal);
+        const response = await rerollDraftSection(
+          draftForReroll,
+          section,
+          locale,
+          controller.signal,
+          inviteToken,
+          obrRoomId,
+          obrPlayerId,
+        );
         applyResponse(response);
       } catch (e) {
-        if (e instanceof DOMException && e.name === 'AbortError') return;
+        if (e instanceof DOMException && e.name === 'AbortError') {
+          return;
+        }
+        if (isUnavailableClass(e)) {
+          backToClassGate(UNAVAILABLE_CLASS_MESSAGE);
+          return;
+        }
         setError(getUserFacingApiErrorMessage(e, fallbackT, 'Failed to re-roll'));
       } finally {
         busyRef.current = false;
         setRollingSection(null);
       }
     },
-    [draft, locale, applyResponse],
+    [draft, locale, inviteToken, obrRoomId, obrPlayerId, applyResponse, backToClassGate],
   );
 
   const setName = useCallback((rawName: string) => {
     const name = rawName.slice(0, 255);
     setDraft((current) => {
-      if (!current) return current;
+      if (!current) {
+        return current;
+      }
       const next: CharacterDraft = { ...current, name };
       try {
-        sessionStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(next));
+        sessionStorage.setItem(storageKey, JSON.stringify(next));
       } catch {
         // The flow still works without storage; refresh will restart it.
       }
       return next;
     });
     setPreview((current) => current ? { ...current, name } : current);
-  }, []);
+  }, [storageKey]);
 
   const setDropLowestAbilities = useCallback(
     async (abilities: AbilityStat[]) => {
-      if (busyRef.current || !draft || !draft.classless) return;
+      if (busyRef.current || !draft || !draft.classless) {
+        return;
+      }
       busyRef.current = true;
       setIsChoosingStats(true);
       setError(null);
@@ -167,21 +229,25 @@ export function useCharacterDraft(locale: string, options: Options = {}) {
       abortRef.current = controller;
 
       try {
-        const response = await createDraft(nextDraft, locale, controller.signal);
+        const response = await createDraft(nextDraft, locale, controller.signal, inviteToken, obrRoomId, obrPlayerId);
         applyResponse(response);
       } catch (e) {
-        if (e instanceof DOMException && e.name === 'AbortError') return;
+        if (e instanceof DOMException && e.name === 'AbortError') {
+          return;
+        }
         setError(getUserFacingApiErrorMessage(e, fallbackT, 'Failed to choose stat rolls'));
       } finally {
         busyRef.current = false;
         setIsChoosingStats(false);
       }
     },
-    [draft, locale, applyResponse],
+    [draft, locale, inviteToken, obrRoomId, obrPlayerId, applyResponse],
   );
 
   const confirm = useCallback(async (replace = false) => {
-    if (busyRef.current || !draft) return;
+    if (busyRef.current || !draft) {
+      return;
+    }
     busyRef.current = true;
     setIsConfirming(true);
     setError(null);
@@ -190,19 +256,25 @@ export function useCharacterDraft(locale: string, options: Options = {}) {
     abortRef.current = controller;
 
     try {
-      const character = await confirmDraft(draft, locale, controller.signal, replace);
+      const character = await confirmDraft(draft, locale, controller.signal, replace, inviteToken, obrRoomId, obrPlayerId);
       clearStored();
       if (character.id) {
-        onCreatedRef.current?.(character);
+        await onCreatedRef.current?.(character);
       }
     } catch (e) {
-      if (e instanceof DOMException && e.name === 'AbortError') return;
+      if (e instanceof DOMException && e.name === 'AbortError') {
+        return;
+      }
+      if (isUnavailableClass(e)) {
+        backToClassGate(UNAVAILABLE_CLASS_MESSAGE);
+        return;
+      }
       setError(getUserFacingApiErrorMessage(e, fallbackT, 'Failed to create character'));
     } finally {
       busyRef.current = false;
       setIsConfirming(false);
     }
-  }, [draft, locale, clearStored]);
+  }, [draft, locale, inviteToken, obrRoomId, obrPlayerId, clearStored, backToClassGate]);
 
   const restart = useCallback(() => {
     abortRef.current?.abort();
@@ -219,15 +291,19 @@ export function useCharacterDraft(locale: string, options: Options = {}) {
   useEffect(() => {
     let stored: CharacterDraft | null = null;
     try {
-      const raw = sessionStorage.getItem(DRAFT_STORAGE_KEY);
-      if (raw) stored = JSON.parse(raw) as CharacterDraft;
+      const raw = sessionStorage.getItem(storageKey);
+      if (raw) {
+        stored = JSON.parse(raw) as CharacterDraft;
+      }
     } catch {
       clearStored();
       return;
     }
 
     if (!stored || typeof stored !== 'object' || !stored.seeds) {
-      if (stored !== null) clearStored();
+      if (stored !== null) {
+        clearStored();
+      }
       return;
     }
 

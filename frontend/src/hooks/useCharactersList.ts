@@ -3,7 +3,6 @@ import { useCharacter } from '@/CharacterContext/CharacterContext';
 import { type CharacterListItem } from '@/hooks/models.ts';
 import { getApiLocale, getCharacterKey } from '@/hooks/utils.ts';
 import { useAuth } from '@/hooks/useAuth';
-import { PathsApiCharactersGetParametersQueryLocale } from '@/api/schema.ts';
 import { useErrorFeedback } from '@/components/molecules/feedback/ErrorFeedbackProvider';
 import { appHistory } from '@/router/history';
 import { buildHomeCallbackUrl } from '@/router/navigation';
@@ -28,7 +27,7 @@ export function useCharactersList() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [deleteCandidate, setDeleteCandidate] = useState<CharacterListItem | null>(null);
-  const locale = getApiLocale<PathsApiCharactersGetParametersQueryLocale>(
+  const locale = getApiLocale(
     i18n.language
   );
 
@@ -57,7 +56,9 @@ export function useCharactersList() {
   }, [charactersQuery.error, showUnexpectedError]);
 
   const createNew = () => {
-    if (isCreating) return;
+    if (isCreating) {
+      return;
+    }
 
     setDeleteError(null);
     setIsCreating(true);
@@ -87,20 +88,26 @@ export function useCharactersList() {
   };
 
   const requestDelete = (character: CharacterListItem) => {
-    if (!character.id || deletingId) return;
+    if (!character.id || deletingId) {
+      return;
+    }
 
     setDeleteError(null);
     setDeleteCandidate(character);
   };
 
   const cancelDelete = () => {
-    if (deletingId) return;
+    if (deletingId) {
+      return;
+    }
     setDeleteCandidate(null);
   };
 
   const confirmDelete = async () => {
     const character = deleteCandidate;
-    if (!character?.id) return;
+    if (!character?.id) {
+      return;
+    }
 
     setDeleteError(null);
     setDeletingId(character.id);

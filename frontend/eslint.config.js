@@ -35,6 +35,8 @@ export default [
       'react-compiler': reactCompiler,
     },
     rules: {
+      // Every if/for/while body gets braces, even one-liners.
+      curly: ['error', 'all'],
       // Correctness rules from the classic react-hooks recommended set.
       'react-hooks/rules-of-hooks': 'error',
       'react-hooks/exhaustive-deps': 'warn',

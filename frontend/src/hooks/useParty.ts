@@ -1,5 +1,4 @@
 import { $api } from "@/api";
-import { PathsApiCharactersGetParametersQueryLocale } from "@/api/schema.ts";
 import { useAuth } from "@/hooks/useAuth";
 import type { CharacterListItem } from "@/hooks/models";
 import { usePartyDetail } from "@/hooks/usePartyRepository";
@@ -12,6 +11,8 @@ export type PartyMember = {
   disconnected?: boolean;
   /** A recent SSE event touched this member — drives the quiet "changed" pulse. */
   changed?: boolean;
+  /** Rolled with an older version of their class than the one now offered. */
+  olderRules?: { version: number; latestVersion: number } | null;
 };
 
 // The warband takeover shows the GM-owned party the player's scvm is bound to — every
@@ -28,7 +29,7 @@ export function useParty(): {
 } {
   const { isAuthenticated } = useAuth();
   const { i18n } = useTranslation();
-  const locale = getApiLocale<PathsApiCharactersGetParametersQueryLocale>(
+  const locale = getApiLocale(
     i18n.language,
   );
 
@@ -58,6 +59,7 @@ export function useParty(): {
     .map((m) => ({
       id: m.characterId,
       name: m.name?.trim() || "Unnamed scvm",
+      olderRules: m.olderRules,
     }));
 
   return {

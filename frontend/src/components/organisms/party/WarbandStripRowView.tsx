@@ -5,7 +5,7 @@ import type {
   WarbandContribRow,
   WarbandMember,
 } from "@/components/organisms/party/warbandMember";
-import { Box, Collapse, styled, useMediaQuery } from "@mui/material";
+import { Box, Collapse, styled, Tooltip, useMediaQuery } from "@mui/material";
 import { keyframes } from "@mui/system";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
@@ -17,6 +17,8 @@ type WarbandStripRowViewProps = {
   disconnected?: boolean;
   /** A recent SSE event touched this member — flashes the quiet "changed" pulse. */
   changed?: boolean;
+  /** Rolled with an older version of their class than the one now offered. */
+  olderRules?: { version: number; latestVersion: number } | null;
   actions?: ReactNode;
 };
 
@@ -302,6 +304,11 @@ const renderCombatTip = (name: string, rows: WarbandContribRow[]) => (
   </Box>
 );
 
+const OlderRulesTag = styled(DisconnectedTag)({
+  background: partyColors.pink,
+  borderColor: partyColors.black,
+});
+
 // One member as a full-width Vital Strip: identity, big HP, ability + combat tiles,
 // a modifier count, and a caret. The stats own their tooltips; the caret toggles
 // the detail panel so touch users get the same information without nested controls.
@@ -311,6 +318,7 @@ export function WarbandStripRowView({
   onToggle,
   disconnected = false,
   changed = false,
+  olderRules = null,
   actions,
 }: WarbandStripRowViewProps) {
   const { t } = useTranslation();
@@ -333,8 +341,18 @@ export function WarbandStripRowView({
                 {t("gm.disconnected", "Disconnected")}
               </DisconnectedTag>
             )}
+            {olderRules && (
+              <OlderRulesTag>
+                {t("party.olderRulesVersions", "Rolled with v{{version}} · class now v{{latestVersion}}", {
+                  version: olderRules.version,
+                  latestVersion: olderRules.latestVersion,
+                })}
+              </OlderRulesTag>
+            )}
           </NameRow>
-          <ClassLine>{member.cls}</ClassLine>
+          <Tooltip title={member.classAttribution ?? ''} disableHoverListener={!member.classAttribution}>
+            <ClassLine>{member.cls}</ClassLine>
+          </Tooltip>
         </IdentityCol>
 
         <HpCol>
