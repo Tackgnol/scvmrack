@@ -36,7 +36,7 @@ export const classKeys = {
   all: () => ["classes"] as const,
   mine: (locale: string) => ["classes", "mine", locale] as const,
   one: (id: number) => ["classes", id] as const,
-  detail: (id: number) => ["classes", "detail", id] as const,
+  detail: (id: number, locale: string) => ["classes", "detail", id, locale] as const,
   drafts: () => ["classes", "drafts"] as const,
   draft: (id: number) => ["classes", "drafts", id] as const,
   creationBan: () => ["classes", "creation-ban"] as const,
@@ -60,8 +60,11 @@ export async function getClass(id: number): Promise<SavedClass> {
   return unwrapApiResult(await client.GET("/api/classes/{id}", classPath(id)), "Failed to load the class");
 }
 
-export async function getClassDetail(id: number): Promise<ClassDetail> {
-  return unwrapApiResult(await client.GET("/api/classes/details/{id}", classPath(id)), "Failed to load the class");
+export async function getClassDetail(id: number, locale: ApiLocale): Promise<ClassDetail> {
+  return unwrapApiResult(
+    await client.GET("/api/classes/details/{id}", { params: { path: { id }, query: { locale } } }),
+    "Failed to load the class",
+  );
 }
 
 /** Lists unfinished private creator work, newest first. */

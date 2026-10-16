@@ -693,15 +693,15 @@ test('a taken-down public class is hidden from everyone but moderators', async (
     playingCount: 0,
     draft: ready(),
   };
-  const guest = await service.getDetail({ session: null, id: 7 });
+  const guest = await service.getDetail({ session: null, id: 7, locale: 'en' });
   assert.equal(!guest.ok && guest.error.statusCode, 404);
-  const owner = await service.getDetail({ session: GM, id: 7 });
+  const owner = await service.getDetail({ session: GM, id: 7, locale: 'en' });
   assert.equal(owner.ok, false);
 
   const previous = process.env.MODERATION_ADMIN_USER_IDS;
   process.env.MODERATION_ADMIN_USER_IDS = 'admin-1';
   try {
-    const admin = await service.getDetail({ session: { user: { id: 'admin-1', isAnonymous: false } }, id: 7 });
+    const admin = await service.getDetail({ session: { user: { id: 'admin-1', isAnonymous: false } }, id: 7, locale: 'en' });
     assert.equal(admin.ok && admin.value.reportable, false);
   } finally {
     if (previous === undefined) {
@@ -731,6 +731,7 @@ test('an allowlisted moderator can preview the exact reported class version', as
     const result = await service.getDetail({
       session: { user: { id: 'admin-1', isAnonymous: false } },
       id: 7,
+      locale: 'en',
     });
     assert.equal(result.ok && result.value.id, 7);
     assert.equal(result.ok && result.value.version, 1);

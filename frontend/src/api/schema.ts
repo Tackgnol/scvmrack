@@ -8164,7 +8164,9 @@ export interface paths {
         /** @description Load the latest readable Custom Class version for display */
         get: {
             parameters: {
-                query?: never;
+                query?: {
+                    locale?: "en" | "pl";
+                };
                 header?: never;
                 path: {
                     id: number;

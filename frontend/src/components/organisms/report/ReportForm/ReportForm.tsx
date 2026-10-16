@@ -53,14 +53,14 @@ export function ReportForm({
   });
   const values = useWatch({ control });
   const [editingClass, setEditingClass] = useState(!initialClassId);
+  const locale = getApiLocale(i18n.language);
   const referencedId = parseClassReference(values.classReference ?? "");
   const knownClass = useQuery({
-    queryKey: classKeys.detail(referencedId ?? 0),
-    queryFn: () => getClassDetail(referencedId ?? 0),
+    queryKey: classKeys.detail(referencedId ?? 0, locale),
+    queryFn: () => getClassDetail(referencedId ?? 0, locale),
     enabled: referencedId !== null,
     retry: false,
   });
-  const locale = getApiLocale(i18n.language);
   const className =
     knownClass.data && localizedText(knownClass.data.draft.name, locale);
   const anonymousAllowed = values.reason === ANONYMOUS_REASON;

@@ -15,8 +15,8 @@ export function ClassDetailPage() {
   const { t, i18n } = useTranslation();
   const language = getApiLocale(i18n.language);
   const query = useQuery({
-    queryKey: classKeys.detail(Number(classId)),
-    queryFn: () => getClassDetail(Number(classId)),
+    queryKey: classKeys.detail(Number(classId), language),
+    queryFn: () => getClassDetail(Number(classId), language),
   });
 
   if (query.isLoading) {
