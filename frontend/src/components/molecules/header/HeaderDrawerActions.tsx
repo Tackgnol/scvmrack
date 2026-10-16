@@ -14,6 +14,7 @@ type HeaderDrawerActionsProps = {
   isAuthenticated: boolean;
   authButtonHref: string;
   showSaving: boolean;
+  onRetrySave?: () => void;
   validationSummary: string;
   validationLabel: string;
   onClose: () => void;
@@ -27,6 +28,7 @@ export function HeaderDrawerActions({
   isAuthenticated,
   authButtonHref,
   showSaving,
+  onRetrySave,
   validationSummary,
   validationLabel,
   onClose,
@@ -39,7 +41,7 @@ export function HeaderDrawerActions({
   return (
     <Box sx={customStyles.header.drawerFooter}>
       <Box sx={customStyles.header.drawerStatusBox}>
-        {isSheetRoute && <HeaderStatusChip saving={showSaving} />}
+        {isSheetRoute && <HeaderStatusChip saving={showSaving} onRetrySave={onRetrySave} />}
         {isSheetRoute && (
           <HeaderValidationChip summary={validationSummary} label={validationLabel} />
         )}

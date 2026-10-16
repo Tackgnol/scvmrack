@@ -795,6 +795,7 @@
   },
   "status": {
     "saving": "Saving...",
+    "unsavedRetry": "Unsaved · Retry",
     "saved": "Saved",
     "synced": "Synced",
     "guest": "Guest",

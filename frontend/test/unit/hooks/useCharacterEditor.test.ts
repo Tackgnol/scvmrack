@@ -452,6 +452,23 @@ test('reports repeated 5xx saves after the retry tolerance and keeps a manual re
     'Unexpected error occurred.',
     expect.objectContaining({ label: 'Retry', onClick: expect.any(Function) })
   );
+  expect(result.current.isSaving).toBe(false);
+  expect(result.current.saveFailed).toBe(true);
+
+  act(() => cb.onSettled());
+  act(() => result.current.retrySave());
+  expect(result.current.saveFailed).toBe(false);
+  expect(result.current.isSaving).toBe(true);
+  expect(mutation.mutate).toHaveBeenCalledTimes(2);
+  expect((mutation.mutate as any).mock.calls[1][0].body).toMatchObject({ currentHp: 10 });
+
+  const retry = (mutation.mutate as any).mock.calls[1][1];
+  act(() => {
+    retry.onSuccess({ id: 'char-1', currentHp: 10 });
+    retry.onSettled();
+  });
+  expect(result.current.saveFailed).toBe(false);
+  expect(result.current.isSaving).toBe(false);
 });
 
 test('rolls back and drops the batch on a terminal client (4xx) error', () => {

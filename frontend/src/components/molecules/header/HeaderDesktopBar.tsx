@@ -18,6 +18,7 @@ type HeaderDesktopBarProps = {
   isAuthenticated: boolean;
   authButtonHref: string;
   showSaving: boolean;
+  onRetrySave?: () => void;
   validationSummary: string;
   validationLabel: string;
   homeUrl: string;
@@ -33,6 +34,7 @@ export function HeaderDesktopBar({
   isAuthenticated,
   authButtonHref,
   showSaving,
+  onRetrySave,
   validationSummary,
   validationLabel,
   homeUrl,
@@ -48,7 +50,7 @@ export function HeaderDesktopBar({
     <Box sx={customStyles.header.desktopNav}>
       <Box sx={customStyles.header.topBar}>
         <PartyTriggerPill />
-        {isSheetRoute && <HeaderStatusChip saving={showSaving} />}
+        {isSheetRoute && <HeaderStatusChip saving={showSaving} onRetrySave={onRetrySave} />}
         {isSheetRoute && (
           <HeaderValidationChip summary={validationSummary} label={validationLabel} />
         )}

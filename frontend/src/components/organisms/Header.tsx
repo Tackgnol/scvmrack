@@ -12,6 +12,7 @@ import { isSheetRoutePath } from '@/router/routeClassification';
 import { BoneIcon } from '@components/molecules/header/BoneIcon';
 import { HeaderDesktopBar } from '@components/molecules/header/HeaderDesktopBar';
 import { HeaderMobileDrawer } from '@components/molecules/header/HeaderMobileDrawer';
+import { HeaderStatusChip } from '@components/molecules/header/HeaderStatusChip';
 import MiseryHeaderLink from '@/components/molecules/character/MiseryHeaderLink';
 import {
   Box,
@@ -26,6 +27,7 @@ import { customStyles } from '@theme/morkBorgTheme';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { $api } from '@/api';
+import './Header.styles.css';
 
 export default function Header() {
   const { t } = useTranslation();
@@ -39,6 +41,8 @@ export default function Header() {
   });
   const {
     isSaving,
+    saveFailed,
+    retrySave,
     character,
     characterId,
     lastCharacterId,
@@ -147,6 +151,7 @@ export default function Header() {
               isAuthenticated={isAuthenticated}
               authButtonHref={authButtonHref}
               showSaving={showSaving}
+              onRetrySave={saveFailed ? retrySave : undefined}
               validationSummary={validationSummary}
               validationLabel={validationLabel}
               homeUrl={homeUrl}
@@ -158,6 +163,11 @@ export default function Header() {
             />
           )}
         </Box>
+        {isMobile && isSheetRoute && saveFailed && (
+          <Box className="header-save-failure">
+            <HeaderStatusChip saving={false} onRetrySave={retrySave} />
+          </Box>
+        )}
       </Paper>
 
       <HeaderMobileDrawer
@@ -167,6 +177,7 @@ export default function Header() {
         isAuthenticated={isAuthenticated}
         authButtonHref={authButtonHref}
         showSaving={showSaving}
+        onRetrySave={saveFailed ? retrySave : undefined}
         validationSummary={validationSummary}
         validationLabel={validationLabel}
         homeUrl={homeUrl}

@@ -105,3 +105,14 @@ Feature: Character sheet
     When I cancel leaving and wait for the sheet to sync
     And I reload the page
     Then the edited habit is still shown
+
+  # RPG-306: backend/tests/e2e/tests/authed/error-paths.spec.ts
+  Scenario: Exhausted saves have a persistent recovery action
+    Given I am signed in with a character open
+    When I edit its habit and all three save attempts fail with 503
+    And I skip the unexpected-error report without sending it
+    Then the sheet shows an unsaved state with a persistent Retry action
+    And it does not report Saving or Synced
+    When saving is available again and I choose Retry
+    Then the original edit saves without another edit
+    And reloading still shows the edited habit

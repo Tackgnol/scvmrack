@@ -53,6 +53,7 @@ export function useCharacterEditor(
   // callbacks never read a stale closure; the count drives `isSaving` renders.
   const pendingRef = useRef<OptimisticPatch[]>([]);
   const [pendingCount, setPendingCount] = useState(0);
+  const [saveFailed, setSaveFailed] = useState(false);
   const setPending = (
     updater: (prev: OptimisticPatch[]) => OptimisticPatch[]
   ) => {
@@ -74,6 +75,13 @@ export function useCharacterEditor(
   const flushingRef = useRef(false);
   const haltRef = useRef(false);
   const maxRetries = 3;
+
+  const retrySave = () => {
+    retryCountRef.current = 0;
+    haltRef.current = false;
+    setSaveFailed(false);
+    flushRef.current();
+  };
 
   const getActiveKey = () =>
     characterId ? getCharacterKey(characterId, locale) : undefined;
@@ -131,6 +139,7 @@ export function useCharacterEditor(
       },
       {
         onSuccess: (serverCharacter: unknown) => {
+          setSaveFailed(false);
           retryCountRef.current = 0;
           haltRef.current = false;
           trackCharacterEdited(batch, locale ?? 'en');
@@ -194,6 +203,7 @@ export function useCharacterEditor(
 
             // Out of retries: stop auto-reflush, surface a manual retry.
             haltRef.current = true;
+            setSaveFailed(true);
             if (isUnexpectedApiError(error)) {
               showUnexpectedError(error, {
                 source: 'character_save',
@@ -210,11 +220,7 @@ export function useCharacterEditor(
               ),
               {
                 label: t('actions.retry', 'Retry'),
-                onClick: () => {
-                  retryCountRef.current = 0;
-                  haltRef.current = false;
-                  flushRef.current();
-                },
+                onClick: retrySave,
               }
             );
             return;
@@ -315,6 +321,7 @@ export function useCharacterEditor(
 
     // A fresh edit resumes saving even if a prior batch had halted.
     haltRef.current = false;
+    setSaveFailed(false);
     setPending((prev) => [...prev, patch]);
     applyLocalPatch(patch);
 
@@ -501,7 +508,9 @@ export function useCharacterEditor(
     updateModifier,
 
     // Saving while patches are queued or a PATCH is in flight.
-    isSaving: pendingCount > 0 || updateCharacter.isPending,
+    isSaving: !saveFailed && (pendingCount > 0 || updateCharacter.isPending),
+    saveFailed,
+    retrySave,
 
     getVisibleCharacter: (character: CharacterResponse | undefined) => {
       if (pendingRef.current.length > 0) {

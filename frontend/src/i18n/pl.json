@@ -791,6 +791,7 @@
     "createNewCharacter": "Stwórz nową postać"
   },
   "status": {
+    "unsavedRetry": "Niezapisane · Ponów",
     "saving": "Zapisywanie...",
     "saved": "Zapisano",
     "synced": "Zsynchronizowano",
