@@ -204,31 +204,30 @@ test("an invite's class list is the party's default pool: the six Book Classes",
   );
 });
 
+async function forgeThroughInvite(
+  jar: CookieJar,
+  inviteToken: string,
+  options: { classId?: number; replace?: boolean } = {}
+): Promise<Response> {
+  const draftResponse = await request(
+    `/api/characters/draft?locale=en&invite=${inviteToken}`,
+    { method: 'POST', json: { classId: options.classId ?? 1, seeds }, jar, csrf: true }
+  );
+  await expectStatus(draftResponse, 200);
+  const { draft } = (await draftResponse.json()) as { draft: unknown };
+  return request(`/api/characters/new?locale=en&invite=${inviteToken}`, {
+    method: 'POST',
+    json: { draft, replace: options.replace ?? false },
+    jar,
+    csrf: true,
+  });
+}
+
 test('forging through an invite creates the scvm already in the party', async () => {
   const party = await gmParty();
   const player = await anonymousSession();
 
-  const draftResponse = await request(
-    `/api/characters/draft?locale=en&invite=${party.inviteToken}`,
-    {
-      method: 'POST',
-      json: { classId: 3, seeds },
-      jar: player.jar,
-      csrf: true,
-    }
-  );
-  await expectStatus(draftResponse, 200);
-  const { draft } = (await draftResponse.json()) as { draft: unknown };
-
-  const created = await request(
-    `/api/characters/new?locale=en&invite=${party.inviteToken}`,
-    {
-      method: 'POST',
-      json: { draft },
-      jar: player.jar,
-      csrf: true,
-    }
-  );
+  const created = await forgeThroughInvite(player.jar, party.inviteToken, { classId: 3 });
 
   await expectStatus(created, 201);
   const character = (await created.json()) as {
@@ -239,25 +238,6 @@ test('forging through an invite creates the scvm already in the party', async ()
   assert.equal(character.partyId, party.id);
   assert.equal(character.classId, 3);
 });
-
-async function forgeThroughInvite(
-  jar: CookieJar,
-  inviteToken: string,
-  replace = false
-): Promise<Response> {
-  const draftResponse = await request(
-    `/api/characters/draft?locale=en&invite=${inviteToken}`,
-    { method: 'POST', json: { classId: 1, seeds }, jar, csrf: true }
-  );
-  await expectStatus(draftResponse, 200);
-  const { draft } = (await draftResponse.json()) as { draft: unknown };
-  return request(`/api/characters/new?locale=en&invite=${inviteToken}`, {
-    method: 'POST',
-    json: { draft, replace },
-    jar,
-    csrf: true,
-  });
-}
 
 test("owner-less scvm still hold party seats when a guest replaces theirs", async () => {
   const party = await gmParty();
@@ -272,7 +252,7 @@ test("owner-less scvm still hold party seats when a guest replaces theirs", asyn
     client.query('UPDATE characters SET user_id = NULL WHERE party_id = $1', [party.id])
   );
 
-  const created = await forgeThroughInvite(guest.jar, party.inviteToken, true);
+  const created = await forgeThroughInvite(guest.jar, party.inviteToken, { replace: true });
 
   await expectStatus(created, 409);
   assert.equal(((await created.json()) as { code: string }).code, 'PARTY_FULL');

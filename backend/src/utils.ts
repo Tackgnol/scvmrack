@@ -102,8 +102,8 @@ export function sanitizeJsonb(obj: unknown): unknown {
   return obj;
 }
 
-/** False for the keyless, nameless entries an empty armor slot once left behind in inventory. */
-function isNamedItem(item: unknown): boolean {
+/** False for the keyless, nameless entries an empty armor slot once left behind in inventory; non-objects pass through to `sanitizeJsonb`. */
+export function isNamedItem(item: unknown): boolean {
   if (!item || typeof item !== 'object') {
     return true;
   }

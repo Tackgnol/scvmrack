@@ -1,4 +1,5 @@
 import { apiError } from '../errors.js';
+import type { CharacterTxOps } from '../repositories/character-repository.js';
 import { positiveIntFromEnv } from './env-int.js';
 
 /** Party member cap, read once at module load from PARTY_MAX_MEMBERS. */
@@ -11,10 +12,7 @@ export const partyFull = () => apiError(409, 'PARTY_FULL', 'This party is full')
  * `replacingUserId`'s scvm don't count: they leave as the new one joins.
  */
 export async function lockPartySeat(
-  ops: {
-    lockParty(partyId: string): Promise<void>;
-    countPartyMembers(partyId: string, excludingUserId?: string): Promise<number>;
-  },
+  ops: Pick<CharacterTxOps, 'lockParty' | 'countPartyMembers'>,
   partyId: string,
   replacingUserId?: string
 ): Promise<boolean> {

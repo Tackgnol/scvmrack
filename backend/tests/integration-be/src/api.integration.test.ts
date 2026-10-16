@@ -282,7 +282,7 @@ test(name, async () => {
 });
 }
 
-test('independent scalar edits from two stale tabs both persist', async () => {
+test('scalar edits from two tabs carry no version, so independent fields both persist', async () => {
   const jar = await bootstrapAnonymousSession();
   const id = await createCharacter(jar);
   const headers = { 'x-csrf-token': await fetchCsrfToken(jar) };

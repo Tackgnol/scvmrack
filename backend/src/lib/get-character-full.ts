@@ -18,7 +18,7 @@ import {
   type AbilityTable,
 } from '../repositories/catalog-repository.js';
 import { characterRepository } from '../repositories/character-repository.js';
-import { snakeToCamel } from '../utils.js';
+import { isNamedItem, snakeToCamel } from '../utils.js';
 import { statToModifier } from './ability-modifiers.js';
 import { findTranslationsWithAuthoredFallback } from './class-translations.js';
 import { classAttribution } from './class-attribution.js';
@@ -773,8 +773,8 @@ export async function hydrateCharacterRow(
   locale: string,
 ): Promise<Record<string, unknown>> {
   // 2. Normalize stored JSONB (handles both SQL snake_case and PATCH camelCase)
-  const equipment      = asItems(row.equipment);
-  const storage        = asItems(row.storage);
+  const equipment      = asItems(row.equipment).filter(isNamedItem);
+  const storage        = asItems(row.storage).filter(isNamedItem);
   const equippedWeapons = asItems(row.equippedWeapons);
   const equippedArmor  = asItem(row.equippedArmor);
   const abilities      = asItems(row.abilities);

@@ -1,11 +1,10 @@
 import { apiError, badRequest, notFound, unauthorized, type ApiHttpError } from '../errors.js';
-import { byLineage, mayOffer, type ClassVersionRef } from '../lib/class-model.js';
+import { byLineage, classNotAvailable, mayOffer, type ClassVersionRef } from '../lib/class-model.js';
 import { translatedClassTexts } from '../lib/class-translations.js';
 import { isValidUUID } from '../utils.js';
 import { classPoolRepository, type PartyPoolRow } from '../repositories/class-pool-repository.js';
 import type { ClassPoolView } from '../schemas/party.js';
 import { buildClassPoolView } from './class-pool-view.js';
-import { classNotAvailable } from './character-class-choice.js';
 import { fail, ok, unexpected, type ServiceLogger, type ServiceResult } from './result.js';
 import { sessionUserId, type AppSession } from './session.js';
 

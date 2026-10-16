@@ -254,7 +254,7 @@ export function applyOptimisticPatch(
 
         case 'unequip-armor': {
             const item = character.equippedArmor;
-            if (!item) {
+            if (!item || !(item.name || item.key)) {
                 return character;
             }
 

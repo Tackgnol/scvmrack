@@ -1,3 +1,4 @@
+import { apiError } from '../errors.js';
 import type { Class, ClassSource, ClassStatus, ClassVisibility, GettingBetterRule, Prisma } from '@prisma/client';
 
 export type { ClassSource, ClassStatus, ClassVisibility, GettingBetterRule };
@@ -70,6 +71,9 @@ export function mayUse(
 ): boolean {
   return row.source !== 'user' || row.visibility === 'public' || (viewerId !== null && row.ownerUserId === viewerId);
 }
+
+/** The refusal for a class a party's pool doesn't offer. */
+export const classNotAvailable = (message: string) => apiError(409, 'CLASS_NOT_AVAILABLE', message);
 
 /** Whether a party may offer a class version: available, and usable by the party's owner. */
 export function mayOffer(row: ClassVersionRef, partyOwnerId: string | null): boolean {
