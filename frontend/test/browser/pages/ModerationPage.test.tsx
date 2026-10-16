@@ -5,17 +5,19 @@ import { userEvent } from "vitest/browser";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { AnchorHTMLAttributes, ReactNode } from "react";
 import BrowserTestProvider from "../BrowserTestProvider";
+import { mockLinkHref } from "../mockLinkHref";
 import { ModerationPage } from "@/pages/ModerationPage";
 import { banClassCreation, getCreationBan, listOpenModerationReports, takeDownModerationReport, unbanClassCreation } from "@/api/moderation";
 
 type MockLinkProps = {
   children: ReactNode;
   to: string;
+  params?: Record<string, string>;
 } & AnchorHTMLAttributes<HTMLAnchorElement>;
 
 vi.mock("@/seo/Seo", () => ({ Seo: () => null }));
 vi.mock("@tanstack/react-router", () => ({
-  Link: ({ children, to, ...props }: MockLinkProps) => <a href={to} {...props}>{children}</a>,
+  Link: ({ children, to, params, ...props }: MockLinkProps) => <a href={mockLinkHref(to, params)} {...props}>{children}</a>,
 }));
 vi.mock("@/api/moderation", async (importOriginal) => ({
   moderationKeys: (await importOriginal<typeof import("@/api/moderation")>()).moderationKeys,

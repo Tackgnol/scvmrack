@@ -1,7 +1,7 @@
 import { ModalButton } from "@/components/molecules/modal/MorkBorgModal";
 import { Card, CardAction, CardName, Meta } from "@/pages/gmPages.styles";
 import { Box, Button } from "@mui/material";
-import { Link } from "@tanstack/react-router";
+import { Link, type RegisteredRouter } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import type { OwnClassCardProps } from "./OwnClassCard.models";
 import { ClassDescription, TakenDownNotice } from "./OwnClassCard.styles";
@@ -48,8 +48,8 @@ export function OwnClassCard({ cls, busy, onRestore, onAppeal, onPublish, onUnpu
       ) : (
         <Box>
           <CardAction
-            component={Link}
-            to={`/gm/classes/${cls.id}`}
+            component={Link<RegisteredRouter, string, '/gm/classes/$classId'>}
+            to="/gm/classes/$classId" params={{ classId: String(cls.id) }}
             aria-label={t("classes.editLabel", "Edit {{name}}", { name: cls.name })}
           >
             {t("classes.edit", "Edit")}

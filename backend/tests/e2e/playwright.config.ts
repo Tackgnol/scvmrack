@@ -21,6 +21,9 @@ export default defineConfig({
 
   use: {
     baseURL,
+    channel: 'chromium',
+    // Docker's http://web origin needs the secure context production gets from HTTPS.
+    launchOptions: { args: ['--unsafely-treat-insecure-origin-as-secure=' + new URL(baseURL).origin] },
     trace: debug ? 'on' : 'retain-on-failure',
     screenshot: debug ? 'on' : 'only-on-failure',
   },

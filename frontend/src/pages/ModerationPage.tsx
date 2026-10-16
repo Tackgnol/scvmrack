@@ -19,7 +19,7 @@ import { ModerationReportItem } from "@/components/organisms/moderation/Moderati
 import { getUserFacingApiErrorMessage } from "@/utils/errorUtils";
 import { Alert, Box, Button, Stack, Typography } from "@mui/material";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
+import { Link, type RegisteredRouter } from "@tanstack/react-router";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -95,11 +95,11 @@ export function ModerationPage() {
                 <Typography component="h2" variant="h5">{group.latest.name}</Typography>
                 {group.ownerUserId && <Typography variant="body2" sx={{ overflowWrap: "anywhere" }}>{t("moderation.gmUserIdCopy", "GM user ID · copy for ban lookup")}: {group.ownerUserId}</Typography>}
                 <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" alignItems="center">
-                  <CardAction component={Link} to={`/classes/${group.latest.id}`} className="secondary">
+                  <CardAction component={Link<RegisteredRouter, string, '/classes/$classId'>} to="/classes/$classId" params={{ classId: String(group.latest.id) }} className="secondary">
                     {t("moderation.previewLatest", "Preview latest version")} · {t("moderation.version", { version: group.latest.version })}
                   </CardAction>
                   {group.versions.slice(1).map((version) => (
-                    <Button key={version.id} component={Link} to={`/classes/${version.id}`} size="small">
+                    <Button key={version.id} component={Link<RegisteredRouter, string, '/classes/$classId'>} to="/classes/$classId" params={{ classId: String(version.id) }} size="small">
                       {t("moderation.version", { version: version.version })}
                     </Button>
                   ))}

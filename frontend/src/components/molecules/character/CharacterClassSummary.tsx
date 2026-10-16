@@ -1,5 +1,5 @@
 import { Box, Link as MuiLink, Paper, Typography } from '@mui/material';
-import { Link } from '@tanstack/react-router';
+import { Link, type RegisteredRouter } from '@tanstack/react-router';
 import { customStyles } from '@/theme/morkBorgTheme';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -48,7 +48,7 @@ export default function CharacterClassSummary({
         sx={{ ...customStyles.characterClassText, ...(action ? { pr: 12 } : {}) }}
       >
         {detailClassId ? (
-          <MuiLink component={Link} to={`/classes/${detailClassId}`} color="inherit">
+          <MuiLink component={Link<RegisteredRouter, string, '/classes/$classId'>} to="/classes/$classId" params={{ classId: String(detailClassId) }} color="inherit">
             {className}
           </MuiLink>
         ) : (

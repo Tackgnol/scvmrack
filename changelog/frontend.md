@@ -138,4 +138,5 @@
 - **Browser** (`test/browser`): Vitest browser mode (Chromium/Firefox/WebKit) —
   component rendering and interaction
 
+- The app should no longer open a blank class creator or report a missing class when you follow Resume, Edit, sheet class links, or moderation previews. Saved class content loads without a hard reload.
 - The app should no longer lose a pending character edit when you immediately navigate away from the sheet. Navigation waits for saving; failed saves keep the sheet and Retry available.
