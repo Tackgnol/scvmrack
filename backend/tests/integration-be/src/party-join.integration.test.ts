@@ -344,6 +344,11 @@ type PoolView = {
   removed: unknown[];
 };
 
+type ClassList = {
+  classes: Array<{ id: number; name: string }>;
+  classlessEnabled: boolean;
+};
+
 test("the GM's pool panel switches classes and Classless, and invites follow it", async () => {
   const party = await gmParty();
 
@@ -396,10 +401,33 @@ test("the GM's pool panel switches classes and Classless, and invites follow it"
     }
   );
   await expectStatus(offered, 200);
+  const offeredList = (await offered.json()) as ClassList;
   assert.deepEqual(
-    ((await offered.json()) as Array<{ id: number }>).map((c) => c.id),
+    offeredList.classes.map((c) => c.id),
     [1, 2, 4, 5, 6]
   );
+  assert.equal(offeredList.classlessEnabled, false);
+
+  const reenabled = await request(
+    `/api/parties/${party.id}/class-pool/classless?locale=en`,
+    {
+      method: 'PUT',
+      json: { enabled: true },
+      jar: party.jar,
+      csrf: true,
+    }
+  );
+  await expectStatus(reenabled, 200);
+  const reloaded = await request(
+    `/api/parties/${party.id}/class-pool?locale=en`,
+    { jar: party.jar }
+  );
+  assert.equal(((await reloaded.json()) as PoolView).classlessEnabled, true);
+  const reoffered = await request(
+    `/api/characters/classes?locale=en&invite=${party.inviteToken}`,
+    { jar: player.jar }
+  );
+  assert.equal(((await reoffered.json()) as ClassList).classlessEnabled, true);
 });
 
 test("someone else's party pool is not found", async () => {
@@ -588,10 +616,7 @@ test('a forged class shows under My classes, joins the pool and a player rolls i
     `/api/characters/classes?locale=en&invite=${party.inviteToken}`,
     { jar: player.jar }
   );
-  const offeredClasses = (await offered.json()) as Array<{
-    id: number;
-    name: string;
-  }>;
+  const offeredClasses = ((await offered.json()) as ClassList).classes;
   assert.equal(offeredClasses.find((c) => c.id === id)?.name, name);
 
   const draftResponse = await request(
@@ -621,6 +646,26 @@ test('a forged class shows under My classes, joins the pool and a player rolls i
   await expectStatus(created, 201);
   const scvm = (await created.json()) as { id: string; classId: number };
   assert.equal(scvm.classId, id);
+
+  // RPG-319: the "created by" credit follows the reader's locale on the sheet and the class page.
+  for (const [locale, credit] of [
+    ['en', 'created by GM join test'],
+    ['pl', 'stworzona przez GM join test'],
+  ] as const) {
+    const localizedSheet = await request(`/api/characters/${scvm.id}?locale=${locale}`, {
+      jar: player.jar,
+    });
+    await expectStatus(localizedSheet, 200);
+    assert.equal(
+      ((await localizedSheet.json()) as { classAttribution: string }).classAttribution,
+      credit
+    );
+    const details = await request(`/api/classes/details/${id}?locale=${locale}`, {
+      jar: party.jar,
+    });
+    await expectStatus(details, 200);
+    assert.equal(((await details.json()) as { attribution: string }).attribution, credit);
+  }
 
   const edited = await request(`/api/classes/${id}`, {
     method: 'PUT',
