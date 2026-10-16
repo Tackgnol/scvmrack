@@ -33,6 +33,7 @@ describe('ItemAutocomplete Component', () => {
             </BrowserTestProvider>
         );
         await expect.element(page.getByRole('button', { name: 'Otwórz wyszukiwanie przedmiotów' })).toBeVisible();
+        await expect.element(page.getByRole('button', { name: 'Open', exact: true })).not.toBeInTheDocument();
         const input = page.getByRole('combobox', { name: 'Dodaj Przedmiot' });
         await userEvent.fill(input, 'miecz');
         await expect.element(page.getByRole('button', { name: 'Zamknij wyszukiwanie przedmiotów' })).toBeVisible();

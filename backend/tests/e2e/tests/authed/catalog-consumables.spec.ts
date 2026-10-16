@@ -11,7 +11,7 @@ test('catalog Torches keep separate use controls for both copies after reload', 
       method: 'PATCH', headers: { 'content-type': 'application/json', 'x-csrf-token': token },
       body: JSON.stringify({ equipment: [] }),
     });
-    if (!response.ok) throw new Error(`Consumable setup failed: ${response.status}`);
+    if (!response.ok) {throw new Error(`Consumable setup failed: ${response.status}`);}
   }, seededCharacter.id);
   await page.reload();
   for (const query of ['torch', 'torches']) {

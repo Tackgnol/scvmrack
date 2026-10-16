@@ -282,6 +282,30 @@ test(name, async () => {
 });
 }
 
+test('scalar edits from two tabs carry no version, so independent fields both persist', async () => {
+  const jar = await bootstrapAnonymousSession();
+  const id = await createCharacter(jar);
+  const headers = { 'x-csrf-token': await fetchCsrfToken(jar) };
+  const path = `/api/characters/${id}`;
+  await expectStatus(await request(path, { method: 'PATCH', jar, headers, json: { habit: 'Tab A habit' } }), 200);
+  await expectStatus(await request(path, { method: 'PATCH', jar, headers, json: { silver: 42 } }), 200);
+  const saved = await (await request(path, { jar })).json() as { habit: string; silver: number };
+  assert.equal(saved.habit, 'Tab A habit');
+  assert.equal(saved.silver, 42);
+});
+
+test('a nameless inventory entry is never stored', async () => {
+  const jar = await bootstrapAnonymousSession();
+  const id = await createCharacter(jar);
+  const headers = { 'x-csrf-token': await fetchCsrfToken(jar) };
+  const path = `/api/characters/${id}`;
+  const phantom = { description: '', uses: [], dice: [], tags: [], modifiers: [] };
+  const saved = await request(path, { method: 'PATCH', jar, headers, json: { equipment: [phantom, { key: 'rope' }] } });
+  await expectStatus(saved, 200);
+  const reloaded = await (await request(path, { jar })).json() as { equipment: Array<{ key?: string }> };
+  assert.deepEqual(reloaded.equipment.map(({ key }) => key), ['rope']);
+});
+
 test('an unchanged SQL-era timestamp accepts one save and rejects a replay', async () => {
   const jar = await bootstrapAnonymousSession();
   const id = await createCharacter(jar);

@@ -104,6 +104,20 @@ export function useCharacterEditor(
     return Date.parse(candidate.updatedAt) > Date.parse(reference.updatedAt);
   };
 
+  /**
+   * Takes a newer server copy written to the cache elsewhere (Getting Better, party refetch) as the
+   * editing base, but only with nothing queued: replaying index-based edits onto it could hit the wrong item.
+   */
+  const adoptNewerCachedCharacter = () => {
+    if (pendingRef.current.length > 0 || flushingRef.current || updateCharacter.isPending) {
+      return;
+    }
+    const cached = getActiveCachedCharacter();
+    if (isNewerThan(cached, optimisticCharacterRef.current)) {
+      optimisticCharacterRef.current = cached;
+    }
+  };
+
   const flush = () => {
     if (!characterId || readOnly) {
       return;
@@ -152,7 +166,12 @@ export function useCharacterEditor(
           // Write it to cache, then re-apply patches that arrived mid-flight so
           // their optimistic state survives.
           const server = serverCharacter as CharacterResponse | undefined;
-          if (server) {
+          const cached = key ? queryClient.getQueryData<CharacterResponse>(key) : undefined;
+          if (server && pendingRef.current.length === 0 && isNewerThan(cached, server)) {
+            // A newer server copy (e.g. Getting Better) landed mid-flight; it already includes this save.
+            lastSavedCharacterRef.current = server;
+            optimisticCharacterRef.current = cached;
+          } else if (server) {
             const remaining = pendingRef.current;
             const optimistic = remaining.reduce(
               (acc, patch) => applyOptimisticPatch(acc, patch),
@@ -325,6 +344,7 @@ export function useCharacterEditor(
     // A fresh edit resumes saving even if a prior batch had halted.
     haltRef.current = false;
     setSaveFailed(false);
+    adoptNewerCachedCharacter();
     setPending((prev) => [...prev, patch]);
     applyLocalPatch(patch);
 

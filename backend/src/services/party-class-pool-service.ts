@@ -1,5 +1,5 @@
 import { apiError, badRequest, notFound, unauthorized, type ApiHttpError } from '../errors.js';
-import { byLineage, mayOffer, type ClassVersionRef } from '../lib/class-model.js';
+import { byLineage, classNotAvailable, mayOffer, type ClassVersionRef } from '../lib/class-model.js';
 import { translatedClassTexts } from '../lib/class-translations.js';
 import { isValidUUID } from '../utils.js';
 import { classPoolRepository, type PartyPoolRow } from '../repositories/class-pool-repository.js';
@@ -114,8 +114,7 @@ export function createPartyClassPoolService(log: ServiceLogger) {
   /** Runs `change` on a party the session owns, then returns the pool as it now stands. */
   async function changePool(
     input: { session: AppSession; id: string; locale: string },
-    change: (pool: PartyPoolRow) => Promise<ApiHttpError | void>,
-    failure: [code: string, message: string]
+    change: (pool: PartyPoolRow) => Promise<ApiHttpError | void>
   ): Promise<ServiceResult<ClassPoolView>> {
     try {
       const owned = await ownedPool(input.session, input.id);
@@ -132,40 +131,40 @@ export function createPartyClassPoolService(log: ServiceLogger) {
       }
       return ok(await view(current, input.locale));
     } catch (err) {
-      return fail(unexpected(log, err, ...failure));
+      return fail(unexpected(log, err, 'CLASS_POOL_UPDATE_FAILED', 'Failed to update the class pool'));
     }
   }
 
   return {
-    getClassPool(input: { session: AppSession; id: string; locale: string }) {
-      return changePool(input, async () => {}, ['CLASS_POOL_LOAD_FAILED', 'Failed to load the class pool']);
+    async getClassPool(input: { session: AppSession; id: string; locale: string }): Promise<ServiceResult<ClassPoolView>> {
+      try {
+        const owned = await ownedPool(input.session, input.id);
+        return owned.ok ? ok(await view(owned.value, input.locale)) : owned;
+      } catch (err) {
+        return fail(unexpected(log, err, 'CLASS_POOL_LOAD_FAILED', 'Failed to load the class pool'));
+      }
     },
 
     /** Switches one class lineage; only a class the GM may offer can be switched on. */
     setPoolClass(input: { session: AppSession; id: string; lineageId: string; enabled: boolean; locale: string }) {
-      return changePool(
-        input,
-        async (pool) => {
-          if (input.enabled) {
-            const offered = await view(pool, input.locale);
-            if (!offered.classes.some((c) => c.lineageId === input.lineageId)) {
-              return apiError(409, 'CLASS_NOT_AVAILABLE', 'This class cannot be added to the pool');
-            }
+      return changePool(input, async (pool) => {
+        if (input.enabled) {
+          const rows = await classPoolRepository.findCatalogRows(pool.ownerUserId, pool.poolLineageIds);
+          const offerable = byLineage(rows).some(
+            ({ latest }) => latest.lineageId === input.lineageId && mayOffer(latest, pool.ownerUserId)
+          );
+          if (!offerable) {
+            return classNotAvailable('This class cannot be added to the pool');
           }
-          await classPoolRepository.setLineage(input.id, input.lineageId, input.enabled);
-        },
-        ['CLASS_POOL_UPDATE_FAILED', 'Failed to update the class pool']
-      );
+        }
+        await classPoolRepository.setLineage(input.id, input.lineageId, input.enabled);
+      });
     },
 
     setPoolClassless(input: { session: AppSession; id: string; enabled: boolean; locale: string }) {
-      return changePool(
-        input,
-        async () => {
-          await classPoolRepository.setClassless(input.id, input.enabled);
-        },
-        ['CLASS_POOL_UPDATE_FAILED', 'Failed to update the class pool']
-      );
+      return changePool(input, async () => {
+        await classPoolRepository.setClassless(input.id, input.enabled);
+      });
     },
   };
 }

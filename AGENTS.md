@@ -153,7 +153,7 @@ The frontend uses optimistic updates with debouncing:
 4. The PATCH response (already hydrated) is written back into the cache and still-pending patches are re-applied on top; transient 5xx/network failures auto-retry, then surface a manual retry.
 5. The queue is flushed on unmount so a last edit isn't dropped.
 
-**Caution:** the cache is reconciled from the PATCH *response*. Do NOT re-add a per-PATCH `invalidateQueries`/refetch on the character detail query (in `useCharacterRepository` or the editor) — it races the optimistic queue and silently drops edits.
+**Caution:** the cache is reconciled from the PATCH *response*. Do NOT re-add a per-PATCH `invalidateQueries`/refetch on the character detail query (in `useCharacterRepository` or the editor) — it races the optimistic queue and silently drops edits. The one exception is the 409 stale-write path, which clears and halts the queue before refetching, so there is nothing left to race.
 
 ### Authentication Flow
 

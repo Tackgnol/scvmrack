@@ -1,7 +1,7 @@
 import fp from 'fastify-plugin';
 import { AsyncLocalStorage } from 'node:async_hooks';
 import type { FastifyRequest } from 'fastify';
-import { authCallbackPath, reportAuthCallbackError } from '../lib/auth-callback-errors.js';
+import { isAuthCallback, reportAuthCallbackError } from '../lib/auth-callback-errors.js';
 
 const serverFailures = new Set([
   'unable_to_create_user',
@@ -13,19 +13,27 @@ const serverFailures = new Set([
   'id_is_missing',
   'name_is_missing',
 ]);
+const configFailures = new Set([
+  'invalid_client',
+  'unauthorized_client',
+  'invalid_scope',
+  'server_error',
+  'temporarily_unavailable',
+]);
+const authErrorPagePath = '/api/auth/error';
 
 export default fp(async function authErrorReporting(fastify) {
   const callbacks = new AsyncLocalStorage<FastifyRequest>();
   let sessionCookieName: string | undefined;
   fastify.addHook('onRequest', (request, _reply, done) => {
-    if (new URL(request.url, 'http://localhost').pathname === authCallbackPath) {
+    if (isAuthCallback(request.url)) {
       callbacks.run(request, done);
     } else {
       done();
     }
   });
   fastify.addHook('onReady', async () => {
-    if (!fastify.hasDecorator('auth')) return;
+    if (!fastify.hasDecorator('auth')) {return;}
     const context: {
       authCookies: { sessionToken: { name: string } };
       logger: { error: (...args: unknown[]) => void };
@@ -37,9 +45,8 @@ export default fp(async function authErrorReporting(fastify) {
       const request = callbacks.getStore();
       if (request) {
         for (const value of args) {
-          if (!value || typeof value !== 'object') continue;
-          if ('error' in value && typeof value.error === 'string' &&
-            ['invalid_client', 'unauthorized_client', 'invalid_scope', 'server_error', 'temporarily_unavailable'].includes(value.error)) {
+          if (!value || typeof value !== 'object') {continue;}
+          if ('error' in value && typeof value.error === 'string' && configFailures.has(value.error)) {
             reportAuthCallbackError(request, value.error);
           } else if ('body' in value && value.body && typeof value.body === 'object' &&
             'code' in value.body && value.body.code === 'INVALID_OAUTH_CONFIG') {
@@ -59,9 +66,12 @@ export default fp(async function authErrorReporting(fastify) {
     if (reply.statusCode < 300 || reply.statusCode >= 400) {
       return;
     }
+    if (!isAuthCallback(request.url)) {
+      return;
+    }
     const incoming = new URL(request.url, 'http://localhost');
     if (
-      incoming.pathname !== authCallbackPath || incoming.searchParams.has('error') ||
+      incoming.searchParams.has('error') ||
       !incoming.searchParams.get('code') || !incoming.searchParams.get('state')
     ) {
       return;
@@ -73,7 +83,7 @@ export default fp(async function authErrorReporting(fastify) {
     const outgoing = new URL(location, 'http://localhost');
     const setCookies = reply.getHeader('set-cookie');
     const cookies = Array.isArray(setCookies) ? setCookies : typeof setCookies === 'string' ? [setCookies] : [];
-    if (outgoing.pathname !== '/api/auth/error' || cookies.some((cookie) =>
+    if (outgoing.pathname !== authErrorPagePath || cookies.some((cookie) =>
       sessionCookieName && cookie.startsWith(`${sessionCookieName}=`) && !cookie.startsWith(`${sessionCookieName}=;`))) {
       return;
     }

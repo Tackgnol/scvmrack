@@ -183,6 +183,11 @@ test('applyOptimisticPatch handles armor equip/unequip', () => {
     expect(r2.equipment![1].key).toBe('rags');
 });
 
+test('unequipping an empty armor slot adds nothing to inventory', () => {
+    const emptySlot = { ...baseCharacter, equippedArmor: { description: '', uses: [], tags: [] } as any };
+    expect(applyOptimisticPatch(emptySlot, { kind: 'unequip-armor' }).equipment).toEqual(baseCharacter.equipment);
+});
+
 test('applyOptimisticPatch handles modifiers', () => {
     const mod = { id: 'mod-2', name: 'New' };
     const r1 = applyOptimisticPatch(baseCharacter, { kind: 'modifier-add', modifier: mod as any });

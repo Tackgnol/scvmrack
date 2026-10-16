@@ -21,7 +21,7 @@ test(`a stale inventory edit preserves the saved ${hammerFirst ? 'Hammer' : 'rop
       method: 'PATCH', headers: { 'content-type': 'application/json', 'x-csrf-token': token },
       body: JSON.stringify({ equipment: [{ key: 'equipment.rope' }, { key: 'equipment.rope' }] }),
     });
-    if (!response.ok) throw new Error(`Inventory setup failed: ${response.status}`);
+    if (!response.ok) {throw new Error(`Inventory setup failed: ${response.status}`);}
   }, seededCharacter.id);
   await page.reload();
   const staleTab = await context.newPage();
@@ -57,7 +57,7 @@ test('equipping armor into an empty slot never creates a phantom carried item', 
       method: 'PATCH', headers: { 'content-type': 'application/json', 'x-csrf-token': token },
       body: JSON.stringify({ equipment: [{ key: 'equipment.rope' }], equippedArmor: null, equippedWeapons: [], storage: [] }),
     });
-    if (!response.ok) throw new Error(`Inventory setup failed: ${response.status}`);
+    if (!response.ok) {throw new Error(`Inventory setup failed: ${response.status}`);}
   }, seededCharacter.id);
   await page.reload();
   await waitForCharacterSave(page, () => selectSearchResult(page, 'leather', /^Leather Armor\b/i));

@@ -102,6 +102,15 @@ export function sanitizeJsonb(obj: unknown): unknown {
   return obj;
 }
 
+/** False for the keyless, nameless entries an empty armor slot once left behind in inventory; non-objects pass through to `sanitizeJsonb`. */
+export function isNamedItem(item: unknown): boolean {
+  if (!item || typeof item !== 'object') {
+    return true;
+  }
+  const { key, name } = item as { key?: unknown; name?: unknown };
+  return Boolean(key) || (typeof name === 'string' && name.trim() !== '');
+}
+
 /**
  * Sanitize character update payload
  */
@@ -167,7 +176,11 @@ export function sanitizeCharacterUpdate(
         );
       }
     } else if (jsonbFields.includes(key)) {
-      sanitized[key] = sanitizeJsonb(value);
+      sanitized[key] = sanitizeJsonb(
+        (key === 'equipment' || key === 'storage') && Array.isArray(value)
+          ? value.filter(isNamedItem)
+          : value
+      );
     }
     // Unknown fields are silently dropped
   }
