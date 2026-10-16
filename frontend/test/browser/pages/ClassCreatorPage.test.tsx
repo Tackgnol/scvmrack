@@ -22,8 +22,7 @@ vi.mock("@tanstack/react-router", () => ({ useParams: vi.fn() }));
 vi.mock("@/components/organisms/class-creator/ClassCreator/ClassCreator", () => ({ ClassCreator: vi.fn(() => <div>New class editor</div>) }));
 vi.mock("@/components/organisms/class-creator/SavedClassCreator/SavedClassCreator", () => ({ SavedClassCreator: () => <div>Existing class editor</div> }));
 
-function renderPage() {
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+function renderPage(queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })) {
   return render(
     <QueryClientProvider client={queryClient}>
       <BrowserTestProvider><ClassCreatorPage /></BrowserTestProvider>
@@ -58,6 +57,21 @@ describe("ClassCreatorPage creation bans", () => {
 
     await expect.element(page.getByText("New class editor")).toBeVisible();
     expect(vi.mocked(ClassCreator).mock.lastCall?.[0].initialDraft).toEqual(saved);
+  });
+
+  it("reads a resumed draft once, so a save that deletes it never reloads it (RPG-317)", async () => {
+    vi.mocked(useParams).mockReturnValue({ draftId: "5" } as never);
+    vi.mocked(getClassDraft).mockResolvedValue({ id: 5, classId: null, draft: blankDraft(), revision: 1, updatedAt: "2026-10-12T00:00:00.000Z" } as never);
+    vi.mocked(getMyCreationBan).mockResolvedValue({ banned: false });
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+
+    await renderPage(queryClient);
+    await expect.element(page.getByText("New class editor")).toBeVisible();
+    await queryClient.invalidateQueries();
+    await queryClient.refetchQueries({ type: "active", stale: true });
+
+    expect(vi.mocked(getClassDraft)).toHaveBeenCalledTimes(1);
+    await expect.element(page.getByText("New class editor")).toBeVisible();
   });
 
   it("keeps an existing class editable even when the GM is banned", async () => {

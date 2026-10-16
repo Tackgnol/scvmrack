@@ -20,7 +20,10 @@ export function ClassCreatorPage() {
   const draftQuery = useQuery({
     queryKey: classKeys.draft(draft ?? 0),
     queryFn: () => getClassDraft(draft!),
-    enabled: isAuthenticated && draft !== null,
+    // Read once per visit: the creator owns the draft from then on, and saving or
+    // discarding deletes it server-side, so any refetch would only 404.
+    enabled: (query) => isAuthenticated && draft !== null && query.state.data === undefined,
+    gcTime: 0,
   });
   const draftClassId = draftQuery.data?.classId;
   const savedClass = useQuery({
@@ -60,7 +63,7 @@ export function ClassCreatorPage() {
         {isAuthenticated && draft !== null && draftQuery.isLoading && (
           <CenterRow><Spinner /></CenterRow>
         )}
-        {isAuthenticated && draft !== null && (draftQuery.isLoadingError || savedClass.isLoadingError) && (
+        {isAuthenticated && draft !== null && (draftQuery.error || savedClass.error) && (
           <Alert severity="error">{t("creator.draftLoadFailed", "This draft wouldn't load.")}</Alert>
         )}
         {isAuthenticated && draftClassId != null && savedClass.isLoading && (
