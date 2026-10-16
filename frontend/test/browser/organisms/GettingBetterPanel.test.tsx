@@ -1,3 +1,4 @@
+import i18n, { loadLanguage } from '@/i18n';
 import { useEffect, useMemo, useState } from 'react';
 import { render } from 'vitest-browser-react';
 import { describe, expect, it, vi } from 'vitest';
@@ -199,6 +200,24 @@ describe('GettingBetterPanel Browser', () => {
 
     for (const name of ['Strength', 'Agility', 'Presence', 'Toughness']) {
       await expect.element(page.getByRole('spinbutton', { name })).toBeVisible();
+    }
+  });
+
+  it('labels ability rolls with Polish stat names (RPG-318)', async () => {
+    await loadLanguage('pl');
+    await i18n.changeLanguage('pl');
+    try {
+      await render(
+        <BrowserTestProvider>
+          <PanelHarness />
+        </BrowserTestProvider>,
+      );
+
+      for (const name of ['Siła', 'Zwinność', 'Opanowanie', 'Wytrzymałość']) {
+        await expect.element(page.getByRole('spinbutton', { name, exact: true })).toBeVisible();
+      }
+    } finally {
+      await i18n.changeLanguage('en');
     }
   });
 

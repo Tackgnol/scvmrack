@@ -2741,10 +2741,13 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
-                            id: number;
-                            name?: null | string;
-                            description?: null | string;
-                        }[];
+                            classes: {
+                                id: number;
+                                name?: null | string;
+                                description?: null | string;
+                            }[];
+                            classlessEnabled: boolean;
+                        };
                     };
                 };
                 /** @description Default Response */
