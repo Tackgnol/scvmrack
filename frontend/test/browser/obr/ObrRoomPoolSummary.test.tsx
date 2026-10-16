@@ -13,10 +13,13 @@ vi.mock("@/api/draft", async (importOriginal) => ({
 
 describe("ObrRoomPoolSummary", () => {
   it("lists the room party's classes read-only for someone who doesn't own it", async () => {
-    vi.mocked(fetchClasses).mockResolvedValue([
-      { id: 1, name: "Fanged Deserter", description: null },
-      { id: 2, name: "Gutterborn Scum", description: null },
-    ] as Awaited<ReturnType<typeof fetchClasses>>);
+    vi.mocked(fetchClasses).mockResolvedValue({
+      classes: [
+        { id: 1, name: "Fanged Deserter", description: null },
+        { id: 2, name: "Gutterborn Scum", description: null },
+      ],
+      classlessEnabled: true,
+    });
     render(
       <QueryClientProvider client={new QueryClient()}>
         <BrowserTestProvider>

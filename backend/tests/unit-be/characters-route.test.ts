@@ -284,7 +284,7 @@ mock.module('../../src/services/character-draft-service.js', {
         listClassCalls.push(input);
         return {
           ok: true,
-          value: [{ id: 1, name: 'Gutterborn Scvm', description: null }],
+          value: { classes: [{ id: 1, name: 'Gutterborn Scvm', description: null }], classlessEnabled: true },
         };
       },
     }),
@@ -508,7 +508,7 @@ test('GET /classes returns the localized class list', async () => {
   });
 
   assert.equal(response.statusCode, 200);
-  assert.deepEqual(response.json(), [{ id: 1, name: 'Gutterborn Scvm', description: null }]);
+  assert.deepEqual(response.json(), { classes: [{ id: 1, name: 'Gutterborn Scvm', description: null }], classlessEnabled: true });
   assert.deepEqual(listClassCalls, [{ locale: 'en', inviteToken: undefined, obrRoomId: undefined }]);
 
   await app.close();

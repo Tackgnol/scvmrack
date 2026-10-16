@@ -36,7 +36,7 @@ export default function ConsumableSection({
       <Box sx={customStyles.powersSection.contentContainer}>
         {consumablesWithIndices.map(({ item, equipmentIndex, uses }, displayIndex) => (
           <TrackedUseRow
-            key={item.key ?? equipmentIndex}
+            key={`${item.key ?? ''}:${equipmentIndex}`}
             number={displayIndex + 1}
             name={item.name ?? t('consumables.unknown')}
             description={item.description}

@@ -16,10 +16,13 @@ vi.mock('@/api/draft', async (importOriginal) => ({
 
 vi.mock('@sentry/react', () => sentryMocks);
 
-const classes = [
-  { id: 1, name: 'Esoteric Hermit', description: 'A lonely mystic.' },
-  { id: 2, name: 'Fanged Deserter', description: 'Bites first.' },
-];
+const classes = {
+  classes: [
+    { id: 1, name: 'Esoteric Hermit', description: 'A lonely mystic.' },
+    { id: 2, name: 'Fanged Deserter', description: 'Bites first.' },
+  ],
+  classlessEnabled: true,
+};
 
 describe('ClassGate', () => {
   const onPick = vi.fn();
@@ -52,6 +55,18 @@ describe('ClassGate', () => {
     await expect.element(page.getByTestId('class-gate-classless')).toBeVisible();
     await expect.element(page.getByTestId('class-gate-random')).toBeVisible();
     await expect.element(page.getByTestId('class-gate-random-mark')).toBeVisible();
+  });
+
+  it('leaves Classless out when the pool switches it off (RPG-321)', async () => {
+    vi.mocked(fetchClasses).mockResolvedValue({ ...classes, classlessEnabled: false });
+    render(
+      <BrowserTestProvider>
+        <ClassGate onPick={onPick} busy={false} inviteToken="tok-1" />
+      </BrowserTestProvider>
+    );
+
+    await expect.element(page.getByTestId('class-gate-random')).toBeVisible();
+    await expect.element(page.getByTestId('class-gate-classless')).not.toBeInTheDocument();
   });
 
   it('dispatches the right choice per card', async () => {

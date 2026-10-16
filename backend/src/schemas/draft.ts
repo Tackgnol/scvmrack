@@ -106,14 +106,21 @@ export const DraftResponseSchema = {
 } as const;
 
 export const ClassListResponseSchema = {
-  type: 'array',
-  items: {
-    type: 'object',
-    properties: {
-      id: { type: 'integer' },
-      name: { type: ['string', 'null'] },
-      description: { type: ['string', 'null'] },
+  type: 'object',
+  properties: {
+    classes: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          id: { type: 'integer' },
+          name: { type: ['string', 'null'] },
+          description: { type: ['string', 'null'] },
+        },
+        required: ['id'],
+      },
     },
-    required: ['id'],
+    classlessEnabled: { type: 'boolean' },
   },
+  required: ['classes', 'classlessEnabled'],
 } as const;

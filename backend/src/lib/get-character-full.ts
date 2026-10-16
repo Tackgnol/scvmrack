@@ -925,7 +925,7 @@ export async function hydrateCharacterRow(
     classId:          row.classId,
     className,
     classDescription,
-    classAttribution: cls ? classAttribution(cls) : null,
+    classAttribution: cls ? classAttribution(cls, locale) : null,
     classAuthoredLanguage,
     classContentRemoved: Boolean(cls?.contentRemovedAt),
     classReportable: cls ? isReportable(cls) : false,

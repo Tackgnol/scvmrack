@@ -34,7 +34,7 @@ export default function PowersSection({ showLabel = true }: PowersSectionProps) 
       <Box sx={customStyles.powersSection.contentContainer}>
         {scrollsWithIndices.map(({ item, equipmentIndex, uses }, displayIndex) => (
           <TrackedUseRow
-            key={item.key ?? equipmentIndex}
+            key={`${item.key ?? ''}:${equipmentIndex}`}
             number={displayIndex + 1}
             name={item.name ?? t('powers.unknownScroll')}
             description={item.description}

@@ -2741,10 +2741,13 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
-                            id: number;
-                            name?: null | string;
-                            description?: null | string;
-                        }[];
+                            classes: {
+                                id: number;
+                                name?: null | string;
+                                description?: null | string;
+                            }[];
+                            classlessEnabled: boolean;
+                        };
                     };
                 };
                 /** @description Default Response */
@@ -8164,7 +8167,9 @@ export interface paths {
         /** @description Load the latest readable Custom Class version for display */
         get: {
             parameters: {
-                query?: never;
+                query?: {
+                    locale?: "en" | "pl";
+                };
                 header?: never;
                 path: {
                     id: number;

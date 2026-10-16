@@ -58,6 +58,7 @@ const replaceCurrentWithSearchParams = async (
 };
 
 const navigateToHomeWithFlag = async (
+    pathname: string,
     queryParam: string,
     preserveCurrentSearchParams = false
 ): Promise<void> => {
@@ -65,7 +66,7 @@ const navigateToHomeWithFlag = async (
         ? getCurrentSearchParams()
         : new URLSearchParams();
     searchParams.set(queryParam, 'true');
-    await appHistory.replace(buildPath(HOME_PATH, searchParams, ''));
+    await appHistory.replace(buildPath(pathname, searchParams, ''));
 };
 
 export const hasCurrentSearchParam = (queryParam: string): boolean => {
@@ -123,7 +124,7 @@ export const setCurrentCharacterIdParam = async (characterId: string | null): Pr
         await appHistory.replace(buildPath(
             characterId
                 ? buildPartyCharacterPath(decodeURIComponent(partyMatch[1]), characterId)
-                : HOME_PATH,
+                : NEW_CHARACTER_PATH,
             searchParams,
             appHistory.location.hash
         ));
@@ -170,7 +171,7 @@ export const buildHomeCallbackUrl = (
             searchParams.set(CHARACTER_ID_QUERY_PARAM, characterId);
         }
         searchParams.set(CLAIM_CHARACTER_QUERY_PARAM, claimCharacterId);
-        return buildPath(HOME_PATH, searchParams, '');
+        return buildPath(NEW_CHARACTER_PATH, searchParams, '');
     }
 
     if (characterId) {
@@ -195,9 +196,11 @@ export const clearCurrentSearchParam = async (queryParam: string): Promise<void>
 };
 
 export const navigateToLoggedOut = async (): Promise<void> => {
-    await navigateToHomeWithFlag(LOGGED_OUT_QUERY_PARAM);
+    // The public landing page: the sheet route would wait forever for a character the
+    // logged-out flag stops it from creating.
+    await navigateToHomeWithFlag('/', LOGGED_OUT_QUERY_PARAM);
 };
 
 export const navigateToSessionExpired = async (): Promise<void> => {
-    await navigateToHomeWithFlag(SESSION_EXPIRED_QUERY_PARAM, true);
+    await navigateToHomeWithFlag(NEW_CHARACTER_PATH, SESSION_EXPIRED_QUERY_PARAM, true);
 };

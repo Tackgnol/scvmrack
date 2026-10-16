@@ -328,7 +328,7 @@ export function GettingBetterPanelSections({
             return (
               <Box key={stat} sx={styles.factGrid}>
                 <Typography sx={styles.label}>
-                  {t(`abilities.${stat}`, stat)}
+                  {t(`stats.${stat}`, stat)}
                 </Typography>
                 <TextField
                   type="number"
@@ -338,7 +338,7 @@ export function GettingBetterPanelSections({
                   inputProps={{
                     min: 1,
                     max: 6,
-                    "aria-label": t(`abilities.${stat}`, stat),
+                    "aria-label": t(`stats.${stat}`, stat),
                   }}
                 />
                 <Typography sx={styles.muted}>

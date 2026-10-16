@@ -324,11 +324,12 @@ const classes: FastifyPluginAsync = async (fastify): Promise<void> => {
         description: 'Load the latest readable Custom Class version for display',
         tags: ['classes'],
         params: ClassIdParamsSchema,
+        querystring: ClassLocaleQuerySchema,
         response: { 200: ClassDetailSchema, 401: ErrorSchema, 404: ErrorSchema, 500: ErrorSchema },
       },
     },
     async (request, reply) => {
-      const result = await createCustomClassService(request.log).getDetail({ session: request.appSession, id: request.params.id });
+      const result = await createCustomClassService(request.log).getDetail({ session: request.appSession, id: request.params.id, locale: request.query.locale ?? 'en' });
       if (!result.ok) {
         return sendServiceError(reply, request, result.error);
       }
