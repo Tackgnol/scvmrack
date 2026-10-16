@@ -185,7 +185,7 @@ async function expectApiError(
   if (expectedMessage) {
     assert.equal(payload.message, expectedMessage);
   } else {
-    assert.equal(typeof payload.message, 'string');
+    assert.ok(typeof payload.message === 'string');
     assert.ok(payload.message.length > 0);
   }
   return payload;
@@ -212,7 +212,7 @@ async function bootstrapAnonymousSession(): Promise<{
   await expectStatus(response, 200);
   const payload = (await response.json()) as { user?: { id?: string } };
   const userId = payload.user?.id;
-  assert.equal(typeof userId, 'string');
+  assert.ok(typeof userId === 'string');
   return { jar, userId };
 }
 
