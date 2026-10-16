@@ -78,6 +78,7 @@ test('handled OAuth failures emit a sanitized Sentry event while normal outcomes
     await app.register(authErrorReporting);
     await app.register(errorHandler);
     await app.register(rpgtoolsSharedAuth, {
+      security: { csrf: { hmacKey: 'rpg309-local-test-hmac-key-not-a-secret' } },
       baseURL: `${origin}/api/auth`,
       trustedOrigins: [origin],
       database: (options: Parameters<typeof adapterFactory>[0]) => {
