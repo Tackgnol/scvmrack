@@ -137,3 +137,5 @@
 - **Unit** (`test/unit`): Vitest + JSDOM — hooks, utils, routing, auth, error utils
 - **Browser** (`test/browser`): Vitest browser mode (Chromium/Firefox/WebKit) —
   component rendering and interaction
+
+- The app should no longer lose a pending character edit when you immediately navigate away from the sheet. Navigation waits for saving; failed saves keep the sheet and Retry available.

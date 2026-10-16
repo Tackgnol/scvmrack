@@ -116,3 +116,10 @@ Feature: Character sheet
     When saving is available again and I choose Retry
     Then the original edit saves without another edit
     And reloading still shows the edited habit
+
+  Scenario: Immediate in-app navigation preserves a pending character edit
+    Given I have an owned character with a saved habit
+    When I change its habit and immediately navigate to Start before auto-save
+    And I return to the character and reload it
+    Then the edited habit is still shown
+    And leaving the synced sheet does not warn about unsaved changes
