@@ -65,7 +65,7 @@ const navigateToHomeWithFlag = async (
         ? getCurrentSearchParams()
         : new URLSearchParams();
     searchParams.set(queryParam, 'true');
-    await appHistory.replace(buildPath(HOME_PATH, searchParams, ''));
+    await appHistory.replace(buildPath(NEW_CHARACTER_PATH, searchParams, ''));
 };
 
 export const hasCurrentSearchParam = (queryParam: string): boolean => {
@@ -123,7 +123,7 @@ export const setCurrentCharacterIdParam = async (characterId: string | null): Pr
         await appHistory.replace(buildPath(
             characterId
                 ? buildPartyCharacterPath(decodeURIComponent(partyMatch[1]), characterId)
-                : HOME_PATH,
+                : NEW_CHARACTER_PATH,
             searchParams,
             appHistory.location.hash
         ));
@@ -170,7 +170,7 @@ export const buildHomeCallbackUrl = (
             searchParams.set(CHARACTER_ID_QUERY_PARAM, characterId);
         }
         searchParams.set(CLAIM_CHARACTER_QUERY_PARAM, claimCharacterId);
-        return buildPath(HOME_PATH, searchParams, '');
+        return buildPath(NEW_CHARACTER_PATH, searchParams, '');
     }
 
     if (characterId) {
