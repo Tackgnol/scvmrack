@@ -87,6 +87,7 @@
 - The app should no longer create a nameless carried item or overcount encumbrance when you equip armor into an empty slot.
 - Equipment lookup/add-item flow keeps the add controls stable while search and
   add calls are pending, reducing layout jumps when items enter the sheet
+- The app should no longer omit use controls when you add catalog Torches. Each copy keeps its own saved uses.
 - Kill & Replace flow (death modal at 0 HP)
 - Character bootstrap and route synchronization avoid render-phase state writes
   and coalesce duplicate character-id navigation, preventing recovery loops and
