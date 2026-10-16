@@ -245,7 +245,9 @@ export function applyOptimisticPatch(
             equipment.splice(patch.equipmentIndex, 1);
 
             const oldArmor = character.equippedArmor;
-            const nextEquipment = oldArmor ? [...equipment, oldArmor] : equipment;
+            const nextEquipment = oldArmor && (oldArmor.name || oldArmor.key)
+                ? [...equipment, oldArmor]
+                : equipment;
 
             return { ...character, equipment: nextEquipment, equippedArmor: newItem };
         }
