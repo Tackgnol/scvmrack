@@ -62,3 +62,13 @@ Feature: Security and ownership
     When I sign out from Scvm Rack
     Then the app session becomes empty
     And the session cookie is not readable from JavaScript
+
+  # RPG-308: real shared-auth and Prisma integration
+  Scenario: First Logto sign-in creates an app account
+    Given I have a valid Logto account with a preferred username
+    And I have not signed in to Scvm Rack before
+    When I sign in through Logto
+    Then Scvm Rack starts my authenticated session
+    And my profile uses my preferred username
+    When I sign in again
+    Then Scvm Rack reuses my existing account
