@@ -61,6 +61,9 @@ All application routes are mounted under the `/api` prefix.
 
 - `GET /search` — fuzzy, locale-aware item search (PostgreSQL trigram indexes)
 - `GET /:itemType/:id` — fetch a full item by type and id
+- The app should no longer hide Torch or Lantern use controls when an existing
+  database retains outdated ammo labels. Deployments repair the catalog and
+  affected inventory/storage entries while preserving their uses and quantities.
 
 ### OBR (`/api/obr`)
 

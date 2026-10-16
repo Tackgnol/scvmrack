@@ -338,7 +338,8 @@ steps:
         # INSERT of the canonical set, so it is idempotent and converges any
         # database to exactly the right rows (no duplicates, no stale entries).
         echo "Reapplying authoritative reference seeds..."
-        for f in 009_sync_class_ability_modifiers.sql; do
+        # Existing catalogs can retain lighting refill labels that hide use controls.
+        for f in 009_sync_class_ability_modifiers.sql 012_clear_lantern_torch_ammo_type.sql; do
           echo "  -> $f"
           docker cp "backend/init/05-seed/$f" "$db_container_id:/tmp/$f"
           docker exec "$db_container_id" psql \
