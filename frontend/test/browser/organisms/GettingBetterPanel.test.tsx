@@ -190,6 +190,18 @@ describe('GettingBetterPanel Browser', () => {
     await expect.poll(() => latestDraft?.hp.check).toEqual(serverRoll(12, [2, 2, 2, 2, 2, 2]));
   });
 
+  it('labels ability rolls with translated stat names', async () => {
+    await render(
+      <BrowserTestProvider>
+        <PanelHarness />
+      </BrowserTestProvider>,
+    );
+
+    for (const name of ['Strength', 'Agility', 'Presence', 'Toughness']) {
+      await expect.element(page.getByRole('spinbutton', { name })).toBeVisible();
+    }
+  });
+
   it('routes reroll all, close, and apply actions through the controller', async () => {
     const events = {
       rerollSection: vi.fn(),
