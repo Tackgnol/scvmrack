@@ -91,6 +91,7 @@
   add calls are pending, reducing layout jumps when items enter the sheet
 - The app should no longer omit use controls when you add catalog Torches. Each copy keeps its own saved uses.
 - Kill & Replace flow (death modal at 0 HP)
+- The app should no longer show Synced when you edit a character deleted in another tab. The missing-character screen explains what happened and lets you recover to a surviving character.
 - Character bootstrap and route synchronization avoid render-phase state writes
   and coalesce duplicate character-id navigation, preventing recovery loops and
   stack overflows during rapid route changes

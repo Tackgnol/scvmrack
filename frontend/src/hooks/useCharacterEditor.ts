@@ -180,13 +180,16 @@ export function useCharacterEditor(
           // Both are worth retrying; the queued batch is kept and onSettled
           // re-flushes it until we run out of attempts.
           const status = getApiErrorStatus(error);
-          if (status === 409) {
-            // Index-based edits cannot be replayed safely on a different inventory.
+          if (status === 404 || status === 409) {
             retryCountRef.current = 0;
             haltRef.current = true;
             setPending(() => []);
             optimisticCharacterRef.current = undefined;
             lastSavedCharacterRef.current = undefined;
+            if (status === 404) {
+              return;
+            }
+            // Index-based edits cannot be replayed safely on a different inventory.
             if (key) {
               void queryClient.invalidateQueries({ queryKey: key, exact: true });
             }

@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useCharacter } from '@/CharacterContext/CharacterContext';
 import { useErrorFeedback } from '@/components/molecules/feedback/ErrorFeedbackProvider';
 import { useSavingIndicator } from '@/hooks/useSavingIndicator';
+import { isApiNotFound } from '@/utils/errorUtils';
 import {
   buildHomeCallbackUrl,
   buildPrintCallbackUrl,
@@ -46,6 +47,7 @@ export default function Header() {
     character,
     characterId,
     lastCharacterId,
+    error,
     validationIssues = [],
   } = useCharacter();
   const { showBugReport } = useErrorFeedback();
@@ -61,7 +63,7 @@ export default function Header() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const homeUrl = buildHomeCallbackUrl(characterId || lastCharacterId);
-  const isSheetRoute = isSheetRoutePath(pathname);
+  const isSheetRoute = isSheetRoutePath(pathname) && !isApiNotFound(error);
   const activeCharacterId = characterId || lastCharacterId || undefined;
   const validationSummary = validationIssues
     .map(({ message }) => message)
