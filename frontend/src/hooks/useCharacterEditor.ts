@@ -1,3 +1,4 @@
+import { appHistory } from '@/router/history';
 import { trackCharacterEdited } from '@/analytics/characterAnalytics';
 import { $api } from '@/api';
 import { applyOptimisticPatch } from '@/hooks/applyOptimisticPatch.ts';
@@ -78,6 +79,7 @@ export function useCharacterEditor(
   const haltRef = useRef(false);
   // A save that failed in transit may still have landed, so retries resend exactly it, save id included.
   const unconfirmedSaveRef = useRef<{ batch: OptimisticPatch[]; body: CharacterUpdateRequest } | null>(null);
+  const navigationWaitersRef = useRef<Array<(blocked: boolean) => void>>([]);
   const maxRetries = 3;
 
   const retrySave = () => {
@@ -286,6 +288,10 @@ export function useCharacterEditor(
         },
         onSettled: () => {
           flushingRef.current = false;
+          if (haltRef.current || pendingRef.current.length === 0) {
+            const waiters = navigationWaitersRef.current.splice(0);
+            waiters.forEach((resolve) => resolve(haltRef.current));
+          }
           // Re-flush whatever is still queued (mid-flight edits, or a batch kept
           // for auto-retry) unless we've explicitly halted.
           if (!haltRef.current && pendingRef.current.length > 0) {
@@ -303,6 +309,30 @@ export function useCharacterEditor(
   });
 
   const debouncedFlush = useDebouncedCallback(flush, 1000);
+
+  // The provider outlives sheet routes: hold navigation until the current queue saves.
+  useEffect(() => {
+    if (!characterId || readOnly) {
+      return;
+    }
+    const waiters = navigationWaitersRef.current;
+    const unblock = appHistory.block({
+      enableBeforeUnload: false,
+      blockerFn: () => {
+        if (pendingRef.current.length === 0) {
+          return false;
+        }
+        return new Promise<boolean>((resolve) => {
+          waiters.push(resolve);
+          flushRef.current();
+        });
+      },
+    });
+    return () => {
+      unblock();
+      waiters.splice(0).forEach((resolve) => resolve(true));
+    };
+  }, [characterId, readOnly]);
 
   const hasPendingEdits = pendingCount > 0;
   useEffect(() => {
