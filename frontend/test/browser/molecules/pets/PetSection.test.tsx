@@ -117,4 +117,34 @@ describe('PetSection Component', () => {
 
     await expect.poll(() => mockMarkPipPending).toHaveBeenCalledWith(7, 0);
   });
+
+  it('keeps duplicate pets apart through reorder and removal (RPG-310)', async () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const hurt = { item: { name: 'Hound', key: 'pet.hound' }, equipmentIndex: 0, uses: [true, false] };
+    const healthy = { item: { name: 'Hound', key: 'pet.hound' }, equipmentIndex: 1, uses: [false, false] };
+    const pets = (petsWithIndices: typeof hurt[]) =>
+      vi.mocked(petHook.usePetSection).mockReturnValue({
+        petsWithIndices, hasPendingPipSave: false, isPipPending: mockIsPipPending, markPipPending: mockMarkPipPending,
+      } as never);
+    const firstPips = () => page.getByRole('button', { name: /Hound point 1$/ });
+
+    pets([hurt, healthy]);
+    const screen = await render(<BrowserTestProvider><PetSection /></BrowserTestProvider>);
+    await expect.element(firstPips().nth(0)).toHaveAccessibleName('Mark hit point empty: Hound point 1');
+    await expect.element(firstPips().nth(1)).toHaveAccessibleName('Mark hit point filled: Hound point 1');
+
+    pets([{ ...healthy, equipmentIndex: 0 }, { ...hurt, equipmentIndex: 1 }]);
+    await screen.rerender(<BrowserTestProvider><PetSection /></BrowserTestProvider>);
+    await expect.element(firstPips().nth(0)).toHaveAccessibleName('Mark hit point filled: Hound point 1');
+    await expect.element(firstPips().nth(1)).toHaveAccessibleName('Mark hit point empty: Hound point 1');
+
+    pets([{ ...hurt, equipmentIndex: 1 }]);
+    await screen.rerender(<BrowserTestProvider><PetSection /></BrowserTestProvider>);
+    await expect.element(firstPips().nth(1)).not.toBeInTheDocument();
+    await userEvent.click(firstPips());
+    await expect.poll(() => mockMarkPipPending).toHaveBeenCalledWith(1, 0);
+
+    expect(consoleError.mock.calls.flat().join(' ')).not.toMatch(/same key/);
+    consoleError.mockRestore();
+  });
 });

@@ -102,4 +102,34 @@ describe('PowersSection Component', () => {
 
         await expect.poll(() => mockMarkPipPending).toHaveBeenCalledWith(5, 0);
     });
+
+    it('keeps duplicate scrolls apart through reorder and removal (RPG-310)', async () => {
+        const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+        const spent = { item: { name: 'Fireball', key: 's1' }, equipmentIndex: 0, uses: [true] };
+        const fresh = { item: { name: 'Fireball', key: 's1' }, equipmentIndex: 1, uses: [false] };
+        const scrolls = (scrollsWithIndices: typeof spent[]) =>
+            vi.mocked(powersHook.usePowersSection).mockReturnValue({
+                scrollsWithIndices, hasPendingPipSave: false, isPipPending: mockIsPipPending, markPipPending: mockMarkPipPending,
+            } as never);
+        const pips = () => page.getByRole('button', { name: /Fireball use 1$/ });
+
+        scrolls([spent, fresh]);
+        const screen = await render(<BrowserTestProvider><PowersSection /></BrowserTestProvider>);
+        await expect.element(pips().nth(0)).toHaveAccessibleName('Mark unused: Fireball use 1');
+        await expect.element(pips().nth(1)).toHaveAccessibleName('Mark used: Fireball use 1');
+
+        scrolls([{ ...fresh, equipmentIndex: 0 }, { ...spent, equipmentIndex: 1 }]);
+        await screen.rerender(<BrowserTestProvider><PowersSection /></BrowserTestProvider>);
+        await expect.element(pips().nth(0)).toHaveAccessibleName('Mark used: Fireball use 1');
+        await expect.element(pips().nth(1)).toHaveAccessibleName('Mark unused: Fireball use 1');
+
+        scrolls([{ ...spent, equipmentIndex: 1 }]);
+        await screen.rerender(<BrowserTestProvider><PowersSection /></BrowserTestProvider>);
+        await expect.element(pips().nth(1)).not.toBeInTheDocument();
+        await userEvent.click(pips());
+        await expect.poll(() => mockMarkPipPending).toHaveBeenCalledWith(1, 0);
+
+        expect(consoleError.mock.calls.flat().join(' ')).not.toMatch(/same key/);
+        consoleError.mockRestore();
+    });
 });
