@@ -39,6 +39,8 @@ type ClassSummary = {
   description: string | null;
 };
 
+type ClassList = { classes: ClassSummary[]; classlessEnabled: boolean };
+
 function normalizedDraftName(raw: unknown): string | undefined {
   const name = sanitizeString(raw, 255);
   return name.length > 0 ? name : undefined;
@@ -192,7 +194,7 @@ export function createCharacterDraftService(log: ServiceLogger) {
       locale: string;
       inviteToken?: string | null;
       obrRoomId?: string | null;
-    }): Promise<ServiceResult<ClassSummary[]>> {
+    }): Promise<ServiceResult<ClassList>> {
       try {
         const pool = await resolvePartyClassPool(input.inviteToken, input.obrRoomId);
         if (!pool.ok) {
@@ -200,7 +202,10 @@ export function createCharacterDraftService(log: ServiceLogger) {
         }
         const classes = await characterRepository.listClassesByIds(pool.value.classIds);
         const texts = await translatedClassTexts(input.locale, classes);
-        return ok(classes.map((c, i) => ({ id: c.id, ...texts[i] })));
+        return ok({
+          classes: classes.map((c, i) => ({ id: c.id, ...texts[i] })),
+          classlessEnabled: pool.value.classlessEnabled,
+        });
       } catch (err) {
         return fail(
           unexpected(log, err, 'CLASS_LIST_FAILED', 'Failed to list classes')

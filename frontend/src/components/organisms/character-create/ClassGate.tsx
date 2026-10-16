@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Alert, Box, Button, ButtonBase, CircularProgress, Typography } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import * as Sentry from '@sentry/react';
-import { fetchClasses, type ClassSummary } from '@/api/draft';
+import { fetchClasses, type ClassList } from '@/api/draft';
 import type { StartChoice } from '@/hooks/useCharacterDraft';
 import { classGateStyles as styles } from '@/theme/createStyles';
 import d20Icon from '@/assets/D20.svg';
@@ -25,7 +25,7 @@ type ClassGateProps = {
 };
 
 type ClassLoadState =
-  | { key: string; status: 'loaded'; classes: ClassSummary[] }
+  | { key: string; status: 'loaded'; list: ClassList }
   | { key: string; status: 'failed' };
 
 export function ClassGate({ onPick, busy, inviteToken, obrRoomId }: ClassGateProps) {
@@ -34,9 +34,10 @@ export function ClassGate({ onPick, busy, inviteToken, obrRoomId }: ClassGatePro
   const [loadAttempt, setLoadAttempt] = useState(0);
   const [loadState, setLoadState] = useState<ClassLoadState | null>(null);
   const requestKey = `${locale}:${inviteToken ?? ''}:${obrRoomId ?? ''}:${loadAttempt}`;
-  const classes = loadState?.key === requestKey && loadState.status === 'loaded'
-    ? loadState.classes
+  const list = loadState?.key === requestKey && loadState.status === 'loaded'
+    ? loadState.list
     : null;
+  const classes = list?.classes ?? null;
   const loadFailed = loadState?.key === requestKey && loadState.status === 'failed';
 
   // Keyed on `locale` only — NOT `t`. The `t` from useTranslation changes identity
@@ -54,7 +55,7 @@ export function ClassGate({ onPick, busy, inviteToken, obrRoomId }: ClassGatePro
 
     fetchClasses(locale, controller.signal, inviteToken, obrRoomId)
       .then((result) => {
-        setLoadState({ key: requestKey, status: 'loaded', classes: result });
+        setLoadState({ key: requestKey, status: 'loaded', list: result });
       })
       .catch((e) => {
         if (e instanceof DOMException && e.name === 'AbortError' && !timedOut) {
@@ -158,19 +159,21 @@ export function ClassGate({ onPick, busy, inviteToken, obrRoomId }: ClassGatePro
                 {t('create.randomClassHint', 'Let the dice choose the first wound.')}
               </Typography>
             </ButtonBase>
-            <ButtonBase
-              data-testid="class-gate-classless"
-              disabled={busy}
-              onClick={() => onPick({ classless: true })}
-              sx={{ ...styles.card, ...styles.specialCard, ...styles.special }}
-            >
-              <Typography component="span" sx={styles.specialTitle}>
-                {t('create.classless', 'Classless Scvm')}
-              </Typography>
-              <Typography component="span" sx={styles.specialDescription}>
-                {t('create.classlessHint', 'No class. No abilities. Just you and the dark.')}
-              </Typography>
-            </ButtonBase>
+            {list?.classlessEnabled && (
+              <ButtonBase
+                data-testid="class-gate-classless"
+                disabled={busy}
+                onClick={() => onPick({ classless: true })}
+                sx={{ ...styles.card, ...styles.specialCard, ...styles.special }}
+              >
+                <Typography component="span" sx={styles.specialTitle}>
+                  {t('create.classless', 'Classless Scvm')}
+                </Typography>
+                <Typography component="span" sx={styles.specialDescription}>
+                  {t('create.classlessHint', 'No class. No abilities. Just you and the dark.')}
+                </Typography>
+              </ButtonBase>
+            )}
           </Box>
         </Box>
       )}

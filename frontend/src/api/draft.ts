@@ -46,6 +46,9 @@ export type ClassSummary = {
   description: string | null;
 };
 
+/** The classes a roll may use, and whether it may go classless instead. */
+export type ClassList = { classes: ClassSummary[]; classlessEnabled: boolean };
+
 type LooseClient = {
   POST: (
     path: string,
@@ -151,8 +154,8 @@ export function fetchClasses(
   inviteToken?: string,
   obrRoomId?: string,
   obrPlayerId?: string,
-): Promise<ClassSummary[]> {
-  return unwrap<ClassSummary[]>(
+): Promise<ClassList> {
+  return unwrap<ClassList>(
     loose.GET(`/api/characters/classes${creationQuery(locale, inviteToken, obrRoomId, obrPlayerId)}`, {
       signal,
     }),

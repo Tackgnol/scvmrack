@@ -197,7 +197,7 @@ test("an invite's class list is the party's default pool: the six Book Classes",
   );
 
   await expectStatus(response, 200);
-  const classes = (await response.json()) as Array<{ id: number }>;
+  const { classes } = (await response.json()) as { classes: Array<{ id: number }> };
   assert.deepEqual(
     classes.map((cls) => cls.id),
     [1, 2, 3, 4, 5, 6]

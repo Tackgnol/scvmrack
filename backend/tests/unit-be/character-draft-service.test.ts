@@ -421,14 +421,14 @@ test('rerollSection rejects a class that left the scope', async () => {
 });
 
 test('listClasses lists the classes of the scope behind the invite', async () => {
-  scope = { classIds: [1, 7], acceptedClassIds: [1, 7], classlessEnabled: true, party: null };
+  scope = { classIds: [1, 7], acceptedClassIds: [1, 7], classlessEnabled: false, party: null };
   listClassesResult = [{ id: 1, name: 'Gutterborn Scvm', description: null }];
 
   const result = await createCharacterDraftService(log).listClasses({ locale: 'en', inviteToken: 'invite-1' });
 
   assert.equal(result.ok, true);
   if (result.ok) {
-    assert.deepEqual(result.value, listClassesResult);
+    assert.deepEqual(result.value, { classes: listClassesResult, classlessEnabled: false });
   }
   assert.deepEqual(scopeCalls, ['invite-1']);
   assert.deepEqual(listedIds, [[1, 7]]);

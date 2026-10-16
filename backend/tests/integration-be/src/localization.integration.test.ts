@@ -187,7 +187,7 @@ const bookClasses = [
 test('GET /api/characters/classes lists exactly the six Book Classes', async () => {
   const response = await request('/api/characters/classes?locale=en');
   assert.equal(response.status, 200);
-  const classes = (await response.json()) as Array<{ id: number; name: string }>;
+  const { classes } = (await response.json()) as { classes: Array<{ id: number; name: string }> };
   assert.deepEqual(
     classes.map(({ id, name }) => ({ id, name })),
     bookClasses.map(({ id, name }) => ({ id, name })),
