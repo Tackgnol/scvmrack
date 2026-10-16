@@ -1,13 +1,14 @@
 import { render } from 'vitest-browser-react';
 import { expect, describe, it, vi } from 'vitest';
 import { page, userEvent } from 'vitest/browser';
+import { mockLinkHref } from '../../mockLinkHref';
 import CharacterClassSummary from '@/components/molecules/character/CharacterClassSummary';
 import type { ReactNode } from 'react';
 import BrowserTestProvider from '../../BrowserTestProvider';
 
 vi.mock('@tanstack/react-router', () => ({
-  Link: ({ children, to, search, ...props }: { children: ReactNode; to: string; search?: Record<string, string> }) => (
-    <a href={to + (search ? `?${new URLSearchParams(search)}` : '')} {...props}>
+  Link: ({ children, to, params, search, ...props }: { children: ReactNode; to: string; params?: Record<string, string>; search?: Record<string, string> }) => (
+    <a href={mockLinkHref(to, params, search)} {...props}>
       {children}
     </a>
   ),

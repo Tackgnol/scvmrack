@@ -2,7 +2,7 @@ import { ModalButton } from "@/components/molecules/modal/MorkBorgModal";
 import { Card, CardAction, CardName, Meta } from "@/pages/gmPages.styles";
 import { localizedText } from "@/utils/localizedText";
 import { Box } from "@mui/material";
-import { Link } from "@tanstack/react-router";
+import { Link, type RegisteredRouter } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import type { DraftCardProps } from "./DraftCard.models";
 import { expiryDays } from "./DraftCard.utils";
@@ -32,7 +32,7 @@ export function DraftCard({ draft, locale, locked, onDiscard }: DraftCardProps) 
       </Box>
       <Box>
         {!locked && (
-          <CardAction component={Link} to={`/gm/classes/draft/${draft.id}`}>
+          <CardAction component={Link<RegisteredRouter, string, '/gm/classes/draft/$draftId'>} to="/gm/classes/draft/$draftId" params={{ draftId: String(draft.id) }}>
             {t("classes.resume", "Resume")}
           </CardAction>
         )}

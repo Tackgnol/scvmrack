@@ -137,3 +137,5 @@
 - **Unit** (`test/unit`): Vitest + JSDOM — hooks, utils, routing, auth, error utils
 - **Browser** (`test/browser`): Vitest browser mode (Chromium/Firefox/WebKit) —
   component rendering and interaction
+
+- The app should no longer open a blank class creator or report a missing class when you follow Resume, Edit, sheet class links, or moderation previews. Saved class content loads without a hard reload.
