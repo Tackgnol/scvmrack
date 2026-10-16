@@ -145,6 +145,7 @@ Centralized, structured error pipeline (`src/errors.ts` + `plugins/error-handler
 - 5xx responses return a generic message (no internal leakage) and are reported
   to Sentry; 4xx responses are logged at info level
 - Custom 404 handler returns the same structured payload
+- The app should no longer miss error reports when a Logto callback fails inside Better Auth. Unexpected failures reach GlitchTip once with an error code and request ID, without OAuth tokens or profile data; normal sign-in rejections stay quiet.
 
 ## Security controls
 

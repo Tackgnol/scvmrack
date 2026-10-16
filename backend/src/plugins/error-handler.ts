@@ -1,6 +1,7 @@
 import fp from 'fastify-plugin';
 import * as Sentry from '@sentry/node';
 import type { FastifyError } from 'fastify';
+import { reportAuthCallbackError } from '../lib/auth-callback-errors.js';
 import {
   apiError,
   normalizeApiError,
@@ -13,7 +14,7 @@ export default fp(async function errorHandlerPlugin(fastify) {
 
     if (api.statusCode >= 500) {
       request.log.error({ err: error, requestId: request.id }, api.message);
-      if (Sentry.isInitialized()) {
+      if (Sentry.isInitialized() && !reportAuthCallbackError(request, `http_${api.statusCode}`)) {
         Sentry.captureException(error);
       }
     } else {
