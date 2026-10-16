@@ -4,6 +4,7 @@ import { page } from 'vitest/browser';
 import AbilityCardsGrid from '@/components/molecules/ability/AbilityCardsGrid';
 import BrowserTestProvider from '../../BrowserTestProvider';
 import { CharacterContext } from '@/CharacterContext/CharacterContext';
+import i18n, { loadLanguage } from '@/i18n';
 
 describe('AbilityCardsGrid Browser', () => {
   const mockCharacter = {
@@ -21,6 +22,22 @@ describe('AbilityCardsGrid Browser', () => {
     updateField: mockUpdateField,
     // Add other required fields from useCurrentCharacter if necessary
   } as any;
+
+  it('announces attribute actions in Polish', async () => {
+    await loadLanguage('pl');
+    await i18n.changeLanguage('pl');
+    await render(
+      <BrowserTestProvider>
+        <CharacterContext.Provider value={mockContextValue}>
+          <AbilityCardsGrid />
+        </CharacterContext.Provider>
+      </BrowserTestProvider>
+    );
+    for (const stat of ['Zwinność', 'Opanowanie', 'Siła', 'Wytrzymałość']) {
+      await expect.element(page.getByRole('button', { name: `Zmniejsz ${stat}`, exact: true })).toBeVisible();
+      await expect.element(page.getByRole('button', { name: `Zwiększ ${stat}`, exact: true })).toBeVisible();
+    }
+  });
 
   it('renders all ability cards from config', async () => {
     await render(

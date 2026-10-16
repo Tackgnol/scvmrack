@@ -109,6 +109,9 @@ export default function ItemAutocomplete({
             options={results}
             loading={isLoading || isAdding}
             loadingText={loadingText}
+            openText={t('equipment.openSearch', 'Open item search')}
+            closeText={t('equipment.closeSearch', 'Close item search')}
+            clearText={t('equipment.clearSearch', 'Clear item search')}
             noOptionsText={
                 inputValue.trim().length < 2
                     ? t('equipment.typeToSearch', 'Type 2 characters to search')

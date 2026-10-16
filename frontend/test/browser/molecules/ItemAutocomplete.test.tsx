@@ -4,6 +4,7 @@ import { page, userEvent } from 'vitest/browser';
 import ItemAutocomplete from '@/components/molecules/ItemAutocomplete';
 import BrowserTestProvider from '../BrowserTestProvider';
 import * as itemSearch from '@/hooks/useEquipmentSearch';
+import i18n, { loadLanguage } from '@/i18n';
 
 vi.mock('@/hooks/useEquipmentSearch', () => ({
     useItemSearch: vi.fn(),
@@ -21,6 +22,22 @@ describe('ItemAutocomplete Component', () => {
             search: mockSearch,
             clearResults: mockClearResults,
         } as any);
+    });
+
+    it('announces Polish item-search actions', async () => {
+        await loadLanguage('pl');
+        await i18n.changeLanguage('pl');
+        await render(
+            <BrowserTestProvider>
+                <ItemAutocomplete onSelect={vi.fn()} />
+            </BrowserTestProvider>
+        );
+        await expect.element(page.getByRole('button', { name: 'Otwórz wyszukiwanie przedmiotów' })).toBeVisible();
+        const input = page.getByRole('combobox', { name: 'Dodaj Przedmiot' });
+        await userEvent.fill(input, 'miecz');
+        await expect.element(page.getByRole('button', { name: 'Zamknij wyszukiwanie przedmiotów' })).toBeVisible();
+        await userEvent.click(page.getByRole('button', { name: 'Zamknij wyszukiwanie przedmiotów' }));
+        await expect.element(page.getByRole('button', { name: 'Otwórz wyszukiwanie przedmiotów' })).toBeVisible();
     });
 
     it('does not search on <2 chars typing', async () => {
