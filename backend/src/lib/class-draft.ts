@@ -7,7 +7,8 @@
 import { SUPPORTED_LOCALES, type SupportedLocale } from '../config/locales.js';
 import { ABILITY_STATS, type AbilityStat } from './ability-modifiers.js';
 import type { GettingBetterRule } from './class-model.js';
-import { CLASSLESS_DEFAULTS, type ClassSpec, type StatDice } from './generate-character.js';
+import type { ClassSpec, StatDice } from './generate-character.js';
+import { CLASSLESS_DEFAULTS } from './classless-defaults.js';
 import type { FromSchema } from 'json-schema-to-ts';
 import type { ClassDraftSchema } from '../schemas/custom-class.js';
 

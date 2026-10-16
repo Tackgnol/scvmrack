@@ -3,7 +3,7 @@ import { test } from 'node:test';
 
 import { blankClassDraft, type ClassDraft } from '../../src/lib/class-draft.ts';
 import { blankedContent, draftFromVersion, planVersionWrite, type VersionRow } from '../../src/lib/class-version.ts';
-import { CLASSLESS_DEFAULTS } from '../../src/lib/generate-character.ts';
+import { CLASSLESS_DEFAULTS } from '../../src/lib/classless-defaults.ts';
 
 const ability = (key: string | undefined, name: string): ClassDraft['abilities'][number] => ({
   ...(key ? { key } : {}),

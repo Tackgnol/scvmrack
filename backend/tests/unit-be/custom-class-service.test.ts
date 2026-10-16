@@ -14,6 +14,11 @@ mock.module('../../src/repositories/creation-ban-repository.js', {
     },
   },
 });
+mock.module('../../src/repositories/catalog-repository.js', {
+  namedExports: {
+    catalogRepository: { findSharedItemsByKeys: async () => [] },
+  },
+});
 mock.module('../../src/lib/draft-seeds.js', {
   namedExports: {
     randomSectionSeeds: () => ({}),

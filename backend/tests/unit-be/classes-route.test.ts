@@ -103,6 +103,13 @@ mock.module('../../src/services/custom-class-service.js', {
   },
 });
 
+mock.module('../../src/services/moderation-service.js', {
+  namedExports: { createModerationService: () => ({}) },
+});
+mock.module('../../src/services/creation-ban-service.js', {
+  namedExports: { createCreationBanService: () => ({}) },
+});
+
 const { default: errorHandlerPlugin } = await import(
   '../../src/plugins/error-handler.js'
 );

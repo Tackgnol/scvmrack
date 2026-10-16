@@ -6,6 +6,10 @@ mock.module('../../src/repositories/moderation-repository.js', {
   namedExports: { moderationRepository: {} },
 });
 
+mock.module('../../src/repositories/creation-ban-repository.js', {
+  namedExports: { creationBanRepository: {} },
+});
+
 const { default: adminRoutes } = await import('../../src/routes/admin/index.js');
 
 test('non-admin moderation queue and decision requests return 404', async () => {

@@ -15,7 +15,7 @@ import {
 } from './class-draft.js';
 import { itemFromRow, itemTypeOf, stableItemKeys, type ItemRowRead } from './class-items.js';
 import { customClassKeyRoot } from './class-model.js';
-import { CLASSLESS_DEFAULTS } from './generate-character.js';
+import { CLASSLESS_DEFAULTS } from './classless-defaults.js';
 import { stableKeys } from './stable-keys.js';
 
 type TextRow = Pick<Translation, 'key' | 'locale' | 'value'>;

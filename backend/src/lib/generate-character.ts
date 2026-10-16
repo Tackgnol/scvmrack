@@ -25,6 +25,7 @@ import { sanitizeString } from '../utils.js';
 import { statToModifier } from './ability-modifiers.js';
 import { abilityGrantedItems, type AbilityGrants } from './class-grants.js';
 import { byClassOrder } from './ability-order.js';
+import { CLASSLESS_DEFAULTS } from './classless-defaults.js';
 import { hydrateInventoryUses } from './inventory.js';
 import type {
   AbilityStat,
@@ -92,19 +93,6 @@ export interface CharacterData {
 type BuildCharacterOptions = {
   dropLowestAbilities?: AbilityStat[];
 };
-
-/**
- * Classless scvm (MÖRK BORG core rules): no stat modifiers, d8 HP, 2d6×10
- * silver, d10 weapon die, d4 armor die, no class abilities, no origin.
- */
-export const CLASSLESS_DEFAULTS = {
-  hpDie: 8,
-  silverDice: [6, 6],
-  silverModifier: 10,
-  weaponDie: 10,
-  armorDie: 4,
-  omenDie: 2,
-} as const;
 
 /** How one stat is rolled: `count`d`faces` + `modifier`, optionally dropping the lowest die. */
 export type StatDice = { count: number; faces: number; modifier: number; dropLowest: boolean };
