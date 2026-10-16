@@ -51,6 +51,8 @@ test('handled OAuth failures emit a sanitized Sentry event while normal outcomes
   const origin = 'http://localhost:3210';
   const provider = 'https://local-logto.example.test';
   let omitEmail = false;
+  let tokenFailure: 'invalid_client' | 'invalid_grant' | undefined;
+  let omitTokenEndpoint = false;
   const fetchMock = mock.method(globalThis, 'fetch', async (input: RequestInfo | URL) => {
     const url = new URL(input instanceof Request ? input.url : String(input));
     assert.equal(url.origin, provider);
@@ -58,11 +60,12 @@ test('handled OAuth failures emit a sanitized Sentry event while normal outcomes
       return Response.json({
         issuer: provider,
         authorization_endpoint: `${provider}/authorize`,
-        token_endpoint: `${provider}/token`,
+        token_endpoint: omitTokenEndpoint ? undefined : `${provider}/token`,
         userinfo_endpoint: `${provider}/userinfo`,
       });
     }
     if (url.pathname === '/token') {
+      if (tokenFailure) return Response.json({ error: tokenFailure, error_description: 'provider-token-secret' }, { status: 400 });
       return Response.json({ access_token: 'provider-token-secret', token_type: 'Bearer', expires_in: 3600 });
     }
     assert.equal(url.pathname, '/userinfo');
@@ -105,11 +108,12 @@ test('handled OAuth failures emit a sanitized Sentry event while normal outcomes
     app.get('/ordinary-redirect', async (_request, reply) => reply.redirect('/?error=unable_to_create_user'));
     await app.ready();
 
-    const callback = async (query: Record<string, string> = {}) => {
-      const start = await app.inject({ method: 'GET', url: '/api/auth/oauth2/login/logto', headers: { host: 'localhost:3210' } });
+    const callback = async (query: Record<string, string> = {}, returnTo = '/', afterStart?: () => void) => {
+      const start = await app.inject({ method: 'GET', url: `/api/auth/oauth2/login/logto?${new URLSearchParams({ returnTo })}`, headers: { host: 'localhost:3210' } });
       assert.equal(start.statusCode, 302);
       const state = new URL(start.headers.location!).searchParams.get('state');
       assert.ok(state);
+      afterStart?.();
       const params = new URLSearchParams({ code: 'oauth-secret-code', state, ...query });
       return app.inject({
         method: 'GET',
@@ -131,6 +135,8 @@ test('handled OAuth failures emit a sanitized Sentry event while normal outcomes
     assert.equal(success.statusCode, 302);
     assert.equal(success.headers.location, '/');
     assert.match(cookies(success.headers['set-cookie']), /session_token=/);
+    await callback({}, '/?error=unable_to_create_user');
+    await callback({}, '/api/auth/error?error=unable_to_create_user');
     await callback({ error: 'access_denied' });
     await callback({ code: 'invalid', state: 'invalid' });
     await callback({ error: 'unable_to_create_user' });
@@ -169,6 +175,24 @@ test('handled OAuth failures emit a sanitized Sentry event while normal outcomes
     } finally {
       await crashingApp.close();
     }
+    tokenFailure = 'invalid_grant';
+    const rejectedCode = await callback();
+    assert.match(rejectedCode.headers.location!, /error=oauth_code_verification_failed/);
+    await Sentry.flush(2000);
+    assert.equal(events.length, 4);
+    tokenFailure = 'invalid_client';
+    const badClient = await callback();
+    assert.match(badClient.headers.location!, /error=oauth_code_verification_failed/);
+    await Sentry.flush(2000);
+    assert.equal(events.length, 5);
+    assert.equal(events[4].tags?.auth_failure, 'invalid_client');
+    assert.deepEqual(events[4].contexts?.auth_callback, { request_id: 'qa-request-309', provider: 'logto' });
+    tokenFailure = undefined;
+    const badConfiguration = await callback({}, '/', () => { omitTokenEndpoint = true; });
+    assert.match(badConfiguration.headers.location!, /error=oauth_code_verification_failed/);
+    await Sentry.flush(2000);
+    assert.equal(events.length, 6);
+    assert.equal(events[5].tags?.auth_failure, 'invalid_oauth_config');
     for (const event of events) {
       for (const secret of [
         'private-email@example.test', 'oauth-secret-code', 'provider-token-secret', 'profile-secret',
