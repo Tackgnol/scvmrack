@@ -245,20 +245,6 @@ export const partyRepository = {
     });
   },
 
-  /**
-   * Bind a character to a party with the cap enforced inside a transaction so
-   * concurrent joins can never overflow it.
-   *
-   * The count→insert is a classic check-then-act race: under the default READ
-   * COMMITTED isolation, two joins of different characters both read `cap - 1`,
-   * both pass the guard, and each updates its own distinct row — no write-write
-   * conflict, so both commit and the party overflows. We close the race with a
-   * transaction-scoped Postgres advisory lock keyed on the party id: concurrent
-   * joiners to the same party serialize on the lock (they queue rather than
-   * abort/retry), so each runs its count→insert with an up-to-date count. The
-   * lock auto-releases at transaction end. Throws {@link PartyFullError} when
-   * the cap is reached (the service maps that to a 409).
-   */
   async rotateInviteToken(id: string, token: string): Promise<void> {
     await prisma.party.update({
       where: { id },

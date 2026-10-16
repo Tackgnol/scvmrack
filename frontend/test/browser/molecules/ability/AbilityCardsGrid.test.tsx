@@ -37,6 +37,7 @@ describe('AbilityCardsGrid Browser', () => {
       await expect.element(page.getByRole('button', { name: `Zmniejsz ${stat}`, exact: true })).toBeVisible();
       await expect.element(page.getByRole('button', { name: `Zwiększ ${stat}`, exact: true })).toBeVisible();
     }
+    await expect.element(page.getByRole('button', { name: /^(Increase|Decrease) / }).first()).not.toBeInTheDocument();
   });
 
   it('renders all ability cards from config', async () => {

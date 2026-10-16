@@ -29,6 +29,7 @@ describe('PetSection Component', () => {
     await render(<BrowserTestProvider><PetSection /></BrowserTestProvider>);
     await expect.element(page.getByRole('button', { name: 'Zaznacz punkt życia jako pełny: Jastrząb, punkt 1' })).toBeVisible();
     await expect.element(page.getByRole('button', { name: 'Zaznacz punkt życia jako pusty: Jastrząb, punkt 2' })).toBeVisible();
+    await expect.element(page.getByRole('button', { name: /^Mark hit point/ }).first()).not.toBeInTheDocument();
   });
 
   it('renders null when there are no pets', async () => {

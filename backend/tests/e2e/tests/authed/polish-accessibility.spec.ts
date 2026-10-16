@@ -12,7 +12,7 @@ test('Polish sheet controls announce Polish actions and restore dialog focus', a
         equippedArmor: { name: 'Pancerz testowy', currentTier: 1, maxTier: 3 },
       }),
     });
-    if (!response.ok) throw new Error(`Polish sheet setup failed: ${response.status}`);
+    if (!response.ok) {throw new Error(`Polish sheet setup failed: ${response.status}`);}
   }, seededCharacter.id);
   await page.reload();
   await page.getByRole('button', { name: 'Polski', exact: true }).click();

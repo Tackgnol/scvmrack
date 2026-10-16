@@ -104,6 +104,17 @@ export function useCharacterEditor(
     return Date.parse(candidate.updatedAt) > Date.parse(reference.updatedAt);
   };
 
+  /** Rebases queued edits onto a newer server copy written to the cache elsewhere (Getting Better, party refetch). */
+  const adoptNewerCachedCharacter = () => {
+    const cached = getActiveCachedCharacter();
+    if (cached && isNewerThan(cached, optimisticCharacterRef.current)) {
+      optimisticCharacterRef.current = pendingRef.current.reduce(
+        (acc, patch) => applyOptimisticPatch(acc, patch),
+        cached
+      );
+    }
+  };
+
   const flush = () => {
     if (!characterId || readOnly) {
       return;
@@ -119,6 +130,7 @@ export function useCharacterEditor(
     }
 
     const key = getActiveKey();
+    adoptNewerCachedCharacter();
     const currentCharacter = getLatestOptimisticCharacter();
     if (!currentCharacter) {
       return;
@@ -325,6 +337,7 @@ export function useCharacterEditor(
     // A fresh edit resumes saving even if a prior batch had halted.
     haltRef.current = false;
     setSaveFailed(false);
+    adoptNewerCachedCharacter();
     setPending((prev) => [...prev, patch]);
     applyLocalPatch(patch);
 

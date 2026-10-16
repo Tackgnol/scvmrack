@@ -28,7 +28,7 @@ import {
 } from './session.js';
 
 export type { AppSession } from './session.js';
-import { PARTY_MAX_MEMBERS, partyFull } from '../lib/party-limits.js';
+import { PARTY_MAX_MEMBERS, lockPartySeat, partyFull } from '../lib/party-limits.js';
 import { characterRepository } from '../repositories/character-repository.js';
 import { defaultPoolLineageIds } from './party-class-pool-service.js';
 
@@ -747,8 +747,7 @@ export function createPartyService(
 
         // The cap is checked under the party lock so concurrent joins can't overflow it.
         const joined = await characterRepository.transaction(async (ops) => {
-          await ops.lockParty(party.id);
-          if ((await ops.countPartyMembers(party.id)) >= PARTY_MAX_MEMBERS) {
+          if (!(await lockPartySeat(ops, party.id))) {
             return false;
           }
           await ops.joinParty(character.id, party.id);

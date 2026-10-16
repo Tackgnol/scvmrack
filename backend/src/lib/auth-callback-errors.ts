@@ -4,16 +4,20 @@ import * as Sentry from '@sentry/node';
 export const authCallbackPath = '/api/auth/oauth2/callback/logto';
 const reportedRequests = new WeakSet<FastifyRequest>();
 
+/** Whether a raw request target is the Logto callback (never throws, unlike `new URL` on a malformed target). */
+export function isAuthCallback(url: string): boolean {
+  return url.split('?', 1)[0] === authCallbackPath;
+}
+
 /** Leave callback exceptions to the sanitized reporter instead of automatic capture. */
 export function shouldReportFastifyError(_error: unknown, request: object, reply: Pick<FastifyReply, 'statusCode'>): boolean {
-  const isCallback = 'url' in request && typeof request.url === 'string' &&
-    new URL(request.url, 'http://localhost').pathname === authCallbackPath;
+  const isCallback = 'url' in request && typeof request.url === 'string' && isAuthCallback(request.url);
   return reply.statusCode >= 500 && !isCallback;
 }
 
 /** Report a callback failure once, excluding OAuth and profile data from its event. */
 export function reportAuthCallbackError(request: FastifyRequest, failure: string): boolean {
-  if (new URL(request.url, 'http://localhost').pathname !== authCallbackPath) {
+  if (!isAuthCallback(request.url)) {
     return false;
   }
   if (reportedRequests.has(request)) {

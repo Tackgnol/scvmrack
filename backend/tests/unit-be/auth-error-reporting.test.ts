@@ -6,7 +6,7 @@ import { memoryAdapter } from 'better-auth/adapters/memory';
 import { rpgtoolsSharedAuth } from '@tackgnol/rpgtools-shared-auth';
 import authErrorReporting from '../../src/plugins/auth-error-reporting.ts';
 import errorHandler from '../../src/plugins/error-handler.ts';
-import { shouldReportFastifyError } from '../../src/lib/auth-callback-errors.ts';
+import { isAuthCallback, shouldReportFastifyError } from '../../src/lib/auth-callback-errors.ts';
 
 function cookies(value: string | string[] | number | undefined): string {
   const values = typeof value === 'string' ? [value] : Array.isArray(value) ? value : [];
@@ -26,7 +26,7 @@ test('handled OAuth failures emit a sanitized Sentry event while normal outcomes
     transport: () => ({
       send: async (envelope) => {
         for (const [header, payload] of envelope[1]) {
-          if (header.type === 'event') events.push(payload as Sentry.Event);
+          if (header.type === 'event') {events.push(payload as Sentry.Event);}
         }
         return { statusCode: 200 };
       },
@@ -65,7 +65,7 @@ test('handled OAuth failures emit a sanitized Sentry event while normal outcomes
       });
     }
     if (url.pathname === '/token') {
-      if (tokenFailure) return Response.json({ error: tokenFailure, error_description: 'provider-token-secret' }, { status: 400 });
+      if (tokenFailure) {return Response.json({ error: tokenFailure, error_description: 'provider-token-secret' }, { status: 400 });}
       return Response.json({ access_token: 'provider-token-secret', token_type: 'Bearer', expires_in: 3600 });
     }
     assert.equal(url.pathname, '/userinfo');
@@ -207,4 +207,10 @@ test('handled OAuth failures emit a sanitized Sentry event while normal outcomes
     fetchMock.mock.restore();
     await Sentry.close(2000);
   }
+});
+
+test('a malformed request target is not the callback and does not throw', () => {
+  assert.equal(isAuthCallback('/api/auth/oauth2/callback/logto?code=c&state=s'), true);
+  assert.equal(isAuthCallback('http://['), false);
+  assert.equal(shouldReportFastifyError(new Error('boom'), { url: 'http://[' }, { statusCode: 500 }), true);
 });

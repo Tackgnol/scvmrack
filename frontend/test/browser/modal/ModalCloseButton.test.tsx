@@ -11,6 +11,7 @@ describe('ModalCloseButton Browser', () => {
     await i18n.changeLanguage('pl');
     await render(<BrowserTestProvider><ModalCloseButton onClick={vi.fn()} /></BrowserTestProvider>);
     await expect.element(page.getByRole('button', { name: 'Zamknij okno' })).toBeVisible();
+    await expect.element(page.getByRole('button', { name: 'Close modal' })).not.toBeInTheDocument();
   });
   it('renders correctly and handles click', async () => {
     const onClick = vi.fn();

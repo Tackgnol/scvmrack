@@ -240,6 +240,45 @@ test('forging through an invite creates the scvm already in the party', async ()
   assert.equal(character.classId, 3);
 });
 
+async function forgeThroughInvite(
+  jar: CookieJar,
+  inviteToken: string,
+  replace = false
+): Promise<Response> {
+  const draftResponse = await request(
+    `/api/characters/draft?locale=en&invite=${inviteToken}`,
+    { method: 'POST', json: { classId: 1, seeds }, jar, csrf: true }
+  );
+  await expectStatus(draftResponse, 200);
+  const { draft } = (await draftResponse.json()) as { draft: unknown };
+  return request(`/api/characters/new?locale=en&invite=${inviteToken}`, {
+    method: 'POST',
+    json: { draft, replace },
+    jar,
+    csrf: true,
+  });
+}
+
+test("owner-less scvm still hold party seats when a guest replaces theirs", async () => {
+  const party = await gmParty();
+  const guest = await anonymousSession();
+  const elsewhere = await gmParty();
+  await expectStatus(await forgeThroughInvite(guest.jar, elsewhere.inviteToken), 201);
+  for (let seat = 0; seat < 10; seat++) {
+    const player = await anonymousSession();
+    await expectStatus(await forgeThroughInvite(player.jar, party.inviteToken), 201);
+  }
+  await withDatabase((client) =>
+    client.query('UPDATE characters SET user_id = NULL WHERE party_id = $1', [party.id])
+  );
+
+  const created = await forgeThroughInvite(guest.jar, party.inviteToken, true);
+
+  await expectStatus(created, 409);
+  assert.equal(((await created.json()) as { code: string }).code, 'PARTY_FULL');
+  assert.equal(await characterCount(guest.userId), 1);
+});
+
 test('a class taken out of the pool mid-forge is refused on confirm and nothing is created', async () => {
   const party = await gmParty();
   const player = await anonymousSession();

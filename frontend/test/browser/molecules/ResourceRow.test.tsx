@@ -52,6 +52,7 @@ describe('ResourceRow Component', () => {
         await renderWithCharacter({});
         await expect.element(page.getByRole('button', { name: 'Obniż poziom pancerza' })).toBeVisible();
         await expect.element(page.getByRole('button', { name: 'Podnieś poziom pancerza' })).toBeVisible();
+        await expect.element(page.getByRole('button', { name: /armor tier/ })).not.toBeInTheDocument();
     });
 
     it('handles HP increases and decreases', async () => {

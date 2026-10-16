@@ -43,7 +43,11 @@ function characterTxOps(tx: Prisma.TransactionClient) {
     /** How many scvm are in the party, not counting `excludingUserId`'s. */
     countPartyMembers(partyId: string, excludingUserId?: string): Promise<number> {
       return tx.character.count({
-        where: { partyId, ...(excludingUserId ? { NOT: { userId: excludingUserId } } : {}) },
+        where: {
+          partyId,
+          // NOT alone would also skip owner-less scvm (user_id NULL), which still hold a seat.
+          ...(excludingUserId ? { OR: [{ userId: null }, { NOT: { userId: excludingUserId } }] } : {}),
+        },
       });
     },
 

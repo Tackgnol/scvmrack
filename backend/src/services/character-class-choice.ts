@@ -3,7 +3,7 @@ import { apiError, type ApiHttpError } from '../errors.js';
 import type { PartyClassPool } from './party-class-pool-service.js';
 import { fail, ok, type ServiceResult } from './result.js';
 
-const classNotAvailable = (message: string) => apiError(409, 'CLASS_NOT_AVAILABLE', message);
+export const classNotAvailable = (message: string) => apiError(409, 'CLASS_NOT_AVAILABLE', message);
 
 /** Why a class choice can't be rolled from the pool, or null when it can. */
 export function classChoiceError(

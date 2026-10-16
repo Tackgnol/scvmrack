@@ -6,7 +6,7 @@ import {
   type CharacterSummaryRow,
 } from '../repositories/character-repository.js';
 import { characterCreateDataFromDraft, randomCharacterCreateData } from '../lib/generate-character.js';
-import { PARTY_MAX_MEMBERS, partyFull } from '../lib/party-limits.js';
+import { lockPartySeat, partyFull } from '../lib/party-limits.js';
 import { classChoiceError, pickPoolClass } from './character-class-choice.js';
 import { resolvePartyClassPool } from './party-class-pool-service.js';
 import { getCharacterFull } from '../lib/get-character-full.js';
@@ -86,13 +86,6 @@ function resolveListLocale(rawLocale: unknown, acceptLanguage: unknown): 'en' | 
 }
 
 /**
- * Character business logic. Returns a stable {@link ServiceResult}: known
- * failures (auth, ownership, validation, not-found) are returned as
- * `ApiHttpError` values. Unexpected failures are mapped to a 5xx `ApiHttpError`
- * after logging the raw error, so the controller can hand them to the central
- * error handler (which reports 5xx to Sentry).
- */
-/**
  * Inserts the scvm as a party member, an Owlbear player's seat, or on its own. A guest replacing
  * their scvm loses the old one in the same transaction. Null when the party is already full.
  */
@@ -106,12 +99,8 @@ function insertCharacter(
 ): Promise<string | null> {
   const { party, obrBinding, replaceUserId } = target;
   return characterRepository.transaction(async (ops) => {
-    if (party) {
-      await ops.lockParty(party.id);
-      // The guest's old scvm leaves as the new one joins, so it doesn't count against the cap.
-      if ((await ops.countPartyMembers(party.id, replaceUserId)) >= PARTY_MAX_MEMBERS) {
-        return null;
-      }
+    if (party && !(await lockPartySeat(ops, party.id, replaceUserId))) {
+      return null;
     }
     if (replaceUserId) {
       await ops.deleteCharactersOf(replaceUserId);
@@ -126,6 +115,13 @@ function insertCharacter(
   });
 }
 
+/**
+ * Character business logic. Returns a stable {@link ServiceResult}: known
+ * failures (auth, ownership, validation, not-found) are returned as
+ * `ApiHttpError` values. Unexpected failures are mapped to a 5xx `ApiHttpError`
+ * after logging the raw error, so the controller can hand them to the central
+ * error handler (which reports 5xx to Sentry).
+ */
 export function createCharacterService(
   log: ServiceLogger,
   partyBus?: PartyEventBus

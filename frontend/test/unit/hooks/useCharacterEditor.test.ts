@@ -118,6 +118,33 @@ test('a conflict discards stale queued edits and refreshes the authoritative cha
   expect(mutation.mutate).toHaveBeenCalledTimes(1);
 });
 
+test('REGRESSION: an edit after a newer server copy lands in the cache builds on that copy', () => {
+  const rope = { key: 'rope', name: 'Rope' };
+  const hammer = { key: 'hammer', name: 'Hammer' };
+  const queryClient = makeQueryClient({ id: 'char-1', updatedAt: '2026-10-15T09:00:00.000Z', currentHp: 5, equipment: [] });
+  (useQueryClient as any).mockReturnValue(queryClient);
+  const mutation = noopMutation();
+  const { result } = renderHook(() =>
+    useCharacterEditor('char-1', mutation, (id) => ['char', id])
+  );
+  act(() => result.current.updateField('currentHp', 4));
+  act(() => result.current.flush());
+  act(() => {
+    mutation.mutate.mock.calls[0][1].onSuccess({ id: 'char-1', updatedAt: '2026-10-15T09:00:01.000Z', currentHp: 4, equipment: [] });
+    mutation.mutate.mock.calls[0][1].onSettled();
+  });
+  // Getting Better writes its result straight into the cache.
+  const improved = { id: 'char-1', updatedAt: '2026-10-15T09:00:02.000Z', currentHp: 9, equipment: [rope] };
+  queryClient.setQueryData(['char', 'char-1'], improved);
+
+  act(() => result.current.addEquipmentItem(hammer as any));
+  act(() => result.current.flush());
+
+  const body = mutation.mutate.mock.calls[1][0].body;
+  expect(body.expectedUpdatedAt).toBe(improved.updatedAt);
+  expect(body.equipment).toEqual([rope, hammer]);
+});
+
 beforeEach(() => {
   vi.clearAllMocks();
   errorFeedbackMocks.showUnexpectedError.mockReturnValue(true);
