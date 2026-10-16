@@ -3331,6 +3331,7 @@ export interface paths {
                     "application/json": {
                         /** Format: date-time */
                         expectedUpdatedAt?: string;
+                        saveId?: string;
                         name?: string;
                         currentHp?: number;
                         maxHp?: number;

@@ -280,6 +280,7 @@ export const UpdateBodySchema = {
   additionalProperties: false, // Fastify's default Ajv strips unknown fields
   properties: {
     expectedUpdatedAt: { type: 'string', format: 'date-time' },
+    saveId: { type: 'string', pattern: '^[A-Za-z0-9-]{1,64}$' },
     name: { type: 'string', maxLength: 255 },
     currentHp: { type: 'integer', minimum: -100, maximum: 1000 },
     maxHp: { type: 'integer', minimum: 1, maximum: 1000 },

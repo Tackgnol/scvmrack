@@ -96,6 +96,14 @@ export const characterRepository = {
     });
   },
 
+  /** The save id of the last guarded update, or null when the character is gone. */
+  getLastSaveId(id: string): Promise<{ lastSaveId: string | null } | null> {
+    return prisma.character.findUnique({
+      where: { id },
+      select: { lastSaveId: true },
+    });
+  },
+
   getPresence(id: string): Promise<{ presence: number } | null> {
     return prisma.character.findUnique({
       where: { id },
@@ -151,7 +159,15 @@ export const characterRepository = {
     return rows.map((row) => row.id);
   },
 
-  update(id: string, data: Prisma.CharacterUpdateInput, expectedUpdatedAt?: Date): Promise<unknown> {
+  update(
+    id: string,
+    data: Prisma.CharacterUpdateInput,
+    guard?: { expectedUpdatedAt?: Date; saveId?: string }
+  ): Promise<unknown> {
+    const { expectedUpdatedAt, saveId } = guard ?? {};
+    if (saveId) {
+      data = { ...data, lastSaveId: saveId };
+    }
     if (!expectedUpdatedAt) {
       return prisma.character.update({ where: { id }, data });
     }

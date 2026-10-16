@@ -464,13 +464,13 @@ export function createCharacterService(
           }
         }
 
-        await characterRepository.update(
-          input.id,
-          updates as Prisma.CharacterUpdateInput,
-          typeof input.body.expectedUpdatedAt === 'string'
-            ? new Date(input.body.expectedUpdatedAt)
-            : undefined
-        );
+        await characterRepository.update(input.id, updates as Prisma.CharacterUpdateInput, {
+          expectedUpdatedAt:
+            typeof input.body.expectedUpdatedAt === 'string'
+              ? new Date(input.body.expectedUpdatedAt)
+              : undefined,
+          saveId: typeof input.body.saveId === 'string' ? input.body.saveId : undefined,
+        });
 
         const character = await getCharacterFull(input.id, locale);
         if (!character) {
@@ -489,10 +489,16 @@ export function createCharacterService(
           err instanceof Prisma.PrismaClientKnownRequestError &&
           err.code === 'P2025'
         ) {
-          if (input.body.expectedUpdatedAt && await characterRepository.getOwnerId(input.id)) {
-            return fail(conflict('CHARACTER_CHANGED', 'Character changed in another tab. Reload before editing again.'));
+          const stored = input.body.expectedUpdatedAt ? await characterRepository.getLastSaveId(input.id) : null;
+          if (!stored) {
+            return fail(notFound('CHARACTER_NOT_FOUND', 'Character not found'));
           }
-          return fail(notFound('CHARACTER_NOT_FOUND', 'Character not found'));
+          // A retry of a save that already landed (its response was lost) reads back instead of conflicting.
+          if (input.body.saveId && stored.lastSaveId === input.body.saveId) {
+            const character = await getCharacterFull(input.id, locale);
+            return character ? ok(character) : fail(notFound('CHARACTER_NOT_FOUND', 'Character not found'));
+          }
+          return fail(conflict('CHARACTER_CHANGED', 'Character changed in another tab. Reload before editing again.'));
         }
         return fail(
           unexpected(log, err,'CHARACTER_UPDATE_FAILED', 'Failed to update character')

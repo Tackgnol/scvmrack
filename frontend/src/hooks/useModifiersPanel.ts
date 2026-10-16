@@ -5,11 +5,11 @@ import {
   scopeIncludeOptions,
 } from '@components/modifiers/config';
 import {
-  createModifierId,
   excludeToIncludes,
   includesToExclude,
   resolveScopeFromIncludes,
 } from '@components/modifiers/utils';
+import { createRandomId } from '@/utils/randomId';
 import {
   type IncludeContext,
   type LocalStatistic,
@@ -290,7 +290,7 @@ export function useModifiersPanel() {
       (option) => option.value === scope
     );
     const modifier: CustomModifier = {
-      id: createModifierId(),
+      id: createRandomId(),
       name: name.trim(),
       value: quickValue,
       source: 'Player',
@@ -343,7 +343,7 @@ export function useModifiersPanel() {
       updateModifier(editingModifierId, modifierPayload);
     } else {
       addModifier({
-        id: createModifierId(),
+        id: createRandomId(),
         ...modifierPayload,
       });
     }

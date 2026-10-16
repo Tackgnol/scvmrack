@@ -1,7 +1,5 @@
-import {
-  createModifierId,
-  scopeToExclude,
-} from '@components/modifiers/utils';
+import { scopeToExclude } from '@components/modifiers/utils';
+import { createRandomId } from '@/utils/randomId';
 import { type ScopeOption } from '@components/modifiers/types';
 import {
   type Character,
@@ -70,7 +68,7 @@ const clampInteger = (value: number, min: number, max: number): number =>
 
 export const buildCustomItemKey = (
   kind: CustomItemKind,
-  id = createModifierId(),
+  id = createRandomId(),
 ): string => `custom.${kind}.${id}`;
 
 export const createUsePips = (
@@ -121,7 +119,7 @@ const createOptionalModifier = (
 
   return [
     {
-      id: createModifierId(),
+      id: createRandomId(),
       name: itemName,
       source: itemName,
       value: clampInteger(input.value, -20, 20),
