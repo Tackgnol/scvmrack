@@ -153,10 +153,10 @@ describe('navigation router utils', () => {
     });
 
     describe('navigateToLoggedOut', () => {
-        it('should navigate to home with logged-out flag', async () => {
+        it('should navigate to the public landing page with logged-out flag', async () => {
             await navigateToLoggedOut();
             expect(appHistory.replace).toHaveBeenCalledWith(
-                `/character/new?${LOGGED_OUT_QUERY_PARAM}=true`
+                `/?${LOGGED_OUT_QUERY_PARAM}=true`
             );
         });
     });
