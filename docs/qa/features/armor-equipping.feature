@@ -9,4 +9,3 @@ Feature: Equipping armor without phantom inventory
     Then the armor slot shows the equipped armor
     And my carried inventory contains only the remaining real items
     And encumbrance counts only the remaining real items
-
