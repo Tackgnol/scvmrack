@@ -21,7 +21,7 @@ import {
   getApiErrorStatus,
   getUserFacingApiErrorMessage,
 } from "@/utils/errorUtils";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { hashKey, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDraftAutosave } from "./useDraftAutosave";
@@ -174,7 +174,12 @@ export function useClassCreator(
       setSavedId(result.id);
       setSavedRevision(input.revision);
       setDraft((current) => withSavedKeys(current, result.draft, result.savedRefs));
-      void queryClient.invalidateQueries({ queryKey: classKeys.all() });
+      // Saving consumes the draft server-side; refetching it would only 404.
+      const consumedDraft = input.draftId === undefined ? null : hashKey(classKeys.draft(input.draftId));
+      void queryClient.invalidateQueries({
+        queryKey: classKeys.all(),
+        predicate: (query) => query.queryHash !== consumedDraft,
+      });
       queryClient.setQueryData(classKeys.one(result.id), result);
       draftRef.current = withSavedKeys(draftRef.current, result.draft, result.savedRefs);
       historyRef.current = { undo: [], redo: [] };

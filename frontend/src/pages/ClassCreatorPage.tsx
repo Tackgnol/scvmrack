@@ -60,7 +60,7 @@ export function ClassCreatorPage() {
         {isAuthenticated && draft !== null && draftQuery.isLoading && (
           <CenterRow><Spinner /></CenterRow>
         )}
-        {isAuthenticated && draft !== null && (draftQuery.error || savedClass.error) && (
+        {isAuthenticated && draft !== null && (draftQuery.isLoadingError || savedClass.isLoadingError) && (
           <Alert severity="error">{t("creator.draftLoadFailed", "This draft wouldn't load.")}</Alert>
         )}
         {isAuthenticated && draftClassId != null && savedClass.isLoading && (
