@@ -17,7 +17,9 @@ export function WarbandTarotDeck({ members, active }: WarbandTarotDeckProps) {
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   return (
-    <Box data-testid="warband-tarot-deck">
+    // minWidth 0: as a grid item the deck would otherwise grow to fit every card, so the
+    // strip never overflowed and its arrows stayed disabled (RPG-322).
+    <Box data-testid="warband-tarot-deck" sx={{ minWidth: 0 }}>
       <PartyStrip cardWidth={isMobile ? 280 : 300}>
         {members.map((member) => (
           <WarbandCard
