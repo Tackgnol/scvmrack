@@ -11,7 +11,7 @@ import {
   SimpleField,
 } from '@/hooks/models.ts';
 import { buildRequestFromPatches } from '@/hooks/patchToRequest.ts';
-import { getApiLocale } from '@/hooks/utils.ts';
+import { API_LOCALES, getApiLocale } from '@/hooks/utils.ts';
 import { createRandomId } from '@/utils/randomId';
 import {
   getSimpleFieldLimitMessage,
@@ -73,6 +73,8 @@ export function useCharacterEditor(
   const lastSavedCharacterRef = useRef<CharacterResponse | undefined>(
     undefined
   );
+  // The locale the two refs above were written in: their catalog text (traits, items, abilities) is localized.
+  const refsLocaleRef = useRef(locale);
   // Serializes flushes (one PATCH in flight at a time) and halts auto-reflush
   // once we've given up / hit a client error, so we never busy-loop the server.
   const flushingRef = useRef(false);
@@ -117,6 +119,11 @@ export function useCharacterEditor(
   const adoptNewerCachedCharacter = () => {
     if (pendingRef.current.length > 0 || flushingRef.current || updateCharacter.isPending) {
       return;
+    }
+    if (refsLocaleRef.current !== locale) {
+      optimisticCharacterRef.current = undefined;
+      lastSavedCharacterRef.current = undefined;
+      refsLocaleRef.current = locale;
     }
     const cached = getActiveCachedCharacter();
     if (isNewerThan(cached, optimisticCharacterRef.current)) {
@@ -177,6 +184,12 @@ export function useCharacterEditor(
           // their optimistic state survives.
           const server = serverCharacter as CharacterResponse | undefined;
           const cached = key ? queryClient.getQueryData<CharacterResponse>(key) : undefined;
+          refsLocaleRef.current = locale;
+          // Other locales still hold the pre-save character: mark them stale. This only refetches one
+          // that is on screen, i.e. the language was switched while this save was in flight.
+          API_LOCALES.filter((other) => other !== locale).forEach((other) => {
+            void queryClient.invalidateQueries({ queryKey: getCharacterKey(characterId, other), exact: true });
+          });
           if (server && pendingRef.current.length === 0 && isNewerThan(cached, server)) {
             // A newer server copy (e.g. Getting Better) landed mid-flight; it already includes this save.
             lastSavedCharacterRef.current = server;
@@ -274,6 +287,7 @@ export function useCharacterEditor(
               context.previousCharacter as CharacterResponse
             );
             optimisticCharacterRef.current = optimistic;
+            refsLocaleRef.current = locale;
             if (key) {
               queryClient.setQueryData(key, optimistic);
             }
@@ -364,6 +378,7 @@ export function useCharacterEditor(
     const base = getLatestOptimisticCharacter();
     const optimistic = base ? applyOptimisticPatch(base, patch) : undefined;
     optimisticCharacterRef.current = optimistic;
+    refsLocaleRef.current = locale;
 
     const key = getActiveKey();
     if (!key) {
@@ -581,7 +596,7 @@ export function useCharacterEditor(
         return optimisticCharacterRef.current ?? character;
       }
 
-      const lastSaved = lastSavedCharacterRef.current;
+      const lastSaved = refsLocaleRef.current === locale ? lastSavedCharacterRef.current : undefined;
       if (isNewerThan(lastSaved, character)) {
         return lastSaved;
       }

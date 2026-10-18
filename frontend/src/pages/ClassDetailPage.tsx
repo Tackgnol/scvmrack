@@ -14,9 +14,11 @@ export function ClassDetailPage() {
   const { classId } = useParams({ from: '/classes/$classId' });
   const { t, i18n } = useTranslation();
   const language = getApiLocale(i18n.language);
+  const id = Number(classId);
   const query = useQuery({
-    queryKey: classKeys.detail(Number(classId), language),
-    queryFn: () => getClassDetail(Number(classId), language),
+    queryKey: classKeys.detail(id, language),
+    queryFn: () => getClassDetail(id, language),
+    enabled: Number.isInteger(id) && id > 0,
   });
 
   if (query.isLoading) {

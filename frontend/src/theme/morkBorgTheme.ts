@@ -619,9 +619,9 @@ export const customStyles = {
 
   // Ability adjust button
   abilityAdjustButton: {
-    width: { xs: 44, sm: 28 },
-    height: { xs: 44, sm: 28 },
-    minWidth: { xs: 44, sm: 28 },
+    width: { xs: 40, sm: 28 },
+    height: { xs: 40, sm: 28 },
+    minWidth: { xs: 40, sm: 28 },
     backgroundColor: 'transparent',
     border: `2px solid ${morkBorgColors.yellow}`,
     color: morkBorgColors.yellow,
@@ -637,6 +637,7 @@ export const customStyles = {
   // Ability value input
   abilityValueInput: {
     width: { xs: 56, sm: 48 },
+    minWidth: 0,
     '& .MuiOutlinedInput-root': {
       backgroundColor: morkBorgColors.yellow,
       '& input': {
@@ -755,7 +756,7 @@ export const customStyles = {
     },
     grid: {
       display: 'grid',
-      gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(4, 1fr)' },
+      gridTemplateColumns: { xs: 'repeat(2, minmax(0, 1fr))', sm: 'repeat(4, 1fr)' },
       gap: { xs: 0.75, sm: 1.25 },
     },
   },
@@ -1672,7 +1673,7 @@ export const customStyles = {
   // Small component styles
   abilityCardTwo: {
     paper: (rotate: number) => ({
-      p: { xs: 1.25, sm: 2 },
+      p: { xs: 0.75, sm: 2 },
       textAlign: 'center' as const,
       transform: `rotate(${rotate}deg)`,
       position: 'relative' as const,
@@ -1693,7 +1694,7 @@ export const customStyles = {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      gap: 0.5,
+      gap: { xs: 0.25, sm: 0.5 },
     },
     modifier: {
       fontFamily: "'Bebas Neue', sans-serif",

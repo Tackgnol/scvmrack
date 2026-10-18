@@ -67,6 +67,7 @@ describe('ClassGate', () => {
 
     await expect.element(page.getByTestId('class-gate-random')).toBeVisible();
     await expect.element(page.getByTestId('class-gate-classless')).not.toBeInTheDocument();
+    await expect.element(page.getByText('Pick a class or let the dice decide.')).toBeVisible();
   });
 
   it('dispatches the right choice per card', async () => {

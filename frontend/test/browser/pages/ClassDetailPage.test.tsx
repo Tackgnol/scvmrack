@@ -9,13 +9,30 @@ import { blankDraft } from '@/components/organisms/class-creator/creatorShared.u
 import i18n, { loadLanguage } from '@/i18n';
 
 vi.mock('@/seo/Seo', () => ({ Seo: () => null }));
-vi.mock('@tanstack/react-router', () => ({ useParams: () => ({ classId: '7' }), Link: () => null }));
+const route = vi.hoisted(() => ({ classId: '7' }));
+vi.mock('@tanstack/react-router', () => ({ useParams: () => route, Link: () => null }));
 vi.mock('@/api/classes', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/api/classes')>()),
   getClassDetail: vi.fn(),
 }));
 
 describe('ClassDetailPage', () => {
+  it('shows not found for a non-numeric id without asking the server', async () => {
+    route.classId = 'abc';
+    try {
+      await render(
+        <QueryClientProvider client={new QueryClient()}>
+          <BrowserTestProvider><ClassDetailPage /></BrowserTestProvider>
+        </QueryClientProvider>,
+      );
+
+      await expect.element(page.getByText('Class not found.')).toBeVisible();
+      expect(getClassDetail).not.toHaveBeenCalled();
+    } finally {
+      route.classId = '7';
+    }
+  });
+
   it('asks for the class credit in the reader language and refetches it on a switch (RPG-319)', async () => {
     const draft = { ...blankDraft(), name: { en: 'Bog Witch', pl: 'Wiedźma z bagien' } };
     vi.mocked(getClassDetail).mockImplementation(async (_id, locale) => ({

@@ -304,6 +304,24 @@ describe('useCharacterDraft', () => {
     expect(sessionStorage.getItem(`${DRAFT_STORAGE_KEY}:tok-1`)).toBeNull();
   });
 
+  it('re-requests the same draft in the new language when the locale changes', async () => {
+    const { result, rerender } = renderHook(({ locale }) => useCharacterDraft(locale), {
+      initialProps: { locale: 'en' },
+    });
+    await act(() => result.current.start({ classId: 1 }));
+    vi.mocked(draftApi.createDraft).mockClear();
+
+    rerender({ locale: 'pl' });
+
+    await waitFor(() =>
+      expect(draftApi.createDraft).toHaveBeenCalledWith(
+        { classId: 1, classless: false, dropLowestAbilities: undefined, seeds },
+        'pl',
+        expect.anything(), undefined, undefined, undefined,
+      )
+    );
+  });
+
   it('restart() returns to the class gate and clears storage', async () => {
     const { result } = renderHook(() => useCharacterDraft('en'));
     await act(() => result.current.start({ classId: 1 }));

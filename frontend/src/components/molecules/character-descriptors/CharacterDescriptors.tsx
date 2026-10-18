@@ -44,6 +44,7 @@ export const CharacterDescriptors = () => {
         trait2={character.trait2 ?? undefined}
         habit={character.habit ?? undefined}
         bodyDescription={character.bodyDescription ?? undefined}
+        tale={character.tale ?? undefined}
         onChangeField={updateDescriptorField}
       />
 

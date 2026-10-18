@@ -43,20 +43,31 @@ describe('Footer Component', () => {
         <Footer
           onGenerateNew={mockOnGenerateNew}
           onKillScvm={mockOnKillScvm}
-          generateNewLabel="Custom Gen"
         />
       </BrowserTestProvider>,
     );
 
     const genBtn = page.getByTestId('generate-new-button');
     await expect.element(genBtn).toBeVisible();
-    expect(genBtn.element()?.textContent).toContain('Custom Gen');
 
     const killBtn = page.getByTestId('kill-scvm-button');
     await expect.element(killBtn).toBeVisible();
 
     await userEvent.click(killBtn);
     await expect.poll(() => mockOnKillScvm).toHaveBeenCalledOnce();
+  });
+
+  it('renders only Kill Scvm when there is no Generate New action', async () => {
+    await render(
+      <BrowserTestProvider>
+        <Footer onKillScvm={vi.fn()} />
+      </BrowserTestProvider>,
+    );
+
+    await expect.element(page.getByTestId('kill-scvm-button')).toBeVisible();
+    await expect
+      .element(page.getByTestId('generate-new-button'))
+      .not.toBeInTheDocument();
   });
 
   it('opens privacy drawer when legal notice link is clicked', async () => {

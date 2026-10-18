@@ -1,6 +1,7 @@
 import { render } from 'vitest-browser-react';
 import { expect, describe, it, vi, beforeEach } from 'vitest';
 import { page } from 'vitest/browser';
+import { Container } from '@mui/material';
 import { Abilities } from '@/components/organisms/Abilities';
 import BrowserTestProvider from '../BrowserTestProvider';
 import * as CharacterContextModule from '@/CharacterContext/CharacterContext';
@@ -28,5 +29,21 @@ describe('Abilities Component', () => {
 
     // "ABILITIES" from translator fallback
     await expect.element(page.getByText('ABILITIES', { exact: false })).toBeVisible();
+  });
+
+  it.each([360, 320])('fits a %ipx phone without horizontal scroll', async (width) => {
+    await page.viewport(width, 800);
+    await render(
+      <BrowserTestProvider>
+        <Container maxWidth="md">
+          <Abilities />
+        </Container>
+      </BrowserTestProvider>
+    );
+
+    await expect.element(page.getByText('ABILITIES', { exact: false })).toBeVisible();
+    expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(
+      document.documentElement.clientWidth
+    );
   });
 });

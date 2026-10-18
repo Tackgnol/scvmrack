@@ -7,8 +7,9 @@ interface TraitsSectionProps {
   trait2?: string;
   habit?: string;
   bodyDescription?: string;
+  tale?: string;
   onChangeField: (
-    field: 'trait1' | 'trait2' | 'habit' | 'bodyDescription',
+    field: 'trait1' | 'trait2' | 'habit' | 'bodyDescription' | 'tale',
     value: string,
   ) => void;
 }
@@ -18,6 +19,7 @@ export default function TraitsSection({
   trait2,
   habit,
   bodyDescription,
+  tale,
   onChangeField,
 }: TraitsSectionProps) {
   const { t } = useTranslation();
@@ -75,6 +77,16 @@ export default function TraitsSection({
           variant="standard"
           sx={customStyles.characterDescriptors.traitsFieldHabit}
           inputProps={{ 'data-testid': 'body-description-input' }}
+        />
+        <TextField
+          fullWidth
+          multiline
+          label={t('traits.tale')}
+          value={tale || ''}
+          onChange={(event) => onChangeField('tale', event.target.value)}
+          variant="standard"
+          sx={customStyles.characterDescriptors.traitsFieldHabit}
+          inputProps={{ 'data-testid': 'tale-input' }}
         />
       </Box>
     </Box>

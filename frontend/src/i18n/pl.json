@@ -319,6 +319,7 @@
     "changeClass": "Zmień klasę",
     "chooseClass": "Wybierz swoją niedolę",
     "chooseClassHint": "Wybierz klasę, graj bez klasy albo pozwól zdecydować kościom.",
+    "chooseClassHintNoClassless": "Wybierz klasę albo pozwól zdecydować kościom.",
     "classCardLabel": "Klasa",
     "classGateKicker": "Tworzenie postaci",
     "classless": "Scvm bez klasy",
@@ -648,7 +649,7 @@
     "abilityName": "Nazwa Zdolności",
     "description": "Opis",
     "noCharacterLoaded": "Nie udało się załadować postaci",
-    "traitDescription": "{{trait1}} i {{trait2}} {{className}}",
+    "traitDescription": "{{className}}: {{trait1}}, {{trait2}}",
     "unnamedWretch": "Bezimienny nieszczęśnik",
     "mysterious": "tajemniczy",
     "unknown": "nieznany",
@@ -663,7 +664,8 @@
     "trait1": "Cecha 1",
     "trait2": "Cecha 2",
     "habit": "Nawyk",
-    "bodyDescription": "Opis Ciała"
+    "bodyDescription": "Opis Ciała",
+    "tale": "Historia"
   },
   "notes": {
     "title": "Notatki i Nieszczęścia",
@@ -880,12 +882,15 @@
     "decreaseHitPoints": "Zmniejsz punkty życia",
     "decreaseArmorTier": "Obniż poziom pancerza",
     "decreaseStat": "Zmniejsz {{stat}}",
+    "decreaseStat_strength": "Zmniejsz Siłę",
     "increaseArmorTier": "Podnieś poziom pancerza",
     "increaseStat": "Zwiększ {{stat}}",
+    "increaseStat_strength": "Zwiększ Siłę",
     "openMenu": "Otwórz menu",
     "retry": "Ponów"
   },
   "nav": {
+    "language": "Język",
     "start": "Start",
     "home": "Karta",
     "characters": "Scvmy",

@@ -4,8 +4,7 @@ import { customStyles } from '@theme/morkBorgTheme.ts';
 import { Trans, useTranslation } from 'react-i18next';
 
 interface FooterProps {
-  onGenerateNew: () => void;
-  generateNewLabel?: string;
+  onGenerateNew?: () => void;
   onKillScvm?: () => void;
 }
 
@@ -15,7 +14,6 @@ const handleOpenPrivacy = () => {
 
 export default function Footer({
   onGenerateNew,
-  generateNewLabel,
   onKillScvm,
 }: FooterProps) {
   const { t } = useTranslation();
@@ -23,13 +21,15 @@ export default function Footer({
   return (
     <Box sx={customStyles.footer.paper}>
       <Box sx={customStyles.footer.buttonContainer} className="print-hidden">
-        <Button
-          data-testid="generate-new-button"
-          onClick={onGenerateNew}
-          sx={customStyles.footerButton}
-        >
-          {generateNewLabel || t('actions.generateNew')}
-        </Button>
+        {onGenerateNew && (
+          <Button
+            data-testid="generate-new-button"
+            onClick={onGenerateNew}
+            sx={customStyles.footerButton}
+          >
+            {t('actions.generateNew')}
+          </Button>
+        )}
         {onKillScvm && (
           <Button
             data-testid="kill-scvm-button"

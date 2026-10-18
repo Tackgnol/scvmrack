@@ -41,6 +41,19 @@ function isUnavailableClass(error: unknown): boolean {
   return code !== undefined && UNAVAILABLE_CLASS_CODES.has(code);
 }
 
+/** The start choice that re-derives a saved draft's preview from its seeds. */
+function choiceFromDraft(draft: CharacterDraft): StartChoice {
+  const choice: StartChoice = {
+    classId: draft.classId ?? undefined,
+    classless: draft.classless,
+    dropLowestAbilities: draft.dropLowestAbilities,
+  };
+  if (draft.name !== undefined) {
+    choice.name = draft.name;
+  }
+  return choice;
+}
+
 function fallbackT(_key: string, fallback: string): string {
   return fallback;
 }
@@ -307,18 +320,22 @@ export function useCharacterDraft(locale: string, options: Options = {}) {
       return;
     }
 
-    const choice: StartChoice = {
-      classId: stored.classId ?? undefined,
-      classless: stored.classless,
-      dropLowestAbilities: stored.dropLowestAbilities,
-    };
-    if (stored.name !== undefined) {
-      choice.name = stored.name;
-    }
-    void start(choice, stored.seeds);
+    void start(choiceFromDraft(stored), stored.seeds);
     // Mount-only rehydration by design.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // The preview carries localized catalog text, so a language switch re-derives it from the same seeds.
+  const previewLocaleRef = useRef(locale);
+  useEffect(() => {
+    if (previewLocaleRef.current === locale) {
+      return;
+    }
+    previewLocaleRef.current = locale;
+    if (draft) {
+      void start(choiceFromDraft(draft), draft.seeds);
+    }
+  }, [locale, draft, start]);
 
   useEffect(() => () => abortRef.current?.abort(), []);
 

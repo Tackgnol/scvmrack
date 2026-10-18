@@ -51,7 +51,7 @@ const Segment = styled('button', {
 // (changeLanguage lazy-loads the pl bundle and caches the choice in localStorage),
 // so it works on any route without the character context.
 export function LanguageToggle() {
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   // Use i18n.language (the *selected* locale, set synchronously by the detector /
   // changeLanguage) rather than resolvedLanguage, which transiently reports the
   // fallback while the pl bundle finishes loading and would mis-highlight the tab.
@@ -69,7 +69,7 @@ export function LanguageToggle() {
   };
 
   return (
-    <Group role="group" aria-label="Language">
+    <Group role="group" aria-label={t('nav.language', 'Language')}>
       {LOCALES.map(({ code, label, name }) => {
         const active = current === code;
         return (

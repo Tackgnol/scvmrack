@@ -10,6 +10,7 @@ import {
     isScrollItem,
 } from '@/hooks/useEquipmentSections';
 import { aggregateItems } from '@/utils/aggregateItems';
+import { formatDice } from '@/components/equipped/formatDice';
 import { useErrorFeedback } from '@/components/molecules/feedback/ErrorFeedbackProvider';
 import { trackEvent } from '@/analytics/googleAnalytics';
 import { appHistory } from '@/router/history';
@@ -352,6 +353,10 @@ function PrintSheet({ character }: { character: Character }) {
             !isPetItem(item) &&
             !isConsumableUseItem(item),
     );
+    const equippedWeapons = (character.equippedWeapons ?? []).filter((weapon) => weapon !== null);
+    const printedWeapons = equippedWeapons.length > 0
+        ? equippedWeapons
+        : [{ name: t('equipment.unarmed'), dice: [2] }];
     const hasModifiers =
         (character.computedModifiers ?? []).length > 0 ||
         (character.modifiers ?? []).length > 0;
@@ -382,6 +387,13 @@ function PrintSheet({ character }: { character: Character }) {
                 <LabelValue label={t('stats.toDodge')} value={character.drToDodge} />
                 <LabelValue label={t('stats.toHitMelee')} value={character.drToMelee} />
                 <LabelValue label={t('stats.toHitRanged')} value={character.drToRanged} />
+                {printedWeapons.map((weapon, index) => (
+                    <LabelValue
+                        key={index}
+                        label={t('equipment.weapon')}
+                        value={`${weapon.name ?? t('equipment.none')} ${formatDice(weapon.dice)}`.trim()}
+                    />
+                ))}
                 <LabelValue label={t('equipment.armorLabel')} value={character.equippedArmor?.name ?? t('equipment.unarmored')} />
             </dl>
 
@@ -440,6 +452,7 @@ function PrintSheet({ character }: { character: Character }) {
                             <TextField label={t('traits.trait2')} value={character.trait2} />
                             <TextField label={t('traits.habit')} value={character.habit} />
                             <TextField label={t('traits.bodyDescription')} value={character.bodyDescription} />
+                            <TextField label={t('traits.tale')} value={character.tale} />
                             <TextField label={t('character.origin')} value={character.origin} />
                         </dl>
                     </PrintSection>
