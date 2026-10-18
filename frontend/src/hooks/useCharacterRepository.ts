@@ -2,7 +2,7 @@ import { $api, characterKeys, client } from "@/api";
 
 import { CharacterResponse } from "@/hooks/models.ts";
 import { getApiLocale, getCharacterKey } from "@/hooks/utils.ts";
-import { getApiErrorStatus, toApiClientError } from '@/utils/errorUtils';
+import { isRetryableApiError, toApiClientError } from '@/utils/errorUtils';
 import { keepPreviousData, useMutation, useQueryClient } from "@tanstack/react-query";
 
 export function useCharacterRepository(
@@ -33,13 +33,7 @@ export function useCharacterRepository(
             placeholderData: keepPreviousData,
             // Don't retry client errors (e.g. 404 for a just-deleted character,
             // 403 access denied) — retrying can't fix them and only spams 404s.
-            retry: (failureCount, error) => {
-                const status = getApiErrorStatus(error);
-                if (status !== undefined && status >= 400 && status < 500) {
-                    return false;
-                }
-                return failureCount < 2;
-            },
+            retry: (failureCount, error) => failureCount < 2 && isRetryableApiError(error),
         }
     );
 

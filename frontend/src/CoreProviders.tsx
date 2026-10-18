@@ -10,7 +10,7 @@ import {
 import { LazyMotion, domMax } from "motion/react";
 import * as Sentry from "@sentry/react";
 import React from "react";
-import { shouldCaptureClientError } from "@/utils/errorUtils";
+import { isRetryableApiError, shouldCaptureClientError } from "@/utils/errorUtils";
 import { monitoringOperation } from "@/monitoring";
 
 const captureClientError = (error: unknown, key?: readonly unknown[]): void => {
@@ -29,7 +29,7 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 1000 * 60 * 5, // 5 min
-      retry: 1,
+      retry: (failureCount, error) => failureCount < 1 && isRetryableApiError(error),
     },
   },
   queryCache: new QueryCache({

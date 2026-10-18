@@ -207,8 +207,15 @@ export function toApiClientError(
   });
 }
 
+/** A 404, or a 400 for a malformed path id: either way the requested resource does not exist. */
 export function isApiNotFound(error: unknown): boolean {
-  return getApiErrorStatus(error) === 404;
+  const status = getApiErrorStatus(error);
+  return (
+    status === 404 ||
+    (status === 400 &&
+      getApiErrorCode(error) === 'VALIDATION_ERROR' &&
+      getApiErrorMessage(error) === 'Invalid params')
+  );
 }
 
 export function isApiForbidden(error: unknown): boolean {
@@ -232,13 +239,18 @@ export function isUnexpectedApiError(error: unknown): boolean {
   return typeof status === 'number' && status >= 500;
 }
 
+/** Network failures and 5xx can succeed on retry; a 4xx (including 429) cannot. */
+export function isRetryableApiError(error: unknown): boolean {
+  const status = getApiErrorStatus(error);
+  return status === undefined || status >= 500;
+}
+
 export function shouldCaptureClientError(error: unknown): boolean {
   if (error instanceof DOMException && error.name === 'AbortError') {
     return false;
   }
 
-  const status = getApiErrorStatus(error);
-  return status === undefined || status >= 500;
+  return isRetryableApiError(error);
 }
 
 export function getUserFacingApiErrorMessage(

@@ -6,6 +6,7 @@ import {
   getUserFacingApiErrorMessage,
   isApiNotFound,
   isApiRateLimited,
+  isRetryableApiError,
   isUnexpectedApiError,
   shouldCaptureClientError,
   toApiClientError,
@@ -39,6 +40,18 @@ describe('errorUtils', () => {
     expect(isApiNotFound({ statusCode: 404 })).toBe(true);
     expect(isApiRateLimited({ statusCode: 429 })).toBe(true);
     expect(isUnexpectedApiError({ statusCode: 500 })).toBe(true);
+  });
+
+  it('treats a malformed path id as not found, but not other validation errors', () => {
+    expect(isApiNotFound({ statusCode: 400, code: 'VALIDATION_ERROR', message: 'Invalid params' })).toBe(true);
+    expect(isApiNotFound({ statusCode: 400, code: 'VALIDATION_ERROR', message: 'Invalid body' })).toBe(false);
+  });
+
+  it('retries only network failures and server errors', () => {
+    expect(isRetryableApiError(new TypeError('Failed to fetch'))).toBe(true);
+    expect(isRetryableApiError({ statusCode: 502 })).toBe(true);
+    expect(isRetryableApiError({ statusCode: 400 })).toBe(false);
+    expect(isRetryableApiError({ statusCode: 429 })).toBe(false);
   });
 
   it('captures unexpected failures but ignores expected client and abort errors', () => {
