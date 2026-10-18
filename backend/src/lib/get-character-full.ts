@@ -434,7 +434,9 @@ function isCarriedResolvedItem(item: Record<string, unknown> | null): boolean {
 function isAmmoResolvedItem(item: Record<string, unknown>): boolean {
   const tags = resolvedTags(item);
   const key = resolvedKey(item);
-  return tags.includes('ammo') || Boolean(item.ammoType) || AMMO_ITEM_KEYS.has(key);
+  // A weapon's ammoType names what it fires, not what it is.
+  const isAmmoTyped = Boolean(item.ammoType) && !tags.includes('weapon');
+  return tags.includes('ammo') || isAmmoTyped || AMMO_ITEM_KEYS.has(key);
 }
 
 function isEncumbranceExemptResolvedItem(item: Record<string, unknown>): boolean {
