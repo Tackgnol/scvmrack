@@ -236,7 +236,7 @@ export function CharacterSheet({
             <Box className="print-hidden">
                 {!readOnly && (
                     <Footer
-                        onGenerateNew={onGenerateNew}
+                        onGenerateNew={isAuthenticated ? onGenerateNew : onKillScvm}
                         generateNewLabel={isAuthenticated ? undefined : t('actions.killScvm')}
                         onKillScvm={isAuthenticated ? onKillScvm : undefined}
                     />
