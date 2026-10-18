@@ -35,11 +35,14 @@ export function useAbilityCard(ability: AbilityName) {
     characterKey,
     adjustAbility,
     setAbilityFromInput,
+    // `context` lets a locale override the label where the stat name declines (pl: "Siłę").
     decreaseAriaLabel: t('common.decreaseStat', 'Decrease {{stat}}', {
       stat: label,
+      context: ability,
     }),
     increaseAriaLabel: t('common.increaseStat', 'Increase {{stat}}', {
       stat: label,
+      context: ability,
     }),
   };
 }
