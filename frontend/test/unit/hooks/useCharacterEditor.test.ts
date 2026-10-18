@@ -659,7 +659,54 @@ test('writes the server response into the cache on success (no extra refetch)', 
   );
   // Cache now holds the hydrated server copy; we do NOT invalidate/refetch it.
   expect(queryClient.current()).toEqual(serverCopy);
-  expect(queryClient.invalidateQueries).not.toHaveBeenCalled();
+  expect(queryClient.invalidateQueries).not.toHaveBeenCalledWith(
+    expect.objectContaining({ queryKey: ['char', 'char-1', 'pl'] })
+  );
+});
+
+test('REGRESSION: after a save in one language, switching language shows that language', () => {
+  const stores: Record<string, any> = {
+    '["char","char-1","en"]': { id: 'char-1', updatedAt: '2026-10-16T09:00:00.000Z', silver: 0, trait1: 'egocentric' },
+    '["char","char-1","pl"]': { id: 'char-1', updatedAt: '2026-10-16T09:00:00.000Z', silver: 0, trait1: 'egocentryczny' },
+  };
+  const queryClient = {
+    getQueryData: vi.fn((key: unknown) => stores[JSON.stringify(key)]),
+    setQueryData: vi.fn((key: unknown, updater: unknown) => {
+      const id = JSON.stringify(key);
+      stores[id] = typeof updater === 'function' ? (updater as any)(stores[id]) : updater;
+    }),
+    invalidateQueries: vi.fn(),
+    cancelQueries: vi.fn(),
+  };
+  (useQueryClient as any).mockReturnValue(queryClient);
+  const mutation = noopMutation();
+  const { result, rerender } = renderHook(
+    ({ locale }) =>
+      useCharacterEditor('char-1', mutation, (id, activeLocale) => ['char', id, activeLocale], locale),
+    { initialProps: { locale: 'pl' } }
+  );
+
+  act(() => result.current.updateField('silver', 5));
+  act(() => result.current.flush());
+  act(() => {
+    mutation.mutate.mock.calls[0][1].onSuccess({
+      id: 'char-1',
+      updatedAt: '2026-10-16T09:00:01.000Z',
+      silver: 5,
+      trait1: 'egocentryczny',
+    });
+    mutation.mutate.mock.calls[0][1].onSettled();
+  });
+  expect(queryClient.invalidateQueries).toHaveBeenCalledWith({ queryKey: ['char', 'char-1', 'en'], exact: true });
+
+  rerender({ locale: 'en' });
+  expect(result.current.getVisibleCharacter(stores['["char","char-1","en"]'])?.trait1).toBe('egocentric');
+
+  act(() => result.current.updateField('silver', 6));
+  expect(result.current.getVisibleCharacter(stores['["char","char-1","en"]'])).toMatchObject({
+    silver: 6,
+    trait1: 'egocentric',
+  });
 });
 
 test('surfaces rate limits without a retry action and keeps the edit queued', () => {
