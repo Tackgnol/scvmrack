@@ -4,6 +4,7 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 import { page, userEvent } from "vitest/browser";
 import { render } from "vitest-browser-react";
 import BrowserTestProvider from "../../BrowserTestProvider";
+import { Container } from "@mui/material";
 
 vi.mock("@/CharacterContext/CharacterContext", () => ({
   useCharacter: vi.fn(),
@@ -94,5 +95,23 @@ describe("MiseryTrack Browser", () => {
       .toHaveFocus();
     await userEvent.keyboard(" ");
     await expect.poll(() => updateField).toHaveBeenCalledWith("miseryCount", 2);
+  });
+
+  it.each([360, 320])("fits a %ipx phone without horizontal scroll", async (width) => {
+    await page.viewport(width, 800);
+    await render(
+      <BrowserTestProvider>
+        <Container maxWidth="md">
+          <MiseryTrack />
+        </Container>
+      </BrowserTestProvider>,
+    );
+
+    await expect
+      .element(page.getByRole("button", { name: "Misery VII", exact: true }))
+      .toBeVisible();
+    expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(
+      document.documentElement.clientWidth,
+    );
   });
 });

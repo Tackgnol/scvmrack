@@ -23,12 +23,14 @@ const miseryMarkStyles = ({
   next,
 }: MiseryMarkStyleContext) => ({
   position: "relative" as const,
-  flex: "0 0 auto",
+  // Phone widths share the row so seven 44px marks still fit at 320px.
+  flex: compact ? "0 0 auto" : "1 1 0",
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
   boxSizing: "border-box" as const,
-  minWidth: compact ? 0 : 44,
+  minWidth: 0,
+  maxWidth: compact ? "none" : 44,
   minHeight: compact ? 0 : 44,
   padding: compact ? theme.spacing(0, 0.15) : 0,
   border: 0,
@@ -44,6 +46,8 @@ const miseryMarkStyles = ({
   [theme.breakpoints.up("sm")]: compact
     ? {}
     : {
+        flex: "0 0 auto",
+        maxWidth: "none",
         minWidth: 30,
         minHeight: 34,
         padding: theme.spacing(0.25, 0.75),
