@@ -663,7 +663,8 @@
     "trait1": "Cecha 1",
     "trait2": "Cecha 2",
     "habit": "Nawyk",
-    "bodyDescription": "Opis Ciała"
+    "bodyDescription": "Opis Ciała",
+    "tale": "Historia"
   },
   "notes": {
     "title": "Notatki i Nieszczęścia",

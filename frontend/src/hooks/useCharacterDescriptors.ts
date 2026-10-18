@@ -1,7 +1,7 @@
 import { useCharacter } from '@/CharacterContext/CharacterContext';
 import { type Ability } from '@/hooks/models';
 
-type DescriptorField = 'trait1' | 'trait2' | 'habit' | 'bodyDescription' | 'origin';
+type DescriptorField = 'trait1' | 'trait2' | 'habit' | 'bodyDescription' | 'tale' | 'origin';
 
 export function useCharacterDescriptors() {
   const { character, isLoading, updateField, updateAbilities } = useCharacter();

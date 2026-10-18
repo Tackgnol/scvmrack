@@ -61,6 +61,10 @@ const printableCharacter = {
   presence: 14,
   toughness: 6,
   equippedArmor: { name: 'Leather' },
+  equippedWeapons: [
+    { name: 'Warhammer', dice: [6] },
+    { name: 'Femur', dice: [4] },
+  ],
   equipment: [
     { key: 'weapon.sword', name: 'Rusty Sword', description: 'd6' },
     { key: 'scroll.rot', name: 'Rot Scroll', uses: [false, true] },
@@ -143,6 +147,21 @@ describe('PrintPage', () => {
       .toBeVisible();
     await expect.element(page.getByText('4 / 7')).toBeVisible();
     await expect.element(page.getByText(/owes silver/i)).toBeVisible();
+  });
+
+  it('prints every equipped weapon with its damage dice', async () => {
+    await renderPrintPage();
+
+    await expect.element(page.getByText('Warhammer d6')).toBeVisible();
+    await expect.element(page.getByText('Femur d4')).toBeVisible();
+  });
+
+  it('prints the tale', async () => {
+    await renderPrintPage({
+      character: { ...printableCharacter, tale: 'Evil creatures love your spoor.' },
+    } as Partial<ReturnType<typeof useCharacter>>);
+
+    await expect.element(page.getByText('Evil creatures love your spoor.')).toBeVisible();
   });
 
   it('prints every row of a reference table in a section that may flow onto the next page', async () => {

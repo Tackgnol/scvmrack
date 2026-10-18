@@ -10,6 +10,7 @@ describe('TraitsSection Browser', () => {
     trait2: 'weak',
     habit: 'twitches',
     bodyDescription: 'thin',
+    tale: 'You have a rare, sought after item.',
     onChangeField: vi.fn(),
   };
 
@@ -24,6 +25,9 @@ describe('TraitsSection Browser', () => {
     await expect.element(page.getByTestId('trait2-input')).toHaveValue('weak');
     await expect.element(page.getByTestId('habit-input')).toHaveValue('twitches');
     await expect.element(page.getByTestId('body-description-input')).toHaveValue('thin');
+    await expect
+      .element(page.getByTestId('tale-input'))
+      .toHaveValue('You have a rare, sought after item.');
 
   });
 
