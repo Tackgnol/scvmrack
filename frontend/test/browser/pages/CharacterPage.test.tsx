@@ -86,15 +86,13 @@ vi.mock('@/components', () => ({
   EquippedBar: () => <section>Equipped Bar</section>,
   Footer: ({
     onGenerateNew,
-    generateNewLabel,
     onKillScvm,
   }: {
-    onGenerateNew: () => void;
-    generateNewLabel?: string;
+    onGenerateNew?: () => void;
     onKillScvm?: () => void;
   }) => (
     <footer>
-      <button onClick={onGenerateNew}>{generateNewLabel ?? 'Generate New'}</button>
+      {onGenerateNew && <button onClick={onGenerateNew}>Generate New</button>}
       {onKillScvm && <button onClick={onKillScvm}>Kill Scvm</button>}
     </footer>
   ),
@@ -314,6 +312,9 @@ describe('CharacterPage', () => {
   it('asks guests to confirm before killing their only scvm', async () => {
     await renderCharacterPage({ isAuthenticated: false });
 
+    await expect
+      .element(page.getByRole('button', { name: /generate new/i }))
+      .not.toBeInTheDocument();
     await userEvent.click(page.getByRole('button', { name: /kill scvm/i }));
     await expect
       .element(page.getByRole('dialog', { name: /kill this scvm/i }))

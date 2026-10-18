@@ -235,10 +235,10 @@ export function CharacterSheet({
 
             <Box className="print-hidden">
                 {!readOnly && (
+                    // Guests hold one scvm, so they only get Kill Scvm (which confirms first).
                     <Footer
-                        onGenerateNew={isAuthenticated ? onGenerateNew : onKillScvm}
-                        generateNewLabel={isAuthenticated ? undefined : t('actions.killScvm')}
-                        onKillScvm={isAuthenticated ? onKillScvm : undefined}
+                        onGenerateNew={isAuthenticated ? onGenerateNew : undefined}
+                        onKillScvm={onKillScvm}
                     />
                 )}
             </Box>
