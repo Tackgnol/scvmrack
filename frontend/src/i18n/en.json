@@ -322,6 +322,7 @@
     "changeClass": "Change class",
     "chooseClass": "Choose your misery",
     "chooseClassHint": "Pick a class, go classless, or let the dice decide.",
+    "chooseClassHintNoClassless": "Pick a class or let the dice decide.",
     "classCardLabel": "Class",
     "classGateKicker": "Character creation",
     "classless": "Classless Scvm",
@@ -651,7 +652,7 @@
     "abilityName": "Ability Name",
     "description": "Description",
     "noCharacterLoaded": "No Character loaded, refresh the page",
-    "traitDescription": "A {{trait1}} and {{trait2}} {{className}}",
+    "traitDescription": "{{className}}: {{trait1}} and {{trait2}}",
     "unnamedWretch": "Unnamed Wretch",
     "mysterious": "mysterious",
     "unknown": "unknown",
@@ -890,6 +891,7 @@
     "retry": "Retry"
   },
   "nav": {
+    "language": "Language",
     "start": "Start",
     "home": "Sheet",
     "characters": "Scvms",

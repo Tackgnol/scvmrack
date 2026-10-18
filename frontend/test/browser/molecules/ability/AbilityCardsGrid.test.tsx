@@ -34,8 +34,8 @@ describe('AbilityCardsGrid Browser', () => {
       </BrowserTestProvider>
     );
     for (const stat of ['Zwinność', 'Opanowanie', 'Siła', 'Wytrzymałość']) {
-      await expect.element(page.getByRole('button', { name: `Zmniejsz ${stat}`, exact: true })).toBeVisible();
-      await expect.element(page.getByRole('button', { name: `Zwiększ ${stat}`, exact: true })).toBeVisible();
+      await expect.element(page.getByRole('button', { name: `Zmniejsz wartość cechy ${stat}`, exact: true })).toBeVisible();
+      await expect.element(page.getByRole('button', { name: `Zwiększ wartość cechy ${stat}`, exact: true })).toBeVisible();
     }
     await expect.element(page.getByRole('button', { name: /^(Increase|Decrease) / }).first()).not.toBeInTheDocument();
   });

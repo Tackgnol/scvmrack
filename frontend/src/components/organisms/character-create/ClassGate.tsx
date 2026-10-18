@@ -99,7 +99,9 @@ export function ClassGate({ onPick, busy, inviteToken, obrRoomId }: ClassGatePro
           {t('create.chooseClass', 'Choose your misery')}
         </Typography>
         <Typography sx={styles.hint}>
-          {t('create.chooseClassHint', 'Pick a class, go classless, or let the dice decide.')}
+          {list && !list.classlessEnabled
+            ? t('create.chooseClassHintNoClassless', 'Pick a class or let the dice decide.')
+            : t('create.chooseClassHint', 'Pick a class, go classless, or let the dice decide.')}
         </Typography>
       </Box>
 

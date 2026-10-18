@@ -32,12 +32,9 @@ describe('CharacterNameSummary Browser', () => {
       </BrowserTestProvider>
     );
 
-    // In en.json, character.traitDescription might be something like 
-    // "A {{trait1}} and {{trait2}} {{className}}"
-    // Let's check for the fragments
-    await expect.element(page.getByText('cowardly', { exact: false })).toBeVisible();
-    await expect.element(page.getByText('weak', { exact: false })).toBeVisible();
-    await expect.element(page.getByText('Fanged Deserter', { exact: false })).toBeVisible();
+    await expect
+      .element(page.getByText('Fanged Deserter: cowardly and weak', { exact: true }))
+      .toBeVisible();
 
   });
 });
