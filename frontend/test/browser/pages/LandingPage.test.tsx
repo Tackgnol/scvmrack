@@ -12,6 +12,13 @@ type MockLinkProps = {
 } & AnchorHTMLAttributes<HTMLAnchorElement>;
 
 const mockFetch = vi.fn();
+const mockAuth = vi.hoisted(() => ({
+  current: { user: { id: 'visitor' } as { id: string } | null },
+}));
+
+vi.mock('@/hooks/useAuth', () => ({
+  useAuth: () => mockAuth.current,
+}));
 
 vi.mock('@/seo/Seo', () => ({
   Seo: () => null,
@@ -42,6 +49,7 @@ describe('LandingPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     window.sessionStorage.clear();
+    mockAuth.current = { user: { id: 'visitor' } };
     vi.stubGlobal('fetch', mockFetch);
     mockFetch.mockResolvedValue({ ok: true, json: async () => [] });
   });
@@ -82,6 +90,19 @@ describe('LandingPage', () => {
       .element(page.getByRole('link', { name: /open sheet/i }))
       .toHaveAttribute('href', '/character/new');
     expect(buildHomeCallbackUrl).toHaveBeenCalledWith(null);
+  });
+
+  it('skips the list check until the visitor has a session', async () => {
+    mockAuth.current = { user: null };
+
+    await renderLanding();
+
+    await expect
+      .element(page.getByRole('link', { name: /open sheet/i }))
+      .toHaveAttribute('href', '/character/new');
+    expect(
+      mockFetch.mock.calls.some(([url]) => String(url).includes('/api/characters'))
+    ).toBe(false);
   });
 
   it('does not pre-generate a character from the landing page', async () => {

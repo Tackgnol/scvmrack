@@ -1164,7 +1164,7 @@
     },
     "v021": {
       "alpha": "Dodano oznaczenie Alpha przy tytule Scvmrack",
-      "openSheet": "Wzmocniono Open Sheet, aby szybkie kliknięcia używały bezpiecznej ścieżki startowej",
+      "openSheet": "Wzmocniono przycisk „Otwórz kartę”, aby szybkie kliknięcia używały bezpiecznej ścieżki startowej",
       "authorLink": "Podlinkowano autorski kredyt Adam Kościelniak",
       "deployPackaging": "Naprawiono pakowanie wdrożenia, aby wysyłało zbudowane pliki statyczne frontendu"
     },
