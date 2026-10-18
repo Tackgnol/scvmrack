@@ -14,7 +14,9 @@ export function isPetItem(item: EquipmentItem): boolean {
 
 export function isAmmoItem(item: EquipmentItem): boolean {
   const tags = item.tags ?? [];
-  return tags.includes('ammo') || Boolean(item.ammoType) || AMMO_ITEM_KEYS.has(item.key ?? '');
+  // A weapon's ammoType names what it fires, not what it is.
+  const isAmmoTyped = Boolean(item.ammoType) && !tags.includes('weapon');
+  return tags.includes('ammo') || isAmmoTyped || AMMO_ITEM_KEYS.has(item.key ?? '');
 }
 
 export function isConsumableUseItem(item: EquipmentItem): boolean {

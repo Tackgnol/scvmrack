@@ -4,6 +4,7 @@ import { Box, Button, Stack, Typography } from '@mui/material';
 import { Link } from '@tanstack/react-router';
 import { buildHomeCallbackUrl } from '@/router/navigation';
 import { fetchCharacterList } from '@/hooks/charactersListQuery';
+import { useAuth } from '@/hooks/useAuth';
 import { Trans, useTranslation } from 'react-i18next';
 import { useEffect, useState } from 'react';
 import licenseHoriz from '@/assets/CompWith_MORKBORG_horiz.svg';
@@ -342,10 +343,17 @@ const noticeKeys = ['book', 'guest'] as const;
 const mockStatKeys = ['agi', 'pre', 'str', 'tou'] as const;
 const mockRowKeys = ['gear', 'omen', 'print'] as const;
 
+/** Links Open Sheet to the visitor's first scvm; reads the session but never starts one. */
 function useSheetEntryUrl() {
+  const { user } = useAuth({ bootstrapAnonymous: false });
+  const userId = user?.id ?? null;
   const [sheetUrl, setSheetUrl] = useState(() => buildHomeCallbackUrl(null));
 
   useEffect(() => {
+    // A first visit has no session yet, so the list would only answer 401.
+    if (!userId) {
+      return;
+    }
     let cancelled = false;
     const controller = new AbortController();
 
@@ -369,7 +377,7 @@ function useSheetEntryUrl() {
       cancelled = true;
       controller.abort();
     };
-  }, []);
+  }, [userId]);
 
   return sheetUrl;
 }

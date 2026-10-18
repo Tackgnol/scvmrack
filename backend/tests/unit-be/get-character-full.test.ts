@@ -122,9 +122,6 @@ function baseFixture(): Fixture {
           { key: 'custom.bundle.two', name: 'Bundle two' },
           { key: 'custom.bundle.three', name: 'Bundle three' },
           { key: 'custom.bundle.four', name: 'Bundle four' },
-          // Keeps the warband over capacity now that the inventory bow is exempt
-          // (ammoType 'Arrow'); see the encumbrance assertion below.
-          { key: 'custom.bundle.five', name: 'Bundle five' },
         ],
         storage: [{ key: 'equipment.rope' }],
         equippedWeapons: [
@@ -430,12 +427,8 @@ test('getCharacterFull resolves catalog data, translations, modifiers, and deriv
     { custom: 'loose-note' },
   ]);
 
-  // Encumbrance mirrors the frontend's isEncumbranceExemptItem: ammo-typed items
-  // are excluded. The inventory `weapons.shortbow` resolves with ammoType 'Arrow'
-  // from the weapon catalog, so it no longer counts. A plain `custom.bundle.five`
-  // was added to the fixture to keep the warband one over capacity (9 > 8) and
-  // retain over-capacity-modifier coverage; without the bow exemption this would
-  // be 10.
+  // The carried `weapons.shortbow` counts even though its ammoType is 'Arrow': on a
+  // weapon that names what it fires. The arrows themselves stay exempt.
   assert.equal(result.encumbrance, 9);
   assert.equal(result.maxEncumbrance, 8);
   assert.equal(result.drToDodge, 15);
