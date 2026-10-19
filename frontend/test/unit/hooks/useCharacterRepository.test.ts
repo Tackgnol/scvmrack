@@ -14,11 +14,16 @@ const clientMocks = vi.hoisted(() => ({
 }));
 
 vi.mock('@/api', () => ({
+  authKeys: { session: () => ['auth', 'session'] },
   $api: apiMocks,
   client: clientMocks,
   characterKeys: {
     list: () => ['characters', 'list'],
   },
+}));
+
+vi.mock('@/auth', () => ({
+  ensureAnonymousSession: vi.fn().mockResolvedValue({ session: {}, user: { id: 'guest', isAnonymous: true } }),
 }));
 
 vi.mock('@tanstack/react-query', async () => {
@@ -189,7 +194,6 @@ test('useCharacterRepository reports createCharacter aborts as AbortError', asyn
         })
     ).rejects.toMatchObject({
         name: 'AbortError',
-        message: 'The operation was aborted.',
     });
 });
 

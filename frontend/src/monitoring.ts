@@ -6,7 +6,7 @@ import {
 } from "@/utils/errorUtils";
 
 const CLOUDFLARE_BEACON_RE = /\/beacon\.min\.js(?:\/|$)/i;
-const CRAWLER_RE = /(?:bot|crawler|spider|indexer)/i;
+const CRAWLER_RE = /\b(?:Googlebot|bingbot|meta-webindexer)\b/i;
 
 // Browser-side View Transitions API failures (viewport resize, GPU reset,
 // superseded transition). Cosmetic: the navigation itself still completes.
@@ -34,33 +34,17 @@ function hasCloudflareBeaconFrame(event: ErrorEvent): boolean {
   );
 }
 
-// Crawlers don't keep cookies or finish app flows, so nothing they hit is
-// actionable — anonymous-session bootstrap failures, chunk loads, all of it.
 function isCrawlerEvent(event: ErrorEvent): boolean {
+  const userAgent = Object.entries(event.request?.headers ?? {}).find(
+    ([name]) => name.toLowerCase() === 'user-agent',
+  )?.[1] ?? '';
   const browserName = event.contexts?.browser?.name ?? "";
-  const deviceFamily = event.contexts?.device?.family ?? "";
 
-  return CRAWLER_RE.test(`${browserName} ${deviceFamily}`);
+  return CRAWLER_RE.test(`${userAgent} ${browserName}`);
 }
 
 function stringTag(value: unknown): string | undefined {
   return typeof value === "string" && value.length > 0 ? value : undefined;
-}
-
-// The user's connection dropped mid-request. Nothing in the app caused it and
-// nothing in the app can fix it, and a real outage can't report through our own
-// tunnel anyway — so this group only ever collects other people's flaky wifi.
-// "Failed to fetch dynamically imported module" is excluded: that one means a
-// stale chunk reference, which is ours.
-const NETWORK_FAILURE_RE =
-  /(?:failed to fetch|load failed|networkerror|network request failed)/i;
-
-function isNetworkFailure(error: unknown): boolean {
-  return (
-    error instanceof Error &&
-    NETWORK_FAILURE_RE.test(error.message) &&
-    !/dynamically imported module/i.test(error.message)
-  );
 }
 
 export function monitoringOperation(
@@ -85,9 +69,10 @@ export function prepareFrontendEvent(
   if (
     (originalError !== undefined && !shouldCaptureClientError(originalError)) ||
     hasCloudflareBeaconFrame(event) ||
-    isCrawlerEvent(event) ||
-    isViewTransitionError(event, originalError) ||
-    isNetworkFailure(originalError)
+    (isCrawlerEvent(event) &&
+      (getApiErrorCode(originalError) === 'ANONYMOUS_SESSION_UNAVAILABLE' ||
+        (event.tags?.source === 'auth' && event.tags?.anonymous_bootstrap === 'tab-session'))) ||
+    isViewTransitionError(event, originalError)
   ) {
     return null;
   }

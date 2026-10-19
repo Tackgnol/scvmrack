@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as Sentry from '@sentry/react';
 import {
   bootstrapAnonymousSession,
+  ensureAnonymousSession,
   fetchSession,
   loginUrl,
   profileUrl,
@@ -189,6 +190,21 @@ describe('auth api helpers', () => {
       expect(sessionStorage.getItem('scvm.tabSession')).toBeNull();
     });
 
+    it('coalesces simultaneous creation actions into one guest sign-in', async () => {
+      let signedIn = false;
+      mockFetch.mockImplementation(async (url: string) => {
+        if (url.includes('sign-in')) {
+          signedIn = true;
+          return signInResponse(200);
+        }
+        return sessionResponse(signedIn ? user : null);
+      });
+
+      await expect(Promise.all([ensureAnonymousSession(), ensureAnonymousSession()]))
+        .resolves.toEqual([user, user]);
+      expect(urls().filter((url) => url.includes('sign-in'))).toHaveLength(1);
+    });
+
     it('treats a sign-in 400 as success when a session already exists, and logs it', async () => {
       mockFetch
         .mockResolvedValueOnce(signInResponse(400))
@@ -254,6 +270,27 @@ describe('auth api helpers', () => {
 
       await expect(run()).rejects.toThrow('Anonymous session did not start');
       expect(Sentry.captureMessage).not.toHaveBeenCalled();
+    });
+
+    it('keeps failed session reads distinct from a successful empty session', async () => {
+      mockFetch.mockResolvedValueOnce(signInResponse(200))
+        .mockResolvedValue({ status: 503, ok: false });
+      await expect(run()).rejects.toMatchObject({ code: 'AUTH_SESSION_VERIFICATION_FAILED' });
+      expect(urls().filter((url) => url.includes('sign-in'))).toHaveLength(1);
+    });
+
+    it('does not retry rate-limited session verification', async () => {
+      mockFetch.mockResolvedValueOnce(signInResponse(200))
+        .mockResolvedValue({ status: 429, ok: false });
+      await expect(run()).rejects.toMatchObject({ httpStatus: 429 });
+      expect(urls().filter((url) => url.includes('get-session'))).toHaveLength(1);
+    });
+
+    it('keeps a network failure followed by empty reads observable', async () => {
+      mockFetch.mockResolvedValueOnce(signInResponse(200))
+        .mockRejectedValueOnce(new TypeError('Failed to fetch'))
+        .mockResolvedValue(sessionResponse(null));
+      await expect(run()).rejects.toMatchObject({ code: 'AUTH_SESSION_VERIFICATION_FAILED' });
     });
   });
 });

@@ -2,6 +2,14 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useCharacterDraft, DRAFT_STORAGE_KEY } from '@/hooks/useCharacterDraft';
 import * as draftApi from '@/api/draft';
+import { ensureAnonymousSession } from '@/auth';
+
+vi.mock('@/auth', () => ({ ensureAnonymousSession: vi.fn() }));
+vi.mock('@/privacy/privacyConsent', () => ({ usePrivacyAcknowledged: () => true }));
+
+vi.mock('@tanstack/react-query', () => ({
+  useQueryClient: () => ({ setQueryData: vi.fn() }),
+}));
 
 vi.mock('@/api/draft', async (importOriginal) => {
   const original = await importOriginal<typeof import('@/api/draft')>();
@@ -37,6 +45,9 @@ describe('useCharacterDraft', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     sessionStorage.clear();
+    vi.mocked(ensureAnonymousSession).mockResolvedValue({
+      session: { id: 'guest-session' }, user: { id: 'guest', isAnonymous: true },
+    });
     vi.mocked(draftApi.createDraft).mockResolvedValue({ draft, preview });
     vi.mocked(draftApi.rerollDraftSection).mockResolvedValue({
       draft: { ...draft, seeds: { ...seeds, stats: 'b'.repeat(64) } },
@@ -49,6 +60,21 @@ describe('useCharacterDraft', () => {
     const { result } = renderHook(() => useCharacterDraft('en'));
     expect(result.current.phase).toBe('class-gate');
     expect(result.current.draft).toBeNull();
+    expect(ensureAnonymousSession).not.toHaveBeenCalled();
+  });
+
+  it('waits for a usable session before starting a draft', async () => {
+    let ready!: (session: Awaited<ReturnType<typeof ensureAnonymousSession>>) => void;
+    vi.mocked(ensureAnonymousSession).mockReturnValue(new Promise((resolve) => { ready = resolve; }));
+    const { result } = renderHook(() => useCharacterDraft('en'));
+    let starting!: Promise<void>;
+    act(() => { starting = result.current.start({ classId: 1 }); });
+    expect(draftApi.createDraft).not.toHaveBeenCalled();
+    await act(async () => {
+      ready({ session: {}, user: { id: 'guest', isAnonymous: true } });
+      await starting;
+    });
+    expect(result.current.phase).toBe('sheet');
   });
 
   it('start() rolls a draft, moves to sheet phase, and persists to sessionStorage', async () => {

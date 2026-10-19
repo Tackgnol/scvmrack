@@ -62,7 +62,7 @@ type UseAuthOptions = {
 // Auth Hook
 // ============================================
 export function useAuth(options: UseAuthOptions = {}) {
-    const { bootstrapAnonymous = true, fetchSession: fetchSessionEnabled = true } = options;
+    const { bootstrapAnonymous = false, fetchSession: fetchSessionEnabled = true } = options;
     const queryClient = useQueryClient();
     const isInviteRoute = useSyncExternalStore(
         subscribeToHistory,
@@ -120,12 +120,13 @@ export function useAuth(options: UseAuthOptions = {}) {
         !isSessionExpired &&
         fetchSessionEnabled &&
         !sessionQuery.isLoading &&
+        !sessionQuery.isError &&
         !sessionUser;
 
     const anonymousBootstrapQuery = useQuery({
         queryKey: ['auth', 'anonymous-bootstrap'],
         enabled: anonymousBootstrapEnabled,
-        staleTime: Infinity,
+        staleTime: 0,
         retry: false,
         refetchOnWindowFocus: false,
         queryFn: async () => {
@@ -146,7 +147,6 @@ export function useAuth(options: UseAuthOptions = {}) {
     // without producing a user can never hang loading forever.
     const isBootstrappingAnonymous =
         anonymousBootstrapEnabled &&
-        !anonymousBootstrapQuery.data &&
         !anonymousBootstrapQuery.isError;
 
     // Sign out
@@ -166,7 +166,9 @@ export function useAuth(options: UseAuthOptions = {}) {
         user: (isSessionExpired ? null : sessionUser) as AuthUser | null,
         session: isSessionExpired ? null : sessionData,
         isAuthenticated: Boolean(effectiveSessionUser) && !isAnonymousUser,
-        isGuest: !isSessionExpired && (isAnonymousUser || (!sessionUser && !sessionQuery.isLoading)),
+        isGuest: !isSessionExpired && isAnonymousUser,
+        isSessionless: !isSessionExpired && !sessionQuery.isLoading && !sessionUser,
+        error: sessionQuery.error ?? (anonymousBootstrapEnabled ? anonymousBootstrapQuery.error : null),
         isLoading:
             sessionQuery.isLoading ||
             anonymousBootstrapQuery.isFetching ||

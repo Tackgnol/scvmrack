@@ -144,7 +144,7 @@ test('useAuth bootstraps anonymous sessions when no session exists', async () =>
     return { isLoading: false, data: null };
   });
 
-  renderHook(() => useAuth());
+  renderHook(() => useAuth({ bootstrapAnonymous: true }));
 
   await capturedQueryFn?.();
 
@@ -174,7 +174,7 @@ test('useAuth surfaces a failed anonymous bootstrap and does not cache a session
     return { isLoading: false, data: null };
   });
 
-  renderHook(() => useAuth());
+  renderHook(() => useAuth({ bootstrapAnonymous: true }));
 
   await expect(capturedQueryFn?.()).rejects.toThrow('Anonymous session did not start');
   expect(queryClient.setQueryData).not.toHaveBeenCalled();
@@ -200,7 +200,7 @@ test('useAuth reports loading while an anonymous bootstrap is pending but not ye
     return { isLoading: false, data: null };
   });
 
-  const { result } = renderHook(() => useAuth());
+  const { result } = renderHook(() => useAuth({ bootstrapAnonymous: true }));
 
   expect(result.current.isLoading).toBe(true);
 });
@@ -224,6 +224,36 @@ test('useAuth can skip anonymous bootstrap when no session exists', () => {
   renderHook(() => useAuth({ bootstrapAnonymous: false }));
 
   expect(bootstrapAnonymousSession).not.toHaveBeenCalled();
+});
+
+test('public consumers remain sessionless instead of starting a guest session', () => {
+  vi.mocked(useQueryClient).mockReturnValue({ setQueryData: vi.fn() } as never);
+  vi.mocked(useQuery).mockImplementation((options: any) => {
+    if (options.queryKey.includes('anonymous-bootstrap')) {
+      expect(options.enabled).toBe(false);
+    }
+    return { data: null, isLoading: false, isFetching: false } as never;
+  });
+
+  const { result } = renderHook(() => useAuth());
+
+  expect(result.current.isGuest).toBe(false);
+  expect(result.current.isLoading).toBe(false);
+});
+
+test('a failed session read never triggers anonymous sign-in', () => {
+  vi.mocked(useQueryClient).mockReturnValue({ setQueryData: vi.fn() } as never);
+  const failure = new Error('Auth service unavailable');
+  vi.mocked(useQuery).mockImplementation((options: any) => {
+    if (options.queryKey.includes('session')) {
+      return { isError: true, error: failure, isLoading: false } as never;
+    }
+    expect(options.enabled).toBe(false);
+    return { isFetching: false } as never;
+  });
+  const { result } = renderHook(() => useAuth({ bootstrapAnonymous: true }));
+  expect(result.current.error).toBe(failure);
+  expect(result.current.isGuest).toBe(false);
 });
 
 test('useAuth skips anonymous bootstrap on invite routes by default', () => {

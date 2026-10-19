@@ -5,13 +5,13 @@ import MorkBorgModal, { ModalButton } from '@components/molecules/modal/MorkBorg
 import { loginUrl } from '@/auth';
 import { useSessionExpiredFlag } from '@/hooks/useSessionExpiredFlag';
 import { getLastAuthKind } from '@/preferences/lastAuthKind';
-import { CHARACTER_ID_QUERY_PARAM, clearCurrentSearchParam } from '@/router/navigation';
+import { CHARACTER_ID_QUERY_PARAM, clearCurrentSearchParam, navigateToLoggedOut } from '@/router/navigation';
 
 /**
  * Recovers from an expired session. The auth middleware flips the `expired`
  * flag in the URL on a persistent 401; this gate is the only place that reacts
  * to it for the user:
- *   - Guests (anonymous, or unknown) self-heal silently — we drop the flag and
+ *   - Established guests self-heal silently — we drop the flag and
  *     any stale character id so `useAuth` bootstraps a fresh guest session and
  *     the app lands on a clean home. Nothing the guest could "recover" is lost
  *     that re-authenticating would bring back.
@@ -24,10 +24,15 @@ import { CHARACTER_ID_QUERY_PARAM, clearCurrentSearchParam } from '@/router/navi
 export function SessionExpiredGate() {
     const { t } = useTranslation();
     const { isSessionExpired, clearSessionExpiredFlag } = useSessionExpiredFlag();
-    const wasAccount = getLastAuthKind() === 'account';
+    const lastAuthKind = getLastAuthKind();
+    const wasAccount = lastAuthKind === 'account';
 
     useEffect(() => {
         if (!isSessionExpired || wasAccount) {
+            return;
+        }
+        if (!lastAuthKind) {
+            void navigateToLoggedOut();
             return;
         }
 
@@ -37,7 +42,7 @@ export function SessionExpiredGate() {
             await clearCurrentSearchParam(CHARACTER_ID_QUERY_PARAM);
             await clearSessionExpiredFlag();
         })();
-    }, [isSessionExpired, wasAccount, clearSessionExpiredFlag]);
+    }, [isSessionExpired, wasAccount, lastAuthKind, clearSessionExpiredFlag]);
 
     if (!isSessionExpired || !wasAccount) {
         return null;

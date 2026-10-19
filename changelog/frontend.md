@@ -10,6 +10,7 @@
 
 ## Bug fixes
 
+- Public browsing no longer creates guest users. Guest sessions begin when rolling a character or starting a draft; private links offer recovery without creating a replacement owner. Crawler telemetry suppresses only classified expected session outcomes and keeps public-content failures visible.
 - The app should no longer erase an item saved in another tab when you edit an older inventory. Conflicting edits are rejected with an explanation.
 - Logging out lands on the home page instead of a "Page Not Found" screen, and stays usable after a reload.
 - Saving a resumed class draft no longer says the draft wouldn't load after the class saved.

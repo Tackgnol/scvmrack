@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { ErrorEvent, EventHint } from "@sentry/react";
 import { monitoringOperation, prepareFrontendEvent } from "@/monitoring";
 import { toApiClientError } from "@/utils/errorUtils";
+import { AnonymousSessionUnavailableError } from '@/auth';
 
 const event = (overrides: Partial<ErrorEvent> = {}): ErrorEvent => ({
   type: undefined,
@@ -77,7 +78,7 @@ describe("prepareFrontendEvent", () => {
     ).toBe(appEvent);
   });
 
-  it("drops crawler events", () => {
+  it("keeps ambiguous crawler session failures", () => {
     const crawlerEvent = event({
       message: "Anonymous session did not start",
       contexts: {
@@ -88,15 +89,36 @@ describe("prepareFrontendEvent", () => {
 
     expect(
       prepareFrontendEvent(crawlerEvent, hint(new Error(crawlerEvent.message))),
-    ).toBeNull();
+    ).toBe(crawlerEvent);
   });
 
-  it("drops crawler events from search indexers", () => {
+  it("keeps public rendering failures from search indexers", () => {
     const indexerEvent = event({
       contexts: { browser: { name: "meta-webindexer", version: "1.1" } },
     });
 
-    expect(prepareFrontendEvent(indexerEvent, hint(new Error("x")))).toBeNull();
+    expect(prepareFrontendEvent(indexerEvent, hint(new Error("x")))).toBe(indexerEvent);
+  });
+
+  it.each([
+    'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
+    'Mozilla/5.0 (compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm)',
+    'meta-webindexer/1.1 (+https://developers.facebook.com/docs/sharing/webmasters/crawler)',
+  ])('filters only classified expected session outcomes from raw User-Agent: %s', (userAgent) => {
+    const rawEvent = event({ request: { headers: { 'User-Agent': userAgent } } });
+    expect(prepareFrontendEvent(rawEvent, hint(new AnonymousSessionUnavailableError()))).toBeNull();
+    for (const message of ['Public page crashed', 'Anonymous session did not start', 'Could not verify anonymous session', 'Failed to fetch dynamically imported module']) {
+      expect(prepareFrontendEvent(rawEvent, hint(new Error(message)))).toBe(rawEvent);
+    }
+    expect(prepareFrontendEvent(rawEvent, hint(toApiClientError({}, new Response(null, { status: 503 }))))).toBe(rawEvent);
+  });
+
+  it('keeps normal-browser and unknown-client session failures', () => {
+    const clients: Record<string, string>[] = [{ 'user-agent': 'Mozilla/5.0 Chrome/140.0' }, {}];
+    for (const headers of clients) {
+      const rawEvent = event({ request: { headers } });
+      expect(prepareFrontendEvent(rawEvent, hint(new AnonymousSessionUnavailableError()))).toBe(rawEvent);
+    }
   });
 
   it.each([
@@ -132,12 +154,12 @@ describe("prepareFrontendEvent", () => {
     "Failed to fetch",
     "NetworkError when attempting to fetch resource.",
     "Load failed",
-  ])("drops dropped-connection errors (%s)", (message) => {
+  ])("keeps network failures with an unknown cause (%s)", (message) => {
     const networkEvent = event({ tags: { operation: "list_characters" } });
 
     expect(
       prepareFrontendEvent(networkEvent, hint(new TypeError(message))),
-    ).toBeNull();
+    ).toBe(networkEvent);
   });
 
   it("keeps stale-chunk import failures", () => {

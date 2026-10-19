@@ -17,7 +17,7 @@ import type { CharacterResponse } from '@/hooks/models';
 import { usePrivacyAcknowledged } from '@/privacy/privacyConsent';
 import { useSnackbar } from '@/SnackbarContext/SnackbarProvider.tsx';
 import { useErrorFeedback } from '@/components/molecules/feedback/ErrorFeedbackProvider';
-import { getUserFacingApiErrorMessage, isApiNotFound } from '@/utils/errorUtils';
+import { getUserFacingApiErrorMessage, isApiNotFound, toApiClientError } from '@/utils/errorUtils';
 
 import { useCallback, useEffect, useRef, useSyncExternalStore } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -102,11 +102,14 @@ export function useCurrentCharacter() {
     () => '/'
   );
 
-  const { isAuthenticated, isGuest, isLoading: authLoading } = useAuth();
   const privacyAcknowledged = usePrivacyAcknowledged();
+  const isCreationRoute = pathname === '/character' || pathname === '/character/new';
+  const { isAuthenticated, isGuest, isSessionless, isLoading: authLoading, error: authError } = useAuth({
+    bootstrapAnonymous: isCreationRoute && privacyAcknowledged && !isJustLoggedOut,
+  });
 
   const repo = useCharacterRepository(characterId, locale, {
-    enabled: !isSessionExpired,
+    enabled: !isSessionExpired && !authLoading && !isSessionless,
   });
   const isReadOnly = repo.character?.viewerAccess === 'party';
   const editor = useCharacterEditor(
@@ -133,7 +136,7 @@ export function useCurrentCharacter() {
   const { setAutoCreateFailed, checkingExisting } =
     useAutoCreateCharacter({
       pathname,
-      authLoading,
+      authLoading: authLoading || Boolean(authError) || (!isAuthenticated && !isGuest),
       privacyAcknowledged,
       characterId,
       isJustLoggedOut,
@@ -237,7 +240,10 @@ export function useCurrentCharacter() {
     lastCharacterId,
     character: visibleCharacter,
     isReadOnly,
-    error: missingCharacterError ?? repo.error,
+    error: missingCharacterError ?? repo.error ?? authError ??
+      (characterId && isSessionless
+        ? toApiClientError({ status: 401, message: 'A session is required to open this character' })
+        : null),
     isLoading:
       repo.isLoading ||
       repo.createCharacter.isPending ||
