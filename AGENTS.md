@@ -2,6 +2,8 @@
 
 This file guides coding agents (Codex, Claude Code, and others) working in this repository. It is the single source of agent instructions; `CLAUDE.md` imports it and adds only Claude-specific notes.
 
+Always use braces for `if`, `else`, and `for` statement bodies, including single-line bodies.
+
 ## Project Overview
 
 MÖRK BORG Character Sheet is a full-stack TTRPG character management app with a neo-brutalist punk aesthetic. The repository is a two-app monorepo:

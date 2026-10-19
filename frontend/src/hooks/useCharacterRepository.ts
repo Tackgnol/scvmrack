@@ -1,5 +1,5 @@
 import { $api, authKeys, characterKeys, client } from "@/api";
-import { ensureAnonymousSession } from '@/auth';
+import { ensureAnonymousSession, type AuthSession } from '@/auth';
 
 import { CharacterResponse } from "@/hooks/models.ts";
 import { getApiLocale, getCharacterKey } from "@/hooks/utils.ts";
@@ -46,7 +46,7 @@ export function useCharacterRepository(
             signal?: AbortSignal;
         }) => {
             const { signal, ...request } = vars;
-            const session = await ensureAnonymousSession();
+            const session = await ensureAnonymousSession(queryClient.getQueryData<AuthSession>(authKeys.session()));
             signal?.throwIfAborted();
             queryClient.setQueryData(authKeys.session(), session);
             const { data, error, response } = await client.POST('/api/characters/new', {

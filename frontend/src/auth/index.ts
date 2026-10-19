@@ -137,6 +137,9 @@ async function startAnonymousSession(): Promise<AuthSession> {
       return await fetchSession();
     } catch (error) {
       if (error instanceof SessionReadError && error.httpStatus === 429) {
+        if (token) {
+          setTabSession(token);
+        }
         throw error;
       }
       sessionReadFailure ??= error;
@@ -215,7 +218,10 @@ export function bootstrapAnonymousSession(): Promise<AuthSession> {
 // guest character creation). Returns the live session. Imperative on purpose:
 // callers await this instead of racing the background bootstrap query — the
 // whole point of the join flow's KISS rewrite.
-export async function ensureAnonymousSession(): Promise<AuthSession> {
+export async function ensureAnonymousSession(knownSession?: AuthSession | null): Promise<AuthSession> {
+  if (knownSession?.user) {
+    return knownSession;
+  }
   const existing = await fetchSession();
   if (existing?.user) {
     return existing;

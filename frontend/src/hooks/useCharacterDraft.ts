@@ -11,10 +11,11 @@ import {
 } from '@/api/draft';
 import type { CharacterResponse } from '@/hooks/models';
 import { getApiErrorCode, getUserFacingApiErrorMessage } from '@/utils/errorUtils';
-import { ensureAnonymousSession } from '@/auth';
+import { ensureAnonymousSession, type AuthSession } from '@/auth';
 import { authKeys } from '@/api';
 import { useQueryClient } from '@tanstack/react-query';
 import { usePrivacyAcknowledged } from '@/privacy/privacyConsent';
+import { requestOpenPrivacyDrawer } from '@/privacy/privacyDrawerBus';
 
 export const DRAFT_STORAGE_KEY = 'scvmrack.character-draft';
 
@@ -126,7 +127,11 @@ export function useCharacterDraft(locale: string, options: Options = {}) {
 
   const start = useCallback(
     async (choice: StartChoice, seeds?: CharacterDraft['seeds']) => {
-      if (busyRef.current || !privacyAcknowledged) {
+      if (busyRef.current) {
+        return;
+      }
+      if (!privacyAcknowledged) {
+        requestOpenPrivacyDrawer();
         return;
       }
       busyRef.current = true;
@@ -138,7 +143,7 @@ export function useCharacterDraft(locale: string, options: Options = {}) {
       abortRef.current = controller;
 
       try {
-        const session = await ensureAnonymousSession();
+        const session = await ensureAnonymousSession(queryClient.getQueryData<AuthSession>(authKeys.session()));
         controller.signal.throwIfAborted();
         queryClient.setQueryData(authKeys.session(), session);
         const response = await createDraft(

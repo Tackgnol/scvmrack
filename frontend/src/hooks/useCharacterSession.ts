@@ -17,7 +17,7 @@ export function useCharacterSession({
   const auth = useAuth({
     bootstrapAnonymous: isCreationRoute && !characterId && privacyAcknowledged && !isJustLoggedOut,
   });
-  const canAutoCreate = !auth.isLoading && !auth.error && (auth.isAuthenticated || auth.isGuest);
+  const canAutoCreate = !auth.isLoading && (auth.isAuthenticated || auth.isGuest);
   const canReadCharacter = !auth.isLoading && !auth.isSessionless;
   const error = auth.error ?? (characterId && auth.isSessionless
     ? toApiClientError({ status: 401, message: 'A session is required to open this character' })

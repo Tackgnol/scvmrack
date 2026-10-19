@@ -64,6 +64,12 @@ describe('auth api helpers', () => {
     );
   });
 
+  it('reuses an already observed session without another auth lookup', async () => {
+    const account = { session: { id: 'account-session' }, user: { id: 'account', isAnonymous: false } };
+    await expect(ensureAnonymousSession(account)).resolves.toEqual(account);
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
   it('throws when fetching the session fails', async () => {
     mockFetch.mockResolvedValueOnce({ status: 500, ok: false });
 
@@ -284,6 +290,23 @@ describe('auth api helpers', () => {
         .mockResolvedValue({ status: 429, ok: false });
       await expect(run()).rejects.toMatchObject({ httpStatus: 429 });
       expect(urls().filter((url) => url.includes('get-session'))).toHaveLength(1);
+    });
+
+    it('keeps the minted token after a rate-limited read so the next action reuses the owner', async () => {
+      mockFetch.mockResolvedValueOnce(signInResponse(200, 'retained-token'))
+        .mockResolvedValueOnce({ status: 429, ok: false });
+
+      await expect(run()).rejects.toMatchObject({ httpStatus: 429 });
+      expect(sessionStorage.getItem('scvm.tabSession')).toBe('retained-token');
+      expect(urls().filter((url) => url.includes('get-session'))).toHaveLength(1);
+
+      mockFetch.mockResolvedValueOnce(sessionResponse(user));
+      await expect(ensureAnonymousSession()).resolves.toEqual(user);
+      expect(mockFetch).toHaveBeenLastCalledWith(
+        'https://api.example.test/api/auth/get-session',
+        expect.objectContaining({ headers: { Authorization: 'Bearer retained-token' } }),
+      );
+      expect(urls().filter((url) => url.includes('sign-in'))).toHaveLength(1);
     });
 
     it('keeps a network failure followed by empty reads observable', async () => {

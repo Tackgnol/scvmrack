@@ -20,6 +20,8 @@ Owner approved the scenarios in `features/session-free-browsing.feature` and the
 
 `isGuest` means an established anonymous owner. A visitor with no session is separately exposed as `isSessionless`; it must not enable guest replacement protection or private queries.
 
+Only a successful empty session lookup establishes `isSessionless`. Lookup errors leave identity unknown and allow cookie-authenticated character reads; the backend still enforces access. Creation reuses the session already observed in the query cache. If storage writes fail, acknowledgement and the last observed auth kind survive in memory for the current document. A 429 during bootstrap preserves any minted tab token without retrying that request.
+
 ## Ownership and monitoring
 
 The pilot uses the existing app-local auth helper and shared-auth's existing endpoints. Concurrent creation actions share only an in-flight bootstrap promise; no successful session is held globally for later owners. Public composition and route policy stay app-local. No new package, shared-auth release or other-app adoption is included. The RPG-296 audit found Murmur affected, Roster and Constancia structurally safe for this trigger, and the remaining consumers unverified; those are later efforts.

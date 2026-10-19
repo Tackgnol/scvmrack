@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { hasCurrentSearchParam } from '@/router/navigation';
 import { bootstrapAnonymousSession, fetchSession, signOut } from '@/auth';
 import { appHistory } from '@/router/history';
+import { clearLastAuthKind, getLastAuthKind } from '@/preferences/lastAuthKind';
 
 vi.mock('@tanstack/react-query', () => ({
   useQuery: vi.fn(),
@@ -232,12 +233,13 @@ test('public consumers remain sessionless instead of starting a guest session', 
     if (options.queryKey.includes('anonymous-bootstrap')) {
       expect(options.enabled).toBe(false);
     }
-    return { data: null, isLoading: false, isFetching: false } as never;
+    return { data: null, isSuccess: true, isLoading: false, isFetching: false } as never;
   });
 
   const { result } = renderHook(() => useAuth());
 
   expect(result.current.isGuest).toBe(false);
+  expect(result.current.isSessionless).toBe(true);
   expect(result.current.isLoading).toBe(false);
 });
 
@@ -246,7 +248,7 @@ test('a failed session read never triggers anonymous sign-in', () => {
   const failure = new Error('Auth service unavailable');
   vi.mocked(useQuery).mockImplementation((options: any) => {
     if (options.queryKey.includes('session')) {
-      return { isError: true, error: failure, isLoading: false } as never;
+      return { isError: true, isSuccess: false, error: failure, isLoading: false } as never;
     }
     expect(options.enabled).toBe(false);
     return { isFetching: false } as never;
@@ -254,6 +256,33 @@ test('a failed session read never triggers anonymous sign-in', () => {
   const { result } = renderHook(() => useAuth({ bootstrapAnonymous: true }));
   expect(result.current.error).toBe(failure);
   expect(result.current.isGuest).toBe(false);
+  expect(result.current.isSessionless).toBe(false);
+});
+
+test('an observed guest stays recoverable in memory when storage writes fail', async () => {
+  const blockedWrite = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+    throw new DOMException('Storage blocked', 'SecurityError');
+  });
+  const blockedRemoval = vi.spyOn(Storage.prototype, 'removeItem').mockImplementation(() => {
+    throw new DOMException('Storage blocked', 'SecurityError');
+  });
+  vi.mocked(useQueryClient).mockReturnValue({ setQueryData: vi.fn() } as never);
+  vi.mocked(useQuery).mockImplementation((options: any) => {
+    return options.queryKey.includes('session')
+      ? { data: { session: {}, user: { id: 'remembered-guest', isAnonymous: true } }, isSuccess: true, isLoading: false } as never
+      : { isFetching: false } as never;
+  });
+  try {
+    const { result } = renderHook(() => useAuth());
+    expect(getLastAuthKind()).toBe('anonymous');
+    await result.current.signOut.mutateAsync();
+    mutationConfigs[0].onSuccess?.();
+    expect(getLastAuthKind()).toBeNull();
+  } finally {
+    blockedWrite.mockRestore();
+    blockedRemoval.mockRestore();
+    clearLastAuthKind();
+  }
 });
 
 test('useAuth skips anonymous bootstrap on invite routes by default', () => {

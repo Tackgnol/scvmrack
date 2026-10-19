@@ -5,14 +5,20 @@ import { isBrowserRuntime } from '@/platform/runtime';
 // session itself is already gone — so we record this while the session is alive
 // and read it on expiry to decide how to recover: silently bootstrap a fresh
 // guest session (anonymous), or prompt the user to sign in again (account).
-// Losing this value just falls back to the silent-guest path, which is safe.
+// Keep the live kind in memory when storage fails. With no observed kind,
+// expiry returns to public browsing instead of assuming a guest owner existed.
 const LAST_AUTH_KIND_STORAGE_KEY = 'scvmrack-last-auth-kind-v1';
 
 export type AuthKind = 'account' | 'anonymous';
 
+let observedAuthKind: AuthKind | null | undefined;
+
 export const getLastAuthKind = (): AuthKind | null => {
     if (!isBrowserRuntime()) {
         return null;
+    }
+    if (observedAuthKind !== undefined) {
+        return observedAuthKind;
     }
 
     try {
@@ -27,11 +33,12 @@ export const setLastAuthKind = (kind: AuthKind): void => {
     if (!isBrowserRuntime()) {
         return;
     }
+    observedAuthKind = kind;
 
     try {
         localStorage.setItem(LAST_AUTH_KIND_STORAGE_KEY, kind);
     } catch {
-        // Ignore storage errors; we fall back to the silent-guest recovery path.
+        // The live kind remains available in this document.
     }
 };
 
@@ -39,6 +46,7 @@ export const clearLastAuthKind = (): void => {
     if (!isBrowserRuntime()) {
         return;
     }
+    observedAuthKind = null;
 
     try {
         localStorage.removeItem(LAST_AUTH_KIND_STORAGE_KEY);

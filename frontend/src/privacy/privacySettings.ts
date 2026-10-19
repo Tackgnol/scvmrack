@@ -12,6 +12,8 @@ const DEFAULT_PRIVACY_SETTINGS: PrivacySettings = {
     analyticsEnabled: false,
 };
 
+let volatileSettings: PrivacySettings | null = null;
+
 const isPrivacySettings = (value: unknown): value is PrivacySettings => {
     if (!value || typeof value !== 'object') {
         return false;
@@ -31,6 +33,9 @@ export const getDefaultPrivacySettings = (): PrivacySettings => {
 export const getPrivacySettings = (): PrivacySettings => {
     if (!isBrowserRuntime()) {
         return getDefaultPrivacySettings();
+    }
+    if (volatileSettings) {
+        return { ...volatileSettings };
     }
 
     try {
@@ -57,8 +62,9 @@ export const savePrivacySettings = (settings: PrivacySettings): void => {
 
     try {
         localStorage.setItem(PRIVACY_SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+        volatileSettings = null;
     } catch {
-        // Ignore storage errors; app should continue to function.
+        volatileSettings = { ...settings };
     }
 };
 

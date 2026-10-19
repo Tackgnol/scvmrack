@@ -8,7 +8,7 @@ vi.mock('@/auth', () => ({ ensureAnonymousSession: vi.fn() }));
 vi.mock('@/privacy/privacyConsent', () => ({ usePrivacyAcknowledged: () => true }));
 
 vi.mock('@tanstack/react-query', () => ({
-  useQueryClient: () => ({ setQueryData: vi.fn() }),
+  useQueryClient: () => ({ setQueryData: vi.fn(), getQueryData: vi.fn() }),
 }));
 
 vi.mock('@/api/draft', async (importOriginal) => {

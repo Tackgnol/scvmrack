@@ -142,9 +142,8 @@ export function useAuth(options: UseAuthOptions = {}) {
     // loading), so there is a render where neither query reports loading but no
     // anonymous cookie exists yet. Without this, first-run flows (guest
     // auto-create, party-join redemption) fire against a not-yet-minted session,
-    // race the bootstrap, and stall on an endless spinner. Gated on the
-    // request's own outcome (`data`/`isError`) so a sign-in that resolves
-    // without producing a user can never hang loading forever.
+    // race the bootstrap, and stall on an endless spinner. Loading ends when
+    // the session cache receives its user or bootstrap reports an error.
     const isBootstrappingAnonymous =
         anonymousBootstrapEnabled &&
         !anonymousBootstrapQuery.isError;
@@ -167,7 +166,7 @@ export function useAuth(options: UseAuthOptions = {}) {
         session: isSessionExpired ? null : sessionData,
         isAuthenticated: Boolean(effectiveSessionUser) && !isAnonymousUser,
         isGuest: !isSessionExpired && isAnonymousUser,
-        isSessionless: !isSessionExpired && !sessionQuery.isLoading && !sessionUser,
+        isSessionless: !isSessionExpired && sessionQuery.isSuccess && !sessionUser,
         error: sessionQuery.error ?? (anonymousBootstrapEnabled ? anonymousBootstrapQuery.error : null),
         isLoading:
             sessionQuery.isLoading ||
