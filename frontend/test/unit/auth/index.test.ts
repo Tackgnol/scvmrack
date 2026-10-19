@@ -292,5 +292,18 @@ describe('auth api helpers', () => {
         .mockResolvedValue(sessionResponse(null));
       await expect(run()).rejects.toMatchObject({ code: 'AUTH_SESSION_VERIFICATION_FAILED' });
     });
+
+    it('does not classify a tab fallback after a server failure as expected session noise', async () => {
+      mockFetch.mockResolvedValueOnce(signInResponse(200, 'tab-token'))
+        .mockResolvedValueOnce({ status: 503, ok: false })
+        .mockResolvedValueOnce(sessionResponse(null))
+        .mockResolvedValueOnce(sessionResponse(null))
+        .mockResolvedValueOnce(sessionResponse(user));
+      await expect(run()).resolves.toEqual(user);
+      expect(Sentry.captureMessage).toHaveBeenCalledWith(
+        'Anonymous session fell back to tab-only token',
+        expect.objectContaining({ tags: { source: 'auth', anonymous_bootstrap: 'tab-session-after-failure' } }),
+      );
+    });
   });
 });

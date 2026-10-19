@@ -2,6 +2,12 @@ import { expect, test, type Page } from '@playwright/test';
 
 const characterId = '11111111-1111-4111-8111-111111111111';
 const guest = { session: { id: 'session' }, user: { id: 'guest', isAnonymous: true } };
+const character = {
+  id: characterId, name: 'Recovered Scvm', classId: 1, className: 'Test Scvm',
+  strength: 10, agility: 10, presence: 10, toughness: 10,
+  maxHp: 5, currentHp: 5, omens: 2, silver: 50,
+  equipment: [], storage: [], equippedWeapons: [], equippedArmor: null, abilities: [],
+};
 
 async function publicApi(page: Page, initialSession: unknown = null) {
   let session = initialSession;
@@ -36,14 +42,20 @@ async function publicApi(page: Page, initialSession: unknown = null) {
     };
     else if (path === '/api/characters/draft') {
       expect(session).toEqual(guest);
-      status = 503;
-      body = { message: 'Test draft failure after session activation' };
+      body = {
+        draft: { classId: 1, classless: false, seeds: Object.fromEntries(
+          ['name', 'stats', 'omens', 'silver', 'origin', 'abilities', 'gear', 'personality']
+            .map((section) => [section, 'a'.repeat(64)]),
+        ) },
+        preview: { ...character, id: undefined },
+      };
     } else if (path === '/api/characters/new') {
       expect(session).toBeTruthy();
-      status = 503;
-      body = { message: 'Test character failure after session activation' };
+      status = 201;
+      body = character;
     } else if (path === `/api/characters/${characterId}`) {
-      status = 403; body = { message: 'Not your character' };
+      status = session ? 200 : 403;
+      body = session ? character : { message: 'Not your character' };
     }
     await route.fulfill({ status, json: body, headers: {
       'access-control-allow-origin': new URL(page.url()).origin,
@@ -89,6 +101,10 @@ test('choosing a draft starts a session before the draft request', async ({ page
   await expect.poll(() => calls).toContain('POST /api/characters/draft');
   expect(calls.indexOf('POST /api/auth/sign-in/anonymous')).toBeLessThan(calls.indexOf('POST /api/characters/draft'));
   expect(calls.filter((call) => call === 'POST /api/auth/sign-in/anonymous')).toHaveLength(1);
+  await expect(page.getByTestId('draft-stats')).toBeVisible();
+  await page.getByTestId('create-confirm-button').click();
+  await expect(page).toHaveURL(new RegExp(`/character/${characterId}$`));
+  await expect(page.getByRole('textbox', { name: 'Hit Points', exact: true })).toHaveValue('5');
 });
 
 test('direct creation waits for storage acknowledgement and a session', async ({ page }) => {
@@ -99,15 +115,26 @@ test('direct creation waits for storage acknowledgement and a session', async ({
   await acknowledgeStorage(page);
   await expect.poll(() => calls).toContain('POST /api/characters/new');
   expect(calls.indexOf('POST /api/auth/sign-in/anonymous')).toBeLessThan(calls.indexOf('GET /api/characters'));
+  await expect(page.getByRole('textbox', { name: 'Hit Points', exact: true })).toHaveValue('5');
 });
 
-test('private character links without a session show recovery without minting an owner', async ({ page }) => {
+for (const path of [`/character/${characterId}`, `/character/new?character=${characterId}`]) {
+test(`private character link ${path} shows recovery without minting an owner`, async ({ page }) => {
   const calls = await publicApi(page);
-  await page.goto(`/character/${characterId}`);
+  await page.goto(path);
   await acknowledgeStorage(page);
   await expect(page.getByRole('dialog')).toBeVisible();
   expect(calls).not.toContain('POST /api/auth/sign-in/anonymous');
   expect(calls).not.toContain('POST /api/characters/new');
+});
+}
+
+test('legacy character entry does not mint a guest even when the existing router rejects it', async ({ page }) => {
+  const calls = await publicApi(page);
+  await page.goto(`/character?character=${characterId}`);
+  await acknowledgeStorage(page);
+  await expect(page.getByRole('heading', { name: '404', exact: true })).toBeVisible();
+  expect(calls.filter((call) => call.startsWith('POST '))).toEqual([]);
 });
 
 test('returning guest and account sessions never create replacement guests', async ({ page }) => {
@@ -116,7 +143,7 @@ test('returning guest and account sessions never create replacement guests', asy
     await page.goto(`/character/${characterId}`);
     const notice = page.getByTestId('privacy-drawer-save-button');
     if (await notice.isVisible()) await acknowledgeStorage(page);
-    await expect(page.getByRole('dialog')).toBeVisible();
+    await expect(page.getByRole('textbox', { name: 'Hit Points', exact: true })).toHaveValue('5');
     expect(calls).toContain(`GET /api/characters/${characterId}`);
     expect(calls).not.toContain('POST /api/auth/sign-in/anonymous');
     await page.unrouteAll({ behavior: 'wait' });

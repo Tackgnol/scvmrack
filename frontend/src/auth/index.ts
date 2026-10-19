@@ -182,14 +182,17 @@ async function startAnonymousSession(): Promise<AuthSession> {
             Sentry.captureMessage('Anonymous session fell back to tab-only token', {
               level: 'warning',
               fingerprint: ['anonymous-bootstrap-tab-session'],
-              tags: { source: 'auth', anonymous_bootstrap: 'tab-session' },
+              tags: {
+                source: 'auth',
+                anonymous_bootstrap: sessionReadFailure || firstFailure ? 'tab-session-after-failure' : 'tab-session',
+              },
             });
             return session;
           }
           setTabSession(null);
         }
-        if (sessionReadFailure) {
-          throw new SessionVerificationError(sessionReadFailure);
+        if (sessionReadFailure || firstFailure) {
+          throw new SessionVerificationError(sessionReadFailure ?? firstFailure);
         }
         throw new AnonymousSessionUnavailableError();
       }

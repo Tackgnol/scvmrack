@@ -1,4 +1,4 @@
-import { useAuth } from '@/hooks/useAuth.ts';
+import { useCharacterSession } from '@/hooks/useCharacterSession';
 import { useCharacterActions } from '@/hooks/useCharacterActions.ts';
 import { useAutoCreateCharacter } from '@/hooks/useAutoCreateCharacter.ts';
 import { useCharacterEditor } from '@/hooks/useCharacterEditor.ts';
@@ -14,10 +14,9 @@ import {
 import { getApiLocale, getCharacterKey } from '@/hooks/utils.ts';
 import { characterKeys } from '@/api';
 import type { CharacterResponse } from '@/hooks/models';
-import { usePrivacyAcknowledged } from '@/privacy/privacyConsent';
 import { useSnackbar } from '@/SnackbarContext/SnackbarProvider.tsx';
 import { useErrorFeedback } from '@/components/molecules/feedback/ErrorFeedbackProvider';
-import { getUserFacingApiErrorMessage, isApiNotFound, toApiClientError } from '@/utils/errorUtils';
+import { getUserFacingApiErrorMessage, isApiNotFound } from '@/utils/errorUtils';
 
 import { useCallback, useEffect, useRef, useSyncExternalStore } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -102,14 +101,13 @@ export function useCurrentCharacter() {
     () => '/'
   );
 
-  const privacyAcknowledged = usePrivacyAcknowledged();
-  const isCreationRoute = pathname === '/character' || pathname === '/character/new';
-  const { isAuthenticated, isGuest, isSessionless, isLoading: authLoading, error: authError } = useAuth({
-    bootstrapAnonymous: isCreationRoute && privacyAcknowledged && !isJustLoggedOut,
-  });
+  const {
+    isAuthenticated, isGuest, isLoading: authLoading, error: authError,
+    privacyAcknowledged, canAutoCreate, canReadCharacter,
+  } = useCharacterSession({ pathname, characterId, isJustLoggedOut });
 
   const repo = useCharacterRepository(characterId, locale, {
-    enabled: !isSessionExpired && !authLoading && !isSessionless,
+    enabled: !isSessionExpired && canReadCharacter,
   });
   const isReadOnly = repo.character?.viewerAccess === 'party';
   const editor = useCharacterEditor(
@@ -136,7 +134,7 @@ export function useCurrentCharacter() {
   const { setAutoCreateFailed, checkingExisting } =
     useAutoCreateCharacter({
       pathname,
-      authLoading: authLoading || Boolean(authError) || (!isAuthenticated && !isGuest),
+      authLoading: !canAutoCreate,
       privacyAcknowledged,
       characterId,
       isJustLoggedOut,
@@ -240,10 +238,7 @@ export function useCurrentCharacter() {
     lastCharacterId,
     character: visibleCharacter,
     isReadOnly,
-    error: missingCharacterError ?? repo.error ?? authError ??
-      (characterId && isSessionless
-        ? toApiClientError({ status: 401, message: 'A session is required to open this character' })
-        : null),
+    error: missingCharacterError ?? repo.error ?? authError,
     isLoading:
       repo.isLoading ||
       repo.createCharacter.isPending ||
