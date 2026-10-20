@@ -11,13 +11,14 @@ const LAST_AUTH_KIND_STORAGE_KEY = 'scvmrack-last-auth-kind-v1';
 
 export type AuthKind = 'account' | 'anonymous';
 
-let observedAuthKind: AuthKind | null | undefined;
+let observedAuthKind: AuthKind | null = null;
+let storageWriteFailed = false;
 
 export const getLastAuthKind = (): AuthKind | null => {
     if (!isBrowserRuntime()) {
         return null;
     }
-    if (observedAuthKind !== undefined) {
+    if (storageWriteFailed) {
         return observedAuthKind;
     }
 
@@ -25,7 +26,7 @@ export const getLastAuthKind = (): AuthKind | null => {
         const value = localStorage.getItem(LAST_AUTH_KIND_STORAGE_KEY);
         return value === 'account' || value === 'anonymous' ? value : null;
     } catch {
-        return null;
+        return observedAuthKind;
     }
 };
 
@@ -37,8 +38,9 @@ export const setLastAuthKind = (kind: AuthKind): void => {
 
     try {
         localStorage.setItem(LAST_AUTH_KIND_STORAGE_KEY, kind);
+        storageWriteFailed = false;
     } catch {
-        // The live kind remains available in this document.
+        storageWriteFailed = true;
     }
 };
 
@@ -50,7 +52,8 @@ export const clearLastAuthKind = (): void => {
 
     try {
         localStorage.removeItem(LAST_AUTH_KIND_STORAGE_KEY);
+        storageWriteFailed = false;
     } catch {
-        // Ignore storage errors.
+        storageWriteFailed = true;
     }
 };

@@ -285,6 +285,25 @@ test('an observed guest stays recoverable in memory when storage writes fail', a
   }
 });
 
+test('recovery sees auth-kind changes from another tab when storage works', () => {
+  vi.mocked(useQueryClient).mockReturnValue({ setQueryData: vi.fn() } as never);
+  vi.mocked(useQuery).mockImplementation((options: any) => {
+    return options.queryKey.includes('session')
+      ? { data: { session: {}, user: { id: 'guest-before-account-link', isAnonymous: true } }, isSuccess: true, isLoading: false } as never
+      : { isFetching: false } as never;
+  });
+  try {
+    renderHook(() => useAuth());
+    expect(getLastAuthKind()).toBe('anonymous');
+    localStorage.setItem('scvmrack-last-auth-kind-v1', 'account');
+    expect(getLastAuthKind()).toBe('account');
+    localStorage.removeItem('scvmrack-last-auth-kind-v1');
+    expect(getLastAuthKind()).toBeNull();
+  } finally {
+    clearLastAuthKind();
+  }
+});
+
 test('useAuth skips anonymous bootstrap on invite routes by default', () => {
   const queryClient = { invalidateQueries: vi.fn(), setQueryData: vi.fn() };
   (useQueryClient as any).mockReturnValue(queryClient);
