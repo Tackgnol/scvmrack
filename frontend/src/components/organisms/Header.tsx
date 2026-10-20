@@ -37,7 +37,6 @@ export default function Header() {
   });
   const isJoinRoute = pathname.startsWith('/join/');
   const { isAuthenticated, signOut } = useAuth({
-    bootstrapAnonymous: !isJoinRoute,
     fetchSession: !isJoinRoute,
   });
   const {

@@ -11,6 +11,11 @@ import {
 } from '@/api/draft';
 import type { CharacterResponse } from '@/hooks/models';
 import { getApiErrorCode, getUserFacingApiErrorMessage } from '@/utils/errorUtils';
+import { ensureAnonymousSession, type AuthSession } from '@/auth';
+import { authKeys } from '@/api';
+import { useQueryClient } from '@tanstack/react-query';
+import { usePrivacyAcknowledged } from '@/privacy/privacyConsent';
+import { requestOpenPrivacyDrawer } from '@/privacy/privacyDrawerBus';
 
 export const DRAFT_STORAGE_KEY = 'scvmrack.character-draft';
 
@@ -63,6 +68,8 @@ function fallbackT(_key: string, fallback: string): string {
  * previews are always re-derived from the server.
  */
 export function useCharacterDraft(locale: string, options: Options = {}) {
+  const queryClient = useQueryClient();
+  const privacyAcknowledged = usePrivacyAcknowledged();
   const [phase, setPhase] = useState<DraftPhase>('class-gate');
   const [draft, setDraft] = useState<CharacterDraft | null>(null);
   const [preview, setPreview] = useState<CharacterResponse | null>(null);
@@ -123,6 +130,10 @@ export function useCharacterDraft(locale: string, options: Options = {}) {
       if (busyRef.current) {
         return;
       }
+      if (!privacyAcknowledged) {
+        requestOpenPrivacyDrawer();
+        return;
+      }
       busyRef.current = true;
       setIsStarting(true);
       setError(null);
@@ -132,6 +143,9 @@ export function useCharacterDraft(locale: string, options: Options = {}) {
       abortRef.current = controller;
 
       try {
+        const session = await ensureAnonymousSession(queryClient.getQueryData<AuthSession>(authKeys.session()));
+        controller.signal.throwIfAborted();
+        queryClient.setQueryData(authKeys.session(), session);
         const response = await createDraft(
           seeds ? { ...choice, seeds } : choice,
           locale,
@@ -153,7 +167,7 @@ export function useCharacterDraft(locale: string, options: Options = {}) {
         setIsStarting(false);
       }
     },
-    [locale, inviteToken, obrRoomId, obrPlayerId, applyResponse, clearStored],
+    [locale, inviteToken, obrRoomId, obrPlayerId, applyResponse, clearStored, queryClient, privacyAcknowledged],
   );
 
   const reroll = useCallback(
@@ -302,6 +316,9 @@ export function useCharacterDraft(locale: string, options: Options = {}) {
   }, [clearStored]);
 
   useEffect(() => {
+    if (!privacyAcknowledged) {
+      return;
+    }
     let stored: CharacterDraft | null = null;
     try {
       const raw = sessionStorage.getItem(storageKey);
@@ -321,9 +338,9 @@ export function useCharacterDraft(locale: string, options: Options = {}) {
     }
 
     void start(choiceFromDraft(stored), stored.seeds);
-    // Mount-only rehydration by design.
+    // Rehydrate on mount or when the visitor acknowledges storage.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [privacyAcknowledged]);
 
   // The preview carries localized catalog text, so a language switch re-derives it from the same seeds.
   const previewLocaleRef = useRef(locale);

@@ -10,7 +10,7 @@ import { useCallback } from 'react';
 // shared-auth (signInViaObrPopup). Throws Error('popup-blocked') when the
 // popup can't open — callers surface a click-to-open fallback.
 export function useObrSession() {
-    const auth = useAuth();
+    const auth = useAuth({ bootstrapAnonymous: true });
     const queryClient = useQueryClient();
 
     const signIn = useCallback(async (): Promise<void> => {

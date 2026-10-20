@@ -1,4 +1,4 @@
-import { useAuth } from '@/hooks/useAuth.ts';
+import { useCharacterSession } from '@/hooks/useCharacterSession';
 import { useCharacterActions } from '@/hooks/useCharacterActions.ts';
 import { useAutoCreateCharacter } from '@/hooks/useAutoCreateCharacter.ts';
 import { useCharacterEditor } from '@/hooks/useCharacterEditor.ts';
@@ -14,7 +14,6 @@ import {
 import { getApiLocale, getCharacterKey } from '@/hooks/utils.ts';
 import { characterKeys } from '@/api';
 import type { CharacterResponse } from '@/hooks/models';
-import { usePrivacyAcknowledged } from '@/privacy/privacyConsent';
 import { useSnackbar } from '@/SnackbarContext/SnackbarProvider.tsx';
 import { useErrorFeedback } from '@/components/molecules/feedback/ErrorFeedbackProvider';
 import { getUserFacingApiErrorMessage, isApiNotFound } from '@/utils/errorUtils';
@@ -102,11 +101,13 @@ export function useCurrentCharacter() {
     () => '/'
   );
 
-  const { isAuthenticated, isGuest, isLoading: authLoading } = useAuth();
-  const privacyAcknowledged = usePrivacyAcknowledged();
+  const {
+    isAuthenticated, isGuest, isLoading: authLoading, error: authError,
+    privacyAcknowledged, canAutoCreate, canReadCharacter,
+  } = useCharacterSession({ pathname, characterId, isJustLoggedOut });
 
   const repo = useCharacterRepository(characterId, locale, {
-    enabled: !isSessionExpired,
+    enabled: !isSessionExpired && canReadCharacter,
   });
   const isReadOnly = repo.character?.viewerAccess === 'party';
   const editor = useCharacterEditor(
@@ -133,7 +134,7 @@ export function useCurrentCharacter() {
   const { setAutoCreateFailed, checkingExisting } =
     useAutoCreateCharacter({
       pathname,
-      authLoading,
+      authLoading: !canAutoCreate,
       privacyAcknowledged,
       characterId,
       isJustLoggedOut,
@@ -237,7 +238,7 @@ export function useCurrentCharacter() {
     lastCharacterId,
     character: visibleCharacter,
     isReadOnly,
-    error: missingCharacterError ?? repo.error,
+    error: missingCharacterError ?? repo.error ?? authError,
     isLoading:
       repo.isLoading ||
       repo.createCharacter.isPending ||

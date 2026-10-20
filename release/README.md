@@ -4,7 +4,7 @@ User-facing release notes for **Scvm Rack**, newest first.
 
 | Version | Date | Notes |
 |---|---|---|
-| [0.7.0](./0.7.0.md) | 2026-10-08 | Custom Classes, party pools, public sharing and moderation, plus terms, contact, and privacy pages |
+| [0.7.0](./0.7.0.md) | 2026-10-08 | Custom Classes, party pools, public sharing and moderation, session-free public browsing, plus terms, contact, and privacy pages |
 | [0.6.3](./0.6.3.md) | 2026-10-04 | In-app browsers (Reddit, Facebook) work for the current visit with a warning, plus class-grant, print-sheet and caching fixes |
 | [0.6.2](./0.6.2.md) | 2026-09-19 | Steadier guest sign-in on phones and in-app browsers, and rate limits counted per visitor with more headroom |
 | [0.6.1](./0.6.1.md) | 2026-09-15 | Getting Better advancement, plus anonymous Owlbear characters can open in the full site without losing their in-room session |

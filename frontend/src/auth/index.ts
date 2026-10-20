@@ -17,6 +17,29 @@ export interface AuthSession {
 
 const apiBaseUrl = () => import.meta.env.VITE_BACKEND_URL || '';
 
+export class SessionReadError extends Error {
+  constructor(public httpStatus: number) {
+    super('Failed to fetch auth session');
+  }
+}
+
+export class AnonymousSessionUnavailableError extends Error {
+  readonly code = 'ANONYMOUS_SESSION_UNAVAILABLE';
+
+  constructor() {
+    super('Anonymous session did not start');
+    this.name = 'AnonymousSessionUnavailableError';
+  }
+}
+
+class SessionVerificationError extends Error {
+  readonly code = 'AUTH_SESSION_VERIFICATION_FAILED';
+
+  constructor(readonly cause: unknown) {
+    super('Could not verify anonymous session');
+  }
+}
+
 // Shared-auth intentionally excludes /api/auth/* from CSRF checks; these calls
 // bypass the OpenAPI client so anonymous bootstrap and logout can run before a
 // normal API session exists.
@@ -32,7 +55,7 @@ export async function fetchSession(): Promise<AuthSession | null> {
   }
 
   if (!res.ok) {
-    throw new Error('Failed to fetch auth session');
+    throw new SessionReadError(res.status);
   }
 
   const data = (await res.json()) as AuthSession | null;
@@ -79,14 +102,6 @@ function isRetryableSignInError(error: unknown): boolean {
   return true; // fetch itself rejected: network failure
 }
 
-async function fetchSessionQuietly(): Promise<AuthSession | null> {
-  try {
-    return await fetchSession();
-  } catch {
-    return null;
-  }
-}
-
 // The user got a session, but only after the first attempt failed. Logged at
 // warning level so we can measure how often the old code showed an error here.
 function reportRecovered(
@@ -112,17 +127,32 @@ function reportRecovered(
 // seen from mobile browsers: sign-in 400 (this browser already holds an
 // anonymous session that get-session missed), 5xx/network blips, and a session
 // cookie that is not readable on the very next get-session.
-export async function bootstrapAnonymousSession(): Promise<AuthSession> {
+async function startAnonymousSession(): Promise<AuthSession> {
   let firstFailure: unknown;
   let attempts = 0;
   let token: string | null = null;
+  let sessionReadFailure: unknown;
+  const readSession = async (): Promise<AuthSession | null> => {
+    try {
+      return await fetchSession();
+    } catch (error) {
+      if (error instanceof SessionReadError && error.httpStatus === 429) {
+        if (token) {
+          setTabSession(token);
+        }
+        throw error;
+      }
+      sessionReadFailure ??= error;
+      return null;
+    }
+  };
 
   for (;;) {
     try {
       token = await signInAnonymous();
     } catch (error) {
       firstFailure ??= error;
-      const existing = await fetchSessionQuietly();
+      const existing = await readSession();
       if (existing) {
         reportRecovered('existing-session', firstFailure, attempts);
         return existing;
@@ -137,7 +167,7 @@ export async function bootstrapAnonymousSession(): Promise<AuthSession> {
     // Sign-in minted a session. Poll get-session only: repeating sign-in
     // would mint orphan anonymous users.
     for (let poll = 0; ; poll++) {
-      const created = await fetchSessionQuietly();
+      const created = await readSession();
       if (created) {
         if (firstFailure || poll > 0) {
           reportRecovered(
@@ -150,29 +180,48 @@ export async function bootstrapAnonymousSession(): Promise<AuthSession> {
       }
       if (poll >= RETRY_DELAYS_MS.length) {
         if (token && setTabSession(token)) {
-          const session = await fetchSessionQuietly();
+          const session = await readSession();
           if (session) {
             Sentry.captureMessage('Anonymous session fell back to tab-only token', {
               level: 'warning',
               fingerprint: ['anonymous-bootstrap-tab-session'],
-              tags: { source: 'auth', anonymous_bootstrap: 'tab-session' },
+              tags: {
+                source: 'auth',
+                anonymous_bootstrap: sessionReadFailure || firstFailure ? 'tab-session-after-failure' : 'tab-session',
+              },
             });
             return session;
           }
           setTabSession(null);
         }
-        throw new Error('Anonymous session did not start');
+        if (sessionReadFailure || firstFailure) {
+          throw new SessionVerificationError(sessionReadFailure ?? firstFailure);
+        }
+        throw new AnonymousSessionUnavailableError();
       }
       await sleep(RETRY_DELAYS_MS[poll]);
     }
   }
 }
 
+let pendingBootstrap: Promise<AuthSession> | null = null;
+
+/** Share concurrent creation requests without retaining a previous owner's session. */
+export function bootstrapAnonymousSession(): Promise<AuthSession> {
+  pendingBootstrap ??= startAnonymousSession().finally(() => {
+    pendingBootstrap = null;
+  });
+  return pendingBootstrap;
+}
+
 // Guarantee an active session before a state-changing flow runs (party join,
 // guest character creation). Returns the live session. Imperative on purpose:
 // callers await this instead of racing the background bootstrap query — the
 // whole point of the join flow's KISS rewrite.
-export async function ensureAnonymousSession(): Promise<AuthSession> {
+export async function ensureAnonymousSession(knownSession?: AuthSession | null): Promise<AuthSession> {
+  if (knownSession?.user) {
+    return knownSession;
+  }
   const existing = await fetchSession();
   if (existing?.user) {
     return existing;

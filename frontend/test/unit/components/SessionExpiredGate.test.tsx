@@ -13,6 +13,7 @@ const authKindMock = vi.hoisted(() => ({
 
 const navMocks = vi.hoisted(() => ({
   clearCurrentSearchParam: vi.fn(async (_param: string) => {}),
+  navigateToLoggedOut: vi.fn(async () => {}),
 }));
 
 vi.mock('@components/molecules/modal/MorkBorgModal', () => ({
@@ -55,6 +56,7 @@ vi.mock('@/preferences/lastAuthKind', () => ({
 vi.mock('@/router/navigation', () => ({
   CHARACTER_ID_QUERY_PARAM: 'character',
   clearCurrentSearchParam: navMocks.clearCurrentSearchParam,
+  navigateToLoggedOut: navMocks.navigateToLoggedOut,
 }));
 
 vi.mock('@/auth', () => ({
@@ -71,6 +73,7 @@ beforeEach(() => {
   sessionMocks.isSessionExpired = false;
   sessionMocks.clearSessionExpiredFlag.mockClear();
   navMocks.clearCurrentSearchParam.mockClear();
+  navMocks.navigateToLoggedOut.mockClear();
   authKindMock.value = null;
 });
 
@@ -96,7 +99,7 @@ test('silently self-heals an expired guest: clears stale id + flag, shows no mod
   });
 });
 
-test('treats unknown auth kind as a guest and self-heals silently', async () => {
+test('returns a sessionless visitor to public browsing without activating a guest', async () => {
   sessionMocks.isSessionExpired = true;
   authKindMock.value = null;
 
@@ -104,8 +107,9 @@ test('treats unknown auth kind as a guest and self-heals silently', async () => 
 
   expect(container.firstChild).toBeNull();
   await waitFor(() => {
-    expect(sessionMocks.clearSessionExpiredFlag).toHaveBeenCalled();
+    expect(navMocks.navigateToLoggedOut).toHaveBeenCalled();
   });
+  expect(sessionMocks.clearSessionExpiredFlag).not.toHaveBeenCalled();
 });
 
 test('prompts an expired account instead of healing silently', () => {

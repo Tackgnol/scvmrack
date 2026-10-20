@@ -86,7 +86,7 @@ const listStyles = {
 
 export function CharactersListPage() {
     const { t } = useTranslation();
-    const { isGuest } = useAuth();
+    const { isGuest, isSessionless } = useAuth();
     const {
         characters,
         activeId,
@@ -103,7 +103,7 @@ export function CharactersListPage() {
         confirmDelete,
     } = useCharactersList();
 
-    if (isGuest) {
+    if (isGuest || isSessionless) {
         return (
             <>
                 <Seo

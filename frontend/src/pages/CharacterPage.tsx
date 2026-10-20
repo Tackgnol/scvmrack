@@ -12,6 +12,7 @@ import { PartySheetPill } from '@/components/organisms/party/PartySheetPill';
 import { ForgeBanner } from '@/components/molecules/character-create/ForgeBanner';
 import { useMinimumVisible } from '@/hooks/useMinimumVisible';
 import { useScvmDeathFlow } from '@/hooks/useScvmDeathFlow';
+import { usePrivacyAcknowledged } from '@/privacy/privacyConsent';
 import { appHistory } from '@/router/history';
 import { buildPartyCharacterPath } from '@/router/navigation';
 import { Seo } from '@/seo/Seo';
@@ -95,6 +96,7 @@ export function CharacterPage() {
     } = useCharacter();
 
     const { t } = useTranslation();
+    const privacyAcknowledged = usePrivacyAcknowledged();
     const {
         showUnexpectedError,
         canReportUnexpectedError = true,
@@ -124,17 +126,17 @@ export function CharacterPage() {
     });
 
     const hasLoadError =
-        !isSessionExpired && !!error && !character && !!characterId && !isLoading;
+        privacyAcknowledged && !isSessionExpired && !!error && !character && !isLoading;
     const isNotFound = hasLoadError && isApiNotFound(error);
     const isAccessDenied = hasLoadError && isApiForbidden(error);
     const isUnexpectedLoadError = hasLoadError && isUnexpectedApiError(error);
     const shouldReportUnexpectedLoadError =
-        isUnexpectedLoadError && canReportUnexpectedError;
+        isUnexpectedLoadError && canReportUnexpectedError && !!characterId;
     const hasKnownLoadIssue =
         hasLoadError &&
         !isNotFound &&
         !isAccessDenied &&
-        (!isUnexpectedLoadError || !canReportUnexpectedError);
+        (!characterId || !isUnexpectedLoadError || !canReportUnexpectedError);
 
     const loadIssue: CharacterLoadIssue | null = isNotFound
         ? 'not-found'

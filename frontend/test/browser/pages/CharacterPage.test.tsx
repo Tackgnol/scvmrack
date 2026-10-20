@@ -8,6 +8,7 @@ import { useCharacter } from '@/CharacterContext/CharacterContext';
 import type { ReactNode } from 'react';
 
 const generateNew = vi.fn();
+vi.mock('@/privacy/privacyConsent', () => ({ usePrivacyAcknowledged: () => true }));
 const killAndReplace = vi.fn();
 const recoverInvalidCharacter = vi.fn();
 const errorFeedbackMocks = vi.hoisted(() => ({

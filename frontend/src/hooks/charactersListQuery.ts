@@ -1,5 +1,7 @@
 import type { CharacterListItem } from '@/hooks/models';
 import { toApiClientError } from '@/utils/errorUtils';
+import { authHeaders } from '@/utils/tabSession';
+import { embeddedSessionHeaders } from '@/utils/embed';
 
 export type CharacterListEntry = CharacterListItem & { id: string };
 
@@ -19,6 +21,7 @@ export async function fetchCharacterList(
   const baseUrl = import.meta.env.VITE_BACKEND_URL || '';
   const res = await fetch(`${baseUrl}/api/characters`, {
     credentials: 'include',
+    headers: { ...embeddedSessionHeaders(), ...authHeaders() },
     signal,
   });
 

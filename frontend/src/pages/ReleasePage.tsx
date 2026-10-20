@@ -39,6 +39,9 @@ const buildReleaseNotes = (t: TFunction): ReleaseNote[] => {
             date: '2026-10-08',
             type: 'minor',
             changes: [
+                t('release.v070.publicBrowsing', 'Explore public pages and classes without starting a guest session; a guest session begins when you roll a scvm or start a draft'),
+                t('release.v070.sessionRecovery', 'Returning players keep their session, and private sheet links offer recovery without creating a replacement guest'),
+                t('release.v070.blockedStorage', 'After acknowledging the privacy notice, you can create a scvm for the current visit even when browser storage is blocked'),
                 t('release.v070.customClasses', 'Forge Custom Classes with your own rules, items, abilities, reference tables, and Getting Better settings'),
                 t('release.v070.omenDice', 'Book Class Omen rolls now match the printed book: Esoteric Hermit and Heretical Priest use d4; other Book Classes use d2'),
                 t('release.v070.versions', 'Saving changes keeps existing scvm on their original class rules and creates a new version for future rolls'),

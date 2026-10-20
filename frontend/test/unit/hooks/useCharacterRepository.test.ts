@@ -14,11 +14,16 @@ const clientMocks = vi.hoisted(() => ({
 }));
 
 vi.mock('@/api', () => ({
+  authKeys: { session: () => ['auth', 'session'] },
   $api: apiMocks,
   client: clientMocks,
   characterKeys: {
     list: () => ['characters', 'list'],
   },
+}));
+
+vi.mock('@/auth', () => ({
+  ensureAnonymousSession: vi.fn().mockResolvedValue({ session: {}, user: { id: 'guest', isAnonymous: true } }),
 }));
 
 vi.mock('@tanstack/react-query', async () => {
@@ -99,6 +104,7 @@ test('REGRESSION: keeps the previous locale data visible while a locale switch r
 test('useCharacterRepository creates a character and refreshes the cached list', async () => {
     const queryClient = {
         setQueryData: vi.fn(),
+        getQueryData: vi.fn(),
         invalidateQueries: vi.fn(),
     };
     (useQueryClient as any).mockReturnValue(queryClient);
@@ -141,6 +147,7 @@ test('useCharacterRepository creates a character and refreshes the cached list',
 test('useCharacterRepository surfaces createCharacter API failures', async () => {
     (useQueryClient as any).mockReturnValue({
         setQueryData: vi.fn(),
+        getQueryData: vi.fn(),
         invalidateQueries: vi.fn(),
     });
 
@@ -165,6 +172,7 @@ test('useCharacterRepository surfaces createCharacter API failures', async () =>
 test('useCharacterRepository reports createCharacter aborts as AbortError', async () => {
     (useQueryClient as any).mockReturnValue({
         setQueryData: vi.fn(),
+        getQueryData: vi.fn(),
         invalidateQueries: vi.fn(),
     });
 
@@ -189,7 +197,6 @@ test('useCharacterRepository reports createCharacter aborts as AbortError', asyn
         })
     ).rejects.toMatchObject({
         name: 'AbortError',
-        message: 'The operation was aborted.',
     });
 });
 

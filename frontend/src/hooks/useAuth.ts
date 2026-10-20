@@ -62,7 +62,7 @@ type UseAuthOptions = {
 // Auth Hook
 // ============================================
 export function useAuth(options: UseAuthOptions = {}) {
-    const { bootstrapAnonymous = true, fetchSession: fetchSessionEnabled = true } = options;
+    const { bootstrapAnonymous = false, fetchSession: fetchSessionEnabled = true } = options;
     const queryClient = useQueryClient();
     const isInviteRoute = useSyncExternalStore(
         subscribeToHistory,
@@ -120,12 +120,13 @@ export function useAuth(options: UseAuthOptions = {}) {
         !isSessionExpired &&
         fetchSessionEnabled &&
         !sessionQuery.isLoading &&
+        !sessionQuery.isError &&
         !sessionUser;
 
     const anonymousBootstrapQuery = useQuery({
         queryKey: ['auth', 'anonymous-bootstrap'],
         enabled: anonymousBootstrapEnabled,
-        staleTime: Infinity,
+        staleTime: 0,
         retry: false,
         refetchOnWindowFocus: false,
         queryFn: async () => {
@@ -141,12 +142,10 @@ export function useAuth(options: UseAuthOptions = {}) {
     // loading), so there is a render where neither query reports loading but no
     // anonymous cookie exists yet. Without this, first-run flows (guest
     // auto-create, party-join redemption) fire against a not-yet-minted session,
-    // race the bootstrap, and stall on an endless spinner. Gated on the
-    // request's own outcome (`data`/`isError`) so a sign-in that resolves
-    // without producing a user can never hang loading forever.
+    // race the bootstrap, and stall on an endless spinner. Loading ends when
+    // the session cache receives its user or bootstrap reports an error.
     const isBootstrappingAnonymous =
         anonymousBootstrapEnabled &&
-        !anonymousBootstrapQuery.data &&
         !anonymousBootstrapQuery.isError;
 
     // Sign out
@@ -166,7 +165,9 @@ export function useAuth(options: UseAuthOptions = {}) {
         user: (isSessionExpired ? null : sessionUser) as AuthUser | null,
         session: isSessionExpired ? null : sessionData,
         isAuthenticated: Boolean(effectiveSessionUser) && !isAnonymousUser,
-        isGuest: !isSessionExpired && (isAnonymousUser || (!sessionUser && !sessionQuery.isLoading)),
+        isGuest: !isSessionExpired && isAnonymousUser,
+        isSessionless: !isSessionExpired && sessionQuery.isSuccess && !sessionUser,
+        error: sessionQuery.error ?? (anonymousBootstrapEnabled ? anonymousBootstrapQuery.error : null),
         isLoading:
             sessionQuery.isLoading ||
             anonymousBootstrapQuery.isFetching ||

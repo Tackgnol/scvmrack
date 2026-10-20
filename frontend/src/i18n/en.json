@@ -1028,6 +1028,9 @@
     "typePatch": "Patch",
     "moreUpdates": "More updates coming soon. The world is ending, but we keep shipping.",
     "v070": {
+      "publicBrowsing": "Explore public pages and classes without starting a guest session; a guest session begins when you roll a scvm or start a draft",
+      "sessionRecovery": "Returning players keep their session, and private sheet links offer recovery without creating a replacement guest",
+      "blockedStorage": "After acknowledging the privacy notice, you can create a scvm for the current visit even when browser storage is blocked",
       "customClasses": "Forge Custom Classes with your own rules, items, abilities, reference tables, and Getting Better settings",
       "omenDice": "Book Class Omen rolls now match the printed book: Esoteric Hermit and Heretical Priest use d4; other Book Classes use d2",
       "versions": "Saving changes keeps existing scvm on their original class rules and creates a new version for future rolls",
