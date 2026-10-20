@@ -1027,6 +1027,9 @@
     "typePatch": "Poprawka",
     "moreUpdates": "Więcej aktualizacji wkrótce. Świat się kończy, ale my dalej dostarczamy.",
     "v070": {
+      "publicBrowsing": "Przeglądaj publiczne strony i klasy bez rozpoczynania sesji gościa; sesja zaczyna się, gdy losujesz scvma lub rozpoczynasz jego szkic",
+      "sessionRecovery": "Wracający gracze zachowują sesję, a linki do prywatnych kart pozwalają odzyskać dostęp bez tworzenia nowego gościa",
+      "blockedStorage": "Po zapoznaniu się z informacją o prywatności możesz stworzyć scvma na czas bieżącej wizyty, nawet gdy pamięć przeglądarki jest zablokowana",
       "customClasses": "Twórz własne Klasy z własnymi zasadami, przedmiotami, zdolnościami, tabelami i ustawieniami Getting Better",
       "omenDice": "Rzuty na omeny Klas z Księgi odpowiadają podręcznikowi: Hermetyczny pustelnik i Heretycki Kaznodzieja używają k4, a pozostałe Klasy z Księgi k2",
       "versions": "Zapisywanie zmian pozostawia istniejące scvmy przy ich pierwotnych zasadach klasy i tworzy nową wersję dla przyszłych rzutów",

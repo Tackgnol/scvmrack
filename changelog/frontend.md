@@ -11,6 +11,7 @@
 ## Bug fixes
 
 - Public browsing no longer creates guest users. Guest sessions begin when rolling a character or starting a draft; private links offer recovery without creating a replacement owner. Crawler telemetry suppresses only classified expected session outcomes and keeps public-content failures visible.
+- Creation reuses an existing session and remains available for the current visit after privacy acknowledgement when browser storage is blocked. Session lookup failures do not hide cookie-accessible sheets; recovery reflects account linking and sign-out in other tabs when storage is available.
 - The app should no longer erase an item saved in another tab when you edit an older inventory. Conflicting edits are rejected with an explanation.
 - Logging out lands on the home page instead of a "Page Not Found" screen, and stays usable after a reload.
 - Saving a resumed class draft no longer says the draft wouldn't load after the class saved.
@@ -123,7 +124,7 @@
 
 ## Auth & sessions
 
-- Logto sign-in/profile flows plus anonymous guest sessions for first-run ownership
+- Logto sign-in/profile flows plus guest sessions started explicitly for character creation; public browsing only reads an existing session
 - Anonymous bootstrap tolerates transient failures: a failed sign-in still succeeds when a
   session already exists, network/5xx errors retry, and it polls the session (never re-signs-in)
   until the new cookie is readable; recovered bootstraps log a GlitchTip warning. It completes
