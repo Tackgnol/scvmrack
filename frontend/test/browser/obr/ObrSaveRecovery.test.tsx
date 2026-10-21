@@ -85,7 +85,8 @@ it('keeps a rejected edit visible, offers recovery, and resends the same save af
     persisted = { ...persisted, ...body };
     return Response.json(persisted);
   });
-  vi.mocked(signInViaObrPopup).mockImplementation(async () => { authenticated = true; });
+  vi.mocked(signInViaObrPopup).mockRejectedValueOnce(new Error('cancelled'))
+    .mockImplementation(async () => { authenticated = true; });
   await render(<BrowserTestProvider><QueryClientProvider client={client}><RecoverySheet /></QueryClientProvider></BrowserTestProvider>);
   await userEvent.fill(page.getByTestId('hp-input'), '7');
   await userEvent.tab();
@@ -95,8 +96,20 @@ it('keeps a rejected edit visible, offers recovery, and resends the same save af
   await expect.element(page.getByTestId('hp-input')).toHaveValue('7');
   expect(persisted.currentHp).toBe(6);
   await userEvent.click(page.getByRole('button', { name: 'Sign in', exact: true }));
+  await expect.element(page.getByRole('alert')).toHaveTextContent('Sign-in did not complete.');
+  expect(persisted.currentHp).toBe(6);
+  await expect.element(page.getByTestId('hp-input')).toHaveValue('7');
+  await userEvent.click(page.getByRole('button', { name: 'Sign in', exact: true }));
   await expect.poll(() => persisted.currentHp).toBe(7);
   await expect.element(page.getByRole('alert')).not.toBeInTheDocument();
   expect(bodies[bodies.length - 1]).toEqual(bodies[0]);
   expect(appHistory.location.search).toContain('obrref=qa-room');
+  authenticated = false;
+  const nextRequest = bodies.length;
+  await userEvent.fill(page.getByTestId('hp-input'), '8');
+  await userEvent.tab();
+  await expect.element(page.getByRole('alert')).toHaveTextContent('Your session expired. Sign in again.');
+  await userEvent.click(page.getByRole('button', { name: 'Sign in', exact: true }));
+  await expect.poll(() => persisted.currentHp).toBe(8);
+  expect(bodies[bodies.length - 1]).toEqual(bodies[nextRequest]);
 });
