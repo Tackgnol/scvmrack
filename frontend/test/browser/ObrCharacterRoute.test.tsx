@@ -162,7 +162,7 @@ const obrMock = vi.hoisted(() => {
       return Promise.resolve();
     }),
     onItemsChange: vi.fn(() => vi.fn()),
-    onSceneReadyChange: vi.fn(() => vi.fn()),
+    onSceneReadyChange: vi.fn((_callback: (ready: boolean) => void) => vi.fn()),
     onBroadcastMessage: vi.fn(
       (
         channel: string,
@@ -261,11 +261,12 @@ vi.mock("@/components/organisms/CharacterSheet", () => ({
 }));
 
 vi.mock("@/components/obr/ObrRollPicker/ObrRollPicker", () => ({
-  ObrRollPicker: ({ open, onChoose }: { open: boolean; onChoose: (classId: number | null) => void }) =>
+  ObrRollPicker: ({ open, onChoose }: { open: boolean; onChoose: (classId: number | null, classless?: boolean) => void }) =>
     open ? (
       <>
         <button onClick={() => onChoose(null)}>Random</button>
         <button onClick={() => onChoose(7)}>Class 7</button>
+        <button onClick={() => onChoose(null, true)}>Classless Scvm</button>
       </>
     ) : null,
 }));
@@ -634,6 +635,29 @@ describe("ObrCharacterRoute", () => {
     );
   });
 
+  it("keeps explicit Classless distinct from Random when rolling into the room", async () => {
+    routeMocks.role = "PLAYER";
+    await renderRoute();
+    await userEvent.click(page.getByRole("button", { name: "Roll a scvm" }));
+    await userEvent.click(page.getByRole("button", { name: "Classless Scvm" }));
+    await expect.poll(() => routeMocks.generateNew).toHaveBeenCalledWith(
+      null,
+      expect.objectContaining({ classless: true, replace: true, obrRoomId: "room-test", obrPlayerId: "player-1" }),
+    );
+  });
+
+  it("keeps guest rolling usable after a sign-in popup is cancelled", async () => {
+    routeMocks.role = "PLAYER";
+    routeMocks.signIn.mockRejectedValueOnce(new Error("cancelled"));
+    await renderRoute();
+    await userEvent.click(page.getByRole("button", { name: "Login", exact: true }));
+    await expect.element(page.getByText("Sign-in did not complete.")).toBeVisible();
+    await userEvent.click(page.getByRole("button", { name: "Roll a scvm" }));
+    await userEvent.click(page.getByRole("button", { name: "Class 7" }));
+    await expect.poll(() => routeMocks.generateNew).toHaveBeenCalledWith(7, expect.objectContaining({ obrRoomId: "room-test" }));
+    routeMocks.signIn.mockResolvedValue(undefined);
+  });
+
   it("explains when the room party is full", async () => {
     routeMocks.role = "PLAYER";
     routeMocks.generateNew.mockImplementation((_classId, options) => {
@@ -846,6 +870,20 @@ describe("ObrCharacterRoute", () => {
     await expect
       .element(page.getByRole("button", { name: "Re-bind selected token" }))
       .not.toBeDisabled();
+  });
+
+  it('keeps the scvm when a scene opens and a token becomes selectable', async () => {
+    routeMocks.role = 'PLAYER';
+    mockCharacter({ id: 'scene-survivor', name: 'Karg' });
+    await renderRoute();
+    await expect.element(page.getByText('Open a scene and select a character token to bind this scvm.')).toBeVisible();
+    await expect.element(page.getByRole('button', { name: 'Select token to bind' })).toBeDisabled();
+    obrMock.state.selection = ['new-token'];
+    obrMock.state.items = [{ id: 'new-token', metadata: {} }];
+    obrMock.onSceneReadyChange.mock.calls.at(-1)?.[0](true);
+    await expect.element(page.getByRole('button', { name: 'Bind to selected token' })).toBeEnabled();
+    await expect.element(page.getByText('Player sheet')).toBeVisible();
+    expect(routeMocks.setCharacterId).not.toHaveBeenCalledWith(null);
   });
 
   it("waits instead of showing the player flow while the OBR role is pending", async () => {

@@ -7,5 +7,5 @@ test('home page can generate a character via FE and receive backend response', a
   await expect(page.getByTestId('app-title')).toBeVisible();
 
   // Wait for the character to be fully loaded (generate button means page is interactive)
-  await expect(page.getByTestId('generate-new-button')).toBeVisible({ timeout: 45000 });
+  await expect(page.getByTestId('hp-input')).toBeVisible({ timeout: 45000 });
 });

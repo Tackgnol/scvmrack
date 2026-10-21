@@ -413,6 +413,7 @@ export const GenerateBodySchema = {
   type: 'object',
   properties: {
     classId: IdSchema,
+    classless: { type: 'boolean' },
     // Opt-in for guests: replace the single scvm an anonymous session already
     // owns. Without it, creating a second one is a 409 (see character-service).
     replace: { type: 'boolean' },

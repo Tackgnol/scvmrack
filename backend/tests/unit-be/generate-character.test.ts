@@ -919,3 +919,24 @@ test('characterCreateDataFromDraft with classless=true ignores classId', async (
   assert.deepEqual(created.abilities, []);
   assert.equal(created.classlessStatOptions, undefined);
 });
+
+test('a quick Classless roll boosts exactly two abilities and grants no class abilities', async () => {
+  resetFixture();
+  let sixSidedRoll = 0;
+  const fallback = seededRollerFor(randomSectionSeeds())('gear');
+  const roller = {
+    async roll(notation: string) {
+      if (notation === '1d6' && sixSidedRoll < 16) {
+        return { total: [1, 2, 3, 6][sixSidedRoll++ % 4] };
+      }
+      return fallback.roll(notation);
+    },
+  } as unknown as Roller;
+  const { randomCharacterCreateData } = await import('../../src/lib/generate-character.js');
+  const created = await randomCharacterCreateData(null, roller, 'guest-qa');
+  assert.equal(created.classId, null);
+  assert.equal(created.userId, 'guest-qa');
+  assert.deepEqual(created.abilities, []);
+  // Each four-die set is 1,2,3,6: dropping high gives 6, dropping low gives 11.
+  assert.deepEqual(ABILITY_STATS.map(stat => created[stat]).sort((a, b) => a - b), [6, 6, 11, 11]);
+});

@@ -84,6 +84,7 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
                 obrRoomId: request.query.obrRoom,
                 obrPlayerId: request.query.obrPlayer,
                 classId: request.body?.classId,
+                classless: request.body?.classless,
                 draft: request.body?.draft ?? null,
                 replace: request.body?.replace ?? false,
                 locale: request.query.locale ?? 'en',

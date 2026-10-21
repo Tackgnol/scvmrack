@@ -41,7 +41,7 @@ export function useCharacterRepository(
     // ---- Create Character ----
     const createCharacter = useMutation({
         mutationFn: async (vars: {
-            body: { classId?: number; replace?: boolean };
+            body: { classId?: number; replace?: boolean; classless?: boolean };
             params: { query: { locale: string; obrRoom?: string; obrPlayer?: string } };
             signal?: AbortSignal;
         }) => {

@@ -6,7 +6,7 @@ import {
 
 test('guest advances and rewinds the misery track', async ({ page }) => {
   await page.goto('/character');
-  await expect(page.getByTestId('generate-new-button')).toBeVisible({
+  await expect(page.getByTestId('hp-input')).toBeVisible({
     timeout: 30000,
   });
 

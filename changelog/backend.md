@@ -3,6 +3,7 @@
 `scvmgrinder_be` — Fastify 5 + TypeScript API for the MÖRK BORG character sheet.
 
 - The app should no longer reject a first Logto sign-in when the account has a preferred username. New accounts can sign in and keep their profile name.
+- The app should no longer turn an explicit Classless Owlbear roll into a random class when the room permits Classless. Quick rolls boost two random abilities, and rooms that disable Classless reject the request.
 
 ## Custom Classes (0.7.0)
 

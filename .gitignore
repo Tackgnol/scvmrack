@@ -71,6 +71,7 @@ dist
 !backend/.env.example
 !frontend/.env.example
 .npmrc
+.owlbear_account
 backend/.npmrc
 public_nodejs
 replacements.txt

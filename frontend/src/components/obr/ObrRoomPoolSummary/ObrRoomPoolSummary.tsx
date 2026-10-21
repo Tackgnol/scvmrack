@@ -18,7 +18,7 @@ export function ObrRoomPoolSummary({ roomId }: ObrRoomPoolSummaryProps) {
   return (
     <p>
       {t("obr.roster.roomPoolList", "Classes this room rolls: {{classes}}.", {
-        classes: classes.data.flatMap((cls) => cls.name ?? []).join(", ") || t("obr.roster.roomPoolClassless", "Classless only"),
+        classes: classes.data.classes.flatMap((cls) => cls.name ?? []).join(", ") || t("obr.roster.roomPoolClassless", "Classless only"),
       })}{" "}
       {t("obr.roster.roomPoolReadOnly", "Only the party's owner can change them.")}
     </p>

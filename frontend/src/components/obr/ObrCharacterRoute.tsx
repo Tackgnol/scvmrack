@@ -275,7 +275,7 @@ function ObrPlayerCharacterRoute() {
     );
   }
 
-  async function handleRoomRoll(classId: number | null) {
+  async function handleRoomRoll(classId: number | null, classless = false) {
     setRollPickerOpen(false);
     setRollError(null);
     try {
@@ -284,6 +284,7 @@ function ObrPlayerCharacterRoute() {
         replace: !isAuthenticated,
         obrRoomId: actor.roomId,
         obrPlayerId: actor.playerId,
+        ...(classless ? { classless: true } : {}),
         onError: (error) => {
           const code = getApiErrorCode(error);
           if (code === "PARTY_FULL") {
@@ -293,7 +294,7 @@ function ObrPlayerCharacterRoute() {
                 "This room's party is full. Ask the GM to make room.",
               ),
             );
-          } else if (code === "CLASS_NOT_AVAILABLE") {
+          } else if (code === "CLASS_NOT_AVAILABLE" || code === "CLASSLESS_NOT_AVAILABLE") {
             setRollPickerOpen(true);
           }
         },
@@ -418,7 +419,7 @@ function ObrPlayerCharacterRoute() {
         roomId={OBR.room.id}
         locale={locale}
         onClose={() => setRollPickerOpen(false)}
-        onChoose={(classId) => void handleRoomRoll(classId)}
+        onChoose={(classId, classless) => void handleRoomRoll(classId, classless)}
       />
     </>
   );

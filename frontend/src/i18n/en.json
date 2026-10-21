@@ -68,6 +68,7 @@
       "oneTokenSelected": "1 token selected",
       "manyTokensSelected": "{{count}} tokens selected",
       "noTokenSelected": "No token selected",
+      "bindingHelp": "Open a scene and select a character token to bind this scvm.",
       "boundTokenSelected": "Bound token selected",
       "bindSelectedToken": "Bind to selected token",
       "rebindSelectedToken": "Re-bind selected token",

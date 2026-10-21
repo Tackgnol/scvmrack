@@ -3,5 +3,5 @@ export type ObrRollPickerProps = {
   roomId: string;
   locale: string;
   onClose: () => void;
-  onChoose: (classId: number | null) => void;
+  onChoose: (classId: number | null, classless?: boolean) => void;
 };

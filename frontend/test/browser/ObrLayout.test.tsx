@@ -45,6 +45,34 @@ vi.mock("@/auth/obrAuthClient", () => ({
 vi.stubGlobal("open", windowOpenMock);
 
 describe("ObrLayout", () => {
+  it.each(['en', 'pl'])("keeps all active-sheet actions inside a 420px panel in %s", async (locale) => {
+    await page.viewport(420, 600);
+    characterMock.characterId = 'compact-scvm';
+    await i18n.changeLanguage(locale);
+    await render(
+      <BrowserTestProvider>
+        <div data-testid="compact-panel" style={{ width: 420 }}>
+          <ObrLayout><div>Active sheet</div></ObrLayout>
+        </div>
+      </BrowserTestProvider>,
+    );
+    const panel = page.getByTestId('compact-panel').element();
+    await document.fonts.ready;
+    await expect.element(page.getByText('Active sheet')).toBeVisible();
+    await expect.element(page.getByRole('button', { name: locale === 'en' ? 'Open in scvmrack' : 'Otwórz w scvmrack', exact: true })).toBeVisible();
+    const bounds = panel.getBoundingClientRect();
+    const wordmarkElement = page.getByText('Scvmrack', { exact: true }).element();
+    const wordmark = wordmarkElement.getBoundingClientRect();
+    expect(wordmarkElement.scrollWidth).toBeLessThanOrEqual(wordmarkElement.clientWidth);
+    const actions = panel.querySelector('button')!.parentElement!.parentElement!.getBoundingClientRect();
+    expect(wordmark.right <= actions.left || wordmark.bottom <= actions.top).toBe(true);
+    for (const button of panel.querySelectorAll('button')) {
+      const rect = button.getBoundingClientRect();
+      expect(rect.left).toBeGreaterThanOrEqual(bounds.left);
+      expect(rect.right).toBeLessThanOrEqual(bounds.right);
+    }
+  });
+
   beforeEach(async () => {
     vi.clearAllMocks();
     characterMock.characterId = null;
@@ -55,6 +83,7 @@ describe("ObrLayout", () => {
   });
 
   afterEach(async () => {
+    await page.viewport(1280, 720);
     await i18n.changeLanguage("en");
   });
 

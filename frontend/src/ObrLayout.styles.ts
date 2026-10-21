@@ -15,6 +15,7 @@ export const Bar = styled('div')({
     position: 'relative',
     zIndex: 30,
     display: 'flex',
+    flexWrap: 'wrap',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 8,
@@ -25,6 +26,7 @@ export const Bar = styled('div')({
 });
 
 export const Wordmark = styled('span')({
+    flexShrink: 0,
     fontFamily: "'Bebas Neue', sans-serif",
     letterSpacing: '0.08em',
     color: morkBorgColors.pink,
@@ -34,6 +36,7 @@ export const Wordmark = styled('span')({
 
 export const Actions = styled('div')({
     display: 'flex',
+    flexWrap: 'wrap',
     alignItems: 'center',
     justifyContent: 'flex-end',
     gap: 8,

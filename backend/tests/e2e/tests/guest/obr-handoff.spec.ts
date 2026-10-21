@@ -5,7 +5,7 @@ test('anonymous OBR handoff keeps both browser contexts on the same character', 
   test.setTimeout(60000);
 
   await page.goto('/character');
-  await expect(page.getByTestId('generate-new-button')).toBeVisible({ timeout: 30000 });
+  await expect(page.getByTestId('hp-input')).toBeVisible({ timeout: 30000 });
   await expect(page).toHaveURL(/\/character\/[a-f0-9-]+/, { timeout: 30000 });
   const characterId = new URL(page.url()).pathname.split('/').at(-1);
   if (!characterId) {
@@ -36,7 +36,7 @@ test('anonymous OBR handoff keeps both browser contexts on the same character', 
     const tab = await tabContext.newPage();
     await tab.goto(`/obr-open?token=${encodeURIComponent(token)}&character=${characterId}`);
     await expect(tab).toHaveURL(`/character/${characterId}`, { timeout: 15000 });
-    await expect(tab.getByTestId('generate-new-button')).toBeVisible({ timeout: 30000 });
+    await expect(tab.getByTestId('hp-input')).toBeVisible({ timeout: 30000 });
 
     const note = `handoff-${crypto.randomUUID()}`;
     await fillAndSave(tab, 'notes-input', note);

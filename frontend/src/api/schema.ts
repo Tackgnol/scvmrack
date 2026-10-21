@@ -1472,6 +1472,7 @@ export interface paths {
                 content: {
                     "application/json": {
                         classId?: number;
+                        classless?: boolean;
                         replace?: boolean;
                         draft?: {
                             classId: null | number;

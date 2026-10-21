@@ -68,6 +68,7 @@
       "oneTokenSelected": "Wybrano 1 token",
       "manyTokensSelected": "Wybrano tokeny: {{count}}",
       "noTokenSelected": "Nie wybrano tokena",
+      "bindingHelp": "Otwórz scenę i wybierz token postaci, aby przypisać tego scvma.",
       "boundTokenSelected": "Wybrany token jest już przypisany",
       "bindSelectedToken": "Przypisz do tokena",
       "rebindSelectedToken": "Przypisz ponownie",

@@ -6,5 +6,5 @@
     "strict": true,
     "types": ["node", "@playwright/test"]
   },
-  "include": ["tests/**/*.ts", "playwright.config.ts", "prod-smoke.config.ts", "prod-smoke.spec.ts"]
+  "include": ["tests/**/*.ts", "owlbear-live/**/*.ts", "owlbear-live.config.ts", "playwright.config.ts", "prod-smoke.config.ts", "prod-smoke.spec.ts"]
 }

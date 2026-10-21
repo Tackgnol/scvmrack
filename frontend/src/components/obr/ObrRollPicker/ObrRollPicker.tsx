@@ -64,7 +64,12 @@ export function ObrRollPicker({
             <Button variant="contained" onClick={() => onChoose(null)}>
               {t("create.randomClass", "Random")}
             </Button>
-            {classes.map((characterClass) => (
+            {classes.classlessEnabled && (
+              <Button variant="outlined" onClick={() => onChoose(null, true)}>
+                {t("create.classless", "Classless Scvm")}
+              </Button>
+            )}
+            {classes.classes.map((characterClass) => (
               <ButtonBase
                 key={characterClass.id}
                 onClick={() => onChoose(characterClass.id)}

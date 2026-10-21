@@ -600,11 +600,14 @@ export async function generateCharacter(
 
 /** Builds one random scvm row without persisting it, for an atomic party join. */
 export async function randomCharacterCreateData(
-  classId: number,
+  classId: number | null,
   roller: Roller,
   userId?: string,
 ): Promise<Prisma.CharacterUncheckedCreateInput> {
-  const data = await buildCharacterData(classId, () => roller);
+  const dropLowestAbilities = classId === null
+    ? (await shuffle([...ABILITY_STATS], roller)).slice(0, 2)
+    : [];
+  const data = await buildCharacterData(classId, () => roller, { dropLowestAbilities });
   const { classlessStatOptions: _classlessStatOptions, ...persistedData } = data;
   return {
     ...(userId ? { userId } : {}),

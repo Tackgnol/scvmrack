@@ -12,6 +12,8 @@
     "test": "npm run test:unit",
     "test:unit": "vitest run",
     "test:browser": "vitest run --config vitest.browser.config.ts",
+    "test:obr:unit": "vitest run test/unit/obr test/unit/api/obrApiClient test/unit/utils/embed test/unit/pages/ObrOpenPage test/unit/components/ObrExchangeRedeemGate test/unit/hooks/useAuth",
+    "test:obr:browser": "vitest run --config vitest.browser.config.ts test/browser/Obr test/browser/useObrRole test/browser/obr",
     "test:browser:all": "node scripts/run-browser-matrix.mjs",
     "test:browser:ui": "vitest --ui --config vitest.browser.config.ts",
     "test:report": "npm run test:report:unit",

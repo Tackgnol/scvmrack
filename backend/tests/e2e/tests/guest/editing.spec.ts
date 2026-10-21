@@ -11,7 +11,7 @@ test.describe('Guest Editing', () => {
     await expect(page.getByTestId('app-title')).toBeVisible({ timeout: 15000 });
 
     // Wait for the character to be fully loaded (generate button means page is interactive)
-    await expect(page.getByTestId('generate-new-button')).toBeVisible({ timeout: 30000 });
+    await expect(page.getByTestId('hp-input')).toBeVisible({ timeout: 30000 });
     // After auto-creation, URL is /character/<id> or /character?character=<id>
     await expect(page).toHaveURL(/\/character(\/|\?character=)[a-f0-9-]+/, { timeout: 30000 });
 
