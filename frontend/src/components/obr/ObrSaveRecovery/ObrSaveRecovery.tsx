@@ -21,9 +21,8 @@ export function ObrSaveRecovery() {
       retrySave();
     } catch {
       setFailed(true);
-    } finally {
-      setBusy(false);
     }
+    setBusy(false);
   }
 
   if (!isSessionExpired && !saveFailed) {

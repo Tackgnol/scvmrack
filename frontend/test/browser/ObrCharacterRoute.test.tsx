@@ -407,8 +407,7 @@ describe("ObrCharacterRoute", () => {
     vi.unstubAllGlobals();
   });
 
-  it.each(['en', 'pl'].flatMap(locale => ['light', 'dark'].map(scheme => ({ locale, scheme }))))
-  ('keeps the populated GM roster and enemy action usable in compact $locale / $scheme', async ({ locale, scheme }) => {
+  it.each(['en', 'pl'].flatMap(locale => ['light', 'dark'].map(scheme => ({ locale, scheme }))))('keeps the populated GM roster and enemy action usable in compact $locale / $scheme', async ({ locale, scheme }) => {
     await page.viewport(420, 600);
     document.body.style.colorScheme = scheme;
     await loadLanguage(locale);

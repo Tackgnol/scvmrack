@@ -17,8 +17,7 @@ describe('the real sheet in the router-less Owlbear entry', () => {
   it.each([
     { className: 'Fanged Deserter', classCustom: false, classReportable: true },
     { className: 'Ash Cartographer', classCustom: true, classReportable: true },
-  ].flatMap(cls => ['en', 'pl'].flatMap(locale => ['light', 'dark'].map(scheme => ({ ...cls, locale, scheme })))))
-  ('opens $className in compact $locale / $scheme without a router', async ({ locale, scheme, ...classFields }) => {
+  ].flatMap(cls => ['en', 'pl'].flatMap(locale => ['light', 'dark'].map(scheme => ({ ...cls, locale, scheme })))) )('opens $className in compact $locale / $scheme without a router', async ({ locale, scheme, ...classFields }) => {
     await page.viewport(420, 600);
     document.body.style.colorScheme = scheme;
     await loadLanguage(locale);

@@ -54,8 +54,7 @@ describe("Owlbear room class selection", () => {
     await expect.poll(() => chosen).toHaveBeenCalledWith(null, true);
   });
 
-  it.each(['en', 'pl'].flatMap(locale => ['light', 'dark'].map(scheme => ({ locale, scheme }))))
-  ('fits the class picker in compact $locale / $scheme', async ({ locale, scheme }) => {
+  it.each(['en', 'pl'].flatMap(locale => ['light', 'dark'].map(scheme => ({ locale, scheme }))))('fits the class picker in compact $locale / $scheme', async ({ locale, scheme }) => {
     await page.viewport(420, 600);
     document.body.style.colorScheme = scheme;
     await loadLanguage(locale);
