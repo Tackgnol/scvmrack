@@ -162,10 +162,20 @@ describe('navigation router utils', () => {
     });
 
     describe('navigateToSessionExpired', () => {
+        it('keeps the Owlbear entry, room, scvm and view when flagging expiry', async () => {
+            appHistory.location.pathname = '/obr.html';
+            appHistory.location.search = '?obrref=room-qa&character=scvm-qa&view=card';
+            appHistory.location.hash = '#sheet';
+            await navigateToSessionExpired();
+            expect(appHistory.replace).toHaveBeenCalledWith(
+                '/obr.html?obrref=room-qa&character=scvm-qa&view=card&expired=true#sheet', undefined, { ignoreBlocker: true }
+            );
+        });
+
         it('should navigate to home with expired flag', async () => {
             await navigateToSessionExpired();
             expect(appHistory.replace).toHaveBeenCalledWith(
-                `/character/new?${SESSION_EXPIRED_QUERY_PARAM}=true`
+                `/character/new?${SESSION_EXPIRED_QUERY_PARAM}=true`, undefined, { ignoreBlocker: true }
             );
         });
 
@@ -173,7 +183,7 @@ describe('navigation router utils', () => {
             appHistory.location.search = `?${CHARACTER_ID_QUERY_PARAM}=char1`;
             await navigateToSessionExpired();
             expect(appHistory.replace).toHaveBeenCalledWith(
-                `/character/new?${CHARACTER_ID_QUERY_PARAM}=char1&${SESSION_EXPIRED_QUERY_PARAM}=true`
+                `/character/new?${CHARACTER_ID_QUERY_PARAM}=char1&${SESSION_EXPIRED_QUERY_PARAM}=true`, undefined, { ignoreBlocker: true }
             );
         });
     });

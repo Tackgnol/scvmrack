@@ -216,6 +216,7 @@ export function createCharacterService(
       obrRoomId?: string | null;
       obrPlayerId?: string | null;
       classId?: number | null;
+      classless?: boolean;
       draft?: CharacterDraft | null;
       replace?: boolean;
       locale: string;
@@ -288,15 +289,15 @@ export function createCharacterService(
           data = await characterCreateDataFromDraft(input.draft, userId);
         } else {
           const roller = new Roller({ engine: new OSRandomEngine() });
-          let classId = input.classId ?? null;
-          if (classId === null) {
+          let classId = input.classless ? null : input.classId ?? null;
+          if (classId === null && !input.classless) {
             const picked = await pickPoolClass(pool.value, roller);
             if (!picked.ok) {
               return picked;
             }
             classId = picked.value;
           }
-          const unavailable = classChoiceError(pool.value, false, classId);
+          const unavailable = classChoiceError(pool.value, input.classless === true, classId);
           if (unavailable) {
             return fail(unavailable);
           }

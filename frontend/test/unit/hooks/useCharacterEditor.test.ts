@@ -82,6 +82,49 @@ function makeQueryClient(initial?: Store) {
 
 const noopMutation = () => ({ mutate: vi.fn(), isPending: false }) as any;
 
+test('keeps an expired save with its own character while another character is edited', () => {
+  const characters: Record<string, any> = {
+    a: { id: 'a', currentHp: 5, silver: 10 },
+    b: { id: 'b', currentHp: 9, silver: 20 },
+  };
+  (useQueryClient as any).mockReturnValue({
+    getQueryData: ([id]: string[]) => characters[id],
+    setQueryData: ([id]: string[], value: any) => {
+      characters[id] = typeof value === 'function' ? value(characters[id]) : value;
+    },
+    invalidateQueries: vi.fn(),
+  });
+  const mutation = noopMutation();
+  const { result, rerender } = renderHook(({ id }) =>
+    useCharacterEditor(id, mutation, (characterId) => [characterId]),
+  { initialProps: { id: 'a' } });
+  act(() => result.current.updateField('currentHp', 4));
+  act(() => result.current.flush());
+  const failedRequest = mutation.mutate.mock.calls[0][0];
+  act(() => {
+    mutation.mutate.mock.calls[0][1].onError({ status: 401 }, {}, {});
+    mutation.mutate.mock.calls[0][1].onSettled();
+  });
+  rerender({ id: 'b' });
+  expect(result.current.saveFailed).toBe(false);
+  expect(result.current.getVisibleCharacter(characters.b)).toMatchObject({ id: 'b', currentHp: 9 });
+  act(() => result.current.updateField('silver', 21));
+  act(() => result.current.flush());
+  expect(mutation.mutate.mock.calls[1][0]).toMatchObject({
+    params: { path: { id: 'b' } }, body: { silver: 21 },
+  });
+  expect(mutation.mutate.mock.calls[1][0].body).not.toHaveProperty('currentHp');
+  act(() => {
+    mutation.mutate.mock.calls[1][1].onSuccess({ ...characters.b, silver: 21 });
+    mutation.mutate.mock.calls[1][1].onSettled();
+  });
+  rerender({ id: 'a' });
+  expect(result.current.saveFailed).toBe(true);
+  expect(result.current.getVisibleCharacter(characters.a)?.currentHp).toBe(4);
+  act(() => result.current.retrySave());
+  expect(mutation.mutate.mock.calls[2][0]).toEqual(failedRequest);
+});
+
 test('sends the loaded version with a collection edit', () => {
   const updatedAt = '2026-10-15T09:00:00.000Z';
   const queryClient = makeQueryClient({ id: 'char-1', updatedAt, equipment: [] });
@@ -93,6 +136,78 @@ test('sends the loaded version with a collection edit', () => {
   act(() => result.current.addEquipmentItem({ key: 'hammer', name: 'Hammer' }));
   act(() => result.current.flush());
   expect(mutation.mutate.mock.calls[0][0].body.expectedUpdatedAt).toBe(updatedAt);
+});
+
+test('keeps later edits queued after a 401 without retrying until explicit recovery', () => {
+  const queryClient = makeQueryClient({ id: 'char-1', currentHp: 5, silver: 10 });
+  (useQueryClient as any).mockReturnValue(queryClient);
+  const mutation = noopMutation();
+  const { result, unmount } = renderHook(() =>
+    useCharacterEditor('char-1', mutation, (id) => [id])
+  );
+  act(() => result.current.updateField('currentHp', 4));
+  act(() => result.current.flush());
+  const failed = mutation.mutate.mock.calls[0][0];
+  act(() => {
+    mutation.mutate.mock.calls[0][1].onError({ status: 401 }, {}, {});
+    mutation.mutate.mock.calls[0][1].onSettled();
+    result.current.updateField('silver', 11);
+    result.current.flush();
+  });
+  expect(result.current.saveFailed).toBe(true);
+  expect(mutation.mutate).toHaveBeenCalledTimes(1);
+  expect(result.current.getVisibleCharacter(queryClient.current() as any)).toMatchObject({ currentHp: 4, silver: 11 });
+  act(() => result.current.retrySave());
+  expect(mutation.mutate.mock.calls[1][0]).toEqual(failed);
+  act(() => {
+    mutation.mutate.mock.calls[1][1].onSuccess({ id: 'char-1', currentHp: 4, silver: 10 });
+    mutation.mutate.mock.calls[1][1].onSettled();
+    result.current.flush();
+  });
+  expect(mutation.mutate.mock.calls[2][0].body).toMatchObject({ silver: 11 });
+  act(() => {
+    mutation.mutate.mock.calls[2][1].onError({ status: 401 }, {}, {});
+    mutation.mutate.mock.calls[2][1].onSettled();
+  });
+  unmount();
+  expect(mutation.mutate).toHaveBeenCalledTimes(3);
+});
+
+test.each(['success', 'expired'] as const)('a late %s for the previous scvm cannot alter the active scvm', (outcome) => {
+  const characters: Record<string, any> = { a: { id: 'a', currentHp: 5 }, b: { id: 'b', silver: 20 } };
+  (useQueryClient as any).mockReturnValue({
+    getQueryData: ([id]: string[]) => characters[id],
+    setQueryData: ([id]: string[], value: any) => {
+      characters[id] = typeof value === 'function' ? value(characters[id]) : value;
+    },
+    invalidateQueries: vi.fn(),
+  });
+  const mutation = noopMutation();
+  const { result, rerender } = renderHook(({ id }) =>
+    useCharacterEditor(id, mutation, (characterId) => [characterId]),
+  { initialProps: { id: 'a' } });
+  act(() => result.current.updateField('currentHp', 4));
+  act(() => result.current.flush());
+  mutation.isPending = true;
+  rerender({ id: 'b' });
+  act(() => result.current.updateField('silver', 21));
+  act(() => result.current.flush());
+  expect(mutation.mutate).toHaveBeenCalledTimes(1);
+  act(() => {
+    const callbacks = mutation.mutate.mock.calls[0][1];
+    if (outcome === 'success') {
+      callbacks.onSuccess({ id: 'a', currentHp: 4 });
+    } else {
+      callbacks.onError({ status: 401 }, {}, {});
+    }
+    mutation.isPending = false;
+    callbacks.onSettled();
+  });
+  expect(result.current.saveFailed).toBe(false);
+  expect(result.current.getVisibleCharacter(characters.b)).toMatchObject({ id: 'b', silver: 21 });
+  act(() => result.current.flush());
+  expect(mutation.mutate.mock.calls[1][0]).toMatchObject({ params: { path: { id: 'b' } }, body: { silver: 21 } });
+  expect(mutation.mutate.mock.calls[1][0].body).not.toHaveProperty('currentHp');
 });
 
 test('a conflict discards stale queued edits and refreshes the authoritative character', () => {

@@ -1,7 +1,7 @@
 import { renderHook } from '@testing-library/react';
 import { beforeEach, expect, test, vi } from 'vitest';
 import { useCharacterRepository } from '../../../src/hooks/useCharacterRepository.ts';
-import { keepPreviousData, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 // Mock the API client
 const apiMocks = vi.hoisted(() => ({
@@ -97,8 +97,12 @@ test('REGRESSION: keeps the previous locale data visible while a locale switch r
     'get',
     '/api/characters/{id}',
     expect.any(Object),
-    expect.objectContaining({ placeholderData: keepPreviousData })
+    expect.objectContaining({ placeholderData: expect.any(Function) })
   );
+  const placeholder = apiMocks.useQuery.mock.calls[0][3].placeholderData;
+  const sameScvm = { id: 'char-123', name: 'Previous locale' };
+  expect(placeholder(sameScvm)).toBe(sameScvm);
+  expect(placeholder({ id: 'other-scvm', name: 'Another character' })).toBeUndefined();
 });
 
 test('useCharacterRepository creates a character and refreshes the cached list', async () => {

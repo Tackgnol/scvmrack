@@ -5,7 +5,8 @@ import { useQuery } from "@tanstack/react-query";
 export function useRoomClasses(roomId: string, locale: string, enabled = true) {
   return useQuery({
     queryKey: ["obr", "room-pool", roomId, locale],
-    queryFn: async ({ signal }) => (await fetchClasses(locale, signal, undefined, roomId)).classes,
+    queryFn: ({ signal }) => fetchClasses(locale, signal, undefined, roomId),
+    staleTime: 0,
     enabled,
   });
 }

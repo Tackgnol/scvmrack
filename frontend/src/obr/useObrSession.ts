@@ -1,6 +1,7 @@
-import { authKeys } from '@/api';
+import { authKeys, resetRedirectControl } from '@/api';
 import { obrAuthClient } from '@/auth/obrAuthClient';
 import { useAuth } from '@/hooks/useAuth';
+import { clearCurrentSearchParam, SESSION_EXPIRED_QUERY_PARAM } from '@/router/navigation';
 import { signInViaObrPopup } from '@tackgnol/rpgtools-shared-auth/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCallback } from 'react';
@@ -15,6 +16,8 @@ export function useObrSession() {
 
     const signIn = useCallback(async (): Promise<void> => {
         await signInViaObrPopup(obrAuthClient, { windowName: 'scvmrack-obr-login' });
+        resetRedirectControl();
+        await clearCurrentSearchParam(SESSION_EXPIRED_QUERY_PARAM);
         await queryClient.invalidateQueries({ queryKey: authKeys.session() });
     }, [queryClient]);
 

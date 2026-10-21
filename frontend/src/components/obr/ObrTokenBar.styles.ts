@@ -50,3 +50,9 @@ export const BindButton = styled('button')({
         transition: 'none',
     },
 });
+
+export const BindHint = styled('span')({
+    gridColumn: '1 / -1',
+    fontSize: '0.75rem',
+    color: '#b5b5b5',
+});

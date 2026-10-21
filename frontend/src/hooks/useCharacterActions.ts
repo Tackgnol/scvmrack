@@ -16,6 +16,7 @@ export type GenerateNewOptions = {
   replace?: boolean;
   obrRoomId?: string;
   obrPlayerId?: string;
+  classless?: boolean;
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- matches the $api mutation surface
@@ -94,6 +95,7 @@ export function useCharacterActions({
         body: {
           ...(id === null ? {} : { classId: id }),
           ...(options?.replace ? { replace: true } : {}),
+          ...(options?.classless ? { classless: true } : {}),
         },
         params: {
           query: {

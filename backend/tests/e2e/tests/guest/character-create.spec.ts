@@ -36,7 +36,7 @@ test.describe('guest character creation', () => {
 
     // 1. Bootstrap the guest's single scvm on the sheet route, then capture it.
     await page.goto('/character');
-    await expect(page.getByTestId('generate-new-button')).toBeVisible({ timeout: 45000 });
+    await expect(page.getByTestId('hp-input')).toBeVisible({ timeout: 45000 });
     await expect(page).toHaveURL(SHEET_URL);
     const oldId = SHEET_URL.exec(page.url())?.[1];
     expect(oldId).toBeTruthy();

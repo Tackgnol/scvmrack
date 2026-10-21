@@ -48,7 +48,7 @@ test('Game Master sets the Misery count for every player', async ({
   try {
     const guestPage = await guestContext.newPage();
     await guestPage.goto('/character');
-    await expect(guestPage.getByTestId('generate-new-button')).toBeVisible({
+    await expect(guestPage.getByTestId('hp-input')).toBeVisible({
       timeout: 30000,
     });
     await guestPage.goto(`/join/${party.inviteToken}`);

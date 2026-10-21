@@ -71,6 +71,7 @@ dist
 !backend/.env.example
 !frontend/.env.example
 .npmrc
+.owlbear_account
 backend/.npmrc
 public_nodejs
 replacements.txt
@@ -79,6 +80,7 @@ compose.yaml
 materials
 
 # test results & reports
+/output/playwright/owlbear-live/
 reports/
 coverage/
 coverage-backend*/

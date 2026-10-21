@@ -7,7 +7,7 @@ import { scvmrackObrExtension } from "@/obr/extension";
 import { obrRoomBindingsClient } from "@/obr/obrApiClient";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { BindBar, BindButton, BindStatus } from "./ObrTokenBar.styles";
+import { BindBar, BindButton, BindHint, BindStatus } from "./ObrTokenBar.styles";
 import {
   EMPTY_SELECTION_STATE,
   useObrTokenBindingState,
@@ -120,6 +120,9 @@ export function ObrTokenBar({
       >
         {busy ? t("obr.player.binding", "Binding") : actionLabel}
       </BindButton>
+      {!selection.hasSelection && (
+        <BindHint>{t('obr.player.bindingHelp')}</BindHint>
+      )}
     </BindBar>
   );
 }
