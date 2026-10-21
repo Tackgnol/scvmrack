@@ -61,9 +61,16 @@ export function ObrRollPicker({
         )}
         {classes && (
           <Stack spacing={1}>
-            <Button variant="contained" onClick={() => onChoose(null)}>
-              {t("create.randomClass", "Random")}
-            </Button>
+            {classes.classes.length > 0 && (
+              <Button variant="contained" onClick={() => onChoose(null)}>
+                {t("create.randomClass", "Random")}
+              </Button>
+            )}
+            {classes.classes.length === 0 && !classes.classlessEnabled && (
+              <Alert severity="info">
+                {t('obr.player.rollPickerEmpty', 'No scvm can be rolled in this room. Ask the GM to enable a class or Classless.')}
+              </Alert>
+            )}
             {classes.classlessEnabled && (
               <Button variant="outlined" onClick={() => onChoose(null, true)}>
                 {t("create.classless", "Classless Scvm")}

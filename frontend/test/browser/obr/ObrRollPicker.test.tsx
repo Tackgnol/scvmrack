@@ -52,6 +52,17 @@ describe("Owlbear room class selection", () => {
     render(picker({ onChoose: chosen }));
     await userEvent.click(page.getByRole("button", { name: "Classless Scvm", exact: true }));
     await expect.poll(() => chosen).toHaveBeenCalledWith(null, true);
+    await expect.element(page.getByRole("button", { name: "Random", exact: true })).not.toBeInTheDocument();
+  });
+
+  it('explains an empty disabled pool without offering an invalid roll', async () => {
+    vi.mocked(fetchClasses).mockResolvedValue({ classes: [], classlessEnabled: false });
+    const chosen = vi.fn();
+    render(picker({ onChoose: chosen }));
+    await expect.element(page.getByRole('alert')).toHaveTextContent('No scvm can be rolled in this room. Ask the GM to enable a class or Classless.');
+    await expect.element(page.getByRole('button', { name: 'Random', exact: true })).not.toBeInTheDocument();
+    await expect.element(page.getByRole('button', { name: 'Classless Scvm', exact: true })).not.toBeInTheDocument();
+    expect(chosen).not.toHaveBeenCalled();
   });
 
   it.each(['en', 'pl'].flatMap(locale => ['light', 'dark'].map(scheme => ({ locale, scheme }))))('fits the class picker in compact $locale / $scheme', async ({ locale, scheme }) => {

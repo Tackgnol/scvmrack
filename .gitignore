@@ -80,6 +80,7 @@ compose.yaml
 materials
 
 # test results & reports
+/output/playwright/owlbear-live/
 reports/
 coverage/
 coverage-backend*/

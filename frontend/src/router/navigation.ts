@@ -211,5 +211,10 @@ export const navigateToSessionExpired = async (): Promise<void> => {
     searchParams.set(SESSION_EXPIRED_QUERY_PARAM, 'true');
     // Expiry is a recovery signal, not user navigation. A pending save must
     // survive it rather than block the signal by trying to save again.
-    await appHistory.replace(buildPath(NEW_CHARACTER_PATH, searchParams, ''), undefined, { ignoreBlocker: true });
+    const inObr = appHistory.location.pathname === '/obr.html';
+    await appHistory.replace(buildPath(
+        inObr ? appHistory.location.pathname : NEW_CHARACTER_PATH,
+        searchParams,
+        inObr ? appHistory.location.hash : '',
+    ), undefined, { ignoreBlocker: true });
 };

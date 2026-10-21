@@ -93,6 +93,7 @@ it('keeps a rejected edit visible, offers recovery, and resends the same save af
   await expect.poll(() => ({ count: bodies.length, search: appHistory.location.search }), { timeout: 5000 })
     .toMatchObject({ count: 2, search: expect.stringContaining('expired=true') });
   await expect.element(page.getByRole('alert')).toHaveTextContent('Your session expired. Sign in again.');
+  expect(appHistory.location.pathname).toBe('/obr.html');
   await expect.element(page.getByTestId('hp-input')).toHaveValue('7');
   expect(persisted.currentHp).toBe(6);
   await userEvent.click(page.getByRole('button', { name: 'Sign in', exact: true }));
@@ -104,6 +105,7 @@ it('keeps a rejected edit visible, offers recovery, and resends the same save af
   await expect.element(page.getByRole('alert')).not.toBeInTheDocument();
   expect(bodies[bodies.length - 1]).toEqual(bodies[0]);
   expect(appHistory.location.search).toContain('obrref=qa-room');
+  expect(appHistory.location.pathname).toBe('/obr.html');
   authenticated = false;
   const nextRequest = bodies.length;
   await userEvent.fill(page.getByTestId('hp-input'), '8');

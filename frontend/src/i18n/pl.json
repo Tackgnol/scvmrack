@@ -53,6 +53,7 @@
       "rollNew": "Losuj nowego",
       "rollPickerTitle": "Wybierz klasę",
       "rollPickerLoadError": "Nie udało się wczytać klas pokoju.",
+      "rollPickerEmpty": "W tym pokoju nie można wylosować scvma. Poproś MG o włączenie klasy lub opcji Bez klasy.",
       "partyFull": "Drużyna w tym pokoju jest pełna. Poproś MG o zwolnienie miejsca.",
       "rollFailed": "Nie udało się wylosować scvma. Spróbuj ponownie.",
       "forgeScvm": "Stwórz scvma",
@@ -130,6 +131,7 @@
       "removingFromRoster": "Usuwanie",
       "roomPoolList": "Klasy losowane w tym pokoju: {{classes}}.",
       "roomPoolClassless": "Tylko bez klasy",
+      "roomPoolEmpty": "W tym pokoju nie można wylosować scvma.",
       "roomPoolReadOnly": "Zmienić je może tylko właściciel drużyny."
     },
     "card": {

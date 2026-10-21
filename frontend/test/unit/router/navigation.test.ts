@@ -162,6 +162,16 @@ describe('navigation router utils', () => {
     });
 
     describe('navigateToSessionExpired', () => {
+        it('keeps the Owlbear entry, room, scvm and view when flagging expiry', async () => {
+            appHistory.location.pathname = '/obr.html';
+            appHistory.location.search = '?obrref=room-qa&character=scvm-qa&view=card';
+            appHistory.location.hash = '#sheet';
+            await navigateToSessionExpired();
+            expect(appHistory.replace).toHaveBeenCalledWith(
+                '/obr.html?obrref=room-qa&character=scvm-qa&view=card&expired=true#sheet', undefined, { ignoreBlocker: true }
+            );
+        });
+
         it('should navigate to home with expired flag', async () => {
             await navigateToSessionExpired();
             expect(appHistory.replace).toHaveBeenCalledWith(

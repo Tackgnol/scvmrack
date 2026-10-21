@@ -15,11 +15,17 @@ export function ObrRoomPoolSummary({ roomId }: ObrRoomPoolSummaryProps) {
   if (!classes.data) {
     return null;
   }
+  const names = classes.data.classes.flatMap((cls) => cls.name ?? []);
+  if (classes.data.classlessEnabled) {
+    names.push(t('obr.common.classless', 'Classless'));
+  }
   return (
     <p>
-      {t("obr.roster.roomPoolList", "Classes this room rolls: {{classes}}.", {
-        classes: classes.data.classes.flatMap((cls) => cls.name ?? []).join(", ") || t("obr.roster.roomPoolClassless", "Classless only"),
-      })}{" "}
+      {names.length > 0 ? t("obr.roster.roomPoolList", "Classes this room rolls: {{classes}}.", {
+        classes: classes.data.classes.length === 0
+          ? t("obr.roster.roomPoolClassless", "Classless only")
+          : names.join(", "),
+      }) : t('obr.roster.roomPoolEmpty', 'No scvm can be rolled in this room.')}{" "}
       {t("obr.roster.roomPoolReadOnly", "Only the party's owner can change them.")}
     </p>
   );

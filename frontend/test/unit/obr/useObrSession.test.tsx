@@ -7,6 +7,7 @@ import { appHistory } from '@/router/history';
 import { authKeys } from '@/api';
 import { fetchSession } from '@/auth';
 import { signInViaObrPopup } from '@tackgnol/rpgtools-shared-auth/client';
+import { navigateToSessionExpired } from '@/router/navigation';
 
 vi.mock('@/auth', async original => ({
   ...await original<typeof import('@/auth')>(),
@@ -45,7 +46,7 @@ it('keeps the existing guest session and scvm reference when the external popup 
 });
 
 it('recovers an expired embedded session after successful popup sign-in without losing the room or scvm reference', async () => {
-  appHistory.replace('/obr.html?obrref=qa-room&character=qa-scvm&expired=true');
+  await navigateToSessionExpired();
   const { result } = session();
   expect(result.current.user).toBeNull();
   vi.mocked(signInViaObrPopup).mockResolvedValueOnce(undefined);
@@ -55,4 +56,5 @@ it('recovers an expired embedded session after successful popup sign-in without 
   expect(appHistory.location.search).not.toContain('expired=');
   expect(appHistory.location.search).toContain('obrref=qa-room');
   expect(appHistory.location.search).toContain('character=qa-scvm');
+  expect(appHistory.location.pathname).toBe('/obr.html');
 });

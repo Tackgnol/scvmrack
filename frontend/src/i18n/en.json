@@ -53,6 +53,7 @@
       "rollNew": "Roll new",
       "rollPickerTitle": "Choose a class",
       "rollPickerLoadError": "Could not load room classes.",
+      "rollPickerEmpty": "No scvm can be rolled in this room. Ask the GM to enable a class or Classless.",
       "partyFull": "This room's party is full. Ask the GM to make room.",
       "rollFailed": "Could not roll a scvm. Try again.",
       "forgeScvm": "Forge scvm",
@@ -130,6 +131,7 @@
       "removingFromRoster": "Removing",
       "roomPoolList": "Classes this room rolls: {{classes}}.",
       "roomPoolClassless": "Classless only",
+      "roomPoolEmpty": "No scvm can be rolled in this room.",
       "roomPoolReadOnly": "Only the party's owner can change them."
     },
     "card": {

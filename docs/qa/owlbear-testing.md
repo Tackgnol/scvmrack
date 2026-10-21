@@ -15,6 +15,8 @@ The approved acceptance scenarios are in [owlbear-extension.feature](features/ow
 
 These layers deliberately keep the SDK as the browser boundary and exercise ownership/persistence against real Fastify, shared-auth, Prisma and PostgreSQL. The integration suite changes the fixture GM's anonymous flag directly, then uses HTTP for all product actions. It never bypasses ownership checks in application code. Room capability access remains the documented accepted policy; the safe enemy card must omit GM-only fields.
 
+Recovery regressions in `frontend/test/unit/hooks/useCharacterEditor.test.ts` also switch between scvms, settle an earlier scvm's request after switching, retain edits during a 401, and recover the original request unchanged. Repository tests preserve previous-locale data without showing a different scvm's placeholder. `obr/ObrRoomPoolSummary.test.tsx` covers named-only, named-plus-Classless, Classless-only and disabled empty pools in both languages; the picker tests reject invalid Random rolls in pools without named classes.
+
 ## Local commands
 
 From `frontend/`:
