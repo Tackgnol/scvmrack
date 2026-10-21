@@ -130,6 +130,19 @@ test('Owlbear bindings enforce ownership and room scope; unbinding never deletes
   assert.equal((await call<Scvm>(`/api/characters/${scvm.id}`, owner)).id, scvm.id);
   await call('/api/auth/sign-out', owner, 'POST', {});
   await call(`/api/characters/${scvm.id}`, owner, 'PATCH', { silver: 999 }, 401);
+  const resumed = await actor();
+  const db = new Client({ connectionString: process.env.DATABASE_URL });
+  await db.connect();
+  try {
+    // Authentication fixture: model a new sign-in for the original identity.
+    // The retried save still goes through real auth and ownership checks.
+    await db.query('UPDATE "session" SET "userId" = $1 WHERE "userId" = $2', [owner.userId, resumed.userId]);
+  } finally {
+    await db.end();
+  }
+  assert.equal((await call<Scvm>(`/api/characters/${scvm.id}`, resumed)).silver, scvm.silver);
+  await call(`/api/characters/${scvm.id}`, resumed, 'PATCH', { silver: 999 });
+  assert.equal((await call<Scvm>(`/api/characters/${scvm.id}`, resumed)).silver, 999);
 });
 
 test('Owlbear party attach restores members, Miseries and safe enemy state without exposing GM notes in player cards', async () => {

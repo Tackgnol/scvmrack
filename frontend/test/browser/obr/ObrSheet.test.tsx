@@ -1,7 +1,8 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render } from 'vitest-browser-react';
 import { page, userEvent } from 'vitest/browser';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import i18n, { loadLanguage } from '@/i18n';
 import { CharacterContext } from '@/CharacterContext/CharacterContext';
 import { CharacterSheet } from '@/components/organisms/CharacterSheet';
 import type { useCurrentCharacter } from '@/hooks/useCurrentCharacter';
@@ -9,10 +10,19 @@ import type { Character } from '@/hooks/models';
 import BrowserTestProvider from '../BrowserTestProvider';
 
 describe('the real sheet in the router-less Owlbear entry', () => {
+  afterEach(async () => {
+    document.body.style.colorScheme = '';
+    await page.viewport(1280, 720);
+  });
   it.each([
     { className: 'Fanged Deserter', classCustom: false, classReportable: true },
     { className: 'Ash Cartographer', classCustom: true, classReportable: true },
-  ])('opens $className and keeps resources and class links usable', async (classFields) => {
+  ].flatMap(cls => ['en', 'pl'].flatMap(locale => ['light', 'dark'].map(scheme => ({ ...cls, locale, scheme })))))
+  ('opens $className in compact $locale / $scheme without a router', async ({ locale, scheme, ...classFields }) => {
+    await page.viewport(420, 600);
+    document.body.style.colorScheme = scheme;
+    await loadLanguage(locale);
+    await i18n.changeLanguage(locale);
     const character: Character = {
       id: 'obr-sheet', classId: 17, name: 'QA Scvm',
       ...classFields,
@@ -36,7 +46,7 @@ describe('the real sheet in the router-less Owlbear entry', () => {
       </BrowserTestProvider>,
     );
     await expect.element(page.getByText(classFields.className, { exact: true })).toBeVisible();
-    const report = page.getByRole('link', { name: 'Report a class', exact: true });
+    const report = page.getByRole('link', { name: i18n.t('report.link'), exact: true });
     await expect.element(report).toHaveAttribute('href', '/report?classId=17');
     await expect.element(report).toHaveAttribute('target', '_blank');
     if (classFields.classCustom) {
@@ -45,5 +55,6 @@ describe('the real sheet in the router-less Owlbear entry', () => {
     }
     await userEvent.click(page.getByTestId('hp-increase'));
     await expect.poll(() => updateField).toHaveBeenCalledWith('currentHp', 7);
+    expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(window.innerWidth);
   });
 });

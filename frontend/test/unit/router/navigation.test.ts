@@ -165,7 +165,7 @@ describe('navigation router utils', () => {
         it('should navigate to home with expired flag', async () => {
             await navigateToSessionExpired();
             expect(appHistory.replace).toHaveBeenCalledWith(
-                `/character/new?${SESSION_EXPIRED_QUERY_PARAM}=true`
+                `/character/new?${SESSION_EXPIRED_QUERY_PARAM}=true`, undefined, { ignoreBlocker: true }
             );
         });
 
@@ -173,7 +173,7 @@ describe('navigation router utils', () => {
             appHistory.location.search = `?${CHARACTER_ID_QUERY_PARAM}=char1`;
             await navigateToSessionExpired();
             expect(appHistory.replace).toHaveBeenCalledWith(
-                `/character/new?${CHARACTER_ID_QUERY_PARAM}=char1&${SESSION_EXPIRED_QUERY_PARAM}=true`
+                `/character/new?${CHARACTER_ID_QUERY_PARAM}=char1&${SESSION_EXPIRED_QUERY_PARAM}=true`, undefined, { ignoreBlocker: true }
             );
         });
     });

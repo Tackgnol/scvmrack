@@ -1,6 +1,7 @@
 import { useCharacter } from "@/CharacterContext/CharacterContext";
 import { CharacterSheet } from "@/components/organisms/CharacterSheet";
 import { ObrTokenBar } from "./ObrTokenBar";
+import { ObrSaveRecovery } from './ObrSaveRecovery/ObrSaveRecovery';
 import { ObrOpenInScvmrackButton } from "./ObrOpenInScvmrackButton";
 import { ObrAuthedPicker } from "./ObrAuthedPicker";
 import { ObrGmView } from "./ObrGmView";
@@ -366,6 +367,7 @@ function ObrPlayerCharacterRoute() {
               )}
             </PlayerToolbar>
           )}
+          <ObrSaveRecovery />
           <CharacterSheet
             stamping={false}
             onGenerateNew={openRollPicker}

@@ -48,7 +48,7 @@ export default function CharacterClassSummary({
         sx={{ ...customStyles.characterClassText, ...(action ? { pr: 12 } : {}) }}
       >
         {detailClassId ? (
-          <MuiLink component={SheetLink} href={`/classes/${detailClassId}`} color="inherit">
+          <MuiLink component={SheetLink} to="/classes/$classId" params={{ classId: String(detailClassId) }} color="inherit">
             {className}
           </MuiLink>
         ) : (
@@ -80,7 +80,8 @@ export default function CharacterClassSummary({
       {reportClassId && (
         <MuiLink
           component={SheetLink}
-          href={`/report?classId=${reportClassId}`}
+          to="/report"
+          search={{ classId: String(reportClassId) }}
           variant="body2"
           sx={{ display: 'inline-block', mt: 1 }}
         >

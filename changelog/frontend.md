@@ -11,7 +11,7 @@
 ## Bug fixes
 
 - The app should no longer crash when a Book or Custom Class sheet opens inside Owlbear. Class details and report links open in a separate tab so the room stays open.
-- The app should no longer remain signed out when an expired Owlbear session completes popup sign-in. The room and current scvm reference are kept during recovery.
+- The app should no longer discard an edit or get stuck when an Owlbear session expires during a save. The recovery control signs in and retries the same queued save, preserving the room and current scvm reference.
 - The Owlbear header should no longer overlap its wordmark when an active sheet opens in the compact panel, and token binding explains how to open a scene and select a token.
 - The Owlbear extension should no longer advertise version 0.6.0 or reuse its old popover URL when the 0.7.0 release is installed.
 - Owlbear Roll should no longer omit an enabled Classless choice, turn it into a random class, or keep old class choices when the GM changes the room's pool and the player reopens Roll. A quick Classless roll randomly chooses its two boosted abilities; Forge still lets you choose them.

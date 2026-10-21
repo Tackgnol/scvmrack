@@ -10,8 +10,8 @@ The approved acceptance scenarios are in [owlbear-extension.feature](features/ow
 | Token binding, cards, resources and removal | API suite above; existing `ObrCard.test.tsx`, `ObrPartyRoster.test.tsx`, `ObrCharacterRoute.test.tsx`, `obr/contextMenu.test.tsx` browser tests |
 | Durable party, Miseries, enemy projection and attach/detach | API suite above; `ObrEnemies.test.tsx` and `ObrPartyRoster.test.tsx` browser tests |
 | No scene and unavailable storage | `ObrCharacterRoute.test.tsx` scene transition; `frontend/test/unit/hooks/useAuth.test.ts` storage failure; `test/unit/utils/embed.test.ts` embedded cookie marker |
-| Cancelled login, expired session and recovery | `ObrCharacterRoute.test.tsx` cancellation; API suite sign-out/rejected save; existing auth, session gate, editor and exchange gate unit tests |
-| Compact EN/PL interface | `ObrLayout.test.tsx` at 420×600; real sheet without router in `obr/ObrSheet.test.tsx`; live host smoke below |
+| Cancelled login, expired session and recovery | `obr/ObrSaveRecovery.test.tsx` composes the real editor, HTTP middleware, auth/query/history hooks and visible recovery action through save rejection, popup sign-in and retry of the unchanged request; the API suite exercises real sign-out, 401 and a new session saving for the same owner. Popup and HTTP are the browser test's external seams. |
+| Compact EN/PL interface | `ObrLayout.test.tsx` at 420×600; real sheet without router in `obr/ObrSheet.test.tsx`; GM/player enemy views in `ObrEnemies.test.tsx`. Sheet/enemy matrices inherit light/dark CSS color schemes and assert horizontal fit; actual Owlbear theme selection remains a host release check. |
 
 These layers deliberately keep the SDK as the browser boundary and exercise ownership/persistence against real Fastify, shared-auth, Prisma and PostgreSQL. The integration suite changes the fixture GM's anonymous flag directly, then uses HTTP for all product actions. It never bypasses ownership checks in application code. Room capability access remains the documented accepted policy; the safe enemy card must omit GM-only fields.
 

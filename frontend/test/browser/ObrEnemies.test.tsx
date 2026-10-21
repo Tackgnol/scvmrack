@@ -1,10 +1,10 @@
 import { render } from "vitest-browser-react";
 import { page, userEvent } from "vitest/browser";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import BrowserTestProvider from "./BrowserTestProvider";
 import { ObrEnemiesPanel, ObrEnemyWindow } from "@/components/obr/ObrEnemies";
 import type { ObrEnemy } from "@/obr/enemies";
-import i18n from "@/i18n";
+import i18n, { loadLanguage } from "@/i18n";
 
 const roleMock = vi.hoisted(() => ({
   role: "PLAYER" as "GM" | "PLAYER" | null,
@@ -278,6 +278,31 @@ describe("ObrEnemiesPanel", () => {
           currentHealth: 5,
         }),
       );
+  });
+
+  it.each(['en', 'pl'].flatMap(locale => ['light', 'dark'].flatMap(scheme =>
+    (['GM', 'PLAYER'] as const).map(role => ({ locale, scheme, role })),
+  )))('fits the $role enemy view in compact $locale / $scheme', async ({ locale, scheme, role }) => {
+    await page.viewport(420, 600);
+    await loadLanguage(locale);
+    await i18n.changeLanguage(locale);
+    document.body.style.colorScheme = scheme;
+    roleMock.role = role;
+    enemiesMock.enemies = [sampleEnemy];
+    await render(<BrowserTestProvider><ObrEnemyWindow enemyId={sampleEnemy.id} roomId="room-1" characterId="11111111-1111-4111-8111-111111111111" /></BrowserTestProvider>);
+    if (role === 'GM') {
+      await expect.element(page.getByRole('button', { name: i18n.t('obr.enemies.saveEnemy'), exact: true })).toBeVisible();
+    } else {
+      await expect.element(page.getByText('Ash Wight', { exact: true })).toBeVisible();
+      await expect.element(page.getByRole('progressbar')).toBeVisible();
+      await expect.element(page.getByText(sampleEnemy.description!, { exact: true })).not.toBeInTheDocument();
+    }
+    expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(window.innerWidth);
+  });
+
+  afterEach(async () => {
+    document.body.style.colorScheme = '';
+    await page.viewport(1280, 720);
   });
 
   it("does not show raw session errors when an enemy save is rejected", async () => {

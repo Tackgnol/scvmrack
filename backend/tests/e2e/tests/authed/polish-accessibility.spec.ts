@@ -16,7 +16,7 @@ test('Polish sheet controls announce Polish actions and restore dialog focus', a
   }, seededCharacter.id);
   await page.reload();
   await page.getByRole('button', { name: 'Polski', exact: true }).click();
-  for (const stat of ['Zwinność', 'Opanowanie', 'Siła', 'Wytrzymałość']) {
+  for (const stat of ['Zwinność', 'Opanowanie', 'Siłę', 'Wytrzymałość']) {
     await expect(page.getByRole('button', { name: `Zmniejsz ${stat}`, exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: `Zwiększ ${stat}`, exact: true })).toBeVisible();
   }

@@ -222,6 +222,14 @@ export function useCharacterEditor(
           // Both are worth retrying; the queued batch is kept and onSettled
           // re-flushes it until we run out of attempts.
           const status = getApiErrorStatus(error);
+          if (status === 401) {
+            // Authentication can recover in-place in Owlbear. Retain the exact
+            // request, but never retry it until the player explicitly recovers.
+            unconfirmedSaveRef.current = { batch, body };
+            haltRef.current = true;
+            setSaveFailed(true);
+            return;
+          }
           if (status === 404 || status === 409) {
             unconfirmedSaveRef.current = null;
             retryCountRef.current = 0;

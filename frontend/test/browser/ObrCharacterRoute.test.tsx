@@ -9,7 +9,7 @@ import {
   PLAYER_CHARACTER_META_KEY,
   PLAYER_NAME_META_KEY,
 } from "@/obr/extension";
-import i18n from "@/i18n";
+import i18n, { loadLanguage } from "@/i18n";
 
 type Role = "GM" | "PLAYER";
 type TestCharacter = {
@@ -405,6 +405,30 @@ describe("ObrCharacterRoute", () => {
 
   afterEach(() => {
     vi.unstubAllGlobals();
+  });
+
+  it.each(['en', 'pl'].flatMap(locale => ['light', 'dark'].map(scheme => ({ locale, scheme }))))
+  ('keeps the populated GM roster and enemy action usable in compact $locale / $scheme', async ({ locale, scheme }) => {
+    await page.viewport(420, 600);
+    document.body.style.colorScheme = scheme;
+    await loadLanguage(locale);
+    await i18n.changeLanguage(locale);
+    routeMocks.role = 'GM';
+    obrApiMock.state.cards = [rosterCard];
+    obrApiMock.state.bindings = { roomId: 'room-test', players: [], tokens: [{ tokenId: 'token-1', playerId: 'player-1', characterId: rosterCard.id }] };
+    routeMocks.useObrRoomParty.mockReturnValue({ data: {
+      id: 'party-1', name: 'Owlbear room party', inviteToken: 'tok', invitePath: '/join/tok',
+      memberCount: 1, maxMembers: 10, createdAt: '2026-06-27T00:00:00.000Z',
+      updatedAt: '2026-06-27T00:00:00.000Z', role: 'gm', members: [],
+    } });
+    await renderRoute();
+    await expect.element(page.getByText('Karg', { exact: true })).toBeVisible();
+    expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(window.innerWidth);
+    await userEvent.click(page.getByRole('tab', { name: i18n.t('obr.gm.enemiesTab'), exact: true }));
+    await expect.element(page.getByRole('button', { name: i18n.t('obr.enemies.newEnemy'), exact: true })).toBeVisible();
+    expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(window.innerWidth);
+    document.body.style.colorScheme = '';
+    await page.viewport(1280, 720);
   });
 
   it("shows the scene-bound party setup for anonymous OBR GMs", async () => {
@@ -880,7 +904,8 @@ describe("ObrCharacterRoute", () => {
     await expect.element(page.getByRole('button', { name: 'Select token to bind' })).toBeDisabled();
     obrMock.state.selection = ['new-token'];
     obrMock.state.items = [{ id: 'new-token', metadata: {} }];
-    obrMock.onSceneReadyChange.mock.calls.at(-1)?.[0](true);
+    const calls = obrMock.onSceneReadyChange.mock.calls;
+    calls[calls.length - 1]?.[0](true);
     await expect.element(page.getByRole('button', { name: 'Bind to selected token' })).toBeEnabled();
     await expect.element(page.getByText('Player sheet')).toBeVisible();
     expect(routeMocks.setCharacterId).not.toHaveBeenCalledWith(null);

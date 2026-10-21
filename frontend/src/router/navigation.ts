@@ -43,7 +43,8 @@ const getCurrentSearchParams = (): URLSearchParams => {
 };
 
 const replaceCurrentWithSearchParams = async (
-    update: (searchParams: URLSearchParams) => void
+    update: (searchParams: URLSearchParams) => void,
+    ignoreBlocker = false,
 ): Promise<void> => {
     const searchParams = getCurrentSearchParams();
     update(searchParams);
@@ -54,7 +55,11 @@ const replaceCurrentWithSearchParams = async (
         appHistory.location.hash
     );
 
-    await appHistory.replace(nextPath);
+    if (ignoreBlocker) {
+        await appHistory.replace(nextPath, undefined, { ignoreBlocker: true });
+    } else {
+        await appHistory.replace(nextPath);
+    }
 };
 
 const navigateToHomeWithFlag = async (
@@ -192,7 +197,7 @@ export const buildPrintCallbackUrl = (characterId: string | null): string => {
 export const clearCurrentSearchParam = async (queryParam: string): Promise<void> => {
     await replaceCurrentWithSearchParams((searchParams) => {
         searchParams.delete(queryParam);
-    });
+    }, queryParam === SESSION_EXPIRED_QUERY_PARAM);
 };
 
 export const navigateToLoggedOut = async (): Promise<void> => {
@@ -202,5 +207,9 @@ export const navigateToLoggedOut = async (): Promise<void> => {
 };
 
 export const navigateToSessionExpired = async (): Promise<void> => {
-    await navigateToHomeWithFlag(NEW_CHARACTER_PATH, SESSION_EXPIRED_QUERY_PARAM, true);
+    const searchParams = getCurrentSearchParams();
+    searchParams.set(SESSION_EXPIRED_QUERY_PARAM, 'true');
+    // Expiry is a recovery signal, not user navigation. A pending save must
+    // survive it rather than block the signal by trying to save again.
+    await appHistory.replace(buildPath(NEW_CHARACTER_PATH, searchParams, ''), undefined, { ignoreBlocker: true });
 };

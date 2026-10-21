@@ -1,7 +1,8 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render } from "vitest-browser-react";
 import { page, userEvent } from "vitest/browser";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import i18n, { loadLanguage } from '@/i18n';
 import { fetchClasses } from "@/api/draft";
 import { ObrRollPicker } from "@/components/obr/ObrRollPicker/ObrRollPicker";
 import type { ObrRollPickerProps } from "@/components/obr/ObrRollPicker/ObrRollPicker.models";
@@ -23,6 +24,10 @@ function picker(props: Partial<ObrRollPickerProps> = {}, client = new QueryClien
 }
 
 describe("Owlbear room class selection", () => {
+  afterEach(async () => {
+    document.body.style.colorScheme = '';
+    await page.viewport(1280, 720);
+  });
   beforeEach(() => {
     vi.mocked(fetchClasses).mockReset();
     vi.mocked(fetchClasses).mockResolvedValue({
@@ -47,6 +52,18 @@ describe("Owlbear room class selection", () => {
     render(picker({ onChoose: chosen }));
     await userEvent.click(page.getByRole("button", { name: "Classless Scvm", exact: true }));
     await expect.poll(() => chosen).toHaveBeenCalledWith(null, true);
+  });
+
+  it.each(['en', 'pl'].flatMap(locale => ['light', 'dark'].map(scheme => ({ locale, scheme }))))
+  ('fits the class picker in compact $locale / $scheme', async ({ locale, scheme }) => {
+    await page.viewport(420, 600);
+    document.body.style.colorScheme = scheme;
+    await loadLanguage(locale);
+    await i18n.changeLanguage(locale);
+    render(picker({ locale }));
+    await expect.element(page.getByRole('button', { name: 'Ash Cartographer Carries the Cinder Map.' })).toBeVisible();
+    await expect.element(page.getByRole('button', { name: i18n.t('create.randomClass'), exact: true })).toBeVisible();
+    expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(window.innerWidth);
   });
 
   it("keeps Random distinct from an explicit Classless roll", async () => {
