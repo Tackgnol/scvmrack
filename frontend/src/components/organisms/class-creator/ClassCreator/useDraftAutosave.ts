@@ -1,4 +1,5 @@
 import {
+  classKeys,
   createClassDraft,
   deleteClassDraft,
   getClassDraft,
@@ -6,6 +7,7 @@ import {
   type ClassDraft,
   type StoredClassDraft,
 } from "@/api/classes";
+import { useQueryClient } from "@tanstack/react-query";
 import { getApiErrorCode, getApiErrorStatus } from "@/utils/errorUtils";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -47,6 +49,7 @@ async function requestPersist(
 }
 /** Keeps a private server draft in sync after an idle second, retrying while offline. */
 export function useDraftAutosave({ classId, draft, revision, initialDraft, replaceDraft }: UseDraftAutosaveInput) {
+  const queryClient = useQueryClient();
   const [record, setRecord] = useState<StoredClassDraft | null>(initialDraft);
   const [state, setState] = useState<DraftSaveState>(initialDraft ? "saved" : "idle");
   const latest = useRef({ draft, revision });
@@ -71,6 +74,10 @@ export function useDraftAutosave({ classId, draft, revision, initialDraft, repla
   useEffect(() => {
     replaceDraftRef.current = replaceDraft;
   }, [replaceDraft]);
+  const deleteDraft = useCallback(async (id: number) => {
+    await deleteClassDraft(id);
+    await queryClient.invalidateQueries({ queryKey: classKeys.drafts(), exact: true });
+  }, [queryClient]);
   const persist = useCallback(async (force = false) => {
     if (saving.current || discarding.current || latest.current.revision === 0 || conflict.current) {
       return;
@@ -92,7 +99,7 @@ export function useDraftAutosave({ classId, draft, revision, initialDraft, repla
     if (completedRevision.current !== null && completedRevision.current >= snapshot.revision) {
       // A save or discard finished during this write; ignore the obsolete revision.
       if (result.saved && !discarding.current) {
-        await deleteClassDraft(result.saved.id).catch(() => undefined);
+        await deleteDraft(result.saved.id).catch(() => undefined);
       }
       saving.current = false;
       setState("idle");
@@ -121,7 +128,7 @@ export function useDraftAutosave({ classId, draft, revision, initialDraft, repla
     if (latest.current.revision !== snapshot.revision && !conflict.current) {
       void persist();
     }
-  }, [classId]);
+  }, [classId, deleteDraft]);
 
   useEffect(() => {
     if (revision === 0 || (completedRevision.current !== null && revision <= completedRevision.current)) {
@@ -140,8 +147,15 @@ export function useDraftAutosave({ classId, draft, revision, initialDraft, repla
   }, [persist, retryAttempt, state]);
 
   useEffect(() => () => {
-    void persist();
-  }, [persist]);
+    // Refresh after the flush settles, without reopening the editor's own draft prompt.
+    void persist().then(function refreshDraftList(): Promise<void> {
+      const pending = pendingWrite.current;
+      if (pending) {
+        return pending.then(refreshDraftList);
+      }
+      return queryClient.invalidateQueries({ queryKey: classKeys.drafts(), exact: true });
+    });
+  }, [persist, queryClient]);
 
   const loadNewer = useCallback(async () => {
     if (!recordRef.current) {
@@ -169,7 +183,7 @@ export function useDraftAutosave({ classId, draft, revision, initialDraft, repla
       .then((result) => {
         savedDuringDiscard = result?.saved ?? null;
         const toDelete = savedDuringDiscard ?? recordRef.current;
-        return toDelete ? deleteClassDraft(toDelete.id) : Promise.resolve();
+        return toDelete ? deleteDraft(toDelete.id) : Promise.resolve();
       })
       .then(() => {
         recordRef.current = null;
@@ -187,7 +201,7 @@ export function useDraftAutosave({ classId, draft, revision, initialDraft, repla
         throw error;
       })
       .finally(() => { discarding.current = false; });
-  }, []);
+  }, [deleteDraft]);
 
   /**
    * Forgets the draft after a save. The server discarded `discardedId` with the save; a record
@@ -197,12 +211,12 @@ export function useDraftAutosave({ classId, draft, revision, initialDraft, repla
     completedRevision.current = latest.current.revision;
     const leftover = recordRef.current;
     if (leftover && leftover.id !== discardedId) {
-      void deleteClassDraft(leftover.id).catch(() => undefined);
+      void deleteDraft(leftover.id).catch(() => undefined);
     }
     recordRef.current = null;
     setRecord(null);
     setState("idle");
-  }, []);
+  }, [deleteDraft]);
 
   return { state, record, persist, loadNewer, keepMine, discard, complete };
 }

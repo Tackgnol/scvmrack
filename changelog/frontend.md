@@ -10,6 +10,10 @@
 
 ## Bug fixes
 
+- The app should no longer hide an autosaved Custom Class draft, offer a consumed draft, or keep an older Edit link when you return to My classes without reloading, including when a navigation save finishes after the list loads. (RPG-324)
+- The app should no longer leave Next scvm unavailable when you resize an open four-member party view from phone to desktop. (RPG-325)
+- The app should no longer fail to create or clone an Owlbear enemy, or claim an attached room is missing when a save is refused or an enemy was deleted elsewhere. (RPG-332)
+- The app should no longer lose enemy wounds or heals when an Owlbear GM clicks health controls before earlier saves finish. Later queued actions still run if one save fails. (RPG-333)
 - The app should no longer leave an Owlbear GM unable to sign in when their embedded session is missing or expired. Recovery stays in the room and refreshes the party owner's controls.
 - The app should no longer send one scvm's pending edits to another when you switch sheets after a failed save. Each scvm retains its own recovery queue, and further edits wait for explicit recovery after a session expires.
 - Owlbear should no longer open the main app's creation flow when an expired session recovers, offer an invalid Random roll in a Classless-only room, or misreport the GM's enabled class choices.
