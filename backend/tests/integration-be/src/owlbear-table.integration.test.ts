@@ -145,6 +145,33 @@ test('Owlbear bindings enforce ownership and room scope; unbinding never deletes
   assert.equal((await call<Scvm>(`/api/characters/${scvm.id}`, resumed)).silver, 999);
 });
 
+test('the attached party owner manages member bindings without gaining access to unrelated characters or rooms', async () => {
+  const { gm, roomId, party } = await room();
+  const player = await actor();
+  const member = await call<Scvm>(`/api/characters/new?obrRoom=${roomId}&obrPlayer=member`, player, 'POST', {}, 201);
+  const stranger = await actor(true);
+  const tokenPath = `/api/obr/rooms/${roomId}/tokens/gm-token/character`;
+  const playerPath = `/api/obr/rooms/${roomId}/players/assigned-member/character`;
+  await call(tokenPath, gm, 'PUT', { characterId: member.id });
+  const cards = await call<Card[]>(`/api/obr/rooms/${roomId}/cards?ids=${member.id}`);
+  assert.equal(cards[0].id, member.id);
+  await call(tokenPath, stranger, 'PUT', { characterId: member.id }, 401);
+  await call(tokenPath, stranger, 'DELETE', undefined, 401);
+  await call(playerPath, gm, 'PUT', { characterId: member.id });
+  await call(playerPath, stranger, 'DELETE', undefined, 401);
+  await call(`/api/obr/rooms/other-${roomId}/tokens/gm-token/character`, gm, 'PUT', { characterId: member.id }, 401);
+  const unrelated = await call<Scvm>('/api/characters/new', stranger, 'POST', {}, 201);
+  await call(tokenPath, gm, 'PUT', { characterId: unrelated.id }, 401);
+  await call(tokenPath, gm, 'DELETE', undefined, 204);
+  await call(playerPath, gm, 'DELETE', undefined, 204);
+  const bindings = await call<Bindings>(`/api/obr/rooms/${roomId}/bindings`);
+  assert.deepEqual(bindings.tokens, []);
+  assert.equal(bindings.players.some(binding => binding.playerId === 'assigned-member'), false);
+  assert.equal((await call<Scvm>(`/api/characters/${member.id}`, player)).id, member.id);
+  await call(`/api/parties/${party.id}/detach-room`, gm, 'POST', {});
+  await call(tokenPath, gm, 'PUT', { characterId: member.id }, 401);
+});
+
 test('Owlbear party attach restores members, Miseries and safe enemy state without exposing GM notes in player cards', async () => {
   const { gm, roomId, party } = await room();
   const player = await actor();

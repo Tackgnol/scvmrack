@@ -9,6 +9,7 @@
 
 - Owner-only Custom Class drafts, explicit saves, immutable versions for used classes, archive/restore, and configurable account/daily-public-class limits
 - Party Class Pools drive the classes that a party and its Owlbear room can roll
+- The app should no longer reject token or player binding changes when the signed-in GM owns the party attached to that Owlbear room. The permission is limited to that party's members and does not grant access to unrelated characters or rooms.
 - Public class discovery and read-only details, signed-out reports, rate limits and honeypot protection, human moderation, GM removal history, user-based creation bans, takedown disputes, admin restoration, and two-year reporter-detail anonymization
 - Book Class omen rolls follow the printed book: Esoteric Hermit and Heretical Priest use d4; the other Book Classes use d2
 
