@@ -15,6 +15,7 @@
 ## Stack
 
 - **Runtime:** Fastify 5.x (ESM, TypeScript), autoloaded plugins & routes
+- The backend should no longer reuse an outdated Node 22 base when dev images are rebuilt. Build, runtime and CI images pin Node 22.23.4.
 - **Database:** PostgreSQL via Prisma 6 with the `@prisma/adapter-pg` driver adapter
 - **Auth:** `@tackgnol/rpgtools-shared-auth` (Better Auth sessions + Logto OIDC)
 - **Observability:** Sentry / GlitchTip (`@sentry/node`)
