@@ -454,7 +454,8 @@ describe("ObrCharacterRoute", () => {
       .element(page.getByRole("button", { name: "Move party to scvmrack" }))
       .toBeVisible();
     expect(routeMocks.useCharacter).not.toHaveBeenCalled();
-    expect(routeMocks.useObrSession).not.toHaveBeenCalled();
+    expect(routeMocks.useObrSession).toHaveBeenCalled();
+    await expect.element(page.getByRole('button', { name: 'Sign in', exact: true })).toBeVisible();
   });
 
   it("switches the GM view between party and enemies tabs", async () => {

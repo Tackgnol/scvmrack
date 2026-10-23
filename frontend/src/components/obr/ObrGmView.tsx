@@ -3,6 +3,7 @@ import { useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ObrEnemiesGmSlot } from "./ObrEnemiesSlot";
 import { ObrPartyRoster } from "./ObrPartyRoster";
+import { ObrGmSession } from "./ObrGmSession/ObrGmSession";
 import { GmShell, GmTab, GmTabList, GmTabPanel } from "./ObrGmView.styles";
 
 type GmTabId = "party" | "enemies";
@@ -59,6 +60,8 @@ export function ObrGmView() {
   }
 
   return (
+    <>
+    <ObrGmSession />
     <GmShell aria-label={t("obr.gm.region", "GM view")}>
       <GmTabList role="tablist" aria-label={t("obr.gm.tabsLabel", "GM view")}>
         {GM_TABS.map((tab) => {
@@ -104,5 +107,6 @@ export function ObrGmView() {
         <ObrEnemiesGmSlot />
       </GmTabPanel>
     </GmShell>
+    </>
   );
 }

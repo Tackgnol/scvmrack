@@ -10,6 +10,7 @@
 
 ## Bug fixes
 
+- The app should no longer leave an Owlbear GM unable to sign in when their embedded session is missing or expired. Recovery stays in the room and refreshes the party owner's controls.
 - The app should no longer send one scvm's pending edits to another when you switch sheets after a failed save. Each scvm retains its own recovery queue, and further edits wait for explicit recovery after a session expires.
 - Owlbear should no longer open the main app's creation flow when an expired session recovers, offer an invalid Random roll in a Classless-only room, or misreport the GM's enabled class choices.
 - The app should no longer crash when a Book or Custom Class sheet opens inside Owlbear. Class details and report links open in a separate tab so the room stays open.
