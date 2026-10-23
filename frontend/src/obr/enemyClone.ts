@@ -1,10 +1,10 @@
-import { createEnemyRowId, createObrEnemyId } from "@tackgnol/rpgtools-owlbear";
+import { createEnemyRowId } from "@tackgnol/rpgtools-owlbear";
 import type { ObrEnemy } from "./enemies";
 
 export function cloneEnemy(enemy: ObrEnemy, existingNames: string[]): ObrEnemy {
   return {
     ...enemy,
-    id: createObrEnemyId(),
+    id: "",
     partyId: undefined,
     name: nextCloneName(enemy.name, existingNames),
     attacks: enemy.attacks.map((attack) => ({

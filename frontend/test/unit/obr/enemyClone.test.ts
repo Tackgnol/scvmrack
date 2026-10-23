@@ -30,7 +30,7 @@ test("nextCloneName ignores names that merely share a prefix", () => {
   ).toBe("Skeleton 2");
 });
 
-test("cloneEnemy issues fresh ids and a numbered name", () => {
+test("cloneEnemy leaves the server id unset and gives copied rows fresh ids", () => {
   const source: ObrEnemy = {
     id: "abc123",
     partyId: "party-1",
@@ -55,7 +55,7 @@ test("cloneEnemy issues fresh ids and a numbered name", () => {
 
   expect(clone.name).toBe("Goblin 3");
   expect(clone.id).not.toBe(source.id);
-  expect(clone.id.startsWith("enemy-")).toBe(true);
+  expect(clone.id).toBe("");
   expect(clone.partyId).toBeUndefined();
   expect(clone.attacks[0].id).not.toBe("row-1");
   expect(clone.attacks[0].name).toBe("Bite");

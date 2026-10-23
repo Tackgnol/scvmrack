@@ -2,7 +2,6 @@ import { z } from "zod";
 import {
   createEnemyRowId,
   createEnemyStatusId,
-  createObrEnemyId,
   DEFAULT_ENEMY_STATUS_BANDS,
   toHealthPercent,
   type ObrEnemy,
@@ -113,7 +112,8 @@ export function toObrEnemy(
     values.maxHealth,
   );
   return {
-    id: enemyId ?? createObrEnemyId(),
+    // The shared persistence hook uses an empty ID to create a server-owned UUID.
+    id: enemyId ?? "",
     name: values.name,
     type: values.type,
     habitat: values.habitat,

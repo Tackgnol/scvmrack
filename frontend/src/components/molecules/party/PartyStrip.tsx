@@ -4,7 +4,7 @@ import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { Box, IconButton, styled } from '@mui/material';
 import {
   Children,
-  useEffect,
+  useCallback,
   useLayoutEffect,
   useRef,
   useState,
@@ -93,39 +93,26 @@ export function PartyStrip({ children, cardWidth = 300, gap = 18 }: PartyStripPr
   const [canRight, setCanRight] = useState(false);
   const count = Children.count(children);
 
+  const handleScroll = useCallback(() => {
+    const el = trackRef.current;
+    if (!el) {
+      return;
+    }
+    const next = getScrollAvailability(el);
+    setCanLeft(next.canLeft);
+    setCanRight(next.canRight);
+  }, []);
+
   useLayoutEffect(() => {
     const el = trackRef.current;
     if (!el) {
       return;
     }
-    const next = getScrollAvailability(el);
-    setCanLeft(next.canLeft);
-    setCanRight(next.canRight);
-  }, [count]);
-
-  useEffect(() => {
-    const onResize = () => {
-      const el = trackRef.current;
-      if (!el) {
-        return;
-      }
-      const next = getScrollAvailability(el);
-      setCanLeft(next.canLeft);
-      setCanRight(next.canRight);
-    };
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
-  }, []);
-
-  const handleScroll = () => {
-    const el = trackRef.current;
-    if (!el) {
-      return;
-    }
-    const next = getScrollAvailability(el);
-    setCanLeft(next.canLeft);
-    setCanRight(next.canRight);
-  };
+    handleScroll();
+    const observer = new ResizeObserver(handleScroll);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [count, cardWidth, gap, handleScroll]);
 
   const page = (direction: 1 | -1) => {
     const el = trackRef.current;

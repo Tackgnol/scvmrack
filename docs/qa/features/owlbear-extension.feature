@@ -65,3 +65,21 @@ Feature: Owlbear table play
     When I use the player, GM, class picker and enemy views in English and Polish
     Then their primary actions remain visible and usable without horizontal page overflow
     And the views remain legible in Owlbear's light and dark themes
+
+  # Automation anchor: frontend/test/browser/obr/EnemyPersistence.test.tsx
+  Scenario: Create, clone and edit enemies from the GM panel
+    Given a signed-in GM has attached a party to the room
+    When the GM saves a new enemy with a name and hit points
+    Then that enemy remains in the room after reopening the panel
+    When the GM clones the enemy and edits the clone's name
+    Then both enemies remain distinct after reopening the panel
+    And editing the clone has not changed the original enemy
+
+  # Automation anchor: frontend/test/browser/obr/EnemyPersistence.test.tsx
+  Scenario: Keep every acknowledged enemy wound and heal
+    Given a signed-in GM has an enemy at 8 of 8 hit points in the room
+    When the GM rapidly wounds the enemy four times before saves settle
+    Then the enemy has 4 of 8 hit points after the saves settle and the panel reopens
+    When the GM rapidly heals the enemy four times before saves settle
+    Then the enemy has 8 of 8 hit points after the saves settle and the panel reopens
+    And further wounds or heals cannot move hit points outside zero to maximum

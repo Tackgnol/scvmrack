@@ -33,11 +33,12 @@ export function ClassesPage() {
   const [disputeTarget, setDisputeTarget] = useState<number | null>(null);
   const [removalTarget, setRemovalTarget] = useState<RemovalTarget | null>(null);
   const [showArchived, setShowArchived] = useState(false);
-  const draftsQuery = useQuery({ queryKey: classKeys.drafts(), queryFn: listClassDrafts, enabled: isAuthenticated });
+  const draftsQuery = useQuery({ queryKey: classKeys.drafts(), queryFn: listClassDrafts, enabled: isAuthenticated, refetchOnMount: "always" });
   const classesQuery = useQuery({
     queryKey: classKeys.mine(locale),
     queryFn: () => listMyClasses(locale),
     enabled: isAuthenticated,
+    refetchOnMount: "always",
   });
   const refresh = () => void queryClient.invalidateQueries({ queryKey: classKeys.all() });
   const restore = useMutation({

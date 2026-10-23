@@ -54,6 +54,7 @@ export function ObrEnemyManager({
   // burst of copies, so this keeps "Skeleton 2/3/4" from colliding.
   const cloneNamesRef = useRef<string[]>([]);
   const copyQueueRef = useRef<Promise<void> | null>(null);
+  const healthQueueRef = useRef(new Map<string, Promise<ObrEnemy>>());
 
   async function handleClone(enemy: ObrEnemy): Promise<ObrEnemy | null> {
     setActionError(null);
@@ -191,12 +192,17 @@ export function ObrEnemyManager({
 
   async function stepHealth(enemy: ObrEnemy, deltaHealth: number) {
     setActionError(null);
+    const previous = healthQueueRef.current.get(enemy.id) ?? Promise.resolve(enemy);
+    // Each click starts from the preceding server result, even before React renders it.
+    const update = previous.then((current) =>
+      updateEnemyHealth(
+        enemy.id,
+        clampCurrentHealth(current.currentHealth + deltaHealth, current.maxHealth),
+      ),
+    );
+    healthQueueRef.current.set(enemy.id, update);
     try {
-      const nextHealth = clampCurrentHealth(
-        enemy.currentHealth + deltaHealth,
-        enemy.maxHealth,
-      );
-      await updateEnemyHealth(enemy.id, nextHealth);
+      await update;
     } catch (healthError) {
       setActionError(
         enemyErrorMessage(
@@ -205,6 +211,10 @@ export function ObrEnemyManager({
           t,
         ),
       );
+    } finally {
+      if (healthQueueRef.current.get(enemy.id) === update) {
+        healthQueueRef.current.delete(enemy.id);
+      }
     }
   }
 

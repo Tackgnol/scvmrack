@@ -1,6 +1,6 @@
 import {
   getApiErrorCode,
-  isApiNotFound,
+  getApiErrorStatus,
   isApiUnauthorized,
 } from "@/utils/errorUtils";
 
@@ -20,7 +20,7 @@ export function enemyErrorMessage(
     );
   }
 
-  if (isApiNotFound(error) || code === "PARTY_NOT_FOUND") {
+  if (getApiErrorStatus(error) === 404 || code === "PARTY_NOT_FOUND") {
     return t(
       "obr.enemies.partyRequired",
       "Move this room to scvmrack before saving enemies.",
