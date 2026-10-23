@@ -83,3 +83,18 @@ Feature: Owlbear table play
     When the GM rapidly heals the enemy four times before saves settle
     Then the enemy has 8 of 8 hit points after the saves settle and the panel reopens
     And further wounds or heals cannot move hit points outside zero to maximum
+
+  # Automation anchor: frontend/test/browser/obr/EnemyPersistence.test.tsx
+  Scenario: Continue queued enemy health actions after one save fails
+    Given a signed-in GM has an enemy at 8 of 8 hit points in the room
+    When the GM rapidly wounds the enemy four times
+    And one wound fails to save while the other three succeed
+    Then the GM sees the failed-save message
+    And the enemy has 5 of 8 hit points after reopening the panel
+
+  # Automation anchor: frontend/test/browser/obr/EnemyPersistence.test.tsx
+  Scenario: Distinguish a deleted enemy from a missing room party
+    Given a signed-in GM is viewing an enemy in an attached room party
+    When that enemy is deleted elsewhere before the GM changes it
+    Then the failed action does not claim the room party is missing
+    And a genuinely missing room party still explains how to attach it

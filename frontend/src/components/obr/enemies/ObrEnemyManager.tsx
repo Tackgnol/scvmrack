@@ -193,25 +193,26 @@ export function ObrEnemyManager({
   async function stepHealth(enemy: ObrEnemy, deltaHealth: number) {
     setActionError(null);
     const previous = healthQueueRef.current.get(enemy.id) ?? Promise.resolve(enemy);
-    // Each click starts from the preceding server result, even before React renders it.
-    const update = previous.then((current) =>
-      updateEnemyHealth(
-        enemy.id,
-        clampCurrentHealth(current.currentHealth + deltaHealth, current.maxHealth),
-      ),
-    );
+    // Failed clicks keep the last successful server result for the next queued action.
+    const update = previous.then(async (current) => {
+      try {
+        return await updateEnemyHealth(
+          enemy.id,
+          clampCurrentHealth(current.currentHealth + deltaHealth, current.maxHealth),
+        );
+      } catch (healthError) {
+        setActionError(
+          enemyErrorMessage(
+            healthError,
+            t("obr.enemies.healthFailed", "Could not update health"),
+            t,
+          ),
+        );
+        return current;
+      }
+    });
     healthQueueRef.current.set(enemy.id, update);
-    try {
-      await update;
-    } catch (healthError) {
-      setActionError(
-        enemyErrorMessage(
-          healthError,
-          t("obr.enemies.healthFailed", "Could not update health"),
-          t,
-        ),
-      );
-    }
+    await update;
     if (healthQueueRef.current.get(enemy.id) === update) {
       healthQueueRef.current.delete(enemy.id);
     }

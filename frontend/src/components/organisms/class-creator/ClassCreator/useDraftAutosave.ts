@@ -1,4 +1,5 @@
 import {
+  classKeys,
   createClassDraft,
   deleteClassDraft,
   getClassDraft,
@@ -6,6 +7,7 @@ import {
   type ClassDraft,
   type StoredClassDraft,
 } from "@/api/classes";
+import { useQueryClient } from "@tanstack/react-query";
 import { getApiErrorCode, getApiErrorStatus } from "@/utils/errorUtils";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -47,6 +49,7 @@ async function requestPersist(
 }
 /** Keeps a private server draft in sync after an idle second, retrying while offline. */
 export function useDraftAutosave({ classId, draft, revision, initialDraft, replaceDraft }: UseDraftAutosaveInput) {
+  const queryClient = useQueryClient();
   const [record, setRecord] = useState<StoredClassDraft | null>(initialDraft);
   const [state, setState] = useState<DraftSaveState>(initialDraft ? "saved" : "idle");
   const latest = useRef({ draft, revision });
@@ -140,8 +143,15 @@ export function useDraftAutosave({ classId, draft, revision, initialDraft, repla
   }, [persist, retryAttempt, state]);
 
   useEffect(() => () => {
-    void persist();
-  }, [persist]);
+    // Refresh after the flush settles, without reopening the editor's own draft prompt.
+    void persist().then(function refreshDraftList(): Promise<void> {
+      const pending = pendingWrite.current;
+      if (pending) {
+        return pending.then(refreshDraftList);
+      }
+      return queryClient.invalidateQueries({ queryKey: classKeys.drafts(), exact: true });
+    });
+  }, [persist, queryClient]);
 
   const loadNewer = useCallback(async () => {
     if (!recordRef.current) {

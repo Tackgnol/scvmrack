@@ -21,3 +21,11 @@ Feature: Custom classes
     And I return to My classes through normal navigation
     Then Edit opens the latest saved version without reloading
     And a scvm already playing the earlier version keeps its original rules
+
+  # Automation anchor: frontend/test/browser/pages/ClassManagementNavigation.test.tsx
+  Scenario: Discover a draft whose navigation flush finishes after My classes loads
+    Given I am a signed-in GM and have opened My classes
+    When I edit a custom class draft and return before its idle autosave
+    And the navigation save finishes after My classes has loaded
+    Then My classes shows the saved draft without reloading
+    And Resume opens its latest saved content

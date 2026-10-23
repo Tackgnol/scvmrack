@@ -3,7 +3,7 @@ import { createMemoryHistory, createRootRoute, createRoute, createRouter, Link, 
 import { render } from 'vitest-browser-react';
 import { page, userEvent } from 'vitest/browser';
 import { beforeEach, expect, it, vi } from 'vitest';
-import { createClassDraft, getClass, getClassDraft, getMyCreationBan, listClassDrafts, listMyClasses, saveClass, type OwnClassSummary, type SavedClass, type StoredClassDraft } from '@/api/classes';
+import { createClassDraft, getClass, getClassDraft, getMyCreationBan, listClassDrafts, listMyClasses, saveClass, updateClassDraft, type OwnClassSummary, type SavedClass, type StoredClassDraft } from '@/api/classes';
 import { blankDraft } from '@/components/organisms/class-creator/creatorShared.utils';
 import { ClassesPage } from '@/pages/ClassesPage';
 import { ClassCreatorPage } from '@/pages/ClassCreatorPage';
@@ -12,7 +12,7 @@ import BrowserTestProvider from '../BrowserTestProvider';
 vi.mock('@/hooks/useAuth', () => ({ useAuth: () => ({ isAuthenticated: true, isLoading: false }) }));
 vi.mock('@/api/classes', async importOriginal => ({
   ...await importOriginal<typeof import('@/api/classes')>(),
-  createClassDraft: vi.fn(), getClass: vi.fn(), getClassDraft: vi.fn(),
+  createClassDraft: vi.fn(), updateClassDraft: vi.fn(), getClass: vi.fn(), getClassDraft: vi.fn(),
   getMyCreationBan: vi.fn(), listClassDrafts: vi.fn(), listMyClasses: vi.fn(), saveClass: vi.fn(),
 }));
 
@@ -20,7 +20,7 @@ function ClassManagementNavigation() {
   return <><Link to="/gm/classes">My classes</Link><Outlet /></>;
 }
 
-async function openManagement() {
+async function openManagement(initialPath = '/gm/classes') {
   const root = createRootRoute({ component: ClassManagementNavigation });
   const routes = [
     createRoute({ getParentRoute: () => root, path: '/gm/classes', component: ClassesPage }),
@@ -28,7 +28,7 @@ async function openManagement() {
     createRoute({ getParentRoute: () => root, path: '/gm/classes/draft/$draftId', component: ClassCreatorPage }),
     createRoute({ getParentRoute: () => root, path: '/gm/classes/$classId', component: ClassCreatorPage }),
   ];
-  const router = createRouter({ routeTree: root.addChildren(routes), history: createMemoryHistory({ initialEntries: ['/gm/classes'] }) });
+  const router = createRouter({ routeTree: root.addChildren(routes), history: createMemoryHistory({ initialEntries: [initialPath] }) });
   const client = new QueryClient({ defaultOptions: { queries: { retry: false, staleTime: 300_000 }, mutations: { retry: false } } });
   await render(<QueryClientProvider client={client}><BrowserTestProvider><RouterProvider router={router} /></BrowserTestProvider></QueryClientProvider>);
   return router;
@@ -79,4 +79,87 @@ it('edits the latest saved version after returning to My classes (RPG-324)', asy
   await expect.element(page.getByRole('link', { name: 'Edit Ash Navigator II', exact: true })).toHaveAttribute('href', '/gm/classes/17');
   await userEvent.click(page.getByRole('link', { name: 'Edit Ash Navigator II', exact: true }));
   await expect.element(page.getByRole('textbox', { name: 'Class name', exact: true })).toHaveValue('Ash Navigator II');
+});
+
+it.each(['create', 'update'] as const)('discovers a draft after its late navigation %s finishes (RPG-324)', async operation => {
+  const earlier: StoredClassDraft = { id: 14, classId: null, draft: { ...blankDraft(), name: { en: 'Earlier draft', pl: '' } }, revision: 1, updatedAt: '2026-10-23T12:00:00Z', expiresAt: '2027-01-21T12:00:00Z' };
+  const latest = { ...earlier, draft: { ...earlier.draft, name: { en: 'Latest Navigator', pl: '' } }, revision: 2 };
+  let finishSave: () => void = () => { throw new Error('Navigation save has not started'); };
+  const pendingSave = () => new Promise<StoredClassDraft>(resolve => {
+    finishSave = () => {
+      vi.mocked(listClassDrafts).mockResolvedValue([latest]);
+      vi.mocked(getClassDraft).mockResolvedValue(latest);
+      resolve(latest);
+    };
+  });
+  vi.mocked(createClassDraft).mockImplementation(pendingSave);
+  vi.mocked(updateClassDraft).mockImplementation(pendingSave);
+  if (operation === 'update') {
+    vi.mocked(listClassDrafts).mockResolvedValue([earlier]);
+    vi.mocked(getClassDraft).mockResolvedValue(earlier);
+  }
+  await openManagement();
+  await expect.element(page.getByRole('heading', { name: 'My classes', exact: true })).toBeVisible();
+  await userEvent.click(page.getByRole('link', { name: operation === 'create' ? 'Forge a class' : 'Resume', exact: true }));
+  await userEvent.fill(page.getByRole('textbox', { name: 'Class name', exact: true }), 'Latest Navigator');
+  const save = operation === 'create' ? createClassDraft : updateClassDraft;
+  expect(save).not.toHaveBeenCalled();
+  const reads = vi.mocked(listClassDrafts).mock.calls.length;
+  await userEvent.click(page.getByRole('link', { name: 'My classes', exact: true }));
+  await expect.poll(() => vi.mocked(listClassDrafts).mock.calls.length).toBeGreaterThan(reads);
+  await expect.poll(() => save).toHaveBeenCalledTimes(1);
+  await expect.element(page.getByRole('heading', { name: 'My classes', exact: true })).toBeVisible();
+  finishSave();
+  await expect.element(page.getByText('Latest Navigator', { exact: true })).toBeVisible();
+  await userEvent.click(page.getByRole('link', { name: 'Resume', exact: true }));
+  await expect.element(page.getByRole('textbox', { name: 'Class name', exact: true })).toHaveValue('Latest Navigator');
+});
+
+it('keeps an existing class editor open when its own autosave finishes (RPG-324)', async () => {
+  const draft = { ...blankDraft(), name: { en: 'Navigator', pl: '' } };
+  vi.mocked(getClass).mockResolvedValue({ id: 16, version: 1, status: 'active', playingCount: 1, takenDownAt: null, takedownReason: null, draft });
+  vi.mocked(createClassDraft).mockImplementation(async input => {
+    const record: StoredClassDraft = { id: 14, classId: 16, draft: input.draft, revision: 1, updatedAt: '2026-10-23T12:00:00Z', expiresAt: '2027-01-21T12:00:00Z' };
+    vi.mocked(listClassDrafts).mockResolvedValue([record]);
+    return record;
+  });
+  vi.mocked(updateClassDraft).mockResolvedValue({ id: 14, classId: 16, draft, revision: 2, updatedAt: '2026-10-23T12:00:00Z', expiresAt: '2027-01-21T12:00:00Z' });
+  await openManagement('/gm/classes/16');
+  await userEvent.fill(page.getByRole('textbox', { name: 'Class name', exact: true }), 'Navigator II');
+  await expect.element(page.getByText(/^Draft saved ·/)).toBeVisible();
+  await userEvent.fill(page.getByRole('textbox', { name: 'Description', exact: true }), 'Still editing this class.');
+  await expect.element(page.getByRole('textbox', { name: 'Class name', exact: true })).toHaveValue('Navigator II');
+});
+
+it('waits for edits queued behind an in-flight autosave before refreshing My classes (RPG-324)', async () => {
+  let finishCreate: () => void = () => { throw new Error('Create has not started'); };
+  let finishUpdate: () => void = () => { throw new Error('Update has not started'); };
+  vi.mocked(createClassDraft).mockImplementation(input => new Promise(resolve => {
+    finishCreate = () => {
+      const record: StoredClassDraft = { id: 14, classId: null, draft: input.draft, revision: 1, updatedAt: '2026-10-23T12:00:00Z', expiresAt: '2027-01-21T12:00:00Z' };
+      vi.mocked(listClassDrafts).mockResolvedValue([record]);
+      resolve(record);
+    };
+  }));
+  vi.mocked(updateClassDraft).mockImplementation(input => new Promise(resolve => {
+    finishUpdate = () => {
+      const record: StoredClassDraft = { id: 14, classId: null, draft: input.draft, revision: 2, updatedAt: '2026-10-23T12:00:01Z', expiresAt: '2027-01-21T12:00:01Z' };
+      vi.mocked(listClassDrafts).mockResolvedValue([record]);
+      vi.mocked(getClassDraft).mockResolvedValue(record);
+      resolve(record);
+    };
+  }));
+  await openManagement();
+  await userEvent.click(page.getByRole('link', { name: 'Forge a class', exact: true }));
+  await userEvent.fill(page.getByRole('textbox', { name: 'Class name', exact: true }), 'Earlier Navigator');
+  await expect.poll(() => createClassDraft).toHaveBeenCalledTimes(1);
+  await userEvent.fill(page.getByRole('textbox', { name: 'Class name', exact: true }), 'Latest Navigator');
+  await userEvent.click(page.getByRole('link', { name: 'My classes', exact: true }));
+  await expect.element(page.getByRole('heading', { name: 'My classes', exact: true })).toBeVisible();
+  finishCreate();
+  await expect.poll(() => updateClassDraft).toHaveBeenCalledTimes(1);
+  finishUpdate();
+  await expect.element(page.getByText('Latest Navigator', { exact: true })).toBeVisible();
+  await userEvent.click(page.getByRole('link', { name: 'Resume', exact: true }));
+  await expect.element(page.getByRole('textbox', { name: 'Class name', exact: true })).toHaveValue('Latest Navigator');
 });
