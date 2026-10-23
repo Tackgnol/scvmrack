@@ -211,10 +211,9 @@ export function ObrEnemyManager({
           t,
         ),
       );
-    } finally {
-      if (healthQueueRef.current.get(enemy.id) === update) {
-        healthQueueRef.current.delete(enemy.id);
-      }
+    }
+    if (healthQueueRef.current.get(enemy.id) === update) {
+      healthQueueRef.current.delete(enemy.id);
     }
   }
 
