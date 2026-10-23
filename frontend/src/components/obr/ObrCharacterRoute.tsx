@@ -22,6 +22,7 @@ import {
   obrRoomBindingsClient,
 } from "@/obr/obrApiClient";
 import { useObrSession } from "@/obr/useObrSession";
+import { openClassDetails } from '@/obr/openClassDetails';
 import { getApiLocale, getCharacterKey } from "@/hooks/utils";
 import { getApiErrorCode } from "@/utils/errorUtils";
 import { Button } from "@mui/material";
@@ -370,6 +371,14 @@ function ObrPlayerCharacterRoute() {
           <ObrSaveRecovery />
           <CharacterSheet
             stamping={false}
+            onClassLinkClick={(event) => {
+              event.preventDefault();
+              if (character.classId) {
+                void openClassDetails(character.classId, issueObrExchangeToken).catch(() => {
+                  void OBR.notification.show(t('obr.player.openInScvmrackFailed'), 'ERROR');
+                });
+              }
+            }}
             onGenerateNew={openRollPicker}
             onKillScvm={openRollPicker}
           />

@@ -3,13 +3,14 @@ import { customStyles } from '@/theme/morkBorgTheme';
 import { CharacterNameSummary, CharacterClassSummary } from '@components/index';
 import { useCharacterNameAndClass } from '@/hooks/useCharacterNameAndClass';
 import { getCharacterViewTransitionName } from '@/router/routeClassification';
-import type { ReactNode } from 'react';
+import type { MouseEventHandler, ReactNode } from 'react';
 
 type CharacterNameAndClassProps = {
   classAction?: ReactNode;
+  onClassLinkClick?: MouseEventHandler<HTMLAnchorElement>;
 };
 
-export const CharacterNameAndClass = ({ classAction }: CharacterNameAndClassProps) => {
+export const CharacterNameAndClass = ({ classAction, onClassLinkClick }: CharacterNameAndClassProps) => {
   const {
     character,
     isLoading,
@@ -56,6 +57,7 @@ export const CharacterNameAndClass = ({ classAction }: CharacterNameAndClassProp
       />
 
       <CharacterClassSummary
+        onClassLinkClick={onClassLinkClick}
         label={classLabel}
         className={character.className || fallbackClassName}
         classDescription={character.classDescription ?? undefined}

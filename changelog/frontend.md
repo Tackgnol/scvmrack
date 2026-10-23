@@ -24,6 +24,7 @@
 - Saving a resumed class draft no longer says the draft wouldn't load after the class saved.
 - Getting Better labels the four ability rolls with their stat names, in English and Polish.
 - Custom Class "created by" credits are translated into Polish on class pages, sheets and print-outs.
+- The app should no longer show "Class not found" when an Owlbear player opens their party's private Custom Class rules in a new tab. The new tab inherits their existing party access without making the class public.
 - The party forge no longer offers Classless when the GM has switched it off.
 - The party view's previous/next scvm arrows work on phones when the warband overflows.
 - Carrying two copies of the same consumable, pet or power no longer confuses their rows.

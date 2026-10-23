@@ -6,14 +6,14 @@ import { appHistory } from '@/router/history';
 import { Button, Stack } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Message, Wrapper } from './ObrAuthDonePage.styles';
+import type { Handoff } from './ObrOpenPage.models';
 
 const FAILURE_MESSAGE =
     'This link has expired or was already used. Go back to Owlbear and try again.';
 const ACCOUNT_MISMATCH_MESSAGE =
     'This browser tab is already signed into a different account.';
-
-type ForgeHandoff = { token: string; roomId: string; playerId: string };
 
 function scrubToken(): void {
     const url = new URL(window.location.href);
@@ -22,19 +22,21 @@ function scrubToken(): void {
 }
 
 export function ObrOpenPage() {
+    const { t } = useTranslation();
     const { isAnonymous, isLoading, user } = useAuth({ bootstrapAnonymous: false });
     const queryClient = useQueryClient();
     const started = useRef(false);
     const [failureMessage, setFailureMessage] = useState<string | null>(null);
-    const [mismatch, setMismatch] = useState<ForgeHandoff | null>(null);
+    const [mismatch, setMismatch] = useState<Handoff | null>(null);
     const [switching, setSwitching] = useState(false);
 
-    const openForge = useCallback(async ({ token, roomId, playerId }: ForgeHandoff) => {
-        await obrAuthClient.redeemObrExchangeToken(token);
+    const openHandoff = useCallback(async (handoff: Handoff) => {
+        await obrAuthClient.redeemObrExchangeToken(handoff.token);
         scrubToken();
         await queryClient.invalidateQueries({ queryKey: authKeys.session() });
         await appHistory.replace(
-            `/character/create?obrRoom=${encodeURIComponent(roomId)}&obrPlayer=${encodeURIComponent(playerId)}`,
+            'classId' in handoff ? `/classes/${encodeURIComponent(handoff.classId)}`
+                : `/character/create?obrRoom=${encodeURIComponent(handoff.roomId)}&obrPlayer=${encodeURIComponent(handoff.playerId)}`,
         );
     }, [queryClient]);
 
@@ -51,8 +53,11 @@ export function ObrOpenPage() {
         const roomId = params.get('obrRoom')?.trim();
         const playerId = params.get('obrPlayer')?.trim();
         const forge = to === 'forge';
+        const classRules = to === 'class';
+        const classId = params.get('classId')?.trim();
 
-        if (!token || (forge ? !roomId || !playerId : !characterId)) {
+        if (!token || (forge ? !roomId || !playerId
+            : classRules ? !classId || !/^[1-9]\d*$/.test(classId) : !characterId)) {
             if (token) {
                 scrubToken();
             }
@@ -60,15 +65,17 @@ export function ObrOpenPage() {
             return;
         }
 
-        if (forge && roomId && playerId && user && !isAnonymous) {
-            setMismatch({ token, roomId, playerId });
+        if ((forge || classRules) && user && !isAnonymous) {
+            setMismatch(classRules ? { token, classId: classId as string }
+                : { token, roomId: roomId as string, playerId: playerId as string });
             return;
         }
 
         void (async () => {
             try {
-                if (forge) {
-                    await openForge({ token, roomId: roomId as string, playerId: playerId as string });
+                if (forge || classRules) {
+                    await openHandoff(classRules ? { token, classId: classId as string }
+                        : { token, roomId: roomId as string, playerId: playerId as string });
                     return;
                 }
                 await obrAuthClient.redeemObrExchangeToken(token);
@@ -80,24 +87,23 @@ export function ObrOpenPage() {
                 setFailureMessage(FAILURE_MESSAGE);
             }
         })();
-    }, [isAnonymous, isLoading, openForge, queryClient, user]);
+    }, [isAnonymous, isLoading, openHandoff, queryClient, user]);
 
-    const forgeAsObrIdentity = async () => {
+    const openAsObrIdentity = async () => {
         if (!mismatch || switching) {
             return;
         }
         setSwitching(true);
         try {
             await signOut();
-            await openForge(mismatch);
+            await openHandoff(mismatch);
             setMismatch(null);
         } catch {
             scrubToken();
             setMismatch(null);
             setFailureMessage(FAILURE_MESSAGE);
-        } finally {
-            setSwitching(false);
         }
+        setSwitching(false);
     };
 
     if (mismatch) {
@@ -105,8 +111,8 @@ export function ObrOpenPage() {
             <Wrapper>
                 <Stack spacing={2} alignItems="center">
                     <Message>{ACCOUNT_MISMATCH_MESSAGE}</Message>
-                    <Button variant="contained" onClick={() => void forgeAsObrIdentity()} disabled={switching}>
-                        Forge as the Owlbear identity
+                    <Button variant="contained" onClick={() => void openAsObrIdentity()} disabled={switching}>
+                        {'classId' in mismatch ? t('obr.player.openClassAsIdentity') : 'Forge as the Owlbear identity'}
                     </Button>
                     <Button variant="text" onClick={() => { scrubToken(); setMismatch(null); setFailureMessage('Opening cancelled. Go back to Owlbear and try again.'); }}>
                         Cancel
