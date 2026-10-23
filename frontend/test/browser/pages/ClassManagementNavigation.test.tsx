@@ -3,7 +3,7 @@ import { createMemoryHistory, createRootRoute, createRoute, createRouter, Link, 
 import { render } from 'vitest-browser-react';
 import { page, userEvent } from 'vitest/browser';
 import { beforeEach, expect, it, vi } from 'vitest';
-import { createClassDraft, getClass, getClassDraft, getMyCreationBan, listClassDrafts, listMyClasses, saveClass, updateClassDraft, type OwnClassSummary, type SavedClass, type StoredClassDraft } from '@/api/classes';
+import { createClassDraft, deleteClassDraft, getClass, getClassDraft, getMyCreationBan, listClassDrafts, listMyClasses, saveClass, updateClassDraft, type OwnClassSummary, type SavedClass, type StoredClassDraft } from '@/api/classes';
 import { blankDraft } from '@/components/organisms/class-creator/creatorShared.utils';
 import { ClassesPage } from '@/pages/ClassesPage';
 import { ClassCreatorPage } from '@/pages/ClassCreatorPage';
@@ -12,7 +12,7 @@ import BrowserTestProvider from '../BrowserTestProvider';
 vi.mock('@/hooks/useAuth', () => ({ useAuth: () => ({ isAuthenticated: true, isLoading: false }) }));
 vi.mock('@/api/classes', async importOriginal => ({
   ...await importOriginal<typeof import('@/api/classes')>(),
-  createClassDraft: vi.fn(), updateClassDraft: vi.fn(), getClass: vi.fn(), getClassDraft: vi.fn(),
+  createClassDraft: vi.fn(), updateClassDraft: vi.fn(), deleteClassDraft: vi.fn(), getClass: vi.fn(), getClassDraft: vi.fn(),
   getMyCreationBan: vi.fn(), listClassDrafts: vi.fn(), listMyClasses: vi.fn(), saveClass: vi.fn(),
 }));
 
@@ -162,4 +162,53 @@ it('waits for edits queued behind an in-flight autosave before refreshing My cla
   await expect.element(page.getByText('Latest Navigator', { exact: true })).toBeVisible();
   await userEvent.click(page.getByRole('link', { name: 'Resume', exact: true }));
   await expect.element(page.getByRole('textbox', { name: 'Class name', exact: true })).toHaveValue('Latest Navigator');
+});
+
+it.each(['before', 'after'] as const)('refreshes after consumed-draft deletion when autosave resolves %s the class save (RPG-324)', async order => {
+  const draft = { ...blankDraft(), name: { en: 'Navigator', pl: '' }, description: { en: 'The ash road.', pl: '' }, origins: [{ en: 'A burnt chapel', pl: '' }] };
+  vi.mocked(getClass).mockResolvedValue({ id: 16, version: 1, status: 'active', playingCount: 0, takenDownAt: null, takedownReason: null, draft });
+  let finishCreate: () => void = () => { throw new Error('Create has not started'); };
+  let finishDelete: () => void = () => { throw new Error('Delete has not started'); };
+  let finishSave: () => void = () => { throw new Error('Save has not started'); };
+  vi.mocked(createClassDraft).mockImplementation(input => new Promise(resolve => {
+    finishCreate = () => {
+      const record: StoredClassDraft = { id: 14, classId: 16, draft: input.draft, revision: 1, updatedAt: '2026-10-23T12:00:00Z', expiresAt: '2027-01-21T12:00:00Z' };
+      vi.mocked(listClassDrafts).mockResolvedValue([record]);
+      resolve(record);
+    };
+  }));
+  vi.mocked(deleteClassDraft).mockImplementation(() => new Promise(resolve => {
+    finishDelete = () => {
+      vi.mocked(listClassDrafts).mockResolvedValue([]);
+      resolve();
+    };
+  }));
+  vi.mocked(saveClass).mockImplementation(input => new Promise(resolve => {
+    finishSave = () => resolve({ id: 16, version: 1, status: 'active', playingCount: 0, takenDownAt: null, takedownReason: null, draft: input.draft, savedRefs: {} });
+  }));
+  await openManagement('/gm/classes/16');
+  await userEvent.fill(page.getByRole('textbox', { name: 'Class name', exact: true }), 'Saved Navigator');
+  await expect.poll(() => createClassDraft).toHaveBeenCalledTimes(1);
+  await userEvent.click(page.getByRole('button', { name: /Test roll & save/ }).first());
+  await userEvent.click(page.getByRole('button', { name: 'Save class', exact: true }));
+  await expect.poll(() => saveClass).toHaveBeenCalledTimes(1);
+  if (order === 'before') {
+    finishCreate();
+    await expect.element(page.getByText(/^Draft saved ·/)).toBeVisible();
+    await userEvent.click(page.getByRole('link', { name: 'My classes', exact: true }));
+  }
+  finishSave();
+  if (order === 'after') {
+    await expect.element(page.getByRole('button', { name: 'Saved', exact: true })).toBeVisible();
+    await userEvent.click(page.getByRole('link', { name: 'My classes', exact: true }));
+  }
+  await expect.element(page.getByRole('heading', { name: 'My classes', exact: true })).toBeVisible();
+  if (order === 'after') {
+    finishCreate();
+  }
+  await expect.poll(() => deleteClassDraft).toHaveBeenCalledWith(14);
+  const reads = vi.mocked(listClassDrafts).mock.calls.length;
+  finishDelete();
+  await expect.poll(() => vi.mocked(listClassDrafts).mock.calls.length).toBeGreaterThan(reads);
+  await expect.element(page.getByRole('link', { name: 'Resume', exact: true })).not.toBeInTheDocument();
 });

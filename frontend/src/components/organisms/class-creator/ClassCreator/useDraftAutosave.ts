@@ -74,6 +74,10 @@ export function useDraftAutosave({ classId, draft, revision, initialDraft, repla
   useEffect(() => {
     replaceDraftRef.current = replaceDraft;
   }, [replaceDraft]);
+  const deleteDraft = useCallback(async (id: number) => {
+    await deleteClassDraft(id);
+    await queryClient.invalidateQueries({ queryKey: classKeys.drafts(), exact: true });
+  }, [queryClient]);
   const persist = useCallback(async (force = false) => {
     if (saving.current || discarding.current || latest.current.revision === 0 || conflict.current) {
       return;
@@ -95,7 +99,7 @@ export function useDraftAutosave({ classId, draft, revision, initialDraft, repla
     if (completedRevision.current !== null && completedRevision.current >= snapshot.revision) {
       // A save or discard finished during this write; ignore the obsolete revision.
       if (result.saved && !discarding.current) {
-        await deleteClassDraft(result.saved.id).catch(() => undefined);
+        await deleteDraft(result.saved.id).catch(() => undefined);
       }
       saving.current = false;
       setState("idle");
@@ -124,7 +128,7 @@ export function useDraftAutosave({ classId, draft, revision, initialDraft, repla
     if (latest.current.revision !== snapshot.revision && !conflict.current) {
       void persist();
     }
-  }, [classId]);
+  }, [classId, deleteDraft]);
 
   useEffect(() => {
     if (revision === 0 || (completedRevision.current !== null && revision <= completedRevision.current)) {
@@ -179,7 +183,7 @@ export function useDraftAutosave({ classId, draft, revision, initialDraft, repla
       .then((result) => {
         savedDuringDiscard = result?.saved ?? null;
         const toDelete = savedDuringDiscard ?? recordRef.current;
-        return toDelete ? deleteClassDraft(toDelete.id) : Promise.resolve();
+        return toDelete ? deleteDraft(toDelete.id) : Promise.resolve();
       })
       .then(() => {
         recordRef.current = null;
@@ -197,7 +201,7 @@ export function useDraftAutosave({ classId, draft, revision, initialDraft, repla
         throw error;
       })
       .finally(() => { discarding.current = false; });
-  }, []);
+  }, [deleteDraft]);
 
   /**
    * Forgets the draft after a save. The server discarded `discardedId` with the save; a record
@@ -207,12 +211,12 @@ export function useDraftAutosave({ classId, draft, revision, initialDraft, repla
     completedRevision.current = latest.current.revision;
     const leftover = recordRef.current;
     if (leftover && leftover.id !== discardedId) {
-      void deleteClassDraft(leftover.id).catch(() => undefined);
+      void deleteDraft(leftover.id).catch(() => undefined);
     }
     recordRef.current = null;
     setRecord(null);
     setState("idle");
-  }, []);
+  }, [deleteDraft]);
 
   return { state, record, persist, loadNewer, keepMine, discard, complete };
 }
