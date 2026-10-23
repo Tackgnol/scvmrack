@@ -68,7 +68,9 @@ test('failed navigation saves keep the sheet available for Retry', async ({ page
   const patchRoute = `**/api/characters/${seededCharacter.id}*`;
   let attempts = 0;
   await page.route(patchRoute, async (route) => {
-    if (route.request().method() !== 'PATCH') return route.continue();
+    if (route.request().method() !== 'PATCH') {
+      return route.continue();
+    }
     attempts++;
     await route.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify({ statusCode: 503, code: 'SERVICE_UNAVAILABLE', message: 'Unavailable' }) });
   });
@@ -77,7 +79,9 @@ test('failed navigation saves keep the sheet available for Retry', async ({ page
   await expect.poll(() => attempts).toBe(3);
   await expect(page).toHaveURL(new RegExp(`/character/${seededCharacter.id}$`));
   const skip = page.getByRole('button', { name: /skip/i });
-  if (await skip.isVisible()) await skip.click();
+  if (await skip.isVisible()) {
+    await skip.click();
+  }
   await page.unroute(patchRoute);
   const saved = page.waitForResponse((response) => response.request().method() === 'PATCH' && response.url().includes(`/api/characters/${seededCharacter.id}`));
   await page.getByRole('button', { name: 'Retry', exact: true }).first().click();

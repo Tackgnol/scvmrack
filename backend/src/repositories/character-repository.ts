@@ -147,6 +147,17 @@ export const characterRepository = {
     });
   },
 
+  getObrBindingAccessContext(id: string) {
+    return prisma.character.findUnique({
+      where: { id },
+      select: {
+        userId: true,
+        sessionId: true,
+        party: { select: { ownerUserId: true, obrRoomId: true } },
+      },
+    });
+  },
+
   /** Ids from `ids` whose character belongs to the party attached to this OBR room. */
   async filterCharacterIdsInRoomParty(
     ids: string[],
