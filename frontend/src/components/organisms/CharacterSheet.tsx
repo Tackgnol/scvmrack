@@ -28,6 +28,7 @@ import { customStyles } from '@/theme/morkBorgTheme';
 import { Box, Button, Typography, useMediaQuery, useTheme } from '@mui/material';
 import { keyframes } from '@mui/system';
 import { useEffect, useRef } from 'react';
+import type { MouseEventHandler } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const sheetImpactAnimation = keyframes`
@@ -77,6 +78,7 @@ type CharacterSheetProps = {
     onGenerateNew: () => void;
     onKillScvm: () => void;
     readOnly?: boolean;
+    onClassLinkClick?: MouseEventHandler<HTMLAnchorElement>;
 };
 
 export function CharacterSheet({
@@ -84,6 +86,7 @@ export function CharacterSheet({
     onGenerateNew,
     onKillScvm,
     readOnly = false,
+    onClassLinkClick,
 }: CharacterSheetProps) {
     const { t } = useTranslation();
     const { character, isAuthenticated, locale } = useCharacter();
@@ -139,6 +142,7 @@ export function CharacterSheet({
             </Box>
             <Box>
                 <CharacterNameAndClass
+                    onClassLinkClick={onClassLinkClick}
                     classAction={
                         !readOnly && character?.id && !gettingBetter.isOpen ? (
                             <Button

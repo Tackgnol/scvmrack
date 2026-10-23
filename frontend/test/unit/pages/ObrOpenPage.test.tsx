@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, expect, test, vi } from 'vitest';
+import i18n from '@/i18n';
 
 const mocks = vi.hoisted(() => ({
     navigate: vi.fn(async (_path: string) => {}),
@@ -36,7 +37,8 @@ function renderPage() {
     return { invalidateQueries };
 }
 
-beforeEach(() => {
+beforeEach(async () => {
+    await i18n.changeLanguage('en');
     window.history.replaceState({}, '', '/obr-open?token=exchange-token&character=character-1');
     mocks.navigate.mockClear();
     mocks.redeem.mockClear();
@@ -75,6 +77,33 @@ test('scrubs an expired token and tells the user to retry from Owlbear', async (
     });
     expect(window.location.search).toBe('?character=character-1');
     expect(mocks.navigate).not.toHaveBeenCalled();
+});
+
+test('redeems the embedded identity before opening its private class rules', async () => {
+    window.history.replaceState({}, '', '/obr-open?token=exchange-token&to=class&classId=17');
+    renderPage();
+    await waitFor(() => expect(mocks.navigate).toHaveBeenCalledWith('/classes/17'));
+    expect(mocks.redeem).toHaveBeenCalledWith('exchange-token');
+    expect(window.location.search).not.toContain('token');
+});
+
+test('rejects an invalid class destination without consuming its token', async () => {
+    window.history.replaceState({}, '', '/obr-open?token=exchange-token&to=class&classId=../../gm');
+    renderPage();
+    await screen.findByText('This link has expired or was already used. Go back to Owlbear and try again.');
+    expect(mocks.redeem).not.toHaveBeenCalled();
+    expect(mocks.navigate).not.toHaveBeenCalled();
+});
+
+test('requires an explicit switch before replacing an existing class-tab account', async () => {
+    window.history.replaceState({}, '', '/obr-open?token=exchange-token&to=class&classId=17');
+    mocks.useAuth.mockReturnValue({ isAnonymous: false, isLoading: false, user: { id: 'another-account' } });
+    renderPage();
+    const open = await screen.findByRole('button', { name: /open class rules as the owlbear identity/i });
+    expect(mocks.redeem).not.toHaveBeenCalled();
+    open.click();
+    await waitFor(() => expect(mocks.navigate).toHaveBeenCalledWith('/classes/17'));
+    expect(mocks.signOut).toHaveBeenCalledOnce();
 });
 
 test('does not redeem an incomplete handoff URL', async () => {

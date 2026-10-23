@@ -59,6 +59,7 @@
       "forgeScvm": "Stwórz scvma",
       "signIn": "Zaloguj",
       "popupBlocked": "Zezwól na okno logowania i spróbuj ponownie.",
+      "openClassAsIdentity": "Otwórz zasady klasy jako użytkownik z Owlbear",
       "signInFailed": "Logowanie nie zostało ukończone.",
       "selectTokenFirst": "Najpierw wybierz token na mapie",
       "boundNotification": "Przypisano",

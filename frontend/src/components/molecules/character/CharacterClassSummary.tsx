@@ -1,7 +1,7 @@
 import { Box, Link as MuiLink, Paper, Typography } from '@mui/material';
 import SheetLink from '@/components/atoms/SheetLink/SheetLink';
 import { customStyles } from '@/theme/morkBorgTheme';
-import type { ReactNode } from 'react';
+import type { MouseEventHandler, ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 
 interface CharacterClassSummaryProps {
@@ -14,6 +14,7 @@ interface CharacterClassSummaryProps {
   reportClassId?: number;
   /** A Custom Class's id; its name then links to the class's detail page. */
   detailClassId?: number;
+  onClassLinkClick?: MouseEventHandler<HTMLAnchorElement>;
   action?: ReactNode;
 }
 
@@ -26,6 +27,7 @@ export default function CharacterClassSummary({
   classContentRemoved,
   reportClassId,
   detailClassId,
+  onClassLinkClick,
   action,
 }: CharacterClassSummaryProps) {
   const { t } = useTranslation();
@@ -48,7 +50,7 @@ export default function CharacterClassSummary({
         sx={{ ...customStyles.characterClassText, ...(action ? { pr: 12 } : {}) }}
       >
         {detailClassId ? (
-          <MuiLink component={SheetLink} to="/classes/$classId" params={{ classId: String(detailClassId) }} color="inherit">
+          <MuiLink component={SheetLink} to="/classes/$classId" params={{ classId: String(detailClassId) }} onClick={onClassLinkClick} color="inherit">
             {className}
           </MuiLink>
         ) : (

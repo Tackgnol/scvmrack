@@ -59,6 +59,7 @@
       "forgeScvm": "Forge scvm",
       "signIn": "Login",
       "popupBlocked": "Allow the sign-in popup, then try again.",
+      "openClassAsIdentity": "Open class rules as the Owlbear identity",
       "signInFailed": "Sign-in did not complete.",
       "selectTokenFirst": "Select a token on the map first",
       "boundNotification": "Bound",
