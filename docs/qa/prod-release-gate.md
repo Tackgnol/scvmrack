@@ -96,7 +96,7 @@ API smoke:
 - `GET /api/equipment/search?q=sword&limit=5` returns public equipment search results only.
 - `GET /api/characters/not-a-uuid` returns `400 VALIDATION_ERROR`.
 - `GET /api/characters/{random-valid-uuid}` without a session returns `401 SESSION_REQUIRED`.
-- `GET /api/auth/oauth2/login/logto?callbackURL=https://evil.example/after` returns `403 INVALID_CALLBACK_URL` and does not redirect externally.
+- OAuth login with local `returnTo`, external `returnTo`, and legacy external `callbackURL` redirects only to the configured Logto authorization endpoint and uses this app's `/api/auth/oauth2/callback/logto` callback. Set `LOGTO_ENDPOINT` when testing a different provider origin (default: `https://auth.rpgtools.co`). This low-impact smoke does not complete a sign-in; `backend/tests/unit-be/oauth-redirects.test.ts` exercises the real shared-auth callback and verifies the final local path or safe home fallback while mocking only the provider's token/userinfo HTTP boundary.
 
 Browser smoke:
 

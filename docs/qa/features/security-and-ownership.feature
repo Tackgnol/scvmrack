@@ -42,12 +42,18 @@ Feature: Security and ownership
     And I submit a feedback report
     Then the app confirms that the report was sent
 
-  # Automation anchor: docs/qa/security-production-notes.md
-  Scenario: OAuth login does not accept an untrusted callback URL
+  # Automation anchor: backend/tests/unit-be/oauth-redirects.test.ts
+  Scenario Outline: OAuth login keeps its final destination inside Scvmrack
     Given I start the Logto login flow from Scvm Rack
-    When the login request includes an external callback URL
-    Then the auth layer rejects the callback URL
-    And the browser is not redirected to the external URL
+    When I complete sign-in with "<parameter>" requesting "<target>"
+    Then my final destination is the Scvmrack path "<destination>"
+    And the browser is not redirected to an external site
+
+    Examples:
+      | parameter   | target                     | destination |
+      | returnTo    | /faq                       | /faq        |
+      | returnTo    | https://evil.example/after | /           |
+      | callbackURL | https://evil.example/after | /           |
 
   # Automation anchor: docs/qa/security-production-notes.md
   Scenario: Profile link uses the same authenticated account origin

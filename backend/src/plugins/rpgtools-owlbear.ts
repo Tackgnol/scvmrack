@@ -8,9 +8,9 @@ import {
   hasObrWriteSession,
   type AppSession,
 } from '../services/session.js';
-import { canManageObrBinding, filterAdditionalVisibleCharacterIdsInObrRoom } from '../services/obr-room-visibility-service.js';
+import { canManageObrBinding, canRemoveObrBinding, filterAdditionalVisibleCharacterIdsInObrRoom } from '../services/obr-room-visibility-service.js';
 
-type BindingActor = { session: AppSession; roomId: string };
+type BindingActor = { session: AppSession; roomId: string; removing: boolean };
 
 export default fp(async function rpgtoolsOwlbearPlugin(fastify: FastifyInstance) {
   await fastify.register(obrRoomBindings, {
@@ -20,6 +20,7 @@ export default fp(async function rpgtoolsOwlbearPlugin(fastify: FastifyInstance)
     getSession: (request): BindingActor => ({
       session: (request as typeof request & { appSession?: AppSession }).appSession ?? null,
       roomId: (request.params as { roomId: string }).roomId,
+      removing: request.method === 'DELETE',
     }),
     hasWriteAccess: (actor) => hasObrWriteSession((actor as BindingActor).session),
     async getCards(allowedIds, locale) {
@@ -27,8 +28,10 @@ export default fp(async function rpgtoolsOwlbearPlugin(fastify: FastifyInstance)
       return fulls.filter((f): f is Record<string, unknown> => f !== null).map(toCharacterCard);
     },
     async ownsCharacter(actor, characterId) {
-      const { session, roomId } = actor as BindingActor;
-      return canManageObrBinding(session, characterId, roomId);
+      const { session, roomId, removing } = actor as BindingActor;
+      return removing
+        ? canRemoveObrBinding(session, characterId, roomId)
+        : canManageObrBinding(session, characterId, roomId);
     },
     async extraRoomCharacterIds(ids, roomId) {
       return filterAdditionalVisibleCharacterIdsInObrRoom(ids, roomId);

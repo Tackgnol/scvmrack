@@ -4,8 +4,15 @@ import {
   type ObrRosterActionState,
   type ObrRosterState as CoreObrRosterState,
 } from "@tackgnol/rpgtools-owlbear/react-query";
+import {
+  unbindRoomPlayerCharacter,
+  unbindRoomTokenCharacter,
+} from "@tackgnol/rpgtools-owlbear";
 import { partyKeys, promoteObrRoom } from "@/api/party";
-import { useKickPartyMember, useObrRoomParty } from "@/hooks/usePartyRepository";
+import {
+  useKickPartyMember,
+  useObrRoomParty,
+} from "@/hooks/usePartyRepository";
 import { getApiLocale } from "@/hooks/utils";
 import type {
   ObrCard,
@@ -13,7 +20,7 @@ import type {
   ObrTokenCharacterBinding,
 } from "@/api/obr";
 import { scvmrackObrExtension } from "@/obr/extension";
-import { obrApiClient } from "@/obr/obrApiClient";
+import { obrApiClient, obrRoomBindingsClient } from "@/obr/obrApiClient";
 import { useObrRoomId } from "@/obr/useObrRoomId";
 import OBR from "@owlbear-rodeo/sdk";
 import { useQueryClient } from "@tanstack/react-query";
@@ -102,42 +109,65 @@ export function useObrRosterCards(): ObrRosterState {
   const [removeRosterAction, setRemoveRosterAction] =
     useState<RemoveFromRosterState>(null);
 
-  // Composes three independent primitives (player unbind, token unbind,
-  // party kick) that each own the core hook's shared `action` state — routing
-  // them through this dedicated state instead avoids racing that shared
-  // pending/message/error against the composite's own outcome.
+  // Core roster actions swallow errors for their own UI; removal must stop
+  // before kicking a member whose bindings could not be cleared.
   const removeFromRoster = useCallback(
     async (characterId: string) => {
       const row = roster.rows.find((r) => r.characterId === characterId);
       setRemoveRosterAction({ characterId, pending: true, error: null });
 
-      const tasks: Promise<unknown>[] = [
+      const results = await Promise.allSettled([
         ...(row?.players.map((player) =>
-          roster.unassignPlayer(player.playerId),
+          unbindRoomPlayerCharacter(
+            scvmrackObrExtension,
+            OBR,
+            obrRoomBindingsClient,
+            {
+              roomId,
+              playerId: player.playerId,
+            },
+          ),
         ) ?? []),
-        ...(row?.tokens.map((token) => roster.unbindToken(token.tokenId)) ??
-          []),
-      ];
-      if (partyId && partyMemberCharacterIds.has(characterId)) {
-        tasks.push(kickPartyMember.mutateAsync(characterId));
-      }
-
-      const results = await Promise.allSettled(tasks);
+        ...(row?.tokens.map((token) =>
+          unbindRoomTokenCharacter(
+            scvmrackObrExtension,
+            OBR,
+            obrRoomBindingsClient,
+            {
+              roomId,
+              tokenId: token.tokenId,
+            },
+          ),
+        ) ?? []),
+      ]);
       const rejected = results.find(
         (r): r is PromiseRejectedResult => r.status === "rejected",
       );
-      await roster.refresh();
+      let failure: unknown = rejected?.reason;
+      try {
+        if (!rejected && partyId && partyMemberCharacterIds.has(characterId)) {
+          await kickPartyMember.mutateAsync(characterId);
+        }
+      } catch (error) {
+        failure ??= error;
+      }
+      try {
+        await roster.refresh();
+      } catch (error) {
+        failure ??= error;
+      }
       setRemoveRosterAction({
         characterId,
         pending: false,
-        error: rejected
-          ? rejected.reason instanceof Error
-            ? rejected.reason.message
-            : String(rejected.reason)
-          : null,
+        error:
+          rejected || failure !== undefined
+            ? failure instanceof Error
+              ? failure.message
+              : String(failure)
+            : null,
       });
     },
-    [roster, partyId, partyMemberCharacterIds, kickPartyMember],
+    [roster, roomId, partyId, partyMemberCharacterIds, kickPartyMember],
   );
 
   return { ...roster, removeFromRoster, removeRosterAction };

@@ -9,7 +9,7 @@ Feature: Production release smoke
     Then health returns ok
     And public aggregate endpoints expose no private character data
     And validation errors keep the stable error envelope
-    And untrusted OAuth callback URLs are rejected
+    And OAuth sign-in cannot send the browser to an external return target
 
   # Automation anchor: docs/qa/prod-release-gate.md
   Scenario: Public browser smoke passes after deploy
