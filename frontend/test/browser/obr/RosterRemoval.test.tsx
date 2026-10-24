@@ -35,7 +35,12 @@ vi.mock("@owlbear-rodeo/sdk", () => ({
       items: {
         getItems: async () => [],
         onChange: () => () => {},
-        updateItems: async () => {},
+        updateItems: async () => {
+          if (rejectMetadata) {
+            throw new Error("Scene cleanup failed");
+          }
+          tokenMetadataBound = false;
+        },
         deleteItems: async () => {},
       },
     },
@@ -51,6 +56,8 @@ let rejectCleanup: boolean;
 let releaseCleanup: (() => void) | undefined;
 let holdCleanup: boolean;
 let kickedWithBindings: boolean;
+let rejectMetadata: boolean;
+let tokenMetadataBound: boolean;
 
 beforeEach(() => {
   resetRedirectControl();
@@ -61,6 +68,8 @@ beforeEach(() => {
   holdCleanup = false;
   releaseCleanup = undefined;
   kickedWithBindings = false;
+  rejectMetadata = false;
+  tokenMetadataBound = true;
   vi.stubGlobal("fetch", transport.proxy);
   transport.fetch.mockImplementation(async (input: RequestInfo | URL) => {
     const request = input instanceof Request ? input : new Request(input);
@@ -74,8 +83,12 @@ beforeEach(() => {
     if (path === "/api/parties") {
       return Response.json([]);
     }
-    if (path.endsWith('/class-pool')) {
-      return Response.json({ classes: [], classlessEnabled: true, removed: [] });
+    if (path.endsWith("/class-pool")) {
+      return Response.json({
+        classes: [],
+        classlessEnabled: true,
+        removed: [],
+      });
     }
     if (path === "/api/parties/promote") {
       return Response.json({
@@ -118,7 +131,7 @@ beforeEach(() => {
       return new Response(null, { status: 204 });
     }
     if (path.endsWith("/kick")) {
-      kickedWithBindings = playerBound || tokenBound;
+      kickedWithBindings = playerBound || tokenBound || tokenMetadataBound;
       member = false;
       return new Response(null, { status: 204 });
     }
@@ -186,4 +199,25 @@ it("keeps membership after failed cleanup and removes the scvm when the GM retri
       page.getByRole("button", { name: "Remove from roster", exact: true }),
     )
     .not.toBeInTheDocument();
+});
+
+it("retries token metadata cleanup before removing its durable binding and membership", async () => {
+  rejectMetadata = true;
+  await openRoster();
+  await userEvent.click(
+    page.getByRole("button", { name: "Remove from roster", exact: true }),
+  );
+  await expect
+    .element(page.getByText("Scene cleanup failed", { exact: true }))
+    .toBeVisible();
+  expect(member).toBe(true);
+  expect(tokenBound).toBe(true);
+  expect(tokenMetadataBound).toBe(true);
+  rejectMetadata = false;
+  await userEvent.click(
+    page.getByRole("button", { name: "Remove from roster", exact: true }),
+  );
+  await expect.poll(() => member).toBe(false);
+  expect(tokenBound || tokenMetadataBound).toBe(false);
+  expect(kickedWithBindings).toBe(false);
 });

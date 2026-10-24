@@ -6,7 +6,8 @@ import {
 } from "@tackgnol/rpgtools-owlbear/react-query";
 import {
   unbindRoomPlayerCharacter,
-  unbindRoomTokenCharacter,
+  unbindCharacterFromToken,
+  broadcastRosterChanged,
 } from "@tackgnol/rpgtools-owlbear";
 import { partyKeys, promoteObrRoom } from "@/api/party";
 import {
@@ -128,17 +129,19 @@ export function useObrRosterCards(): ObrRosterState {
             },
           ),
         ) ?? []),
-        ...(row?.tokens.map((token) =>
-          unbindRoomTokenCharacter(
+        ...(row?.tokens.map(async (token) => {
+          // Keep the durable binding discoverable until scene cleanup succeeds.
+          await unbindCharacterFromToken(
             scvmrackObrExtension,
             OBR,
-            obrRoomBindingsClient,
-            {
-              roomId,
-              tokenId: token.tokenId,
-            },
-          ),
-        ) ?? []),
+            token.tokenId,
+          );
+          await obrRoomBindingsClient.clearTokenCharacter({
+            roomId,
+            tokenId: token.tokenId,
+          });
+          await broadcastRosterChanged(scvmrackObrExtension, OBR);
+        }) ?? []),
       ]);
       const rejected = results.find(
         (r): r is PromiseRejectedResult => r.status === "rejected",
@@ -149,12 +152,16 @@ export function useObrRosterCards(): ObrRosterState {
           await kickPartyMember.mutateAsync(characterId);
         }
       } catch (error) {
-        failure ??= error;
+        if (failure === null || failure === undefined) {
+          failure = error;
+        }
       }
       try {
         await roster.refresh();
       } catch (error) {
-        failure ??= error;
+        if (failure === null || failure === undefined) {
+          failure = error;
+        }
       }
       setRemoveRosterAction({
         characterId,

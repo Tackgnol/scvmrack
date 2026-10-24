@@ -52,16 +52,15 @@ vi.mock("@tackgnol/rpgtools-owlbear", () => ({
     _client: unknown,
     input: { playerId: string },
   ) => coreMocks.unassignPlayer(input.playerId),
-  unbindRoomTokenCharacter: (
-    _ext: unknown,
-    _obr: unknown,
-    _client: unknown,
-    input: { tokenId: string },
-  ) => coreMocks.unbindToken(input.tokenId),
+  unbindCharacterFromToken: async () => {},
+  broadcastRosterChanged: async () => {},
 }));
 vi.mock("@/obr/obrApiClient", () => ({
   obrApiClient: {},
-  obrRoomBindingsClient: {},
+  obrRoomBindingsClient: {
+    clearTokenCharacter: (input: { tokenId: string }) =>
+      coreMocks.unbindToken(input.tokenId),
+  },
 }));
 vi.mock("@owlbear-rodeo/sdk", () => ({ default: {} }));
 
