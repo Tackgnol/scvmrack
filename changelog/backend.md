@@ -2,6 +2,9 @@
 
 `scvmgrinder_be` — Fastify 5 + TypeScript API for the MÖRK BORG character sheet.
 
+- The app should no longer refuse cleanup of an existing Owlbear room binding when the room's signed-in GM removes a former party member. Recovery is limited to deleting bindings in that GM's attached room.
+- Release smoke checks should no longer flag safe Logto sign-in as a failure when the legacy callbackURL parameter is ignored. Checks validate the trusted provider and callback; completed shared-auth callback tests cover local and external return targets.
+
 - The app should no longer reject a first Logto sign-in when the account has a preferred username. New accounts can sign in and keep their profile name.
 - The app should no longer turn an explicit Classless Owlbear roll into a random class when the room permits Classless. Quick rolls boost two random abilities, and rooms that disable Classless reject the request.
 
@@ -9,7 +12,7 @@
 
 - Owner-only Custom Class drafts, explicit saves, immutable versions for used classes, archive/restore, and configurable account/daily-public-class limits
 - Party Class Pools drive the classes that a party and its Owlbear room can roll
-- The app should no longer reject token or player binding changes when the signed-in GM owns the party attached to that Owlbear room. The permission is limited to that party's members and does not grant access to unrelated characters or rooms.
+- The app should no longer reject new token or player bindings when the signed-in GM owns the party attached to that Owlbear room. Creating bindings is limited to that party's members and does not grant access to unrelated characters or rooms.
 - Public class discovery and read-only details, signed-out reports, rate limits and honeypot protection, human moderation, GM removal history, user-based creation bans, takedown disputes, admin restoration, and two-year reporter-detail anonymization
 - Book Class omen rolls follow the printed book: Esoteric Hermit and Heretical Priest use d4; the other Book Classes use d2
 

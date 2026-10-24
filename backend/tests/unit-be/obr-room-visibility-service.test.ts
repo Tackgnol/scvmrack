@@ -14,6 +14,10 @@ let boundIds = new Set<string>();
 let partyIds = new Set<string>();
 let accessRows = new Map<string, unknown>();
 
+mock.module('../../src/repositories/party-repository.js', {
+  namedExports: { partyRepository: {} },
+});
+
 mock.module('../../src/lib/obr-bindings-db.js', {
   namedExports: {
     obrBindingsDb: {

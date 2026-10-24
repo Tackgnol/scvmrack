@@ -45,10 +45,26 @@ async function fetchCsrfToken(request: APIRequestContext): Promise<string> {
   return payload.token;
 }
 
-async function expectOAuthCallbackRejected(response: APIResponse): Promise<void> {
-  expect(response.status()).toBe(403);
-  expect(response.headers().location).toBeUndefined();
-  expect(await response.text()).toContain('INVALID_CALLBACK_URL');
+async function expectOAuthRedirectsContained(request: APIRequestContext, baseURL: string): Promise<void> {
+  const logto = process.env.LOGTO_ENDPOINT ?? 'https://auth.rpgtools.co';
+  const discovery = await request.get(`${logto.replace(/\/$/, '')}/oidc/.well-known/openid-configuration`);
+  const metadata = await expectJsonResponse<{ authorization_endpoint: string }>(discovery, 200);
+  const expected = new URL(metadata.authorization_endpoint);
+  expect(expected.origin).toBe(new URL(logto).origin);
+  const targets: Record<string, string>[] = [
+    { returnTo: '/faq' },
+    { returnTo: 'https://evil.example/after' },
+    { callbackURL: 'https://evil.example/after' },
+  ];
+  for (const query of targets) {
+    const response = await request.get(`/api/auth/oauth2/login/logto?${new URLSearchParams(query)}`, { maxRedirects: 0 });
+    expect(response.status()).toBe(302);
+    const authorization = new URL(response.headers().location);
+    expect(authorization.origin + authorization.pathname).toBe(expected.origin + expected.pathname);
+    expect(authorization.searchParams.get('redirect_uri')).toBe(new URL('/api/auth/oauth2/callback/logto', baseURL).href);
+    expect(authorization.searchParams.get('response_type')).toBe('code');
+    expect(authorization.searchParams.get('state')).toBeTruthy();
+  }
 }
 
 test.describe('production non-mutating smoke', () => {
@@ -81,7 +97,7 @@ test.describe('production non-mutating smoke', () => {
     expect(equipmentJson).not.toMatch(privateDataPattern);
   });
 
-  test('negative API checks preserve auth, validation, and redirect posture', async ({ request }) => {
+  test('negative API checks preserve auth, validation, and redirect posture', async ({ request, baseURL }) => {
     await expectApiError(await request.get('/api/characters/not-a-uuid'), 400, 'VALIDATION_ERROR');
 
     await expectApiError(
@@ -90,12 +106,10 @@ test.describe('production non-mutating smoke', () => {
       'SESSION_REQUIRED'
     );
 
-    await expectOAuthCallbackRejected(
-      await request.get(
-        '/api/auth/oauth2/login/logto?callbackURL=https%3A%2F%2Fevil.example%2Fafter',
-        { maxRedirects: 0 }
-      )
-    );
+    // Completed callback destinations are covered by oauth-redirects.test.ts;
+    // this non-mutating deploy check verifies the trusted provider and callback.
+    expect(baseURL).toBeTruthy();
+    await expectOAuthRedirectsContained(request, baseURL!);
   });
 
   test('public non-mutating pages render without API server errors', async ({ page }) => {

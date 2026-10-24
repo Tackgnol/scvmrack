@@ -1,5 +1,6 @@
 import { obrBindingsDb } from '../lib/obr-bindings-db.js';
 import { characterRepository } from '../repositories/character-repository.js';
+import { partyRepository } from '../repositories/party-repository.js';
 import { isValidUUID } from '../utils.js';
 import { gmUserId, hasObrWriteSession, ownsCharacter, type AppSession } from './session.js';
 
@@ -21,6 +22,26 @@ export async function canManageObrBinding(
   }
   const ownerId = gmUserId(session);
   return ownerId !== null && row.party?.ownerUserId === ownerId && row.party.obrRoomId === roomId;
+}
+
+/** The attached party owner may also clear existing bindings left by former members. */
+export async function canRemoveObrBinding(
+  session: AppSession,
+  characterId: string,
+  roomId: string
+): Promise<boolean> {
+  if (await canManageObrBinding(session, characterId, roomId)) {
+    return true;
+  }
+  const ownerId = gmUserId(session);
+  if (!ownerId || !isValidUUID(characterId) || !roomId) {
+    return false;
+  }
+  const [party, boundIds] = await Promise.all([
+    partyRepository.getPartyByObrRoomId(roomId),
+    obrBindingsDb.filterCharacterIdsInRoom([characterId], roomId),
+  ]);
+  return party?.ownerUserId === ownerId && boundIds.includes(characterId);
 }
 
 /**

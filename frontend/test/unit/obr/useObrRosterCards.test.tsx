@@ -28,7 +28,10 @@ vi.mock("@tackgnol/rpgtools-owlbear/react-query", () => ({
 }));
 
 const partyMocks = vi.hoisted(() => ({
-  roomPartyData: null as { id: string; members: { characterId: string }[] } | null,
+  roomPartyData: null as {
+    id: string;
+    members: { characterId: string }[];
+  } | null,
   kickMutateAsync: vi.fn(async (_characterId: string) => {}),
 }));
 
@@ -42,7 +45,23 @@ vi.mock("@/obr/useObrRoomId", () => ({
 }));
 
 vi.mock("@/obr/extension", () => ({ scvmrackObrExtension: {} }));
-vi.mock("@/obr/obrApiClient", () => ({ obrApiClient: {} }));
+vi.mock("@tackgnol/rpgtools-owlbear", () => ({
+  unbindRoomPlayerCharacter: (
+    _ext: unknown,
+    _obr: unknown,
+    _client: unknown,
+    input: { playerId: string },
+  ) => coreMocks.unassignPlayer(input.playerId),
+  unbindCharacterFromToken: async () => {},
+  broadcastRosterChanged: async () => {},
+}));
+vi.mock("@/obr/obrApiClient", () => ({
+  obrApiClient: {},
+  obrRoomBindingsClient: {
+    clearTokenCharacter: (input: { tokenId: string }) =>
+      coreMocks.unbindToken(input.tokenId),
+  },
+}));
 vi.mock("@owlbear-rodeo/sdk", () => ({ default: {} }));
 
 vi.mock("@/api/party", () => ({

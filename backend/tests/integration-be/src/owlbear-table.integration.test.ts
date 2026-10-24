@@ -172,6 +172,34 @@ test('the attached party owner manages member bindings without gaining access to
   await call(tokenPath, gm, 'PUT', { characterId: member.id }, 401);
 });
 
+test('the attached GM clears orphaned bindings without acquiring character or other-room access (RPG-334)', async () => {
+  const { gm, roomId, party } = await room();
+  const otherRoom = await room();
+  const player = await actor();
+  const scvm = await call<Scvm>(`/api/characters/new?obrRoom=${roomId}&obrPlayer=former`, player, 'POST', {}, 201);
+  const playerPath = `/api/obr/rooms/${roomId}/players/former/character`;
+  const tokenPath = `/api/obr/rooms/${roomId}/tokens/former/character`;
+  const otherPath = `/api/obr/rooms/${otherRoom.roomId}/tokens/former/character`;
+  await call(tokenPath, player, 'PUT', { characterId: scvm.id });
+  await call(otherPath, player, 'PUT', { characterId: scvm.id });
+  await call(`/api/parties/${party.id}/kick`, gm, 'POST', { characterId: scvm.id }, 204);
+  assert.deepEqual((await call<Party>(`/api/parties/${party.id}`, gm)).members, []);
+  for (const path of [playerPath, tokenPath]) {
+    await call(path, otherRoom.gm, 'DELETE', undefined, 401);
+    await call(path, undefined, 'DELETE', undefined, 403);
+    await call(path, gm, 'PUT', { characterId: scvm.id }, 401);
+    await call(path, gm, 'DELETE', undefined, 204);
+  }
+  const bindings = await call<Bindings>(`/api/obr/rooms/${roomId}/bindings`);
+  assert.deepEqual(bindings.players, []);
+  assert.deepEqual(bindings.tokens, []);
+  await call(otherPath, gm, 'DELETE', undefined, 401);
+  assert.equal((await call<Bindings>(`/api/obr/rooms/${otherRoom.roomId}/bindings`)).tokens[0].characterId, scvm.id);
+  assert.equal((await call<Scvm>(`/api/characters/${scvm.id}`, player)).id, scvm.id);
+  await call(`/api/characters/${scvm.id}`, gm, 'GET', undefined, 403);
+  await call(tokenPath, gm, 'PUT', { characterId: scvm.id }, 401);
+});
+
 test('Owlbear party attach restores members, Miseries and safe enemy state without exposing GM notes in player cards', async () => {
   const { gm, roomId, party } = await room();
   const player = await actor();

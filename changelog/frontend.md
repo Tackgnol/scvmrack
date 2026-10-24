@@ -148,6 +148,8 @@
 
 ## Cross-cutting
 
+- The app should no longer leave a removed scvm stuck in the Owlbear roster when room bindings fail to clear. Failed cleanup keeps party membership available for retry.
+
 - The header identifies Scvmrack as Beta
 - Localized (en/pl) throughout, including release notes and feedback copy
 - The app should no longer announce English item-search actions when you use the sheet in Polish.
