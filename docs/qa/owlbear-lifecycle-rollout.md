@@ -12,7 +12,7 @@ Shared-auth 2.0 owns handoff registration, approval, cancellation, expiry and at
 
 ## Coordinated upgrade
 
-1. Review and release the shared-auth 2.0 candidate first. The application dependency must be updated to the published artifact and its registry integrity before merging the application PR. The old client API is intentionally incompatible. The draft application lockfiles describe the exact locally tested candidate archive; registry installation remains blocked until that archive is published. The Owlbear SDK is pinned to 0.1.1 because the derived binding-cache bridge depends on that version’s cache contract; upgrade it only with the live-join browser contract.
+1. Shared-auth PR #8 is merged and the exact tested 2.0.0 archive is published. Both application lockfiles match its registry integrity. The old client API is intentionally incompatible; retain the matching client/server dependency when merging the application PR. The Owlbear SDK is pinned to 0.1.1 because the derived binding-cache bridge depends on that version’s cache contract; upgrade it only with the live-join browser contract.
 2. Apply `backend/prisma/migrations/20261025000000_room_participation/migration.sql` with the normal Prisma deploy flow, before starting the new API. It adds token generations, operation receipts and pending scene cleanup; it does not delete existing bindings or members.
 3. Deploy the matching backend and frontend together. Old automatic handoff publication fails closed with 410. Ask users to reload old embedded panels after the upgrade.
 4. Run the live canary scenarios below before promoting to stage/production. Local contract tests replace only the external Logto/Owlbear SDK boundary; they do not prove a live provider or room deployment.
