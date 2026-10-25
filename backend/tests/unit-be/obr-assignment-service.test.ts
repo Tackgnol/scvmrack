@@ -63,18 +63,18 @@ function resetState() {
   state.logCalls = [];
 }
 
-mock.module('../../src/lib/obr-bindings-db.js', {
-  namedExports: {
-    obrBindingsDb: {
-      getPlayerBinding: async (roomId: string, playerId: string) => {
-        state.bindingCalls.push({ roomId, playerId });
-        if (state.bindingError) {
-          throw state.bindingError;
-        }
-        return state.binding;
+mock.module('../../src/repositories/room-participation-repository.js', {
+  namedExports: { roomParticipationRepository: {
+    transaction: async (roomId: string, run: (ops: unknown) => Promise<unknown>) => run({
+      getBindings: async () => {
+        state.bindingCalls.push({ roomId, playerId: 'player-1' });
+        if (state.bindingError) { throw state.bindingError; }
+        return { players: state.binding ? [{ ...state.binding, obrPlayerId: 'player-1' }] : [], tokens: [] };
       },
-    },
-  },
+      getCharacter: async () => state.accessRow ? { ...state.accessRow, id: CHARACTER_ID } : null,
+      transferOwnership: async (characterId: string, userId: string) => { state.transferCalls.push({ characterId, userId }); },
+    }),
+  } },
 });
 
 mock.module('../../src/repositories/character-repository.js', {

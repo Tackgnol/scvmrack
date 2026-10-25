@@ -28,6 +28,11 @@ function roomOps(tx: Prisma.TransactionClient, roomId: string) {
       });
       return { players, tokens };
     },
+    transferOwnership: (id: string, userId: string) =>
+      tx.character.update({
+        where: { id },
+        data: { userId, sessionId: null },
+      }),
     getCleanup: () =>
       tx.obrSceneCleanup.findMany({
         where: { roomId },

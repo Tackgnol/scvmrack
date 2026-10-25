@@ -1,66 +1,63 @@
 import { obrAuthClient } from "@/auth/obrAuthClient";
 import {
   completeObrAuthHandoff,
-  type ObrHandoffApproval,
+  RpgToolsAuthClientError,
 } from "@tackgnol/rpgtools-shared-auth/client";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Alert, Button, Stack, TextField, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { Wrapper } from "./ObrAuthDonePage.styles";
 
 export function ObrAuthDonePage() {
   const { t } = useTranslation();
-  const [approval, setApproval] = useState<ObrHandoffApproval | null>(null);
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
   const [finished, setFinished] = useState(false);
+  const [cancelled, setCancelled] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const handoffId = new URLSearchParams(window.location.search).get(
     "handoffId",
   );
 
-  useEffect(() => {
-    let active = true;
-    if (!handoffId) {
-      setError(t("obr.auth.unavailable"));
-      return;
-    }
-    void obrAuthClient.inspectObrHandoff(handoffId).then(
-      (result) => {
-        if (active) {
-          setApproval(result);
-        }
-      },
-      () => {
-        if (active) {
-          setError(t("obr.auth.unavailable"));
-        }
-      },
-    );
-    return () => {
-      active = false;
-    };
-  }, [handoffId, t]);
+  const approvalQuery = useQuery({
+    queryKey: ["auth", "obr-handoff", handoffId],
+    queryFn: () => obrAuthClient.inspectObrHandoff(handoffId!),
+    enabled: Boolean(handoffId) && !finished && !cancelled,
+    retry: false,
+    refetchOnWindowFocus: false,
+  });
+  const approval = approvalQuery.data;
+  const failure =
+    error ??
+    (!handoffId || approvalQuery.isError ? t("obr.auth.unavailable") : null);
 
   async function approve() {
     if (
       !handoffId ||
       !approval ||
       busy ||
-      code.toUpperCase() !== approval.code
+      !/^[A-F0-9]{6}$/i.test(code.trim())
     ) {
       return;
     }
     setBusy(true);
+    setError(null);
     try {
       await completeObrAuthHandoff(obrAuthClient, {
         handoffId,
-        code: code.toUpperCase(),
+        code: code.trim().toUpperCase(),
         expectedUserId: approval.user.id,
       });
       setFinished(true);
-    } catch {
-      setError(t("obr.auth.unavailable"));
+    } catch (error) {
+      setError(
+        t(
+          error instanceof RpgToolsAuthClientError && error.status === 400
+            ? "obr.auth.codeMismatch"
+            : "obr.auth.unavailable",
+        ),
+      );
     }
     setBusy(false);
   }
@@ -71,7 +68,7 @@ export function ObrAuthDonePage() {
     setBusy(true);
     try {
       await obrAuthClient.rejectObrHandoff(handoffId);
-      setApproval(null);
+      setCancelled(true);
       setError(t("obr.auth.cancelled"));
     } catch {
       setError(t("obr.auth.unavailable"));
@@ -84,11 +81,13 @@ export function ObrAuthDonePage() {
         <Typography variant="h4" component="h1">
           {t("obr.auth.heading")}
         </Typography>
-        {error && <Alert severity="error">{error}</Alert>}
+        {failure && <Alert severity="error">{failure}</Alert>}
         {finished ? (
           <Typography role="status">{t("obr.auth.approved")}</Typography>
         ) : (
-          approval && (
+          approval &&
+          !approvalQuery.isError &&
+          !cancelled && (
             <>
               <Typography>{approval.user.name}</Typography>
               <Typography>{approval.user.email}</Typography>
@@ -98,7 +97,6 @@ export function ObrAuthDonePage() {
                 })}
               </Typography>
               <Typography>{t("obr.auth.warning")}</Typography>
-              <Typography component="code">{approval.code}</Typography>
               <TextField
                 label={t("obr.auth.code")}
                 value={code}
@@ -108,7 +106,7 @@ export function ObrAuthDonePage() {
               <Button
                 variant="contained"
                 onClick={() => void approve()}
-                disabled={busy || code.toUpperCase() !== approval.code}
+                disabled={busy || !/^[A-F0-9]{6}$/i.test(code.trim())}
               >
                 {t("obr.auth.approve")}
               </Button>

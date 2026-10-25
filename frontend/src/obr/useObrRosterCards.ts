@@ -9,6 +9,7 @@ import { usePartyStream } from "@/hooks/usePartyStream";
 import { getApiLocale } from "@/hooks/utils";
 import { scvmrackObrExtension } from "./extension";
 import { obrApiClient } from "./obrApiClient";
+import { bindRoomSelectedTokens, unbindRoomToken } from "./roomTokenMetadata";
 import { finishSceneCleanup } from "./sceneCleanup";
 import type {
   ObrRosterState,
@@ -46,6 +47,8 @@ export function useObrRosterCards(): ObrRosterState {
   });
   const [removeRosterAction, setRemoveRosterAction] =
     useState<RemoveFromRosterState>(null);
+  const [tokenSyncError, setTokenSyncError] = useState<string | null>(null);
+  const [tokenSyncPending, setTokenSyncPending] = useState(false);
   const [cleanupMessage, setCleanupMessage] = useState<string | null>(null);
   const operations = useRef(new Map<string, string>());
   const cleanupInFlight = useRef(false);
@@ -173,8 +176,29 @@ export function useObrRosterCards(): ObrRosterState {
     }
   }
 
+  async function updateTokenBinding(action: () => Promise<unknown>) {
+    setTokenSyncPending(true);
+    setTokenSyncError(null);
+    try {
+      await action();
+      await roster.refresh();
+    } catch (error) {
+      setTokenSyncError(error instanceof Error ? error.message : String(error));
+    }
+    setTokenSyncPending(false);
+  }
+
   return {
     ...roster,
+    bindSelectedToken: (input) =>
+      updateTokenBinding(() => bindRoomSelectedTokens({ roomId, ...input })),
+    unbindToken: (tokenId) =>
+      updateTokenBinding(() => unbindRoomToken(roomId, tokenId)),
+    action: {
+      ...roster.action,
+      pending: roster.action.pending || tokenSyncPending,
+      error: tokenSyncError ?? roster.action.error,
+    },
     removeFromRoster,
     removeRosterAction,
     cleanupMessage,

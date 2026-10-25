@@ -41,6 +41,7 @@ export type ObrPlayerCharacterBinding = {
 };
 export type ObrTokenCharacterBinding = {
   tokenId: string;
+  generation?: string;
   playerId: string | null;
   characterId: string;
 };

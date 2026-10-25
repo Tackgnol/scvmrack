@@ -28,6 +28,24 @@ test('the callback waits for explicit approval before the receiving browser can 
       ).json()
     ).state
   ).toBe('awaiting-approval');
+  await expect(page.locator('code')).toHaveCount(0);
+  const wrongCode = registered.code === '000000' ? 'FFFFFF' : '000000';
+  await page
+    .getByRole('textbox', { name: 'Code from the extension' })
+    .fill(wrongCode);
+  await page
+    .getByRole('button', { name: 'Approve sign-in', exact: true })
+    .click();
+  await expect(page.getByRole('alert')).toContainText(
+    'That code did not match.'
+  );
+  expect(
+    (
+      await (
+        await page.request.post('/api/auth/obr-handoff/take', { data: proof })
+      ).json()
+    ).state
+  ).toBe('awaiting-approval');
   await page
     .getByRole('textbox', { name: 'Code from the extension' })
     .fill(registered.code);

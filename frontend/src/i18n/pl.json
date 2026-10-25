@@ -18,6 +18,7 @@
   },
   "obr": {
     "auth": {
+      "codeMismatch": "Kod nie pasuje. Wpisz kod wyświetlony w rozszerzeniu.",
       "cancelled": "Anulowano logowanie. Wróć do Owlbear.",
       "transferUnavailable": "Ten odnośnik jest niedostępny. Otwórz go ponownie z Owlbear.",
       "switchAccount": "Ta karta używa innego konta. Kontynuować jako {{name}}?",
@@ -27,7 +28,7 @@
       "unavailable": "To logowanie wygasło lub jest niedostępne. Wróć do Owlbear i zacznij ponownie.",
       "approved": "Zatwierdzono. Wróć do Owlbear.",
       "destination": "Cel: {{destination}}",
-      "warning": "Zatwierdź tylko logowanie rozpoczęte przez Ciebie w Owlbear. Porównaj kod z rozszerzeniem.",
+      "warning": "Zatwierdź tylko logowanie rozpoczęte przez Ciebie w Owlbear. Wpisz kod wyświetlony w rozszerzeniu.",
       "code": "Kod z rozszerzenia",
       "approve": "Zatwierdź logowanie",
       "cancel": "Anuluj",

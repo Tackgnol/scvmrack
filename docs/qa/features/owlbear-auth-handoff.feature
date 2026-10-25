@@ -5,7 +5,8 @@ Feature: Approve an Owlbear account handoff
   Scenario: Approve sign-in and continue with the same scvm
     Given a guest has an owned scvm open in the extension
     When they start sign-in and authenticate with Logto
-    Then the approval page shows the account, destination and comparison code
+    Then the approval page shows the account and destination
+    And only the initiating extension shows the comparison code
     When they approve the handoff with the matching code
     Then the extension confirms the receiving account before offering account controls
     And their guest scvm remains owned and editable after reopening

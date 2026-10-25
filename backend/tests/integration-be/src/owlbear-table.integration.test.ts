@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import test from 'node:test';
 import { Client } from 'pg';
 
@@ -91,6 +91,8 @@ test('room removal commits membership and bindings together, retains cleanup, an
     await call(`/api/obr/rooms/${roomId}/cards?ids=${scvm.id}`),
     []
   );
+  const lateClaimant = await actor(true);
+  await call(`/api/obr/rooms/${roomId}/players/member/character/claim`, lateClaimant, 'POST', {}, 404);
   const reopened = await call<{ cleanup: unknown[] }>(
     `/api/obr/rooms/${roomId}/participation`,
     gm
@@ -511,7 +513,7 @@ test('Owlbear custom-class roll joins and binds once, and full-sheet handoff pre
   assert.deepEqual(cards.map(c => [c.id, c.currentHp, c.omens, c.silver]), [[scvm.id, 1, 0, 37]]);
   const recipientSecret = randomUUID() + randomUUID();
   const issued = await call<{ token: string }>('/api/auth/obr-exchange/issue', player, 'POST', { recipientSecret });
-  const redeem = await fetch(new URL('/api/auth/obr-exchange/redeem', base), { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(issued) });
+  const redeem = await fetch(new URL('/api/auth/obr-exchange/redeem', base), { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ ...issued, recipientSecret }) });
   assert.equal(redeem.status, 200);
   const tabToken = redeem.headers.get('set-auth-token');
   assert.ok(tabToken);
@@ -598,14 +600,7 @@ test('the attached GM clears orphaned bindings without acquiring character or ot
   await fixtureDb.connect();
   try {
     // Recreate a pre-redesign orphan; new kicks deliberately cannot produce one.
-    await fixtureDb.query(
-      'INSERT INTO obr_player_character_bindings (obr_room_id, obr_player_id, character_id, assigned_by_player_id) VALUES ($1, $2, $3, $2)',
-      [roomId, 'former', scvm.id]
-    );
-    await fixtureDb.query(
-      'INSERT INTO obr_token_character_bindings (obr_room_id, obr_token_id, character_id) VALUES ($1, $2, $3)',
-      [roomId, 'former', scvm.id]
-    );
+    await fixtureDb.query('UPDATE characters SET party_id = NULL, joined_at = NULL WHERE id = $1', [scvm.id]);
   } finally {
     await fixtureDb.end();
   }

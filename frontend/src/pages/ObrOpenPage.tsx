@@ -38,7 +38,7 @@ export function ObrOpenPage() {
   const queryClient = useQueryClient();
   const started = useRef(false);
   const [target] = useState(destination);
-  const [failure, setFailure] = useState(false);
+  const [failure, setFailure] = useState(() => !target);
   const [incoming, setIncoming] = useState<ObrTabTransfer | null>(null);
   const [switching, setSwitching] = useState(false);
   const open = useCallback(
@@ -54,7 +54,7 @@ export function ObrOpenPage() {
       await queryClient.invalidateQueries({ queryKey: authKeys.session() });
       await appHistory.replace(target!);
     },
-    [queryClient],
+    [queryClient, target],
   );
 
   useEffect(() => {
@@ -63,7 +63,6 @@ export function ObrOpenPage() {
     }
     started.current = true;
     if (!target) {
-      setFailure(true);
       return;
     }
     void receiveObrSessionTab()

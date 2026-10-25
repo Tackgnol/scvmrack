@@ -11,9 +11,6 @@ const apiMock = vi.hoisted(() => ({
 }));
 
 vi.mock("@/api/obr", () => apiMock);
-vi.mock("@owlbear-rodeo/sdk", () => ({
-  default: { scene: { items: { updateItems: vi.fn(async () => {}) } } },
-}));
 
 const {
   claimAssignedObrCharacter,

@@ -1,3 +1,4 @@
+import { reconcileRoomTokens } from "./roomTokenMetadata";
 import OBR from "@owlbear-rodeo/sdk";
 import { broadcastRosterChanged } from "@tackgnol/rpgtools-owlbear";
 import {
@@ -38,6 +39,7 @@ export async function finishSceneCleanup(
           }
         }
       });
+      await reconcileRoomTokens(roomId, [cleanup.tokenId]);
       await acknowledgeSceneCleanup(roomId, cleanup.id);
     } catch {
       complete = false;

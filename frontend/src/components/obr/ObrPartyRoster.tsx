@@ -114,19 +114,19 @@ function ObrPartyRosterContainer() {
         onRetry={roster.retrySceneCleanup}
       />
       <ObrPartyRosterView
-      rows={roster.rows}
-      maxMembers={limits.data?.maxMembers ?? FALLBACK_MAX_MEMBERS}
-      connectedPlayers={roster.connectedPlayers}
-      action={roster.action}
-      onRefresh={roster.refresh}
-      bindSelectedToken={roster.bindSelectedToken}
-      assignPlayer={roster.assignPlayer}
-      unassignPlayer={roster.unassignPlayer}
-      unbindToken={roster.unbindToken}
-      onRemoveFromRoster={roster.removeFromRoster}
-      removeRosterAction={roster.removeRosterAction}
-      promotion={<ObrRoomPromotion />}
-    />
+        rows={roster.rows}
+        maxMembers={limits.data?.maxMembers ?? FALLBACK_MAX_MEMBERS}
+        connectedPlayers={roster.connectedPlayers}
+        action={roster.action}
+        onRefresh={roster.refresh}
+        bindSelectedToken={roster.bindSelectedToken}
+        assignPlayer={roster.assignPlayer}
+        unassignPlayer={roster.unassignPlayer}
+        unbindToken={roster.unbindToken}
+        onRemoveFromRoster={roster.removeFromRoster}
+        removeRosterAction={roster.removeRosterAction}
+        promotion={<ObrRoomPromotion />}
+      />
     </>
   );
 }

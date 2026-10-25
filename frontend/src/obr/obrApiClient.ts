@@ -1,7 +1,5 @@
 import type { ObrApiClient } from "@tackgnol/rpgtools-owlbear/client";
 import type { ObrRoomBindingsClient } from "@tackgnol/rpgtools-owlbear";
-import OBR from "@owlbear-rodeo/sdk";
-import { BINDING_GENERATION_META_KEY } from "./extension";
 import {
   bindObrPlayerCharacter,
   bindObrTokenCharacter,
@@ -12,16 +10,6 @@ import {
   fetchObrRoomBindings,
   type ObrLocale,
 } from "@/api/obr";
-
-async function bindToken(input: Parameters<typeof bindObrTokenCharacter>[0]) {
-  const binding = await bindObrTokenCharacter(input);
-  await OBR.scene.items.updateItems([input.tokenId], (items) => {
-    for (const item of items) {
-      item.metadata[BINDING_GENERATION_META_KEY] = binding.generation;
-    }
-  });
-  return binding;
-}
 
 // roomBinding.ts's core functions (restoreCurrentObrCharacterId,
 // persistCurrentObrCharacterId, bindCurrentCharacterToSelection, ...) take a
@@ -35,7 +23,7 @@ export const obrApiClient = {
   fetchRoomBindings: fetchObrRoomBindings,
   bindPlayerCharacter: bindObrPlayerCharacter,
   clearPlayerCharacter: clearObrPlayerCharacter,
-  bindTokenCharacter: bindToken,
+  bindTokenCharacter: bindObrTokenCharacter,
   clearTokenCharacter: clearObrTokenCharacter,
 } satisfies ObrApiClient;
 
@@ -43,7 +31,7 @@ export const obrRoomBindingsClient: ObrRoomBindingsClient = {
   fetchRoomBindings: fetchObrRoomBindings,
   bindPlayerCharacter: bindObrPlayerCharacter,
   clearPlayerCharacter: clearObrPlayerCharacter,
-  bindTokenCharacter: bindToken,
+  bindTokenCharacter: bindObrTokenCharacter,
   clearTokenCharacter: clearObrTokenCharacter,
 };
 
