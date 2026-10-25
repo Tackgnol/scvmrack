@@ -13,11 +13,10 @@ const obrMock = vi.hoisted(() => ({
   setHeight: vi.fn(),
   showNotification: vi.fn<() => Promise<void>>(() => Promise.resolve()),
 }));
-const characterMock = vi.hoisted(() => ({ characterId: null as string | null }));
+const characterMock = vi.hoisted(() => ({ characterId: null as string | null,
+}));
 const authClientMock = vi.hoisted(() => ({
-  issueObrExchangeToken: vi.fn<() => Promise<string>>(() =>
-    Promise.resolve("exchange-token"),
-  ),
+  open: vi.fn<(destination: string) => Promise<void>>(async () => {}),
 }));
 const windowOpenMock = vi.hoisted(() => vi.fn());
 
@@ -39,7 +38,7 @@ vi.mock("@/CharacterContext/CharacterContext", () => ({
 }));
 
 vi.mock("@/auth/obrAuthClient", () => ({
-  obrAuthClient: authClientMock,
+  openObrSessionTab: authClientMock.open,
 }));
 
 vi.stubGlobal("open", windowOpenMock);
@@ -59,24 +58,29 @@ describe("ObrLayout", () => {
     const panel = page.getByTestId('compact-panel').element();
     await document.fonts.ready;
     await expect.element(page.getByText('Active sheet')).toBeVisible();
-    await expect.element(page.getByRole('button', { name: locale === 'en' ? 'Open in scvmrack' : 'Otwórz w scvmrack', exact: true })).toBeVisible();
+    await expect.element(page.getByRole('button', { name: locale === 'en' ? 'Open in scvmrack' : 'Otwórz w scvmrack', exact: true,
+          }),
+        ).toBeVisible();
     const bounds = panel.getBoundingClientRect();
     const wordmarkElement = page.getByText('Scvmrack', { exact: true }).element();
     const wordmark = wordmarkElement.getBoundingClientRect();
-    expect(wordmarkElement.scrollWidth).toBeLessThanOrEqual(wordmarkElement.clientWidth);
+    expect(wordmarkElement.scrollWidth).toBeLessThanOrEqual(wordmarkElement.clientWidth,
+      );
     const actions = panel.querySelector('button')!.parentElement!.parentElement!.getBoundingClientRect();
-    expect(wordmark.right <= actions.left || wordmark.bottom <= actions.top).toBe(true);
+    expect(wordmark.right <= actions.left || wordmark.bottom <= actions.top,
+      ).toBe(true);
     for (const button of panel.querySelectorAll('button')) {
       const rect = button.getBoundingClientRect();
       expect(rect.left).toBeGreaterThanOrEqual(bounds.left);
       expect(rect.right).toBeLessThanOrEqual(bounds.right);
     }
-  });
+  },
+  );
 
   beforeEach(async () => {
     vi.clearAllMocks();
     characterMock.characterId = null;
-    authClientMock.issueObrExchangeToken.mockResolvedValue("exchange-token");
+    authClientMock.open.mockResolvedValue(undefined);
     windowOpenMock.mockReturnValue({} as Window);
     window.localStorage.removeItem("i18nextLng");
     await i18n.changeLanguage("en");
@@ -145,12 +149,16 @@ describe("ObrLayout", () => {
     expect(obrMock.setWidth).toHaveBeenCalledWith(1920);
     expect(obrMock.setHeight).toHaveBeenCalledWith(1080);
 
-    await expect.element(page.getByRole("button", { name: "⊠ Collapse" })).toBeVisible();
+    await expect
+      .element(page.getByRole("button", { name: "⊠ Collapse" }))
+      .toBeVisible();
 
     await userEvent.click(page.getByRole("button", { name: "⊠ Collapse" }));
 
     expect(obrMock.setWidth).toHaveBeenLastCalledWith(420);
-    await expect.element(page.getByRole("button", { name: "⤢ Expand" })).toBeVisible();
+    await expect
+      .element(page.getByRole("button", { name: "⤢ Expand" }))
+      .toBeVisible();
   });
 
   it("hides the open-in-scvmrack action without an active character", async () => {
@@ -167,7 +175,7 @@ describe("ObrLayout", () => {
       .not.toBeInTheDocument();
   });
 
-  it("issues an exchange token and opens the full-site bridge (RPG-252)", async () => {
+  it("opens the full-site transfer flow (RPG-252)", async () => {
     characterMock.characterId = "character-1";
 
     await render(
@@ -178,21 +186,18 @@ describe("ObrLayout", () => {
       </BrowserTestProvider>,
     );
 
-    await userEvent.click(page.getByRole("button", { name: "Open in scvmrack" }));
+    await userEvent.click(
+      page.getByRole("button", { name: "Open in scvmrack" }),
+    );
 
     await expect
-      .poll(() => authClientMock.issueObrExchangeToken)
-      .toHaveBeenCalledOnce();
-    expect(windowOpenMock).toHaveBeenCalledWith(
-      "/obr-open?token=exchange-token&character=character-1",
-      "_blank",
-      "noopener,noreferrer",
-    );
+      .poll(() => authClientMock.open)
+      .toHaveBeenCalledWith("/obr-open?character=character-1");
   });
 
   it("shows a retryable error when the browser blocks the new tab", async () => {
     characterMock.characterId = "character-1";
-    windowOpenMock.mockReturnValueOnce(null);
+    authClientMock.open.mockRejectedValueOnce(new Error("popup-blocked"));
 
     await render(
       <BrowserTestProvider>
@@ -202,7 +207,9 @@ describe("ObrLayout", () => {
       </BrowserTestProvider>,
     );
 
-    await userEvent.click(page.getByRole("button", { name: "Open in scvmrack" }));
+    await userEvent.click(
+      page.getByRole("button", { name: "Open in scvmrack" }),
+    );
 
     await expect
       .poll(() => obrMock.showNotification)

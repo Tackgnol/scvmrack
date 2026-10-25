@@ -67,6 +67,9 @@ it.each(['guest', 'expired'])('recovers the real GM panel from %s, refreshes own
     if (path.endsWith('/bindings')) {
       return Response.json({ roomId: 'gm-room', players: [], tokens: [] });
     }
+    if (path.endsWith('/participation')) {
+      return Response.json({ partyId: party.id, canManage: signedIn, memberIds: [], players: [], tokens: [], cleanup: [] });
+    }
     if (path.endsWith('/limits')) {
       return Response.json({ maxMembers: 10 });
     }

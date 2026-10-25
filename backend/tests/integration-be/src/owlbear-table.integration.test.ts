@@ -55,6 +55,417 @@ async function room() {
   return { gm, roomId, party };
 }
 
+test('room removal commits membership and bindings together, retains cleanup, and safely replays (RPG-336)', async () => {
+  const { gm, roomId, party } = await room();
+  const player = await actor();
+  const scvm = await call<Scvm>(
+    `/api/characters/new?obrRoom=${roomId}&obrPlayer=member`,
+    player,
+    'POST',
+    {},
+    201
+  );
+  await call(
+    `/api/obr/rooms/${roomId}/tokens/token-1/character`,
+    player,
+    'PUT',
+    { characterId: scvm.id }
+  );
+  const path = `/api/obr/rooms/${roomId}/participation/remove`;
+  const command = { characterId: scvm.id, operationId: randomUUID() };
+  const removed = await call<{
+    cleanup: Array<{ id: string; tokenId: string }>;
+  }>(path, gm, 'POST', command);
+  assert.equal(removed.cleanup.length, 1);
+  assert.equal(removed.cleanup[0].tokenId, 'token-1');
+  assert.deepEqual(
+    (await call<Party>(`/api/parties/${party.id}`, gm)).members,
+    []
+  );
+  assert.deepEqual(await call<Bindings>(`/api/obr/rooms/${roomId}/bindings`), {
+    roomId,
+    players: [],
+    tokens: [],
+  });
+  assert.deepEqual(
+    await call(`/api/obr/rooms/${roomId}/cards?ids=${scvm.id}`),
+    []
+  );
+  const reopened = await call<{ cleanup: unknown[] }>(
+    `/api/obr/rooms/${roomId}/participation`,
+    gm
+  );
+  assert.deepEqual(reopened.cleanup, removed.cleanup);
+  assert.deepEqual(
+    (await call<{ cleanup: unknown[] }>(path, gm, 'POST', command)).cleanup,
+    removed.cleanup
+  );
+  assert.equal(
+    (await call<Scvm>(`/api/characters/${scvm.id}`, player)).id,
+    scvm.id
+  );
+});
+
+test('normal kick and self-leave use room removal policy without giving strangers control', async () => {
+  for (const action of ['kick', 'leave']) {
+    const { gm, roomId, party } = await room();
+    const player = await actor();
+    const stranger = await actor(true);
+    const scvm = await call<Scvm>(
+      `/api/characters/new?obrRoom=${roomId}&obrPlayer=member`,
+      player,
+      'POST',
+      {},
+      201
+    );
+    await call(
+      `/api/obr/rooms/${roomId}/tokens/token-1/character`,
+      player,
+      'PUT',
+      { characterId: scvm.id }
+    );
+    await call(
+      `/api/obr/rooms/${roomId}/participation/remove`,
+      stranger,
+      'POST',
+      {
+        characterId: scvm.id,
+        operationId: randomUUID(),
+      },
+      403
+    );
+    assert.equal(
+      (await call<Party>(`/api/parties/${party.id}`, gm)).members.length,
+      1
+    );
+    assert.equal(
+      (await call<Bindings>(`/api/obr/rooms/${roomId}/bindings`)).tokens.length,
+      1
+    );
+    assert.deepEqual(
+      (
+        await call<{ cleanup: unknown[] }>(
+          `/api/obr/rooms/${roomId}/participation`,
+          gm
+        )
+      ).cleanup,
+      []
+    );
+    await call(
+      `/api/parties/${party.id}/${action}`,
+      action === 'kick' ? gm : player,
+      'POST',
+      { characterId: scvm.id },
+      204
+    );
+    assert.deepEqual(
+      (await call<Bindings>(`/api/obr/rooms/${roomId}/bindings`)).players,
+      []
+    );
+    assert.deepEqual(
+      (await call<Bindings>(`/api/obr/rooms/${roomId}/bindings`)).tokens,
+      []
+    );
+    assert.equal(
+      (
+        await call<{ cleanup: unknown[] }>(
+          `/api/obr/rooms/${roomId}/participation`,
+          gm
+        )
+      ).cleanup.length,
+      1
+    );
+    assert.equal(
+      (await call<Scvm>(`/api/characters/${scvm.id}`, player)).id,
+      scvm.id
+    );
+  }
+});
+
+test('old cleanup and duplicate removals cannot erase a deliberate rejoin or a new token generation', async () => {
+  const { gm, roomId, party } = await room();
+  const player = await actor();
+  const scvm = await call<Scvm>(
+    `/api/characters/new?obrRoom=${roomId}&obrPlayer=member`,
+    player,
+    'POST',
+    {},
+    201
+  );
+  const tokenPath = `/api/obr/rooms/${roomId}/tokens/token-1/character`;
+  const original = await call<{ generation: string }>(
+    tokenPath,
+    player,
+    'PUT',
+    { characterId: scvm.id }
+  );
+  assert.equal(typeof original.generation, 'string');
+  const command = { characterId: scvm.id, operationId: randomUUID() };
+  const path = `/api/obr/rooms/${roomId}/participation/remove`;
+  const removed = await call<{
+    cleanup: Array<{ id: string; generation: string }>;
+  }>(path, gm, 'POST', command);
+  assert.equal(removed.cleanup[0].generation, original.generation);
+  await call('/api/parties/join', player, 'POST', {
+    token: party.inviteToken,
+    characterId: scvm.id,
+  });
+  const rebound = await call<{ generation: string }>(tokenPath, player, 'PUT', {
+    characterId: scvm.id,
+  });
+  assert.notEqual(rebound.generation, original.generation);
+  await call(path, gm, 'POST', command);
+  await call(
+    `/api/obr/rooms/${roomId}/participation/cleanup/${removed.cleanup[0].id}/ack`,
+    player,
+    'POST',
+    {},
+    403
+  );
+  await call(
+    `/api/obr/rooms/${roomId}/participation/cleanup/${removed.cleanup[0].id}/ack`,
+    gm,
+    'POST',
+    {}
+  );
+  const current = await call<{
+    memberIds: string[];
+    tokens: Array<{ generation: string }>;
+    cleanup: unknown[];
+  }>(`/api/obr/rooms/${roomId}/participation`, gm);
+  assert.deepEqual(current.memberIds, [scvm.id]);
+  assert.equal(current.tokens[0].generation, rebound.generation);
+  assert.deepEqual(current.cleanup, []);
+});
+
+test('a handoff requires registration, explicit approval and the initiating secret before one atomic redemption', async () => {
+  const popup = await actor(true);
+  const registered = await call<{
+    handoffId: string;
+    secret: string;
+    code: string;
+  }>('/api/auth/obr-handoff/register', undefined, 'POST', {});
+  const proof = { handoffId: registered.handoffId, secret: registered.secret };
+  assert.equal(
+    (
+      await call<{ state: string }>(
+        '/api/auth/obr-handoff/take',
+        undefined,
+        'POST',
+        proof
+      )
+    ).state,
+    'awaiting-approval'
+  );
+  await call(
+    '/api/auth/obr-handoff/approve',
+    popup,
+    'POST',
+    {
+      handoffId: randomUUID(),
+      code: registered.code,
+      expectedUserId: popup.userId,
+    },
+    410
+  );
+  await call(
+    '/api/auth/obr-handoff/approve',
+    popup,
+    'POST',
+    {
+      handoffId: registered.handoffId,
+      code: 'WRONG',
+      expectedUserId: popup.userId,
+    },
+    400
+  );
+  await call('/api/auth/obr-handoff/redeem', undefined, 'POST', proof, 410);
+  await call(
+    '/api/auth/obr-handoff/approve',
+    popup,
+    'POST',
+    {
+      handoffId: registered.handoffId,
+      code: registered.code,
+      expectedUserId: 'another-account',
+    },
+    409
+  );
+  await call('/api/auth/obr-handoff/approve', popup, 'POST', {
+    handoffId: registered.handoffId,
+    code: registered.code,
+    expectedUserId: popup.userId,
+  });
+  await call(
+    '/api/auth/obr-handoff/take',
+    undefined,
+    'POST',
+    { ...proof, secret: 'x'.repeat(43) },
+    401
+  );
+  const approved = await call<{ state: string; user: { id: string } }>(
+    '/api/auth/obr-handoff/take',
+    undefined,
+    'POST',
+    proof
+  );
+  assert.equal(approved.state, 'approved');
+  assert.equal(approved.user.id, popup.userId);
+  const responses = await Promise.all(
+    [1, 2].map(() =>
+      fetch(new URL('/api/auth/obr-handoff/redeem', base), {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(proof),
+      })
+    )
+  );
+  assert.deepEqual(
+    responses.map((response) => response.status).sort(),
+    [200, 410]
+  );
+  assert.equal(
+    responses.filter((response) => response.headers.has('set-auth-token'))
+      .length,
+    1
+  );
+  const received = responses.find((response) => response.status === 200)!;
+  const session = await call<{ user: { id: string } }>(
+    '/api/auth/get-session',
+    {
+      token: received.headers.get('set-auth-token')!,
+      userId: popup.userId,
+    }
+  );
+  assert.equal(session.user.id, popup.userId);
+  await call('/api/auth/obr-handoff/redeem', undefined, 'POST', proof, 410);
+});
+
+test('full-sheet exchange needs a receiving secret and concurrent redemption creates only one session', async () => {
+  const player = await actor(true);
+  const secret = randomUUID() + randomUUID();
+  await call('/api/auth/obr-exchange/issue', player, 'POST', {}, 400);
+  const issued = await call<{ token: string }>(
+    '/api/auth/obr-exchange/issue',
+    player,
+    'POST',
+    { recipientSecret: secret }
+  );
+  await call('/api/auth/obr-exchange/redeem', undefined, 'POST', issued, 400);
+  await call(
+    '/api/auth/obr-exchange/redeem',
+    undefined,
+    'POST',
+    { ...issued, recipientSecret: 'wrong'.repeat(10) },
+    401
+  );
+  const responses = await Promise.all(
+    [1, 2].map(() =>
+      fetch(new URL('/api/auth/obr-exchange/redeem', base), {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ ...issued, recipientSecret: secret }),
+      })
+    )
+  );
+  assert.deepEqual(
+    responses.map((response) => response.status).sort(),
+    [200, 410]
+  );
+  assert.equal(
+    responses.filter((response) => response.headers.has('set-auth-token'))
+      .length,
+    1
+  );
+});
+
+test('rejecting a handoff in the approval page prevents later approval and redemption', async () => {
+  const popup = await actor(true);
+  const registered = await call<{
+    handoffId: string;
+    secret: string;
+    code: string;
+  }>('/api/auth/obr-handoff/register', undefined, 'POST', {});
+  await call('/api/auth/obr-handoff/reject', popup, 'POST', {
+    handoffId: registered.handoffId,
+  });
+  await call(
+    '/api/auth/obr-handoff/approve',
+    popup,
+    'POST',
+    {
+      handoffId: registered.handoffId,
+      code: registered.code,
+      expectedUserId: popup.userId,
+    },
+    410
+  );
+  await call(
+    '/api/auth/obr-handoff/redeem',
+    undefined,
+    'POST',
+    registered,
+    410
+  );
+});
+
+test('expired handoffs cannot resume, and approved sign-in carries anonymous ownership to the receiving account', async () => {
+  const popup = await actor(true);
+  const expired = await call<{
+    handoffId: string;
+    secret: string;
+    code: string;
+  }>('/api/auth/obr-handoff/register', undefined, 'POST', {});
+  const db = new Client({ connectionString: process.env.DATABASE_URL });
+  await db.connect();
+  try {
+    // Clock fixture only; outcomes are checked through public auth/character endpoints.
+    const digest = createHash('sha256')
+      .update(expired.handoffId)
+      .digest('base64url');
+    await db.query(
+      'UPDATE verification SET "expiresAt" = NOW() - INTERVAL \'1 second\' WHERE identifier = $1',
+      [`obr-handoff:${digest}`]
+    );
+  } finally {
+    await db.end();
+  }
+  await call(
+    '/api/auth/obr-handoff/approve',
+    popup,
+    'POST',
+    {
+      handoffId: expired.handoffId,
+      code: expired.code,
+      expectedUserId: popup.userId,
+    },
+    410
+  );
+  await call('/api/auth/obr-handoff/redeem', undefined, 'POST', expired, 410);
+  const guest = await actor();
+  const scvm = await call<Scvm>('/api/characters/new', guest, 'POST', {}, 201);
+  const active = await call<{
+    handoffId: string;
+    secret: string;
+    code: string;
+  }>('/api/auth/obr-handoff/register', guest, 'POST', {});
+  await call('/api/auth/obr-handoff/approve', popup, 'POST', {
+    handoffId: active.handoffId,
+    code: active.code,
+    expectedUserId: popup.userId,
+  });
+  await call('/api/auth/obr-handoff/redeem', guest, 'POST', active);
+  assert.equal(
+    (await call<Scvm>(`/api/characters/${scvm.id}`, popup)).id,
+    scvm.id
+  );
+  await call(`/api/characters/${scvm.id}`, popup, 'PATCH', { silver: 73 });
+  assert.equal(
+    (await call<Scvm>(`/api/characters/${scvm.id}`, popup)).silver,
+    73
+  );
+});
+
 test('Owlbear custom-class roll joins and binds once, and full-sheet handoff preserves live card values', async () => {
   const { gm, roomId, party } = await room();
   const localized = (en: string) => ({ en, pl: '' });
@@ -98,7 +509,8 @@ test('Owlbear custom-class roll joins and binds once, and full-sheet handoff pre
   await call(`/api/characters/${scvm.id}`, player, 'PATCH', { currentHp: 1, omens: 0, silver: 37 });
   const cards = await call<Card[]>(`/api/obr/rooms/${roomId}/cards?ids=${scvm.id}&locale=en`);
   assert.deepEqual(cards.map(c => [c.id, c.currentHp, c.omens, c.silver]), [[scvm.id, 1, 0, 37]]);
-  const issued = await call<{ token: string }>('/api/auth/obr-exchange/issue', player, 'POST', {});
+  const recipientSecret = randomUUID() + randomUUID();
+  const issued = await call<{ token: string }>('/api/auth/obr-exchange/issue', player, 'POST', { recipientSecret });
   const redeem = await fetch(new URL('/api/auth/obr-exchange/redeem', base), { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(issued) });
   assert.equal(redeem.status, 200);
   const tabToken = redeem.headers.get('set-auth-token');
@@ -182,7 +594,21 @@ test('the attached GM clears orphaned bindings without acquiring character or ot
   const otherPath = `/api/obr/rooms/${otherRoom.roomId}/tokens/former/character`;
   await call(tokenPath, player, 'PUT', { characterId: scvm.id });
   await call(otherPath, player, 'PUT', { characterId: scvm.id });
-  await call(`/api/parties/${party.id}/kick`, gm, 'POST', { characterId: scvm.id }, 204);
+  const fixtureDb = new Client({ connectionString: process.env.DATABASE_URL });
+  await fixtureDb.connect();
+  try {
+    // Recreate a pre-redesign orphan; new kicks deliberately cannot produce one.
+    await fixtureDb.query(
+      'INSERT INTO obr_player_character_bindings (obr_room_id, obr_player_id, character_id, assigned_by_player_id) VALUES ($1, $2, $3, $2)',
+      [roomId, 'former', scvm.id]
+    );
+    await fixtureDb.query(
+      'INSERT INTO obr_token_character_bindings (obr_room_id, obr_token_id, character_id) VALUES ($1, $2, $3)',
+      [roomId, 'former', scvm.id]
+    );
+  } finally {
+    await fixtureDb.end();
+  }
   assert.deepEqual((await call<Party>(`/api/parties/${party.id}`, gm)).members, []);
   for (const path of [playerPath, tokenPath]) {
     await call(path, otherRoom.gm, 'DELETE', undefined, 401);

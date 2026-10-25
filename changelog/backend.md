@@ -1,5 +1,8 @@
 # Backend — Feature Summary
 
+- The app should no longer leave a newly joined scvm in an Owlbear party when the GM removes it from a stale roster. Room removal, normal kick and self-leave clear membership and active bindings together. (RPG-336)
+- The app should no longer transfer an account when someone opens a crafted Owlbear sign-in link. Registered handoffs require explicit approval of the displayed account and can be redeemed only once by the initiating extension. (RPG-323)
+
 `scvmgrinder_be` — Fastify 5 + TypeScript API for the MÖRK BORG character sheet.
 
 - The app should no longer refuse cleanup of an existing Owlbear room binding when the room's signed-in GM removes a former party member. Recovery is limited to deleting bindings in that GM's attached room.

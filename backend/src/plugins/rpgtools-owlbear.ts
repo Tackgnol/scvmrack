@@ -1,55 +1,102 @@
 import fp from 'fastify-plugin';
-import type { FastifyInstance, FastifyRequest } from 'fastify';
-import { obrRoomBindings } from '@tackgnol/rpgtools-owlbear/server';
-import { obrBindingsDb } from '../lib/obr-bindings-db.js';
-import { getCharacterFull } from '../lib/get-character-full.js';
-import { toCharacterCard } from '../lib/character-card.js';
-import { hasObrWriteSession } from '../services/session.js';
+import type { FastifyInstance } from 'fastify';
+import { createRoomParticipationService } from '../services/room-participation-service.js';
+import { sendServiceError } from '../errors.js';
 import {
-  canManageObrBinding,
-  canRemoveObrBinding,
-  filterAdditionalVisibleCharacterIdsInObrRoom,
-} from '../services/obr-room-visibility-service.js';
-
-type BindingAccess = {
-  hasWriteSession: boolean;
-  canWriteBinding: (characterId: string) => Promise<boolean>;
-};
-
-/** Capture request-specific access in the SDK's opaque session slot. */
-function createBindingAccess(request: FastifyRequest): BindingAccess {
-  const session = request.appSession ?? null;
-  const { roomId } = request.params as { roomId: string };
-  const authorize =
-    request.method === 'DELETE' ? canRemoveObrBinding : canManageObrBinding;
-  return {
-    hasWriteSession: hasObrWriteSession(session),
-    canWriteBinding: (characterId) => authorize(session, characterId, roomId),
-  };
-}
+  RoomParamsSchema,
+  RoomBindingParamsSchema,
+  RoomBindingBodySchema,
+} from '../schemas/obr.js';
+import { limitMax } from '../lib/rate-limits.js';
 
 export default fp(
   async function rpgtoolsOwlbearPlugin(fastify: FastifyInstance) {
-    await fastify.register(obrRoomBindings, {
-      prefix: '/api/obr',
-      db: obrBindingsDb,
-      getSession: createBindingAccess,
-      hasWriteAccess: (access) => (access as BindingAccess).hasWriteSession,
-      async getCards(allowedIds, locale) {
-        const fulls = await Promise.all(
-          allowedIds.map((id) => getCharacterFull(id, locale))
-        );
-        return fulls
-          .filter((f): f is Record<string, unknown> => f !== null)
-          .map(toCharacterCard);
+    const config = { rateLimit: { max: limitMax(50), timeWindow: '1 minute' } };
+    fastify.get<{
+      Params: { roomId: string };
+      Querystring: { ids?: string; locale?: string };
+    }>(
+      '/api/obr/rooms/:roomId/cards', {
+        config,
+        schema: {
+          params: RoomParamsSchema,
+          querystring: {
+            type: 'object',
+            properties: {
+              ids: { type: 'string', maxLength: 2000 },
+              locale: { type: 'string', enum: ['en', 'pl'] },
+            },
+          },
+        },
       },
-      ownsCharacter: (access, characterId) =>
-        (access as BindingAccess).canWriteBinding(characterId),
-      extraRoomCharacterIds: filterAdditionalVisibleCharacterIdsInObrRoom,
-    });
+      async (request, reply) => {
+        const result = await createRoomParticipationService(request.log).cards(
+          request.params.roomId,
+          (request.query.ids ?? '').split(','),
+          request.query.locale ?? 'en'
+        );
+        if (!result.ok) {
+          return sendServiceError(reply, request, result.error);
+      }
+        return result.value;
+      });
 
-    fastify.log.info('rpgtools-owlbear registered');
-    // Swagger must load first so these routes reach the OpenAPI document.
+    fastify.get<{ Params: { roomId: string } }>(
+      '/api/obr/rooms/:roomId/bindings',
+      { config, schema: { params: RoomParamsSchema } },
+      async (request, reply) => {
+        const result = await createRoomParticipationService(request.log).read(
+          request.params.roomId,
+          request.appSession
+        );
+        if (!result.ok) {
+          return sendServiceError(reply, request, result.error);
+        }
+        return {
+          roomId: request.params.roomId,
+          players: result.value.players,
+          tokens: result.value.tokens,
+        };
+      }
+);
+    for (const kind of ['player', 'token'] as const) {
+      const path = `/api/obr/rooms/:roomId/${kind}s/:bindingId/character`;
+      for (const method of ['PUT', 'DELETE'] as const) {
+        fastify.route<{
+          Params: { roomId: string; bindingId: string };
+          Body: {
+            characterId: string;
+            playerId?: string;
+            connectionId?: string;
+          };
+        }>({
+          method,
+          url: path,
+          config,
+          schema: {
+            params: RoomBindingParamsSchema,
+            ...(method === 'PUT' ? { body: RoomBindingBodySchema } : {}),
+          },
+          handler: async (request, reply) => {
+            const result = await createRoomParticipationService(
+              request.log
+            ).bind({
+              roomId: request.params.roomId,
+              id: request.params.bindingId,
+              kind,
+              ...(request.method === 'PUT' ? request.body : {}),
+              session: request.appSession,
+            });
+            if (!result.ok) {
+              return sendServiceError(reply, request, result.error);
+            }
+            return request.method === 'DELETE'
+              ? reply.code(204).send()
+              : result.value;
+          },
+        });
+      }
+    }
   },
   { dependencies: ['swagger'] }
 );

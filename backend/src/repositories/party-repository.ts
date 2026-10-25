@@ -1,5 +1,29 @@
 import { Prisma } from '@prisma/client';
 import prisma from '../lib/prisma.js';
+import { advisoryLock } from './advisory-lock.js';
+
+async function setPartyRoom(
+  tx: Prisma.TransactionClient,
+  id: string,
+  roomId: string | null
+): Promise<void> {
+  await advisoryLock(tx, 'party', id);
+  const current = await tx.party.findUnique({
+    where: { id },
+    select: { obrRoomId: true },
+  });
+  const rooms = [
+    ...new Set(
+      [current?.obrRoomId, roomId].filter((room): room is string =>
+        Boolean(room)
+      )
+    ),
+  ].sort();
+  for (const room of rooms) {
+    await advisoryLock(tx, 'room', room);
+  }
+  await tx.party.update({ where: { id }, data: { obrRoomId: roomId } });
+}
 
 /**
  * Party data-access layer. The ONLY place that talks to Prisma for party
@@ -44,7 +68,8 @@ function roomOps(tx: Prisma.TransactionClient) {
     findRoomParty(roomId: string) {
       return tx.party.findUnique({
         where: { obrRoomId: roomId },
-        select: { id: true, ownerUserId: true, _count: { select: { members: true } } },
+        select: { id: true, ownerUserId: true, _count: { select: { members: true } },
+        },
       });
     },
 
@@ -53,7 +78,7 @@ function roomOps(tx: Prisma.TransactionClient) {
     },
 
     async setPartyRoom(id: string, roomId: string): Promise<void> {
-      await tx.party.update({ where: { id }, data: { obrRoomId: roomId } });
+      await setPartyRoom(tx, id, roomId);
     },
   };
 }
@@ -181,7 +206,9 @@ export const partyRepository = {
     });
     const latestByLineage = new Map(latest.map((row) => [row.lineageId, row._max.version ?? 0]));
     return new Map(
-      rows.map((row) => [row.id, { version: row.version, latestVersion: latestByLineage.get(row.lineageId) ?? row.version }])
+      rows.map((row) => [row.id, { version: row.version, latestVersion: latestByLineage.get(row.lineageId) ?? row.version,
+        },
+      ])
     );
   },
   getPartyByInviteToken(token: string): Promise<PartyRow | null> {
@@ -264,7 +291,7 @@ export const partyRepository = {
 
   /** Re-point (or clear) the party's Owlbear room pointer (D2: 1:1, re-pointable). */
   async setPartyObrRoom(id: string, obrRoomId: string | null): Promise<void> {
-    await prisma.party.update({ where: { id }, data: { obrRoomId } });
+    await prisma.$transaction((tx) => setPartyRoom(tx, id, obrRoomId));
   },
 
   async renameParty(id: string, name: string): Promise<void> {

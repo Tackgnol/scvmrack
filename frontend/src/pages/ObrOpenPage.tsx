@@ -1,130 +1,127 @@
-import { authKeys } from '@/api';
-import { signOut } from '@/auth';
-import { obrAuthClient } from '@/auth/obrAuthClient';
-import { useAuth } from '@/hooks/useAuth';
-import { appHistory } from '@/router/history';
-import { Button, Stack } from '@mui/material';
-import { useQueryClient } from '@tanstack/react-query';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { Message, Wrapper } from './ObrAuthDonePage.styles';
-import type { Handoff } from './ObrOpenPage.models';
+import { authKeys } from "@/api";
+import { signOut } from "@/auth";
+import { obrAuthClient } from "@/auth/obrAuthClient";
+import { useAuth } from "@/hooks/useAuth";
+import { appHistory } from "@/router/history";
+import {
+  receiveObrSessionTab,
+  type ObrTabTransfer,
+} from "@tackgnol/rpgtools-shared-auth/client";
+import { Alert, Button, Stack, Typography } from "@mui/material";
+import { useQueryClient } from "@tanstack/react-query";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { Wrapper } from "./ObrAuthDonePage.styles";
 
-const FAILURE_MESSAGE =
-    'This link has expired or was already used. Go back to Owlbear and try again.';
-const ACCOUNT_MISMATCH_MESSAGE =
-    'This browser tab is already signed into a different account.';
-
-function scrubToken(): void {
-    const url = new URL(window.location.href);
-    url.searchParams.delete('token');
-    window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
+function destination(): string | null {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("to") === "class") {
+    const id = params.get("classId");
+    return id && /^[1-9]\d*$/.test(id) ? `/classes/${id}` : null;
+  }
+  if (params.get("to") === "forge") {
+    const room = params.get("obrRoom");
+    const player = params.get("obrPlayer");
+    return room && player
+      ? `/character/create?${new URLSearchParams({ obrRoom: room, obrPlayer: player })}`
+      : null;
+  }
+  const id = params.get("character");
+  return id && /^[a-f0-9-]{36}$/i.test(id) ? `/character/${id}` : null;
 }
 
 export function ObrOpenPage() {
-    const { t } = useTranslation();
-    const { isAnonymous, isLoading, user } = useAuth({ bootstrapAnonymous: false });
-    const queryClient = useQueryClient();
-    const started = useRef(false);
-    const [failureMessage, setFailureMessage] = useState<string | null>(null);
-    const [mismatch, setMismatch] = useState<Handoff | null>(null);
-    const [switching, setSwitching] = useState(false);
+  const { t } = useTranslation();
+  const { isAnonymous, isLoading, user } = useAuth({
+    bootstrapAnonymous: false,
+  });
+  const queryClient = useQueryClient();
+  const started = useRef(false);
+  const [target] = useState(destination);
+  const [failure, setFailure] = useState(false);
+  const [incoming, setIncoming] = useState<ObrTabTransfer | null>(null);
+  const [switching, setSwitching] = useState(false);
+  const open = useCallback(
+    async (transfer: ObrTabTransfer) => {
+      await obrAuthClient.redeemObrExchangeToken(
+        transfer.token,
+        transfer.recipientSecret,
+      );
+      const session = await obrAuthClient.getSession();
+      if (session.user?.id !== transfer.user.id) {
+        throw new Error("transfer-identity-mismatch");
+      }
+      await queryClient.invalidateQueries({ queryKey: authKeys.session() });
+      await appHistory.replace(target!);
+    },
+    [queryClient],
+  );
 
-    const openHandoff = useCallback(async (handoff: Handoff) => {
-        await obrAuthClient.redeemObrExchangeToken(handoff.token);
-        scrubToken();
-        await queryClient.invalidateQueries({ queryKey: authKeys.session() });
-        await appHistory.replace(
-            'classId' in handoff ? `/classes/${encodeURIComponent(handoff.classId)}`
-                : `/character/create?obrRoom=${encodeURIComponent(handoff.roomId)}&obrPlayer=${encodeURIComponent(handoff.playerId)}`,
-        );
-    }, [queryClient]);
-
-    useEffect(() => {
-        if (started.current || isLoading) {
-            return;
-        }
-        started.current = true;
-
-        const params = new URLSearchParams(window.location.search);
-        const token = params.get('token')?.trim();
-        const to = params.get('to')?.trim();
-        const characterId = params.get('character')?.trim();
-        const roomId = params.get('obrRoom')?.trim();
-        const playerId = params.get('obrPlayer')?.trim();
-        const forge = to === 'forge';
-        const classRules = to === 'class';
-        const classId = params.get('classId')?.trim();
-
-        if (!token || (forge ? !roomId || !playerId
-            : classRules ? !classId || !/^[1-9]\d*$/.test(classId) : !characterId)) {
-            if (token) {
-                scrubToken();
-            }
-            setFailureMessage(FAILURE_MESSAGE);
-            return;
-        }
-
-        if ((forge || classRules) && user && !isAnonymous) {
-            setMismatch(classRules ? { token, classId: classId as string }
-                : { token, roomId: roomId as string, playerId: playerId as string });
-            return;
-        }
-
-        void (async () => {
-            try {
-                if (forge || classRules) {
-                    await openHandoff(classRules ? { token, classId: classId as string }
-                        : { token, roomId: roomId as string, playerId: playerId as string });
-                    return;
-                }
-                await obrAuthClient.redeemObrExchangeToken(token);
-                scrubToken();
-                await queryClient.invalidateQueries({ queryKey: authKeys.session() });
-                await appHistory.replace(`/character/${encodeURIComponent(characterId as string)}`);
-            } catch {
-                scrubToken();
-                setFailureMessage(FAILURE_MESSAGE);
-            }
-        })();
-    }, [isAnonymous, isLoading, openHandoff, queryClient, user]);
-
-    const openAsObrIdentity = async () => {
-        if (!mismatch || switching) {
-            return;
-        }
-        setSwitching(true);
-        try {
-            await signOut();
-            await openHandoff(mismatch);
-            setMismatch(null);
-        } catch {
-            scrubToken();
-            setMismatch(null);
-            setFailureMessage(FAILURE_MESSAGE);
-        }
-        setSwitching(false);
-    };
-
-    if (mismatch) {
-        return (
-            <Wrapper>
-                <Stack spacing={2} alignItems="center">
-                    <Message>{ACCOUNT_MISMATCH_MESSAGE}</Message>
-                    <Button variant="contained" onClick={() => void openAsObrIdentity()} disabled={switching}>
-                        {'classId' in mismatch ? t('obr.player.openClassAsIdentity') : 'Forge as the Owlbear identity'}
-                    </Button>
-                    <Button variant="text" onClick={() => { scrubToken(); setMismatch(null); setFailureMessage('Opening cancelled. Go back to Owlbear and try again.'); }}>
-                        Cancel
-                    </Button>
-                </Stack>
-            </Wrapper>
-        );
+  useEffect(() => {
+    if (started.current || isLoading) {
+      return;
     }
+    started.current = true;
+    if (!target) {
+      setFailure(true);
+      return;
+    }
+    void receiveObrSessionTab()
+      .then(async (transfer) => {
+        if (user && !isAnonymous && user.id !== transfer.user.id) {
+          setIncoming(transfer);
+        } else {
+          await open(transfer);
+        }
+      })
+      .catch(() => setFailure(true));
+  }, [isAnonymous, isLoading, open, user, target]);
 
-    return (
-        <Wrapper>
-            <Message>{failureMessage ?? 'Opening your scvm…'}</Message>
-        </Wrapper>
-    );
+  async function switchAccount() {
+    if (!incoming || switching) {
+      return;
+    }
+    setSwitching(true);
+    try {
+      await signOut();
+      await open(incoming);
+    } catch {
+      setFailure(true);
+      setIncoming(null);
+    }
+    setSwitching(false);
+  }
+  return (
+    <Wrapper>
+      <Stack spacing={2}>
+        {failure ? (
+          <Alert severity="error">{t("obr.auth.transferUnavailable")}</Alert>
+        ) : incoming ? (
+          <>
+            <Typography>
+              {t("obr.auth.switchAccount", { name: incoming.user.name })}
+            </Typography>
+            <Button
+              variant="contained"
+              disabled={switching}
+              onClick={() => void switchAccount()}
+            >
+              {t("obr.auth.continueAccount", { name: incoming.user.name })}
+            </Button>
+            <Button
+              disabled={switching}
+              onClick={() => {
+                setIncoming(null);
+                setFailure(true);
+              }}
+            >
+              {t("obr.auth.cancel")}
+            </Button>
+          </>
+        ) : (
+          <Typography role="status">{t("obr.auth.opening")}</Typography>
+        )}
+      </Stack>
+    </Wrapper>
+  );
 }

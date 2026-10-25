@@ -46,7 +46,10 @@ export interface paths {
         };
         get: {
             parameters: {
-                query?: never;
+                query?: {
+                    ids?: string;
+                    locale?: "en" | "pl";
+                };
                 header?: never;
                 path: {
                     roomId: string;
@@ -107,7 +110,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/obr/rooms/{roomId}/players/{playerId}/character": {
+    "/api/obr/rooms/{roomId}/players/{bindingId}/character": {
         parameters: {
             query?: never;
             header?: never;
@@ -121,77 +124,16 @@ export interface paths {
                 header?: never;
                 path: {
                     roomId: string;
-                    playerId: string;
+                    bindingId: string;
                 };
                 cookie?: never;
             };
             requestBody: {
                 content: {
                     "application/json": {
+                        /** Format: uuid */
                         characterId: string;
                         connectionId?: string;
-                    };
-                };
-            };
-            responses: {
-                /** @description Default Response */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
-        post?: never;
-        delete: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    roomId: string;
-                    playerId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Default Response */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/obr/rooms/{roomId}/tokens/{tokenId}/character": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    roomId: string;
-                    tokenId: string;
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": {
-                        characterId: string;
                         playerId?: string;
                     };
                 };
@@ -213,7 +155,72 @@ export interface paths {
                 header?: never;
                 path: {
                     roomId: string;
-                    tokenId: string;
+                    bindingId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/obr/rooms/{roomId}/tokens/{bindingId}/character": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    roomId: string;
+                    bindingId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        characterId: string;
+                        connectionId?: string;
+                        playerId?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    roomId: string;
+                    bindingId: string;
                 };
                 cookie?: never;
             };
@@ -10295,6 +10302,223 @@ export interface paths {
                                 field?: string;
                                 message: string;
                                 code?: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/obr/rooms/{roomId}/participation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    roomId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            partyId: null | string;
+                            memberIds: string[];
+                            canManage: boolean;
+                            players: {
+                                playerId: string;
+                                connectionId: null | string;
+                                /** Format: uuid */
+                                characterId: string;
+                                assignedByPlayerId: string;
+                            }[];
+                            tokens: {
+                                tokenId: string;
+                                playerId: null | string;
+                                /** Format: uuid */
+                                characterId: string;
+                                /** Format: uuid */
+                                generation: string;
+                            }[];
+                            cleanup: {
+                                /** Format: uuid */
+                                id: string;
+                                roomId: string;
+                                /** Format: uuid */
+                                operationId: string;
+                                /** Format: uuid */
+                                characterId: string;
+                                tokenId: string;
+                                /** Format: uuid */
+                                generation: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/obr/rooms/{roomId}/participation/remove": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    roomId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        characterId: string;
+                        /** Format: uuid */
+                        operationId: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            partyId: null | string;
+                            memberIds: string[];
+                            canManage: boolean;
+                            players: {
+                                playerId: string;
+                                connectionId: null | string;
+                                /** Format: uuid */
+                                characterId: string;
+                                assignedByPlayerId: string;
+                            }[];
+                            tokens: {
+                                tokenId: string;
+                                playerId: null | string;
+                                /** Format: uuid */
+                                characterId: string;
+                                /** Format: uuid */
+                                generation: string;
+                            }[];
+                            cleanup: {
+                                /** Format: uuid */
+                                id: string;
+                                roomId: string;
+                                /** Format: uuid */
+                                operationId: string;
+                                /** Format: uuid */
+                                characterId: string;
+                                tokenId: string;
+                                /** Format: uuid */
+                                generation: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/obr/rooms/{roomId}/participation/cleanup/{id}/ack": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    roomId: string;
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            partyId: null | string;
+                            memberIds: string[];
+                            canManage: boolean;
+                            players: {
+                                playerId: string;
+                                connectionId: null | string;
+                                /** Format: uuid */
+                                characterId: string;
+                                assignedByPlayerId: string;
+                            }[];
+                            tokens: {
+                                tokenId: string;
+                                playerId: null | string;
+                                /** Format: uuid */
+                                characterId: string;
+                                /** Format: uuid */
+                                generation: string;
+                            }[];
+                            cleanup: {
+                                /** Format: uuid */
+                                id: string;
+                                roomId: string;
+                                /** Format: uuid */
+                                operationId: string;
+                                /** Format: uuid */
+                                characterId: string;
+                                tokenId: string;
+                                /** Format: uuid */
+                                generation: string;
                             }[];
                         };
                     };

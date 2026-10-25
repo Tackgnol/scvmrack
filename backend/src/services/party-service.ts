@@ -28,9 +28,11 @@ import {
 } from './session.js';
 
 export type { AppSession } from './session.js';
-import { PARTY_MAX_MEMBERS, lockPartySeat, partyFull } from '../lib/party-limits.js';
+import { PARTY_MAX_MEMBERS, lockPartySeat, partyFull,
+} from '../lib/party-limits.js';
 import { characterRepository } from '../repositories/character-repository.js';
 import { defaultPoolLineageIds } from './party-class-pool-service.js';
+import { createRoomParticipationService } from './room-participation-service.js';
 
 const OBR_ROOM_SYSTEM_OWNER_ID = 'system:obr-room';
 const OBR_ROOM_SYSTEM_OWNER_EMAIL = 'obr-room@system.scvmrack.local';
@@ -88,7 +90,8 @@ function toMemberPayload(
   session: AppSession,
   classVersions: ReadonlyMap<number, { version: number; latestVersion: number }>
 ): PartyMemberPayload {
-  const versions = member.classId === null ? undefined : classVersions.get(member.classId);
+  const versions =
+    member.classId === null ? undefined : classVersions.get(member.classId);
   return {
     characterId: member.id,
     name: member.name,
@@ -97,7 +100,8 @@ function toMemberPayload(
     maxHp: member.maxHp,
     joinedAt: member.joinedAt,
     owned: ownsCharacter(session, member),
-    olderRules: versions && versions.version < versions.latestVersion ? versions : null,
+    olderRules:
+      versions && versions.version < versions.latestVersion ? versions : null,
   };
 }
 
@@ -354,20 +358,22 @@ export function createPartyService(
           if (existing.ownerUserId === OBR_ROOM_SYSTEM_OWNER_ID) {
             if (existing.members.length === 0) {
               // Re-checked under the transaction: the room's party may have changed since it was read.
-              const replaced = await partyRepository.roomTransaction(async (ops) => {
-                const roomParty = await ops.findRoomParty(obrRoomId);
-                if (
-                  !roomParty ||
-                  roomParty.id !== existing.id ||
-                  roomParty.ownerUserId !== OBR_ROOM_SYSTEM_OWNER_ID ||
-                  roomParty._count.members > 0
-                ) {
-                  return false;
+              const replaced = await partyRepository.roomTransaction(
+                async (ops) => {
+                  const roomParty = await ops.findRoomParty(obrRoomId);
+                  if (
+                    !roomParty ||
+                    roomParty.id !== existing.id ||
+                    roomParty.ownerUserId !== OBR_ROOM_SYSTEM_OWNER_ID ||
+                    roomParty._count.members > 0
+                  ) {
+                    return false;
+                  }
+                  await ops.deleteParty(roomParty.id);
+                  await ops.setPartyRoom(input.id, obrRoomId);
+                  return true;
                 }
-                await ops.deleteParty(roomParty.id);
-                await ops.setPartyRoom(input.id, obrRoomId);
-                return true;
-              });
+              );
               if (replaced) {
                 return ok({ id: input.id, obrRoomId });
               }
@@ -891,6 +897,21 @@ export function createPartyService(
           );
         }
 
+        const party = await partyRepository.getPartyById(input.id);
+        if (party?.obrRoomId) {
+          const result = await createRoomParticipationService(
+            log,
+            partyBus
+          ).remove({
+            session: input.session,
+            roomId: party.obrRoomId,
+            characterId: character.id,
+            operationId: crypto.randomUUID(),
+            expectedPartyId: input.id,
+            eventType: 'character.left',
+          });
+          return result.ok ? ok(undefined) : result;
+        }
         await partyRepository.setCharacterParty(character.id, null);
         partyBus?.publish(input.id, {
           type: 'character.left',
@@ -929,6 +950,20 @@ export function createPartyService(
           );
         }
 
+        const party = await partyRepository.getPartyById(input.id);
+        if (party?.obrRoomId) {
+          const result = await createRoomParticipationService(
+            log,
+            partyBus
+          ).remove({
+            session: input.session,
+            roomId: party.obrRoomId,
+            characterId: character.id,
+            operationId: crypto.randomUUID(),
+            expectedPartyId: input.id,
+          });
+          return result.ok ? ok(undefined) : result;
+        }
         await partyRepository.setCharacterParty(character.id, null);
         partyBus?.publish(input.id, {
           type: 'character.kicked',

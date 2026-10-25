@@ -4,6 +4,7 @@ import { usePartyLimits } from "@/hooks/usePartyRepository";
 import { ObrBindingControls } from "./ObrBindingControls";
 import { ObrPartyRosterRow } from "./ObrPartyRosterRow";
 import { ObrRoomPromotion } from "./ObrRoomPromotion";
+import { ObrSceneCleanup } from "./ObrSceneCleanup/ObrSceneCleanup";
 import {
   type ObrConnectedPlayer,
   type ObrPartyRosterBindingRow,
@@ -106,7 +107,13 @@ function ObrPartyRosterContainer() {
   const roster = useObrRosterCards();
   const limits = usePartyLimits();
   return (
-    <ObrPartyRosterView
+    <>
+      <ObrSceneCleanup
+        message={roster.cleanupMessage}
+        pending={roster.cleanupPending}
+        onRetry={roster.retrySceneCleanup}
+      />
+      <ObrPartyRosterView
       rows={roster.rows}
       maxMembers={limits.data?.maxMembers ?? FALLBACK_MAX_MEMBERS}
       connectedPlayers={roster.connectedPlayers}
@@ -120,6 +127,7 @@ function ObrPartyRosterContainer() {
       removeRosterAction={roster.removeRosterAction}
       promotion={<ObrRoomPromotion />}
     />
+    </>
   );
 }
 

@@ -1,4 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState,
+  useSyncExternalStore,
+} from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   EventStreamContentType,
@@ -6,6 +8,11 @@ import {
 } from "@microsoft/fetch-event-source";
 import { partyKeys } from "@/api/party";
 import { embeddedSessionHeaders } from "@/utils/embed";
+import {
+  authHeaders,
+  subscribeTabSession,
+  tabSessionSnapshot,
+} from "@/utils/tabSession";
 
 export type PartyStreamEvent =
   | { type: "character.updated"; characterId: string; fields: string[] }
@@ -76,6 +83,11 @@ export function usePartyStream(
   partyId: string | null | undefined,
   options: UsePartyStreamOptions = {},
 ) {
+  const tabSession = useSyncExternalStore(
+    subscribeTabSession,
+    tabSessionSnapshot,
+    () => null,
+  );
   const queryClient = useQueryClient();
   const { enabled = true, onClosed } = options;
   const onClosedRef = useRef(onClosed);
@@ -116,6 +128,9 @@ export function usePartyStream(
     setStatus("connecting");
 
     const invalidateRoster = () => {
+      void queryClient.invalidateQueries({
+        queryKey: ["obr", "participation"],
+      });
       void queryClient.invalidateQueries({ queryKey: partyRosterQueryKey() });
       void queryClient.invalidateQueries({
         queryKey: partyDetailQueryKey(partyId),
@@ -196,7 +211,7 @@ export function usePartyStream(
 
     void fetchEventSource(partyStreamUrl(partyId), {
       credentials: "include",
-      headers: embeddedSessionHeaders(),
+      headers: { ...embeddedSessionHeaders(), ...authHeaders() },
       signal: controller.signal,
       // Keep the stream live in a backgrounded tab, matching native EventSource;
       // fetch-event-source otherwise drops the connection while hidden.
@@ -250,7 +265,7 @@ export function usePartyStream(
     return () => {
       controller.abort();
     };
-  }, [enabled, partyId, queryClient]);
+  }, [enabled, partyId, queryClient, tabSession]);
 
   return {
     status,

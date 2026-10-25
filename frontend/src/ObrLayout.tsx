@@ -1,10 +1,11 @@
-import { obrAuthClient } from '@/auth/obrAuthClient';
+import { openObrSessionTab } from '@/auth/obrAuthClient';
 import { useCharacter } from '@/CharacterContext/CharacterContext';
 import OBR from '@owlbear-rodeo/sdk';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { LanguageToggle } from './components/molecules/header/LanguageToggle';
-import { Actions, Bar, Body, Container, ExpandButton, Wordmark } from './ObrLayout.styles';
+import { Actions, Bar, Body, Container, ExpandButton, Wordmark,
+} from './ObrLayout.styles';
 
 const COMPACT_WIDTH = 420;
 const EXPANDED_WIDTH = 860;
@@ -43,7 +44,8 @@ export function ObrLayout({ children }: { children: React.ReactNode }) {
     function maximize() {
         setSize('max');
         OBR.action.setWidth(maxDimension(window.screen.availWidth, EXPANDED_WIDTH));
-        OBR.action.setHeight(maxDimension(window.screen.availHeight, EXPANDED_HEIGHT_FLOOR));
+        OBR.action.setHeight(maxDimension(window.screen.availHeight, EXPANDED_HEIGHT_FLOOR),
+    );
     }
 
     async function openInScvmrack() {
@@ -52,51 +54,46 @@ export function ObrLayout({ children }: { children: React.ReactNode }) {
         }
         setIsOpening(true);
         try {
-            const token = await obrAuthClient.issueObrExchangeToken();
-            const opened = window.open(
-                `/obr-open?token=${encodeURIComponent(token)}&character=${encodeURIComponent(characterId)}`,
-                '_blank',
-                'noopener,noreferrer',
-            );
-            if (!opened) {
-                await OBR.notification.show(
-                    t('obr.layout.openInScvmrackFailed', 'Could not open in scvmrack'),
-                    'ERROR',
-                );
-            }
-        } catch {
-            await OBR.notification.show(
-                t('obr.layout.openInScvmrackFailed', 'Could not open in scvmrack'),
-                'ERROR',
-            );
-        }
-        setIsOpening(false);
+      await openObrSessionTab(
+        `/obr-open?character=${encodeURIComponent(characterId)}`,
+      );
+    } catch {
+      await OBR.notification.show(
+        t("obr.layout.openInScvmrackFailed", "Could not open in scvmrack"),
+        "ERROR",
+      );
     }
+    setIsOpening(false);
+  }
 
-    return (
-        <Container>
-            <Bar>
-                <Wordmark>Scvmrack</Wordmark>
-                <Actions>
-                    <LanguageToggle />
-                    {characterId && (
-                        <ExpandButton type="button" onClick={openInScvmrack} disabled={!ready || isOpening}>
-                            {isOpening
-                                ? t('obr.layout.openingInScvmrack', 'Opening')
-                                : t('obr.layout.openInScvmrack', 'Open in scvmrack')}
-                        </ExpandButton>
-                    )}
-                    <ExpandButton type="button" onClick={toggleExpand} disabled={!ready}>
-                        {expanded
-                            ? t('obr.layout.collapse', '⊠ Collapse')
-                            : t('obr.layout.expand', '⤢ Expand')}
-                    </ExpandButton>
-                    <ExpandButton type="button" onClick={maximize} disabled={!ready}>
-                        {t('obr.layout.maximize', '⛶ Max')}
-                    </ExpandButton>
-                </Actions>
-            </Bar>
-            <Body>{children}</Body>
-        </Container>
-    );
+  return (
+    <Container>
+      <Bar>
+        <Wordmark>Scvmrack</Wordmark>
+        <Actions>
+          <LanguageToggle />
+          {characterId && (
+            <ExpandButton
+              type="button"
+              onClick={openInScvmrack}
+              disabled={!ready || isOpening}
+            >
+              {isOpening
+                ? t("obr.layout.openingInScvmrack", "Opening")
+                : t("obr.layout.openInScvmrack", "Open in scvmrack")}
+            </ExpandButton>
+          )}
+          <ExpandButton type="button" onClick={toggleExpand} disabled={!ready}>
+            {expanded
+              ? t("obr.layout.collapse", "⊠ Collapse")
+              : t("obr.layout.expand", "⤢ Expand")}
+          </ExpandButton>
+          <ExpandButton type="button" onClick={maximize} disabled={!ready}>
+            {t("obr.layout.maximize", "⛶ Max")}
+          </ExpandButton>
+        </Actions>
+      </Bar>
+      <Body>{children}</Body>
+    </Container>
+  );
 }
