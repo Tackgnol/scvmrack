@@ -1,7 +1,7 @@
 # Owlbear lifecycle verification — 25 October 2026
 
 Application branch: `codex/obr-participation-lifecycle`, based on `dev`.
-Shared-auth branch: `codex/obr-approved-handoff`, PR [rpgtools-shared-auth #8](https://github.com/Tackgnol/rpgtools-shared-auth/pull/8), reviewed through `0ff2744`.
+Shared-auth branch: `codex/obr-approved-handoff`, PR [rpgtools-shared-auth #8](https://github.com/Tackgnol/rpgtools-shared-auth/pull/8), reviewed through `6de36c1`.
 
 The shared-auth 2.0.0 archive is **unpublished**, as requested by the maintainer. The application draft depends on publishing that exact reviewed archive (or regenerating the locks for the final release artifact). Local checks used the actual package archive; registry CI cannot install it until publication. Neither branch has been merged or deployed.
 
@@ -9,13 +9,16 @@ The shared-auth 2.0.0 archive is **unpublished**, as requested by the maintainer
 
 | Check | Result | Local evidence |
 | --- | --- | --- |
+| Shared-auth complete TypeScript check, including tests | Pass | package npx tsc --noEmit -p . |
 | Shared-auth build | Pass | package `npm run build` |
-| Shared-auth full suite | 127/127 | `.worktrees/shared-auth-lifecycle/.scratch/pr8-full-tests-final.log` |
+| Shared-auth full suite | 127/127 | `.worktrees/shared-auth-lifecycle/.scratch/pr8-rereview-tests.log` |
+| Final backend/frontend TypeScript checks | Pass | `npx tsc --noEmit` in each app |
 | Backend full unit suite, Node 22.23.4 | 456/456 | `output/obr-lifecycle-backend-unit.log` |
 | Assignment/party unit recheck after review | 81/81 | `output/obr-lifecycle-backend-unit-final-recheck.log` |
 | Frontend full unit suite | 522/522 | `output/obr-lifecycle-unit-final.log` |
 | Full PostgreSQL/API suite | 84/84 | `output/obr-lifecycle-integration-complete.log` |
 | Room/auth real API recheck with reviewed package | 12/12 | `output/obr-lifecycle-pr8-integration.log` |
+| Final package re-review API/database recheck | 12/12 | `output/obr-lifecycle-rereview-integration.log` |
 | Full browser component suite | 580 passed; one card timing failure | `output/obr-lifecycle-browser-final.log` |
 | Card-file isolated rerun | 4/4 | `output/obr-lifecycle-card-recheck.log` |
 | Final sheet/GM component recheck | 27/27 | `output/obr-lifecycle-browser-bind-final.log` |
@@ -47,4 +50,6 @@ CATS tested the deployed canary preceding these changes. It does not verify the 
 
 ## Candidate archive
 
-SHA-1: `16db40de4367266cbdecd5beb8a937a95c0db957`. The allowlist contains 62 files, limited to built entrypoints, README and package metadata. The archive contains no source tests, scratch files or credentials.
+SHA-1: `a1f7068b8996a8cd1dee361a1aef703d3ce00d24`. The allowlist contains 62 files, limited to built entrypoints, README and package metadata. The archive contains no source tests, scratch files or credentials.
+
+The final re-review removes the duplicate Better Auth registration cap; Fastify retains the visitor-aware 10/min limit. The regression explicitly enables Better Auth production limiting. Test fixtures now pass full TypeScript checking, including the previously excluded tests. Standards and spec re-review found no remaining findings in this delta.
