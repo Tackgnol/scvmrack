@@ -6,7 +6,7 @@ import {
     obrCharacterAccessHeaders,
 } from '@/obr/obrCharacterAccess';
 import { embeddedSessionHeaders } from '@/utils/embed';
-import { authHeaders } from '@/utils/tabSession';
+import { authHeaders, requireVerifiedSession } from '@/utils/tabSession';
 import type { paths } from "./schema.ts";
 
 /** The JSON body a GET route answers 200 with. */
@@ -27,6 +27,7 @@ export const authKeys = {
     all: ["auth"] as const,
     session: () => [...authKeys.all, "session"] as const,
     me: () => [...authKeys.all, "me"] as const,
+    obrHandoff: (handoffId: string | null) => [...authKeys.all, "obr-handoff", handoffId] as const,
 };
 
 
@@ -246,6 +247,7 @@ const OBR_CHARACTER_METHODS = new Set(["GET", "PATCH"]);
 
 export const obrCharacterAccessMiddleware: Middleware = {
     onRequest({ request }) {
+        requireVerifiedSession();
         if (!OBR_CHARACTER_METHODS.has(request.method.toUpperCase())) {
             return request;
         }

@@ -17,6 +17,24 @@
     "subtitle": "Interaktywna karta postaci Mörk Borg"
   },
   "obr": {
+    "auth": {
+      "retrySignOut": "Ponów wylogowanie",
+      "codeMismatch": "Kod nie pasuje. Wpisz kod wyświetlony w rozszerzeniu.",
+      "cancelled": "Anulowano logowanie. Wróć do Owlbear.",
+      "transferUnavailable": "Ten odnośnik jest niedostępny. Otwórz go ponownie z Owlbear.",
+      "switchAccount": "Ta karta używa innego konta. Kontynuować jako {{name}}?",
+      "continueAccount": "Kontynuuj jako {{name}}",
+      "opening": "Otwieranie scvma…",
+      "heading": "Zatwierdź logowanie Owlbear",
+      "unavailable": "To logowanie wygasło lub jest niedostępne. Wróć do Owlbear i zacznij ponownie.",
+      "approved": "Zatwierdzono. Wróć do Owlbear.",
+      "destination": "Cel: {{destination}}",
+      "warning": "Zatwierdź tylko logowanie rozpoczęte przez Ciebie w Owlbear. Wpisz kod wyświetlony w rozszerzeniu.",
+      "code": "Kod z rozszerzenia",
+      "approve": "Zatwierdź logowanie",
+      "cancel": "Anuluj",
+      "comparison": "Kod logowania: {{code}}"
+    },
     "layout": {
       "expand": "⤢ Rozszerz",
       "collapse": "⊠ Zwiń",
@@ -97,6 +115,10 @@
       "assignTo": "Przypisz graczowi"
     },
     "roster": {
+      "removed": "Usunięto z pokoju",
+      "cleanupPending": "Usunięto; porządkowanie sceny oczekuje",
+      "cleanupComplete": "Porządkowanie sceny zakończone",
+      "retryCleanup": "Ponów porządkowanie sceny",
       "title": "MISTRZ GRY · PRZEGLĄD {{count}}/{{max}}",
       "empty": "Brak związanych scvm. Gracze muszą przypisać scvma do tokena.",
       "inviteLink": "Zaproszenie {{path}}",

@@ -1,7 +1,10 @@
+import { ObrSignInCode } from "@/components/molecules/ObrSignInCode/ObrSignInCode";
+import type { ObrRoomActor } from "./ObrCharacterRoute.models";
+import { openObrSessionTab } from "@/auth/obrAuthClient";
 import { useCharacter } from "@/CharacterContext/CharacterContext";
 import { CharacterSheet } from "@/components/organisms/CharacterSheet";
 import { ObrTokenBar } from "./ObrTokenBar";
-import { ObrSaveRecovery } from './ObrSaveRecovery/ObrSaveRecovery';
+import { ObrSaveRecovery } from "./ObrSaveRecovery/ObrSaveRecovery";
 import { ObrOpenInScvmrackButton } from "./ObrOpenInScvmrackButton";
 import { ObrAuthedPicker } from "./ObrAuthedPicker";
 import { ObrGmView } from "./ObrGmView";
@@ -22,7 +25,7 @@ import {
   obrRoomBindingsClient,
 } from "@/obr/obrApiClient";
 import { useObrSession } from "@/obr/useObrSession";
-import { openClassDetails } from '@/obr/openClassDetails';
+import { openClassDetails } from "@/obr/openClassDetails";
 import { getApiLocale, getCharacterKey } from "@/hooks/utils";
 import { getApiErrorCode } from "@/utils/errorUtils";
 import { Button } from "@mui/material";
@@ -76,13 +79,14 @@ function hasObrReference(): boolean {
 function ObrPlayerCharacterRoute() {
   const { i18n, t } = useTranslation();
   const { character, setCharacterId, generateNew } = useCharacter();
-  const { isLoading, isAuthenticated, signIn, issueObrExchangeToken } =
+  const { isLoading, isAuthenticated, signIn, signInProgress } =
     useObrSession();
   const queryClient = useQueryClient();
   const locale = getApiLocale(i18n.language);
   const characterId = character?.id ?? null;
   const [signInError, setSignInError] = useState<string | null>(null);
   const [forgeError, setForgeError] = useState<string | null>(null);
+  const [roomActor, setRoomActor] = useState<ObrRoomActor | null>(null);
   const [rollError, setRollError] = useState<string | null>(null);
   const [rollPickerOpen, setRollPickerOpen] = useState(false);
   const [isRestoringCharacter, setIsRestoringCharacter] = useState(true);
@@ -101,6 +105,22 @@ function ObrPlayerCharacterRoute() {
     setRollError(null);
     setRollPickerOpen(true);
   };
+
+  useEffect(() => {
+    let active = true;
+    OBR.onReady(() => {
+      void getCurrentObrRoomActor(OBR)
+        .then((actor) => {
+          if (active) {
+            setRoomActor(actor);
+          }
+        })
+        .catch(() => undefined);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     setCharacterIdRef.current = setCharacterId;
@@ -231,24 +251,6 @@ function ObrPlayerCharacterRoute() {
   }, [characterId]);
 
   useEffect(() => {
-    const characterId = character?.id?.trim();
-    if (!characterId) {
-      return;
-    }
-
-    void persistCurrentObrCharacterId(
-      scvmrackObrExtension,
-      OBR,
-      obrRoomBindingsClient,
-      characterId,
-    ).catch(() => {
-      // Browser/session storage still has the active character. Player metadata
-      // and backend room binding are recovery hints, so failure here should not
-      // block play.
-    });
-  }, [character?.id]);
-
-  useEffect(() => {
     const characterId = character?.id;
     const updatedAt = character?.updatedAt;
     if (!characterId || !updatedAt) {
@@ -296,7 +298,10 @@ function ObrPlayerCharacterRoute() {
                 "This room's party is full. Ask the GM to make room.",
               ),
             );
-          } else if (code === "CLASS_NOT_AVAILABLE" || code === "CLASSLESS_NOT_AVAILABLE") {
+          } else if (
+            code === "CLASS_NOT_AVAILABLE" ||
+            code === "CLASSLESS_NOT_AVAILABLE"
+          ) {
             setRollPickerOpen(true);
           }
         },
@@ -309,20 +314,16 @@ function ObrPlayerCharacterRoute() {
   }
   async function handleForge() {
     setForgeError(null);
+    if (!roomActor) {
+      return;
+    }
     try {
-      const actor = await getCurrentObrRoomActor(OBR);
-      const token = await issueObrExchangeToken();
       const params = new URLSearchParams({
-        token,
         to: "forge",
-        obrRoom: actor.roomId,
-        obrPlayer: actor.playerId,
+        obrRoom: roomActor.roomId,
+        obrPlayer: roomActor.playerId,
       });
-      if (
-        !window.open(`/obr-open?${params}`, "_blank", "noopener,noreferrer")
-      ) {
-        throw new Error("popup-blocked");
-      }
+      await openObrSessionTab(`/obr-open?${params}`);
     } catch {
       setForgeError(
         t(
@@ -361,10 +362,7 @@ function ObrPlayerCharacterRoute() {
                 characterName={character.name ?? "Scvm"}
               />
               {isAuthenticated && (
-                <ObrOpenInScvmrackButton
-                  characterId={character.id}
-                  issueObrExchangeToken={issueObrExchangeToken}
-                />
+                <ObrOpenInScvmrackButton characterId={character.id} />
               )}
             </PlayerToolbar>
           )}
@@ -374,8 +372,11 @@ function ObrPlayerCharacterRoute() {
             onClassLinkClick={(event) => {
               event.preventDefault();
               if (character.classId) {
-                void openClassDetails(character.classId, issueObrExchangeToken).catch(() => {
-                  void OBR.notification.show(t('obr.player.openInScvmrackFailed'), 'ERROR');
+                void openClassDetails(character.classId).catch(() => {
+                  void OBR.notification.show(
+                    t("obr.player.openInScvmrackFailed"),
+                    "ERROR",
+                  );
                 });
               }
             }}
@@ -392,9 +393,24 @@ function ObrPlayerCharacterRoute() {
             {isAuthenticated ? (
               <ObrAuthedPicker
                 locale={locale}
-                onPick={(id) => void setCharacterId(id)}
+                onPick={(id) => {
+                  void (async () => {
+                    await persistCurrentObrCharacterId(
+                      scvmrackObrExtension,
+                      OBR,
+                      obrRoomBindingsClient,
+                      id,
+                    );
+                    await setCharacterId(id);
+                  })().catch(() =>
+                    setRollError(
+                      t("obr.player.pickFailed", "Could not select this scvm"),
+                    ),
+                  );
+                }}
                 onRollNew={openRollPicker}
                 onForge={() => void handleForge()}
+                forgeReady={Boolean(roomActor)}
               />
             ) : (
               <>
@@ -411,12 +427,14 @@ function ObrPlayerCharacterRoute() {
                   fullWidth
                   variant="outlined"
                   onClick={() => void handleForge()}
+                  disabled={!roomActor}
                 >
                   {t("obr.player.forgeScvm", "Forge scvm")}
                 </Button>
                 <Button fullWidth variant="outlined" onClick={handleSignIn}>
                   {t("obr.player.signIn", "Login")}
                 </Button>
+                <ObrSignInCode code={signInProgress?.code} />
                 {signInError && <ErrorText>{signInError}</ErrorText>}
                 {forgeError && <ErrorText>{forgeError}</ErrorText>}
                 {rollError && <ErrorText>{rollError}</ErrorText>}
@@ -430,7 +448,9 @@ function ObrPlayerCharacterRoute() {
         roomId={OBR.room.id}
         locale={locale}
         onClose={() => setRollPickerOpen(false)}
-        onChoose={(classId, classless) => void handleRoomRoll(classId, classless)}
+        onChoose={(classId, classless) =>
+          void handleRoomRoll(classId, classless)
+        }
       />
     </>
   );

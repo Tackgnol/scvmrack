@@ -31,15 +31,23 @@ mock.module('../../src/services/obr-assignment-service.js', {
   },
 });
 
+mock.module('../../src/services/room-participation-service.js', {
+  namedExports: {
+    createRoomParticipationService: () => ({}),
+  },
+});
+
 const { apiError } = await import('../../src/errors.js');
-const { default: errorHandlerPlugin } = await import('../../src/plugins/error-handler.js');
+const { default: errorHandlerPlugin } =
+  await import('../../src/plugins/error-handler.js');
 const { default: obrRoutes } = await import('../../src/routes/obr/index.js');
 
 async function buildApp() {
   const app = Fastify({ logger: false });
   app.decorateRequest('appSession', null);
   app.addHook('onRequest', async (request) => {
-    (request as typeof request & { appSession: Session }).appSession = currentSession;
+    (request as typeof request & { appSession: Session }).appSession =
+      currentSession;
   });
   await app.register(errorHandlerPlugin);
   await app.register(obrRoutes);

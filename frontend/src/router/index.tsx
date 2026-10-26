@@ -44,14 +44,12 @@ const characterCreateRoute = createRoute({
     component: CharacterCreatePage,
 });
 
-// Wrapped (not the bare CharacterPage) so a tab opened via ObrCharacterRoute's
-// "Open in scvmrack" button can redeem its obrExchangeToken before the
-// character load path runs — see ObrExchangeRedeemGate.
+// Scrub unsupported legacy URL credentials before displaying the character.
 const characterIdRoute = createRoute({
     getParentRoute: () => rootRoute,
     path: '/character/$characterId',
     component: lazyRouteComponent(() =>
-        import('@/components/obr/ObrExchangeRedeemGate').then(m => ({ default: m.ObrExchangeRedeemGate }))
+        import('@/components/obr/ObrLegacyTokenCleanup').then(m => ({ default: m.ObrLegacyTokenCleanup }))
     ),
 });
 

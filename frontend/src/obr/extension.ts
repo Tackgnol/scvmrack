@@ -6,6 +6,8 @@ import { createObrExtension } from "@tackgnol/rpgtools-owlbear";
 // changes — every other file keeps importing these same names from here.
 export const scvmrackObrExtension = createObrExtension("co.rpgtools.scvmrack");
 
+export const BINDING_GENERATION_META_KEY = `${scvmrackObrExtension.EXTENSION_ID}/binding-generation`;
+
 export const {
   EXTENSION_ID,
   CHARACTER_META_KEY,

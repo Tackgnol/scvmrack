@@ -41,12 +41,17 @@ function characterTxOps(tx: Prisma.TransactionClient) {
     },
 
     /** How many scvm are in the party, not counting `excludingUserId`'s. */
-    countPartyMembers(partyId: string, excludingUserId?: string): Promise<number> {
+    countPartyMembers(
+      partyId: string,
+      excludingUserId?: string
+    ): Promise<number> {
       return tx.character.count({
         where: {
           partyId,
           // NOT alone would also skip owner-less scvm (user_id NULL), which still hold a seat.
-          ...(excludingUserId ? { OR: [{ userId: null }, { NOT: { userId: excludingUserId } }] } : {}),
+          ...(excludingUserId
+            ? { OR: [{ userId: null }, { NOT: { userId: excludingUserId } }] }
+            : {}),
         },
       });
     },
@@ -55,24 +60,48 @@ function characterTxOps(tx: Prisma.TransactionClient) {
       await tx.character.deleteMany({ where: { userId } });
     },
 
-    async createCharacter(data: Prisma.CharacterUncheckedCreateInput): Promise<string> {
-      const character = await tx.character.create({ data, select: { id: true } });
+    async createCharacter(
+      data: Prisma.CharacterUncheckedCreateInput
+    ): Promise<string> {
+      const character = await tx.character.create({
+        data,
+        select: { id: true },
+      });
       return character.id;
     },
 
     async joinParty(characterId: string, partyId: string): Promise<void> {
-      await tx.character.update({ where: { id: characterId }, data: { partyId, joinedAt: new Date() } });
+      const party = await tx.party.findUnique({
+        where: { id: partyId },
+        select: { obrRoomId: true },
+      });
+      if (party?.obrRoomId) {
+        await advisoryLock(tx, 'room', party.obrRoomId);
+      }
+      await tx.character.update({
+        where: { id: characterId },
+        data: { partyId, joinedAt: new Date() },
+      });
     },
 
     /** Binds the Owlbear player's seat in the room to the character. */
-    async bindObrPlayer(binding: { roomId: string; playerId: string }, characterId: string): Promise<void> {
+    async bindObrPlayer(
+      binding: { roomId: string; playerId: string },
+      characterId: string
+    ): Promise<void> {
+      await advisoryLock(tx, 'room', binding.roomId);
       await tx.obrRoomBinding.upsert({
         where: { obrRoomId: binding.roomId },
         create: { obrRoomId: binding.roomId },
         update: { updatedAt: new Date() },
       });
       await tx.obrPlayerCharacterBinding.upsert({
-        where: { obrRoomId_obrPlayerId: { obrRoomId: binding.roomId, obrPlayerId: binding.playerId } },
+        where: {
+          obrRoomId_obrPlayerId: {
+            obrRoomId: binding.roomId,
+            obrPlayerId: binding.playerId,
+          },
+        },
         create: {
           obrRoomId: binding.roomId,
           obrPlayerId: binding.playerId,
@@ -216,7 +245,10 @@ export const characterRepository = {
    * one-scvm-per-guest invariant when an anonymous session opts into replacing
    * its existing scvm (see character-service generate).
    */
-  deleteOthersForUser(userId: string, keepId: string): Promise<{ count: number }> {
+  deleteOthersForUser(
+    userId: string,
+    keepId: string
+  ): Promise<{ count: number }> {
     return prisma.character.deleteMany({
       where: { userId, id: { not: keepId } },
     });
@@ -237,7 +269,13 @@ export const characterRepository = {
     }
     return prisma.class.findMany({
       where: { id: { in: ids } },
-      select: { id: true, name: true, nameKey: true, descriptionKey: true, languages: true },
+      select: {
+        id: true,
+        name: true,
+        nameKey: true,
+        descriptionKey: true,
+        languages: true,
+      },
       orderBy: { id: 'asc' },
     });
   },

@@ -1,6 +1,12 @@
-import * as Sentry from '@sentry/react';
-import { authHeaders, setTabSession } from '@/utils/tabSession';
-import { embeddedSessionHeaders } from '@/utils/embed';
+import * as Sentry from "@sentry/react";
+import {
+  authHeaders,
+  setTabSession,
+  confirmTabSession,
+  isTabSessionUnverified,
+  requireVerifiedSession,
+} from "@/utils/tabSession";
+import { embeddedSessionHeaders } from "@/utils/embed";
 
 export interface AuthSessionUser {
   id: string;
@@ -15,28 +21,28 @@ export interface AuthSession {
   user: AuthSessionUser;
 }
 
-const apiBaseUrl = () => import.meta.env.VITE_BACKEND_URL || '';
+const apiBaseUrl = () => import.meta.env.VITE_BACKEND_URL || "";
 
 export class SessionReadError extends Error {
   constructor(public httpStatus: number) {
-    super('Failed to fetch auth session');
+    super("Failed to fetch auth session");
   }
 }
 
 export class AnonymousSessionUnavailableError extends Error {
-  readonly code = 'ANONYMOUS_SESSION_UNAVAILABLE';
+  readonly code = "ANONYMOUS_SESSION_UNAVAILABLE";
 
   constructor() {
-    super('Anonymous session did not start');
-    this.name = 'AnonymousSessionUnavailableError';
+    super("Anonymous session did not start");
+    this.name = "AnonymousSessionUnavailableError";
   }
 }
 
 class SessionVerificationError extends Error {
-  readonly code = 'AUTH_SESSION_VERIFICATION_FAILED';
+  readonly code = "AUTH_SESSION_VERIFICATION_FAILED";
 
   constructor(readonly cause: unknown) {
-    super('Could not verify anonymous session');
+    super("Could not verify anonymous session");
   }
 }
 
@@ -44,9 +50,12 @@ class SessionVerificationError extends Error {
 // bypass the OpenAPI client so anonymous bootstrap and logout can run before a
 // normal API session exists.
 export async function fetchSession(): Promise<AuthSession | null> {
+  if (isTabSessionUnverified()) {
+    return null;
+  }
   const res = await fetch(`${apiBaseUrl()}/api/auth/get-session`, {
-    credentials: 'include',
-    cache: 'no-store',
+    credentials: "include",
+    cache: "no-store",
     headers: { ...embeddedSessionHeaders(), ...authHeaders() },
   });
 
@@ -68,26 +77,26 @@ export class AnonymousSignInError extends Error {
   httpStatus: number;
 
   constructor(httpStatus: number) {
-    super('Failed to bootstrap anonymous session');
+    super("Failed to bootstrap anonymous session");
     this.httpStatus = httpStatus;
   }
 }
 
 export async function signInAnonymous(): Promise<string | null> {
   const res = await fetch(`${apiBaseUrl()}/api/auth/sign-in/anonymous`, {
-    method: 'POST',
-    credentials: 'include',
+    method: "POST",
+    credentials: "include",
     headers: {
-      'content-type': 'application/json',
+      "content-type": "application/json",
       ...embeddedSessionHeaders(),
     },
-    body: '{}',
+    body: "{}",
   });
 
   if (!res.ok) {
     throw new AnonymousSignInError(res.status);
   }
-  return res.headers.get('set-auth-token');
+  return res.headers.get("set-auth-token");
 }
 
 const RETRY_DELAYS_MS = [400, 1200];
@@ -105,7 +114,7 @@ function isRetryableSignInError(error: unknown): boolean {
 // The user got a session, but only after the first attempt failed. Logged at
 // warning level so we can measure how often the old code showed an error here.
 function reportRecovered(
-  kind: 'existing-session' | 'retried' | 'delayed-session',
+  kind: "existing-session" | "retried" | "delayed-session",
   firstFailure: unknown,
   attempts: number,
 ): void {
@@ -113,12 +122,12 @@ function reportRecovered(
     firstFailure instanceof AnonymousSignInError
       ? firstFailure.httpStatus
       : firstFailure
-        ? 'network'
-        : 'ok';
-  Sentry.captureMessage('Anonymous bootstrap recovered', {
-    level: 'warning',
-    fingerprint: ['anonymous-bootstrap-recovered', kind, String(signInStatus)],
-    tags: { source: 'auth', anonymous_bootstrap: kind },
+        ? "network"
+        : "ok";
+  Sentry.captureMessage("Anonymous bootstrap recovered", {
+    level: "warning",
+    fingerprint: ["anonymous-bootstrap-recovered", kind, String(signInStatus)],
+    tags: { source: "auth", anonymous_bootstrap: kind },
     extra: { signInStatus, attempts },
   });
 }
@@ -154,10 +163,13 @@ async function startAnonymousSession(): Promise<AuthSession> {
       firstFailure ??= error;
       const existing = await readSession();
       if (existing) {
-        reportRecovered('existing-session', firstFailure, attempts);
+        reportRecovered("existing-session", firstFailure, attempts);
         return existing;
       }
-      if (!isRetryableSignInError(error) || attempts >= RETRY_DELAYS_MS.length) {
+      if (
+        !isRetryableSignInError(error) ||
+        attempts >= RETRY_DELAYS_MS.length
+      ) {
         throw error;
       }
       await sleep(RETRY_DELAYS_MS[attempts++]);
@@ -171,7 +183,7 @@ async function startAnonymousSession(): Promise<AuthSession> {
       if (created) {
         if (firstFailure || poll > 0) {
           reportRecovered(
-            firstFailure ? 'retried' : 'delayed-session',
+            firstFailure ? "retried" : "delayed-session",
             firstFailure,
             attempts + poll,
           );
@@ -182,20 +194,28 @@ async function startAnonymousSession(): Promise<AuthSession> {
         if (token && setTabSession(token)) {
           const session = await readSession();
           if (session) {
-            Sentry.captureMessage('Anonymous session fell back to tab-only token', {
-              level: 'warning',
-              fingerprint: ['anonymous-bootstrap-tab-session'],
-              tags: {
-                source: 'auth',
-                anonymous_bootstrap: sessionReadFailure || firstFailure ? 'tab-session-after-failure' : 'tab-session',
+            Sentry.captureMessage(
+              "Anonymous session fell back to tab-only token",
+              {
+                level: "warning",
+                fingerprint: ["anonymous-bootstrap-tab-session"],
+                tags: {
+                  source: "auth",
+                  anonymous_bootstrap:
+                    sessionReadFailure || firstFailure
+                      ? "tab-session-after-failure"
+                      : "tab-session",
+                },
               },
-            });
+            );
             return session;
           }
           setTabSession(null);
         }
         if (sessionReadFailure || firstFailure) {
-          throw new SessionVerificationError(sessionReadFailure ?? firstFailure);
+          throw new SessionVerificationError(
+            sessionReadFailure ?? firstFailure,
+          );
         }
         throw new AnonymousSessionUnavailableError();
       }
@@ -208,6 +228,7 @@ let pendingBootstrap: Promise<AuthSession> | null = null;
 
 /** Share concurrent creation requests without retaining a previous owner's session. */
 export function bootstrapAnonymousSession(): Promise<AuthSession> {
+  requireVerifiedSession();
   pendingBootstrap ??= startAnonymousSession().finally(() => {
     pendingBootstrap = null;
   });
@@ -218,7 +239,9 @@ export function bootstrapAnonymousSession(): Promise<AuthSession> {
 // guest character creation). Returns the live session. Imperative on purpose:
 // callers await this instead of racing the background bootstrap query — the
 // whole point of the join flow's KISS rewrite.
-export async function ensureAnonymousSession(knownSession?: AuthSession | null): Promise<AuthSession> {
+export async function ensureAnonymousSession(
+  knownSession?: AuthSession | null,
+): Promise<AuthSession> {
   if (knownSession?.user) {
     return knownSession;
   }
@@ -230,17 +253,19 @@ export async function ensureAnonymousSession(knownSession?: AuthSession | null):
   return bootstrapAnonymousSession();
 }
 
-export async function signOut(): Promise<void> {
+export async function signOut(signal?: AbortSignal): Promise<void> {
   const res = await fetch(`${apiBaseUrl()}/api/auth/sign-out`, {
-    method: 'POST',
-    credentials: 'include',
+    signal,
+    method: "POST",
+    credentials: "include",
     headers: { ...embeddedSessionHeaders(), ...authHeaders() },
   });
 
   if (!res.ok) {
-    throw new Error('Failed to sign out');
+    throw new Error("Failed to sign out");
   }
   setTabSession(null);
+  confirmTabSession();
 }
 
 export function loginUrl(returnTo?: string): string {
@@ -249,6 +274,7 @@ export function loginUrl(returnTo?: string): string {
 }
 
 export function profileUrl(): string {
-  const endpoint = import.meta.env.VITE_LOGTO_ENDPOINT ?? 'https://auth.rpgtools.co';
-  return `${endpoint.replace(/\/+$/, '')}/account/security`;
+  const endpoint =
+    import.meta.env.VITE_LOGTO_ENDPOINT ?? "https://auth.rpgtools.co";
+  return `${endpoint.replace(/\/+$/, "")}/account/security`;
 }

@@ -769,10 +769,13 @@ test('a moderator bans new class creation without blocking existing classes, the
   const admin = await anonymousSession();
   const gm = await anonymousSession();
   await withDatabase(async (client) => {
+    // Reuse the configured moderator identity when the suite runs against an existing test DB.
     await client.query(
-      'UPDATE "user" SET id = $2, name = $3, email = $4, "emailVerified" = true, "isAnonymous" = false WHERE id = $1',
-      [admin.userId, 'integration-admin', 'Moderation admin', 'integration-admin@example.test']
+      `INSERT INTO "user" (id, name, email, "emailVerified", "isAnonymous", "createdAt", "updatedAt")
+       VALUES ('integration-admin', 'Moderation admin', 'integration-admin@example.test', true, false, now(), now())
+       ON CONFLICT (id) DO UPDATE SET "isAnonymous" = false`
     );
+    await client.query('UPDATE "session" SET "userId" = $2 WHERE "userId" = $1', [admin.userId, 'integration-admin']);
     await client.query(
       'UPDATE "user" SET name = $2, email = $3, "emailVerified" = true, "isAnonymous" = false WHERE id = $1',
       [gm.userId, 'Creation ban GM', `ban.${Date.now()}@example.test`]

@@ -436,9 +436,10 @@ test('anonymous OBR exchange carries the session without moving character owners
   const iframeJar = await bootstrapAnonymousSession();
   const characterId = await createCharacter(iframeJar);
 
+  const recipientSecret = crypto.randomUUID() + crypto.randomUUID();
   const issueResponse = await request('/api/auth/obr-exchange/issue', {
     method: 'POST',
-    json: {},
+    json: { recipientSecret },
     jar: iframeJar,
   });
   await expectStatus(issueResponse, 200);
@@ -447,7 +448,7 @@ test('anonymous OBR exchange carries the session without moving character owners
   const tabJar = new CookieJar();
   const redeemResponse = await request('/api/auth/obr-exchange/redeem', {
     method: 'POST',
-    json: { token },
+    json: { token, recipientSecret },
     jar: tabJar,
   });
   await expectStatus(redeemResponse, 200);

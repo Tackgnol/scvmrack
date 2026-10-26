@@ -32,4 +32,7 @@ export type RoomRosterState = Omit<CoreRosterState, "rows" | "cards"> & {
 export type ObrRosterState = RoomRosterState & {
   removeFromRoster: (characterId: string) => Promise<void>;
   removeRosterAction: RemoveFromRosterState;
+  cleanupMessage: string | null;
+  cleanupPending: boolean;
+  retrySceneCleanup: () => Promise<void>;
 };

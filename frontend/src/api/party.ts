@@ -72,7 +72,8 @@ export const partyKeys = {
       "/api/parties/{id}",
       { params: { path: { id: partyId } } },
     ] as const,
-  obrRoom: (roomId: string) => ["party", "obr-room", roomId] as const,
+  obrRooms: () => ["party", "obr-room"] as const,
+  obrRoom: (roomId: string) => [...partyKeys.obrRooms(), roomId] as const,
   invite: (token: string) =>
     [
       "get",

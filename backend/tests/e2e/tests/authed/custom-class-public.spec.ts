@@ -147,16 +147,12 @@ test('a party player opens the correct private class details from their sheet wi
       await player.reload();
       await expect(player.getByRole('heading', { name: 'E2E Navigation Keeper', exact: true })).toBeVisible();
     }
-    const tabContext = await browser.newContext({ storageState: { cookies: [], origins: [] } });
-    await prepareActorContext(tabContext, '');
+    await player.goto(`/faq?contractClass=${cls.id}`);
+    await player.addScriptTag({ type: 'module', url: '/test/contracts/classTransfer.ts' });
+    const opened = player.waitForEvent('popup');
+    await player.getByRole('button', { name: 'Open private class from Owlbear', exact: true }).click();
+    const tab = await opened;
     try {
-      const tab = await tabContext.newPage();
-      await tab.goto(`/classes/${cls.id}`);
-      await expect(tab.getByText('Class not found.', { exact: true })).toBeVisible();
-      const issued = await player.request.post('/api/auth/obr-exchange/issue', { data: {} });
-      expect(issued.ok()).toBe(true);
-      const { token: exchangeToken } = await issued.json();
-      await tab.goto(`/obr-open?to=class&classId=${cls.id}&token=${encodeURIComponent(exchangeToken)}`);
       await expect(tab).toHaveURL(`/classes/${cls.id}`);
       await expect(tab.getByRole('heading', { name: 'E2E Navigation Keeper', exact: true })).toBeVisible();
       await expect(tab.getByText('Navigation Hook', { exact: true })).toBeVisible();
@@ -171,7 +167,7 @@ test('a party player opens the correct private class details from their sheet wi
         await outsider.close();
       }
     } finally {
-      await tabContext.close();
+      await tab.close();
     }
   } finally {
     await context.close();

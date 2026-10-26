@@ -23,7 +23,12 @@ export type ObrCard = {
   maxOmens?: number;
   silver?: number;
   equippedWeapons?: { name?: string | null; dice?: number[] }[];
-  equippedArmor?: { name?: string | null; dice?: number[]; maxTier?: number; currentTier?: number };
+  equippedArmor?: {
+    name?: string | null;
+    dice?: number[];
+    maxTier?: number;
+    currentTier?: number;
+  };
   equipment?: { name?: string; description?: string }[];
   computedModifiers?: Record<string, unknown>[];
   bodyDescription?: string | null;
@@ -40,6 +45,7 @@ export type ObrPlayerCharacterBinding = {
 };
 export type ObrTokenCharacterBinding = {
   tokenId: string;
+  generation?: string;
   playerId: string | null;
   characterId: string;
 };
@@ -55,11 +61,8 @@ const obrClient = client as unknown as UntypedApiClient;
 
 export const obrKeys = {
   bindings: (roomId: string) => ["obr", "rooms", roomId, "bindings"] as const,
-  cards: (
-    roomId: string,
-    ids: string[],
-    locale?: ObrLocale,
-  ) => ["obr", "cards", roomId, ids, locale] as const,
+  cards: (roomId: string, ids: string[], locale?: ObrLocale) =>
+    ["obr", "cards", roomId, ids, locale] as const,
 };
 
 // Compact cards for the OBR roster/peek. Gated by the (roomId, id) pair: both
@@ -71,9 +74,9 @@ export async function fetchObrCards(
   locale: ObrLocale,
 ): Promise<ObrCard[]> {
   return unwrapApiResult(
-    (await obrClient.GET("/api/obr/rooms/{roomId}/cards", {
+    await obrClient.GET("/api/obr/rooms/{roomId}/cards", {
       params: { path: { roomId }, query: { ids: ids.join(","), locale } },
-    })),
+    }),
     "Failed to load scvm cards",
   );
 }
@@ -82,9 +85,9 @@ export async function fetchObrRoomBindings(
   roomId: string,
 ): Promise<ObrRoomBindings> {
   return unwrapApiResult(
-    (await obrClient.GET("/api/obr/rooms/{roomId}/bindings", {
+    await obrClient.GET("/api/obr/rooms/{roomId}/bindings", {
       params: { path: { roomId } },
-    })),
+    }),
     "Failed to load Owlbear room bindings",
   );
 }
@@ -96,7 +99,7 @@ export async function bindObrPlayerCharacter(input: {
   connectionId?: string | null;
 }): Promise<ObrPlayerCharacterBinding> {
   return unwrapApiResult(
-    (await obrClient.PUT(
+    await obrClient.PUT(
       "/api/obr/rooms/{roomId}/players/{playerId}/character",
       {
         params: {
@@ -107,7 +110,7 @@ export async function bindObrPlayerCharacter(input: {
           connectionId: input.connectionId ?? undefined,
         },
       },
-    )),
+    ),
     "Failed to bind Owlbear player to scvm",
   );
 }
@@ -117,14 +120,14 @@ export async function clearObrPlayerCharacter(input: {
   playerId: string;
 }): Promise<void> {
   await unwrapApiResult(
-    (await obrClient.DELETE(
+    await obrClient.DELETE(
       "/api/obr/rooms/{roomId}/players/{playerId}/character",
       {
         params: {
           path: { roomId: input.roomId, playerId: input.playerId },
         },
       },
-    )),
+    ),
     "Failed to clear Owlbear player binding",
   );
 }
@@ -134,20 +137,17 @@ export async function bindObrTokenCharacter(input: {
   tokenId: string;
   characterId: string;
   playerId?: string | null;
-}): Promise<ObrTokenCharacterBinding> {
+}): Promise<ObrTokenCharacterBinding & { generation: string }> {
   return unwrapApiResult(
-    (await obrClient.PUT(
-      "/api/obr/rooms/{roomId}/tokens/{tokenId}/character",
-      {
-        params: {
-          path: { roomId: input.roomId, tokenId: input.tokenId },
-        },
-        body: {
-          characterId: input.characterId,
-          playerId: input.playerId ?? undefined,
-        },
+    await obrClient.PUT("/api/obr/rooms/{roomId}/tokens/{tokenId}/character", {
+      params: {
+        path: { roomId: input.roomId, tokenId: input.tokenId },
       },
-    )),
+      body: {
+        characterId: input.characterId,
+        playerId: input.playerId ?? undefined,
+      },
+    }),
     "Failed to bind Owlbear token to scvm",
   );
 }
@@ -157,14 +157,14 @@ export async function clearObrTokenCharacter(input: {
   tokenId: string;
 }): Promise<void> {
   await unwrapApiResult(
-    (await obrClient.DELETE(
+    await obrClient.DELETE(
       "/api/obr/rooms/{roomId}/tokens/{tokenId}/character",
       {
         params: {
           path: { roomId: input.roomId, tokenId: input.tokenId },
         },
       },
-    )),
+    ),
     "Failed to clear Owlbear token binding",
   );
 }

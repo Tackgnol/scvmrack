@@ -153,6 +153,7 @@ model ObrTokenCharacterBinding {
   obrRoomId        String   @map("obr_room_id") @db.VarChar(256)
   obrTokenId       String   @map("obr_token_id") @db.VarChar(256)
   characterId      String   @map("character_id") @db.Uuid
+  generation       String   @default(uuid()) @db.Uuid
   assignedPlayerId String?  @map("assigned_player_id") @db.VarChar(256)
   createdAt        DateTime @default(now()) @map("created_at")
   updatedAt        DateTime @updatedAt @map("updated_at")
@@ -163,6 +164,30 @@ model ObrTokenCharacterBinding {
   @@id([obrRoomId, obrTokenId])
   @@index([obrRoomId, characterId])
   @@map("obr_token_character_bindings")
+}
+
+model ObrRemoval {
+  roomId      String   @map("room_id") @db.VarChar(256)
+  operationId String   @map("operation_id") @db.Uuid
+  characterId String   @map("character_id") @db.Uuid
+  actorId     String   @map("actor_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@id([roomId, operationId])
+  @@map("obr_removals")
+}
+
+model ObrSceneCleanup {
+  id          String   @id @default(uuid()) @db.Uuid
+  roomId      String   @map("room_id") @db.VarChar(256)
+  operationId String   @map("operation_id") @db.Uuid
+  characterId String   @map("character_id") @db.Uuid
+  tokenId     String   @map("token_id") @db.VarChar(256)
+  generation  String   @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([roomId])
+  @@map("obr_scene_cleanup")
 }
 
 model Character {

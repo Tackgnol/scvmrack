@@ -1,13 +1,15 @@
 import OBR from "@owlbear-rodeo/sdk";
-import {
-  bindCurrentCharacterToSelection,
-  getSelectedTokenBindingState,
-} from "@tackgnol/rpgtools-owlbear";
+import { getSelectedTokenBindingState } from "@tackgnol/rpgtools-owlbear";
 import { scvmrackObrExtension } from "@/obr/extension";
-import { obrRoomBindingsClient } from "@/obr/obrApiClient";
+import { bindRoomSelectedTokens } from "@/obr/roomTokenMetadata";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { BindBar, BindButton, BindHint, BindStatus } from "./ObrTokenBar.styles";
+import {
+  BindBar,
+  BindButton,
+  BindHint,
+  BindStatus,
+} from "./ObrTokenBar.styles";
 import {
   EMPTY_SELECTION_STATE,
   useObrTokenBindingState,
@@ -37,12 +39,12 @@ export function ObrTokenBar({
 
     setBusy(true);
     try {
-      const result = await bindCurrentCharacterToSelection(
-        scvmrackObrExtension,
-        OBR,
-        obrRoomBindingsClient,
-        { characterId, characterName },
-      );
+      const result = await bindRoomSelectedTokens({
+        roomId: OBR.room.id,
+        playerId: await OBR.player.getId(),
+        characterId,
+        characterName,
+      });
       const count = result.count;
       if (count > 0) {
         const boundLabel = selection.hasBoundToken
@@ -61,15 +63,6 @@ export function ObrTokenBar({
               ),
           "SUCCESS",
         );
-        if (!result.metadataSynced) {
-          await OBR.notification.show(
-            t(
-              "obr.player.bindMetadataWarning",
-              "Saved binding, but the token label did not update.",
-            ),
-            "WARNING",
-          );
-        }
         setSelection(
           await getSelectedTokenBindingState(scvmrackObrExtension, OBR),
         );
@@ -121,7 +114,7 @@ export function ObrTokenBar({
         {busy ? t("obr.player.binding", "Binding") : actionLabel}
       </BindButton>
       {!selection.hasSelection && (
-        <BindHint>{t('obr.player.bindingHelp')}</BindHint>
+        <BindHint>{t("obr.player.bindingHelp")}</BindHint>
       )}
     </BindBar>
   );

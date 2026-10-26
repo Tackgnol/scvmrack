@@ -1,193 +1,125 @@
-import { renderHook, waitFor } from "@testing-library/react";
+import { act, renderHook, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { beforeEach, expect, test, vi } from "vitest";
+import { beforeEach, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
+import { useObrRosterCards } from "@/obr/useObrRosterCards";
+import {
+  fetchRoomParticipation,
+  removeRoomCharacter,
+  type RoomParticipation,
+} from "@/api/roomParticipation";
+import { finishSceneCleanup } from "@/obr/sceneCleanup";
 
-const coreMocks = vi.hoisted(() => ({
-  rows: [] as any[],
-  unassignPlayer: vi.fn(async (_playerId: string) => {}),
-  unbindToken: vi.fn(async (_tokenId: string) => {}),
-  refresh: vi.fn(async () => {}),
+vi.mock("@/obr/useObrRoomId", () => ({ useObrRoomId: () => "room" }));
+vi.mock("@/hooks/usePartyStream", () => ({ usePartyStream: vi.fn() }));
+vi.mock("@/obr/sceneCleanup", () => ({ finishSceneCleanup: vi.fn() }));
+vi.mock("@/api/roomParticipation", async (original) => ({
+  ...(await original<typeof import("@/api/roomParticipation")>()),
+  fetchRoomParticipation: vi.fn(),
+  removeRoomCharacter: vi.fn(),
 }));
-
+vi.mock("@owlbear-rodeo/sdk", () => ({
+  default: {
+    onReady: (callback: () => void) => {
+      callback();
+      return () => {};
+    },
+    scene: { onReadyChange: () => () => {} },
+  },
+}));
 vi.mock("@tackgnol/rpgtools-owlbear/react-query", () => ({
   useObrRosterCards: () => ({
-    rows: coreMocks.rows,
-    cards: [],
-    connectedPlayers: [],
-    isLoading: false,
-    action: { pending: false, message: null, error: null },
-    sceneReady: true,
-    refresh: coreMocks.refresh,
-    bindSelectedToken: vi.fn(),
-    assignPlayer: vi.fn(),
-    unassignPlayer: coreMocks.unassignPlayer,
-    unbindToken: coreMocks.unbindToken,
+    action: { pending: false, error: null },
+    refresh: vi.fn(),
   }),
   toRosterRows: vi.fn(),
 }));
 
-const partyMocks = vi.hoisted(() => ({
-  roomPartyData: null as {
-    id: string;
-    members: { characterId: string }[];
-  } | null,
-  kickMutateAsync: vi.fn(async (_characterId: string) => {}),
-}));
-
-vi.mock("@/hooks/usePartyRepository", () => ({
-  useObrRoomParty: () => ({ data: partyMocks.roomPartyData }),
-  useKickPartyMember: () => ({ mutateAsync: partyMocks.kickMutateAsync }),
-}));
-
-vi.mock("@/obr/useObrRoomId", () => ({
-  useObrRoomId: () => "room-1",
-}));
-
-vi.mock("@/obr/extension", () => ({ scvmrackObrExtension: {} }));
-vi.mock("@tackgnol/rpgtools-owlbear", () => ({
-  unbindRoomPlayerCharacter: (
-    _ext: unknown,
-    _obr: unknown,
-    _client: unknown,
-    input: { playerId: string },
-  ) => coreMocks.unassignPlayer(input.playerId),
-  unbindCharacterFromToken: async () => {},
-  broadcastRosterChanged: async () => {},
-}));
-vi.mock("@/obr/obrApiClient", () => ({
-  obrApiClient: {},
-  obrRoomBindingsClient: {
-    clearTokenCharacter: (input: { tokenId: string }) =>
-      coreMocks.unbindToken(input.tokenId),
-  },
-}));
-vi.mock("@owlbear-rodeo/sdk", () => ({ default: {} }));
-
-vi.mock("@/api/party", () => ({
-  partyKeys: { obrRoom: (id: string) => ["party", "obr-room", id] },
-  promoteObrRoom: vi.fn(async () => ({})),
-}));
-
-vi.mock("react-i18next", () => ({
-  useTranslation: () => ({
-    t: (key: string, fallback?: string) => fallback ?? key,
-    i18n: { language: "en" },
-  }),
-}));
-
-import { useObrRosterCards } from "../../../src/obr/useObrRosterCards.ts";
-
-function wrapper({ children }: { children: ReactNode }) {
-  const queryClient = new QueryClient();
-  return (
-    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+const empty: RoomParticipation = {
+  partyId: null,
+  memberIds: [],
+  players: [],
+  tokens: [],
+  cleanup: [],
+  canManage: true,
+};
+beforeEach(() => {
+  vi.mocked(fetchRoomParticipation).mockReset().mockResolvedValue(empty);
+  vi.mocked(removeRoomCharacter).mockReset();
+  vi.mocked(finishSceneCleanup).mockReset().mockResolvedValue(true);
+});
+function roster() {
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  const wrapper = ({ children }: { children: ReactNode }) => (
+    <QueryClientProvider client={client}>{children}</QueryClientProvider>
   );
+  return renderHook(() => useObrRosterCards(), { wrapper });
 }
 
-beforeEach(() => {
-  coreMocks.rows = [];
-  coreMocks.unassignPlayer.mockClear();
-  coreMocks.unbindToken.mockClear();
-  coreMocks.refresh.mockClear();
-  partyMocks.roomPartyData = null;
-  partyMocks.kickMutateAsync.mockClear();
+it("reuses the removal operation after a lost response and allocates a new one after success", async () => {
+  vi.mocked(removeRoomCharacter)
+    .mockRejectedValueOnce(new Error("response lost"))
+    .mockResolvedValue(empty);
+  const { result } = roster();
+  await act(async () => result.current.removeFromRoster("scvm"));
+  expect(result.current.removeRosterAction?.error).toBe("response lost");
+  await act(async () => result.current.removeFromRoster("scvm"));
+  const calls = vi.mocked(removeRoomCharacter).mock.calls;
+  expect(calls[0][2]).toBe(calls[1][2]);
+  expect(result.current.removeRosterAction?.error).toBeNull();
+  await act(async () => result.current.removeFromRoster("scvm"));
+  expect(calls[2][2]).not.toBe(calls[1][2]);
 });
 
-test("removeFromRoster clears every player and token binding for that scvm, then refreshes (RPG-55)", async () => {
-  coreMocks.rows = [
-    {
-      id: "char-1",
-      characterId: "char-1",
-      card: null,
-      players: [{ playerId: "player-a" }, { playerId: "player-b" }],
-      tokens: [{ tokenId: "token-a" }],
-    },
-  ];
-
-  const { result } = renderHook(() => useObrRosterCards(), { wrapper });
-
-  await result.current.removeFromRoster("char-1");
-
-  expect(coreMocks.unassignPlayer).toHaveBeenCalledWith("player-a");
-  expect(coreMocks.unassignPlayer).toHaveBeenCalledWith("player-b");
-  expect(coreMocks.unbindToken).toHaveBeenCalledWith("token-a");
-  expect(coreMocks.refresh).toHaveBeenCalledTimes(1);
-  await waitFor(() =>
-    expect(result.current.removeRosterAction).toEqual({
-      characterId: "char-1",
-      pending: false,
-      error: null,
-    }),
-  );
-});
-
-test("removeFromRoster also kicks the character from its linked persistent party", async () => {
-  partyMocks.roomPartyData = {
-    id: "party-1",
-    members: [{ characterId: "char-1" }],
+it("retries pending scene cleanup without issuing a second removal command", async () => {
+  const pending: RoomParticipation = {
+    ...empty,
+    cleanup: [
+      {
+        id: "cleanup",
+        roomId: "room",
+        operationId: "operation",
+        characterId: "scvm",
+        tokenId: "token",
+        generation: "old",
+      },
+    ],
   };
-  coreMocks.rows = [
-    {
-      id: "char-1",
-      characterId: "char-1",
-      card: null,
-      players: [],
-      tokens: [],
-    },
-  ];
-
-  const { result } = renderHook(() => useObrRosterCards(), { wrapper });
-
-  await result.current.removeFromRoster("char-1");
-
-  expect(partyMocks.kickMutateAsync).toHaveBeenCalledWith("char-1");
+  vi.mocked(fetchRoomParticipation).mockResolvedValue(pending);
+  vi.mocked(finishSceneCleanup).mockResolvedValue(false);
+  const { result } = roster();
+  await waitFor(() => expect(result.current.cleanupPending).toBe(true));
+  await waitFor(() => expect(finishSceneCleanup).toHaveBeenCalled());
+  vi.mocked(finishSceneCleanup).mockResolvedValue(true);
+  await act(async () => result.current.retrySceneCleanup());
+  expect(removeRoomCharacter).not.toHaveBeenCalled();
+  expect(finishSceneCleanup).toHaveBeenLastCalledWith("room", pending);
 });
 
-test("removeFromRoster does not kick a character that isn't a party member", async () => {
-  partyMocks.roomPartyData = {
-    id: "party-1",
-    members: [{ characterId: "someone-else" }],
+it("keeps cleanup available when an external scene update fails after the server removal", async () => {
+  const pending: RoomParticipation = {
+    ...empty,
+    cleanup: [
+      {
+        id: "cleanup",
+        roomId: "room",
+        operationId: "operation",
+        characterId: "scvm",
+        tokenId: "token",
+        generation: "old",
+      },
+    ],
   };
-  coreMocks.rows = [
-    {
-      id: "char-1",
-      characterId: "char-1",
-      card: null,
-      players: [],
-      tokens: [],
-    },
-  ];
-
-  const { result } = renderHook(() => useObrRosterCards(), { wrapper });
-
-  await result.current.removeFromRoster("char-1");
-
-  expect(partyMocks.kickMutateAsync).not.toHaveBeenCalled();
-});
-
-test("removeFromRoster surfaces a partial failure without a false-success message", async () => {
-  coreMocks.rows = [
-    {
-      id: "char-1",
-      characterId: "char-1",
-      card: null,
-      players: [{ playerId: "player-a" }],
-      tokens: [{ tokenId: "token-a" }],
-    },
-  ];
-  coreMocks.unbindToken.mockRejectedValueOnce(new Error("token gone"));
-
-  const { result } = renderHook(() => useObrRosterCards(), { wrapper });
-
-  await result.current.removeFromRoster("char-1");
-
-  expect(coreMocks.refresh).toHaveBeenCalledTimes(1);
-  await waitFor(() =>
-    expect(result.current.removeRosterAction).toEqual({
-      characterId: "char-1",
-      pending: false,
-      error: "token gone",
-    }),
+  vi.mocked(fetchRoomParticipation).mockResolvedValue(pending);
+  vi.mocked(removeRoomCharacter).mockResolvedValue(pending);
+  vi.mocked(finishSceneCleanup).mockRejectedValue(
+    new Error("scene unavailable"),
   );
+  const { result } = roster();
+  await act(async () => result.current.removeFromRoster("scvm"));
+  expect(result.current.removeRosterAction?.error).toBe("scene unavailable");
+  expect(result.current.cleanupPending).toBe(true);
+  expect(removeRoomCharacter).toHaveBeenCalledTimes(1);
 });

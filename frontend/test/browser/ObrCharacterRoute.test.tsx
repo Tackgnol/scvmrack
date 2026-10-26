@@ -4,11 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import BrowserTestProvider from "./BrowserTestProvider";
 import { ObrCharacterRoute } from "@/components/obr/ObrCharacterRoute";
-import {
-  CHARACTER_META_KEY,
-  PLAYER_CHARACTER_META_KEY,
-  PLAYER_NAME_META_KEY,
-} from "@/obr/extension";
+import { CHARACTER_META_KEY, PLAYER_CHARACTER_META_KEY } from "@/obr/extension";
 import i18n, { loadLanguage } from "@/i18n";
 
 type Role = "GM" | "PLAYER";
@@ -67,6 +63,25 @@ const obrApiMock = vi.hoisted(() => {
     ),
   };
 });
+
+vi.mock("@/api/roomParticipation", () => ({
+  acknowledgeSceneCleanup: vi.fn(),
+  removeRoomCharacter: vi.fn(),
+  participationKey: (roomId: string) => ["obr", "participation", roomId],
+  fetchRoomParticipation: async () => {
+    const party = routeMocks.useObrRoomParty.getMockImplementation()?.()?.data;
+    return {
+      partyId: party?.id ?? null,
+      canManage: false,
+      cleanup: [],
+      memberIds: (party?.members ?? []).map(
+        (member: { characterId: string }) => member.characterId,
+      ),
+      ...obrApiMock.state.bindings,
+    };
+  },
+}));
+vi.mock("@/hooks/usePartyStream", () => ({ usePartyStream: () => ({}) }));
 
 const obrMock = vi.hoisted(() => {
   const state = {
@@ -261,7 +276,13 @@ vi.mock("@/components/organisms/CharacterSheet", () => ({
 }));
 
 vi.mock("@/components/obr/ObrRollPicker/ObrRollPicker", () => ({
-  ObrRollPicker: ({ open, onChoose }: { open: boolean; onChoose: (classId: number | null, classless?: boolean) => void }) =>
+  ObrRollPicker: ({
+    open,
+    onChoose,
+  }: {
+    open: boolean;
+    onChoose: (classId: number | null, classless?: boolean) => void;
+  }) =>
     open ? (
       <>
         <button onClick={() => onChoose(null)}>Random</button>
@@ -407,28 +428,72 @@ describe("ObrCharacterRoute", () => {
     vi.unstubAllGlobals();
   });
 
-  it.each(['en', 'pl'].flatMap(locale => ['light', 'dark'].map(scheme => ({ locale, scheme }))))('keeps the populated GM roster and enemy action usable in compact $locale / $scheme', async ({ locale, scheme }) => {
-    await page.viewport(420, 600);
-    document.body.style.colorScheme = scheme;
-    await loadLanguage(locale);
-    await i18n.changeLanguage(locale);
-    routeMocks.role = 'GM';
-    obrApiMock.state.cards = [rosterCard];
-    obrApiMock.state.bindings = { roomId: 'room-test', players: [], tokens: [{ tokenId: 'token-1', playerId: 'player-1', characterId: rosterCard.id }] };
-    routeMocks.useObrRoomParty.mockReturnValue({ data: {
-      id: 'party-1', name: 'Owlbear room party', inviteToken: 'tok', invitePath: '/join/tok',
-      memberCount: 1, maxMembers: 10, createdAt: '2026-06-27T00:00:00.000Z',
-      updatedAt: '2026-06-27T00:00:00.000Z', role: 'gm', members: [],
-    } });
-    await renderRoute();
-    await expect.element(page.getByText('Karg', { exact: true })).toBeVisible();
-    expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(window.innerWidth);
-    await userEvent.click(page.getByRole('tab', { name: i18n.t('obr.gm.enemiesTab'), exact: true }));
-    await expect.element(page.getByRole('button', { name: i18n.t('obr.enemies.newEnemy'), exact: true })).toBeVisible();
-    expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(window.innerWidth);
-    document.body.style.colorScheme = '';
-    await page.viewport(1280, 720);
-  });
+  it.each(
+    ["en", "pl"].flatMap((locale) =>
+      ["light", "dark"].map((scheme) => ({ locale, scheme })),
+    ),
+  )(
+    "keeps the populated GM roster and enemy action usable in compact $locale / $scheme",
+    async ({ locale, scheme }) => {
+      await page.viewport(420, 600);
+      document.body.style.colorScheme = scheme;
+      await loadLanguage(locale);
+      await i18n.changeLanguage(locale);
+      routeMocks.role = "GM";
+      obrApiMock.state.cards = [rosterCard];
+      obrApiMock.state.bindings = {
+        roomId: "room-test",
+        players: [],
+        tokens: [
+          {
+            tokenId: "token-1",
+            playerId: "player-1",
+            characterId: rosterCard.id,
+          },
+        ],
+      };
+      routeMocks.useObrRoomParty.mockReturnValue({
+        data: {
+          id: "party-1",
+          name: "Owlbear room party",
+          inviteToken: "tok",
+          invitePath: "/join/tok",
+          memberCount: 1,
+          maxMembers: 10,
+          createdAt: "2026-06-27T00:00:00.000Z",
+          updatedAt: "2026-06-27T00:00:00.000Z",
+          role: "gm",
+          members: [],
+        },
+      });
+      await renderRoute();
+      await expect
+        .element(page.getByText("Karg", { exact: true }))
+        .toBeVisible();
+      expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(
+        window.innerWidth,
+      );
+      await userEvent.click(
+        page.getByRole("tab", {
+          name: i18n.t("obr.gm.enemiesTab"),
+          exact: true,
+        }),
+      );
+      await expect
+        .element(
+          page.getByRole("button", {
+            name: i18n.t("obr.enemies.newEnemy"),
+            exact: true,
+          }),
+        )
+        .toBeVisible();
+      expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(
+        window.innerWidth,
+      );
+      document.body.style.colorScheme = "";
+      await page.viewport(1280, 720);
+    },
+  );
 
   it("shows the scene-bound party setup for anonymous OBR GMs", async () => {
     routeMocks.role = "GM";
@@ -455,7 +520,9 @@ describe("ObrCharacterRoute", () => {
       .toBeVisible();
     expect(routeMocks.useCharacter).not.toHaveBeenCalled();
     expect(routeMocks.useObrSession).toHaveBeenCalled();
-    await expect.element(page.getByRole('button', { name: 'Sign in', exact: true })).toBeVisible();
+    await expect
+      .element(page.getByRole("button", { name: "Sign in", exact: true }))
+      .toBeVisible();
   });
 
   it("switches the GM view between party and enemies tabs", async () => {
@@ -613,9 +680,6 @@ describe("ObrCharacterRoute", () => {
     });
 
     await expect
-      .poll(() => obrApiMock.fetchRoomBindings.mock.calls.length)
-      .toBeGreaterThanOrEqual(2);
-    await expect
       .poll(() =>
         obrApiMock.fetchCards.mock.calls.some(
           ([ids, roomId]) =>
@@ -646,17 +710,21 @@ describe("ObrCharacterRoute", () => {
     await renderRoute();
 
     await userEvent.click(page.getByRole("button", { name: "Roll a scvm" }));
-    await expect.element(page.getByRole("button", { name: "Random" })).toBeVisible();
+    await expect
+      .element(page.getByRole("button", { name: "Random" }))
+      .toBeVisible();
     await userEvent.click(page.getByRole("button", { name: "Random" }));
 
-    await expect.poll(() => routeMocks.generateNew).toHaveBeenCalledWith(
-      null,
-      expect.objectContaining({
-        replace: true,
-        obrRoomId: "room-test",
-        obrPlayerId: "player-1",
-      }),
-    );
+    await expect
+      .poll(() => routeMocks.generateNew)
+      .toHaveBeenCalledWith(
+        null,
+        expect.objectContaining({
+          replace: true,
+          obrRoomId: "room-test",
+          obrPlayerId: "player-1",
+        }),
+      );
   });
 
   it("keeps explicit Classless distinct from Random when rolling into the room", async () => {
@@ -664,21 +732,37 @@ describe("ObrCharacterRoute", () => {
     await renderRoute();
     await userEvent.click(page.getByRole("button", { name: "Roll a scvm" }));
     await userEvent.click(page.getByRole("button", { name: "Classless Scvm" }));
-    await expect.poll(() => routeMocks.generateNew).toHaveBeenCalledWith(
-      null,
-      expect.objectContaining({ classless: true, replace: true, obrRoomId: "room-test", obrPlayerId: "player-1" }),
-    );
+    await expect
+      .poll(() => routeMocks.generateNew)
+      .toHaveBeenCalledWith(
+        null,
+        expect.objectContaining({
+          classless: true,
+          replace: true,
+          obrRoomId: "room-test",
+          obrPlayerId: "player-1",
+        }),
+      );
   });
 
   it("keeps guest rolling usable after a sign-in popup is cancelled", async () => {
     routeMocks.role = "PLAYER";
     routeMocks.signIn.mockRejectedValueOnce(new Error("cancelled"));
     await renderRoute();
-    await userEvent.click(page.getByRole("button", { name: "Login", exact: true }));
-    await expect.element(page.getByText("Sign-in did not complete.")).toBeVisible();
+    await userEvent.click(
+      page.getByRole("button", { name: "Login", exact: true }),
+    );
+    await expect
+      .element(page.getByText("Sign-in did not complete."))
+      .toBeVisible();
     await userEvent.click(page.getByRole("button", { name: "Roll a scvm" }));
     await userEvent.click(page.getByRole("button", { name: "Class 7" }));
-    await expect.poll(() => routeMocks.generateNew).toHaveBeenCalledWith(7, expect.objectContaining({ obrRoomId: "room-test" }));
+    await expect
+      .poll(() => routeMocks.generateNew)
+      .toHaveBeenCalledWith(
+        7,
+        expect.objectContaining({ obrRoomId: "room-test" }),
+      );
     routeMocks.signIn.mockResolvedValue(undefined);
   });
 
@@ -694,7 +778,9 @@ describe("ObrCharacterRoute", () => {
     await userEvent.click(page.getByRole("button", { name: "Class 7" }));
 
     await expect
-      .element(page.getByText("This room's party is full. Ask the GM to make room."))
+      .element(
+        page.getByText("This room's party is full. Ask the GM to make room."),
+      )
       .toBeVisible();
   });
   it("restores the active OBR scvm from player metadata after a refresh", async () => {
@@ -777,61 +863,12 @@ describe("ObrCharacterRoute", () => {
       .toHaveBeenCalledWith("f15c7ec3-dad2-4f65-8b69-0f1f642c7d29");
   });
 
-  it("persists the active OBR scvm into player metadata", async () => {
+  it("does not recreate a removed room binding just by reopening an owned sheet", async () => {
     routeMocks.role = "PLAYER";
-    mockCharacter({
-      id: "f15c7ec3-dad2-4f65-8b69-0f1f642c7d29",
-      name: "Karg",
-      updatedAt: "2026-06-27T12:00:00.000Z",
-    });
-
+    mockCharacter({ id: "f15c7ec3-dad2-4f65-8b69-0f1f642c7d29", name: "Karg" });
     await renderRoute();
-
     await expect.element(page.getByText("Player sheet")).toBeVisible();
-    await expect
-      .element(page.getByLabelText("Enemy view"))
-      .not.toBeInTheDocument();
-    await expect
-      .poll(() => obrMock.setPlayerMetadata)
-      .toHaveBeenCalledWith({
-        [PLAYER_CHARACTER_META_KEY]: "f15c7ec3-dad2-4f65-8b69-0f1f642c7d29",
-        [PLAYER_NAME_META_KEY]: "Adam",
-      });
-  });
-
-  it("opens a new scvmrack tab with an obr-exchange token for an authenticated player (RPG-57)", async () => {
-    routeMocks.role = "PLAYER";
-    routeMocks.useObrSession.mockReturnValue({
-      isLoading: false,
-      isAuthenticated: true,
-      signIn: routeMocks.signIn,
-      issueObrExchangeToken: routeMocks.issueObrExchangeToken,
-    });
-    mockCharacter({
-      id: "f15c7ec3-dad2-4f65-8b69-0f1f642c7d29",
-      name: "Karg",
-      updatedAt: "2026-06-27T12:00:00.000Z",
-    });
-    const windowOpen = vi.spyOn(window, "open").mockReturnValue(null);
-
-    await renderRoute();
-
-    await userEvent.click(
-      page.getByRole("button", { name: "Open in scvmrack" }),
-    );
-
-    await expect
-      .poll(() => routeMocks.issueObrExchangeToken)
-      .toHaveBeenCalled();
-    await expect
-      .poll(() => windowOpen)
-      .toHaveBeenCalledWith(
-        "/character/f15c7ec3-dad2-4f65-8b69-0f1f642c7d29?obrExchangeToken=obr-exchange-token",
-        "_blank",
-        "noopener,noreferrer",
-      );
-
-    windowOpen.mockRestore();
+    expect(obrApiMock.bindPlayerCharacter).not.toHaveBeenCalled();
   });
 
   it("does not offer to open in scvmrack for an unauthenticated player", async () => {
@@ -896,18 +933,28 @@ describe("ObrCharacterRoute", () => {
       .not.toBeDisabled();
   });
 
-  it('keeps the scvm when a scene opens and a token becomes selectable', async () => {
-    routeMocks.role = 'PLAYER';
-    mockCharacter({ id: 'scene-survivor', name: 'Karg' });
+  it("keeps the scvm when a scene opens and a token becomes selectable", async () => {
+    routeMocks.role = "PLAYER";
+    mockCharacter({ id: "scene-survivor", name: "Karg" });
     await renderRoute();
-    await expect.element(page.getByText('Open a scene and select a character token to bind this scvm.')).toBeVisible();
-    await expect.element(page.getByRole('button', { name: 'Select token to bind' })).toBeDisabled();
-    obrMock.state.selection = ['new-token'];
-    obrMock.state.items = [{ id: 'new-token', metadata: {} }];
+    await expect
+      .element(
+        page.getByText(
+          "Open a scene and select a character token to bind this scvm.",
+        ),
+      )
+      .toBeVisible();
+    await expect
+      .element(page.getByRole("button", { name: "Select token to bind" }))
+      .toBeDisabled();
+    obrMock.state.selection = ["new-token"];
+    obrMock.state.items = [{ id: "new-token", metadata: {} }];
     const calls = obrMock.onSceneReadyChange.mock.calls;
     calls[calls.length - 1]?.[0](true);
-    await expect.element(page.getByRole('button', { name: 'Bind to selected token' })).toBeEnabled();
-    await expect.element(page.getByText('Player sheet')).toBeVisible();
+    await expect
+      .element(page.getByRole("button", { name: "Bind to selected token" }))
+      .toBeEnabled();
+    await expect.element(page.getByText("Player sheet")).toBeVisible();
     expect(routeMocks.setCharacterId).not.toHaveBeenCalledWith(null);
   });
 

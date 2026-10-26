@@ -8,17 +8,18 @@ import {
   PickList,
 } from "./ObrCharacterRoute.styles";
 
-
 export function ObrAuthedPicker({
   locale,
   onPick,
   onRollNew,
   onForge,
+  forgeReady = true,
 }: {
   locale: ApiLocale;
   onPick: (id: string) => void;
   onRollNew: () => void;
   onForge: () => void;
+  forgeReady?: boolean;
 }) {
   const { t } = useTranslation();
   const charactersQuery = $api.useQuery(
@@ -53,6 +54,7 @@ export function ObrAuthedPicker({
         fullWidth
         variant="outlined"
         onClick={onForge}
+        disabled={!forgeReady}
       >
         {t("obr.player.forgeScvm", "Forge scvm")}
       </Button>

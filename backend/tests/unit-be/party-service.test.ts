@@ -1,6 +1,12 @@
 import assert from 'node:assert/strict';
 import { beforeEach, mock, test } from 'node:test';
 
+// Room removal is covered through the real API/database contract suite. These
+// tests exercise party policy independently of its room-service dependency.
+mock.module('../../src/services/room-participation-service.js', {
+  namedExports: { createRoomParticipationService: () => ({ remove: async () => ({ ok: true, value: {} }) }) },
+});
+
 const PARTY_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 const OTHER_PARTY_ID = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
 const CHAR_ID = '11111111-1111-4111-8111-111111111111';
