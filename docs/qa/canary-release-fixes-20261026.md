@@ -19,7 +19,7 @@ Review caught and corrected a missing Cancel control while registration is still
 - Backend: all 463 unit tests and 88 PostgreSQL/HTTP integration tests pass.
 - Frontend: all 539 unit tests and 581 browser tests pass; 28 affected component tests pass again after the registration-cancellation review correction. Type checks, lint and production build pass. Lint retains 19 existing warnings; React Doctor remains 64.
 - Browser protocols: 12 checks pass across Chromium, Firefox and WebKit, without retries. Fixtures use the installed candidate; the compiled popup helper matches the archive.
-- Standards review: no actionable findings. Spec review: the registration-cancellation finding was corrected; final recheck follows the correction.
+- Standards review: no actionable findings. Spec review: the registration-cancellation finding was corrected and the final recheck passed. Neither axis has remaining actionable findings.
 
 The first integration attempt ran before the restarted API was ready; the normal health gate preceded the successful full run. An existing E2E runner image contained stale tests; it was replaced with an image built from the committed tracked test sources. Those orchestration attempts are retained in local logs and are not counted as candidate passes.
 
