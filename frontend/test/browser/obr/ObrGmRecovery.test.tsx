@@ -134,6 +134,7 @@ it.each(["en", "pl"])(
       }
       return Response.json([]);
     });
+    let finishSignIn = () => {};
     vi.mocked(signInViaObrPopup)
       .mockRejectedValueOnce(new Error("cancelled"))
       .mockImplementationOnce(async (_client, options) => {
@@ -155,6 +156,11 @@ it.each(["en", "pl"])(
             { once: true },
           );
         });
+      })
+      .mockImplementationOnce(async (_client, options) => {
+        options?.onProgress?.({ state: "redeeming", code: "ABC123" });
+        await new Promise<void>((resolve) => { finishSignIn = resolve; });
+        signedIn = true;
       })
       .mockImplementation(async () => {
         signedIn = true;
@@ -234,6 +240,14 @@ it.each(["en", "pl"])(
     );
     await userEvent.click(partyTab);
     await userEvent.click(signIn);
+    await expect
+      .element(page.getByRole("alert").getByRole("status"))
+      .toHaveTextContent("ABC123");
+    await expect
+      .element(page.getByRole("button", { name: i18n.t("actions.cancel"), exact: true }))
+      .not.toBeInTheDocument();
+    await expect.element(signIn).toBeDisabled();
+    finishSignIn();
     await expect
       .element(page.getByRole("button", { name: /\/join\/qa-invite/ }))
       .toBeVisible();

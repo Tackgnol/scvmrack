@@ -436,7 +436,7 @@ function ObrPlayerCharacterRoute() {
                 </Button>
                 <ObrSignInCode
                   code={signInProgress?.code}
-                  onCancel={signInProgress ? cancelSignIn : undefined}
+                  onCancel={cancelSignIn}
                 />
                 {signInError && <ErrorText>{signInError}</ErrorText>}
                 {forgeError && <ErrorText>{forgeError}</ErrorText>}

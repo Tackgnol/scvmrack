@@ -7,7 +7,8 @@ test.beforeEach(async ({ context, protocol }) => {
   Object.assign(protocol.db.user.find(row => row.id === user.id)!, { isAnonymous: false, name: 'Protocol actor', email: 'actor@example.invalid' });
 });
 
-test('browser isolation keeps approval pending until consent and transfers the guest to the approved account', async ({ page, context, protocol }) => {
+for (const abortDuring of ['none', 'redemption', 'confirmation']) {
+test(`browser isolation transfers the guest to the approved account with abort during ${abortDuring}`, async ({ page, context, protocol }) => {
   const { user } = await (await context.request.get(protocol.apiOrigin + '/api/auth/get-session')).json();
   const providerCookies = await context.cookies();
   await page.addInitScript(() => {
@@ -18,7 +19,7 @@ test('browser isolation keeps approval pending until consent and transfers the g
       return popup;
     };
   });
-  await page.goto(`/test/contracts/popup.html?api=${encodeURIComponent(protocol.apiOrigin)}`);
+  await page.goto(`/test/contracts/popup.html?api=${encodeURIComponent(protocol.apiOrigin)}&abortDuring=${abortDuring}`);
   await expect(page.getByRole('button', { name: 'Sign in', exact: true })).toBeVisible();
   // The provider fixture restores the first-party login; the initiator keeps its guest bearer.
   await context.addCookies(providerCookies);
@@ -44,6 +45,7 @@ test('browser isolation keeps approval pending until consent and transfers the g
   expect(protocol.claims).toEqual([{ guestId, userId: user.id }]);
   await popup.close();
 });
+}
 
 test('explicit cancellation makes an isolated approval unusable and leaves the guest unclaimed', async ({ page, context, protocol }) => {
   const providerCookies = await context.cookies();

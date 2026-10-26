@@ -42,6 +42,23 @@ cancel.disabled = true;
 const start = document.createElement("button");
 start.textContent = "Sign in";
 let attempt: AbortController | undefined;
+const abortDuring = new URLSearchParams(location.search).get("abortDuring");
+const redeem = client.redeemObrHandoff;
+client.redeemObrHandoff = async (...args) => {
+  const result = await redeem(...args);
+  if (abortDuring === "redemption") {
+    attempt?.abort();
+  }
+  return result;
+};
+const getSession = client.getSession;
+client.getSession = async (...args) => {
+  const result = await getSession(...args);
+  if (abortDuring === "confirmation") {
+    attempt?.abort();
+  }
+  return result;
+};
 cancel.onclick = () => attempt?.abort();
 start.onclick = async () => {
   attempt = new AbortController();
@@ -51,6 +68,7 @@ start.onclick = async () => {
     await signInViaObrPopup(client, {
       signal: attempt.signal,
       onProgress: (progress) => {
+        cancel.disabled = progress.state === "redeeming";
         status.textContent = progress.code ?? progress.state;
       },
     });

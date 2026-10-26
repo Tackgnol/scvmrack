@@ -65,5 +65,13 @@ export function useObrSession() {
     await queryClient.invalidateQueries({ queryKey: partyKeys.obrRooms() });
   }, [queryClient]);
 
-  return { ...auth, signIn, cancelSignIn, signInProgress };
+  return {
+    ...auth,
+    signIn,
+    cancelSignIn:
+      signInProgress && signInProgress.state !== "redeeming"
+        ? cancelSignIn
+        : undefined,
+    signInProgress,
+  };
 }

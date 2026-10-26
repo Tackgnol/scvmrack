@@ -63,3 +63,11 @@ Feature: Approve an Owlbear account handoff
     Then the extension keeps waiting for explicit approval and offers cancellation
     When they approve the handoff with the matching code
     Then the extension confirms the receiving account and keeps the scvm editable
+
+  Scenario: Finish approved sign-in once account transfer has started
+    Given a guest has an owned scvm open in the extension
+    When they approve sign-in with the matching comparison code
+    And the extension starts completing the account transfer
+    Then cancellation is no longer offered
+    When the extension confirms the receiving account
+    Then it shows the player signed in and keeps their scvm editable
