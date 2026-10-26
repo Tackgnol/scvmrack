@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { useObrSession } from "@/obr/useObrSession";
 
 export function ObrGmSession() {
-  const { isLoading, isAuthenticated, signIn, signInProgress } =
+  const { isLoading, isAuthenticated, signIn, cancelSignIn, signInProgress } =
     useObrSession();
   const { t } = useTranslation();
   const [busy, setBusy] = useState(false);
@@ -42,7 +42,7 @@ export function ObrGmSession() {
       }
     >
       {error ?? t("obr.roster.signInForInvite")}
-      <ObrSignInCode code={signInProgress?.code} />
+      <ObrSignInCode code={signInProgress?.code} onCancel={cancelSignIn} />
     </Alert>
   );
 }

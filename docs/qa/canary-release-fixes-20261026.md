@@ -1,0 +1,22 @@
+# Canary release fixes — 26 October 2026
+
+Branch: `codex/canary-release-fixes`, based on `dev`. Scope: RPG-337, RPG-338, RPG-339 and the five response-contract gaps from the 479-case canary CATS run. The contrast/footer work remains separate in PR #64.
+
+## Behavior and boundaries
+
+- **RPG-337:** shared-auth 2.0.1 stops treating `Window.closed` as cancellation. The initiating extension offers explicit cancellation using an AbortSignal; cancellation interrupts held requests and delays, preserves the original error even if the host rejects window closure, and cancels the registered proof. Code approval, expiry, recipient secrets, identity verification, quarantine and one-use redemption remain enforced. A companion shared-auth PR is required; the package candidate remains unpublished pending authorization.
+- **RPG-338:** the recovery banner, tabs and panels share one vertical GM shell. Composed browser tests exercise real pointer clicks, retry, visible comparison code, cancellation and both tabs at 420px in English and Polish.
+- **RPG-339:** monitoring prepares its own CSRF protection when enabled, before its first envelope. The transport preserves SDK keepalive options and refreshes once after a 403. Initialization failures are caught; active reports can retry preparation. Public monitoring does not bootstrap an anonymous account or bypass CSRF.
+- **CATS contracts:** add class-list/detail validation responses, a complete catalog-row union, health bodies and room binding bodies. Reuse participation binding definitions so nullable connection/player fields and token generations remain consistent. Generated client changes are limited to these five paths.
+
+The 12 native browser protocol checks cover Chromium, Firefox and WebKit using real shared-auth HTTP, a memory auth adapter, the installed Sentry SDK, the protected tunnel, and local provider/GlitchTip fixtures. The isolated popup actually reports a closed handle while its page stays interactive; approval follows several pending polls. See [protocol suite](../../backend/tests/protocol/README.md). Real PostgreSQL integration tests separately cover ownership transfer and binding contracts.
+
+## CATS contract verification
+
+Replayed only the five changed GET endpoints against the isolated local API and database: 22 OpenAPI 3.1 cases plus six OpenAPI 3.0 numeric boundary cases. Raw results: 18 successes, 10 errors, zero warnings. The 10 errors are expected fuzzer-status assumptions: optional invalid values correctly return 400, invented invite context returns 410, and synthetic class resources return 404. All 28 actual response bodies were independently validated against their declared status schema: zero undocumented statuses, zero invalid bodies and zero 5xx responses. The numeric pass was six successes.
+
+Contracts, raw CATS reports and per-case validation are retained locally under `output/playwright/canary-release-fixes/cats/`. This candidate verification does not change the earlier canary run's raw results.
+
+## Release limits
+
+This is local candidate verification. The final deployed Logto/Owlbear journey still needs a canary retest. The monitoring fixture proves protected local ingestion during an in-flight navigation; it does not establish production GlitchTip ingestion, guarantee every event created during unload, or cover actual macOS/iOS Safari. Browser keepalive limits remain. No merge, deployment or package publication is included.

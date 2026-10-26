@@ -1,0 +1,9 @@
+# Browser protocol regressions
+
+From `backend/`, run `npm run test:protocol`. Install the locked backend and frontend dependencies first, generate Prisma, and install the matching Playwright Chromium, Firefox and WebKit browsers. The suite starts its own Vite server on loopback port 5278 and fresh Fastify servers on ephemeral loopback ports. It has one worker and no retries.
+
+The popup checks use the installed shared-auth client and real shared-auth HTTP endpoints with its memory adapter. A provider fixture restores a first-party account while the initiating client retains its guest bearer. A different-origin approval document sets `Cross-Origin-Opener-Policy: same-origin`: the opener sees `closed=true` although Playwright can still interact with the approval page. Multiple pending reads precede approval, then the receiving identity and ownership callback are checked. Explicit cancellation must make the approval unusable. The external provider is simulated; this does not replace the real Logto/Owlbear deployment check or the PostgreSQL ownership integration suite.
+
+The monitoring checks use the installed Sentry SDK, the app's monitoring transport, the real shared-auth CSRF protection and the real tunnel route. Only the external GlitchTip receiver is replaced. They verify an in-flight envelope during document departure, one refresh after CSRF rotation, rejection without protection and no guest creation. They do not claim delivery of every error created during unload, production GlitchTip ingestion, or actual macOS/iOS Safari coverage. SDK keepalive limits still apply.
+
+The fixtures live under `frontend/test/contracts/` and are served by the test Vite configuration only during development. Production entries remain the app and Owlbear HTML files. No credentials or production services are used.

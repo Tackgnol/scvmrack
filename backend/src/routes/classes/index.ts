@@ -325,7 +325,7 @@ const classes: FastifyPluginAsync = async (fastify): Promise<void> => {
         tags: ['classes'],
         params: ClassIdParamsSchema,
         querystring: ClassLocaleQuerySchema,
-        response: { 200: ClassDetailSchema, 401: ErrorSchema, 404: ErrorSchema, 500: ErrorSchema },
+        response: { 200: ClassDetailSchema, 400: ErrorSchema, 401: ErrorSchema, 404: ErrorSchema, 500: ErrorSchema },
       },
     },
     async (request, reply) => {

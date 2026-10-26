@@ -1,5 +1,9 @@
 # Frontend — Feature Summary
 
+- The app should no longer cancel Owlbear sign-in when browser isolation loses contact with an open approval window. The extension keeps waiting for consent and offers an explicit Cancel action. (RPG-337)
+- The app should no longer cover the GM sign-in recovery action when the compact Owlbear panel shows an error or comparison code. Recovery and the room tabs share one vertical layout. (RPG-338)
+- The app should no longer start its first monitoring CSRF lookup when an error report is sent during page departure. Monitoring prepares protection while the page is active and retains one refresh after a rejected token. (RPG-339)
+
 - The app should no longer keep an unverified account signed in when an Owlbear receiving identity check fails. It revokes the received session and clears its stored bearer before showing the failure. (RPG-323)
 
 - The app should no longer bring a removed scvm back when Owlbear scene cleanup fails. It shows pending cleanup, retries after reopening, and preserves a deliberate rejoin. (RPG-336)

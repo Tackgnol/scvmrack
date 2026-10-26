@@ -57,6 +57,7 @@ describe("instrument", () => {
   });
 
   it("initializes Sentry with tunnel and integrations in production", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => ({ token: "csrf-ready" }) }));
     await importInstrument({ mode: "mydevil" });
 
     expect(sentryMocks.init).toHaveBeenCalledWith(
@@ -118,12 +119,12 @@ describe("instrument", () => {
       expect.objectContaining({
         method: "POST",
         credentials: "include",
-        headers: {
-          "content-type": "text/plain",
-          "x-csrf-token": "csrf-1",
-        },
+        headers: expect.any(Headers),
       }),
     );
+    const headers = new Headers(mockFetch.mock.calls[1][1].headers);
+    expect(headers.get("content-type")).toBe("text/plain");
+    expect(headers.get("x-csrf-token")).toBe("csrf-1");
   });
 
   it("refreshes CSRF and retries tunneled requests after a 403", async () => {
@@ -151,22 +152,24 @@ describe("instrument", () => {
       2,
       "https://sentry.example.test/envelope",
       expect.objectContaining({
-        headers: { "x-csrf-token": "csrf-1" },
+        headers: expect.any(Headers),
       }),
     );
     expect(mockFetch).toHaveBeenNthCalledWith(
       4,
       "https://sentry.example.test/envelope",
       expect.objectContaining({
-        headers: { "x-csrf-token": "csrf-2" },
+        headers: expect.any(Headers),
       }),
     );
+    expect(new Headers(mockFetch.mock.calls[1][1].headers).get("x-csrf-token")).toBe("csrf-1");
+    expect(new Headers(mockFetch.mock.calls[3][1].headers).get("x-csrf-token")).toBe("csrf-2");
   });
 
-  it("throws when CSRF bootstrap fails", async () => {
+  it("keeps preparation failure quiet and reports a later failed bootstrap to the sender", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn().mockResolvedValueOnce({ ok: false, status: 500 }),
+      vi.fn().mockResolvedValue({ ok: false, status: 500 }),
     );
 
     await importInstrument();

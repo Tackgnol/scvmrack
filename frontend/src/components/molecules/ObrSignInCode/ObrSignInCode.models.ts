@@ -1,1 +1,1 @@
-export type ObrSignInCodeProps = { code?: string };
+export type ObrSignInCodeProps = { code?: string; onCancel?: () => void };

@@ -7,6 +7,7 @@ import { FastifyPluginAsync, FastifyServerOptions } from 'fastify';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import { anonymizeExpiredModerationReports } from './services/moderation-service.js';
+import { HealthResponseSchema } from './schemas/health.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -28,7 +29,7 @@ const app: FastifyPluginAsync<AppOptions> = async (fastify, opts) => {
     options: opts,
   });
 
-  fastify.get('/health', healthHandler);
+  fastify.get('/health', { schema: { response: { 200: HealthResponseSchema } } }, healthHandler);
 
   let moderationRetentionTimer: ReturnType<typeof setInterval> | undefined;
   const runModerationRetention = async () => {

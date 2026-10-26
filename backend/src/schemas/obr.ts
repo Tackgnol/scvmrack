@@ -129,3 +129,13 @@ export const RoomParticipationSchema = {
     },
   },
 } as const;
+
+export const RoomBindingsResponseSchema = {
+  type: 'object',
+  required: ['roomId', 'players', 'tokens'],
+  properties: {
+    roomId: { type: 'string' },
+    players: RoomParticipationSchema.properties.players,
+    tokens: RoomParticipationSchema.properties.tokens,
+  },
+} as const;
