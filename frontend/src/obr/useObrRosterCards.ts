@@ -1,5 +1,7 @@
 import { useObrRosterCards as useObrRosterCardsCore } from "@tackgnol/rpgtools-owlbear/react-query";
 import { partyKeys } from "@/api/party";
+import { obrKeys } from "@/api/obrKeys";
+import { errorMessage } from "@/utils/errorMessage";
 import {
   fetchRoomParticipation,
   participationKey,
@@ -69,7 +71,7 @@ export function useObrRosterCards(): ObrRosterState {
   useEffect(() => {
     if (players && tokens) {
       // The SDK cache is a projection of the server snapshot, including SSE updates.
-      queryClient.setQueryData(["obr", "rooms", roomId, "bindings"], {
+      queryClient.setQueryData(obrKeys.bindings(roomId), {
         roomId,
         players,
         tokens,
@@ -158,7 +160,7 @@ export function useObrRosterCards(): ObrRosterState {
       setCleanupMessage(
         t(complete ? "obr.roster.removed" : "obr.roster.cleanupPending"),
       );
-      await queryClient.invalidateQueries({ queryKey: ["obr"] });
+      await queryClient.invalidateQueries({ queryKey: obrKeys.all });
       await queryClient.invalidateQueries({
         queryKey: partyKeys.obrRoom(roomId),
       });
@@ -171,7 +173,7 @@ export function useObrRosterCards(): ObrRosterState {
       setRemoveRosterAction({
         characterId,
         pending: false,
-        error: error instanceof Error ? error.message : String(error),
+        error: errorMessage(error),
       });
     }
   }
@@ -183,7 +185,7 @@ export function useObrRosterCards(): ObrRosterState {
       await action();
       await roster.refresh();
     } catch (error) {
-      setTokenSyncError(error instanceof Error ? error.message : String(error));
+      setTokenSyncError(errorMessage(error));
     }
     setTokenSyncPending(false);
   }

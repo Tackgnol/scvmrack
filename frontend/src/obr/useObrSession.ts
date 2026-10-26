@@ -1,3 +1,7 @@
+import { obrKeys } from "@/api/obrKeys";
+import { partyKeys } from "@/api/party";
+import { discardObrSession } from "@/auth/discardObrSession";
+import { tabSessionSnapshot, confirmTabSession } from "@/utils/tabSession";
 import { authKeys, resetRedirectControl } from "@/api";
 import { obrAuthClient } from "@/auth/obrAuthClient";
 import { useAuth } from "@/hooks/useAuth";
@@ -22,15 +26,28 @@ export function useObrSession() {
     useState<ObrSignInProgress | null>(null);
 
   const signIn = useCallback(async (): Promise<void> => {
+    const previousToken = tabSessionSnapshot();
     await signInViaObrPopup(obrAuthClient, {
       windowName: "scvmrack-obr-login",
       onProgress: setSignInProgress,
-    }).finally(() => setSignInProgress(null));
+    })
+      .catch(async (error: unknown) => {
+        if (
+          (error instanceof Error &&
+            error.message === "handoff-identity-mismatch") ||
+          tabSessionSnapshot() !== previousToken
+        ) {
+          await discardObrSession(queryClient);
+        }
+        throw error;
+      })
+      .finally(() => setSignInProgress(null));
+    confirmTabSession();
     resetRedirectControl();
     await clearCurrentSearchParam(SESSION_EXPIRED_QUERY_PARAM);
     await queryClient.invalidateQueries({ queryKey: authKeys.session() });
-    await queryClient.invalidateQueries({ queryKey: ["obr"] });
-    await queryClient.invalidateQueries({ queryKey: ["party", "obr-room"] });
+    await queryClient.invalidateQueries({ queryKey: obrKeys.all });
+    await queryClient.invalidateQueries({ queryKey: partyKeys.obrRooms() });
   }, [queryClient]);
 
   return { ...auth, signIn, signInProgress };

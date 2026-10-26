@@ -8,6 +8,12 @@ The application owns room participation. A room transaction reads current member
 
 The participation response is the authoritative roster snapshot. Party SSE refreshes it; the Owlbear SDK binding cache is a derived projection. Signing in refreshes auth and room queries centrally and reconnects the party stream with the current bearer. Character editing retains its existing optimistic save queue.
 
+Scene metadata cleanup deliberately follows the database commit. The old cleanup-before-kick order could leave partial participation when the scene or client disappeared. Membership, binding removal and durable cleanup now commit atomically; an unavailable scene stays visibly pending and can be retried after reopening. Ordinary leave and kick in an attached room intentionally use the same command so they cannot bypass binding cleanup; non-room parties retain their existing behavior and event types.
+
+Removal receipts are durable replay-protection tombstones, retained indefinitely. A simple TTL is unsafe: an old operation replayed after pruning could remove a deliberate later rejoin. Safe pruning requires an enforced command-expiry protocol, not just a scheduled deletion. Pending scene tasks have a separate lifetime and disappear after acknowledgment.
+
+Roll and forge already bind the created scvm to the player inside the character-creation transaction (`character-service.ts` / `character-repository.ts`), including the forge's room/player context. Reopening reads that persisted assignment. A mount-time binding write is intentionally absent because it could recreate a binding the GM removed.
+
 Shared-auth 2.0 owns handoff registration, approval, cancellation, expiry and atomic redemption. The extension keeps a server-issued secret in memory. The first-party approval page shows the account and destination, requires the code shown only by the initiating extension and deliberate approval, and binds that approval to the account displayed. The extension reports completion only after reading its receiving identity. A copied callback URL cannot redeem the account. Full-sheet, forge and class tabs use an opener/origin-bound message exchange with a receiving secret; credentials never appear in their URLs. A different existing first-party account requires confirmation before replacement.
 
 ## Coordinated upgrade

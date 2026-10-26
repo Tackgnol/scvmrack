@@ -31,7 +31,8 @@ export const obrBindingsDb: Pick<
 > = {
   async getPlayerBinding(roomId, playerId) {
     const row = await prisma.obrPlayerCharacterBinding.findUnique({
-      where: { obrRoomId_obrPlayerId: { obrRoomId: roomId, obrPlayerId: playerId },
+      where: {
+        obrRoomId_obrPlayerId: { obrRoomId: roomId, obrPlayerId: playerId },
       },
       select: playerBindingSelect,
     });
@@ -52,7 +53,9 @@ export const obrBindingsDb: Pick<
         select: { characterId: true },
       }),
     ]);
-    const bound = new Set([...players.map((r) => r.characterId), ...tokens.map((r) => r.characterId),
+    const bound = new Set([
+      ...players.map((r) => r.characterId),
+      ...tokens.map((r) => r.characterId),
     ]);
     return ids.filter((id) => bound.has(id));
   },

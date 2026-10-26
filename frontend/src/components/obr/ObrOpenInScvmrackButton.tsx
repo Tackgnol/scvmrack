@@ -4,9 +4,7 @@ import { Button } from "@mui/material";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
-// Opens the authenticated player's scvm in a plain (non-Owlbear) browser tab,
-// carrying a one-time obr-exchange token so the new tab inherits this iframe's
-// session — see ObrExchangeRedeemGate for the redeem side.
+// Open a receiving tab with an opener-bound, one-use session transfer.
 export function ObrOpenInScvmrackButton({
   characterId,
 }: {

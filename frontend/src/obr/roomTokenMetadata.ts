@@ -76,7 +76,7 @@ export async function bindRoomSelectedTokens(input: {
       input.characterId,
       input.characterName,
     );
-    return { count, metadataSynced: true };
+    return { count };
   } finally {
     await reconcileRoomTokens(input.roomId, tokenIds);
   }

@@ -1,3 +1,11 @@
+import { obrOpenDestination } from "./ObrOpenPage.utils";
+import { discardObrSession } from "@/auth/discardObrSession";
+import {
+  tabSessionSnapshot,
+  confirmTabSession,
+  isTabSessionUnverified,
+  subscribeTabSession,
+} from "@/utils/tabSession";
 import { authKeys } from "@/api";
 import { signOut } from "@/auth";
 import { obrAuthClient } from "@/auth/obrAuthClient";
@@ -9,26 +17,15 @@ import {
 } from "@tackgnol/rpgtools-shared-auth/client";
 import { Alert, Button, Stack, Typography } from "@mui/material";
 import { useQueryClient } from "@tanstack/react-query";
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import { useTranslation } from "react-i18next";
 import { Wrapper } from "./ObrAuthDonePage.styles";
-
-function destination(): string | null {
-  const params = new URLSearchParams(window.location.search);
-  if (params.get("to") === "class") {
-    const id = params.get("classId");
-    return id && /^[1-9]\d*$/.test(id) ? `/classes/${id}` : null;
-  }
-  if (params.get("to") === "forge") {
-    const room = params.get("obrRoom");
-    const player = params.get("obrPlayer");
-    return room && player
-      ? `/character/create?${new URLSearchParams({ obrRoom: room, obrPlayer: player })}`
-      : null;
-  }
-  const id = params.get("character");
-  return id && /^[a-f0-9-]{36}$/i.test(id) ? `/character/${id}` : null;
-}
 
 export function ObrOpenPage() {
   const { t } = useTranslation();
@@ -37,22 +34,40 @@ export function ObrOpenPage() {
   });
   const queryClient = useQueryClient();
   const started = useRef(false);
-  const [target] = useState(destination);
+  const [target] = useState(() => obrOpenDestination(window.location.search));
   const [failure, setFailure] = useState(() => !target);
   const [incoming, setIncoming] = useState<ObrTabTransfer | null>(null);
   const [switching, setSwitching] = useState(false);
+  const unverified = useSyncExternalStore(
+    subscribeTabSession,
+    isTabSessionUnverified,
+    () => false,
+  );
   const open = useCallback(
     async (transfer: ObrTabTransfer) => {
-      await obrAuthClient.redeemObrExchangeToken(
-        transfer.token,
-        transfer.recipientSecret,
-      );
-      const session = await obrAuthClient.getSession();
-      if (session.user?.id !== transfer.user.id) {
-        throw new Error("transfer-identity-mismatch");
+      const previousToken = tabSessionSnapshot();
+      let redeemed = false;
+      try {
+        await obrAuthClient.redeemObrExchangeToken(
+          transfer.token,
+          transfer.recipientSecret,
+        );
+        redeemed = true;
+        const session = await obrAuthClient.getSession();
+        if (session.user?.id !== transfer.user.id) {
+          throw new Error("transfer-identity-mismatch");
+        }
+      } catch (error) {
+        if (redeemed || tabSessionSnapshot() !== previousToken) {
+          await discardObrSession(queryClient);
+        }
+        throw error;
       }
+      confirmTabSession();
       await queryClient.invalidateQueries({ queryKey: authKeys.session() });
-      await appHistory.replace(target!);
+      if (target) {
+        await appHistory.replace(target);
+      }
     },
     [queryClient, target],
   );
@@ -94,7 +109,25 @@ export function ObrOpenPage() {
     <Wrapper>
       <Stack spacing={2}>
         {failure ? (
-          <Alert severity="error">{t("obr.auth.transferUnavailable")}</Alert>
+          <>
+            <Alert severity="error">{t("obr.auth.transferUnavailable")}</Alert>
+            {unverified && (
+              <Button
+                disabled={switching}
+                onClick={async () => {
+                  setSwitching(true);
+                  try {
+                    await discardObrSession(queryClient);
+                  } catch {
+                    setFailure(true);
+                  }
+                  setSwitching(false);
+                }}
+              >
+                {t("obr.auth.retrySignOut")}
+              </Button>
+            )}
+          </>
         ) : incoming ? (
           <>
             <Typography>

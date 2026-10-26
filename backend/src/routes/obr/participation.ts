@@ -2,14 +2,15 @@ import type { FastifyPluginAsync } from 'fastify';
 import type { JsonSchemaToTsProvider } from '@fastify/type-provider-json-schema-to-ts';
 import { sendServiceError } from '../../errors.js';
 import { createRoomParticipationService } from '../../services/room-participation-service.js';
-import { limitMax } from '../../lib/rate-limits.js';
+import { roomRouteConfig as config } from './config.js';
 import {
   RoomParamsSchema as roomParams,
   RoomParticipationSchema,
+  RoomRemovalBodySchema,
+  RoomCleanupParamsSchema,
 } from '../../schemas/obr.js';
 const participation: FastifyPluginAsync = async (fastify) => {
   const app = fastify.withTypeProvider<JsonSchemaToTsProvider>();
-  const config = { rateLimit: { max: limitMax(50), timeWindow: '1 minute' } };
   app.get(
     '/rooms/:roomId/participation',
     {
@@ -37,15 +38,7 @@ const participation: FastifyPluginAsync = async (fastify) => {
       schema: {
         params: roomParams,
         response: { 200: RoomParticipationSchema },
-        body: {
-          type: 'object',
-          required: ['characterId', 'operationId'],
-          additionalProperties: false,
-          properties: {
-            characterId: { type: 'string', format: 'uuid' },
-            operationId: { type: 'string', format: 'uuid' },
-          },
-        },
+        body: RoomRemovalBodySchema,
       },
     },
     async (request, reply) => {
@@ -68,14 +61,7 @@ const participation: FastifyPluginAsync = async (fastify) => {
     {
       config,
       schema: {
-        params: {
-          ...roomParams,
-          required: ['roomId', 'id'],
-          properties: {
-            ...roomParams.properties,
-            id: { type: 'string', format: 'uuid' },
-          },
-        },
+        params: RoomCleanupParamsSchema,
         response: { 200: RoomParticipationSchema },
       },
     },

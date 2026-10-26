@@ -1,23 +1,29 @@
-import { openObrSessionTab } from '@/auth/obrAuthClient';
-import { useCharacter } from '@/CharacterContext/CharacterContext';
-import OBR from '@owlbear-rodeo/sdk';
-import { useEffect, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { LanguageToggle } from './components/molecules/header/LanguageToggle';
-import { Actions, Bar, Body, Container, ExpandButton, Wordmark,
-} from './ObrLayout.styles';
+import { openObrSessionTab } from "@/auth/obrAuthClient";
+import { useCharacter } from "@/CharacterContext/CharacterContext";
+import OBR from "@owlbear-rodeo/sdk";
+import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { LanguageToggle } from "./components/molecules/header/LanguageToggle";
+import {
+  Actions,
+  Bar,
+  Body,
+  Container,
+  ExpandButton,
+  Wordmark,
+} from "./ObrLayout.styles";
 
 const COMPACT_WIDTH = 420;
 const EXPANDED_WIDTH = 860;
 const EXPANDED_HEIGHT_FLOOR = 720;
 
-type PanelSize = 'compact' | 'expanded' | 'max';
+type PanelSize = "compact" | "expanded" | "max";
 
 // window.screen.availWidth/availHeight is unavailable in some hosts (or can
 // report an unreasonably small value); fall back to the expanded-mode size
 // rather than shrinking the panel.
 function maxDimension(available: number | undefined, floor: number): number {
-    return available && available > floor ? available : floor;
+  return available && available > floor ? available : floor;
 }
 
 // Chrome for the Owlbear Rodeo extension panel. No app nav/header/footer — the
@@ -26,34 +32,35 @@ function maxDimension(available: number | undefined, floor: number): number {
 // same sheet gets room to edit, then shrink it back. Editing never leaves
 // this iframe, so the partitioned session is untouched.
 export function ObrLayout({ children }: { children: React.ReactNode }) {
-    const { t } = useTranslation();
-    const { characterId } = useCharacter();
-    const [ready, setReady] = useState(false);
-    const [size, setSize] = useState<PanelSize>('compact');
-    const [isOpening, setIsOpening] = useState(false);
-    const expanded = size !== 'compact';
+  const { t } = useTranslation();
+  const { characterId } = useCharacter();
+  const [ready, setReady] = useState(false);
+  const [size, setSize] = useState<PanelSize>("compact");
+  const [isOpening, setIsOpening] = useState(false);
+  const expanded = size !== "compact";
 
-    useEffect(() => OBR.onReady(() => setReady(true)), []);
+  useEffect(() => OBR.onReady(() => setReady(true)), []);
 
-    function toggleExpand() {
-        const next = expanded ? 'compact' : 'expanded';
-        setSize(next);
-        OBR.action.setWidth(next === 'expanded' ? EXPANDED_WIDTH : COMPACT_WIDTH);
-    }
+  function toggleExpand() {
+    const next = expanded ? "compact" : "expanded";
+    setSize(next);
+    OBR.action.setWidth(next === "expanded" ? EXPANDED_WIDTH : COMPACT_WIDTH);
+  }
 
-    function maximize() {
-        setSize('max');
-        OBR.action.setWidth(maxDimension(window.screen.availWidth, EXPANDED_WIDTH));
-        OBR.action.setHeight(maxDimension(window.screen.availHeight, EXPANDED_HEIGHT_FLOOR),
+  function maximize() {
+    setSize("max");
+    OBR.action.setWidth(maxDimension(window.screen.availWidth, EXPANDED_WIDTH));
+    OBR.action.setHeight(
+      maxDimension(window.screen.availHeight, EXPANDED_HEIGHT_FLOOR),
     );
-    }
+  }
 
-    async function openInScvmrack() {
-        if (!characterId) {
-            return;
-        }
-        setIsOpening(true);
-        try {
+  async function openInScvmrack() {
+    if (!characterId) {
+      return;
+    }
+    setIsOpening(true);
+    try {
       await openObrSessionTab(
         `/obr-open?character=${encodeURIComponent(characterId)}`,
       );

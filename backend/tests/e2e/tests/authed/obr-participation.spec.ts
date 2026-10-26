@@ -176,6 +176,32 @@ test('a live join reaches the open GM roster and its first removal stays removed
       token: party.inviteToken,
       characterId: scvm.id,
     });
+    await mutate(
+      context.request,
+      `/api/obr/rooms/${roomId}/players/late-player/character`,
+      { characterId: scvm.id },
+      'PUT'
+    );
+    const boundToken = await mutate(
+      context.request,
+      `/api/obr/rooms/${roomId}/tokens/token-1/character`,
+      { characterId: scvm.id },
+      'PUT'
+    );
+    await page.evaluate(
+      ({ characterId, generation }) => {
+        const contract = (
+          window as unknown as {
+            obrContract: { token: { metadata: Record<string, unknown> } };
+          }
+        ).obrContract;
+        contract.token.metadata = {
+          'co.rpgtools.scvmrack/characterId': characterId,
+          'co.rpgtools.scvmrack/binding-generation': generation,
+        };
+      },
+      { characterId: scvm.id, generation: boundToken.generation }
+    );
     await expect(
       roster.getByText('Late arrival', { exact: true })
     ).toBeVisible();
@@ -189,6 +215,24 @@ test('a live join reaches the open GM roster and its first removal stays removed
       await page.request.get(`/api/obr/rooms/${roomId}/participation`)
     ).json();
     expect(state.memberIds).toEqual([]);
+    expect(state.players).toEqual([]);
+    expect(state.tokens).toEqual([]);
+    expect(
+      (await context.request.get(`/api/characters/${scvm.id}`)).status()
+    ).toBe(200);
+    await expect
+      .poll(() =>
+        page.evaluate(
+          () =>
+            (
+              window as unknown as {
+                obrContract: { token: { metadata: Record<string, unknown> } };
+              }
+            ).obrContract.token.metadata
+        )
+      )
+      .toEqual({});
+
     await page.reload();
     await page.addScriptTag({
       type: 'module',

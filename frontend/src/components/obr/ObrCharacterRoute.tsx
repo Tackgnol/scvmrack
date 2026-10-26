@@ -1,8 +1,10 @@
+import { ObrSignInCode } from "@/components/molecules/ObrSignInCode/ObrSignInCode";
+import type { ObrRoomActor } from "./ObrCharacterRoute.models";
 import { openObrSessionTab } from "@/auth/obrAuthClient";
 import { useCharacter } from "@/CharacterContext/CharacterContext";
 import { CharacterSheet } from "@/components/organisms/CharacterSheet";
 import { ObrTokenBar } from "./ObrTokenBar";
-import { ObrSaveRecovery } from './ObrSaveRecovery/ObrSaveRecovery';
+import { ObrSaveRecovery } from "./ObrSaveRecovery/ObrSaveRecovery";
 import { ObrOpenInScvmrackButton } from "./ObrOpenInScvmrackButton";
 import { ObrAuthedPicker } from "./ObrAuthedPicker";
 import { ObrGmView } from "./ObrGmView";
@@ -23,7 +25,7 @@ import {
   obrRoomBindingsClient,
 } from "@/obr/obrApiClient";
 import { useObrSession } from "@/obr/useObrSession";
-import { openClassDetails } from '@/obr/openClassDetails';
+import { openClassDetails } from "@/obr/openClassDetails";
 import { getApiLocale, getCharacterKey } from "@/hooks/utils";
 import { getApiErrorCode } from "@/utils/errorUtils";
 import { Button } from "@mui/material";
@@ -84,6 +86,7 @@ function ObrPlayerCharacterRoute() {
   const characterId = character?.id ?? null;
   const [signInError, setSignInError] = useState<string | null>(null);
   const [forgeError, setForgeError] = useState<string | null>(null);
+  const [roomActor, setRoomActor] = useState<ObrRoomActor | null>(null);
   const [rollError, setRollError] = useState<string | null>(null);
   const [rollPickerOpen, setRollPickerOpen] = useState(false);
   const [isRestoringCharacter, setIsRestoringCharacter] = useState(true);
@@ -102,6 +105,22 @@ function ObrPlayerCharacterRoute() {
     setRollError(null);
     setRollPickerOpen(true);
   };
+
+  useEffect(() => {
+    let active = true;
+    OBR.onReady(() => {
+      void getCurrentObrRoomActor(OBR)
+        .then((actor) => {
+          if (active) {
+            setRoomActor(actor);
+          }
+        })
+        .catch(() => undefined);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     setCharacterIdRef.current = setCharacterId;
@@ -279,7 +298,10 @@ function ObrPlayerCharacterRoute() {
                 "This room's party is full. Ask the GM to make room.",
               ),
             );
-          } else if (code === "CLASS_NOT_AVAILABLE" || code === "CLASSLESS_NOT_AVAILABLE") {
+          } else if (
+            code === "CLASS_NOT_AVAILABLE" ||
+            code === "CLASSLESS_NOT_AVAILABLE"
+          ) {
             setRollPickerOpen(true);
           }
         },
@@ -292,12 +314,14 @@ function ObrPlayerCharacterRoute() {
   }
   async function handleForge() {
     setForgeError(null);
+    if (!roomActor) {
+      return;
+    }
     try {
-      const actor = await getCurrentObrRoomActor(OBR);
       const params = new URLSearchParams({
         to: "forge",
-        obrRoom: actor.roomId,
-        obrPlayer: actor.playerId,
+        obrRoom: roomActor.roomId,
+        obrPlayer: roomActor.playerId,
       });
       await openObrSessionTab(`/obr-open?${params}`);
     } catch {
@@ -386,6 +410,7 @@ function ObrPlayerCharacterRoute() {
                 }}
                 onRollNew={openRollPicker}
                 onForge={() => void handleForge()}
+                forgeReady={Boolean(roomActor)}
               />
             ) : (
               <>
@@ -402,17 +427,14 @@ function ObrPlayerCharacterRoute() {
                   fullWidth
                   variant="outlined"
                   onClick={() => void handleForge()}
+                  disabled={!roomActor}
                 >
                   {t("obr.player.forgeScvm", "Forge scvm")}
                 </Button>
                 <Button fullWidth variant="outlined" onClick={handleSignIn}>
                   {t("obr.player.signIn", "Login")}
                 </Button>
-                {signInProgress?.code && (
-                  <Hint role="status">
-                    {t("obr.auth.comparison", { code: signInProgress.code })}
-                  </Hint>
-                )}
+                <ObrSignInCode code={signInProgress?.code} />
                 {signInError && <ErrorText>{signInError}</ErrorText>}
                 {forgeError && <ErrorText>{forgeError}</ErrorText>}
                 {rollError && <ErrorText>{rollError}</ErrorText>}

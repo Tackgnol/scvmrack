@@ -28,7 +28,10 @@ import {
 } from './session.js';
 
 export type { AppSession } from './session.js';
-import { PARTY_MAX_MEMBERS, lockPartySeat, partyFull,
+import {
+  PARTY_MAX_MEMBERS,
+  lockPartySeat,
+  partyFull,
 } from '../lib/party-limits.js';
 import { characterRepository } from '../repositories/character-repository.js';
 import { defaultPoolLineageIds } from './party-class-pool-service.js';
@@ -188,6 +191,32 @@ export function createPartyService(
       return notFound('PARTY_NOT_FOUND', 'Party not found');
     }
     return null;
+  }
+
+  async function removePartyMember(
+    input: { session: AppSession; id: string; characterId: string },
+    eventType: 'character.left' | 'character.kicked'
+  ): Promise<ServiceResult<void>> {
+    const party = await partyRepository.getPartyById(input.id);
+    if (party?.obrRoomId) {
+      const result = await createRoomParticipationService(log, partyBus).remove(
+        {
+          session: input.session,
+          roomId: party.obrRoomId,
+          characterId: input.characterId,
+          operationId: crypto.randomUUID(),
+          expectedPartyId: input.id,
+          eventType,
+        }
+      );
+      return result.ok ? ok(undefined) : result;
+    }
+    await partyRepository.setCharacterParty(input.characterId, null);
+    partyBus?.publish(input.id, {
+      type: eventType,
+      characterId: input.characterId,
+    });
+    return ok(undefined);
   }
 
   return {
@@ -897,27 +926,7 @@ export function createPartyService(
           );
         }
 
-        const party = await partyRepository.getPartyById(input.id);
-        if (party?.obrRoomId) {
-          const result = await createRoomParticipationService(
-            log,
-            partyBus
-          ).remove({
-            session: input.session,
-            roomId: party.obrRoomId,
-            characterId: character.id,
-            operationId: crypto.randomUUID(),
-            expectedPartyId: input.id,
-            eventType: 'character.left',
-          });
-          return result.ok ? ok(undefined) : result;
-        }
-        await partyRepository.setCharacterParty(character.id, null);
-        partyBus?.publish(input.id, {
-          type: 'character.left',
-          characterId: character.id,
-        });
-        return ok(undefined);
+        return await removePartyMember(input, 'character.left');
       } catch (err) {
         return fail(
           unexpected(log, err, 'PARTY_LEAVE_FAILED', 'Failed to leave party')
@@ -950,26 +959,7 @@ export function createPartyService(
           );
         }
 
-        const party = await partyRepository.getPartyById(input.id);
-        if (party?.obrRoomId) {
-          const result = await createRoomParticipationService(
-            log,
-            partyBus
-          ).remove({
-            session: input.session,
-            roomId: party.obrRoomId,
-            characterId: character.id,
-            operationId: crypto.randomUUID(),
-            expectedPartyId: input.id,
-          });
-          return result.ok ? ok(undefined) : result;
-        }
-        await partyRepository.setCharacterParty(character.id, null);
-        partyBus?.publish(input.id, {
-          type: 'character.kicked',
-          characterId: character.id,
-        });
-        return ok(undefined);
+        return await removePartyMember(input, 'character.kicked');
       } catch (err) {
         return fail(
           unexpected(log, err, 'PARTY_KICK_FAILED', 'Failed to remove member')

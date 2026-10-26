@@ -1,47 +1,47 @@
-import { renderHook } from '@testing-library/react';
-import { beforeEach, expect, test, vi } from 'vitest';
-import { useAuth } from '@/hooks/useAuth.ts';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { hasCurrentSearchParam } from '@/router/navigation';
-import { bootstrapAnonymousSession, fetchSession, signOut } from '@/auth';
-import { appHistory } from '@/router/history';
-import { clearLastAuthKind, getLastAuthKind } from '@/preferences/lastAuthKind';
+import { renderHook } from "@testing-library/react";
+import { beforeEach, expect, test, vi } from "vitest";
+import { useAuth } from "@/hooks/useAuth.ts";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { hasCurrentSearchParam } from "@/router/navigation";
+import { bootstrapAnonymousSession, fetchSession, signOut } from "@/auth";
+import { appHistory } from "@/router/history";
+import { clearLastAuthKind, getLastAuthKind } from "@/preferences/lastAuthKind";
 
-vi.mock('@tanstack/react-query', () => ({
+vi.mock("@tanstack/react-query", () => ({
   useQuery: vi.fn(),
   useMutation: vi.fn(),
   useQueryClient: vi.fn(),
 }));
 
-vi.mock('@/auth', () => ({
+vi.mock("@/auth", () => ({
   fetchSession: vi.fn(),
   bootstrapAnonymousSession: vi.fn(),
   signOut: vi.fn(),
 }));
 
-vi.mock('@/auth/ownershipScope', () => ({
+vi.mock("@/auth/ownershipScope", () => ({
   synchronizeOwnershipScope: vi.fn(),
 }));
 
-vi.mock('@/api', () => ({
+vi.mock("@/api", () => ({
   authKeys: {
-    all: ['auth'],
-    session: () => ['auth', 'session'],
-    me: () => ['auth', 'me'],
+    all: ["auth"],
+    session: () => ["auth", "session"],
+    me: () => ["auth", "me"],
   },
 }));
 
-vi.mock('@/router/navigation', () => ({
+vi.mock("@/router/navigation", () => ({
   hasCurrentSearchParam: vi.fn().mockReturnValue(false),
   navigateToLoggedOut: vi.fn(),
-  SESSION_EXPIRED_QUERY_PARAM: 'expired',
-  OBR_EXCHANGE_TOKEN_QUERY_PARAM: 'obrExchangeToken',
+  SESSION_EXPIRED_QUERY_PARAM: "expired",
+  OBR_EXCHANGE_TOKEN_QUERY_PARAM: "obrExchangeToken",
 }));
 
-vi.mock('@/router/history', () => ({
+vi.mock("@/router/history", () => ({
   appHistory: {
     subscribe: vi.fn(() => vi.fn()),
-    location: { pathname: '/' },
+    location: { pathname: "/" },
   },
 }));
 
@@ -66,17 +66,17 @@ function installMutationMocks() {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  window.history.pushState({}, '', '/');
-  (appHistory as any).location = { pathname: '/' };
+  window.history.pushState({}, "", "/");
+  (appHistory as any).location = { pathname: "/" };
   (hasCurrentSearchParam as any).mockReturnValue(false);
   installMutationMocks();
 });
 
-test('useAuth returns real user and session data', () => {
+test("useAuth returns real user and session data", () => {
   (useQuery as any).mockImplementation(({ queryKey }: any) => {
-    if (queryKey.includes('session')) {
+    if (queryKey.includes("session")) {
       return {
-        data: { session: { id: 's1' }, user: { id: '1', email: 'a@b.com' } },
+        data: { session: { id: "s1" }, user: { id: "1", email: "a@b.com" } },
         isLoading: false,
       };
     }
@@ -89,20 +89,20 @@ test('useAuth returns real user and session data', () => {
 
   const { result } = renderHook(() => useAuth());
 
-  expect(result.current.user?.id).toBe('1');
+  expect(result.current.user?.id).toBe("1");
   expect(result.current.isAuthenticated).toBe(true);
   expect(result.current.isGuest).toBe(false);
 });
 
-test('useAuth treats expired session flag as logged out and skips anonymous bootstrap', () => {
+test("useAuth treats expired session flag as logged out and skips anonymous bootstrap", () => {
   (useQuery as any).mockImplementation(({ queryKey, enabled }: any) => {
-    if (queryKey.includes('session')) {
+    if (queryKey.includes("session")) {
       return {
-        data: { session: { id: 's1' }, user: { id: '1', email: 'a@b.com' } },
+        data: { session: { id: "s1" }, user: { id: "1", email: "a@b.com" } },
         isLoading: false,
       };
     }
-    if (queryKey.includes('anonymous-bootstrap')) {
+    if (queryKey.includes("anonymous-bootstrap")) {
       expect(enabled).toBe(false);
       return { isFetching: false };
     }
@@ -123,22 +123,22 @@ test('useAuth treats expired session flag as logged out and skips anonymous boot
   expect(result.current.isGuest).toBe(false);
 });
 
-test('useAuth bootstraps anonymous sessions when no session exists', async () => {
+test("useAuth bootstraps anonymous sessions when no session exists", async () => {
   const queryClient = { invalidateQueries: vi.fn(), setQueryData: vi.fn() };
   (useQueryClient as any).mockReturnValue(queryClient);
   const createdSession = {
-    session: { id: 'anonymous-session' },
-    user: { id: 'anonymous-user', isAnonymous: true },
+    session: { id: "anonymous-session" },
+    user: { id: "anonymous-user", isAnonymous: true },
   };
   vi.mocked(bootstrapAnonymousSession).mockResolvedValue(createdSession);
 
   let capturedQueryFn: (() => Promise<unknown>) | undefined;
   (useQuery as any).mockImplementation((options: any) => {
     const { queryKey } = options;
-    if (queryKey.includes('session')) {
+    if (queryKey.includes("session")) {
       return { data: null, isLoading: false };
     }
-    if (queryKey.includes('anonymous-bootstrap')) {
+    if (queryKey.includes("anonymous-bootstrap")) {
       capturedQueryFn = options.queryFn;
       return { isFetching: false };
     }
@@ -151,24 +151,24 @@ test('useAuth bootstraps anonymous sessions when no session exists', async () =>
 
   expect(bootstrapAnonymousSession).toHaveBeenCalled();
   expect(queryClient.setQueryData).toHaveBeenCalledWith(
-    ['auth', 'session'],
-    createdSession
+    ["auth", "session"],
+    createdSession,
   );
 });
 
-test('useAuth surfaces a failed anonymous bootstrap and does not cache a session', async () => {
+test("useAuth surfaces a failed anonymous bootstrap and does not cache a session", async () => {
   const queryClient = { invalidateQueries: vi.fn(), setQueryData: vi.fn() };
   (useQueryClient as any).mockReturnValue(queryClient);
   vi.mocked(bootstrapAnonymousSession).mockRejectedValue(
-    new Error('Anonymous session did not start')
+    new Error("Anonymous session did not start"),
   );
 
   let capturedQueryFn: (() => Promise<unknown>) | undefined;
   (useQuery as any).mockImplementation((options: any) => {
-    if (options.queryKey.includes('session')) {
+    if (options.queryKey.includes("session")) {
       return { data: null, isLoading: false };
     }
-    if (options.queryKey.includes('anonymous-bootstrap')) {
+    if (options.queryKey.includes("anonymous-bootstrap")) {
       capturedQueryFn = options.queryFn;
       return { isFetching: false };
     }
@@ -177,11 +177,13 @@ test('useAuth surfaces a failed anonymous bootstrap and does not cache a session
 
   renderHook(() => useAuth({ bootstrapAnonymous: true }));
 
-  await expect(capturedQueryFn?.()).rejects.toThrow('Anonymous session did not start');
+  await expect(capturedQueryFn?.()).rejects.toThrow(
+    "Anonymous session did not start",
+  );
   expect(queryClient.setQueryData).not.toHaveBeenCalled();
 });
 
-test('useAuth reports loading while an anonymous bootstrap is pending but not yet fetching', () => {
+test("useAuth reports loading while an anonymous bootstrap is pending but not yet fetching", () => {
   // SPA nav into a sheet route: the session query is already cached as null
   // (not loading) and the bootstrap query is enabled but hasn't flipped to
   // fetching yet. Without covering this window, first-run flows (auto-create,
@@ -192,10 +194,10 @@ test('useAuth reports loading while an anonymous bootstrap is pending but not ye
   });
   (useQuery as any).mockImplementation((options: any) => {
     const { queryKey } = options;
-    if (queryKey.includes('session')) {
+    if (queryKey.includes("session")) {
       return { data: null, isLoading: false };
     }
-    if (queryKey.includes('anonymous-bootstrap')) {
+    if (queryKey.includes("anonymous-bootstrap")) {
       return { isFetching: false, isError: false, data: undefined };
     }
     return { isLoading: false, data: null };
@@ -206,16 +208,16 @@ test('useAuth reports loading while an anonymous bootstrap is pending but not ye
   expect(result.current.isLoading).toBe(true);
 });
 
-test('useAuth can skip anonymous bootstrap when no session exists', () => {
+test("useAuth can skip anonymous bootstrap when no session exists", () => {
   const queryClient = { invalidateQueries: vi.fn(), setQueryData: vi.fn() };
   (useQueryClient as any).mockReturnValue(queryClient);
 
   (useQuery as any).mockImplementation((options: any) => {
     const { queryKey } = options;
-    if (queryKey.includes('session')) {
+    if (queryKey.includes("session")) {
       return { data: null, isLoading: false };
     }
-    if (queryKey.includes('anonymous-bootstrap')) {
+    if (queryKey.includes("anonymous-bootstrap")) {
       expect(options.enabled).toBe(false);
       return { isFetching: false };
     }
@@ -227,13 +229,18 @@ test('useAuth can skip anonymous bootstrap when no session exists', () => {
   expect(bootstrapAnonymousSession).not.toHaveBeenCalled();
 });
 
-test('public consumers remain sessionless instead of starting a guest session', () => {
+test("public consumers remain sessionless instead of starting a guest session", () => {
   vi.mocked(useQueryClient).mockReturnValue({ setQueryData: vi.fn() } as never);
   vi.mocked(useQuery).mockImplementation((options: any) => {
-    if (options.queryKey.includes('anonymous-bootstrap')) {
+    if (options.queryKey.includes("anonymous-bootstrap")) {
       expect(options.enabled).toBe(false);
     }
-    return { data: null, isSuccess: true, isLoading: false, isFetching: false } as never;
+    return {
+      data: null,
+      isSuccess: true,
+      isLoading: false,
+      isFetching: false,
+    } as never;
   });
 
   const { result } = renderHook(() => useAuth());
@@ -243,12 +250,17 @@ test('public consumers remain sessionless instead of starting a guest session', 
   expect(result.current.isLoading).toBe(false);
 });
 
-test('a failed session read never triggers anonymous sign-in', () => {
+test("a failed session read never triggers anonymous sign-in", () => {
   vi.mocked(useQueryClient).mockReturnValue({ setQueryData: vi.fn() } as never);
-  const failure = new Error('Auth service unavailable');
+  const failure = new Error("Auth service unavailable");
   vi.mocked(useQuery).mockImplementation((options: any) => {
-    if (options.queryKey.includes('session')) {
-      return { isError: true, isSuccess: false, error: failure, isLoading: false } as never;
+    if (options.queryKey.includes("session")) {
+      return {
+        isError: true,
+        isSuccess: false,
+        error: failure,
+        isLoading: false,
+      } as never;
     }
     expect(options.enabled).toBe(false);
     return { isFetching: false } as never;
@@ -259,22 +271,33 @@ test('a failed session read never triggers anonymous sign-in', () => {
   expect(result.current.isSessionless).toBe(false);
 });
 
-test('an observed guest stays recoverable in memory when storage writes fail', async () => {
-  const blockedWrite = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
-    throw new DOMException('Storage blocked', 'SecurityError');
-  });
-  const blockedRemoval = vi.spyOn(Storage.prototype, 'removeItem').mockImplementation(() => {
-    throw new DOMException('Storage blocked', 'SecurityError');
-  });
+test("an observed guest stays recoverable in memory when storage writes fail", async () => {
+  const blockedWrite = vi
+    .spyOn(Storage.prototype, "setItem")
+    .mockImplementation(() => {
+      throw new DOMException("Storage blocked", "SecurityError");
+    });
+  const blockedRemoval = vi
+    .spyOn(Storage.prototype, "removeItem")
+    .mockImplementation(() => {
+      throw new DOMException("Storage blocked", "SecurityError");
+    });
   vi.mocked(useQueryClient).mockReturnValue({ setQueryData: vi.fn() } as never);
   vi.mocked(useQuery).mockImplementation((options: any) => {
-    return options.queryKey.includes('session')
-      ? { data: { session: {}, user: { id: 'remembered-guest', isAnonymous: true } }, isSuccess: true, isLoading: false } as never
-      : { isFetching: false } as never;
+    return options.queryKey.includes("session")
+      ? ({
+          data: {
+            session: {},
+            user: { id: "remembered-guest", isAnonymous: true },
+          },
+          isSuccess: true,
+          isLoading: false,
+        } as never)
+      : ({ isFetching: false } as never);
   });
   try {
     const { result } = renderHook(() => useAuth());
-    expect(getLastAuthKind()).toBe('anonymous');
+    expect(getLastAuthKind()).toBe("anonymous");
     await result.current.signOut.mutateAsync();
     mutationConfigs[0].onSuccess?.();
     expect(getLastAuthKind()).toBeNull();
@@ -285,36 +308,43 @@ test('an observed guest stays recoverable in memory when storage writes fail', a
   }
 });
 
-test('recovery sees auth-kind changes from another tab when storage works', () => {
+test("recovery sees auth-kind changes from another tab when storage works", () => {
   vi.mocked(useQueryClient).mockReturnValue({ setQueryData: vi.fn() } as never);
   vi.mocked(useQuery).mockImplementation((options: any) => {
-    return options.queryKey.includes('session')
-      ? { data: { session: {}, user: { id: 'guest-before-account-link', isAnonymous: true } }, isSuccess: true, isLoading: false } as never
-      : { isFetching: false } as never;
+    return options.queryKey.includes("session")
+      ? ({
+          data: {
+            session: {},
+            user: { id: "guest-before-account-link", isAnonymous: true },
+          },
+          isSuccess: true,
+          isLoading: false,
+        } as never)
+      : ({ isFetching: false } as never);
   });
   try {
     renderHook(() => useAuth());
-    expect(getLastAuthKind()).toBe('anonymous');
-    localStorage.setItem('scvmrack-last-auth-kind-v1', 'account');
-    expect(getLastAuthKind()).toBe('account');
-    localStorage.removeItem('scvmrack-last-auth-kind-v1');
+    expect(getLastAuthKind()).toBe("anonymous");
+    localStorage.setItem("scvmrack-last-auth-kind-v1", "account");
+    expect(getLastAuthKind()).toBe("account");
+    localStorage.removeItem("scvmrack-last-auth-kind-v1");
     expect(getLastAuthKind()).toBeNull();
   } finally {
     clearLastAuthKind();
   }
 });
 
-test('useAuth skips anonymous bootstrap on invite routes by default', () => {
+test("useAuth skips anonymous bootstrap on invite routes by default", () => {
   const queryClient = { invalidateQueries: vi.fn(), setQueryData: vi.fn() };
   (useQueryClient as any).mockReturnValue(queryClient);
-  (appHistory as any).location = { pathname: '/join/tok123' };
+  (appHistory as any).location = { pathname: "/join/tok123" };
 
   (useQuery as any).mockImplementation((options: any) => {
     const { queryKey } = options;
-    if (queryKey.includes('session')) {
+    if (queryKey.includes("session")) {
       return { data: null, isLoading: false };
     }
-    if (queryKey.includes('anonymous-bootstrap')) {
+    if (queryKey.includes("anonymous-bootstrap")) {
       expect(options.enabled).toBe(false);
       return { isFetching: false };
     }
@@ -326,41 +356,41 @@ test('useAuth skips anonymous bootstrap on invite routes by default', () => {
   expect(bootstrapAnonymousSession).not.toHaveBeenCalled();
 });
 
-test('useAuth skips anonymous bootstrap while an obr-exchange token is pending (RPG-57)', () => {
+test("useAuth ignores a legacy URL token when deciding anonymous bootstrap", () => {
   const queryClient = { invalidateQueries: vi.fn(), setQueryData: vi.fn() };
   (useQueryClient as any).mockReturnValue(queryClient);
   (hasCurrentSearchParam as any).mockImplementation(
-    (param: string) => param === 'obrExchangeToken'
+    (param: string) => param === "obrExchangeToken",
   );
 
   (useQuery as any).mockImplementation((options: any) => {
     const { queryKey } = options;
-    if (queryKey.includes('session')) {
+    if (queryKey.includes("session")) {
       return { data: null, isLoading: false };
     }
-    if (queryKey.includes('anonymous-bootstrap')) {
-      expect(options.enabled).toBe(false);
+    if (queryKey.includes("anonymous-bootstrap")) {
+      expect(options.enabled).toBe(true);
       return { isFetching: false };
     }
     return { isLoading: false, data: null };
   });
 
-  renderHook(() => useAuth());
+  renderHook(() => useAuth({ bootstrapAnonymous: true }));
 
   expect(bootstrapAnonymousSession).not.toHaveBeenCalled();
 });
 
-test('useAuth can skip session fetch entirely', () => {
+test("useAuth can skip session fetch entirely", () => {
   const queryClient = { invalidateQueries: vi.fn(), setQueryData: vi.fn() };
   (useQueryClient as any).mockReturnValue(queryClient);
 
   (useQuery as any).mockImplementation((options: any) => {
     const { queryKey } = options;
-    if (queryKey.includes('session')) {
+    if (queryKey.includes("session")) {
       expect(options.enabled).toBe(false);
       return { data: undefined, isLoading: false };
     }
-    if (queryKey.includes('anonymous-bootstrap')) {
+    if (queryKey.includes("anonymous-bootstrap")) {
       expect(options.enabled).toBe(false);
       return { isFetching: false };
     }
@@ -373,8 +403,12 @@ test('useAuth can skip session fetch entirely', () => {
   expect(bootstrapAnonymousSession).not.toHaveBeenCalled();
 });
 
-test('useAuth handles signOut', async () => {
-  (useQuery as any).mockReturnValue({ isLoading: false, isFetching: false, data: null });
+test("useAuth handles signOut", async () => {
+  (useQuery as any).mockReturnValue({
+    isLoading: false,
+    isFetching: false,
+    data: null,
+  });
   const queryClient = { invalidateQueries: vi.fn(), setQueryData: vi.fn() };
   (useQueryClient as any).mockReturnValue(queryClient);
 
@@ -384,12 +418,15 @@ test('useAuth handles signOut', async () => {
   expect(signOut).toHaveBeenCalled();
 
   mutationConfigs[0].onSuccess?.();
-  expect(queryClient.setQueryData).toHaveBeenCalledWith(['auth', 'session'], null);
+  expect(queryClient.setQueryData).toHaveBeenCalledWith(
+    ["auth", "session"],
+    null,
+  );
 });
 
-test('useAuth wires fetchSession as the session query function', () => {
+test("useAuth wires fetchSession as the session query function", () => {
   (useQuery as any).mockImplementation(({ queryKey, queryFn }: any) => {
-    if (queryKey.includes('session')) {
+    if (queryKey.includes("session")) {
       expect(queryFn).toBe(fetchSession);
     }
     return { data: null, isLoading: false, isFetching: false };

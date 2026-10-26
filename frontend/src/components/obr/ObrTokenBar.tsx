@@ -63,15 +63,6 @@ export function ObrTokenBar({
               ),
           "SUCCESS",
         );
-        if (!result.metadataSynced) {
-          await OBR.notification.show(
-            t(
-              "obr.player.bindMetadataWarning",
-              "Saved binding, but the token label did not update.",
-            ),
-            "WARNING",
-          );
-        }
         setSelection(
           await getSelectedTokenBindingState(scvmrackObrExtension, OBR),
         );

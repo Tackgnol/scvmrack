@@ -18,6 +18,7 @@
   },
   "obr": {
     "auth": {
+      "retrySignOut": "Ponów wylogowanie",
       "codeMismatch": "Kod nie pasuje. Wpisz kod wyświetlony w rozszerzeniu.",
       "cancelled": "Anulowano logowanie. Wróć do Owlbear.",
       "transferUnavailable": "Ten odnośnik jest niedostępny. Otwórz go ponownie z Owlbear.",

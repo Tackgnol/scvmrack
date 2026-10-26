@@ -3,6 +3,7 @@ import {
   expect,
   createTestUser,
   createSeededCharacter,
+  prepareActorContext,
 } from '../../fixtures.js';
 
 test('the callback waits for explicit approval before the receiving browser can redeem the account', async ({
@@ -77,6 +78,87 @@ test('the callback waits for explicit approval before the receiving browser can 
     await receiving.close();
   }
 });
+
+for (const failure of [
+  'identity mismatch',
+  'truncated redemption',
+  'failed revocation',
+]) {
+  test(`a receiving ${failure} stays signed out locally instead of navigating`, async ({
+    browser,
+  }) => {
+    const actor = await createTestUser('Mismatch receiver');
+    const scvm = await createSeededCharacter(actor.userId, {
+      name: 'Protected scvm',
+    });
+    const context = await browser.newContext();
+    await prepareActorContext(context, actor.sessionCookie);
+    try {
+      const opener = await context.newPage();
+      await opener.goto(`/faq?contractCharacter=${scvm.id}`);
+      await opener.addScriptTag({
+        type: 'module',
+        url: '/test/contracts/mismatchedTransfer.ts',
+      });
+      const opening = opener.waitForEvent('popup');
+      await opener
+        .getByRole('button', { name: 'Send mismatched identity' })
+        .click();
+      const receiving = await opening;
+      if (failure === 'truncated redemption') {
+        await receiving.route(
+          '**/api/auth/obr-exchange/redeem',
+          async (route) => {
+            const response = await route.fetch();
+            await route.fulfill({ response, body: '{' });
+          }
+        );
+      }
+      if (failure === 'failed revocation') {
+        let signOuts = 0;
+        await receiving.route('**/api/auth/sign-out', async (route) => {
+          signOuts++;
+          if (signOuts === 2) {
+            await route.fulfill({ status: 503, body: '{}' });
+          } else {
+            await route.continue();
+          }
+        });
+      }
+      await receiving
+        .getByRole('button', {
+          name: 'Continue as Mismatched identity',
+          exact: true,
+        })
+        .click();
+      await expect(receiving.getByRole('alert')).toContainText(
+        'Open it again from Owlbear'
+      );
+      expect(new URL(receiving.url()).pathname).toBe('/obr-open');
+      expect(
+        await receiving.evaluate(() =>
+          sessionStorage.getItem('scvm.tabSession')
+        )
+      ).toBeNull();
+      if (failure === 'failed revocation') {
+        await expect(
+          receiving.getByRole('button', { name: 'Retry sign-out' })
+        ).toBeVisible();
+        await receiving.reload();
+        await receiving.getByRole('button', { name: 'Retry sign-out' }).click();
+        await expect(
+          receiving.getByRole('button', { name: 'Retry sign-out' })
+        ).toHaveCount(0);
+      }
+      const session = await (
+        await receiving.request.get('/api/auth/get-session')
+      ).json();
+      expect(session?.user ?? null).toBeNull();
+    } finally {
+      await context.close();
+    }
+  });
+}
 
 test('a receiving tab asks before replacing a different first-party account', async ({
   page,

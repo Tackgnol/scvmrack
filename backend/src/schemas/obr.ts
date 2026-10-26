@@ -33,6 +33,33 @@ export const RoomBindingBodySchema = {
   },
 } as const;
 
+export const RoomCardsQuerySchema = {
+  type: 'object',
+  properties: {
+    ids: { type: 'string', maxLength: 2000 },
+    locale: { type: 'string', enum: ['en', 'pl'] },
+  },
+} as const;
+
+export const RoomRemovalBodySchema = {
+  type: 'object',
+  required: ['characterId', 'operationId'],
+  additionalProperties: false,
+  properties: {
+    characterId: { type: 'string', format: 'uuid' },
+    operationId: { type: 'string', format: 'uuid' },
+  },
+} as const;
+
+export const RoomCleanupParamsSchema = {
+  ...RoomParamsSchema,
+  required: ['roomId', 'id'],
+  properties: {
+    ...RoomParamsSchema.properties,
+    id: { type: 'string', format: 'uuid' },
+  },
+} as const;
+
 export const RoomParticipationSchema = {
   type: 'object',
   required: [

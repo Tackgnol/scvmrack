@@ -3,7 +3,7 @@ import { characterRepository } from '../repositories/character-repository.js';
 import { isValidUUID } from '../utils.js';
 import { ownsCharacter, type AppSession } from './session.js';
 
-/** Character owners and the signed-in owner of this room's attached party may manage bindings. */
+/** Keep requested characters bound to this room or belonging to its attached party. */
 export async function filterVisibleCharacterIdsInObrRoom(
   ids: string[],
   roomId: string
@@ -42,7 +42,10 @@ export async function isCharacterVisibleInObrRoom(
   characterId: string,
   roomId: string
 ): Promise<boolean> {
-  const visible = await filterVisibleCharacterIdsInObrRoom([characterId], roomId);
+  const visible = await filterVisibleCharacterIdsInObrRoom(
+    [characterId],
+    roomId
+  );
   return visible.length > 0;
 }
 

@@ -1,15 +1,20 @@
 import type { FastifyPluginAsync } from 'fastify';
 import type { JsonSchemaToTsProvider } from '@fastify/type-provider-json-schema-to-ts';
 import { sendServiceError } from '../../errors.js';
-import { CharacterSchema, ErrorSchema, LocaleQuerySchema,
+import {
+  CharacterSchema,
+  ErrorSchema,
+  LocaleQuerySchema,
 } from '../../schemas/character.js';
 import { ObrPlayerParamsSchema } from '../../schemas/obr.js';
 import { createObrAssignmentService } from '../../services/obr-assignment-service.js';
 import { limitMax } from '../../lib/rate-limits.js';
 import participation from './participation.js';
+import bindings from './bindings.js';
 
 const obrRoutes: FastifyPluginAsync = async (fastify) => {
   await fastify.register(participation);
+  await fastify.register(bindings);
   const app = fastify.withTypeProvider<JsonSchemaToTsProvider>();
 
   app.post(
@@ -36,7 +41,9 @@ const obrRoutes: FastifyPluginAsync = async (fastify) => {
       },
     },
     async (request, reply) => {
-      const result = await createObrAssignmentService(request.log).claimAssignedPlayerCharacter({
+      const result = await createObrAssignmentService(
+        request.log
+      ).claimAssignedPlayerCharacter({
         session: request.appSession,
         roomId: request.params.roomId,
         playerId: request.params.playerId,

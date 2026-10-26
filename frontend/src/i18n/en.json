@@ -18,6 +18,7 @@
   },
   "obr": {
     "auth": {
+      "retrySignOut": "Retry sign-out",
       "codeMismatch": "That code did not match. Enter the code shown in your extension.",
       "cancelled": "Sign-in cancelled. Return to Owlbear.",
       "transferUnavailable": "This opening link is unavailable. Open it again from Owlbear.",

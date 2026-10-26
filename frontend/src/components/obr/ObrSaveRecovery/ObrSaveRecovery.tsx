@@ -1,8 +1,9 @@
-import { Alert, Button } from '@mui/material';
-import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { useCharacter } from '@/CharacterContext/CharacterContext';
-import { useObrSession } from '@/obr/useObrSession';
+import { ObrSignInCode } from "@/components/molecules/ObrSignInCode/ObrSignInCode";
+import { Alert, Button } from "@mui/material";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { useCharacter } from "@/CharacterContext/CharacterContext";
+import { useObrSession } from "@/obr/useObrSession";
 
 export function ObrSaveRecovery() {
   const { isSessionExpired, saveFailed, retrySave } = useCharacter();
@@ -29,17 +30,18 @@ export function ObrSaveRecovery() {
     return null;
   }
   return (
-    <Alert severity="warning" action={
-      <Button color="inherit" disabled={busy} onClick={() => void recover()}>
-        {t(isSessionExpired ? 'errors.signInAgain' : 'actions.retry')}
-      </Button>
-    }>
-      {failed ? t('obr.player.signInFailed') : t(isSessionExpired ? 'errors.unauthorized' : 'status.unsavedRetry')}
-      {signInProgress?.code && (
-        <span role="status">
-          {t("obr.auth.comparison", { code: signInProgress.code })}
-        </span>
-      )}
+    <Alert
+      severity="warning"
+      action={
+        <Button color="inherit" disabled={busy} onClick={() => void recover()}>
+          {t(isSessionExpired ? "errors.signInAgain" : "actions.retry")}
+        </Button>
+      }
+    >
+      {failed
+        ? t("obr.player.signInFailed")
+        : t(isSessionExpired ? "errors.unauthorized" : "status.unsavedRetry")}
+      <ObrSignInCode code={signInProgress?.code} />
     </Alert>
   );
 }

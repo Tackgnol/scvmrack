@@ -68,7 +68,10 @@ function roomOps(tx: Prisma.TransactionClient) {
     findRoomParty(roomId: string) {
       return tx.party.findUnique({
         where: { obrRoomId: roomId },
-        select: { id: true, ownerUserId: true, _count: { select: { members: true } },
+        select: {
+          id: true,
+          ownerUserId: true,
+          _count: { select: { members: true } },
         },
       });
     },
@@ -191,7 +194,9 @@ export const partyRepository = {
   },
 
   /** Each class version's number and the newest version number of its lineage. */
-  async findClassVersions(classIds: number[]): Promise<Map<number, { version: number; latestVersion: number }>> {
+  async findClassVersions(
+    classIds: number[]
+  ): Promise<Map<number, { version: number; latestVersion: number }>> {
     if (classIds.length === 0) {
       return new Map();
     }
@@ -204,9 +209,15 @@ export const partyRepository = {
       where: { lineageId: { in: rows.map((row) => row.lineageId) } },
       _max: { version: true },
     });
-    const latestByLineage = new Map(latest.map((row) => [row.lineageId, row._max.version ?? 0]));
+    const latestByLineage = new Map(
+      latest.map((row) => [row.lineageId, row._max.version ?? 0])
+    );
     return new Map(
-      rows.map((row) => [row.id, { version: row.version, latestVersion: latestByLineage.get(row.lineageId) ?? row.version,
+      rows.map((row) => [
+        row.id,
+        {
+          version: row.version,
+          latestVersion: latestByLineage.get(row.lineageId) ?? row.version,
         },
       ])
     );

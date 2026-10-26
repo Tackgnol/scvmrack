@@ -2,6 +2,11 @@ import { act, renderHook } from "@testing-library/react";
 import { beforeEach, expect, test, vi } from "vitest";
 import { useQueryClient } from "@tanstack/react-query";
 import {
+  quarantineTabSession,
+  confirmTabSession,
+  setTabSession,
+} from "@/utils/tabSession";
+import {
   partyDetailQueryKey,
   partyMemberDetailQueryKey,
   partyRosterQueryKey,
@@ -48,8 +53,20 @@ const emit = (event: string, data: unknown) =>
   });
 
 beforeEach(() => {
+  confirmTabSession();
+  setTabSession(null);
   calls.length = 0;
   (useQueryClient as any).mockReturnValue({ invalidateQueries: vi.fn() });
+});
+
+test("quarantining a cookie-only session aborts its stream even when the bearer stays null", async () => {
+  const { result } = renderHook(() => usePartyStream("party-1"));
+  expect(calls).toHaveLength(1);
+  await act(async () => quarantineTabSession());
+  expect(calls[0].options.signal.aborted).toBe(true);
+  expect(result.current.status).toBe("idle");
+  expect(calls).toHaveLength(1);
+  await act(async () => confirmTabSession());
 });
 
 test("does not connect when disabled", () => {

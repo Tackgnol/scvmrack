@@ -1,4 +1,8 @@
-import { useCallback, useEffect, useRef, useState,
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
   useSyncExternalStore,
 } from "react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -7,11 +11,13 @@ import {
   fetchEventSource,
 } from "@microsoft/fetch-event-source";
 import { partyKeys } from "@/api/party";
+import { obrKeys } from "@/api/obrKeys";
 import { embeddedSessionHeaders } from "@/utils/embed";
 import {
   authHeaders,
   subscribeTabSession,
   tabSessionSnapshot,
+  isTabSessionUnverified,
 } from "@/utils/tabSession";
 
 export type PartyStreamEvent =
@@ -88,6 +94,11 @@ export function usePartyStream(
     tabSessionSnapshot,
     () => null,
   );
+  const unverifiedSession = useSyncExternalStore(
+    subscribeTabSession,
+    isTabSessionUnverified,
+    () => false,
+  );
   const queryClient = useQueryClient();
   const { enabled = true, onClosed } = options;
   const onClosedRef = useRef(onClosed);
@@ -114,7 +125,7 @@ export function usePartyStream(
   }, []);
 
   useEffect(() => {
-    if (!enabled || !partyId) {
+    if (!enabled || !partyId || unverifiedSession) {
       setStatus("idle");
       setPresenceByCharacter({});
       return;
@@ -129,7 +140,7 @@ export function usePartyStream(
 
     const invalidateRoster = () => {
       void queryClient.invalidateQueries({
-        queryKey: ["obr", "participation"],
+        queryKey: obrKeys.participations(),
       });
       void queryClient.invalidateQueries({ queryKey: partyRosterQueryKey() });
       void queryClient.invalidateQueries({
@@ -265,7 +276,7 @@ export function usePartyStream(
     return () => {
       controller.abort();
     };
-  }, [enabled, partyId, queryClient, tabSession]);
+  }, [enabled, partyId, queryClient, tabSession, unverifiedSession]);
 
   return {
     status,

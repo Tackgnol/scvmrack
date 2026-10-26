@@ -1,5 +1,7 @@
 # Frontend — Feature Summary
 
+- The app should no longer keep an unverified account signed in when an Owlbear receiving identity check fails. It revokes the received session and clears its stored bearer before showing the failure. (RPG-323)
+
 - The app should no longer bring a removed scvm back when Owlbear scene cleanup fails. It shows pending cleanup, retries after reopening, and preserves a deliberate rejoin. (RPG-336)
 - The app should no longer hide a different signed-in account when an Owlbear opening tab inherits iframe storage. Opening a full sheet, forge or class rules uses a receiving-tab handshake and asks before switching accounts. (RPG-323)
 

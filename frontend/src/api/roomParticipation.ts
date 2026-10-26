@@ -1,12 +1,12 @@
 import { client } from "@/api";
 import { unwrapApiResult } from "@/api/clientResult";
 import type { ApiOk } from "@/api";
+import { obrKeys } from "./obrKeys";
 
 export type RoomParticipation = ApiOk<"/api/obr/rooms/{roomId}/participation">;
 export type SceneCleanup = RoomParticipation["cleanup"][number];
 
-export const participationKey = (roomId: string) =>
-  ["obr", "participation", roomId] as const;
+export const participationKey = obrKeys.participation;
 
 export function fetchRoomParticipation(
   roomId: string,

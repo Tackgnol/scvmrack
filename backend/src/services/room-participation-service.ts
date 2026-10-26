@@ -6,6 +6,7 @@ import {
 import { fail, ok, unexpected, type ServiceLogger } from './result.js';
 import {
   gmUserId,
+  hasObrWriteSession,
   ownsCharacter,
   sessionUserId,
   type AppSession,
@@ -15,7 +16,10 @@ import { getCharacterFull } from '../lib/get-character-full.js';
 import { toCharacterCard } from '../lib/character-card.js';
 import { isValidUUID } from '../utils.js';
 
-async function projection(ops: RoomParticipationOps, session: AppSession) {
+async function readRoomParticipation(
+  ops: RoomParticipationOps,
+  session: AppSession
+) {
   const party = await ops.getParty();
   const { players, tokens } = await ops.getBindings();
   const canManage = Boolean(party && gmUserId(session) === party.ownerUserId);
@@ -48,7 +52,7 @@ export function createRoomParticipationService(
       try {
         const snapshot = await roomParticipationRepository.transaction(
           roomId,
-          (ops) => projection(ops, null)
+          (ops) => readRoomParticipation(ops, null)
         );
         const visible = new Set([
           ...snapshot.memberIds,
@@ -79,7 +83,7 @@ export function createRoomParticipationService(
         );
       }
     },
-    async bind(input: {
+    async updateBinding(input: {
       roomId: string;
       kind: 'player' | 'token';
       id: string;
@@ -92,12 +96,41 @@ export function createRoomParticipationService(
         return await roomParticipationRepository.transaction(
           input.roomId,
           async (ops) => {
-            const before = await projection(ops, input.session);
-            const existing =
-              input.kind === 'token'
-                ? before.tokens.find((row) => row.tokenId === input.id)
-                : before.players.find((row) => row.playerId === input.id);
-            const characterId = input.characterId ?? existing?.characterId;
+            const before = await readRoomParticipation(ops, input.session);
+            const binding = {
+              token: {
+                existing: before.tokens.find((row) => row.tokenId === input.id),
+                set: async (characterId: string) => {
+                  const row = await ops.setToken({ ...input, characterId });
+                  return {
+                    roomId: input.roomId,
+                    tokenId: row.obrTokenId,
+                    playerId: row.assignedPlayerId,
+                    characterId: row.characterId,
+                    generation: row.generation,
+                  };
+                },
+                clear: () => ops.clearToken(input.id),
+              },
+              player: {
+                existing: before.players.find(
+                  (row) => row.playerId === input.id
+                ),
+                set: async (characterId: string) => {
+                  const row = await ops.setPlayer({ ...input, characterId });
+                  return {
+                    roomId: input.roomId,
+                    playerId: row.obrPlayerId,
+                    connectionId: row.obrConnectionId,
+                    characterId: row.characterId,
+                    assignedByPlayerId: row.assignedByPlayerId,
+                  };
+                },
+                clear: () => ops.clearPlayer(input.id),
+              },
+            }[input.kind];
+            const characterId =
+              input.characterId ?? binding.existing?.characterId;
             if (!characterId) {
               return ok(null);
             }
@@ -109,37 +142,16 @@ export function createRoomParticipationService(
             if (!owns && !manages) {
               return fail(
                 apiError(
-                  401,
+                  hasObrWriteSession(input.session) ? 403 : 401,
                   'BINDING_ACCESS_DENIED',
                   'You cannot manage this room binding'
                 )
               );
             }
             if (input.characterId) {
-              if (input.kind === 'token') {
-                const row = await ops.setToken({ ...input, characterId });
-                return ok({
-                  roomId: input.roomId,
-                  tokenId: row.obrTokenId,
-                  playerId: row.assignedPlayerId,
-                  characterId: row.characterId,
-                  generation: row.generation,
-                });
-              }
-              const row = await ops.setPlayer({ ...input, characterId });
-              return ok({
-                roomId: input.roomId,
-                playerId: row.obrPlayerId,
-                connectionId: row.obrConnectionId,
-                characterId: row.characterId,
-                assignedByPlayerId: row.assignedByPlayerId,
-              });
+              return ok(await binding.set(characterId));
             }
-            if (input.kind === 'token') {
-              await ops.clearToken(input.id);
-            } else {
-              await ops.clearPlayer(input.id);
-            }
+            await binding.clear();
             return ok(null);
           }
         );
@@ -158,7 +170,7 @@ export function createRoomParticipationService(
       try {
         return ok(
           await roomParticipationRepository.transaction(roomId, (ops) =>
-            projection(ops, session)
+            readRoomParticipation(ops, session)
           )
         );
       } catch (error) {
@@ -204,7 +216,7 @@ export function createRoomParticipationService(
                 );
               }
               return ok({
-                snapshot: await projection(ops, input.session),
+                snapshot: await readRoomParticipation(ops, input.session),
                 changed: false,
               });
             }
@@ -270,7 +282,7 @@ export function createRoomParticipationService(
             }
             await ops.removeBindings(input.characterId);
             return ok({
-              snapshot: await projection(ops, input.session),
+              snapshot: await readRoomParticipation(ops, input.session),
               changed: true,
             });
           }
@@ -307,7 +319,7 @@ export function createRoomParticipationService(
               return fail(forbidden());
             }
             await ops.acknowledgeCleanup(id);
-            return ok(await projection(ops, session));
+            return ok(await readRoomParticipation(ops, session));
           }
         );
       } catch (error) {

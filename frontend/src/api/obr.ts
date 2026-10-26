@@ -23,7 +23,11 @@ export type ObrCard = {
   maxOmens?: number;
   silver?: number;
   equippedWeapons?: { name?: string | null; dice?: number[] }[];
-  equippedArmor?: { name?: string | null; dice?: number[]; maxTier?: number; currentTier?: number;
+  equippedArmor?: {
+    name?: string | null;
+    dice?: number[];
+    maxTier?: number;
+    currentTier?: number;
   };
   equipment?: { name?: string; description?: string }[];
   computedModifiers?: Record<string, unknown>[];
@@ -57,10 +61,8 @@ const obrClient = client as unknown as UntypedApiClient;
 
 export const obrKeys = {
   bindings: (roomId: string) => ["obr", "rooms", roomId, "bindings"] as const,
-  cards: (
-    roomId: string,
-    ids: string[],
-    locale?: ObrLocale) => ["obr", "cards", roomId, ids, locale] as const,
+  cards: (roomId: string, ids: string[], locale?: ObrLocale) =>
+    ["obr", "cards", roomId, ids, locale] as const,
 };
 
 // Compact cards for the OBR roster/peek. Gated by the (roomId, id) pair: both
@@ -96,7 +98,8 @@ export async function bindObrPlayerCharacter(input: {
   characterId: string;
   connectionId?: string | null;
 }): Promise<ObrPlayerCharacterBinding> {
-  return unwrapApiResult(await obrClient.PUT(
+  return unwrapApiResult(
+    await obrClient.PUT(
       "/api/obr/rooms/{roomId}/players/{playerId}/character",
       {
         params: {
@@ -135,17 +138,16 @@ export async function bindObrTokenCharacter(input: {
   characterId: string;
   playerId?: string | null;
 }): Promise<ObrTokenCharacterBinding & { generation: string }> {
-  return unwrapApiResult(await obrClient.PUT(
-      "/api/obr/rooms/{roomId}/tokens/{tokenId}/character",
-      {
-        params: {
-          path: { roomId: input.roomId, tokenId: input.tokenId },
-        },
-        body: {
-          characterId: input.characterId,
-          playerId: input.playerId ?? undefined,
-        },
-      }),
+  return unwrapApiResult(
+    await obrClient.PUT("/api/obr/rooms/{roomId}/tokens/{tokenId}/character", {
+      params: {
+        path: { roomId: input.roomId, tokenId: input.tokenId },
+      },
+      body: {
+        characterId: input.characterId,
+        playerId: input.playerId ?? undefined,
+      },
+    }),
     "Failed to bind Owlbear token to scvm",
   );
 }

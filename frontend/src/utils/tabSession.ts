@@ -1,5 +1,44 @@
 export const TAB_SESSION_KEY = "scvm.tabSession";
 let receivingSessionEstablished = false;
+const UNVERIFIED_SESSION_KEY = "scvm.unverifiedSession";
+let unverifiedSession = false;
+
+export function isTabSessionUnverified(): boolean {
+  try {
+    return (
+      unverifiedSession ||
+      sessionStorage.getItem(UNVERIFIED_SESSION_KEY) === "1"
+    );
+  } catch {
+    return unverifiedSession;
+  }
+}
+
+export function quarantineTabSession(): void {
+  unverifiedSession = true;
+  try {
+    sessionStorage.setItem(UNVERIFIED_SESSION_KEY, "1");
+  } catch {
+    /* Memory keeps this document blocked when storage is unavailable. */
+  }
+  setTabSession(null);
+}
+
+export function confirmTabSession(): void {
+  unverifiedSession = false;
+  try {
+    sessionStorage.removeItem(UNVERIFIED_SESSION_KEY);
+  } catch {
+    /* Storage may be disabled by the host. */
+  }
+  window.dispatchEvent(new Event(TAB_SESSION_KEY));
+}
+
+export function requireVerifiedSession(): void {
+  if (isTabSessionUnverified()) {
+    throw new Error("Retry sign-out before using this unverified session");
+  }
+}
 
 export function tabSessionSnapshot(): string | null {
   try {

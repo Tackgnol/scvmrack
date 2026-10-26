@@ -1,5 +1,7 @@
 # Backend — Feature Summary
 
+- The app should no longer prompt a signed-in user to authenticate again when a room binding is forbidden; it returns the correct access-denied response. (RPG-336)
+
 - The app should no longer leave a newly joined scvm in an Owlbear party when the GM removes it from a stale roster. Room removal, normal kick and self-leave clear membership and active bindings together. (RPG-336)
 - The app should no longer transfer an account when someone opens a crafted Owlbear sign-in link. Registered handoffs require explicit approval of the displayed account and can be redeemed only once by the initiating extension. (RPG-323)
 
