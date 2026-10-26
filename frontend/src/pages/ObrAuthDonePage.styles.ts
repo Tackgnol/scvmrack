@@ -7,6 +7,13 @@ export const Wrapper = styled(Box)({
     alignItems: 'center',
     justifyContent: 'center',
     padding: 24,
+    color: morkBorgColors.black,
+    '& .MuiInputLabel-root.MuiInputLabel-shrink': {
+        color: morkBorgColors.black,
+    },
+    '& .MuiButton-text': {
+        color: morkBorgColors.black,
+    },
 });
 
 export const Message = styled(Typography)({
