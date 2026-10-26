@@ -42,7 +42,10 @@ export function ObrGmSession() {
       }
     >
       {error ?? t("obr.roster.signInForInvite")}
-      <ObrSignInCode code={signInProgress?.code} onCancel={cancelSignIn} />
+      <ObrSignInCode
+        code={signInProgress?.code}
+        onCancel={signInProgress ? cancelSignIn : undefined}
+      />
     </Alert>
   );
 }

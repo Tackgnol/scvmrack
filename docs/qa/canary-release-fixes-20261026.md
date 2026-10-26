@@ -11,6 +11,18 @@ Branch: `codex/canary-release-fixes`, based on `dev`. Scope: RPG-337, RPG-338, R
 
 The 12 native browser protocol checks cover Chromium, Firefox and WebKit using real shared-auth HTTP, a memory auth adapter, the installed Sentry SDK, the protected tunnel, and local provider/GlitchTip fixtures. The isolated popup actually reports a closed handle while its page stays interactive; approval follows several pending polls. See [protocol suite](../../backend/tests/protocol/README.md). Real PostgreSQL integration tests separately cover ownership transfer and binding contracts.
 
+Review caught and corrected a missing Cancel control while registration is still pending. The composed GM test now cancels both registration and code waiting before a successful retry, in both languages.
+
+## Verification
+
+- Shared-auth: build and 129 tests pass. Candidate archive SHA-1: `101aba655ca1974275e1155d23035fda877d798f`. It is installed locally from the archive; publication remains gated. Companion: [shared-auth PR #9](https://github.com/Tackgnol/rpgtools-shared-auth/pull/9).
+- Backend: all 463 unit tests and 88 PostgreSQL/HTTP integration tests pass.
+- Frontend: all 539 unit tests and 581 browser tests pass; 28 affected component tests pass again after the registration-cancellation review correction. Type checks, lint and production build pass. Lint retains 19 existing warnings; React Doctor remains 64.
+- Browser protocols: 12 checks pass across Chromium, Firefox and WebKit, without retries. Fixtures use the installed candidate; the compiled popup helper matches the archive.
+- Standards review: no actionable findings. Spec review: the registration-cancellation finding was corrected; final recheck follows the correction.
+
+The first integration attempt ran before the restarted API was ready; the normal health gate preceded the successful full run. An existing E2E runner image contained stale tests; it was replaced with an image built from the committed tracked test sources. Those orchestration attempts are retained in local logs and are not counted as candidate passes.
+
 ## CATS contract verification
 
 Replayed only the five changed GET endpoints against the isolated local API and database: 22 OpenAPI 3.1 cases plus six OpenAPI 3.0 numeric boundary cases. Raw results: 18 successes, 10 errors, zero warnings. The 10 errors are expected fuzzer-status assumptions: optional invalid values correctly return 400, invented invite context returns 410, and synthetic class resources return 404. All 28 actual response bodies were independently validated against their declared status schema: zero undocumented statuses, zero invalid bodies and zero 5xx responses. The numeric pass was six successes.

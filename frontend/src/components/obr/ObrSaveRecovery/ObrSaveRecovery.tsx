@@ -41,7 +41,10 @@ export function ObrSaveRecovery() {
       {failed
         ? t("obr.player.signInFailed")
         : t(isSessionExpired ? "errors.unauthorized" : "status.unsavedRetry")}
-      <ObrSignInCode code={signInProgress?.code} onCancel={cancelSignIn} />
+      <ObrSignInCode
+        code={signInProgress?.code}
+        onCancel={signInProgress ? cancelSignIn : undefined}
+      />
     </Alert>
   );
 }

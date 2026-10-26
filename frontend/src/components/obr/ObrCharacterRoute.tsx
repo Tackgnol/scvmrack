@@ -434,7 +434,10 @@ function ObrPlayerCharacterRoute() {
                 <Button fullWidth variant="outlined" onClick={handleSignIn}>
                   {t("obr.player.signIn", "Login")}
                 </Button>
-                <ObrSignInCode code={signInProgress?.code} onCancel={cancelSignIn} />
+                <ObrSignInCode
+                  code={signInProgress?.code}
+                  onCancel={signInProgress ? cancelSignIn : undefined}
+                />
                 {signInError && <ErrorText>{signInError}</ErrorText>}
                 {forgeError && <ErrorText>{forgeError}</ErrorText>}
                 {rollError && <ErrorText>{rollError}</ErrorText>}

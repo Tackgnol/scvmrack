@@ -137,6 +137,16 @@ it.each(["en", "pl"])(
     vi.mocked(signInViaObrPopup)
       .mockRejectedValueOnce(new Error("cancelled"))
       .mockImplementationOnce(async (_client, options) => {
+        options?.onProgress?.({ state: "registering" });
+        await new Promise<void>((_resolve, reject) => {
+          options?.signal?.addEventListener(
+            "abort",
+            () => reject(new Error("handoff-cancelled")),
+            { once: true },
+          );
+        });
+      })
+      .mockImplementationOnce(async (_client, options) => {
         options?.onProgress?.({ state: "awaiting-approval", code: "ABC123" });
         await new Promise<void>((_resolve, reject) => {
           options?.signal?.addEventListener(
@@ -195,6 +205,22 @@ it.each(["en", "pl"])(
         ),
       ),
     ).toBe(true);
+    await userEvent.click(signIn);
+    await expect
+      .element(
+        page.getByRole("button", {
+          name: i18n.t("actions.cancel"),
+          exact: true,
+        }),
+      )
+      .toBeVisible();
+    await expect
+      .element(page.getByRole("alert").getByRole("status"))
+      .not.toBeInTheDocument();
+    await userEvent.click(
+      page.getByRole("button", { name: i18n.t("actions.cancel"), exact: true }),
+    );
+    await expect.element(signIn).toBeEnabled();
     await userEvent.click(signIn);
     await expect
       .element(page.getByRole("alert").getByRole("status"))
