@@ -3,36 +3,42 @@ import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { morkBorgColors } from '@/theme/morkBorgTheme';
 
-const Bar = styled('footer')({
-  display: 'flex',
-  flexWrap: 'wrap',
-  justifyContent: 'center',
+const Bar = styled('footer')(({ theme }) => ({
+  display: 'grid',
+  gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
   alignItems: 'center',
-  gap: '0 20px',
-  padding: '12px 16px 20px',
-  marginTop: 'auto',
-});
+  gap: theme.spacing(0.5, 1),
+  padding: theme.spacing(2, 0),
+  marginTop: theme.spacing(3),
+  borderTop: `2px solid ${morkBorgColors.black}`,
+  [theme.breakpoints.up('sm')]: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: theme.spacing(1, 3),
+  },
+}));
 
 const FooterLink = styled(Link)({
   minHeight: 44,
   display: 'inline-flex',
   alignItems: 'center',
-  padding: '4px 14px',
+  justifyContent: 'center',
+  padding: '4px 8px',
   color: morkBorgColors.black,
   fontFamily: '"Antonio", sans-serif',
-  fontSize: '0.72rem',
-  letterSpacing: '0.16em',
+  fontSize: '0.8rem',
+  letterSpacing: '0.12em',
   textTransform: 'uppercase',
   textDecoration: 'none',
-  border: `1px solid rgba(10, 10, 10, 0.45)`,
-  transition: 'border-color 120ms ease-out, color 120ms ease-out',
-  '&:hover': {
-    color: morkBorgColors.pink,
-    borderColor: morkBorgColors.pink,
+  textAlign: 'center',
+  textUnderlineOffset: '6px',
+  textDecorationThickness: '2px',
+  '&:last-of-type': {
+    gridColumn: '1 / -1',
   },
-  '&:focus-visible': {
-    outline: `2px solid ${morkBorgColors.pink}`,
-    outlineOffset: '2px',
+  '&:hover': {
+    textDecorationLine: 'underline',
   },
 });
 
