@@ -6,7 +6,9 @@ import {
   RoomBindingParamsSchema,
   RoomBindingBodySchema,
   RoomCardsQuerySchema,
+  RoomBindingsResponseSchema,
 } from '../../schemas/obr.js';
+import { ErrorSchema } from '../../schemas/equipment.js';
 import { roomRouteConfig as config } from './config.js';
 
 const bindings: FastifyPluginAsync = async (fastify) => {
@@ -37,7 +39,13 @@ const bindings: FastifyPluginAsync = async (fastify) => {
 
   fastify.get<{ Params: { roomId: string } }>(
     '/rooms/:roomId/bindings',
-    { config, schema: { params: RoomParamsSchema } },
+    {
+      config,
+      schema: {
+        params: RoomParamsSchema,
+        response: { 200: RoomBindingsResponseSchema, 400: ErrorSchema, 500: ErrorSchema },
+      },
+    },
     async (request, reply) => {
       const result = await createRoomParticipationService(request.log).read(
         request.params.roomId,

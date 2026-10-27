@@ -26,6 +26,7 @@ npm run build:ts         # Compile TypeScript
 npm test                 # Fast unit loop: backend unit tests + frontend unit tests
 npm run test:integration # Backend integration suite in Docker
 npm run test:browser     # Frontend browser suite
+npm run test:protocol    # Real shared-auth/monitoring HTTP in Chromium, Firefox and WebKit
 npm run test:e2e         # Whole user flow
 npm run test:all         # Reproduce CI before pushing to master
 ```
@@ -451,4 +452,4 @@ Current choices that differ from the baseline. They are legacy, not precedent: l
 - **STD-003 (UI primitives):** the UI is MUI with a custom Mörk Borg theme, not an unstyled library such as React Aria.
 - **STD-003 / STD-004 (structure):** `frontend/src/components/` is flat and not organised by atomic level or per-component folders.
 - **STD-007 (validation):** backend request/response validation uses Fastify JSON schemas (`backend/src/schemas/`), not Zod.
-- **STD-009:** the measured React Doctor baseline is **62** (2026-10-14, after the PR #31 review fixes), using `npm run doctor -- --score --yes --no-parallel` in `frontend/`. Preserve or improve this score; the target remains 80 or higher.
+- **STD-009:** the measured React Doctor baseline is **64** (2026-10-26, full scan using `npm run doctor` in `frontend/`). Preserve or improve this score; the target remains 80 or higher.

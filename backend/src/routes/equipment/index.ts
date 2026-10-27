@@ -1,6 +1,6 @@
 import type { FastifyPluginAsync } from 'fastify';
 import type { JsonSchemaToTsProvider } from '@fastify/type-provider-json-schema-to-ts';
-import { ErrorSchema } from '../../schemas/equipment.js';
+import { CatalogItemResponseSchema, ErrorSchema } from '../../schemas/equipment.js';
 import { sendServiceError } from '../../errors.js';
 import { createEquipmentService } from '../../services/equipment-service.js';
 import { limitMax } from '../../lib/rate-limits.js';
@@ -102,6 +102,7 @@ const equipment: FastifyPluginAsync = async (fastify) => {
           },
         },
         response: {
+          200: CatalogItemResponseSchema,
           400: ErrorSchema,
           404: ErrorSchema,
           500: ErrorSchema,

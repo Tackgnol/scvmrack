@@ -33,10 +33,10 @@ Feature: Approve an Owlbear account handoff
     Then the extension confirms their account and keeps their scvm
 
     Examples:
-      | interruption                     |
-      | cancel the handoff                |
-      | let the handoff expire            |
-      | close the popup without approval  |
+      | interruption                               |
+      | cancel the handoff                         |
+      | let the handoff expire                     |
+      | close the popup and cancel in the extension |
 
   Scenario: Redeem an approved handoff only once
     Given a player has explicitly approved a registered handoff
@@ -55,3 +55,19 @@ Feature: Approve an Owlbear account handoff
     When they open the full Scvmrack sheet
     Then the sheet opens the same scvm under the intended account
     And another browser cannot reuse that opening link to acquire the account
+
+  Scenario: Complete sign-in when the browser loses contact with the approval window
+    Given a guest has an owned scvm open in the extension
+    When they start sign-in and authenticate with Logto
+    And the browser reports the approval window closed while its page remains open
+    Then the extension keeps waiting for explicit approval and offers cancellation
+    When they approve the handoff with the matching code
+    Then the extension confirms the receiving account and keeps the scvm editable
+
+  Scenario: Finish approved sign-in once account transfer has started
+    Given a guest has an owned scvm open in the extension
+    When they approve sign-in with the matching comparison code
+    And the extension starts completing the account transfer
+    Then cancellation is no longer offered
+    When the extension confirms the receiving account
+    Then it shows the player signed in and keeps their scvm editable

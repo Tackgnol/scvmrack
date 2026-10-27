@@ -187,6 +187,7 @@ const characters: FastifyPluginAsync = async (fastify): Promise<void> => {
                 querystring: InviteLocaleQuerySchema,
                 response: {
                     200: ClassListResponseSchema,
+                    400: ErrorSchema,
                     410: ErrorSchema,
                     500: ErrorSchema,
                 },

@@ -18,6 +18,19 @@ const staleSearchWeapon = {
   tags: ['weapon', 'melee'],
   dice: [6],
   value: 20,
+  amountMin: null,
+  amountMax: null,
+  mod: null,
+  roll: null,
+  exp: false,
+  effectDie: null,
+  effect: null,
+  damageModifier: 0,
+  modifiers: [],
+  ammoType: null,
+  defaultAmount: null,
+  classId: null,
+  position: null,
 };
 
 const prismaMock = {

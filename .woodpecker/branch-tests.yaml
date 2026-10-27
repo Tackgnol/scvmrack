@@ -53,6 +53,7 @@ steps:
 
         npm --prefix frontend ci --no-audit --no-fund
         npm --prefix frontend run test:unit
+        npm --prefix backend run test:protocol
 
   browser-test-chromium:
     image: mcr.microsoft.com/playwright:v1.60.0-jammy
