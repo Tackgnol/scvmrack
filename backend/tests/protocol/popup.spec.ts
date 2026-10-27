@@ -1,4 +1,13 @@
 import { test, expect } from './fixtures.js';
+import type { Page } from '@playwright/test';
+
+async function waitForApprovalPage(popup: Page, apiOrigin: string) {
+  await popup.waitForURL(
+    url => url.origin === apiOrigin && url.pathname === '/approval-fixture',
+    { waitUntil: 'load', timeout: 15000 }
+  );
+  await expect(popup.getByRole('button', { name: 'Approve sign-in' })).toBeVisible();
+}
 
 test.beforeEach(async ({ context, protocol }) => {
   const actor = await context.request.post(protocol.apiOrigin + '/api/auth/sign-in/anonymous', { data: {} });
@@ -26,7 +35,7 @@ test(`browser isolation transfers the guest to the approved account with abort d
   const popupOpened = page.waitForEvent('popup');
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
   const popup = await popupOpened;
-  await expect(popup.getByRole('button', { name: 'Approve sign-in' })).toBeVisible();
+  await waitForApprovalPage(popup, protocol.apiOrigin);
   await expect.poll(() => page.evaluate(() => (window as typeof window & { popupHandle: Window }).popupHandle.closed)).toBe(true);
   expect(popup.isClosed()).toBe(false);
   expect(await popup.evaluate(() => window.opener)).toBeNull();
@@ -55,7 +64,7 @@ test('explicit cancellation makes an isolated approval unusable and leaves the g
   const opened = page.waitForEvent('popup');
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
   const popup = await opened;
-  await expect(popup.getByRole('button', { name: 'Approve sign-in' })).toBeVisible();
+  await waitForApprovalPage(popup, protocol.apiOrigin);
   const handoffId = new URL(popup.url()).searchParams.get('handoffId');
   await page.getByRole('button', { name: 'Cancel sign-in' }).click();
   await expect(page.getByRole('status')).toHaveText('handoff-cancelled');

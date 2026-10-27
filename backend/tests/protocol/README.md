@@ -6,6 +6,8 @@ The popup checks use the installed shared-auth client and real shared-auth HTTP 
 
 The same approved journey also aborts the caller's signal after real redemption and session-confirmation HTTP responses. Both must finish successfully and transfer ownership once; aborting before approval remains cancellation. The GM component suite separately checks that Cancel disappears during completion.
 
+Popup readiness waits for the actual approval URL and its load event before checking the controls. The reserved `about:blank` page can already be loaded while registration is pending, so its load state alone is not an approval-page readiness signal.
+
 The monitoring checks use the installed Sentry SDK, the app's monitoring transport, the real shared-auth CSRF protection and the real tunnel route. Only the external GlitchTip receiver is replaced. They verify an in-flight envelope during document departure, one refresh after CSRF rotation, rejection without protection and no guest creation. They do not claim delivery of every error created during unload, production GlitchTip ingestion, or actual macOS/iOS Safari coverage. SDK keepalive limits still apply.
 
 The fixtures live under `frontend/test/contracts/` and are served by the test Vite configuration only during development. Production entries remain the app and Owlbear HTML files. No credentials or production services are used.
