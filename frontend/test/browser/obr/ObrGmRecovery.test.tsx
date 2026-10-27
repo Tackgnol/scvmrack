@@ -60,6 +60,18 @@ afterEach(async () => {
   await i18n.changeLanguage("en");
 });
 
+function expectPointerTarget(element: Element) {
+  const bounds = element.getBoundingClientRect();
+  expect(
+    element.contains(
+      document.elementFromPoint(
+        bounds.x + bounds.width / 2,
+        bounds.y + bounds.height / 2,
+      ),
+    ),
+  ).toBe(true);
+}
+
 it.each(["en", "pl"])(
   "recovers the compact GM panel with pointer controls in %s",
   async (locale) => {
@@ -189,28 +201,12 @@ it.each(["en", "pl"])(
     await expect.element(partyTab).toBeVisible();
     await expect.element(signIn).toBeVisible();
     const button = signIn.element();
-    const bounds = button.getBoundingClientRect();
-    expect(
-      button.contains(
-        document.elementFromPoint(
-          bounds.x + bounds.width / 2,
-          bounds.y + bounds.height / 2,
-        ),
-      ),
-    ).toBe(true);
+    expectPointerTarget(button);
     await userEvent.click(signIn);
     await expect
       .element(page.getByRole("alert"))
       .toHaveTextContent(i18n.t("obr.player.signInFailed"));
-    const failedBounds = button.getBoundingClientRect();
-    expect(
-      button.contains(
-        document.elementFromPoint(
-          failedBounds.x + failedBounds.width / 2,
-          failedBounds.y + failedBounds.height / 2,
-        ),
-      ),
-    ).toBe(true);
+    expectPointerTarget(button);
     await userEvent.click(signIn);
     await expect
       .element(
@@ -231,6 +227,13 @@ it.each(["en", "pl"])(
     await expect
       .element(page.getByRole("alert").getByRole("status"))
       .toHaveTextContent("ABC123");
+    expectPointerTarget(
+      page.getByRole("button", { name: i18n.t("actions.cancel"), exact: true }).element(),
+    );
+    expectPointerTarget(partyTab.element());
+    expectPointerTarget(
+      page.getByRole("tab", { name: i18n.t("obr.gm.enemiesTab"), exact: true }).element(),
+    );
     await userEvent.click(
       page.getByRole("button", { name: i18n.t("actions.cancel"), exact: true }),
     );

@@ -33,7 +33,7 @@ test(`browser isolation transfers the guest to the approved account with abort d
   const code = await page.getByRole('status').textContent();
   const guestId = await page.getByRole('status').getAttribute('data-guest-id');
   expect(code).toMatch(/^[A-F0-9]{6}$/);
-  // Wait for multiple actual pending polls, beyond the old two-read cancellation.
+  // Wait for several pending polls while the handle reports closed.
   const polls: string[] = [];
   page.on('response', response => { if (response.url().endsWith('/obr-handoff/take')) { polls.push(response.url()); } });
   await expect.poll(() => polls.length, { timeout: 10000 }).toBeGreaterThanOrEqual(3);

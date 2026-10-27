@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { randomUUID } from 'node:crypto';
+import { PrismaClient } from '@prisma/client';
 
 const baseUrl = process.env.E2E_BASE_URL ?? 'http://localhost:3000';
 
@@ -23,6 +24,23 @@ test('catalog responses preserve each item kind, rule JSON and nullable fields',
       assert.ok(Object.hasOwn(item, field), `${kind} retains ${field}`);
     }
   }
+});
+
+test('catalog equipment retains a non-null integer health modifier', async (t) => {
+  const prisma = new PrismaClient();
+  const key = `qa.contract-health.${randomUUID()}`;
+  t.after(async () => {
+    try {
+      await prisma.equipment.deleteMany({ where: { key } });
+    } finally {
+      await prisma.$disconnect();
+    }
+  });
+  const item = await prisma.equipment.create({ data: { key, tags: [], hpMod: 3 } });
+  const response = await fetch(`${baseUrl}/api/equipment/equipment/${item.id}`);
+  assert.equal(response.status, 200);
+  const body = await response.json() as { hpMod: unknown };
+  assert.equal(body.hpMod, 3);
 });
 
 test('CATS invalid class requests remain typed validation errors', async () => {

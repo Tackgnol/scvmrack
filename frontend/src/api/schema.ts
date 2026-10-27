@@ -10281,7 +10281,7 @@ export interface paths {
                             mod: string | null;
                             hpMin: number | null;
                             hpMax: number | null;
-                            hpMod: string | null;
+                            hpMod: number | null;
                             roll: number | null;
                             multiple: number | null;
                             ammoType: string | null;

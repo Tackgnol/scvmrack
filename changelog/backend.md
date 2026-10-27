@@ -1,6 +1,7 @@
 # Backend — Feature Summary
 
-- API documentation now describes successful health, catalog item and Owlbear binding responses, including nullable fields, and validation errors for class lists and class details. These close the five contract gaps reported by the canary CATS run.
+- API documentation now describes successful health, catalog item and Owlbear binding responses, including nullable fields, and validation errors for class lists and class details. These close the five contract gaps reported by the canary CATS run. (RPG-340)
+- The app should no longer fail to return catalog equipment when it has a numeric health modifier. Catalog responses and generated client types preserve that modifier as an integer. (RPG-340)
 
 - The app should no longer prompt a signed-in user to authenticate again when a room binding is forbidden; it returns the correct access-denied response. (RPG-336)
 

@@ -65,7 +65,7 @@ export const CatalogItemResponseSchema = {
         mod: nullableString,
         hpMin: nullableInteger,
         hpMax: nullableInteger,
-        hpMod: nullableString,
+        hpMod: nullableInteger,
         roll: nullableInteger,
         multiple: nullableInteger,
         ammoType: nullableString,
