@@ -20,6 +20,7 @@ export const Rail = styled("ol")({
 });
 
 export const StepButton = styled("button")({
+  position: "relative",
   display: "flex",
   justifyContent: "space-between",
   alignItems: "center",

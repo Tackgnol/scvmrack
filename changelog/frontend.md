@@ -20,6 +20,11 @@
 
 ## Bug fixes
 
+- The app should no longer render legal headings, body text or email links unreadably on yellow when opening Privacy, Terms or Contact in either language. (RPG-343)
+- The app should no longer use off-palette stat labels when editing a Custom Class. Stats use the Mörk Borg black, yellow and pink palette. (RPG-344)
+- The app should no longer widen the Custom Class creator beyond the phone viewport when its off-screen step labels are present. (RPG-344)
+- The app should no longer show browser-default blue links on black when a GM opens their Custom Classes in a party pool, including visited and keyboard-focus states. (RPG-345)
+- The app should no longer leave players guessing where to enter an Owlbear sign-in code when approval is pending. Both languages explain the new Scvmrack window, code entry and return to Owlbear. (RPG-346)
 - The app should no longer show unreadable text or controls on yellow when approving an Owlbear sign-in or opening a transferred session.
 - The app should no longer crowd footer links into touching, uneven boxes on phones. Footer navigation uses aligned text links with clear spacing and visible keyboard focus.
 - The app should no longer hide an autosaved Custom Class draft, offer a consumed draft, or keep an older Edit link when you return to My classes without reloading, including when a navigation save finishes after the list loads. (RPG-324)

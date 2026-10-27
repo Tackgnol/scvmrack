@@ -1,8 +1,7 @@
 import { partyColors, partyFonts } from "@/theme/partyTokens";
-import { statColors } from "@/theme/morkBorgTheme";
 import { styled } from "@mui/material";
 
-const { white, grey, darkGrey, mutedText } = partyColors;
+const { grey, darkGrey, mutedText } = partyColors;
 
 export const Line = styled("section")({
   display: "grid",
@@ -20,15 +19,13 @@ export const StatName = styled("div")({
   fontFamily: partyFonts.headline,
   fontSize: "1.6rem",
   lineHeight: 1,
-  color: white,
+  color: partyColors.yellow,
+  background: partyColors.black,
+  border: `1px solid ${partyColors.pink}`,
   padding: "8px 6px",
   textAlign: "center",
   letterSpacing: "0.04em",
   minWidth: 72,
-  "&.strength": { background: statColors.str },
-  "&.agility": { background: statColors.agi },
-  "&.presence": { background: statColors.pre },
-  "&.toughness": { background: statColors.tou },
   "@media (max-width: 520px)": { fontSize: "1.35rem", minWidth: 56 },
 });
 

@@ -68,6 +68,16 @@ export const ClassName = styled("span")({
   lineHeight: 1.2,
   color: white,
   transition: "color .12s",
+  "& a, & a:visited": {
+    color: "inherit",
+    textDecorationColor: "currentColor",
+    textUnderlineOffset: "0.2em",
+  },
+  "& a:hover": { color: yellow },
+  "& a:focus-visible": {
+    outline: `2px solid ${pink}`,
+    outlineOffset: 3,
+  },
 });
 
 export const Blurb = styled("span")({

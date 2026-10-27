@@ -227,6 +227,12 @@ it.each(["en", "pl"])(
     await expect
       .element(page.getByRole("alert").getByRole("status"))
       .toHaveTextContent("ABC123");
+    await expect
+      .element(page.getByText(i18n.t("obr.auth.waitingHeading"), { exact: true }))
+      .toBeVisible();
+    await expect
+      .element(page.getByText(i18n.t("obr.auth.waitingHelp"), { exact: true }))
+      .toBeVisible();
     expectPointerTarget(
       page.getByRole("button", { name: i18n.t("actions.cancel"), exact: true }).element(),
     );
