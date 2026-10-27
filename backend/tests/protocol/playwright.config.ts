@@ -12,6 +12,6 @@ export default defineConfig({
   webServer: {
     command: 'node node_modules/vite/bin/vite.js --config vite.protocol.config.ts --host 127.0.0.1 --port 5278 --strictPort',
     cwd: fileURLToPath(new URL('../../../frontend', import.meta.url)),
-    url: 'http://127.0.0.1:5278', reuseExistingServer: false,
+    url: 'http://127.0.0.1:5278/test/contracts/protocol.html', reuseExistingServer: false,
   },
 });
