@@ -1,5 +1,6 @@
 import { Box, Paper, Stack, Typography } from "@mui/material";
 import type { LegalDocument } from "@/pages/legalCopy";
+import { customStyles, morkBorgColors } from "@/theme/morkBorgTheme";
 
 interface LegalDocumentPageProps {
   document: LegalDocument;
@@ -11,10 +12,19 @@ export function LegalDocumentPage({ document }: LegalDocumentPageProps) {
   return (
     <Box
       sx={{
+        ...customStyles.yellowSurface,
+        ...customStyles.inheritedLinks,
         maxWidth: 760,
         mx: "auto",
         py: { xs: 3, sm: 6 },
         px: { xs: 2, sm: 3 },
+        "& a": {
+          fontWeight: 700,
+        },
+        "& a:hover": {
+          color: morkBorgColors.yellow,
+          backgroundColor: morkBorgColors.black,
+        },
       }}
     >
       <Stack spacing={3}>
@@ -36,6 +46,8 @@ export function LegalDocumentPage({ document }: LegalDocumentPageProps) {
           elevation={0}
           sx={{
             p: { xs: 2, sm: 3 },
+            color: morkBorgColors.white,
+            backgroundColor: morkBorgColors.black,
             border: "2px solid",
             borderColor: "text.primary",
           }}
@@ -64,7 +76,6 @@ export function LegalDocumentPage({ document }: LegalDocumentPageProps) {
                     fontSize: "1rem",
                     lineHeight: 1.7,
                     overflowWrap: "anywhere",
-                    "& a": { color: "primary.main", fontWeight: 700 },
                   }}
                 >
                   {paragraph.split(emailPattern).map((part) =>

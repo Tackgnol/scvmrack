@@ -41,6 +41,26 @@ const sectionStamp = {
 
 // Custom reusable styles
 export const customStyles = {
+  yellowSurface: {
+    color: morkBorgColors.black,
+    // shortcut: any Paper ancestor opts out; use explicit dark-panel markers before nesting yellow surfaces inside Paper.
+    '& .MuiInputLabel-root.MuiInputLabel-shrink:not(.MuiPaper-root *)': {
+      color: morkBorgColors.black,
+    },
+    '& .MuiButton-text:not(.MuiPaper-root *)': {
+      color: morkBorgColors.black,
+    },
+    '& .MuiButton-containedPrimary:not(.MuiPaper-root *)': {
+      border: `2px solid ${morkBorgColors.black}`,
+    },
+  },
+  inheritedLinks: {
+    '& a, & a:visited': {
+      color: 'inherit',
+      textDecorationColor: 'currentColor',
+      textUnderlineOffset: '0.2em',
+    },
+  },
   // Navigation styles
   navLink: {
     base: {

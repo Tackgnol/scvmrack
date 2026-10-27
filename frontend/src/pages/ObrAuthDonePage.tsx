@@ -15,7 +15,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Alert, Button, Stack, TextField, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import { Wrapper } from "./ObrAuthDonePage.styles";
+import { ObrAuthWrapper } from "./obrAuth.styles";
 
 export function ObrAuthDonePage() {
   const { t } = useTranslation();
@@ -89,7 +89,7 @@ export function ObrAuthDonePage() {
     }
   }
   return (
-    <Wrapper>
+    <ObrAuthWrapper>
       <Stack
         component="form"
         onSubmit={handleSubmit(approve)}
@@ -134,6 +134,6 @@ export function ObrAuthDonePage() {
           )
         )}
       </Stack>
-    </Wrapper>
+    </ObrAuthWrapper>
   );
 }

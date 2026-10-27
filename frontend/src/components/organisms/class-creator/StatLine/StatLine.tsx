@@ -38,7 +38,7 @@ export function StatLine({
         stat: short,
       })}
     >
-      <StatName className={stat} aria-hidden="true">
+      <StatName aria-hidden="true">
         {short}
       </StatName>
       <Result aria-live="polite">

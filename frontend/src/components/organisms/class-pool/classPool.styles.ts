@@ -1,4 +1,5 @@
 import { partyColors, partyFonts } from "@/theme/partyTokens";
+import { customStyles } from "@/theme/morkBorgTheme";
 import { styled } from "@mui/material";
 
 const { yellow, pink, black, white, darkGrey, mutedText } = partyColors;
@@ -63,11 +64,13 @@ export const Notice = styled("div")({
 });
 
 export const ClassName = styled("span")({
+  ...customStyles.inheritedLinks,
   fontFamily: partyFonts.gothic,
   fontSize: "1.35rem",
   lineHeight: 1.2,
   color: white,
   transition: "color .12s",
+  "& a:hover": { color: yellow },
 });
 
 export const Blurb = styled("span")({

@@ -3,38 +3,44 @@ import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { morkBorgColors } from '@/theme/morkBorgTheme';
 
-const Bar = styled('footer')({
+const Bar = styled('footer')(({ theme }) => ({
   display: 'flex',
   flexWrap: 'wrap',
-  justifyContent: 'center',
   alignItems: 'center',
-  gap: '0 20px',
-  padding: '12px 16px 20px',
-  marginTop: 'auto',
-});
+  gap: theme.spacing(0.5, 1),
+  padding: theme.spacing(2, 0),
+  marginTop: theme.spacing(3),
+  borderTop: `2px solid ${morkBorgColors.black}`,
+  [theme.breakpoints.up('sm')]: {
+    justifyContent: 'center',
+    gap: theme.spacing(1, 3),
+  },
+}));
 
-const FooterLink = styled(Link)({
+const FooterLink = styled(Link)(({ theme }) => ({
+  flex: `1 0 calc((100% - ${theme.spacing(2)}) / 3)`,
+  minWidth: 0,
   minHeight: 44,
   display: 'inline-flex',
   alignItems: 'center',
-  padding: '4px 14px',
+  justifyContent: 'center',
+  padding: theme.spacing(0.5, 1),
   color: morkBorgColors.black,
   fontFamily: '"Antonio", sans-serif',
-  fontSize: '0.72rem',
-  letterSpacing: '0.16em',
+  fontSize: theme.typography.pxToRem(13),
+  letterSpacing: '0.12em',
   textTransform: 'uppercase',
   textDecoration: 'none',
-  border: `1px solid rgba(10, 10, 10, 0.45)`,
-  transition: 'border-color 120ms ease-out, color 120ms ease-out',
+  textAlign: 'center',
+  textUnderlineOffset: '6px',
+  textDecorationThickness: '2px',
+  [theme.breakpoints.up('sm')]: {
+    flex: '0 0 auto',
+  },
   '&:hover': {
-    color: morkBorgColors.pink,
-    borderColor: morkBorgColors.pink,
+    textDecorationLine: 'underline',
   },
-  '&:focus-visible': {
-    outline: `2px solid ${morkBorgColors.pink}`,
-    outlineOffset: '2px',
-  },
-});
+}));
 
 export function AppFooter() {
   const { t } = useTranslation();
