@@ -7,7 +7,7 @@ import { useObrSession } from "@/obr/useObrSession";
 
 export function ObrSaveRecovery() {
   const { isSessionExpired, saveFailed, retrySave } = useCharacter();
-  const { signIn, signInProgress } = useObrSession();
+  const { signIn, cancelSignIn, signInProgress } = useObrSession();
   const { t } = useTranslation();
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -41,7 +41,10 @@ export function ObrSaveRecovery() {
       {failed
         ? t("obr.player.signInFailed")
         : t(isSessionExpired ? "errors.unauthorized" : "status.unsavedRetry")}
-      <ObrSignInCode code={signInProgress?.code} />
+      <ObrSignInCode
+        code={signInProgress?.code}
+        onCancel={cancelSignIn}
+      />
     </Alert>
   );
 }

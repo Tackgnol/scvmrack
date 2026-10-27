@@ -60,9 +60,8 @@ export function ObrGmView() {
   }
 
   return (
-    <>
-    <ObrGmSession />
     <GmShell aria-label={t("obr.gm.region", "GM view")}>
+      <ObrGmSession />
       <GmTabList role="tablist" aria-label={t("obr.gm.tabsLabel", "GM view")}>
         {GM_TABS.map((tab) => {
           const isActive = activeTab === tab.id;
@@ -107,6 +106,5 @@ export function ObrGmView() {
         <ObrEnemiesGmSlot />
       </GmTabPanel>
     </GmShell>
-    </>
   );
 }

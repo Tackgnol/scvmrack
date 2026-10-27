@@ -11,7 +11,7 @@ import {
 } from "@/router/navigation";
 import { signInViaObrPopup } from "@tackgnol/rpgtools-shared-auth/client";
 import { useQueryClient } from "@tanstack/react-query";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { ObrSignInProgress } from "@tackgnol/rpgtools-shared-auth/client";
 
 // Session for the Owlbear Rodeo panel. `useAuth` already bootstraps an
@@ -24,11 +24,23 @@ export function useObrSession() {
 
   const [signInProgress, setSignInProgress] =
     useState<ObrSignInProgress | null>(null);
+  const attempt = useRef<AbortController | null>(null);
+  useEffect(() => () => attempt.current?.abort(), []);
+
+  function cancelSignIn() {
+    attempt.current?.abort();
+  }
 
   const signIn = useCallback(async (): Promise<void> => {
+    if (attempt.current) {
+      throw new Error("handoff-in-progress");
+    }
+    const controller = new AbortController();
+    attempt.current = controller;
     const previousToken = tabSessionSnapshot();
     await signInViaObrPopup(obrAuthClient, {
       windowName: "scvmrack-obr-login",
+      signal: controller.signal,
       onProgress: setSignInProgress,
     })
       .catch(async (error: unknown) => {
@@ -41,7 +53,10 @@ export function useObrSession() {
         }
         throw error;
       })
-      .finally(() => setSignInProgress(null));
+      .finally(() => {
+        attempt.current = null;
+        setSignInProgress(null);
+      });
     confirmTabSession();
     resetRedirectControl();
     await clearCurrentSearchParam(SESSION_EXPIRED_QUERY_PARAM);
@@ -50,5 +65,13 @@ export function useObrSession() {
     await queryClient.invalidateQueries({ queryKey: partyKeys.obrRooms() });
   }, [queryClient]);
 
-  return { ...auth, signIn, signInProgress };
+  return {
+    ...auth,
+    signIn,
+    cancelSignIn:
+      signInProgress && signInProgress.state !== "redeeming"
+        ? cancelSignIn
+        : undefined,
+    signInProgress,
+  };
 }

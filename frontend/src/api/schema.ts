@@ -98,7 +98,66 @@ export interface paths {
                     headers: {
                         [name: string]: unknown;
                     };
-                    content?: never;
+                    content: {
+                        "application/json": {
+                            roomId: string;
+                            players: {
+                                playerId: string;
+                                connectionId: null | string;
+                                /** Format: uuid */
+                                characterId: string;
+                                assignedByPlayerId: string;
+                            }[];
+                            tokens: {
+                                tokenId: string;
+                                playerId: null | string;
+                                /** Format: uuid */
+                                characterId: string;
+                                /** Format: uuid */
+                                generation: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
                 };
             };
         };
@@ -294,7 +353,14 @@ export interface paths {
                     headers: {
                         [name: string]: unknown;
                     };
-                    content?: never;
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            status: "ok";
+                            /** Format: date-time */
+                            timestamp: string;
+                        };
+                    };
                 };
             };
         };
@@ -2755,6 +2821,26 @@ export interface paths {
                                 description?: null | string;
                             }[];
                             classlessEnabled: boolean;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
                         };
                     };
                 };
@@ -8376,6 +8462,26 @@ export interface paths {
                     };
                 };
                 /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                            code: string;
+                            statusCode: number;
+                            requestId: string;
+                            details?: {
+                                field?: string;
+                                message: string;
+                                code?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
                 401: {
                     headers: {
                         [name: string]: unknown;
@@ -10125,6 +10231,79 @@ export interface paths {
             };
             requestBody?: never;
             responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            id: number;
+                            key: string;
+                            tags: string[];
+                            value: number | null;
+                            exp: boolean | null;
+                            classId: number | null;
+                            position: number | null;
+                            amountMin: number | null;
+                            amountMax: number | null;
+                            mod: string | null;
+                            dice: number[];
+                            roll: number | null;
+                            effectDie: number | null;
+                            effect: unknown;
+                            damageModifier: number | null;
+                            modifiers: unknown;
+                            ammoType: string | null;
+                            defaultAmount: number | null;
+                        } | {
+                            id: number;
+                            key: string;
+                            tags: string[];
+                            value: number | null;
+                            exp: boolean | null;
+                            classId: number | null;
+                            position: number | null;
+                            dice: number[];
+                            roll: number | null;
+                            maxTier: number | null;
+                            modifiers: unknown;
+                        } | {
+                            id: number;
+                            key: string;
+                            tags: string[];
+                            value: number | null;
+                            exp: boolean | null;
+                            classId: number | null;
+                            position: number | null;
+                            amountMin: number | null;
+                            amountMax: number | null;
+                            mod: string | null;
+                            hpMin: number | null;
+                            hpMax: number | null;
+                            hpMod: number | null;
+                            roll: number | null;
+                            multiple: number | null;
+                            ammoType: string | null;
+                            defaultAmount: number | null;
+                            useEffect: unknown;
+                        } | {
+                            id: number;
+                            key: string;
+                            tags: string[];
+                            value: number | null;
+                            exp: boolean | null;
+                            classId: number | null;
+                            position: number | null;
+                            hp: number;
+                            actionDie: number[];
+                            actionType: string | null;
+                            amount: number | null;
+                            amountDie: number | null;
+                            buff: unknown;
+                        };
+                    };
+                };
                 /** @description Default Response */
                 400: {
                     headers: {
