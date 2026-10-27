@@ -1,6 +1,6 @@
 import { Box, Paper, Stack, Typography } from "@mui/material";
 import type { LegalDocument } from "@/pages/legalCopy";
-import { morkBorgColors } from "@/theme/morkBorgTheme";
+import { customStyles, morkBorgColors } from "@/theme/morkBorgTheme";
 
 interface LegalDocumentPageProps {
   document: LegalDocument;
@@ -12,11 +12,11 @@ export function LegalDocumentPage({ document }: LegalDocumentPageProps) {
   return (
     <Box
       sx={{
+        ...customStyles.yellowSurface,
         maxWidth: 760,
         mx: "auto",
         py: { xs: 3, sm: 6 },
         px: { xs: 2, sm: 3 },
-        color: morkBorgColors.black,
         "& a, & a:visited": {
           color: "inherit",
           fontWeight: 700,
@@ -25,10 +25,6 @@ export function LegalDocumentPage({ document }: LegalDocumentPageProps) {
         "& a:hover": {
           color: morkBorgColors.yellow,
           backgroundColor: morkBorgColors.black,
-        },
-        "& a:focus-visible": {
-          outline: `2px solid ${morkBorgColors.black}`,
-          outlineOffset: 3,
         },
       }}
     >

@@ -1,7 +1,7 @@
 import { partyColors, partyFonts } from "@/theme/partyTokens";
 import { styled } from "@mui/material";
 
-const { grey, darkGrey, mutedText } = partyColors;
+const { yellow, pink, black, grey, darkGrey, mutedText } = partyColors;
 
 export const Line = styled("section")({
   display: "grid",
@@ -11,7 +11,7 @@ export const Line = styled("section")({
   border: `2px solid ${darkGrey}`,
   padding: 10,
   alignItems: "center",
-  "&.open": { borderColor: partyColors.yellow },
+  "&.open": { borderColor: yellow },
   "@media (max-width: 520px)": { gridTemplateColumns: "auto minmax(0, 1fr)" },
 });
 
@@ -19,9 +19,9 @@ export const StatName = styled("div")({
   fontFamily: partyFonts.headline,
   fontSize: "1.6rem",
   lineHeight: 1,
-  color: partyColors.yellow,
-  background: partyColors.black,
-  border: `1px solid ${partyColors.pink}`,
+  color: yellow,
+  background: black,
+  border: `1px solid ${pink}`,
   padding: "8px 6px",
   textAlign: "center",
   letterSpacing: "0.04em",

@@ -25,8 +25,8 @@
 - The app should no longer widen the Custom Class creator beyond the phone viewport when its off-screen step labels are present. (RPG-344)
 - The app should no longer show browser-default blue links on black when a GM opens their Custom Classes in a party pool, including visited and keyboard-focus states. (RPG-345)
 - The app should no longer leave players guessing where to enter an Owlbear sign-in code when approval is pending. Both languages explain the new Scvmrack window, code entry and return to Owlbear. (RPG-346)
-- The app should no longer show unreadable text or controls on yellow when approving an Owlbear sign-in or opening a transferred session.
-- The app should no longer crowd footer links into touching, uneven boxes on phones. Footer navigation uses aligned text links with clear spacing and visible keyboard focus.
+- The app should no longer lose its approval button's boundary on hover or show unreadable text on yellow when approving an Owlbear sign-in or opening a transferred session. Yellow-surface control styles live in the theme. (RPG-343)
+- The app should no longer crowd footer links into touching, uneven boxes on phones. Footer links wrap to fill each row without assuming a fixed link count and retain the theme's keyboard focus ring. (RPG-347)
 - The app should no longer hide an autosaved Custom Class draft, offer a consumed draft, or keep an older Edit link when you return to My classes without reloading, including when a navigation save finishes after the list loads. (RPG-324)
 - The app should no longer leave Next scvm unavailable when you resize an open four-member party view from phone to desktop. (RPG-325)
 - The app should no longer fail to create or clone an Owlbear enemy, or claim an attached room is missing when a save is refused or an enemy was deleted elsewhere. (RPG-332)

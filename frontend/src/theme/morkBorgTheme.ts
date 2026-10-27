@@ -41,6 +41,15 @@ const sectionStamp = {
 
 // Custom reusable styles
 export const customStyles = {
+  yellowSurface: {
+    color: morkBorgColors.black,
+    '& .MuiInputLabel-root.MuiInputLabel-shrink': {
+      color: morkBorgColors.black,
+    },
+    '& .MuiButton-text': {
+      color: morkBorgColors.black,
+    },
+  },
   // Navigation styles
   navLink: {
     base: {
@@ -3125,6 +3134,7 @@ export const morkBorgTheme = createTheme({
         containedPrimary: {
           backgroundColor: morkBorgColors.pink,
           color: morkBorgColors.black,
+          border: `2px solid ${morkBorgColors.black}`,
           '&:hover': {
             backgroundColor: morkBorgColors.yellow,
           },

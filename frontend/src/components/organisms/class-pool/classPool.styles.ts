@@ -74,10 +74,6 @@ export const ClassName = styled("span")({
     textUnderlineOffset: "0.2em",
   },
   "& a:hover": { color: yellow },
-  "& a:focus-visible": {
-    outline: `2px solid ${pink}`,
-    outlineOffset: 3,
-  },
 });
 
 export const Blurb = styled("span")({
