@@ -5,6 +5,7 @@ import i18n from "@/i18n";
 import { LegalPage } from "@/pages/LegalPage";
 import { TermsPage } from "@/pages/TermsPage";
 import { PrivacyPage } from "@/pages/PrivacyPage";
+import { morkBorgColors } from "@/theme/morkBorgTheme";
 import BrowserTestProvider from "../BrowserTestProvider";
 
 describe("legal pages", () => {
@@ -107,11 +108,9 @@ describe("legal pages", () => {
         .element(page.getByRole("heading", { name: children }))
         .toBeVisible();
       await expect.element(page.getByText(lastUpdated)).toBeVisible();
-      await expect
-        .element(
-          page.getByRole("link", { name: "contact@rpgtools.co" }).first(),
-        )
-        .toBeVisible();
+      const contactLink = page.getByRole("link", { name: "contact@rpgtools.co" }).first();
+      await expect.element(contactLink).toBeVisible();
+      await expect.element(contactLink).toHaveStyle({ color: morkBorgColors.black });
     },
   );
 
@@ -122,9 +121,9 @@ describe("legal pages", () => {
         <LegalPage />
       </BrowserTestProvider>,
     );
-    await expect
-      .element(page.getByRole("link", { name: "contact@rpgtools.co" }).first())
-      .toBeVisible();
+    const contactLink = page.getByRole("link", { name: "contact@rpgtools.co" }).first();
+    await expect.element(contactLink).toBeVisible();
+    await expect.element(contactLink).toHaveStyle({ color: morkBorgColors.black });
     await expect
       .element(page.getByText("scvmrack-appeal@rpgtools.co"))
       .toBeVisible();

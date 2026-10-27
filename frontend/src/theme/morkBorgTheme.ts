@@ -43,11 +43,21 @@ const sectionStamp = {
 export const customStyles = {
   yellowSurface: {
     color: morkBorgColors.black,
-    '& .MuiInputLabel-root.MuiInputLabel-shrink': {
+    '& .MuiInputLabel-root.MuiInputLabel-shrink:not(.MuiPaper-root *)': {
       color: morkBorgColors.black,
     },
-    '& .MuiButton-text': {
+    '& .MuiButton-text:not(.MuiPaper-root *)': {
       color: morkBorgColors.black,
+    },
+    '& .MuiButton-containedPrimary:not(.MuiPaper-root *)': {
+      border: `2px solid ${morkBorgColors.black}`,
+    },
+  },
+  inheritedLinks: {
+    '& a, & a:visited': {
+      color: 'inherit',
+      textDecorationColor: 'currentColor',
+      textUnderlineOffset: '0.2em',
     },
   },
   // Navigation styles
@@ -3134,7 +3144,6 @@ export const morkBorgTheme = createTheme({
         containedPrimary: {
           backgroundColor: morkBorgColors.pink,
           color: morkBorgColors.black,
-          border: `2px solid ${morkBorgColors.black}`,
           '&:hover': {
             backgroundColor: morkBorgColors.yellow,
           },

@@ -13,14 +13,13 @@ export function LegalDocumentPage({ document }: LegalDocumentPageProps) {
     <Box
       sx={{
         ...customStyles.yellowSurface,
+        ...customStyles.inheritedLinks,
         maxWidth: 760,
         mx: "auto",
         py: { xs: 3, sm: 6 },
         px: { xs: 2, sm: 3 },
-        "& a, & a:visited": {
-          color: "inherit",
+        "& a": {
           fontWeight: 700,
-          textUnderlineOffset: "0.2em",
         },
         "& a:hover": {
           color: morkBorgColors.yellow,

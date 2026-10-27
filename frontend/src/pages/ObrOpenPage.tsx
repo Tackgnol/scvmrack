@@ -25,7 +25,7 @@ import {
   useSyncExternalStore,
 } from "react";
 import { useTranslation } from "react-i18next";
-import { Wrapper } from "./ObrAuthDonePage.styles";
+import { ObrAuthWrapper } from "./obrAuth.styles";
 
 export function ObrOpenPage() {
   const { t } = useTranslation();
@@ -106,7 +106,7 @@ export function ObrOpenPage() {
     setSwitching(false);
   }
   return (
-    <Wrapper>
+    <ObrAuthWrapper>
       <Stack spacing={2}>
         {failure ? (
           <>
@@ -154,6 +154,6 @@ export function ObrOpenPage() {
           <Typography role="status">{t("obr.auth.opening")}</Typography>
         )}
       </Stack>
-    </Wrapper>
+    </ObrAuthWrapper>
   );
 }
