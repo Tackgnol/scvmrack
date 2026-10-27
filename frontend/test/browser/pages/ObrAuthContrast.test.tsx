@@ -45,6 +45,7 @@ describe('controls on yellow surfaces', () => {
           <Paper>
             <TextField id="dark-code" label="Dark code" />
             <Button>Dark cancel</Button>
+            <Button variant="contained">Dark action</Button>
           </Paper>
         </ObrAuthWrapper>
       </BrowserTestProvider>,
@@ -73,5 +74,10 @@ describe('controls on yellow surfaces', () => {
     const darkCancel = page.getByRole('button', { name: 'Dark cancel' });
     await expect.element(darkCancel).toBeVisible();
     await expect.element(darkCancel).toHaveStyle({ color: morkBorgColors.yellow });
+    const darkAction = page.getByRole('button', { name: 'Dark action' });
+    await expect.element(darkAction).toBeVisible();
+    await expect.element(darkAction).toHaveStyle({ borderTopStyle: 'none' });
+    await userEvent.hover(darkAction);
+    await expect.element(darkAction).toHaveStyle({ borderTopStyle: 'none' });
   });
 });

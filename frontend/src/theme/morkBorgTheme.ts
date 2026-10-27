@@ -43,6 +43,7 @@ const sectionStamp = {
 export const customStyles = {
   yellowSurface: {
     color: morkBorgColors.black,
+    // shortcut: any Paper ancestor opts out; use explicit dark-panel markers before nesting yellow surfaces inside Paper.
     '& .MuiInputLabel-root.MuiInputLabel-shrink:not(.MuiPaper-root *)': {
       color: morkBorgColors.black,
     },
