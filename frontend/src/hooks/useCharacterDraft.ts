@@ -13,6 +13,7 @@ import type { CharacterResponse } from '@/hooks/models';
 import { getApiErrorCode, getUserFacingApiErrorMessage } from '@/utils/errorUtils';
 import { ensureAnonymousSession, type AuthSession } from '@/auth';
 import { authKeys } from '@/api';
+import { partyKeys } from '@/api/party';
 import { useQueryClient } from '@tanstack/react-query';
 import { usePrivacyAcknowledged } from '@/privacy/privacyConsent';
 import { requestOpenPrivacyDrawer } from '@/privacy/privacyDrawerBus';
@@ -286,6 +287,15 @@ export function useCharacterDraft(locale: string, options: Options = {}) {
       const character = await confirmDraft(draft, locale, controller.signal, replace, inviteToken, obrRoomId, obrPlayerId);
       clearStored();
       if (character.id) {
+        if (character.partyId) {
+          // The sheet needs a membership snapshot taken after creation.
+          const queryKey = partyKeys.detail(character.partyId);
+          await queryClient.cancelQueries({ queryKey });
+          await queryClient.invalidateQueries({
+            queryKey,
+            refetchType: 'all',
+          });
+        }
         await onCreatedRef.current?.(character);
       }
     } catch (e) {
@@ -301,7 +311,7 @@ export function useCharacterDraft(locale: string, options: Options = {}) {
       busyRef.current = false;
       setIsConfirming(false);
     }
-  }, [draft, locale, inviteToken, obrRoomId, obrPlayerId, clearStored, backToClassGate]);
+  }, [draft, locale, inviteToken, obrRoomId, obrPlayerId, clearStored, backToClassGate, queryClient]);
 
   const restart = useCallback(() => {
     abortRef.current?.abort();

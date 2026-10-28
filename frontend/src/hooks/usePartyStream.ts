@@ -138,7 +138,15 @@ export function usePartyStream(
     const controller = new AbortController();
     setStatus("connecting");
 
+    const invalidateObrCards = async () => {
+      const filters = { queryKey: obrKeys.cards() };
+      // An initial fetch can still contain values from before this event.
+      await queryClient.cancelQueries(filters);
+      await queryClient.invalidateQueries(filters);
+    };
+
     const invalidateRoster = () => {
+      void invalidateObrCards();
       void queryClient.invalidateQueries({
         queryKey: obrKeys.participations(),
       });
@@ -173,6 +181,7 @@ export function usePartyStream(
         [parsed.characterId]: fields,
       }));
       invalidateMember(parsed.characterId);
+      void invalidateObrCards();
     };
 
     const handleRosterEvent = (data: string) => {
