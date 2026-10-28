@@ -59,8 +59,6 @@ type CharacterResponse =
 
 const obrClient = client as unknown as UntypedApiClient;
 
-export { obrKeys } from "./obrKeys";
-
 // Compact cards for the OBR roster/peek. Gated by the (roomId, id) pair: both
 // must be presented and match a durable OBR room binding (see backend
 // obr-room-binding-service.getCards).

@@ -476,7 +476,7 @@ export function createCharacterService(
         if (!character) {
           return fail(notFound('CHARACTER_NOT_FOUND', 'Character not found'));
         }
-        await publishCharacterUpdated(partyBus, input.id, changedFields);
+        await publishCharacterUpdated(partyBus, input.id, changedFields, log);
         return ok(character);
       } catch (err) {
         if (

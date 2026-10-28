@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test, { mock } from 'node:test';
+import { createInMemoryPartyEventBus } from '../../src/plugins/party-bus.js';
 
 import type { Prisma } from '@prisma/client';
 import type { ImprovementDraft, RollResult } from '../../src/lib/getting-better.js';
@@ -62,6 +63,7 @@ function defaultCharacterRow(): CharacterRow {
 let characterRow: CharacterRow | null = defaultCharacterRow();
 let activeImprovement: ImprovementRow | null = null;
 let appliedCount = 0;
+let notificationLookupError: Error | null = null;
 let createCalls = 0;
 let applyCalls: Array<{
   characterId: string;
@@ -89,6 +91,7 @@ function resetState(): void {
   characterRow = defaultCharacterRow();
   activeImprovement = null;
   appliedCount = 0;
+  notificationLookupError = null;
   createCalls = 0;
   applyCalls = [];
   classAbilities = [];
@@ -242,6 +245,17 @@ mock.module('../../src/lib/get-character-full.js', {
   },
 });
 
+mock.module('../../src/repositories/character-repository.js', {
+  namedExports: { characterRepository: {
+    getUpdatePartyIds: async () => {
+      if (notificationLookupError) {
+        throw notificationLookupError;
+      }
+      return ['room-party'];
+    },
+  } },
+});
+
 const { createCharacterImprovementService } = await import(
   '../../src/services/character-improvement-service.js'
 );
@@ -257,6 +271,27 @@ async function createPreview(): Promise<ImprovementDraft> {
   assert.equal(result.ok, true);
   assert.ok(activeImprovement);
   return activeImprovement.rolledDraft as ImprovementDraft;
+}
+
+for (const failure of ['audience lookup', 'publish'] as const) {
+  test(`committed Getting Better stays successful when notification ${failure} fails`, async () => {
+    resetState();
+    const draft = await createPreview();
+    const error = new Error('Notification unavailable');
+    notificationLookupError = failure === 'audience lookup' ? error : null;
+    const bus = createInMemoryPartyEventBus();
+    if (failure === 'publish') {
+      bus.publish = () => { throw error; };
+    }
+    const logged = mock.fn();
+    const service = createCharacterImprovementService({ error: logged }, bus);
+    const result = await service.apply({ id: characterId, improvementId, draft, session, rawLocale: 'en' });
+    assert.equal(result.ok, true);
+    assert.equal(applyCalls.length, 1);
+    assert.ok(activeImprovement?.appliedAt);
+    assert.deepEqual(activeImprovement?.applied, applyCalls[0].applied);
+    assert.equal(logged.mock.calls.length, 1);
+  });
 }
 
 test('getOrCreatePreview creates once and returns the active preview on reopen', async () => {

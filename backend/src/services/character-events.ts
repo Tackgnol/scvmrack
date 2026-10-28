@@ -1,17 +1,29 @@
 import type { PartyEventBus } from '../plugins/party-bus.js';
 import { characterRepository } from '../repositories/character-repository.js';
+import type { ServiceLogger } from './result.js';
 
-/** Notify every current audience without changing the scvm's party or bindings. */
+/** Best-effort notification; a committed save remains successful if delivery fails. */
 export async function publishCharacterUpdated(
   bus: PartyEventBus | undefined,
   characterId: string,
-  fields: string[]
+  fields: string[],
+  log: ServiceLogger
 ): Promise<void> {
   if (!bus) {
     return;
   }
-  const partyIds = await characterRepository.getUpdatePartyIds(characterId);
+  let partyIds: string[];
+  try {
+    partyIds = await characterRepository.getUpdatePartyIds(characterId);
+  } catch (err) {
+    log.error({ err, characterId }, 'Saved character: failed to look up live-update audiences');
+    return;
+  }
   for (const partyId of partyIds) {
-    bus.publish(partyId, { type: 'character.updated', characterId, fields });
+    try {
+      bus.publish(partyId, { type: 'character.updated', characterId, fields });
+    } catch (err) {
+      log.error({ err, characterId, partyId }, 'Saved character: failed to publish live update');
+    }
   }
 }

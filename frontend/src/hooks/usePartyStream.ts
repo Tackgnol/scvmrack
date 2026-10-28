@@ -101,9 +101,9 @@ export function usePartyStream(
     () => false,
   );
   const queryClient = useQueryClient();
-  const { enabled = true, onClosed } = options;
+  const { enabled = true, onClosed, onChanged } = options;
   const onClosedRef = useRef(onClosed);
-  const onChangedRef = useRef(options.onChanged);
+  const onChangedRef = useRef(onChanged);
   const [status, setStatus] = useState<PartyStreamStatus>("idle");
   const [changedFieldsByCharacter, setChangedFieldsByCharacter] =
     useState<ChangedFieldsByCharacter>({});
@@ -112,8 +112,8 @@ export function usePartyStream(
 
   useEffect(() => {
     onClosedRef.current = onClosed;
-    onChangedRef.current = options.onChanged;
-  }, [onClosed, options.onChanged]);
+    onChangedRef.current = onChanged;
+  }, [onClosed, onChanged]);
 
   const clearChangedFields = useCallback((characterId?: string) => {
     setChangedFieldsByCharacter((current) => {

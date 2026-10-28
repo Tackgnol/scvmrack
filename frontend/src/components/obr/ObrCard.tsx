@@ -1,6 +1,9 @@
 import OBR from "@owlbear-rodeo/sdk";
 import { obrKeys } from "@/api/obrKeys";
-import { fetchObrCards, type ObrCard } from "@/api/obr";
+import {
+  fetchObrCards,
+  type ObrCard,
+} from "@/api/obr";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { WarbandCardView } from "@/components/organisms/party/WarbandCardView";
 import {
@@ -42,7 +45,7 @@ export function ObrCardRoute({
   const { i18n, t } = useTranslation();
   const [role, setRole] = useState<"GM" | "PLAYER" | null>(null);
   const locale = getApiLocale(i18n.language);
-  const ids = characterId?.trim() ?? "";
+  const id = characterId?.trim() ?? "";
   const room = roomId?.trim() ?? "";
   const token = tokenId?.trim() ?? "";
   const {
@@ -51,9 +54,9 @@ export function ObrCardRoute({
     isFetching,
     isError,
   } = useQuery({
-    queryKey: obrKeys.cardSet(room, [ids], locale),
-    queryFn: () => fetchObrCards([ids], room, locale),
-    enabled: ids.length > 0 && room.length > 0,
+    queryKey: obrKeys.cardSet(room, [id], locale),
+    queryFn: () => fetchObrCards([id], room, locale),
+    enabled: id.length > 0 && room.length > 0,
     // Locale is part of the key, so switching it looks like a brand-new query.
     // Keep showing the previous locale's card while the new one loads instead
     // of blanking to the loading skeleton (RPG-56).
@@ -97,10 +100,7 @@ export function ObrCardRoute({
     try {
       await unbindCharacterFromToken(scvmrackObrExtension, OBR, token);
       await Promise.all([
-        showNotification(
-          t("obr.card.unboundToken", "Token unbound"),
-          "SUCCESS",
-        ),
+        showNotification(t("obr.card.unboundToken", "Token unbound"), "SUCCESS"),
         OBR.popover.close(SCVM_CARD_POPOVER_ID),
       ]);
     } catch {
@@ -112,7 +112,7 @@ export function ObrCardRoute({
   }
 
   const notFoundAction =
-    canUnbind && ids && !card && !isLoading && !isFetching && !isError
+    canUnbind && id && !card && !isLoading && !isFetching && !isError
       ? {
           label: t("obr.card.unbindToken", "Unbind token"),
           busyLabel: t("obr.card.unbindingToken", "Unbinding"),
@@ -120,10 +120,8 @@ export function ObrCardRoute({
         }
       : null;
 
-  if (!ids) {
-    return (
-      <ObrCard card={null} error={t("obr.card.missingId", "Missing scvm id")} />
-    );
+  if (!id) {
+    return <ObrCard card={null} error={t("obr.card.missingId", "Missing scvm id")} />;
   }
 
   // isFetching stays true during the background refetch that `placeholderData`
@@ -134,12 +132,7 @@ export function ObrCardRoute({
   }
 
   if (isError) {
-    return (
-      <ObrCard
-        card={null}
-        error={t("obr.card.loadFailed", "Could not load scvm")}
-      />
-    );
+    return <ObrCard card={null} error={t("obr.card.loadFailed", "Could not load scvm")} />;
   }
 
   return (

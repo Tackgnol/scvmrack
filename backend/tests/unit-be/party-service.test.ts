@@ -215,6 +215,7 @@ mock.module('../../src/repositories/class-pool-repository.js', {
 mock.module('../../src/repositories/character-repository.js', {
   namedExports: {
     characterRepository: {
+      getUpdatePartyIds: async () => [PARTY_ID],
       transaction: async (work: (ops: unknown) => Promise<unknown>) =>
         work({
           lockParty: async () => {},

@@ -113,3 +113,16 @@ Feature: Owlbear table play
     When its owner opens the full sheet and saves a hit-point change
     Then that owned sheet retains the change
     And the scvm remains absent from the room roster and bindings
+
+  # Automation anchors: backend/tests/unit-be/character-service.test.ts; backend/tests/unit-be/character-improvement-service.test.ts
+  Scenario Outline: Keep a completed sheet change when live notification fails
+    Given I own a scvm bound to an Owlbear room
+    When I <action>
+    And the change is committed but its live notification fails
+    Then the completed change is acknowledged as saved
+    And reopening the sheet shows the change applied exactly once
+
+    Examples:
+      | action                |
+      | save a hit-point edit |
+      | apply Getting Better  |

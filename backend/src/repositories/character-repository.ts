@@ -119,16 +119,19 @@ export type CharacterTxOps = ReturnType<typeof characterTxOps>;
 export const characterRepository = {
   /** Parties that can observe this scvm through membership or a live room binding. */
   async getUpdatePartyIds(characterId: string): Promise<string[]> {
+    const bindings = await Promise.all([
+      prisma.obrPlayerCharacterBinding.findMany({ where: { characterId }, select: { obrRoomId: true } }),
+      prisma.obrTokenCharacterBinding.findMany({ where: { characterId }, select: { obrRoomId: true } }),
+    ]);
+    const roomIds = [...new Set(bindings.flat().map(binding => binding.obrRoomId))];
     // The app attaches rooms through parties.obr_room_id; the SDK registry's party_id is optional.
-    const parties = await prisma.$queryRaw<Array<{ id: string }>>`
-      SELECT p.id FROM parties p
-      WHERE p.id IN (SELECT party_id FROM characters WHERE id = ${characterId}::uuid)
-         OR p.obr_room_id IN (
-           SELECT obr_room_id FROM obr_player_character_bindings WHERE character_id = ${characterId}::uuid
-           UNION
-           SELECT obr_room_id FROM obr_token_character_bindings WHERE character_id = ${characterId}::uuid
-         )
-    `;
+    const parties = await prisma.party.findMany({
+      where: { OR: [
+        { members: { some: { id: characterId } } },
+        { obrRoomId: { in: roomIds } },
+      ] },
+      select: { id: true },
+    });
     return parties.map(party => party.id);
   },
   /** Owner lookup for ownership checks. `null` when the row does not exist. */

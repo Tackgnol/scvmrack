@@ -27,70 +27,96 @@ type Binding = { characterId: string; playerId?: string; tokenId?: string };
 type Bindings = { players: Binding[]; tokens: Binding[] };
 type Card = { id: string; currentHp: number; omens: number; silver: number };
 
-for (const binding of ['member', 'self-bound player', 'self-bound token', 'another party'] as const) {
-test(`full-sheet HP saves reach the room GM for ${binding} (RPG-348)`, async () => {
-  const { gm, roomId, party } = await room();
-  const player = await actor(true);
-  const sourceParty = binding === 'another party'
-    ? await call<Party>('/api/parties', gm, 'POST', { name: 'Original party' }, 201)
-    : null;
-  const query = binding === 'member' ? `obrRoom=${roomId}&obrPlayer=live-player`
-    : sourceParty ? `invite=${sourceParty.inviteToken}` : '';
-  const draft = sourceParty ? await call<{ draft: unknown }>(`/api/characters/draft?${query}`, player, 'POST', { classId: 1 }) : null;
-  const scvm = await call<Scvm>(`/api/characters/new?${query}`, player, 'POST', draft ? { draft: draft.draft } : {}, 201);
-  if (binding !== 'member') {
-    const target = binding === 'self-bound token' ? 'tokens/live-token' : 'players/live-player';
-    await call(`/api/obr/rooms/${roomId}/${target}/character`, player, 'PUT', { characterId: scvm.id });
-  }
-  await call(`/api/characters/${scvm.id}`, player, 'PATCH', { maxHp: 4, currentHp: 1 });
-  const controller = new AbortController();
-  const response = await fetch(new URL(`/api/parties/${party.id}/stream`, base), {
-    headers: { Authorization: `Bearer ${gm.token}` },
-    signal: AbortSignal.any([controller.signal, AbortSignal.timeout(15000)]),
-  });
-  assert.equal(response.status, 200);
-  assert.match(response.headers.get('content-type') ?? '', /text\/event-stream/);
-  assert.ok(response.body);
-  const reader = response.body.getReader();
-  const decoder = new TextDecoder();
-  let pending = '';
-  async function nextUpdate(): Promise<{ type: string; characterId: string; fields: string[] }> {
-    while (true) {
-      const separator = pending.indexOf('\n\n');
-      if (separator >= 0) {
-        const frame = pending.slice(0, separator);
-        pending = pending.slice(separator + 2);
-        const data = frame.split('\n').find(line => line.startsWith('data: '));
-        if (data) {
-          const event = JSON.parse(data.slice(6));
-          if (event.type === 'character.updated' && event.characterId === scvm.id) {
-            return event;
+type RoomContext = Awaited<ReturnType<typeof room>>;
+
+async function roomMember(context: RoomContext, player: Actor) {
+  const scvm = await call<Scvm>(`/api/characters/new?obrRoom=${context.roomId}&obrPlayer=live-player`, player, 'POST', {}, 201);
+  return { scvm, expectedParty: context.party.id };
+}
+
+async function standaloneScvm(_context: RoomContext, player: Actor) {
+  const scvm = await call<Scvm>('/api/characters/new', player, 'POST', {}, 201);
+  return { scvm, expectedParty: null };
+}
+
+async function anotherPartyScvm(context: RoomContext, player: Actor) {
+  const party = await call<Party>('/api/parties', context.gm, 'POST', { name: 'Original party' }, 201);
+  const query = `invite=${party.inviteToken}`;
+  const rolled = await call<{ draft: unknown }>(`/api/characters/draft?${query}`, player, 'POST', { classId: 1 });
+  const scvm = await call<Scvm>(`/api/characters/new?${query}`, player, 'POST', { draft: rolled.draft }, 201);
+  return { scvm, expectedParty: party.id };
+}
+
+const liveSaveCases = [
+  { name: 'member', create: roomMember, bind: null },
+  { name: 'self-bound player', create: standaloneScvm, bind: 'players/live-player' },
+  { name: 'self-bound token', create: standaloneScvm, bind: 'tokens/live-token' },
+  { name: 'another party', create: anotherPartyScvm, bind: 'players/live-player' },
+];
+
+for (const scenario of liveSaveCases) {
+  test(`full-sheet HP saves reach the room GM for ${scenario.name} (RPG-348)`, async () => {
+    const context = await room();
+    const { gm, roomId, party } = context;
+    const player = await actor(true);
+    const { scvm, expectedParty } = await scenario.create(context, player);
+    if (scenario.bind) {
+      await call(`/api/obr/rooms/${roomId}/${scenario.bind}/character`, player, 'PUT', { characterId: scvm.id });
+    }
+    await call(`/api/characters/${scvm.id}`, player, 'PATCH', { maxHp: 4, currentHp: 1 });
+    const controller = new AbortController();
+    const response = await fetch(new URL(`/api/parties/${party.id}/stream`, base), {
+      headers: { Authorization: `Bearer ${gm.token}` },
+      signal: AbortSignal.any([controller.signal, AbortSignal.timeout(15000)]),
+    });
+    assert.equal(response.status, 200);
+    assert.match(response.headers.get('content-type') ?? '', /text\/event-stream/);
+    assert.ok(response.body);
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let pending = '';
+    async function nextUpdate(): Promise<{ type: string; characterId: string; fields: string[] }> {
+      while (true) {
+        const separator = pending.indexOf('\n\n');
+        if (separator >= 0) {
+          const frame = pending.slice(0, separator);
+          pending = pending.slice(separator + 2);
+          const data = frame.split('\n').find(line => line.startsWith('data: '));
+          if (data) {
+            const event = JSON.parse(data.slice(6));
+            if (event.type === 'character.updated' && event.characterId === scvm.id) {
+              return event;
+            }
           }
+        } else {
+          const chunk = await reader.read();
+          assert.equal(chunk.done, false, 'The GM stream remains connected');
+          pending += decoder.decode(chunk.value, { stream: true });
         }
-      } else {
-        const chunk = await reader.read();
-        assert.equal(chunk.done, false, 'The GM stream remains connected');
-        pending += decoder.decode(chunk.value, { stream: true });
       }
     }
-  }
-  try {
-    for (const currentHp of [2, 3]) {
-      await call(`/api/characters/${scvm.id}`, player, 'PATCH', { currentHp });
-      const event = await nextUpdate();
-      assert.ok(event.fields.includes('currentHp'));
-      assert.equal((await call<Scvm>(`/api/characters/${scvm.id}`, player)).currentHp, currentHp);
-      const cards = await call<Card[]>(`/api/obr/rooms/${roomId}/cards?ids=${scvm.id}&locale=en`);
-      assert.equal(cards[0]?.currentHp, currentHp);
+    try {
+      for (const currentHp of [2, 3]) {
+        await call(`/api/characters/${scvm.id}`, player, 'PATCH', { currentHp });
+        const event = await nextUpdate();
+        assert.ok(event.fields.includes('currentHp'));
+        assert.equal((await call<Scvm>(`/api/characters/${scvm.id}`, player)).currentHp, currentHp);
+        const cards = await call<Card[]>(`/api/obr/rooms/${roomId}/cards?ids=${scvm.id}&locale=en`);
+        assert.equal(cards[0]?.currentHp, currentHp);
+      }
+      if (expectedParty) {
+        await call(`/api/parties/${expectedParty}/miseries`, gm, 'PUT', { miseryCount: 4 });
+        assert.ok((await nextUpdate()).fields.includes('miseryCount'));
+        assert.equal((await call<Scvm>(`/api/characters/${scvm.id}`, player)).miseryCount, 4);
+      }
+      assert.equal((await call<Scvm>(`/api/characters/${scvm.id}`, player)).partyId,
+        expectedParty,
+        'Room binding and live saves do not move the scvm between parties');
+    } finally {
+      await reader.cancel();
+      controller.abort();
     }
-    assert.equal((await call<Scvm>(`/api/characters/${scvm.id}`, player)).partyId,
-      binding === 'member' ? party.id : sourceParty?.id ?? null,
-      'Room binding and live saves do not move the scvm between parties');
-  } finally {
-    await reader.cancel();
-    controller.abort();
-  }
-});
+  });
 }
 
 test('a full-sheet save after room removal keeps ownership without restoring participation', async () => {
