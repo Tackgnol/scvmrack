@@ -131,11 +131,11 @@ mock.module('../../src/repositories/character-repository.js', {
       },
       getPresence: async () => state.presenceRow,
       getPartyId: async () => state.partyIdRow,
-      getUpdatePartyIds: async () => {
+      getUpdateAudiences: async (characterIds: string[]) => {
         if (state.notificationLookupError) {
           throw state.notificationLookupError;
         }
-        return state.partyIdRow?.partyId ? [state.partyIdRow.partyId] : [];
+        return characterIds.map(characterId => ({ characterId, partyIds: state.partyIdRow?.partyId ? [state.partyIdRow.partyId] : [] }));
       },
       update: async (id: string, data: unknown) => {
         state.updateCalls.push({ id, data });

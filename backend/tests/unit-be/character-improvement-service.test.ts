@@ -247,11 +247,11 @@ mock.module('../../src/lib/get-character-full.js', {
 
 mock.module('../../src/repositories/character-repository.js', {
   namedExports: { characterRepository: {
-    getUpdatePartyIds: async () => {
+    getUpdateAudiences: async (characterIds: string[]) => {
       if (notificationLookupError) {
         throw notificationLookupError;
       }
-      return ['room-party'];
+      return characterIds.map(characterId => ({ characterId, partyIds: ['room-party'] }));
     },
   } },
 });

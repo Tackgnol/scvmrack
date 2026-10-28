@@ -38,7 +38,7 @@ import {
   type ServiceResult,
 } from './result.js';
 import type { PartyEventBus } from '../plugins/party-bus.js';
-import { publishCharacterUpdated } from './character-events.js';
+import { publishCharacterUpdates } from './character-events.js';
 import {
   ownsCharacter,
   sessionId,
@@ -476,7 +476,7 @@ export function createCharacterService(
         if (!character) {
           return fail(notFound('CHARACTER_NOT_FOUND', 'Character not found'));
         }
-        await publishCharacterUpdated(partyBus, input.id, changedFields, log);
+        await publishCharacterUpdates(partyBus, [input.id], changedFields, log);
         return ok(character);
       } catch (err) {
         if (

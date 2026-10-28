@@ -29,17 +29,17 @@ type Card = { id: string; currentHp: number; omens: number; silver: number };
 
 type RoomContext = Awaited<ReturnType<typeof room>>;
 
-async function roomMember(context: RoomContext, player: Actor) {
+async function roomMember(player: Actor, context: RoomContext) {
   const scvm = await call<Scvm>(`/api/characters/new?obrRoom=${context.roomId}&obrPlayer=live-player`, player, 'POST', {}, 201);
   return { scvm, expectedParty: context.party.id };
 }
 
-async function standaloneScvm(_context: RoomContext, player: Actor) {
+async function standaloneScvm(player: Actor) {
   const scvm = await call<Scvm>('/api/characters/new', player, 'POST', {}, 201);
   return { scvm, expectedParty: null };
 }
 
-async function anotherPartyScvm(context: RoomContext, player: Actor) {
+async function anotherPartyScvm(player: Actor, context: RoomContext) {
   const party = await call<Party>('/api/parties', context.gm, 'POST', { name: 'Original party' }, 201);
   const query = `invite=${party.inviteToken}`;
   const rolled = await call<{ draft: unknown }>(`/api/characters/draft?${query}`, player, 'POST', { classId: 1 });
@@ -59,46 +59,17 @@ for (const scenario of liveSaveCases) {
     const context = await room();
     const { gm, roomId, party } = context;
     const player = await actor(true);
-    const { scvm, expectedParty } = await scenario.create(context, player);
+    const { scvm, expectedParty } = await scenario.create(player, context);
     if (scenario.bind) {
       await call(`/api/obr/rooms/${roomId}/${scenario.bind}/character`, player, 'PUT', { characterId: scvm.id });
     }
     await call(`/api/characters/${scvm.id}`, player, 'PATCH', { maxHp: 4, currentHp: 1 });
-    const controller = new AbortController();
-    const response = await fetch(new URL(`/api/parties/${party.id}/stream`, base), {
-      headers: { Authorization: `Bearer ${gm.token}` },
-      signal: AbortSignal.any([controller.signal, AbortSignal.timeout(15000)]),
-    });
-    assert.equal(response.status, 200);
-    assert.match(response.headers.get('content-type') ?? '', /text\/event-stream/);
-    assert.ok(response.body);
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-    let pending = '';
-    async function nextUpdate(): Promise<{ type: string; characterId: string; fields: string[] }> {
-      while (true) {
-        const separator = pending.indexOf('\n\n');
-        if (separator >= 0) {
-          const frame = pending.slice(0, separator);
-          pending = pending.slice(separator + 2);
-          const data = frame.split('\n').find(line => line.startsWith('data: '));
-          if (data) {
-            const event = JSON.parse(data.slice(6));
-            if (event.type === 'character.updated' && event.characterId === scvm.id) {
-              return event;
-            }
-          }
-        } else {
-          const chunk = await reader.read();
-          assert.equal(chunk.done, false, 'The GM stream remains connected');
-          pending += decoder.decode(chunk.value, { stream: true });
-        }
-      }
-    }
+    const { nextUpdate, close } = await openUpdates(party.id, gm);
     try {
       for (const currentHp of [2, 3]) {
         await call(`/api/characters/${scvm.id}`, player, 'PATCH', { currentHp });
         const event = await nextUpdate();
+        assert.equal(event.characterId, scvm.id);
         assert.ok(event.fields.includes('currentHp'));
         assert.equal((await call<Scvm>(`/api/characters/${scvm.id}`, player)).currentHp, currentHp);
         const cards = await call<Card[]>(`/api/obr/rooms/${roomId}/cards?ids=${scvm.id}&locale=en`);
@@ -113,11 +84,80 @@ for (const scenario of liveSaveCases) {
         expectedParty,
         'Room binding and live saves do not move the scvm between parties');
     } finally {
-      await reader.cancel();
-      controller.abort();
+      await close();
     }
   });
 }
+
+async function openUpdates(partyId: string, subscriber: Actor) {
+  const controller = new AbortController();
+  const response = await fetch(new URL(`/api/parties/${partyId}/stream`, base), {
+    headers: { Authorization: `Bearer ${subscriber.token}` },
+    signal: AbortSignal.any([controller.signal, AbortSignal.timeout(15000)]),
+  });
+  assert.equal(response.status, 200);
+  assert.match(response.headers.get('content-type') ?? '', /text\/event-stream/);
+  assert.ok(response.body);
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let pending = '';
+  async function nextUpdate(): Promise<{ type: string; characterId: string; fields: string[] }> {
+    while (true) {
+      const separator = pending.indexOf('\n\n');
+      if (separator >= 0) {
+        const frame = pending.slice(0, separator);
+        pending = pending.slice(separator + 2);
+        const data = frame.split('\n').find(line => line.startsWith('data: '));
+        if (data) {
+          const event = JSON.parse(data.slice(6));
+          if (event.type === 'character.updated') {
+            return event;
+          }
+        }
+      } else {
+        const chunk = await reader.read();
+        assert.equal(chunk.done, false, 'The GM stream remains connected');
+        pending += decoder.decode(chunk.value, { stream: true });
+      }
+    }
+  }
+  return { nextUpdate, close: async () => { await reader.cancel(); controller.abort(); } };
+}
+
+test('a Miseries batch keeps each scvm scoped to its bound rooms', async () => {
+  const source = await room();
+  const player = await actor(true);
+  const destinations = [await room(), await room()];
+  const participants: Array<{ scvm: Scvm; updates: Awaited<ReturnType<typeof openUpdates>> }> = [];
+  try {
+    for (const destination of destinations) {
+      const { scvm } = await roomMember(player, source);
+      await call(`/api/obr/rooms/${destination.roomId}/players/bound-player/character`, player, 'PUT', { characterId: scvm.id });
+      const updates = await openUpdates(destination.party.id, destination.gm);
+      participants.push({ scvm, updates });
+    }
+    await call(`/api/parties/${source.party.id}/miseries`, source.gm, 'PUT', { miseryCount: 4 });
+    for (const { scvm, updates } of participants) {
+      // This later save is a stream boundary after all batch events; no sleeps are needed.
+      await call(`/api/characters/${scvm.id}`, player, 'PATCH', { silver: 31 });
+      const received = [];
+      while (true) {
+        const event = await updates.nextUpdate();
+        if (event.fields.includes('silver')) {
+          assert.equal(event.characterId, scvm.id);
+          break;
+        }
+        received.push(event);
+      }
+      assert.deepEqual(received.map(event => [event.characterId, event.fields]), [[scvm.id, ['miseryCount']]]);
+      const persisted = await call<Scvm>(`/api/characters/${scvm.id}`, player);
+      assert.equal(persisted.miseryCount, 4);
+      assert.equal(persisted.partyId, source.party.id);
+    }
+  } finally {
+    await Promise.all(participants.map(({ updates }) => updates.close()));
+  }
+});
 
 test('a full-sheet save after room removal keeps ownership without restoring participation', async () => {
   const { gm, roomId, party } = await room();

@@ -73,6 +73,8 @@ const state = {
   deleteCalls: [] as string[],
   renameCalls: [] as Array<{ id: string; name: string }>,
   miseryCharacterIds: [] as string[],
+  audienceCalls: [] as string[][],
+  audienceError: null as Error | null,
   setMiseryCalls: [] as Array<{ partyId: string; miseryCount: number }>,
   setPartyOwnerCalls: [] as Array<{ id: string; ownerUserId: string }>,
   setObrRoomCalls: [] as Array<{ id: string; obrRoomId: string | null }>,
@@ -85,6 +87,8 @@ const publishedEvents: Array<{
 }> = [];
 
 function resetState(): void {
+  state.audienceCalls = [];
+  state.audienceError = null;
   state.party = null;
   state.partyByToken = null;
   state.partyByObrRoomId = null;
@@ -215,7 +219,13 @@ mock.module('../../src/repositories/class-pool-repository.js', {
 mock.module('../../src/repositories/character-repository.js', {
   namedExports: {
     characterRepository: {
-      getUpdatePartyIds: async () => [PARTY_ID],
+      getUpdateAudiences: async (characterIds: string[]) => {
+        state.audienceCalls.push([...characterIds]);
+        if (state.audienceError) {
+          throw state.audienceError;
+        }
+        return characterIds.map(characterId => ({ characterId, partyIds: [PARTY_ID] }));
+      },
       transaction: async (work: (ops: unknown) => Promise<unknown>) =>
         work({
           lockParty: async () => {},
@@ -237,8 +247,8 @@ const { createPartyService } = await import(
 
 const noopLog = { error: () => {} };
 const service = () => createPartyService(noopLog);
-const serviceWithBus = () =>
-  createPartyService(noopLog, {
+const serviceWithBus = (log = noopLog) =>
+  createPartyService(log, {
     publish: (
       partyId: string,
       event: { type: string; [key: string]: unknown }
@@ -1312,6 +1322,27 @@ test('setMiseries updates every party character and publishes live invalidations
       },
     },
   ]);
+});
+
+test('Miseries resolves recipients once for the whole party', async () => {
+  state.party = partyWith([], 'gm-1');
+  state.miseryCharacterIds = [CHAR_ID, '22222222-2222-4222-8222-222222222222'];
+  const result = await serviceWithBus().setMiseries({ session: gm(), id: PARTY_ID, miseryCount: 4 });
+  assert.equal(result.ok, true);
+  assert.deepEqual(state.audienceCalls, [state.miseryCharacterIds]);
+  assert.equal(publishedEvents.length, 2);
+});
+
+test('committed Miseries stay successful when the batch notification lookup fails', async () => {
+  state.party = partyWith([], 'gm-1');
+  state.miseryCharacterIds = [CHAR_ID, '22222222-2222-4222-8222-222222222222'];
+  state.audienceError = new Error('Recipients unavailable');
+  const logged = mock.fn();
+  const result = await serviceWithBus({ error: logged }).setMiseries({ session: gm(), id: PARTY_ID, miseryCount: 4 });
+  assert.deepEqual(result, { ok: true, value: { miseryCount: 4, updatedCharacters: 2 } });
+  assert.deepEqual(state.setMiseryCalls, [{ partyId: PARTY_ID, miseryCount: 4 }]);
+  assert.equal(logged.mock.calls.length, 1);
+  assert.deepEqual(state.audienceCalls, [state.miseryCharacterIds]);
 });
 
 test('setMiseries rejects values outside zero through seven', async () => {

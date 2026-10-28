@@ -17,7 +17,7 @@ import { characterImprovementRepository } from '../repositories/character-improv
 import type { ImprovementCharacterRow } from '../repositories/character-improvement-repository.js';
 import { isValidLocale, isValidUUID } from '../utils.js';
 import type { PartyEventBus } from '../plugins/party-bus.js';
-import { publishCharacterUpdated } from './character-events.js';
+import { publishCharacterUpdates } from './character-events.js';
 import { characterUpdateFromApplied, gainedAbilityItems } from './character-improvement-apply.js';
 import {
   buildDraft,
@@ -290,7 +290,7 @@ export function createCharacterImprovementService(
         if (!character) {
           return fail(notFound('CHARACTER_NOT_FOUND', 'Character not found'));
         }
-        await publishCharacterUpdated(partyBus, input.id, Object.keys(data), log);
+        await publishCharacterUpdates(partyBus, [input.id], Object.keys(data), log);
         return ok(character);
       } catch (err) {
         const ruleError = mapRuleError(err);

@@ -1,29 +1,34 @@
 import type { PartyEventBus } from '../plugins/party-bus.js';
-import { characterRepository } from '../repositories/character-repository.js';
+import { characterRepository, type CharacterUpdateAudience } from '../repositories/character-repository.js';
+import { notificationRepository } from '../repositories/notification-repository.js';
 import type { ServiceLogger } from './result.js';
 
 /** Best-effort notification; a committed save remains successful if delivery fails. */
-export async function publishCharacterUpdated(
+export async function publishCharacterUpdates(
   bus: PartyEventBus | undefined,
-  characterId: string,
+  characterIds: readonly string[],
   fields: string[],
   log: ServiceLogger
 ): Promise<void> {
-  if (!bus) {
+  if (!bus || characterIds.length === 0) {
     return;
   }
-  let partyIds: string[];
+  let audiences: CharacterUpdateAudience[];
   try {
-    partyIds = await characterRepository.getUpdatePartyIds(characterId);
+    audiences = await characterRepository.getUpdateAudiences(characterIds);
   } catch (err) {
-    log.error({ err, characterId }, 'Saved character: failed to look up live-update audiences');
+    log.error({ err, characterIds }, 'Saved characters: failed to look up live-update audiences');
+    notificationRepository.reportFailure('audience_lookup');
     return;
   }
-  for (const partyId of partyIds) {
-    try {
-      bus.publish(partyId, { type: 'character.updated', characterId, fields });
-    } catch (err) {
-      log.error({ err, characterId, partyId }, 'Saved character: failed to publish live update');
+  for (const { characterId, partyIds } of audiences) {
+    for (const partyId of partyIds) {
+      try {
+        bus.publish(partyId, { type: 'character.updated', characterId, fields });
+      } catch (err) {
+        log.error({ err, characterId, partyId }, 'Saved character: failed to publish live update');
+        notificationRepository.reportFailure('publish');
+      }
     }
   }
 }

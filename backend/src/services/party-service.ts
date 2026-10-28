@@ -1,5 +1,5 @@
 import crypto from 'node:crypto';
-import { publishCharacterUpdated } from './character-events.js';
+import { publishCharacterUpdates } from './character-events.js';
 import {
   partyRepository,
   type PartyMemberRow,
@@ -626,9 +626,7 @@ export function createPartyService(
           input.id,
           input.miseryCount
         );
-        await Promise.all(characterIds.map(characterId =>
-          publishCharacterUpdated(partyBus, characterId, ['miseryCount'], log)
-        ));
+        await publishCharacterUpdates(partyBus, characterIds, ['miseryCount'], log);
         return ok({
           miseryCount: input.miseryCount,
           updatedCharacters: characterIds.length,
