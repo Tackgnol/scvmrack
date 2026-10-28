@@ -38,6 +38,7 @@ import {
   type ServiceResult,
 } from './result.js';
 import type { PartyEventBus } from '../plugins/party-bus.js';
+import { publishCharacterUpdated } from './character-events.js';
 import {
   ownsCharacter,
   sessionId,
@@ -432,8 +433,6 @@ export function createCharacterService(
       }
 
       try {
-        const partyBinding = await characterRepository.getPartyId(input.id);
-
         // Hydrate inventory uses for equipment and storage if present.
         if (Array.isArray(updates['equipment']) || Array.isArray(updates['storage'])) {
           const roller = new Roller({ engine: new OSRandomEngine() });
@@ -477,13 +476,7 @@ export function createCharacterService(
         if (!character) {
           return fail(notFound('CHARACTER_NOT_FOUND', 'Character not found'));
         }
-        if (partyBinding?.partyId) {
-          partyBus?.publish(partyBinding.partyId, {
-            type: 'character.updated',
-            characterId: input.id,
-            fields: changedFields,
-          });
-        }
+        await publishCharacterUpdated(partyBus, input.id, changedFields);
         return ok(character);
       } catch (err) {
         if (

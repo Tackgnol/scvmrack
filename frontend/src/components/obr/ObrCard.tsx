@@ -1,8 +1,6 @@
 import OBR from "@owlbear-rodeo/sdk";
-import {
-  fetchObrCards,
-  type ObrCard,
-} from "@/api/obr";
+import { obrKeys } from "@/api/obrKeys";
+import { fetchObrCards, type ObrCard } from "@/api/obr";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { WarbandCardView } from "@/components/organisms/party/WarbandCardView";
 import {
@@ -53,7 +51,7 @@ export function ObrCardRoute({
     isFetching,
     isError,
   } = useQuery({
-    queryKey: ["obr", "cards", room, ids, locale],
+    queryKey: obrKeys.cardSet(room, [ids], locale),
     queryFn: () => fetchObrCards([ids], room, locale),
     enabled: ids.length > 0 && room.length > 0,
     // Locale is part of the key, so switching it looks like a brand-new query.
@@ -99,7 +97,10 @@ export function ObrCardRoute({
     try {
       await unbindCharacterFromToken(scvmrackObrExtension, OBR, token);
       await Promise.all([
-        showNotification(t("obr.card.unboundToken", "Token unbound"), "SUCCESS"),
+        showNotification(
+          t("obr.card.unboundToken", "Token unbound"),
+          "SUCCESS",
+        ),
         OBR.popover.close(SCVM_CARD_POPOVER_ID),
       ]);
     } catch {
@@ -120,7 +121,9 @@ export function ObrCardRoute({
       : null;
 
   if (!ids) {
-    return <ObrCard card={null} error={t("obr.card.missingId", "Missing scvm id")} />;
+    return (
+      <ObrCard card={null} error={t("obr.card.missingId", "Missing scvm id")} />
+    );
   }
 
   // isFetching stays true during the background refetch that `placeholderData`
@@ -131,7 +134,12 @@ export function ObrCardRoute({
   }
 
   if (isError) {
-    return <ObrCard card={null} error={t("obr.card.loadFailed", "Could not load scvm")} />;
+    return (
+      <ObrCard
+        card={null}
+        error={t("obr.card.loadFailed", "Could not load scvm")}
+      />
+    );
   }
 
   return (

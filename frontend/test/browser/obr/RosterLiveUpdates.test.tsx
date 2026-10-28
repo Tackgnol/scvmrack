@@ -5,6 +5,7 @@ import { page } from "vitest/browser";
 import { beforeEach, expect, it, vi } from "vitest";
 import { ObrPartyRoster } from "@/components/obr/ObrPartyRoster";
 import { resetRedirectControl } from "@/api";
+import { obrKeys } from "@/api/obrKeys";
 import BrowserTestProvider from "../BrowserTestProvider";
 
 const stream = vi.hoisted(() => ({
@@ -14,9 +15,7 @@ vi.mock("@microsoft/fetch-event-source", () => ({
   EventStreamContentType: "text/event-stream",
   fetchEventSource: async (_url: string, options: FetchEventSourceInit) => {
     stream.options = options;
-    await options.onopen?.(
-      new Response("", { headers: { "content-type": "text/event-stream" } }),
-    );
+    await openStream(options);
     await new Promise<void>((resolve) =>
       options.signal?.addEventListener("abort", () => resolve(), {
         once: true,
@@ -150,34 +149,13 @@ function send(type: "character.updated" | "character.kicked") {
   });
 }
 
-for (const trigger of ["save", "reconnect"] as const) {
-  it(`discards a pre-save HP response still pending on ${trigger}`, async () => {
-    holdFirstCards = true;
-    const client = new QueryClient({
-      defaultOptions: { queries: { staleTime: 300000, retry: false } },
-    });
-    await render(
-      <BrowserTestProvider>
-        <QueryClientProvider client={client}>
-          <ObrPartyRoster />
-        </QueryClientProvider>
-      </BrowserTestProvider>,
-    );
-    await expect.poll(() => releaseCards).toBeTypeOf("function");
-    hp = 2;
-    if (trigger === "save") {
-      send("character.updated");
-    } else {
-      await stream.options?.onopen?.(
-        new Response("", { headers: { "content-type": "text/event-stream" } }),
-      );
-    }
-    releaseCards?.();
-    await expect.element(page.getByText("2/4", { exact: true })).toBeVisible();
-  });
+function openStream(options = stream.options) {
+  return options?.onopen?.(
+    new Response("", { headers: { "content-type": "text/event-stream" } }),
+  );
 }
 
-it("shows successive full-sheet save events live and retains the latest HP when reopened (RPG-348)", async () => {
+async function renderRoster() {
   const client = new QueryClient({
     defaultOptions: { queries: { staleTime: 300000, retry: false } },
   });
@@ -188,7 +166,36 @@ it("shows successive full-sheet save events live and retains the latest HP when 
       </QueryClientProvider>
     </BrowserTestProvider>,
   );
+  return { client, view };
+}
+
+for (const trigger of ["save", "reconnect"] as const) {
+  it(`discards a pre-save HP response still pending on ${trigger}`, async () => {
+    holdFirstCards = true;
+    await renderRoster();
+    await expect.poll(() => releaseCards).toBeTypeOf("function");
+    hp = 2;
+    if (trigger === "save") {
+      send("character.updated");
+    } else {
+      await openStream();
+    }
+    releaseCards?.();
+    await expect.element(page.getByText("2/4", { exact: true })).toBeVisible();
+  });
+}
+
+it("shows successive full-sheet save events live and retains the latest HP when reopened (RPG-348)", async () => {
+  const { client, view } = await renderRoster();
   await expect.element(page.getByText("1/4", { exact: true })).toBeVisible();
+  // Inspect the real package hook's cache, so an SDK key change fails explicitly.
+  expect(
+    client
+      .getQueryCache()
+      .findAll({ queryKey: obrKeys.cards() })
+      .filter((query) => query.state.data !== undefined)
+      .map((query) => query.queryKey),
+  ).toEqual([obrKeys.cardSet("live-room", ["scvm"], "en")]);
   await expect.poll(() => stream.options?.onmessage).toBeTypeOf("function");
   for (const value of [2, 3]) {
     hp = value;
@@ -212,23 +219,12 @@ it("shows successive full-sheet save events live and retains the latest HP when 
   await expect.element(page.getByText("3/4", { exact: true })).toBeVisible();
   // A reopened stream must catch up even if a save happened while disconnected.
   hp = 4;
-  await stream.options?.onopen?.(
-    new Response("", { headers: { "content-type": "text/event-stream" } }),
-  );
+  await openStream();
   await expect.element(page.getByText("4/4", { exact: true })).toBeVisible();
 });
 
 it("keeps a removed scvm absent when a later full-sheet save event arrives", async () => {
-  const client = new QueryClient({
-    defaultOptions: { queries: { staleTime: 300000, retry: false } },
-  });
-  await render(
-    <BrowserTestProvider>
-      <QueryClientProvider client={client}>
-        <ObrPartyRoster />
-      </QueryClientProvider>
-    </BrowserTestProvider>,
-  );
+  await renderRoster();
   await expect
     .element(page.getByText("Live scvm", { exact: true }))
     .toBeVisible();

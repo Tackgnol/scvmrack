@@ -117,6 +117,20 @@ function characterTxOps(tx: Prisma.TransactionClient) {
 export type CharacterTxOps = ReturnType<typeof characterTxOps>;
 
 export const characterRepository = {
+  /** Parties that can observe this scvm through membership or a live room binding. */
+  async getUpdatePartyIds(characterId: string): Promise<string[]> {
+    // The app attaches rooms through parties.obr_room_id; the SDK registry's party_id is optional.
+    const parties = await prisma.$queryRaw<Array<{ id: string }>>`
+      SELECT p.id FROM parties p
+      WHERE p.id IN (SELECT party_id FROM characters WHERE id = ${characterId}::uuid)
+         OR p.obr_room_id IN (
+           SELECT obr_room_id FROM obr_player_character_bindings WHERE character_id = ${characterId}::uuid
+           UNION
+           SELECT obr_room_id FROM obr_token_character_bindings WHERE character_id = ${characterId}::uuid
+         )
+    `;
+    return parties.map(party => party.id);
+  },
   /** Owner lookup for ownership checks. `null` when the row does not exist. */
   getOwnerId(id: string): Promise<{ userId: string | null } | null> {
     return prisma.character.findUnique({

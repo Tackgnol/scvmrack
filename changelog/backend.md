@@ -1,5 +1,6 @@
 # Backend — Feature Summary
 
+- The app should no longer skip Owlbear room updates when an owner binds a scvm without joining the room party, including a scvm that belongs to another party. Saves and improvements notify the scvm's party and actively bound room parties without moving its membership. (RPG-348)
 - API documentation now describes successful health, catalog item and Owlbear binding responses, including nullable fields, and validation errors for class lists and class details. These close the five contract gaps reported by the canary CATS run. (RPG-340)
 - The app should no longer fail to return catalog equipment when it has a numeric health modifier. Catalog responses and generated client types preserve that modifier as an integer. (RPG-340)
 

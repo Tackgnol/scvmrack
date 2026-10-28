@@ -14,6 +14,7 @@ type Scvm = {
   omens: number;
   silver: number;
   miseryCount: number;
+  partyId?: string | null;
   abilities: Array<{ name: string }>;
   equipment: Array<{ name: string }>;
 };
@@ -26,10 +27,21 @@ type Binding = { characterId: string; playerId?: string; tokenId?: string };
 type Bindings = { players: Binding[]; tokens: Binding[] };
 type Card = { id: string; currentHp: number; omens: number; silver: number };
 
-test('full-sheet HP saves publish persisted updates to the room GM stream (RPG-348)', async () => {
+for (const binding of ['member', 'self-bound player', 'self-bound token', 'another party'] as const) {
+test(`full-sheet HP saves reach the room GM for ${binding} (RPG-348)`, async () => {
   const { gm, roomId, party } = await room();
   const player = await actor(true);
-  const scvm = await call<Scvm>(`/api/characters/new?obrRoom=${roomId}&obrPlayer=live-player`, player, 'POST', {}, 201);
+  const sourceParty = binding === 'another party'
+    ? await call<Party>('/api/parties', gm, 'POST', { name: 'Original party' }, 201)
+    : null;
+  const query = binding === 'member' ? `obrRoom=${roomId}&obrPlayer=live-player`
+    : sourceParty ? `invite=${sourceParty.inviteToken}` : '';
+  const draft = sourceParty ? await call<{ draft: unknown }>(`/api/characters/draft?${query}`, player, 'POST', { classId: 1 }) : null;
+  const scvm = await call<Scvm>(`/api/characters/new?${query}`, player, 'POST', draft ? { draft: draft.draft } : {}, 201);
+  if (binding !== 'member') {
+    const target = binding === 'self-bound token' ? 'tokens/live-token' : 'players/live-player';
+    await call(`/api/obr/rooms/${roomId}/${target}/character`, player, 'PUT', { characterId: scvm.id });
+  }
   await call(`/api/characters/${scvm.id}`, player, 'PATCH', { maxHp: 4, currentHp: 1 });
   const controller = new AbortController();
   const response = await fetch(new URL(`/api/parties/${party.id}/stream`, base), {
@@ -71,11 +83,15 @@ test('full-sheet HP saves publish persisted updates to the room GM stream (RPG-3
       const cards = await call<Card[]>(`/api/obr/rooms/${roomId}/cards?ids=${scvm.id}&locale=en`);
       assert.equal(cards[0]?.currentHp, currentHp);
     }
+    assert.equal((await call<Scvm>(`/api/characters/${scvm.id}`, player)).partyId,
+      binding === 'member' ? party.id : sourceParty?.id ?? null,
+      'Room binding and live saves do not move the scvm between parties');
   } finally {
     await reader.cancel();
     controller.abort();
   }
 });
+}
 
 test('a full-sheet save after room removal keeps ownership without restoring participation', async () => {
   const { gm, roomId, party } = await room();

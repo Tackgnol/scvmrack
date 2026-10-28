@@ -64,6 +64,42 @@ beforeEach(() => {
   (useQueryClient as any).mockReturnValue(createQueryClientMock());
 });
 
+test("notifies a consumer once for stream opening, saved edits and membership changes", async () => {
+  const onChanged = vi.fn();
+  renderHook(() => usePartyStream("party-1", { onChanged }));
+  await act(async () => {
+    await calls[0].options.onopen(okResponse);
+  });
+  expect(onChanged).toHaveBeenCalledTimes(1);
+  act(() =>
+    emit("character.updated", {
+      type: "character.updated",
+      characterId: "scvm",
+      fields: ["currentHp"],
+    }),
+  );
+  expect(onChanged).toHaveBeenCalledTimes(2);
+  act(() =>
+    emit("character.joined", { type: "character.joined", characterId: "scvm" }),
+  );
+  expect(onChanged).toHaveBeenCalledTimes(3);
+  act(() =>
+    emit("character.presence", {
+      type: "character.presence",
+      characterId: "scvm",
+      connected: true,
+    }),
+  );
+  act(() =>
+    emit("character.updated", {
+      type: "character.updated",
+      characterId: "scvm",
+      fields: null,
+    }),
+  );
+  expect(onChanged).toHaveBeenCalledTimes(3);
+});
+
 test("quarantining a cookie-only session aborts its stream even when the bearer stays null", async () => {
   const { result } = renderHook(() => usePartyStream("party-1"));
   expect(calls).toHaveLength(1);

@@ -1,4 +1,8 @@
 import {
+  customClassDraft,
+  localized,
+  offerPrivateClass,
+  holdPartyRead,
   createSeededCharacter,
   createTestUser,
   expect,
@@ -57,23 +61,10 @@ for (const kind of ['Book', 'private Custom'] as const) {
     const party = await created.json();
     let className = 'Fanged Deserter';
     if (kind === 'private Custom') {
-      const localized = (en: string) => ({ en, pl: '' });
-      const saved = await page.request.post('/api/classes', { headers, data: { draft: {
-        languages: ['en'], name: localized('E2E Forge Keeper'), description: localized('Keeps every new scvm.'),
-        stats: Object.fromEntries(['strength', 'agility', 'presence', 'toughness'].map(stat =>
-          [stat, { count: 3, faces: 6, modifier: 0, dropLowest: false }])),
-        hpDie: 8, omenDie: 2, weaponDie: 10, armorDie: 4,
-        silver: { count: 2, faces: 6, multiplier: 10 }, origins: [localized('The forge')],
-        abilities: [], randomAbilityCount: 0, items: [], gettingBetterRule: 'book', gettingBetterNote: localized(''),
-      } } });
-      expect(saved.status()).toBe(201);
-      const cls = await saved.json();
-      const pool = await (await page.request.get(`/api/parties/${party.id}/class-pool`)).json();
-      const lineage = pool.classes.find((entry: { classId: number }) => entry.classId === cls.id);
-      expect(lineage).toBeTruthy();
-      expect((await page.request.put(`/api/parties/${party.id}/class-pool/lineages/${lineage.lineageId}`, {
-        headers, data: { enabled: true },
-      })).ok()).toBe(true);
+      await offerPrivateClass(page, party.id, customClassDraft({
+        name: localized('E2E Forge Keeper'), description: localized('Keeps every new scvm.'),
+        origins: [localized('The forge')], abilities: [],
+      }));
       className = 'E2E Forge Keeper';
     }
     const player = await createTestUser('E2E Repeated Forger');
@@ -88,21 +79,11 @@ for (const kind of ['Book', 'private Custom'] as const) {
       await expect(sheet.getByTestId('hp-input')).toBeVisible();
       const ids = [original.id];
       for (const ordinal of [2, 3]) {
-        let membershipCaptured = false;
-        if (ordinal === 3) {
-          const pendingMembership = new Promise<void>(resolve => { releaseMembership = resolve; });
-          // Deliver a real pre-create membership snapshot after creation succeeds.
-          await sheet.route(`**/api/parties/${party.id}`, async route => {
-            const response = await route.fetch();
-            membershipCaptured = true;
-            await pendingMembership;
-            await route.fulfill({ response });
-          }, { times: 1 });
-        }
+        // The third forge receives a real pre-create snapshot after creation.
+        const delayedRead = ordinal === 3 ? await holdPartyRead(sheet, party.id) : null;
+        releaseMembership = delayedRead?.release ?? (() => {});
         await sheet.goto(`/join/${party.inviteToken}/forge`);
-        if (ordinal === 3) {
-          await expect.poll(() => membershipCaptured).toBe(true);
-        }
+        await delayedRead?.ready;
         await sheet.getByRole('button', { name: new RegExp(`^${className} `) }).click();
         await sheet.getByRole('textbox', { name: 'Character name', exact: true }).fill(`Forged scvm ${ordinal}`);
         const documentStart = await sheet.evaluate(() => performance.timeOrigin);

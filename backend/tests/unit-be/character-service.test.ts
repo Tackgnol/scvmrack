@@ -127,6 +127,7 @@ mock.module('../../src/repositories/character-repository.js', {
       },
       getPresence: async () => state.presenceRow,
       getPartyId: async () => state.partyIdRow,
+      getUpdatePartyIds: async () => state.partyIdRow?.partyId ? [state.partyIdRow.partyId] : [],
       update: async (id: string, data: unknown) => {
         state.updateCalls.push({ id, data });
         if (state.updateError) {

@@ -14,6 +14,7 @@ import { getApiErrorCode, getUserFacingApiErrorMessage } from '@/utils/errorUtil
 import { ensureAnonymousSession, type AuthSession } from '@/auth';
 import { authKeys } from '@/api';
 import { partyKeys } from '@/api/party';
+import { refreshQueries } from '@/api/queryCache';
 import { useQueryClient } from '@tanstack/react-query';
 import { usePrivacyAcknowledged } from '@/privacy/privacyConsent';
 import { requestOpenPrivacyDrawer } from '@/privacy/privacyDrawerBus';
@@ -289,10 +290,8 @@ export function useCharacterDraft(locale: string, options: Options = {}) {
       if (character.id) {
         if (character.partyId) {
           // The sheet needs a membership snapshot taken after creation.
-          const queryKey = partyKeys.detail(character.partyId);
-          await queryClient.cancelQueries({ queryKey });
-          await queryClient.invalidateQueries({
-            queryKey,
+          await refreshQueries(queryClient, {
+            queryKey: partyKeys.detail(character.partyId),
             refetchType: 'all',
           });
         }

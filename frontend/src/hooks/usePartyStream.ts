@@ -43,6 +43,7 @@ export type PresenceByCharacter = Record<string, boolean>;
 type UsePartyStreamOptions = {
   enabled?: boolean;
   onClosed?: () => void;
+  onChanged?: () => void;
 };
 
 export const partyRosterQueryKey = partyKeys.roster;
@@ -102,6 +103,7 @@ export function usePartyStream(
   const queryClient = useQueryClient();
   const { enabled = true, onClosed } = options;
   const onClosedRef = useRef(onClosed);
+  const onChangedRef = useRef(options.onChanged);
   const [status, setStatus] = useState<PartyStreamStatus>("idle");
   const [changedFieldsByCharacter, setChangedFieldsByCharacter] =
     useState<ChangedFieldsByCharacter>({});
@@ -110,7 +112,8 @@ export function usePartyStream(
 
   useEffect(() => {
     onClosedRef.current = onClosed;
-  }, [onClosed]);
+    onChangedRef.current = options.onChanged;
+  }, [onClosed, options.onChanged]);
 
   const clearChangedFields = useCallback((characterId?: string) => {
     setChangedFieldsByCharacter((current) => {
@@ -138,15 +141,8 @@ export function usePartyStream(
     const controller = new AbortController();
     setStatus("connecting");
 
-    const invalidateObrCards = async () => {
-      const filters = { queryKey: obrKeys.cards() };
-      // An initial fetch can still contain values from before this event.
-      await queryClient.cancelQueries(filters);
-      await queryClient.invalidateQueries(filters);
-    };
-
     const invalidateRoster = () => {
-      void invalidateObrCards();
+      onChangedRef.current?.();
       void queryClient.invalidateQueries({
         queryKey: obrKeys.participations(),
       });
@@ -181,7 +177,7 @@ export function usePartyStream(
         [parsed.characterId]: fields,
       }));
       invalidateMember(parsed.characterId);
-      void invalidateObrCards();
+      onChangedRef.current?.();
     };
 
     const handleRosterEvent = (data: string) => {
