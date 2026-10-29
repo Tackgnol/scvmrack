@@ -20,7 +20,7 @@
 #   dev_logto_post_logout_redirect_uri
 #   dev_glitchtip_dsn
 #   dev_vite_glitchtip_dsn
-#   dev_moderation_admin_user_ids          (comma-separated signed-in admin ids)
+#   dev_moderation_admin_user_ids          (comma-separated Scvmrack session user.id values)
 #   dev_client_origin
 #   dev_client_gateway
 #   dev_app_base_url
