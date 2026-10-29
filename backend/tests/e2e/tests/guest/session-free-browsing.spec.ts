@@ -1,3 +1,4 @@
+import { customClassDraft } from '../../fixtures';
 import { expect, test, type Page } from '@playwright/test';
 
 const characterId = '11111111-1111-4111-8111-111111111111';
@@ -69,7 +70,7 @@ async function publicApi(page: Page, initialSession: unknown = null) {
       body = {
         attribution: 'Test author',
         reportable: true,
-        draft: {
+        draft: customClassDraft({
           name: { en: 'Public Test Class', pl: 'Publiczna klasa' },
           description: {
             en: 'Available without a session',
@@ -80,7 +81,7 @@ async function publicApi(page: Page, initialSession: unknown = null) {
           items: [],
           gettingBetterRule: 'book',
           gettingBetterNote: { en: '', pl: '' },
-        },
+        }),
       };
     } else if (path === '/api/characters/draft') {
       expect(session).toMatchObject({ user: { id: 'guest' } });

@@ -20,6 +20,8 @@
 
 ## Bug fixes
 
+- The app should no longer show a 404 when a player forges another scvm through a party invite. The saved scvm opens in its editable party sheet without a reload. (RPG-342)
+- The app should no longer leave the Owlbear GM roster showing old hit points when a player saves changes in the full Scvmrack sheet. Room updates refresh its cards automatically, including after reconnecting. (RPG-348)
 - The app should no longer render legal headings, body text or email links unreadably on yellow when opening Privacy, Terms or Contact in either language. (RPG-343)
 - The app should no longer use off-palette stat labels when editing a Custom Class. Stats use the Mörk Borg black, yellow and pink palette. (RPG-344)
 - The app should no longer widen the Custom Class creator beyond the phone viewport when its off-screen step labels are present. (RPG-344)

@@ -32,6 +32,8 @@ export type CharacterPartyAccessRow = {
   } | null;
 };
 
+export type CharacterUpdateAudience = { characterId: string; partyIds: string[] };
+
 /** Character writes bound to one transaction, so a service can combine them atomically. */
 function characterTxOps(tx: Prisma.TransactionClient) {
   return {
@@ -117,6 +119,38 @@ function characterTxOps(tx: Prisma.TransactionClient) {
 export type CharacterTxOps = ReturnType<typeof characterTxOps>;
 
 export const characterRepository = {
+  /** Parties that can observe this scvm through membership or a live room binding. */
+  async getUpdateAudiences(characterIds: readonly string[]): Promise<CharacterUpdateAudience[]> {
+    const ids = [...new Set(characterIds)];
+    if (ids.length === 0) {
+      return [];
+    }
+    const [characters, players, tokens] = await Promise.all([
+      prisma.character.findMany({ where: { id: { in: ids } }, select: { id: true, partyId: true } }),
+      prisma.obrPlayerCharacterBinding.findMany({ where: { characterId: { in: ids } }, select: { characterId: true, obrRoomId: true } }),
+      prisma.obrTokenCharacterBinding.findMany({ where: { characterId: { in: ids } }, select: { characterId: true, obrRoomId: true } }),
+    ]);
+    const bindings = [...players, ...tokens];
+    const roomIds = [...new Set(bindings.map(binding => binding.obrRoomId))];
+    // The app attaches rooms through parties.obr_room_id; the SDK registry's party_id is optional.
+    const parties = roomIds.length === 0 ? [] : await prisma.party.findMany({
+      where: { obrRoomId: { in: roomIds } }, select: { id: true, obrRoomId: true },
+    });
+    const roomParties = new Map(parties.map(party => [party.obrRoomId, party.id]));
+    const audiences = new Map(ids.map(id => [id, new Set<string>()] as const));
+    for (const character of characters) {
+      if (character.partyId) {
+        audiences.get(character.id)?.add(character.partyId);
+      }
+    }
+    for (const binding of bindings) {
+      const partyId = roomParties.get(binding.obrRoomId);
+      if (partyId) {
+        audiences.get(binding.characterId)?.add(partyId);
+      }
+    }
+    return [...audiences].map(([characterId, partyIds]) => ({ characterId, partyIds: [...partyIds] }));
+  },
   /** Owner lookup for ownership checks. `null` when the row does not exist. */
   getOwnerId(id: string): Promise<{ userId: string | null } | null> {
     return prisma.character.findUnique({

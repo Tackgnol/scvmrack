@@ -1,4 +1,8 @@
 import {
+  customClassDraft,
+  localized,
+  offerPrivateClass,
+  holdPartyRead,
   createSeededCharacter,
   createTestUser,
   expect,
@@ -45,6 +49,65 @@ test('GM creates a party, sees the invite link, and regenerates it', async ({ pa
   expect(regen.inviteToken).not.toBe(party.inviteToken);
   await expect(page.getByText(new RegExp(`/join/${regen.inviteToken}`))).toBeVisible({ timeout: 15000 });
 });
+
+for (const kind of ['Book', 'private Custom'] as const) {
+  test(`additional ${kind} party forges open editable sheets without reloading (RPG-342)`, async ({ page, browser }) => {
+    test.setTimeout(120000);
+    await page.goto('/gm');
+    const { token } = await (await page.request.get('/api/csrf-token')).json();
+    const headers = { 'x-csrf-token': token };
+    const created = await page.request.post('/api/parties', { headers, data: { name: `${kind} forge table` } });
+    expect(created.status()).toBe(201);
+    const party = await created.json();
+    let className = 'Fanged Deserter';
+    if (kind === 'private Custom') {
+      await offerPrivateClass(page, party.id, customClassDraft({
+        name: localized('E2E Forge Keeper'), description: localized('Keeps every new scvm.'),
+        origins: [localized('The forge')], abilities: [],
+      }));
+      className = 'E2E Forge Keeper';
+    }
+    const player = await createTestUser('E2E Repeated Forger');
+    const original = await createSeededCharacter(player.userId, { name: 'Original scvm' });
+    const context = await browser.newContext({ storageState: { cookies: [], origins: [] } });
+    await prepareActorContext(context, player.sessionCookie);
+    let releaseMembership = () => {};
+    try {
+      const sheet = await context.newPage();
+      await sheet.goto(`/join/${party.inviteToken}`);
+      await sheet.getByRole('button', { name: 'Join party', exact: true }).click();
+      await expect(sheet.getByTestId('hp-input')).toBeVisible();
+      const ids = [original.id];
+      for (const ordinal of [2, 3]) {
+        // The third forge receives a real pre-create snapshot after creation.
+        const delayedRead = ordinal === 3 ? await holdPartyRead(sheet, party.id) : null;
+        releaseMembership = delayedRead?.release ?? (() => {});
+        await sheet.goto(`/join/${party.inviteToken}/forge`);
+        await delayedRead?.ready;
+        await sheet.getByRole('button', { name: new RegExp(`^${className} `) }).click();
+        await sheet.getByRole('textbox', { name: 'Character name', exact: true }).fill(`Forged scvm ${ordinal}`);
+        const documentStart = await sheet.evaluate(() => performance.timeOrigin);
+        const confirmed = sheet.waitForResponse(response =>
+          response.request().method() === 'POST' && isPath(response.url(), /^\/api\/characters\/new$/));
+        await sheet.getByRole('button', { name: 'Create this wretch', exact: true }).click();
+        const response = await confirmed;
+        expect(response.status()).toBe(201);
+        const character = await response.json();
+        releaseMembership();
+        ids.push(character.id);
+        await expect(sheet).toHaveURL(new RegExp(`/party/${party.id}/character/${character.id}$`));
+        await expect(sheet.getByTestId('hp-input')).toBeVisible();
+        await expect(sheet.getByTestId('hp-input')).toBeEnabled();
+        expect(await sheet.evaluate(() => performance.timeOrigin)).toBe(documentStart);
+      }
+      const persisted = await (await page.request.get(`/api/parties/${party.id}`)).json();
+      expect(persisted.members.map((member: { characterId: string }) => member.characterId).sort()).toEqual(ids.sort());
+    } finally {
+      releaseMembership();
+      await context.close();
+    }
+  });
+}
 
 test('a player joins a party via the invite link and the GM sees the member', async ({
   page,

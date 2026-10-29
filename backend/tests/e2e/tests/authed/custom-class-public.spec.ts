@@ -1,39 +1,6 @@
-import { expect, prepareActorContext, test } from '../../fixtures.js';
+import { customClassDraft, localized, expect, prepareActorContext, test } from '../../fixtures.js';
 
-const localized = (en: string) => ({ en, pl: '' });
-
-const draft = {
-  languages: ['en'],
-  name: localized('E2E Gutter Prophet'),
-  description: localized('Hears the Basilisks whisper through the drains.'),
-  stats: Object.fromEntries(
-    ['strength', 'agility', 'presence', 'toughness'].map((stat) => [
-      stat,
-      { count: 3, faces: 6, modifier: 0, dropLowest: false },
-    ])
-  ),
-  hpDie: 8,
-  omenDie: 2,
-  weaponDie: 10,
-  armorDie: 4,
-  silver: { count: 2, faces: 6, multiplier: 10 },
-  origins: [localized('A drowned chapel under Galgenbeck')],
-  abilities: [
-    {
-      random: false,
-      name: localized('Drain Sight'),
-      text: localized('You can see through any grate within 10 metres.'),
-      modifiers: [],
-      grantItem: null,
-      grantPet: null,
-      table: null,
-    },
-  ],
-  randomAbilityCount: 0,
-  items: [],
-  gettingBetterRule: 'book',
-  gettingBetterNote: localized(''),
-};
+const draft = customClassDraft();
 
 test('a published class page renders when opened directly by a signed-out visitor', async ({ page, browser }) => {
   test.setTimeout(90000);

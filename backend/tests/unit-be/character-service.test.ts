@@ -20,6 +20,8 @@ const state = {
   accessRow: null as Record<string, unknown> | null,
   presenceRow: null as { presence: number } | null,
   partyIdRow: null as { partyId: string | null } | null,
+  notificationLookupError: null as Error | null,
+  notificationPublishError: null as Error | null,
   deleteResult: { count: 1 },
   countValue: 0,
   listRows: [] as Array<Record<string, unknown>>,
@@ -78,6 +80,8 @@ function resetState(): void {
   state.accessRow = null;
   state.presenceRow = { presence: 10 };
   state.partyIdRow = { partyId: null };
+  state.notificationLookupError = null;
+  state.notificationPublishError = null;
   state.deleteResult = { count: 1 };
   state.countValue = 0;
   state.listRows = [];
@@ -127,6 +131,12 @@ mock.module('../../src/repositories/character-repository.js', {
       },
       getPresence: async () => state.presenceRow,
       getPartyId: async () => state.partyIdRow,
+      getUpdateAudiences: async (characterIds: string[]) => {
+        if (state.notificationLookupError) {
+          throw state.notificationLookupError;
+        }
+        return characterIds.map(characterId => ({ characterId, partyIds: state.partyIdRow?.partyId ? [state.partyIdRow.partyId] : [] }));
+      },
       update: async (id: string, data: unknown) => {
         state.updateCalls.push({ id, data });
         if (state.updateError) {
@@ -255,12 +265,15 @@ const publishedEvents: Array<{
   partyId: string;
   event: { type: string; [key: string]: unknown };
 }> = [];
-const serviceWithBus = () =>
-  createCharacterService(noopLog, {
+const serviceWithBus = (log = noopLog) =>
+  createCharacterService(log, {
     publish: (
       partyId: string,
       event: { type: string; [key: string]: unknown }
     ) => {
+      if (state.notificationPublishError) {
+        throw state.notificationPublishError;
+      }
       publishedEvents.push({ partyId, event });
     },
     subscribe: () => () => {},
@@ -803,6 +816,27 @@ test('update publishes changed fields when the character belongs to a party', as
     },
   ]);
 });
+
+for (const failure of ['audience lookup', 'publish'] as const) {
+  test(`a committed HP save stays successful when notification ${failure} fails`, async () => {
+    state.partyIdRow = { partyId: PARTY_ID };
+    state.fullResult = { id: VALID_ID, currentHp: 3 };
+    const error = new Error('Notification unavailable');
+    state.notificationLookupError = failure === 'audience lookup' ? error : null;
+    state.notificationPublishError = failure === 'publish' ? error : null;
+    const logged = mock.fn();
+    const result = await serviceWithBus({ error: logged }).update({
+      id: VALID_ID, session: session('user-1'), body: { currentHp: 3 }, rawLocale: 'en',
+    });
+    assert.equal(result.ok, true);
+    assert.deepEqual(result.ok && result.value, { id: VALID_ID, currentHp: 3 });
+    assert.deepEqual(state.updateCalls, [{ id: VALID_ID, data: { currentHp: 3 } }]);
+    assert.equal(logged.mock.calls.length, 1);
+    const reopened = await service().getById({ id: VALID_ID, session: session('user-1'), locale: 'en' });
+    assert.deepEqual(reopened.ok && reopened.value, { id: VALID_ID, currentHp: 3, viewerAccess: 'owner' });
+    assert.equal(state.updateCalls.length, 1);
+  });
+}
 
 test('update allows an OBR-assigned player to edit the bound character', async () => {
   state.ownerRow = { userId: 'gm-1' };

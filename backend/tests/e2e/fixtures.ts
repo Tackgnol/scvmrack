@@ -1,4 +1,4 @@
-import { test as base } from '@playwright/test';
+import { test as base, expect, type Page } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
@@ -308,3 +308,71 @@ export const test = base.extend<Fixtures>({
 });
 
 export { expect } from '@playwright/test';
+
+export const localized = (en: string) => ({ en, pl: '' });
+
+const defaultCustomClassDraft = {
+  languages: ['en'],
+  name: localized('E2E Gutter Prophet'),
+  description: localized('Hears the Basilisks whisper through the drains.'),
+  stats: Object.fromEntries(
+    ['strength', 'agility', 'presence', 'toughness'].map((stat) => [
+      stat,
+      { count: 3, faces: 6, modifier: 0, dropLowest: false },
+    ])
+  ),
+  hpDie: 8,
+  omenDie: 2,
+  weaponDie: 10,
+  armorDie: 4,
+  silver: { count: 2, faces: 6, multiplier: 10 },
+  origins: [localized('A drowned chapel under Galgenbeck')],
+  abilities: [
+    {
+      random: false,
+      name: localized('Drain Sight'),
+      text: localized('You can see through any grate within 10 metres.'),
+      modifiers: [],
+      grantItem: null,
+      grantPet: null,
+      table: null,
+    },
+  ],
+  randomAbilityCount: 0,
+  items: [],
+  gettingBetterRule: 'book',
+  gettingBetterNote: localized(''),
+};
+
+export function customClassDraft(overrides: Partial<typeof defaultCustomClassDraft> = {}) {
+  return { ...structuredClone(defaultCustomClassDraft), ...overrides };
+}
+
+export async function offerPrivateClass(page: Page, partyId: string, draft = customClassDraft()) {
+  const { token } = await (await page.request.get('/api/csrf-token')).json();
+  const headers = { 'x-csrf-token': token };
+  const saved = await page.request.post('/api/classes', { headers, data: { draft } });
+  expect(saved.status()).toBe(201);
+  const cls = await saved.json();
+  const pool = await (await page.request.get(`/api/parties/${partyId}/class-pool`)).json();
+  const lineage = pool.classes.find((entry: { classId: number }) => entry.classId === cls.id);
+  expect(lineage).toBeTruthy();
+  const enabled = await page.request.put(`/api/parties/${partyId}/class-pool/lineages/${lineage.lineageId}`, {
+    headers, data: { enabled: true },
+  });
+  expect(enabled.ok()).toBe(true);
+}
+
+export async function holdPartyRead(page: Page, partyId: string) {
+  let release = () => {};
+  let captured = () => {};
+  const pending = new Promise<void>(resolve => { release = resolve; });
+  const ready = new Promise<void>(resolve => { captured = resolve; });
+  await page.route(`**/api/parties/${partyId}`, async route => {
+    const response = await route.fetch();
+    captured();
+    await pending;
+    await route.fulfill({ response });
+  }, { times: 1 });
+  return { ready, release };
+}

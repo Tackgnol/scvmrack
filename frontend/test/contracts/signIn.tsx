@@ -5,7 +5,7 @@ import BrowserTestProvider from "../browser/BrowserTestProvider";
 import { useObrSession } from "@/obr/useObrSession";
 
 export function SignInContract() {
-  const { user, signIn, signInProgress } = useObrSession();
+  const { user, signIn, signInProgress, cancelSignIn } = useObrSession();
   const [error, setError] = useState<string | null>(null);
   return (
     <>
@@ -18,6 +18,7 @@ export function SignInContract() {
       >
         Start sign-in
       </button>
+      {cancelSignIn && <button onClick={cancelSignIn}>Cancel sign-in</button>}
       {error && <div role="alert">{error}</div>}
     </>
   );
