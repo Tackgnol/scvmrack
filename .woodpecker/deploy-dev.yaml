@@ -20,6 +20,7 @@
 #   dev_logto_post_logout_redirect_uri
 #   dev_glitchtip_dsn
 #   dev_vite_glitchtip_dsn
+#   dev_moderation_admin_user_ids          (comma-separated signed-in admin ids)
 #   dev_client_origin
 #   dev_client_gateway
 #   dev_app_base_url
@@ -60,6 +61,8 @@ steps:
         from_secret: dev_glitchtip_dsn
       VITE_GLITCHTIP_DSN:
         from_secret: dev_vite_glitchtip_dsn
+      MODERATION_ADMIN_USER_IDS:
+        from_secret: dev_moderation_admin_user_ids
       CLIENT_ORIGIN:
         from_secret: dev_client_origin
       CLIENT_GATEWAY:
