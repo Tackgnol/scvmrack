@@ -568,8 +568,10 @@ export function PartyPage() {
 
             <Reveal step={2}>
               <GmMiseryControl
+                key={party.id}
                 partyId={party.id}
                 memberCount={party.memberCount}
+                miseryCounts={party.members.map(member => member.miseryCount)}
               />
             </Reveal>
 

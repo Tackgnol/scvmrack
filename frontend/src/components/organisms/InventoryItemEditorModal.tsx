@@ -1,6 +1,7 @@
 import { useId, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Box, Button, TextField } from '@mui/material';
+import { Box, Button, TextField, Typography } from '@mui/material';
+import { INVENTORY_LIMITS, getInventoryLimitMessage } from '@/inventory/limits';
 import { type AggregatedItem } from '@/utils/aggregateItems';
 import { type EquipmentItem } from '@/hooks/models';
 import { useCharacter } from '@/CharacterContext/CharacterContext';
@@ -63,6 +64,10 @@ export default function InventoryItemEditorModal({
   });
 
   const hasActiveItem = Boolean(open && editor.item);
+  const maxQuantity =
+    (aggregated?.indices.length ?? 0) +
+    Math.max(0, INVENTORY_LIMITS[location] - (character?.[location]?.length ?? 0));
+  const hasQuantityError = editor.localQuantity > maxQuantity;
   const nameErrorMessage = hasActiveItem
     ? getTextLimitMessage(t, 'itemName', editor.editName)
     : null;
@@ -72,8 +77,11 @@ export default function InventoryItemEditorModal({
   const commentsErrorMessage = hasActiveItem
     ? getTextLimitMessage(t, 'itemComments', editor.editComments)
     : null;
-  const hasTextErrors = Boolean(
-    nameErrorMessage || descriptionErrorMessage || commentsErrorMessage,
+  const hasErrors = Boolean(
+    nameErrorMessage ||
+    descriptionErrorMessage ||
+    commentsErrorMessage ||
+    hasQuantityError,
   );
   useValidationAlert(nameErrorMessage);
   useValidationAlert(descriptionErrorMessage);
@@ -97,7 +105,7 @@ export default function InventoryItemEditorModal({
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
-    if (hasTextErrors) {
+    if (hasErrors) {
       return;
     }
     editor.save();
@@ -116,7 +124,7 @@ export default function InventoryItemEditorModal({
             type="submit"
             form={formId}
             variant="contained"
-            disabled={hasTextErrors}
+            disabled={hasErrors}
           >
             {t('equipment.save')}
           </Button>
@@ -147,8 +155,14 @@ export default function InventoryItemEditorModal({
         <QuantityStepper
           value={localQuantity}
           onChange={setLocalQuantity}
+          max={maxQuantity}
           cacheKey={`${quantityCacheKey}:modal`}
         />
+        {localQuantity >= maxQuantity && (
+          <Typography role="status" color="warning.main">
+            {getInventoryLimitMessage(t, location)}
+          </Typography>
+        )}
 
         <TextField
           fullWidth

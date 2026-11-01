@@ -4,41 +4,55 @@ import { useSetPartyMiseries } from "@/hooks/usePartyRepository";
 import { getUserFacingApiErrorMessage } from "@/utils/errorUtils";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import type { GmMiseryControlProps } from "./GmMiseryControl.models";
 import {
   GmMiseryControlAction,
   GmMiseryControlNotice,
   GmMiseryControlRoot,
 } from "./GmMiseryControl.styled";
 
-type GmMiseryControlProps = {
-  partyId: string;
-  memberCount: number;
-};
-
 export default function GmMiseryControl({
   partyId,
   memberCount,
+  miseryCounts,
 }: GmMiseryControlProps) {
   const { t } = useTranslation();
-  const [miseryCount, setMiseryCount] = useState(0);
+  const [selectedCount, setSelectedCount] = useState<number | null>(null);
+  const firstCount = miseryCounts[0];
+  const sharedCount =
+    Number.isInteger(firstCount) &&
+    miseryCounts.every((count) => count === firstCount)
+      ? firstCount
+      : null;
+  const miseryCount = selectedCount ?? sharedCount;
   const mutation = useSetPartyMiseries(partyId);
 
   return (
     <GmMiseryControlRoot data-testid="gm-misery-control">
       <MiseryControl
-        count={miseryCount}
-        onChange={setMiseryCount}
+        count={miseryCount ?? 0}
+        onChange={setSelectedCount}
         headingLevel="h2"
-        description={t("party.miseryControlHelp")}
+        description={
+          memberCount > 0 && miseryCount === null
+            ? t("party.miseryControlMixed")
+            : t("party.miseryControlHelp")
+        }
         action={
           <GmMiseryControlAction
-            disabled={memberCount === 0 || mutation.isPending}
-            onClick={() => mutation.mutate(miseryCount)}
+            disabled={
+              memberCount === 0 || miseryCount === null || mutation.isPending
+            }
+            onClick={() => {
+              if (miseryCount !== null) {
+                mutation.mutate(miseryCount);
+              }
+            }}
           >
             {mutation.isPending
               ? t("party.miseryControlPending")
               : t("party.miseryControlApply", {
-                  count: miseryCount,
+                  count: miseryCount ?? 0,
                   total: MISERY_MARKS.length,
                 })}
           </GmMiseryControlAction>

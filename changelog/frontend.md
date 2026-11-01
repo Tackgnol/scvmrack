@@ -1,5 +1,8 @@
 # Frontend — Feature Summary
 
+- GM Misery controls start from the members' saved count after reload. Mixed counts require a deliberate choice before Apply. (RPG-356)
+- Inventory quantity controls respect the remaining On Hand and Storage capacity. Over-cap additions and transfers show a message and preserve existing items instead of silently trimming them. (RPG-357)
+
 - The app should no longer cancel Owlbear sign-in when browser isolation loses contact with an open approval window. The extension keeps waiting for consent and offers an explicit Cancel action. (RPG-337)
 - The app should no longer report cancelled sign-in when an approved account transfer has already started. Cancel is available until transfer begins; completion still verifies the receiving account. (RPG-337)
 - The app should no longer cover the GM sign-in recovery action when the compact Owlbear panel shows an error or comparison code. Recovery and the room tabs share one vertical layout. (RPG-338)

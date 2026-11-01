@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { INVENTORY_LIMITS } from '@/inventory/limits';
 import { clamp } from "@/utils/clamp";
 import { type CharacterUpdateRequest, type SimpleField } from '@/hooks/models';
 
@@ -322,8 +323,8 @@ export const characterUpdateSchema = z.object({
   notes: limitedString(10000).optional(),
   miseryCount: boundedInteger(0, 7, 0).optional(),
   abilities: limitedObjectArray(abilitySchema, 20).optional(),
-  equipment: limitedObjectArray(equipmentItemSchema, 50).optional(),
-  storage: limitedObjectArray(equipmentItemSchema, 100).optional(),
+  equipment: z.array(equipmentItemSchema).max(INVENTORY_LIMITS.equipment).optional(),
+  storage: z.array(equipmentItemSchema).max(INVENTORY_LIMITS.storage).optional(),
   equippedWeapons: limitedObjectArray(weaponSchema, 10).optional(),
   equippedArmor: armorSchema.nullable().optional(),
   modifiers: limitedObjectArray(modifierSchema, 30).optional(),

@@ -54,6 +54,7 @@ export type PartyMemberPayload = {
   classId: number | null;
   currentHp: number;
   maxHp: number;
+  miseryCount: number;
   joinedAt: Date | null;
   owned: boolean;
   /** Set when the scvm plays an older version than its lineage's newest one. */
@@ -101,6 +102,7 @@ function toMemberPayload(
     classId: member.classId,
     currentHp: member.currentHp,
     maxHp: member.maxHp,
+    miseryCount: member.miseryCount,
     joinedAt: member.joinedAt,
     owned: ownsCharacter(session, member),
     olderRules:

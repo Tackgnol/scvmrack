@@ -1,5 +1,7 @@
 # Backend — Feature Summary
 
+- Party member summaries include each scvm's saved Misery count so GM controls can preserve the campaign state on reload. (RPG-356)
+
 - API documentation now describes successful health, catalog item and Owlbear binding responses, including nullable fields, and validation errors for class lists and class details. These close the five contract gaps reported by the canary CATS run. (RPG-340)
 - The app should no longer fail to return catalog equipment when it has a numeric health modifier. Catalog responses and generated client types preserve that modifier as an integer. (RPG-340)
 

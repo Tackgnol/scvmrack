@@ -236,6 +236,37 @@ describe("PartyPage", () => {
     await expect.poll(() => mutate).toHaveBeenCalledWith(4);
   });
 
+  it("preserves existing Miseries when the GM opens and applies the control", async () => {
+    const party = gmParty();
+    detail({ data: { ...party, members: party.members.map(member => ({ ...member, miseryCount: 4 })) } });
+    const mutate = vi.fn();
+    mockedSetMiseries.mockReturnValue({ mutate, isPending: false } as never);
+    await renderPage();
+
+    const control = page.getByTestId("gm-misery-control");
+    await expect.element(control.getByTestId("misery-count")).toHaveTextContent("4 / 7");
+    await userEvent.click(control.getByRole("button", { name: /set 4 \/ 7 for all scvms/i }));
+    await expect.poll(() => mutate).toHaveBeenCalledWith(4);
+  });
+
+  it("requires an explicit Misery choice when members have different counts", async () => {
+    const party = gmParty();
+    detail({ data: { ...party, memberCount: 2, members: [
+      { ...party.members[0], miseryCount: 2 },
+      { ...party.members[0], characterId: "c2", name: "Ash", miseryCount: 4 },
+    ] } });
+    const mutate = vi.fn();
+    mockedSetMiseries.mockReturnValue({ mutate, isPending: false } as never);
+    await renderPage();
+
+    const control = page.getByTestId("gm-misery-control");
+    await expect.element(control.getByRole("button", { name: /for all scvms/i })).toBeDisabled();
+    await expect.element(control.getByText(/different Misery counts/i)).toBeVisible();
+    await userEvent.click(control.getByRole("button", { name: /misery iii$/i }));
+    await userEvent.click(control.getByRole("button", { name: /set 3 \/ 7 for all scvms/i }));
+    await expect.poll(() => mutate).toHaveBeenCalledWith(3);
+  });
+
   it("redirects a member to their own party-character URL", async () => {
     detail({
       data: {
