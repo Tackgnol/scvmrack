@@ -14,13 +14,18 @@ import { useState, type ChangeEvent, type KeyboardEvent } from 'react';
 export function useIntegerFieldBuffer(
   committedValue: number,
   onCommit: (digits: string) => void,
+  bounds?: { min: number; max: number },
 ) {
   const [draft, setDraft] = useState<string | null>(null);
 
   const value = draft ?? String(committedValue);
 
   const onChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const digits = event.target.value.replace(/\D/g, '');
+    const raw = event.target.value.replace(/\D/g, '');
+    const numeric = Number(raw);
+    const digits = bounds && raw !== '' && (numeric < bounds.min || numeric > bounds.max)
+      ? String(Math.max(bounds.min, Math.min(bounds.max, numeric)))
+      : raw;
     // React bails out of re-syncing the DOM when the controlled value string
     // is unchanged (e.g. typing "e" after "15" filters back to "15"), so the
     // browser would otherwise keep showing the rejected character. Correct
@@ -30,7 +35,7 @@ export function useIntegerFieldBuffer(
     setDraft(digits);
     // A rejected character (e.g. "e") filters back to the same digits as
     // before — nothing was actually edited, so don't re-commit.
-    if (digits === '' || digits === previous) {
+    if (digits === '' || (digits === previous && raw === digits)) {
       return;
     }
     onCommit(digits);

@@ -1,5 +1,5 @@
 import { render } from 'vitest-browser-react';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { page } from 'vitest/browser';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import BrowserTestProvider from '../BrowserTestProvider';
@@ -17,6 +17,18 @@ vi.mock('@/api/classes', async (importOriginal) => ({
 }));
 
 describe('ClassDetailPage', () => {
+  beforeEach(() => vi.clearAllMocks());
+  it('identifies single-language content and omits empty sections', async () => {
+    vi.mocked(getClassDetail).mockResolvedValue({ draft: blankDraft(), attribution: 'created by Ada', reportable: false } as never);
+    await render(
+      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+        <BrowserTestProvider><ClassDetailPage /></BrowserTestProvider>
+      </QueryClientProvider>,
+    );
+    await expect.element(page.getByText('This class is written in English.')).toBeVisible();
+    await expect.element(page.getByRole('heading', { name: 'Abilities', exact: true })).not.toBeInTheDocument();
+    await expect.element(page.getByRole('heading', { name: 'Origins', exact: true })).not.toBeInTheDocument();
+  });
   it('shows not found for a non-numeric id without asking the server', async () => {
     route.classId = 'abc';
     try {

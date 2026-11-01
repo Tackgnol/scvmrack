@@ -97,7 +97,9 @@ export function DeleteCharacterModal({
   const characterName =
     (character?.name || '').trim() || t('characters.unnamed', 'Unnamed Scvm');
   const className =
-    (character?.className || '').trim() || t('characters.unknownClass', 'Unknown');
+    (character?.className || '').trim() || (character?.classId === null
+      ? t('create.classlessLabel', 'Classless')
+      : t('characters.unknownClass', 'Unknown'));
   const hpLabel =
     character?.currentHp != null || character?.maxHp != null
       ? `${character.currentHp ?? '-'}/${character.maxHp ?? '-'}`

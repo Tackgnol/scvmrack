@@ -99,7 +99,7 @@ export function CharacterSheet({
     const hasPets = equipment.some(isPetItem);
     const hasConsumables = equipment.some(isConsumableUseItem);
     const hasBackpack = (character?.storage ?? []).length > 0;
-    const defaultExpanded = !isMobile;
+    const defaultExpanded = readOnly || !isMobile;
     const animateImpact = stamping && !prefersReducedMotion;
     const gettingBetter = useGettingBetterPreview({
         characterId: character?.id ?? null,
@@ -125,7 +125,10 @@ export function CharacterSheet({
 
     return (
         <Box
+            component="fieldset"
+            disabled={readOnly}
             className="print-sheet"
+            style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}
             sx={
                 animateImpact
                     ? {
@@ -138,7 +141,7 @@ export function CharacterSheet({
             <Box>
                 <SummaryBar />
                 <ResourceRow />
-                <EquippedBar />
+                <EquippedBar readOnly={readOnly} />
             </Box>
             <Box>
                 <CharacterNameAndClass
@@ -189,7 +192,7 @@ export function CharacterSheet({
                 </Box>
             )}
             <Abilities />
-            <CharacterDescriptors />
+            <CharacterDescriptors readOnly={readOnly} />
 
             <Box className="print-hidden" sx={customStyles.zoneDivider}>
                 <Typography sx={customStyles.zoneDividerIcon}>✠</Typography>

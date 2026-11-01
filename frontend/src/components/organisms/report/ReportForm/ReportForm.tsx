@@ -4,7 +4,7 @@ import { getApiLocale } from "@/hooks/utils";
 import { APPEAL_ADDRESS } from "@/legal/contact";
 import { CardAction } from "@/pages/gmPages.styles";
 import { partyColors } from "@/theme/partyTokens";
-import { getUserFacingApiErrorMessage } from "@/utils/errorUtils";
+import { getUserFacingApiErrorMessage, isApiNotFound, isApiForbidden } from "@/utils/errorUtils";
 import { localizedText } from "@/utils/localizedText";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -63,6 +63,9 @@ export function ReportForm({
   });
   const className =
     knownClass.data && localizedText(knownClass.data.draft.name, locale);
+  const unreportable = knownClass.data?.reportable === false ||
+    isApiNotFound(knownClass.error) || isApiForbidden(knownClass.error);
+  const reportable = knownClass.data?.reportable === true;
   const anonymousAllowed = values.reason === ANONYMOUS_REASON;
   const fieldLabels: Record<keyof ReportFormValues, string> = {
     classReference: t("report.classId", "Class reference"),
@@ -84,7 +87,7 @@ export function ReportForm({
 
   const submit = handleSubmit((form) => {
     const classId = parseClassReference(form.classReference);
-    if (classId === null) {
+    if (classId === null || !reportable) {
       return;
     }
     onSubmit({
@@ -108,6 +111,12 @@ export function ReportForm({
       }}
     >
       <Stack spacing={2}>
+        {unreportable && (
+          <Alert severity="error">{t('report.unreportable', 'This class is unavailable for public reporting. Choose a public class.')}</Alert>
+        )}
+        {knownClass.error && !unreportable && (
+          <Alert severity="error">{getUserFacingApiErrorMessage(knownClass.error, t, t('report.lookupFailed', 'Could not check this class. Try again.'))}</Alert>
+        )}
         <Controller
           name="website"
           control={control}
@@ -280,7 +289,7 @@ export function ReportForm({
         <CardAction
           onClick={() => void submit()}
           aria-describedby={missing.length > 0 ? "report-missing" : undefined}
-          disabled={pending || missing.length > 0}
+          disabled={pending || missing.length > 0 || !reportable || knownClass.isFetching}
         >
           {pending
             ? t("report.sending", "Sending...")

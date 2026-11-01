@@ -6,6 +6,16 @@ import type { ChangeEvent, KeyboardEvent } from 'react';
 const change = (value: string) =>
   ({ target: { value } }) as ChangeEvent<HTMLInputElement>;
 
+test('bounded scores clamp the editing buffer as well as the committed value', () => {
+  const onCommit = vi.fn();
+  const { result } = renderHook(() => useIntegerFieldBuffer(21, onCommit, { min: 1, max: 21 }));
+  act(() => result.current.onChange(change('99')));
+  expect(result.current.value).toBe('21');
+  expect(onCommit).toHaveBeenCalledWith('21');
+  act(() => result.current.onChange(change('')));
+  expect(result.current.value).toBe('');
+});
+
 test('displays the committed value when there is no in-progress edit', () => {
   const { result } = renderHook(() => useIntegerFieldBuffer(7, vi.fn()));
   expect(result.current.value).toBe('7');

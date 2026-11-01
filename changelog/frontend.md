@@ -1,5 +1,11 @@
 # Frontend — Feature Summary
 
+- Custom Class saves and discarded drafts navigate to durable destinations. Required ability fields are marked, and class details identify their authored language and omit empty sections. (RPG-361, RPG-362, RPG-371, RPG-372, RPG-373)
+- Party member sheets disable editing, and the header party view follows the scvm currently open. Classless roster entries have their own translated label. (RPG-360, RPG-363, RPG-367)
+- Privacy settings are reachable from every page footer. Malformed character links show the normal not-found page; missing sheets offer the roster and do not show save status or Print. (RPG-364, RPG-365)
+- Ability score inputs immediately display the bounded value. Warband rename accepts the same 100 characters as creation. (RPG-368, RPG-369)
+- Report forms check class reportability before submission, authors do not see Report on their own pool rows, and visitors without moderation access see the normal not-found page. (RPG-366, RPG-370, RPG-374)
+
 - GM Misery controls start from the members' saved count after reload. Mixed counts require a deliberate choice before Apply. (RPG-356)
 - Inventory quantity controls respect the remaining On Hand and Storage capacity. Over-cap additions and transfers show a message and preserve existing items instead of silently trimming them. (RPG-357)
 

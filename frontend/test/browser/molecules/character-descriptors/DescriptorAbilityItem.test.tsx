@@ -75,6 +75,12 @@ describe("DescriptorAbilityItem Browser", () => {
     },
   };
 
+  it('shows the reference table on a disabled read-only sheet', async () => {
+    await render(<BrowserTestProvider><fieldset disabled><DescriptorAbilityItem {...defaultProps} ability={tableAbility} readOnly /></fieldset></BrowserTestProvider>);
+    await expect.element(page.getByText('Red Poison: DR12 or -D10 HP.')).toBeVisible();
+    await expect.element(page.getByRole('button', { name: 'd2 table' })).toBeDisabled();
+  });
+
   it("keeps a reference table closed until it is opened", async () => {
     await render(
       <BrowserTestProvider>

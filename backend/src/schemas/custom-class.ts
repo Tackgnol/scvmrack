@@ -57,12 +57,15 @@ const OriginSchema = {
 } as const;
 
 const ITEM_REF = `^(new:[A-Za-z0-9-]{1,64}|${CLASS_ITEM_KEY})$`;
-const GrantSchema = { type: ['string', 'null'], pattern: ITEM_REF } as const;
+const GrantSchema = {
+  type: ['string', 'null'],
+  pattern: `^(new:[A-Za-z0-9-]{1,64}|${CLASS_ITEM_KEY}|(weapons|armor|equipment|pets)\\.[A-Za-z0-9_.-]{1,200})$`,
+} as const;
 const TableRowSchema = {
   type: 'object',
   additionalProperties: false,
   required: ['text', 'itemRef'],
-  properties: { text: LocalizedSchema, itemRef: GrantSchema },
+  properties: { text: LocalizedSchema, itemRef: { type: ['string', 'null'], pattern: ITEM_REF } },
 } as const;
 
 const AbilityTableSchema = {

@@ -6,11 +6,13 @@ import DescriptorAbilityItem from './DescriptorAbilityItem';
 
 interface ClassAbilitiesSectionProps {
   abilities: Ability[];
+  readOnly?: boolean;
   onUpdateComment: (index: number, ability: Ability, comment: string) => void;
 }
 
 export default function ClassAbilitiesSection({
   abilities,
+  readOnly = false,
   onUpdateComment,
 }: ClassAbilitiesSectionProps) {
   const { t } = useTranslation();
@@ -27,6 +29,7 @@ export default function ClassAbilitiesSection({
               <DescriptorAbilityItem
                 key={ability.key ?? ability.name ?? `ability-${index}`}
                 ability={ability}
+                readOnly={readOnly}
                 index={index}
                 onUpdateComment={(comment) => onUpdateComment(index, ability, comment)}
               />

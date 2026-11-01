@@ -933,6 +933,7 @@
     "gm": "GM"
   },
   "characters": {
+    "backToRoster": "Back to my Scvms",
     "title": "Your Characters",
     "loginRequired": "You need to be logged in to view your characters.",
     "noCharacters": "No characters yet. Create your first scvm!",
@@ -1024,6 +1025,7 @@
     "morkBorgCredit": "MÖRK BORG is copyright Ockult Örtmästare Games and Stockholm Kartell. This is an independent fan project."
   },
   "privacy": {
+    "reviewSettings": "Review your privacy settings",
     "title": "BLOOD OATH",
     "subtitle": "Data, Tracking, and Storage Notice",
     "sections": {
@@ -1794,6 +1796,8 @@
     "loadFailed": "Your classes failed to load."
   },
   "report": {
+    "unreportable": "This class is unavailable for public reporting. Choose a public class.",
+    "lookupFailed": "Could not check this class. Try again.",
     "thisClass": "Report this class",
     "otherClass": "Report a different class",
     "link": "Report a class",

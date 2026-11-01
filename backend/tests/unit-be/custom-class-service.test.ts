@@ -6,6 +6,7 @@ import { blankClassDraft, blankClassItem, type ClassDraft } from '../../src/lib/
 const GM = { user: { id: 'gm-1', isAnonymous: false } };
 const GUEST = { user: { id: 'guest-1', isAnonymous: true } };
 let creationBanned = false;
+let sharedItems: Array<{ key: string; itemType: string }> = [];
 
 mock.module('../../src/repositories/creation-ban-repository.js', {
   namedExports: {
@@ -16,7 +17,7 @@ mock.module('../../src/repositories/creation-ban-repository.js', {
 });
 mock.module('../../src/repositories/catalog-repository.js', {
   namedExports: {
-    catalogRepository: { findSharedItemsByKeys: async () => [] },
+    catalogRepository: { findSharedItemsByKeys: async () => sharedItems },
   },
 });
 mock.module('../../src/lib/draft-seeds.js', {
@@ -229,6 +230,7 @@ const ready = (): ClassDraft => ({
 
 beforeEach(() => {
   creationBanned = false;
+  sharedItems = [];
   repo.owned = 0;
   repo.found = null;
   repo.createThrows = null;
@@ -313,6 +315,7 @@ test('a creation ban rejects new drafts and saved classes but keeps owned edits 
   assert.equal(published.ok, true);
 
   creationBanned = false;
+  sharedItems = [];
   assert.equal((await service.create({ session: GM, draft: ready() })).ok, true);
 });
 
@@ -742,4 +745,25 @@ test('an allowlisted moderator can preview the exact reported class version', as
       process.env.MODERATION_ADMIN_USER_IDS = previous;
     }
   }
+});
+
+
+test('catalog item and pet grants save while missing keys and wrong slots stay rejected (RPG-358)', async () => {
+  sharedItems = [{ key: 'equipment.rope', itemType: 'equipment' }, { key: 'pets.hawk', itemType: 'pet' }];
+  const draft: ClassDraft = { ...ready(), abilities: [{ random: false, name: { en: 'Companion', pl: '' }, text: { en: 'Travel prepared.', pl: '' }, modifiers: [], grantItem: 'equipment.rope', grantPet: 'pets.hawk', table: null }] };
+  assert.equal((await service.create({ session: GM, draft })).ok, true);
+  assert.equal(repo.created[0].draft.abilities[0].grantPet, 'pets.hawk');
+  draft.abilities[0].grantPet = 'equipment.rope';
+  assert.equal((await service.create({ session: GM, draft })).ok, false);
+  draft.abilities[0].grantPet = 'pets.unavailable';
+  assert.equal((await service.create({ session: GM, draft })).ok, false);
+});
+
+
+test('an author reads their archived class details while unrelated readers are refused (RPG-359)', async () => {
+  repo.detail = { id: 7, lineageId: 'l', ownerUserId: 'gm-1', ownerName: 'GM', visibility: 'private', version: 1, status: 'archived', takenDownAt: null, isLatest: true, playingCount: 1, draft: ready() };
+  const owner = await service.getDetail({ session: GM, id: 7, locale: 'en' });
+  assert.equal(owner.ok, true);
+  assert.equal(owner.ok && owner.value.reportable, false);
+  assert.equal((await service.getDetail({ session: GUEST, id: 7, locale: 'en' })).ok, false);
 });

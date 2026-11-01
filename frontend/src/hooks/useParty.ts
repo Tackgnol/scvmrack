@@ -1,4 +1,5 @@
 import { $api } from "@/api";
+import { useCharacter } from '@/CharacterContext/CharacterContext';
 import { useAuth } from "@/hooks/useAuth";
 import type { CharacterListItem } from "@/hooks/models";
 import { usePartyDetail } from "@/hooks/usePartyRepository";
@@ -15,9 +16,7 @@ export type PartyMember = {
   olderRules?: { version: number; latestVersion: number } | null;
 };
 
-// The warband takeover shows the GM-owned party the player's scvm is bound to — every
-// player's scvm, not just the viewer's own. We discover the party from the player's
-// character list (the bound scvm carries its `partyId`), then read the party roster.
+// The sheet selects its own party; public pages fall back to a party in the account roster.
 // Cards fetch their own full sheet lazily via useWarbandMember (party-scoped read
 // access on /api/characters/{id}). No bound scvm → no party → empty (pull-tab hides).
 export function useParty(): {
@@ -28,6 +27,7 @@ export function useParty(): {
   refetch: () => void;
 } {
   const { isAuthenticated } = useAuth();
+  const { character, characterId } = useCharacter();
   const { i18n } = useTranslation();
   const locale = getApiLocale(
     i18n.language,
@@ -49,7 +49,12 @@ export function useParty(): {
   const list: CharacterListItem[] = Array.isArray(listQuery.data)
     ? listQuery.data
     : [];
-  const partyId = list.find((c) => Boolean(c.partyId))?.partyId ?? null;
+  const current = character?.id === characterId
+    ? character
+    : list.find((c) => c.id === characterId);
+  const partyId = characterId
+    ? current?.partyId ?? null
+    : list.find((c) => Boolean(c.partyId))?.partyId ?? null;
 
   const partyQuery = usePartyDetail(partyId, Boolean(partyId));
   const members: PartyMember[] = (partyQuery.data?.members ?? [])

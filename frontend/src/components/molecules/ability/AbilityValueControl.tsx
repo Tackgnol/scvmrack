@@ -23,7 +23,7 @@ export default function AbilityValueControl({
   decreaseAriaLabel,
   increaseAriaLabel,
 }: AbilityValueControlProps) {
-  const input = useIntegerFieldBuffer(value, onInputChange);
+  const input = useIntegerFieldBuffer(value, onInputChange, { min: 1, max: 21 });
 
   return (
     <Box sx={customStyles.abilityCardTwo.controls}>

@@ -395,6 +395,9 @@ export function PartyPage() {
 
   const submitRename = async () => {
     const next = draftName.trim();
+    if (draftName.length > 100) {
+      return;
+    }
     if (!next || next === party?.name) {
       cancelRename();
       return;
@@ -456,7 +459,7 @@ export function PartyPage() {
                 <NameInput
                   ref={nameInputRef}
                   value={draftName}
-                  maxLength={60}
+                  maxLength={100}
                   aria-label={t("party.renameLabel", "Warband name")}
                   disabled={renameMutation.isPending}
                   onChange={(event) => setDraftName(event.target.value)}

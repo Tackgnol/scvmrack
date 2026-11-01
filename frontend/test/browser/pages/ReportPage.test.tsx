@@ -6,6 +6,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import BrowserTestProvider from "../BrowserTestProvider";
 import { ReportPage } from "@/pages/ReportPage";
 import { submitPublicReport } from "@/api/reports";
+import { toApiClientError } from '@/utils/errorUtils';
+import { blankDraft } from '@/components/organisms/class-creator/creatorShared.utils';
 import { getClassDetail } from "@/api/classes";
 
 const search = vi.hoisted(() => ({ value: {} as { classId?: string } }));
@@ -38,8 +40,21 @@ describe("ReportPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     search.value = {};
-    vi.mocked(getClassDetail).mockRejectedValue(new Error("not public"));
+    vi.mocked(getClassDetail).mockResolvedValue({ id: 7, version: 1, playingCount: 0, status: "active", takenDownAt: null, takedownReason: null, draft: blankDraft(), attribution: "", reportable: true });
     vi.mocked(submitPublicReport).mockResolvedValue({ id: "550e8400-e29b-41d4-a716-446655440000" });
+  });
+
+  it.each(['private', 'unknown'])('blocks a %s class before report submission', async kind => {
+    search.value = { classId: '7' };
+    if (kind === 'private') {
+      vi.mocked(getClassDetail).mockResolvedValue({ id: 7, version: 1, playingCount: 0, status: "active", takenDownAt: null, takedownReason: null, draft: blankDraft(), attribution: '', reportable: false });
+    } else {
+      vi.mocked(getClassDetail).mockRejectedValue(toApiClientError({ status: 404, message: 'Missing' }));
+    }
+    await renderPage();
+    await expect.element(page.getByText('This class is unavailable for public reporting. Choose a public class.')).toBeVisible();
+    await expect.element(page.getByRole('button', { name: 'Submit report' })).toBeDisabled();
+    expect(submitPublicReport).not.toHaveBeenCalled();
   });
 
   it("lists what is still needed, then sends a report for a pasted class link", async () => {

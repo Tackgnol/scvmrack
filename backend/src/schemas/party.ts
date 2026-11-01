@@ -38,7 +38,7 @@ export const CreatePartyBodySchema = {
   type: 'object',
   additionalProperties: false,
   properties: {
-    name: { type: 'string', minLength: 1, maxLength: 120 },
+    name: { type: 'string', minLength: 1, maxLength: 100 },
   },
 } as const;
 
@@ -48,7 +48,7 @@ export const PromotePartyBodySchema = {
   required: ['obrRoomId'],
   properties: {
     obrRoomId: { type: 'string', minLength: 1, maxLength: 256 },
-    name: { type: 'string', minLength: 1, maxLength: 120 },
+    name: { type: 'string', minLength: 1, maxLength: 100 },
   },
 } as const;
 
@@ -66,7 +66,7 @@ export const RenamePartyBodySchema = {
   additionalProperties: false,
   required: ['name'],
   properties: {
-    name: { type: 'string', minLength: 1, maxLength: 120 },
+    name: { type: 'string', minLength: 1, maxLength: 100 },
   },
 } as const;
 

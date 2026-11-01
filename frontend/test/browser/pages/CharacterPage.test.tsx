@@ -8,6 +8,10 @@ import { useCharacter } from '@/CharacterContext/CharacterContext';
 import type { ReactNode } from 'react';
 
 const generateNew = vi.fn();
+vi.mock('@tanstack/react-router', async original => ({
+  ...await original<typeof import('@tanstack/react-router')>(),
+  Link: ({ children, to }: { children: ReactNode; to: string }) => <a href={to}>{children}</a>,
+}));
 vi.mock('@/privacy/privacyConsent', () => ({ usePrivacyAcknowledged: () => true }));
 const killAndReplace = vi.fn();
 const recoverInvalidCharacter = vi.fn();
@@ -131,7 +135,7 @@ vi.mock('@/components', () => ({
   NoteSection: () => <section>Note Section</section>,
   PetSection: () => <section>Pet Section</section>,
   PowersSection: () => <section>Powers Section</section>,
-  ResourceRow: () => <section>Resource Row</section>,
+  ResourceRow: () => <section>Resource Row<button>Edit HP</button></section>,
   SummaryBar: () => <section>Summary Bar</section>,
 }));
 
@@ -146,12 +150,12 @@ describe('CharacterPage', () => {
       isAuthenticated: false,
       error: null,
       character: {
-        id: 'char-1',
+        id: '00000000-0000-4000-8000-000000000001',
         name: 'Rot-Prone Sigrid',
         equipment: [],
         storage: [],
       },
-      characterId: 'char-1',
+      characterId: '00000000-0000-4000-8000-000000000001',
       isLoading: false,
       isSessionExpired: false,
       ...overrides,
@@ -177,17 +181,31 @@ describe('CharacterPage', () => {
     localStorage.removeItem('scvmrack-skip-kill-confirm-v1');
   });
 
+  it('shows an ordinary not-found page for a malformed character ID', async () => {
+    await renderCharacterPage({ characterId: 'not-a-uuid', character: undefined, error: hookError({ statusCode: 401, message: 'A session is required' }) });
+    await expect.element(page.getByRole('heading', { name: '404', exact: true })).toBeVisible();
+    await expect.element(page.getByRole('dialog')).not.toBeInTheDocument();
+    expect(generateNew).not.toHaveBeenCalled();
+  });
+
+  it('disables editing controls on a party reader sheet', async () => {
+    await renderCharacterPage({ isReadOnly: true });
+    await expect.element(page.getByRole('button', { name: 'Edit HP' })).toBeDisabled();
+    await expect.element(page.getByRole('button', { name: 'Kill Scvm' })).not.toBeInTheDocument();
+  });
+
   it('offers a replacement when a requested character is not found', async () => {
     await renderCharacterPage({
       isAuthenticated: true,
       error: hookError({ statusCode: 404, message: 'Character not found' }),
       character: undefined,
-      characterId: 'missing-char',
+      characterId: '00000000-0000-4000-8000-000000000002',
     });
 
     await expect
       .element(page.getByRole('dialog', { name: /scvm not found/i }))
       .toBeVisible();
+    await expect.element(page.getByRole('button', { name: 'Back to my Scvms' })).toBeVisible();
     await userEvent.click(page.getByRole('button', { name: /generate new scvm/i }));
 
     expect(recoverInvalidCharacter).toHaveBeenCalled();
@@ -204,7 +222,7 @@ describe('CharacterPage', () => {
         message: "You don't have access to this scvm",
       }),
       character: undefined,
-      characterId: 'forbidden-char',
+      characterId: '00000000-0000-4000-8000-000000000003',
     });
 
     await expect
@@ -221,7 +239,7 @@ describe('CharacterPage', () => {
       isAuthenticated: true,
       error: hookError({ statusCode: 500, code: 'INTERNAL_ERROR', message: 'Unexpected error occurred.' }),
       character: undefined,
-      characterId: 'char-500',
+      characterId: '00000000-0000-4000-8000-000000000004',
     });
 
     await expect.poll(() => errorFeedbackMocks.showUnexpectedError).toHaveBeenCalledWith(
@@ -229,7 +247,7 @@ describe('CharacterPage', () => {
       expect.objectContaining({
         source: 'character_page',
         operation: 'load_character',
-        characterId: 'char-500',
+        characterId: '00000000-0000-4000-8000-000000000004',
       })
     );
     expect(document.body.textContent).not.toMatch(/scvm not found/i);
@@ -261,7 +279,7 @@ describe('CharacterPage', () => {
       isAuthenticated: true,
       error: hookError({ statusCode: 500, code: 'INTERNAL_ERROR', message: 'Unexpected error occurred.' }),
       character: undefined,
-      characterId: 'char-500',
+      characterId: '00000000-0000-4000-8000-000000000004',
     });
 
     await expect
@@ -274,7 +292,7 @@ describe('CharacterPage', () => {
   it('renders sheet composition and conditional inventory sections', async () => {
     await renderCharacterPage({
       character: {
-        id: 'char-1',
+        id: '00000000-0000-4000-8000-000000000001',
         name: 'Rot-Prone Sigrid',
         equipment: [
           { kind: 'scroll', name: 'Psalm' },

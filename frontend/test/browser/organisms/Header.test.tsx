@@ -110,8 +110,8 @@ describe('Header Component', () => {
     vi.mocked(CharacterContextModule.useCharacter).mockReturnValue({
       isSaving: false,
       isJustLoggedOut: false,
-      character: null,
-      characterId: null,
+      character: { id: 'char-123' },
+      characterId: 'char-123',
       lastCharacterId: null,
       validationIssues: [],
       ...character,
@@ -132,6 +132,16 @@ describe('Header Component', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  it('hides sheet status and Print when the requested sheet is missing', async () => {
+    await renderHeader({
+      pathname: '/character/char-123',
+      character: { character: undefined, validationIssues: [{ id: 'name', message: 'Name required' }] },
+    });
+    await expect.element(page.getByTestId('header-print-button')).not.toBeInTheDocument();
+    await expect.element(page.getByTestId('synced-chip')).not.toBeInTheDocument();
+    await expect.element(page.getByTestId('validation-issues-chip')).not.toBeInTheDocument();
   });
 
   it('renders Header title and top bar interactions correctly', async () => {
@@ -164,7 +174,7 @@ describe('Header Component', () => {
   it('shows a read-only misery mirror on character routes', async () => {
     await renderHeader({
       pathname: '/character/char-123',
-      character: { character: { miseryCount: 4 } },
+      character: { character: { id: 'char-123', miseryCount: 4 } },
     });
 
     const mirror = page.getByTestId('header-misery-mirror');

@@ -6,7 +6,7 @@ import ClassAbilitiesSection from '@components/molecules/character-descriptors/C
 import TraitsSection from '@components/molecules/character-descriptors/TraitsSection';
 import OriginSection from '@components/molecules/character-descriptors/OriginSection';
 
-export const CharacterDescriptors = () => {
+export const CharacterDescriptors = ({ readOnly = false }: { readOnly?: boolean } = {}) => {
   const { t } = useTranslation();
   const {
     character,
@@ -36,6 +36,7 @@ export const CharacterDescriptors = () => {
     <>
       <ClassAbilitiesSection
         abilities={abilities}
+        readOnly={readOnly}
         onUpdateComment={updateAbilityComment}
       />
 

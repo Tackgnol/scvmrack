@@ -252,3 +252,11 @@ describe('ClassPoolPanel', () => {
     await expect.poll(() => setPoolClassless).toHaveBeenCalledWith({ partyId: 'p1', enabled: false, locale: 'en' });
   });
 });
+
+
+it('only offers reporting for another author’s public class (RPG-374)', async () => {
+  vi.mocked(getClassPool).mockResolvedValue({ ...baseView(), classes: [cls('My public class', { classId: 71, group: 'mine', attribution: { kind: 'owner', name: 'Author', private: false } }), cls('Other public class', { classId: 72, group: 'public', attribution: { kind: 'owner', name: 'Author', private: false } })] });
+  await renderPanel();
+  await userEvent.click(page.getByRole('button', { name: /Other GMs' public classes/ }));
+  await expect.element(page.getByRole('link', { name: 'Report a class', exact: true })).toHaveAttribute('href', '/report?classId=72');
+});

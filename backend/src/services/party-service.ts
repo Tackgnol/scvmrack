@@ -232,6 +232,9 @@ export function createPartyService(
         return fail(unauthorized());
       }
       const ownerUserId = sessionUserId(input.session) as string;
+      if (input.name && input.name.length > 100) {
+        return fail(badRequest('INVALID_PARTY_NAME', 'Party names must be at most 100 characters'));
+      }
 
       const name =
         typeof input.name === 'string' && input.name.trim().length > 0
@@ -584,6 +587,9 @@ export function createPartyService(
       }
 
       const name = typeof input.name === 'string' ? input.name.trim() : '';
+      if (input.name.length > 100) {
+        return fail(badRequest('INVALID_PARTY_NAME', 'Party names must be at most 100 characters'));
+      }
       if (name.length === 0) {
         return fail(badRequest('INVALID_PARTY_NAME', 'Party name is required'));
       }

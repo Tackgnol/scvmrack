@@ -15,6 +15,15 @@ describe('AbilityValueControl Browser', () => {
     increaseAriaLabel: 'Increase Strength',
   };
 
+  it('immediately displays the bounded score even when the committed value was already 21', async () => {
+    const onInputChange = vi.fn();
+    await render(<BrowserTestProvider><AbilityValueControl {...defaultProps} value={21} onInputChange={onInputChange} /></BrowserTestProvider>);
+    const input = page.getByRole('textbox', { name: 'Strength' });
+    await userEvent.fill(input, '99');
+    await expect.element(input).toHaveValue('21');
+    await expect.poll(() => onInputChange).toHaveBeenCalledWith('21');
+  });
+
   it('renders value and label', async () => {
     await render(
       <BrowserTestProvider>

@@ -6,7 +6,7 @@ import { abilityReferenceTableStyles as styles } from "./AbilityReferenceTable.s
 import { type Props } from "./AbilityReferenceTable.models";
 
 /** An ability's dN reference table: collapsed by default; rolling marks a row but never applies it. */
-export default function AbilityReferenceTable({ table }: Props) {
+export default function AbilityReferenceTable({ table, readOnly = false }: Props) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [rolled, setRolled] = useState<number | null>(null);
@@ -40,7 +40,7 @@ export default function AbilityReferenceTable({ table }: Props) {
           </Typography>
         )}
       </Box>
-      <Collapse in={open}>
+      <Collapse in={readOnly || open}>
         <Box component="ol" id={listId} sx={styles.rows}>
           {table.rows.map((row) => (
             <Box

@@ -1,4 +1,6 @@
 import { useCharacter } from '@/CharacterContext/CharacterContext';
+import { isCharacterId } from '@/utils/characterId';
+import { NotFoundPage } from '@/pages/NotFoundPage';
 import { useErrorFeedback } from '@/components/molecules/feedback/ErrorFeedbackProvider';
 import {
     CharacterLoadErrorModals,
@@ -181,11 +183,16 @@ export function CharacterPage() {
     // adopted. Acknowledge only the character we actually landed on.
     const showForgeBanner = !!justCreatedId && justCreatedId === characterId && !!character;
 
+    if (characterId && !isCharacterId(characterId)) {
+        return <NotFoundPage seoNoIndex />;
+    }
+
     return (
         <>
             <CharacterLoadErrorModals
                 issue={loadIssue}
                 error={error}
+                showRoster={isAuthenticated}
                 onGenerateNew={
                     isNotFound || isAccessDenied
                         ? () => void recoverInvalidCharacter()

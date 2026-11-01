@@ -932,6 +932,7 @@
     "gm": "MG"
   },
   "characters": {
+    "backToRoster": "Wróć do moich Szumowin",
     "title": "Twoje Postacie",
     "loginRequired": "Musisz być zalogowany, aby zobaczyć swoje postacie.",
     "noCharacters": "Nie masz jeszcze żadnych postaci. Stwórz swojego pierwszego scvma!",
@@ -1023,6 +1024,7 @@
     "morkBorgCredit": "MÖRK BORG jest chroniony prawem autorskim Ockult Örtmästare Games oraz Stockholm Kartell. To jest niezależny projekt fanowski."
   },
   "privacy": {
+    "reviewSettings": "Sprawdź ustawienia prywatności",
     "title": "KRWAWA PRZYSIĘGA",
     "subtitle": "Informacja o Danych, Śledzeniu i Przechowywaniu",
     "sections": {
@@ -1825,6 +1827,8 @@
     "loadFailed": "Nie udało się wczytać Twoich klas."
   },
   "report": {
+    "unreportable": "Ta klasa nie jest dostępna do publicznego zgłoszenia. Wybierz klasę publiczną.",
+    "lookupFailed": "Nie udało się sprawdzić klasy. Spróbuj ponownie.",
     "thisClass": "Zgłoś tę klasę",
     "otherClass": "Zgłoś inną klasę",
     "link": "Zgłoś klasę",

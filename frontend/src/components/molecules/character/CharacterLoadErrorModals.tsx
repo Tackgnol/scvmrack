@@ -5,6 +5,7 @@ import {
 } from '@/utils/errorUtils';
 import { Typography } from '@mui/material';
 import { useTranslation } from 'react-i18next';
+import { appHistory } from '@/router/history';
 
 // The three load-failure states are mutually exclusive, so they collapse into one
 // parameterized modal driven by `issue` (null = nothing wrong, render nothing).
@@ -14,12 +15,14 @@ type CharacterLoadErrorModalsProps = {
   issue: CharacterLoadIssue | null;
   error: unknown;
   onGenerateNew: () => void;
+  showRoster?: boolean;
 };
 
 export function CharacterLoadErrorModals({
   issue,
   error,
   onGenerateNew,
+  showRoster = false,
 }: CharacterLoadErrorModalsProps) {
   const { t } = useTranslation();
 
@@ -54,9 +57,16 @@ export function CharacterLoadErrorModals({
       closeOnBackdrop={false}
       showCloseButton={false}
       actions={
-        <ModalButton variant="primary" onClick={onGenerateNew}>
-          {t('characters.generateNew')}
-        </ModalButton>
+        <>
+          {showRoster && (
+            <ModalButton variant="primary" onClick={() => void appHistory.push('/characters')}>
+              {t('characters.backToRoster', 'Back to my Scvms')}
+            </ModalButton>
+          )}
+          <ModalButton variant="primary" onClick={onGenerateNew}>
+            {t('characters.generateNew')}
+          </ModalButton>
+        </>
       }
     >
       <Typography>{body}</Typography>

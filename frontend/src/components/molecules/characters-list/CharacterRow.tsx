@@ -129,7 +129,9 @@ export function CharacterRow({
   const id = character.id || null;
   const name = (character.name || '').trim() || t('characters.unnamed', 'Unnamed Scvm');
   const className =
-    (character.className || '').trim() || t('characters.unknownClass', 'Unknown');
+    (character.className || '').trim() || (character.classId === null
+      ? t('create.classlessLabel', 'Classless')
+      : t('characters.unknownClass', 'Unknown'));
 
   return (
     <Box

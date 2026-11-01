@@ -29,7 +29,7 @@ const numberPulse = keyframes`
 `;
 
 export default function ResourcesRow() {
-  const { character, updateField, updateArmorField, killAndReplace } = useCharacter();
+  const { character, updateField, updateArmorField, killAndReplace, isReadOnly } = useCharacter();
   const { t } = useTranslation();
   const [omensModalOpen, setOmensModalOpen] = useState(false);
   const prefersReducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
@@ -44,7 +44,7 @@ export default function ResourcesRow() {
   const characterKey = character?.id ?? 'unknown';
   const { hpPulse, deathModalOpen, setDeathModalOpen } = useHpDeathWatch(
     currentHp,
-    character?.id ?? null,
+    isReadOnly ? null : character?.id ?? null,
     prefersReducedMotion,
   );
   const silverInput = useIntegerFieldBuffer(character?.silver ?? 0, (digits) =>
