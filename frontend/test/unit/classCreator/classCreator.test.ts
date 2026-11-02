@@ -50,6 +50,10 @@ describe("formulaText", () => {
 });
 
 describe("statRange", () => {
+  it("shows the bounded score range for extreme custom dice", () => {
+    expect(statRange({ count: 2, faces: 4, modifier: -6, dropLowest: false })).toEqual({ low: 1, high: 2, modLow: -3, modHigh: -3 });
+    expect(statRange({ count: 6, faces: 12, modifier: 6, dropLowest: true })).toEqual({ low: 11, high: 21, modLow: 0, modHigh: 6 });
+  });
   it("gives the score and modifier range", () => {
     expect(
       statRange({ count: 3, faces: 6, modifier: -1, dropLowest: false }),

@@ -183,14 +183,15 @@ describe('CharacterPage', () => {
     localStorage.removeItem('scvmrack-skip-kill-confirm-v1');
   });
 
-  it.each(['guest', 'sessionless'])('offers Start recovery for a %s without creating another scvm', async visitor => {
+  it.each([
+    { visitor: 'guest', status: 404, code: undefined, title: 'Scvm not found' },
+    { visitor: 'sessionless', status: 401, code: 'CHARACTER_SESSION_REQUIRED', title: 'Sign in to open this Scvm' },
+  ])('offers Start recovery for a $visitor without creating another scvm', async ({ status, code, title }) => {
     const push = vi.spyOn(appHistory, 'push').mockResolvedValue({ type: 'SUCCESS' });
     try {
-      await renderCharacterPage({ isAuthenticated: false, character: undefined, characterId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', error: toApiClientError({ status: visitor === 'guest' ? 404 : 401, code: visitor === 'sessionless' ? 'CHARACTER_SESSION_REQUIRED' : undefined, message: 'Unavailable' }) as never });
-      if (visitor === 'sessionless') {
-        await expect.element(page.getByRole('dialog', { name: 'Sign in to open this Scvm' })).toBeVisible();
-        await expect.element(page.getByText(/session expired/i)).not.toBeInTheDocument();
-      }
+      await renderCharacterPage({ isAuthenticated: false, character: undefined, characterId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', error: toApiClientError({ status, code, message: 'Unavailable' }) as never });
+      await expect.element(page.getByRole('dialog', { name: title })).toBeVisible();
+      await expect.element(page.getByText(/session expired/i)).not.toBeInTheDocument();
       await userEvent.click(page.getByRole('button', { name: 'Back to Start' }));
       await expect.poll(() => push).toHaveBeenCalledWith('/');
       expect(generateNew).not.toHaveBeenCalled();
@@ -199,6 +200,14 @@ describe('CharacterPage', () => {
     } finally {
       push.mockRestore();
     }
+  });
+
+  it('leaves expired account recovery to the global session gate', async () => {
+    await renderCharacterPage({ isAuthenticated: true, isSessionExpired: true, character: undefined, error: hookError({ statusCode: 401, message: 'Session expired' }) });
+    await expect.element(page.getByRole('dialog')).not.toBeInTheDocument();
+    await expect.element(page.getByRole('button', { name: 'Back to Start' })).not.toBeInTheDocument();
+    expect(recoverInvalidCharacter).not.toHaveBeenCalled();
+    expect(generateNew).not.toHaveBeenCalled();
   });
 
   it('shows an ordinary not-found page for a malformed character ID', async () => {

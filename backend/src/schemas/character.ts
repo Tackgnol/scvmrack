@@ -1,7 +1,7 @@
 // Stricter schema definitions with validation limits
 // Use these in your route schemas
 
-import { MISERY_MAX, MISERY_MIN } from '../lib/character-limits.js';
+import { ABILITY_SCORE_LIMITS, MISERY_MAX, MISERY_MIN } from '../lib/character-limits.js';
 
 export const CharacterIdParamsSchema = {
   type: 'object',
@@ -287,10 +287,10 @@ export const UpdateBodySchema = {
     omens: { type: 'integer', minimum: 0, maximum: 100 },
     maxOmens: { type: 'integer', minimum: 0, maximum: 100 },
     silver: { type: 'integer', minimum: 0, maximum: 1000000 },
-    strength: { type: 'integer', minimum: 1, maximum: 30 },
-    agility: { type: 'integer', minimum: 1, maximum: 30 },
-    presence: { type: 'integer', minimum: 1, maximum: 30 },
-    toughness: { type: 'integer', minimum: 1, maximum: 30 },
+    strength: { type: 'integer', minimum: ABILITY_SCORE_LIMITS.min, maximum: ABILITY_SCORE_LIMITS.max },
+    agility: { type: 'integer', minimum: ABILITY_SCORE_LIMITS.min, maximum: ABILITY_SCORE_LIMITS.max },
+    presence: { type: 'integer', minimum: ABILITY_SCORE_LIMITS.min, maximum: ABILITY_SCORE_LIMITS.max },
+    toughness: { type: 'integer', minimum: ABILITY_SCORE_LIMITS.min, maximum: ABILITY_SCORE_LIMITS.max },
     trait1: { type: 'string', maxLength: 255 },
     trait2: { type: 'string', maxLength: 255 },
     habit: { type: 'string', maxLength: 1000 },

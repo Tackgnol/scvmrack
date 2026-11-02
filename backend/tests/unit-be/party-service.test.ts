@@ -1501,7 +1501,6 @@ test('detachRoom clears the pointer', async () => {
   assert.deepEqual(state.setObrRoomCalls, [{ id: PARTY_ID, obrRoomId: null }]);
 });
 
-
 test('party create and rename accept 100-character names (RPG-369)', async () => {
   state.party = partyWith([], 'gm-1');
   const svc = service();

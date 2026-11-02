@@ -1,13 +1,11 @@
 import { ModalButton, MorkBorgModal } from '@/components';
 import { getCharacterLoadErrorCopy } from './CharacterLoadErrorModals.utils';
 import type { CharacterLoadErrorModalsProps } from './CharacterLoadErrorModals.models';
-export type { CharacterLoadIssue } from './CharacterLoadErrorModals.models';
 import { Typography } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { appHistory } from '@/router/history';
 
-// The three load-failure states are mutually exclusive, so they collapse into one
-// parameterized modal driven by `issue` (null = nothing wrong, render nothing).
+// A single issue selects the recovery message; null means there is no load failure.
 export function CharacterLoadErrorModals({
   issue,
   error,

@@ -1,4 +1,4 @@
-export type CharacterLoadIssue = 'not-found' | 'access-denied' | 'load-error';
+export type CharacterLoadIssue = 'not-found' | 'access-denied' | 'load-error' | 'session-required';
 
 export type CharacterLoadErrorModalsProps = {
   issue: CharacterLoadIssue | null;

@@ -1,5 +1,7 @@
 # Backend — Feature Summary
 
+- Ability score writes and newly generated scores stay within 1–21. Custom Class previews and forged scvms use the same bounded result. Existing historical improvement scores remain readable. (RPG-368)
+
 - Custom Class abilities accept shared catalog item and pet grants while validating availability and grant type. Authors can read their archived classes unless taken down. (RPG-358, RPG-359)
 - Party create and rename requests share a 100-character name limit. (RPG-369)
 

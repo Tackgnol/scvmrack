@@ -302,6 +302,8 @@ const abilitySchema = z.object({
   comment: limitedString(1000).optional(),
 });
 
+const abilityScoreSchema = boundedInteger(ABILITY_SCORE_LIMITS.min, ABILITY_SCORE_LIMITS.max, 10).optional();
+
 export const characterUpdateSchema = z.object({
   expectedUpdatedAt: z.string().datetime().optional(),
   saveId: z.string().regex(/^[A-Za-z0-9-]{1,64}$/).optional(),
@@ -311,10 +313,10 @@ export const characterUpdateSchema = z.object({
   omens: boundedInteger(0, 100, 0).optional(),
   maxOmens: boundedInteger(0, 100, 0).optional(),
   silver: boundedInteger(0, 1000000, 0).optional(),
-  strength: boundedInteger(ABILITY_SCORE_LIMITS.min, ABILITY_SCORE_LIMITS.max, 10).optional(),
-  agility: boundedInteger(ABILITY_SCORE_LIMITS.min, ABILITY_SCORE_LIMITS.max, 10).optional(),
-  presence: boundedInteger(ABILITY_SCORE_LIMITS.min, ABILITY_SCORE_LIMITS.max, 10).optional(),
-  toughness: boundedInteger(ABILITY_SCORE_LIMITS.min, ABILITY_SCORE_LIMITS.max, 10).optional(),
+  strength: abilityScoreSchema,
+  agility: abilityScoreSchema,
+  presence: abilityScoreSchema,
+  toughness: abilityScoreSchema,
   trait1: limitedString(35).optional(),
   trait2: limitedString(35).optional(),
   habit: limitedString(200).optional(),

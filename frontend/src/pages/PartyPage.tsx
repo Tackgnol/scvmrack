@@ -394,13 +394,13 @@ export function PartyPage() {
     setDraftName("");
   };
 
-  const renameNameInvalid = !partyNameSchema.safeParse(draftName).success;
+  const checkedName = partyNameSchema.safeParse(draftName);
+  const renameNameInvalid = !checkedName.success;
   const submitRename = async () => {
-    const checked = partyNameSchema.safeParse(draftName);
-    if (!checked.success) {
+    if (!checkedName.success) {
       return;
     }
-    const next = checked.data;
+    const next = checkedName.data;
     if (!next || next === party?.name) {
       cancelRename();
       return;

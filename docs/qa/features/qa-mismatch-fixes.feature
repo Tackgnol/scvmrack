@@ -120,6 +120,7 @@ Feature: Reliable class and character workflows
   @RPG-368
   Scenario: An ability input shows the bounded score that will be saved
     Given I am editing my scvm's Strength
+    And no score-limit message is visible before I edit
     When I enter a score above 21
     Then the input immediately shows 21
     And a message in my selected language explains the score limit
@@ -158,3 +159,15 @@ Feature: Reliable class and character workflows
       | visitor                   |
       | guest with a session      |
       | visitor without a session |
+
+  @RPG-368
+  Scenario Outline: Forged ability scores stay within the approved range
+    Given a Custom Class's Strength dice would produce <rawScore>
+    When I preview and forge a scvm from that class
+    Then both preview and saved Strength are <boundedScore>
+    And the ability modifier matches that saved score
+
+    Examples:
+      | rawScore | boundedScore |
+      | -4       | 1            |
+      | 78       | 21           |

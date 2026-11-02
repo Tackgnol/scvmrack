@@ -9,7 +9,7 @@ import type {
 } from "@/api/classes";
 import type { TFunction } from "i18next";
 import { signed } from "@/utils/signed";
-import { statToModifier } from "@/utils/stats";
+import { ABILITY_SCORE_LIMITS, statToModifier } from "@/utils/stats";
 import type {
   CreatorIssue,
   CreatorStep,
@@ -124,8 +124,8 @@ export function formulaText(stat: StatDice): string {
 /** The lowest and highest score a stat can roll, and their modifiers. */
 export function statRange(stat: StatDice) {
   const kept = stat.dropLowest && stat.count > 1 ? stat.count - 1 : stat.count;
-  const low = kept + stat.modifier;
-  const high = kept * stat.faces + stat.modifier;
+  const low = Math.max(ABILITY_SCORE_LIMITS.min, Math.min(ABILITY_SCORE_LIMITS.max, kept + stat.modifier));
+  const high = Math.max(ABILITY_SCORE_LIMITS.min, Math.min(ABILITY_SCORE_LIMITS.max, kept * stat.faces + stat.modifier));
   return {
     low,
     high,

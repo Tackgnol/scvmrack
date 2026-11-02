@@ -1,6 +1,5 @@
 import type { TFunction } from "i18next";
 import {
-  getApiErrorCode,
   getUserFacingApiErrorMessage,
   isApiUnauthorized,
 } from "@/utils/errorUtils";
@@ -11,7 +10,7 @@ export function getCharacterLoadErrorCopy(
   error: unknown,
   t: TFunction,
 ) {
-  if (getApiErrorCode(error) === "CHARACTER_SESSION_REQUIRED") {
+  if (issue === "session-required") {
     return {
       title: t("characters.sessionRequiredTitle", "Sign in to open this Scvm"),
       body: t(

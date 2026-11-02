@@ -704,7 +704,7 @@
     "placeholderAlt2": "Bazgroły z otchłani."
   },
   "miseries": {
-    "mixed": "Różne liczby Nieszczęść",
+    "mixed": "Różne liczby Męk",
     "title": "Latopis Nechrubelski",
     "headerLabel": "Męki",
     "headerAria": "Męki: {{count}} z 7. Przejdź do toru Męk",
@@ -1926,7 +1926,7 @@
     "loadFailed": "Nie możesz wczytać zgłoszeń moderacyjnych."
   },
   "party": {
-    "miseryControlChoose": "Wybierz liczbę Nieszczęść",
+    "miseryControlChoose": "Wybierz liczbę Męk",
     "pill": "Drużyna",
     "looks": "Wygląd",
     "kit": "Sprzęt",

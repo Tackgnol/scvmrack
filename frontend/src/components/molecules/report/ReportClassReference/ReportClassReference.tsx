@@ -10,6 +10,9 @@ export function ReportClassReference({
   ...inputProps
 }: ReportClassReferenceProps) {
   const { t } = useTranslation();
+  const reportingLabel = reportedClassName
+    ? t('report.reportingClass', 'Reporting: {{name}}', { name: reportedClassName })
+    : undefined;
   if (editing || !reportedClassName) {
     return (
       <TextField
@@ -22,11 +25,7 @@ export function ReportClassReference({
                 "report.invalidClassReference",
                 "Enter a class number or a link such as /classes/12.",
               )
-            : reportedClassName
-              ? t("report.reportingClass", "Reporting: {{name}}", {
-                  name: reportedClassName,
-                })
-              : t(
+            : reportingLabel ?? t(
                   "report.classIdHint",
                   "The number or link of the class page, such as /classes/12.",
                 )
@@ -44,9 +43,7 @@ export function ReportClassReference({
       flexWrap="wrap"
     >
       <Typography sx={{ fontWeight: 700 }}>
-        {t("report.reportingClass", "Reporting: {{name}}", {
-          name: reportedClassName,
-        })}
+        {reportingLabel}
       </Typography>
       <Button variant="outlined" color="inherit" onClick={onEdit}>
         {t("report.otherClass", "Report a different class")}

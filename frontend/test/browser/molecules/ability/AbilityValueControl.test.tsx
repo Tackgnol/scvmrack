@@ -20,6 +20,7 @@ describe('AbilityValueControl Browser', () => {
     const onInputChange = vi.fn();
     await render(<BrowserTestProvider><AbilityValueControl {...defaultProps} value={21} onInputChange={onInputChange} /></BrowserTestProvider>);
     const input = page.getByRole('textbox', { name: 'Strength' });
+    await expect.element(page.getByText('Scores are limited to 1–21.')).not.toBeInTheDocument();
     await userEvent.fill(input, '99');
     await expect.element(input).toHaveValue('21');
     await expect.element(page.getByText('Scores are limited to 1–21.')).toBeVisible();
@@ -39,6 +40,28 @@ describe('AbilityValueControl Browser', () => {
     } finally {
       await i18n.changeLanguage('en');
     }
+  });
+
+  it('shows limit feedback only after a bounded step or typed value and clears it for valid input', async () => {
+    const onIncrease = vi.fn();
+    await render(<BrowserTestProvider><AbilityValueControl {...defaultProps} value={21} onIncrease={onIncrease} /></BrowserTestProvider>);
+    const feedback = page.getByText('Scores are limited to 1–21.');
+    await expect.element(feedback).not.toBeInTheDocument();
+    await userEvent.click(page.getByRole('button', { name: 'Increase Strength' }));
+    await expect.element(feedback).toBeVisible();
+    await expect.poll(() => onIncrease).toHaveBeenCalledOnce();
+    const input = page.getByRole('textbox', { name: 'Strength' });
+    await userEvent.fill(input, '15');
+    await expect.element(feedback).not.toBeInTheDocument();
+    await userEvent.fill(input, '0');
+    await expect.element(input).toHaveValue('1');
+    await expect.element(feedback).toBeVisible();
+  });
+
+  it('does not show editing feedback on an untouched read-only control', async () => {
+    await render(<BrowserTestProvider><fieldset disabled><AbilityValueControl {...defaultProps} /></fieldset></BrowserTestProvider>);
+    await expect.element(page.getByRole('textbox', { name: 'Strength' })).toBeDisabled();
+    await expect.element(page.getByText('Scores are limited to 1–21.')).not.toBeInTheDocument();
   });
 
   it('renders value and label', async () => {
