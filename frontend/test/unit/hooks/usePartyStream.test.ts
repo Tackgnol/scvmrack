@@ -52,11 +52,52 @@ const emit = (event: string, data: unknown) =>
     data: typeof data === "string" ? data : JSON.stringify(data),
   });
 
+const createQueryClientMock = () => ({
+  invalidateQueries: vi.fn(),
+  cancelQueries: vi.fn().mockResolvedValue(undefined),
+});
+
 beforeEach(() => {
   confirmTabSession();
   setTabSession(null);
   calls.length = 0;
-  (useQueryClient as any).mockReturnValue({ invalidateQueries: vi.fn() });
+  (useQueryClient as any).mockReturnValue(createQueryClientMock());
+});
+
+test("notifies a consumer once for stream opening, saved edits and membership changes", async () => {
+  const onChanged = vi.fn();
+  renderHook(() => usePartyStream("party-1", { onChanged }));
+  await act(async () => {
+    await calls[0].options.onopen(okResponse);
+  });
+  expect(onChanged).toHaveBeenCalledTimes(1);
+  act(() =>
+    emit("character.updated", {
+      type: "character.updated",
+      characterId: "scvm",
+      fields: ["currentHp"],
+    }),
+  );
+  expect(onChanged).toHaveBeenCalledTimes(2);
+  act(() =>
+    emit("character.joined", { type: "character.joined", characterId: "scvm" }),
+  );
+  expect(onChanged).toHaveBeenCalledTimes(3);
+  act(() =>
+    emit("character.presence", {
+      type: "character.presence",
+      characterId: "scvm",
+      connected: true,
+    }),
+  );
+  act(() =>
+    emit("character.updated", {
+      type: "character.updated",
+      characterId: "scvm",
+      fields: null,
+    }),
+  );
+  expect(onChanged).toHaveBeenCalledTimes(3);
 });
 
 test("quarantining a cookie-only session aborts its stream even when the bearer stays null", async () => {
@@ -79,7 +120,7 @@ test("does not connect when disabled", () => {
 });
 
 test("connects with credentials and aborts on unmount", async () => {
-  const queryClient = { invalidateQueries: vi.fn() };
+  const queryClient = createQueryClientMock();
   (useQueryClient as any).mockReturnValue(queryClient);
 
   const { unmount } = renderHook(() => usePartyStream("party-1"));
@@ -105,7 +146,7 @@ test("connects with credentials and aborts on unmount", async () => {
 });
 
 test("does not reconnect when option callbacks are recreated by rerenders", async () => {
-  const queryClient = { invalidateQueries: vi.fn() };
+  const queryClient = createQueryClientMock();
   (useQueryClient as any).mockReturnValue(queryClient);
 
   const { rerender } = renderHook(() =>
@@ -125,7 +166,7 @@ test("does not reconnect when option callbacks are recreated by rerenders", asyn
 });
 
 test("character.updated invalidates that member and stores changed fields", () => {
-  const queryClient = { invalidateQueries: vi.fn() };
+  const queryClient = createQueryClientMock();
   (useQueryClient as any).mockReturnValue(queryClient);
 
   const { result } = renderHook(() => usePartyStream("party-1"));
@@ -148,7 +189,7 @@ test("character.updated invalidates that member and stores changed fields", () =
 });
 
 test("membership events invalidate roster and changed member detail", () => {
-  const queryClient = { invalidateQueries: vi.fn() };
+  const queryClient = createQueryClientMock();
   (useQueryClient as any).mockReturnValue(queryClient);
 
   renderHook(() => usePartyStream("party-1"));
@@ -172,7 +213,7 @@ test("membership events invalidate roster and changed member detail", () => {
 });
 
 test("presence snapshot and presence events update connection state", () => {
-  const queryClient = { invalidateQueries: vi.fn() };
+  const queryClient = createQueryClientMock();
   (useQueryClient as any).mockReturnValue(queryClient);
 
   const { result } = renderHook(() => usePartyStream("party-1"));
@@ -207,7 +248,7 @@ test("presence snapshot and presence events update connection state", () => {
 });
 
 test("presence state clears when the stream is disabled", () => {
-  const queryClient = { invalidateQueries: vi.fn() };
+  const queryClient = createQueryClientMock();
   (useQueryClient as any).mockReturnValue(queryClient);
 
   const { result, rerender } = renderHook(
@@ -231,7 +272,7 @@ test("presence state clears when the stream is disabled", () => {
 
 test("party.closed closes the stream and calls onClosed", () => {
   const onClosed = vi.fn();
-  const queryClient = { invalidateQueries: vi.fn() };
+  const queryClient = createQueryClientMock();
   (useQueryClient as any).mockReturnValue(queryClient);
 
   const { result } = renderHook(() => usePartyStream("party-1", { onClosed }));
@@ -246,7 +287,7 @@ test("party.closed closes the stream and calls onClosed", () => {
 });
 
 test("malformed events are ignored without throwing", () => {
-  const queryClient = { invalidateQueries: vi.fn() };
+  const queryClient = createQueryClientMock();
   (useQueryClient as any).mockReturnValue(queryClient);
 
   const { result } = renderHook(() => usePartyStream("party-1"));
@@ -264,7 +305,7 @@ test("malformed events are ignored without throwing", () => {
 });
 
 test("fatal open response stops without retrying", async () => {
-  const queryClient = { invalidateQueries: vi.fn() };
+  const queryClient = createQueryClientMock();
   (useQueryClient as any).mockReturnValue(queryClient);
 
   const { result } = renderHook(() => usePartyStream("party-1"));

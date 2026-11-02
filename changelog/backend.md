@@ -1,5 +1,9 @@
 # Backend — Feature Summary
 
+- The app should no longer report a failed save or Getting Better application when its committed change cannot send a live notification. Notification failures are logged and reported to configured error monitoring without sheet or request data, while preserving the save result. (RPG-348)
+- The app should no longer repeat its room-audience lookup for every scvm when a GM changes party Miseries. One batch preserves each scvm's own recipients. (RPG-348)
+- The app should no longer skip Owlbear room updates when an owner binds a scvm without joining the room party, including a scvm that belongs to another party. Saves, improvements and party Miseries notify the scvm's party and actively bound room parties without moving its membership. (RPG-348)
+
 - Ability score writes and newly generated scores stay within 1–21. Custom Class previews and forged scvms use the same bounded result. Existing historical improvement scores remain readable. (RPG-368)
 
 - Custom Class abilities accept shared catalog item and pet grants while validating availability and grant type. Authors can read their archived classes unless taken down. (RPG-358, RPG-359)

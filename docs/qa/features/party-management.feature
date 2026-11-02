@@ -20,6 +20,20 @@ Feature: Party management
     When I resize the open view back to phone width
     Then I can page to every member and return to the first
 
+  # Automation anchor: backend/tests/e2e/tests/authed/party.spec.ts
+  Scenario Outline: Use each newly forged party scvm without reloading
+    Given a GM's Party Class Pool allows <class>
+    And I am signed in as a player with a scvm in that party
+    When I forge two more scvms through the party invite using <class>
+    Then each successful forge opens that new scvm's editable party sheet
+    And I do not need to reload to use either new sheet
+    And all three scvms remain in the party
+
+    Examples:
+      | class                  |
+      | a Book Class           |
+      | a private Custom Class |
+
   Scenario: Reloading GM controls preserves the party's existing Miseries
     Given I am signed in as a Game Master with a party
     And every scvm in the party has four of seven Miseries

@@ -98,3 +98,31 @@ Feature: Owlbear table play
     When that enemy is deleted elsewhere before the GM changes it
     Then the failed action does not claim the room party is missing
     And a genuinely missing room party still explains how to attach it
+
+  # Automation anchors: frontend/test/browser/obr/RosterLiveUpdates.test.tsx; backend/tests/integration-be/src/owlbear-table.integration.test.ts
+  Scenario: Show full-sheet saves live in the Owlbear GM roster
+    Given a player's scvm is bound to their online player in an Owlbear room
+    And the GM roster and that scvm's full Scvmrack sheet are open
+    When the player saves two successive hit-point changes in the full sheet
+    Then the GM roster shows each saved value without Refresh or reopening
+    And reopening the roster still shows the latest saved value
+
+  # Automation anchors: frontend/test/browser/obr/RosterLiveUpdates.test.tsx; backend/tests/integration-be/src/owlbear-table.integration.test.ts
+  Scenario: Keep a removed scvm out of the room after a full-sheet save
+    Given the GM has removed a player's scvm from the room
+    When its owner opens the full sheet and saves a hit-point change
+    Then that owned sheet retains the change
+    And the scvm remains absent from the room roster and bindings
+
+  # Automation anchors: backend/tests/unit-be/character-service.test.ts; backend/tests/unit-be/character-improvement-service.test.ts
+  Scenario Outline: Keep a completed sheet change when live notification fails
+    Given I own a scvm bound to an Owlbear room
+    When I <action>
+    And the change is committed but its live notification fails
+    Then the completed change is acknowledged as saved
+    And reopening the sheet shows the change applied exactly once
+
+    Examples:
+      | action                |
+      | save a hit-point edit |
+      | apply Getting Better  |

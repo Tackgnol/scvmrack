@@ -1,6 +1,7 @@
 import { useObrRosterCards as useObrRosterCardsCore } from "@tackgnol/rpgtools-owlbear/react-query";
 import { partyKeys } from "@/api/party";
 import { obrKeys } from "@/api/obrKeys";
+import { refreshQueries } from "@/api/queryCache";
 import { errorMessage } from "@/utils/errorMessage";
 import {
   fetchRoomParticipation,
@@ -46,6 +47,9 @@ export function useObrRosterCards(): ObrRosterState {
   const participation = useQuery(participationOptions(roomId));
   usePartyStream(participation.data?.partyId ?? "", {
     enabled: participation.data?.canManage,
+    onChanged: () => {
+      void refreshQueries(queryClient, { queryKey: obrKeys.cards() });
+    },
   });
   const [removeRosterAction, setRemoveRosterAction] =
     useState<RemoveFromRosterState>(null);

@@ -43,6 +43,7 @@ export type PresenceByCharacter = Record<string, boolean>;
 type UsePartyStreamOptions = {
   enabled?: boolean;
   onClosed?: () => void;
+  onChanged?: () => void;
 };
 
 export const partyRosterQueryKey = partyKeys.roster;
@@ -100,8 +101,9 @@ export function usePartyStream(
     () => false,
   );
   const queryClient = useQueryClient();
-  const { enabled = true, onClosed } = options;
+  const { enabled = true, onClosed, onChanged } = options;
   const onClosedRef = useRef(onClosed);
+  const onChangedRef = useRef(onChanged);
   const [status, setStatus] = useState<PartyStreamStatus>("idle");
   const [changedFieldsByCharacter, setChangedFieldsByCharacter] =
     useState<ChangedFieldsByCharacter>({});
@@ -110,7 +112,8 @@ export function usePartyStream(
 
   useEffect(() => {
     onClosedRef.current = onClosed;
-  }, [onClosed]);
+    onChangedRef.current = onChanged;
+  }, [onClosed, onChanged]);
 
   const clearChangedFields = useCallback((characterId?: string) => {
     setChangedFieldsByCharacter((current) => {
@@ -139,6 +142,7 @@ export function usePartyStream(
     setStatus("connecting");
 
     const invalidateRoster = () => {
+      onChangedRef.current?.();
       void queryClient.invalidateQueries({
         queryKey: obrKeys.participations(),
       });
@@ -173,6 +177,7 @@ export function usePartyStream(
         [parsed.characterId]: fields,
       }));
       invalidateMember(parsed.characterId);
+      onChangedRef.current?.();
     };
 
     const handleRosterEvent = (data: string) => {
