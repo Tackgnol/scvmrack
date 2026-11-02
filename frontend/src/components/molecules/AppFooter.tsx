@@ -1,3 +1,4 @@
+import { requestOpenPrivacyDrawer } from '@/privacy/privacyDrawerBus';
 import { styled } from '@mui/material';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
@@ -49,6 +50,9 @@ export function AppFooter() {
       <FooterLink to="/faq">{t('nav.faq')}</FooterLink>
       <FooterLink to="/release">{t('nav.release')}</FooterLink>
       <FooterLink to="/owlbear">{t('nav.owlbear')}</FooterLink>
+      <FooterLink as="button" type="button" onClick={requestOpenPrivacyDrawer} sx={{ background: 'none', border: 0, cursor: 'pointer' }}>
+        {t('privacy.reviewSettings', 'Review your privacy settings')}
+      </FooterLink>
       <FooterLink to="/privacy">{t('nav.privacy')}</FooterLink>
       <FooterLink to="/terms">{t('nav.terms')}</FooterLink>
       <FooterLink to="/legal">{t('nav.legal')}</FooterLink>

@@ -528,6 +528,10 @@
     "removeModifier": "Usuń modyfikator"
   },
   "attributes": {
+    "legacyScoreTitle": "Obniżyć wartość cechy?",
+    "confirmScoreChange": "Zmień na {{score}}",
+    "legacyScoreWarning": "{{stat}}: zmienić wartość z {{from}} na {{to}}? Wartości są teraz ograniczone do {{min}}–{{max}}. Obecna wartość nie zmieni się bez potwierdzenia.",
+    "scoreLimits": "Wartości są ograniczone do {{min}}–{{max}}.",
     "agility": "Zwinność",
     "presence": "Opanowanie",
     "strength": "Siła",
@@ -545,6 +549,7 @@
     "weapon": "Broń",
     "armorLabel": "Pancerz",
     "onHand": "Pod Ręką",
+    "inventoryLimit": "Limit dla „{{container}}” wynosi {{limit}} przedmiotów.",
     "storedItems": "Schowane Przedmioty",
     "readyItemPlaceholder": "Gotowy przedmiot...",
     "itemDescriptionPlaceholder": "Opis przedmiotu...",
@@ -702,6 +707,7 @@
     "placeholderAlt2": "Bazgroły z otchłani."
   },
   "miseries": {
+    "mixed": "Różne liczby Męk",
     "title": "Latopis Nechrubelski",
     "headerLabel": "Męki",
     "headerAria": "Męki: {{count}} z 7. Przejdź do toru Męk",
@@ -711,7 +717,7 @@
   },
   "footer": {
     "worldEnding": "Świat Się Kończy",
-    "legalNotice": "MÖRK BORG jest chroniony prawem autorskim Ockult Örtmästare Games oraz Stockholm Kartell. Scvmrack to niezależna produkcja Adama Kościelniaka, rozwijana jako część pakietu <rpgtoolsLink>rpgtools.co</rpgtoolsLink>; nie jest ona powiązana z Ockult Örtmästare Games ani Stockholm Kartell. Została opublikowana na mocy licencji MÖRK BORG Third Party License. <privacyLink>Sprawdź ustawienia prywatności</privacyLink>",
+    "legalNotice": "MÖRK BORG jest chroniony prawem autorskim Ockult Örtmästare Games oraz Stockholm Kartell. Scvmrack to niezależna produkcja Adama Kościelniaka, rozwijana jako część pakietu <rpgtoolsLink>rpgtools.co</rpgtoolsLink>; nie jest ona powiązana z Ockult Örtmästare Games ani Stockholm Kartell. Została opublikowana na mocy licencji MÖRK BORG Third Party License.",
     "translationCredit": "Oficjalne polskie tłumaczenie dostarczone przez Nerd Sirens",
     "terms": "Regulamin"
   },
@@ -931,6 +937,10 @@
     "gm": "MG"
   },
   "characters": {
+    "backToStart": "Wróć na start",
+    "sessionRequiredTitle": "Zaloguj się, aby otworzyć tego scvma",
+    "sessionRequiredDescription": "W tej przeglądarce nie ma aktywnej sesji. Wróć na start i zaloguj się, aby otworzyć tego scvma.",
+    "backToRoster": "Wróć do moich Szumowin",
     "title": "Twoje Postacie",
     "loginRequired": "Musisz być zalogowany, aby zobaczyć swoje postacie.",
     "noCharacters": "Nie masz jeszcze żadnych postaci. Stwórz swojego pierwszego scvma!",
@@ -1022,6 +1032,7 @@
     "morkBorgCredit": "MÖRK BORG jest chroniony prawem autorskim Ockult Örtmästare Games oraz Stockholm Kartell. To jest niezależny projekt fanowski."
   },
   "privacy": {
+    "reviewSettings": "Sprawdź ustawienia prywatności",
     "title": "KRWAWA PRZYSIĘGA",
     "subtitle": "Informacja o Danych, Śledzeniu i Przechowywaniu",
     "sections": {
@@ -1824,6 +1835,9 @@
     "loadFailed": "Nie udało się wczytać Twoich klas."
   },
   "report": {
+    "invalidClassReference": "Wpisz numer klasy lub link, np. /classes/12.",
+    "unreportable": "Ta klasa nie jest dostępna do publicznego zgłoszenia. Wybierz klasę publiczną.",
+    "lookupFailed": "Nie udało się sprawdzić klasy. Spróbuj ponownie.",
     "thisClass": "Zgłoś tę klasę",
     "otherClass": "Zgłoś inną klasę",
     "link": "Zgłoś klasę",
@@ -1915,6 +1929,7 @@
     "loadFailed": "Nie możesz wczytać zgłoszeń moderacyjnych."
   },
   "party": {
+    "miseryControlChoose": "Wybierz liczbę Męk",
     "pill": "Drużyna",
     "looks": "Wygląd",
     "kit": "Sprzęt",
@@ -1939,6 +1954,7 @@
     "rename": "Zmień nazwę",
     "noMembers": "Żaden scvm nie dołączył jeszcze do tej drużyny.",
     "miseryControlHelp": "Ustaw tę samą pieczęć każdemu scvmowi. Otwarte karty zaktualizują się na żywo.",
+    "miseryControlMixed": "Scvmy mają różne liczby Męk. Wybierz liczbę, zanim ustawisz ją wszystkim.",
     "miseryControlApply": "Ustaw {{count}} / {{total}} wszystkim scvmom",
     "miseryControlPending": "Ustawianie Męk...",
     "miseryControlSuccess": "Każdy scvm ma teraz {{count}} / {{total}} Męk.",

@@ -336,8 +336,10 @@ describe("ClassCreator", () => {
 
     await userEvent.click(page.getByRole("button", { name: "Add ability" }));
     await expect
-      .element(page.getByLabelText("Name", { exact: true }))
+      .element(page.getByRole("textbox", { name: "Name", exact: true }))
       .toHaveFocus();
+    await expect.element(page.getByRole('textbox', { name: 'Name', exact: true })).toHaveAttribute('aria-required', 'true');
+    await expect.element(page.getByRole('textbox', { name: 'Rules text', exact: true })).toHaveAttribute('aria-required', 'true');
     await userEvent.keyboard("Grave Sense");
     await page
       .getByLabelText("Rules text")
@@ -502,7 +504,7 @@ describe("ClassCreator", () => {
     );
 
     await expect
-      .element(page.getByLabelText("Name", { exact: true }))
+      .element(page.getByRole("textbox", { name: "Name", exact: true }))
       .toHaveFocus();
     await userEvent.keyboard("Reliquary Flail");
     await userEvent.fill(
@@ -520,7 +522,7 @@ describe("ClassCreator", () => {
     await expect.element(title()).toHaveTextContent("Abilities");
     await expect.element(page.getByLabelText("Rules text")).toHaveFocus();
     await expect
-      .element(page.getByLabelText("Name", { exact: true }))
+      .element(page.getByRole("textbox", { name: "Name", exact: true }))
       .toHaveValue("Reliquary Flail");
     await expect.element(page.getByText("2d6 · melee")).toBeVisible();
     await expect.element(page.getByRole("button", { name: "Edit stats" })).toBeVisible();

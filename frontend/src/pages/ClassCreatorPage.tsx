@@ -7,12 +7,15 @@ import { CenterRow, Page, Spinner, Stamp, Title } from "@/pages/gmPages.styles";
 import { Seo } from "@/seo/Seo";
 import { Alert } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
-import { useParams } from "@tanstack/react-router";
+import { useNavigate, useParams } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 
 /** `/gm/classes/new` forges a class from blank; `/gm/classes/$classId` edits one of the GM's own. */
 export function ClassCreatorPage() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const onSaved = (savedId: number) => void navigate({ to: '/gm/classes/$classId', params: { classId: String(savedId) }, replace: true });
+  const onDiscarded = () => void navigate({ to: '/gm/classes', replace: true });
   const { isAuthenticated, isLoading } = useAuth();
   const { classId, draftId } = useParams({ strict: false }) as { classId?: string; draftId?: string };
   const id = classId ? Number(classId) : null;
@@ -79,10 +82,10 @@ export function ClassCreatorPage() {
           <Alert severity="warning">{t("creator.creationBanned", "You cannot create new Custom Classes while a moderation restriction is active. Your existing classes remain available.")}</Alert>
         )}
         {isAuthenticated && draft !== null && draftQuery.data && (draftClassId === null || savedClass.data) && canCreate && (
-          <ClassCreator classId={draftClassId ?? null} initialDraft={savedClass.data?.draft ?? draftQuery.data.draft} initialDraftRecord={draftQuery.data} />
+          <ClassCreator classId={draftClassId ?? null} initialDraft={savedClass.data?.draft ?? draftQuery.data.draft} initialDraftRecord={draftQuery.data} onSaved={onSaved} onDiscarded={onDiscarded} />
         )}
-        {isAuthenticated && draft === null && id === null && canCreate && <ClassCreator classId={null} initialDraft={blankDraft()} />}
-        {isAuthenticated && draft === null && id !== null && <SavedClassCreator classId={id} />}
+        {isAuthenticated && draft === null && id === null && canCreate && <ClassCreator classId={null} initialDraft={blankDraft()} onSaved={onSaved} />}
+        {isAuthenticated && draft === null && id !== null && <SavedClassCreator classId={id} onSaved={onSaved} />}
       </Page>
     </>
   );

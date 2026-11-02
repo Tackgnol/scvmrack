@@ -51,6 +51,11 @@ export function ClassDetailPage() {
               <Stamp>{attribution}</Stamp>
               <Title component="h1">{text(draft.name)}</Title>
               <Lede>{text(draft.description)}</Lede>
+              {draft.languages.length === 1 && (
+                <Typography variant="caption">
+                  {t('character.classWrittenIn', { language: t(`classes.languages.${draft.languages[0]}`) })}
+                </Typography>
+              )}
               {/* styled() drops the router's route typing; /report reads classId loosely */}
               {query.data.reportable && (
                 <ReportLink to="/report" search={{ classId } as never}>
@@ -59,13 +64,13 @@ export function ClassDetailPage() {
               )}
             </Stack>
             <Divider />
-            <Box>
+            {draft.origins.length > 0 && <Box>
               <SectionHeading>{t('creator.steps.origins.label')}</SectionHeading>
               <ol>
                 {draft.origins.map((origin) => <li key={origin.key ?? text(origin)}>{text(origin)}</li>)}
               </ol>
-            </Box>
-            <Stack spacing={1.5}>
+            </Box>}
+            {draft.abilities.length > 0 && <Stack spacing={1.5}>
               <SectionHeading>{t('creator.steps.abilities.label')}</SectionHeading>
               {draft.abilities.map((ability) => (
                 <Paper key={ability.key ?? text(ability.name)} sx={{ p: 2 }}>
@@ -78,7 +83,7 @@ export function ClassDetailPage() {
                   )}
                 </Paper>
               ))}
-            </Stack>
+            </Stack>}
             {draft.items.length > 0 && (
               <Stack spacing={1}>
                 <SectionHeading>{t('creator.steps.items.label')}</SectionHeading>

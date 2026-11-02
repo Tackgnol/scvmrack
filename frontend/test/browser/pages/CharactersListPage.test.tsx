@@ -116,6 +116,13 @@ describe('CharactersListPage', () => {
     );
   };
 
+  it.each([['en', 'Classless'], ['pl', 'Bez klasy']])('labels a Classless roster row in %s', async (language, label) => {
+    await loadLanguage(language as 'en' | 'pl');
+    await i18n.changeLanguage(language);
+    await renderCharactersList({ query: { data: [{ id: 'classless', name: 'Unaffiliated', classId: null, className: null }] } });
+    await expect.element(page.getByText(label, { exact: true })).toBeVisible();
+  });
+
   beforeEach(async () => {
     vi.clearAllMocks();
     await i18n.changeLanguage('en');

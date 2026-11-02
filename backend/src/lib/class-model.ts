@@ -82,7 +82,8 @@ export function mayOffer(row: ClassVersionRef, partyOwnerId: string | null): boo
 
 /**
  * Whether a viewer may open a class version's detail page: moderators always; others while it is
- * available and theirs to use, or enabled in the pool of a party they play in. `pooledForViewer`
+ * available and theirs to use, authors may also read their archived classes unless taken down.
+ * Other available classes may be enabled in a party they play in. `pooledForViewer`
  * is only asked when nothing else decides.
  */
 export async function mayRead(
@@ -90,6 +91,9 @@ export async function mayRead(
   viewer: { userId: string | null; moderator: boolean; pooledForViewer: () => Promise<boolean> }
 ): Promise<boolean> {
   if (viewer.moderator) {
+    return true;
+  }
+  if (viewer.userId !== null && row.ownerUserId === viewer.userId && row.takenDownAt === null) {
     return true;
   }
   if (!isAvailable(row)) {

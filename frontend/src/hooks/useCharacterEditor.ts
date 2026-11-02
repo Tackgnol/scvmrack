@@ -1,4 +1,5 @@
 import { appHistory } from '@/router/history';
+import { INVENTORY_LIMITS, getInventoryLimitMessage } from '@/inventory/limits';
 import { trackCharacterEdited } from '@/analytics/characterAnalytics';
 import { $api } from '@/api';
 import { applyOptimisticPatch } from '@/hooks/applyOptimisticPatch.ts';
@@ -440,12 +441,25 @@ export function useCharacterEditor(
       return;
     }
 
+    adoptNewerCachedCharacter();
+    const current = getLatestOptimisticCharacter();
+    const next = current ? applyOptimisticPatch(current, patch) : undefined;
+    for (const location of ['equipment', 'storage'] as const) {
+      const count = next?.[location]?.length ?? 0;
+      if (
+        count > INVENTORY_LIMITS[location] &&
+        count > (current?.[location]?.length ?? 0)
+      ) {
+        showError(getInventoryLimitMessage(t, location));
+        return;
+      }
+    }
+
     // A fresh edit resumes saving even if a prior batch had halted.
     if (!state.awaitingAuth) {
       state.halted = false;
       setSaveFailed(false);
     }
-    adoptNewerCachedCharacter();
     setPending((prev) => [...prev, patch]);
     applyLocalPatch(patch);
 

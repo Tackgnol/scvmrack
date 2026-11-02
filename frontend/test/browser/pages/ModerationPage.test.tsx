@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { AnchorHTMLAttributes, ReactNode } from "react";
 import BrowserTestProvider from "../BrowserTestProvider";
 import { mockLinkHref } from "../mockLinkHref";
+import { toApiClientError } from '@/utils/errorUtils';
 import { ModerationPage } from "@/pages/ModerationPage";
 import { banClassCreation, getCreationBan, listOpenModerationReports, takeDownModerationReport, unbanClassCreation } from "@/api/moderation";
 
@@ -46,6 +47,14 @@ function renderPage() {
 describe("ModerationPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  it.each([401, 403, 404])('shows the normal not-found page for a %s without mounting admin controls', async status => {
+    vi.mocked(listOpenModerationReports).mockRejectedValue(toApiClientError({ status, message: 'Not found' }));
+    await renderPage();
+    await expect.element(page.getByRole('heading', { name: '404', exact: true })).toBeVisible();
+    await expect.element(page.getByRole('heading', { name: 'Moderation', exact: true })).not.toBeInTheDocument();
+    expect(getCreationBan).not.toHaveBeenCalled();
   });
 
   it("groups reports by class and links the latest and older version previews", async () => {

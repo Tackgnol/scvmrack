@@ -64,3 +64,11 @@ Feature: Equipment and inventory
     And I wait for the sheet to sync and reload the page
     Then the torches still show that use spent
 
+  Scenario: Increasing item quantity cannot silently exceed the On Hand limit
+    Given I am signed in
+    And my character has 50 items On Hand
+    When I try to increase an item's quantity
+    Then the sheet explains that On Hand is limited to 50 items
+    And no existing item or quantity changes
+    And reloading keeps all 50 items unchanged
+

@@ -1,6 +1,6 @@
 import validator from 'validator';
 import { isSupportedLocale, type SupportedLocale } from './config/locales.js';
-import { MISERY_MAX, MISERY_MIN } from './lib/character-limits.js';
+import { ABILITY_SCORE_LIMITS, MISERY_MAX, MISERY_MIN } from './lib/character-limits.js';
 
 /**
  * Convert a camelCase string to snake_case
@@ -140,10 +140,10 @@ export function sanitizeCharacterUpdate(
     omens: { min: 0, max: 100 },
     maxOmens: { min: 0, max: 100 },
     silver: { min: 0, max: 1000000 },
-    strength: { min: 1, max: 30 },
-    agility: { min: 1, max: 30 },
-    presence: { min: 1, max: 30 },
-    toughness: { min: 1, max: 30 },
+    strength: ABILITY_SCORE_LIMITS,
+    agility: ABILITY_SCORE_LIMITS,
+    presence: ABILITY_SCORE_LIMITS,
+    toughness: ABILITY_SCORE_LIMITS,
     miseryCount: { min: MISERY_MIN, max: MISERY_MAX },
   };
 

@@ -49,7 +49,7 @@ export function ClassPoolRow({ cls, onSwitch }: ClassPoolRowProps) {
             {cls.languages.join(" · ").toUpperCase()}
           </Chip>
           {attribution && <Attr>{attribution}</Attr>}
-          {cls.attribution?.kind === "owner" && !cls.attribution.private && (
+          {cls.attribution?.kind === "owner" && !cls.attribution.private && cls.group !== "mine" && (
             <ReportLink to="/report" search={{ classId: String(cls.classId) } as never}>
               {t("report.link", "Report a class")}
             </ReportLink>

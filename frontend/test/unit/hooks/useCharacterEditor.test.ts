@@ -82,6 +82,50 @@ function makeQueryClient(initial?: Store) {
 
 const noopMutation = () => ({ mutate: vi.fn(), isPending: false }) as any;
 
+test.each(['add', 'move', 'unequip-weapon', 'unequip-armor'] as const)('rejects an inventory %s at capacity without changing either container', (operation) => {
+  const equipment = Array.from({ length: 50 }, (_, i) => ({ key: `equipment.${i}`, name: `Item ${i}` }));
+  const storage = [{ key: 'equipment.rope', name: 'Rope' }];
+  const equippedWeapons = [{ key: 'weapons.sword', name: 'Sword' }];
+  const equippedArmor = { key: 'armor.leather', name: 'Leather' };
+  const queryClient = makeQueryClient({ id: 'char-1', equipment, storage, equippedWeapons, equippedArmor });
+  vi.mocked(useQueryClient).mockReturnValue(queryClient as unknown as ReturnType<typeof useQueryClient>);
+  const mutation = noopMutation();
+  const { result } = renderHook(() => useCharacterEditor('char-1', mutation, id => [id]));
+  act(() => {
+    if (operation === 'add') {
+      result.current.addEquipmentItem({ key: 'equipment.hammer', name: 'Hammer' });
+    } else if (operation === 'move') {
+      result.current.moveToEquipment(0);
+    } else if (operation === 'unequip-weapon') {
+      result.current.unequipWeapon(0);
+    } else {
+      result.current.unequipArmor();
+    }
+    result.current.flush();
+  });
+  expect(queryClient.current()).toMatchObject({ equipment, storage, equippedWeapons, equippedArmor });
+  expect(mutation.mutate).not.toHaveBeenCalled();
+  expect(snackbarMocks.showError).toHaveBeenCalled();
+});
+
+test.each([['equipment', 50], ['storage', 100]] as const)('fills the last %s slot and rejects the next addition in the same edit burst', (location, limit) => {
+  const items = Array.from({ length: limit - 1 }, (_, i) => ({ key: `equipment.${i}`, name: `Item ${i}` }));
+  const queryClient = makeQueryClient({ id: 'char-1', [location]: items });
+  vi.mocked(useQueryClient).mockReturnValue(queryClient as unknown as ReturnType<typeof useQueryClient>);
+  const mutation = noopMutation();
+  const { result } = renderHook(() => useCharacterEditor('char-1', mutation, id => [id]));
+  act(() => {
+    const add = location === 'equipment' ? result.current.addEquipmentItem : result.current.addStorageItem;
+    add({ key: 'equipment.last', name: 'Last item' });
+    add({ key: 'equipment.overflow', name: 'Overflow item' });
+    result.current.flush();
+  });
+  const body = mutation.mutate.mock.calls[0][0].body;
+  expect(body[location]).toHaveLength(limit);
+  expect(body[location].at(-1)).toMatchObject({ key: 'equipment.last' });
+  expect(snackbarMocks.showError).toHaveBeenCalled();
+});
+
 test('keeps an expired save with its own character while another character is edited', () => {
   const characters: Record<string, any> = {
     a: { id: 'a', currentHp: 5, silver: 10 },

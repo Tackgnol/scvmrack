@@ -1,9 +1,9 @@
 import { useCharacter } from '@/CharacterContext/CharacterContext';
+import { isCharacterId } from '@/utils/characterId';
+import { NotFoundPage } from '@/pages/NotFoundPage';
 import { useErrorFeedback } from '@/components/molecules/feedback/ErrorFeedbackProvider';
-import {
-    CharacterLoadErrorModals,
-    type CharacterLoadIssue,
-} from '@/components/molecules/character/CharacterLoadErrorModals';
+import { CharacterLoadErrorModals } from '@/components/molecules/character/CharacterLoadErrorModals';
+import type { CharacterLoadIssue } from '@/components/molecules/character/CharacterLoadErrorModals.models';
 import { DeathStampOverlay } from '@/components/molecules/character/DeathStampOverlay';
 import { KillConfirmModal } from '@/components/molecules/character/KillConfirmModal';
 import { CharacterSheetSkeleton } from '@/components/molecules/character/CharacterSheetSkeleton';
@@ -17,6 +17,7 @@ import { appHistory } from '@/router/history';
 import { buildPartyCharacterPath } from '@/router/navigation';
 import { Seo } from '@/seo/Seo';
 import {
+    getApiErrorCode,
     isApiForbidden,
     isApiNotFound,
     isUnexpectedApiError,
@@ -138,13 +139,16 @@ export function CharacterPage() {
         !isAccessDenied &&
         (!characterId || !isUnexpectedLoadError || !canReportUnexpectedError);
 
-    const loadIssue: CharacterLoadIssue | null = isNotFound
-        ? 'not-found'
-        : isAccessDenied
-            ? 'access-denied'
-            : hasKnownLoadIssue
-                ? 'load-error'
-                : null;
+    let loadIssue: CharacterLoadIssue | null = null;
+    if (hasLoadError && getApiErrorCode(error) === 'CHARACTER_SESSION_REQUIRED') {
+        loadIssue = 'session-required';
+    } else if (isNotFound) {
+        loadIssue = 'not-found';
+    } else if (isAccessDenied) {
+        loadIssue = 'access-denied';
+    } else if (hasKnownLoadIssue) {
+        loadIssue = 'load-error';
+    }
 
     // First-run / loading: no character yet and no terminal load error. This is
     // true while the storage notice is still unacknowledged (generation is gated)
@@ -181,11 +185,16 @@ export function CharacterPage() {
     // adopted. Acknowledge only the character we actually landed on.
     const showForgeBanner = !!justCreatedId && justCreatedId === characterId && !!character;
 
+    if (characterId && !isCharacterId(characterId)) {
+        return <NotFoundPage seoNoIndex />;
+    }
+
     return (
         <>
             <CharacterLoadErrorModals
                 issue={loadIssue}
                 error={error}
+                showRoster={isAuthenticated}
                 onGenerateNew={
                     isNotFound || isAccessDenied
                         ? () => void recoverInvalidCharacter()

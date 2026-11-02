@@ -10,12 +10,14 @@ import { useValidationAlert } from "@/hooks/useValidationAlert";
 
 interface DescriptorAbilityItemProps {
   ability: Ability;
+  readOnly?: boolean;
   index: number;
   onUpdateComment: (comment: string) => void;
 }
 
 export default function DescriptorAbilityItem({
   ability,
+  readOnly = false,
   index,
   onUpdateComment,
 }: DescriptorAbilityItemProps) {
@@ -69,7 +71,7 @@ export default function DescriptorAbilityItem({
           </Typography>
         )}
 
-        {ability.table && <AbilityReferenceTable table={ability.table} />}
+        {ability.table && <AbilityReferenceTable table={ability.table} readOnly={readOnly} />}
 
         <Collapse in={showComment}>
           <TextField

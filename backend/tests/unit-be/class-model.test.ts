@@ -16,6 +16,13 @@ const row = (overrides: Partial<ClassVersionRef> = {}): ClassVersionRef => ({
 });
 const takenDown = new Date('2026-10-01');
 
+test('authors can read their archived class but takedowns and unrelated reads stay blocked', async () => {
+  const viewer = { userId: 'gm-1', moderator: false, pooledForViewer: async () => false };
+  assert.equal(await mayRead(row({ status: 'archived' }), viewer), true);
+  assert.equal(await mayRead(row({ status: 'archived' }), { ...viewer, userId: 'gm-2' }), false);
+  assert.equal(await mayRead(row({ takenDownAt: takenDown }), viewer), false);
+});
+
 test('a party offers built-in, public and its owner’s classes while they are available', () => {
   const cases: Array<[Partial<ClassVersionRef>, string | null, boolean]> = [
     [{ source: 'main_book' }, null, true],

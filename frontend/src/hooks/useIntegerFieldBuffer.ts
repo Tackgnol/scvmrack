@@ -1,4 +1,4 @@
-import { useState, type ChangeEvent, type KeyboardEvent } from 'react';
+import { useState, type ChangeEvent, type KeyboardEvent } from "react";
 
 // Shared editing behavior for integer text fields (HP, silver, ability
 // scores). Backs the field with a local string draft instead of committing
@@ -14,13 +14,23 @@ import { useState, type ChangeEvent, type KeyboardEvent } from 'react';
 export function useIntegerFieldBuffer(
   committedValue: number,
   onCommit: (digits: string) => void,
+  bounds?: { min: number; max: number },
+  onClamp?: () => void,
+  commitOnBlur = false,
 ) {
   const [draft, setDraft] = useState<string | null>(null);
 
   const value = draft ?? String(committedValue);
 
-  const onChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const digits = event.target.value.replace(/\D/g, '');
+  const onChange = (
+    event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
+    const raw = event.target.value.replace(/\D/g, "");
+    const numeric = Number(raw);
+    const digits =
+      bounds && raw !== "" && (numeric < bounds.min || numeric > bounds.max)
+        ? String(Math.max(bounds.min, Math.min(bounds.max, numeric)))
+        : raw;
     // React bails out of re-syncing the DOM when the controlled value string
     // is unchanged (e.g. typing "e" after "15" filters back to "15"), so the
     // browser would otherwise keep showing the rejected character. Correct
@@ -30,17 +40,28 @@ export function useIntegerFieldBuffer(
     setDraft(digits);
     // A rejected character (e.g. "e") filters back to the same digits as
     // before — nothing was actually edited, so don't re-commit.
-    if (digits === '' || digits === previous) {
+    if (digits === "" || (digits === previous && raw === digits)) {
       return;
     }
-    onCommit(digits);
+    if (raw !== digits) {
+      onClamp?.();
+    }
+    if (!commitOnBlur) {
+      onCommit(digits);
+    }
   };
 
-  const onBlur = () => setDraft(null);
+  const onBlur = () => {
+    if (commitOnBlur && draft !== null && draft !== "") {
+      onCommit(draft);
+    }
+    setDraft(null);
+  };
 
   const onKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === 'Enter') {
-      event.currentTarget.blur();
+    if (event.key === "Enter" && event.target instanceof HTMLElement) {
+      event.preventDefault();
+      event.target.blur();
     }
   };
 

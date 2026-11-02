@@ -92,6 +92,16 @@ test('Game Master sets the Misery count for every player', async ({
     await expectMiseryCount(guestPage, 4);
     await expectMiseryCount(signedInPage, 4);
 
+    await page.reload();
+    await expect(control.getByTestId('misery-count')).toHaveText('4 / 7');
+    const reapply = page.waitForResponse(response =>
+      response.request().method() === 'PUT' &&
+      isPath(response.url(), new RegExp(`^/api/parties/${party.id}/miseries$`)) &&
+      response.status() === 200
+    );
+    await control.getByRole('button', { name: /set 4 \/ 7 for all scvms/i }).click();
+    await reapply;
+
     await Promise.all([guestPage.reload(), signedInPage.reload()]);
     await expectMiseryCount(guestPage, 4);
     await expectMiseryCount(signedInPage, 4);

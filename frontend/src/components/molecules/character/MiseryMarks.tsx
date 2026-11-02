@@ -9,7 +9,7 @@ import {
 } from "./miseryTrackUtils";
 
 type MiseryMarksProps = {
-  count: number;
+  count: number | null;
   interactive?: boolean;
   compact?: boolean;
   onChange?: (count: number) => void;

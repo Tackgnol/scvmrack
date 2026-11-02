@@ -70,3 +70,39 @@ test('useAbilityCard uses defaults when character is unavailable', () => {
   expect(result.current.value).toBe(10);
   expect(result.current.characterKey).toBe('unknown');
 });
+
+for (const { name, edit, expected } of [
+  { name: 'increase', edit: (card: ReturnType<typeof useAbilityCard>) => card.adjustAbility(1), expected: 21 },
+  { name: 'decrease', edit: (card: ReturnType<typeof useAbilityCard>) => card.adjustAbility(-1), expected: 21 },
+  { name: 'type 25', edit: (card: ReturnType<typeof useAbilityCard>) => card.setAbilityFromInput('25'), expected: 21 },
+  { name: 'type 15', edit: (card: ReturnType<typeof useAbilityCard>) => card.setAbilityFromInput('15'), expected: 15 },
+]) {
+  test(`legacy score edit ${name} waits for confirmation and supports cancel`, () => {
+    const updateField = vi.fn();
+    const state = createCharacterTestWrapper({ character: { id: 'legacy', strength: 25 }, updateField });
+    const { result } = renderHook(() => useAbilityCard('strength'), { wrapper: state.wrapper });
+    const attempt = () => edit(result.current);
+    act(attempt);
+    expect(updateField).not.toHaveBeenCalled();
+    expect(result.current.value).toBe(25);
+    expect(result.current.pendingValue).toBe(expected);
+    act(() => result.current.cancelAbilityChange());
+    expect(result.current.pendingValue).toBeNull();
+    expect(updateField).not.toHaveBeenCalled();
+    act(attempt);
+    act(() => result.current.confirmAbilityChange());
+    expect(updateField).toHaveBeenCalledExactlyOnceWith('strength', expected);
+  });
+}
+
+test('a pending legacy change cannot be applied to a different character', () => {
+  const updateField = vi.fn();
+  const state = createCharacterTestWrapper({ character: { id: 'legacy', strength: 25 }, updateField });
+  const { result, rerender } = renderHook(() => useAbilityCard('strength'), { wrapper: state.wrapper });
+  act(() => result.current.adjustAbility(-1));
+  state.setContext({ character: { id: 'another', strength: 25 } });
+  rerender();
+  expect(result.current.pendingValue).toBeNull();
+  act(() => result.current.confirmAbilityChange());
+  expect(updateField).not.toHaveBeenCalled();
+});

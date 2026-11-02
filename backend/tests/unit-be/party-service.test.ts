@@ -29,6 +29,7 @@ type Member = {
   classId: number | null;
   currentHp: number;
   maxHp: number;
+  miseryCount: number;
   userId: string | null;
   sessionId: string | null;
   joinedAt: Date | null;
@@ -279,6 +280,7 @@ function partyWith(
       classId: m.classId ?? null,
       currentHp: m.currentHp ?? 5,
       maxHp: m.maxHp ?? 8,
+      miseryCount: m.miseryCount ?? 0,
       userId: m.userId ?? null,
       sessionId: m.sessionId ?? null,
       joinedAt: m.joinedAt ?? new Date(),
@@ -555,6 +557,15 @@ test('getParty gives the owner a manage view with the token', async () => {
   assert.equal((r as any).value.inviteToken, 'tok-abc');
   assert.equal((r as any).value.invitePath, '/join/tok-abc');
   assert.equal((r as any).value.members.length, 1);
+});
+
+test('getParty returns the current Misery count for each member', async () => {
+  state.party = partyWith([{ miseryCount: 4 }, { miseryCount: 2 }]);
+  const result = await service().getParty({ session: gm('gm-1'), id: PARTY_ID });
+  assert.equal(result.ok, true);
+  if (result.ok) {
+    assert.deepEqual(result.value.members.map(member => member.miseryCount), [4, 2]);
+  }
 });
 
 test('getParty marks a member playing an older Class Version with both version numbers', async () => {
@@ -1490,3 +1501,9 @@ test('detachRoom clears the pointer', async () => {
   assert.deepEqual(state.setObrRoomCalls, [{ id: PARTY_ID, obrRoomId: null }]);
 });
 
+test('party create and rename accept 100-character names (RPG-369)', async () => {
+  state.party = partyWith([], 'gm-1');
+  const svc = service();
+  assert.equal((await svc.createParty({ session: gm(), name: 'a'.repeat(100) })).ok, true);
+  assert.equal((await svc.renameParty({ session: gm(), id: PARTY_ID, name: 'b'.repeat(100) })).ok, true);
+});

@@ -18,7 +18,7 @@ vi.mock("@/api/classes", () => ({
   getMyCreationBan: vi.fn(),
 }));
 vi.mock("@/hooks/useAuth", () => ({ useAuth: vi.fn() }));
-vi.mock("@tanstack/react-router", () => ({ useParams: vi.fn() }));
+vi.mock("@tanstack/react-router", () => ({ useParams: vi.fn(), useNavigate: () => vi.fn() }));
 vi.mock("@/components/organisms/class-creator/ClassCreator/ClassCreator", () => ({ ClassCreator: vi.fn(() => <div>New class editor</div>) }));
 vi.mock("@/components/organisms/class-creator/SavedClassCreator/SavedClassCreator", () => ({ SavedClassCreator: () => <div>Existing class editor</div> }));
 

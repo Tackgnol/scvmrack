@@ -47,6 +47,7 @@ export type PartyMemberRow = {
   classId: number | null;
   currentHp: number;
   maxHp: number;
+  miseryCount: number;
   userId: string | null;
   sessionId: string | null;
   joinedAt: Date | null;
@@ -94,6 +95,7 @@ const MEMBER_SELECT = {
   classId: true,
   currentHp: true,
   maxHp: true,
+  miseryCount: true,
   userId: true,
   sessionId: true,
   joinedAt: true,

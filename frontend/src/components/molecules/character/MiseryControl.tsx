@@ -12,7 +12,7 @@ import {
 import { MISERY_MARKS } from "./miseryTrackUtils";
 
 type MiseryControlProps = {
-  count: number;
+  count: number | null;
   onChange?: (count: number) => void;
   description?: string;
   action?: ReactNode;
@@ -47,7 +47,9 @@ export default function MiseryControl({
         />
         <MiseryControlSummary>
           <MiseryControlCount data-testid="misery-count" aria-live="polite">
-            {count} / {MISERY_MARKS.length}
+            {count === null
+              ? t("miseries.mixed", "Mixed counts")
+              : `${count} / ${MISERY_MARKS.length}`}
           </MiseryControlCount>
           <MiseryControlStatus>
             {description ??

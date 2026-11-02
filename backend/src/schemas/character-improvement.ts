@@ -1,3 +1,4 @@
+import { ABILITY_SCORE_LIMITS } from '../lib/character-limits.js';
 import {
   CharacterIdParamsSchema,
   CharacterSchema,
@@ -168,10 +169,11 @@ const ImprovementAbilityRollSchema = {
   ],
   properties: {
     roll: RollValueSchema,
+    // Historical scores remain readable even when they exceed today's write limit.
     fromScore: { type: 'integer', minimum: 1, maximum: 30 },
     fromModifier: { type: 'integer', minimum: -3, maximum: 6 },
     toModifier: { type: 'integer', minimum: -3, maximum: 6 },
-    toScore: { type: 'integer', minimum: 1, maximum: 21 },
+    toScore: { type: 'integer', minimum: ABILITY_SCORE_LIMITS.min, maximum: ABILITY_SCORE_LIMITS.max },
     outcome: { type: 'string', enum: ['increase', 'decrease', 'same'] },
   },
 };

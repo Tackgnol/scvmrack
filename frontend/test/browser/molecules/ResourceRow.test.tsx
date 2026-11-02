@@ -19,7 +19,7 @@ describe('ResourceRow Component', () => {
     const mockUpdateArmorField = vi.fn();
     const mockKillAndReplace = vi.fn();
 
-    const renderWithCharacter = async (charOverrides: any) => {
+    const renderWithCharacter = async (charOverrides: any, readOnly = false) => {
         vi.mocked(CharacterContextModule.useCharacter).mockReturnValue({
             character: {
                 id: 'test-char',
@@ -37,13 +37,20 @@ describe('ResourceRow Component', () => {
 
         return render(
             <BrowserTestProvider>
-                <ResourceRow />
+                <ResourceRow readOnly={readOnly} />
             </BrowserTestProvider>
         );
     };
 
     beforeEach(() => {
         vi.clearAllMocks();
+    });
+
+    it('does not open the death prompt while a GM reads a member at zero HP', async () => {
+        await renderWithCharacter({ currentHp: 0 }, true);
+        await expect.element(page.getByTestId('hp-input')).toBeVisible();
+        await expect.element(page.getByTestId('death-modal-kill-button')).not.toBeInTheDocument();
+        expect(mockKillAndReplace).not.toHaveBeenCalled();
     });
 
     it('announces armor tier actions in Polish', async () => {

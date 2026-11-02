@@ -1,6 +1,7 @@
 // JSON schema definitions for the party routes. Mirrors the shape used by the
 // character schemas: shared params/bodies, an error schema reused per route.
 
+import { PARTY_NAME_MAX_LENGTH } from '../config/party.js';
 import type { FromSchema } from 'json-schema-to-ts';
 import { SUPPORTED_LOCALES } from '../config/locales.js';
 import { GETTING_BETTER_RULES } from '../lib/class-model.js';
@@ -38,7 +39,7 @@ export const CreatePartyBodySchema = {
   type: 'object',
   additionalProperties: false,
   properties: {
-    name: { type: 'string', minLength: 1, maxLength: 120 },
+    name: { type: 'string', minLength: 1, maxLength: PARTY_NAME_MAX_LENGTH },
   },
 } as const;
 
@@ -48,7 +49,7 @@ export const PromotePartyBodySchema = {
   required: ['obrRoomId'],
   properties: {
     obrRoomId: { type: 'string', minLength: 1, maxLength: 256 },
-    name: { type: 'string', minLength: 1, maxLength: 120 },
+    name: { type: 'string', minLength: 1, maxLength: PARTY_NAME_MAX_LENGTH },
   },
 } as const;
 
@@ -66,7 +67,7 @@ export const RenamePartyBodySchema = {
   additionalProperties: false,
   required: ['name'],
   properties: {
-    name: { type: 'string', minLength: 1, maxLength: 120 },
+    name: { type: 'string', minLength: 1, maxLength: PARTY_NAME_MAX_LENGTH },
   },
 } as const;
 

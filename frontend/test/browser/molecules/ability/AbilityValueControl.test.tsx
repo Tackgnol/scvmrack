@@ -1,6 +1,7 @@
 import { render } from 'vitest-browser-react';
 import { expect, describe, it, vi } from 'vitest';
 import { page, userEvent } from 'vitest/browser';
+import i18n, { loadLanguage } from '@/i18n';
 import AbilityValueControl from '@/components/molecules/ability/AbilityValueControl';
 import BrowserTestProvider from '../../BrowserTestProvider';
 
@@ -14,6 +15,57 @@ describe('AbilityValueControl Browser', () => {
     decreaseAriaLabel: 'Decrease Strength',
     increaseAriaLabel: 'Increase Strength',
   };
+
+  it('immediately displays the bounded score even when the committed value was already 21', async () => {
+    const onInputChange = vi.fn();
+    await render(<BrowserTestProvider><AbilityValueControl {...defaultProps} value={21} onInputChange={onInputChange} /></BrowserTestProvider>);
+    const input = page.getByRole('textbox', { name: 'Strength' });
+    await expect.element(page.getByRole('status')).toBeEmptyDOMElement();
+    const liveRegion = page.getByRole('status').element();
+    await expect.element(page.getByText('Scores are limited to 1–21.')).not.toBeInTheDocument();
+    await userEvent.fill(input, '99');
+    await expect.element(input).toHaveValue('21');
+    await expect.element(page.getByText('Scores are limited to 1–21.')).toBeVisible();
+    expect(page.getByRole('status').element()).toBe(liveRegion);
+    await expect.poll(() => onInputChange).toHaveBeenCalledWith('21');
+  });
+
+  it('explains the score range in Polish and associates it with the input', async () => {
+    await loadLanguage('pl');
+    await i18n.changeLanguage('pl');
+    try {
+      await render(<BrowserTestProvider><AbilityValueControl {...defaultProps} value={21} /></BrowserTestProvider>);
+      const input = page.getByRole('textbox', { name: 'Strength' });
+      await userEvent.fill(input, '25');
+      await expect.element(input).toHaveValue('21');
+      await expect.element(page.getByText('Wartości są ograniczone do 1–21.')).toBeVisible();
+      await expect.element(input).toHaveAccessibleDescription('Wartości są ograniczone do 1–21.');
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+  });
+
+  it('shows limit feedback only after a bounded step or typed value and clears it for valid input', async () => {
+    const onIncrease = vi.fn();
+    await render(<BrowserTestProvider><AbilityValueControl {...defaultProps} value={21} onIncrease={onIncrease} /></BrowserTestProvider>);
+    const feedback = page.getByText('Scores are limited to 1–21.');
+    await expect.element(feedback).not.toBeInTheDocument();
+    await userEvent.click(page.getByRole('button', { name: 'Increase Strength' }));
+    await expect.element(feedback).toBeVisible();
+    await expect.poll(() => onIncrease).toHaveBeenCalledOnce();
+    const input = page.getByRole('textbox', { name: 'Strength' });
+    await userEvent.fill(input, '15');
+    await expect.element(feedback).not.toBeInTheDocument();
+    await userEvent.fill(input, '0');
+    await expect.element(input).toHaveValue('1');
+    await expect.element(feedback).toBeVisible();
+  });
+
+  it('does not show editing feedback on an untouched read-only control', async () => {
+    await render(<BrowserTestProvider><fieldset disabled><AbilityValueControl {...defaultProps} /></fieldset></BrowserTestProvider>);
+    await expect.element(page.getByRole('textbox', { name: 'Strength' })).toBeDisabled();
+    await expect.element(page.getByText('Scores are limited to 1–21.')).not.toBeInTheDocument();
+  });
 
   it('renders value and label', async () => {
     await render(

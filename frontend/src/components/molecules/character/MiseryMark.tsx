@@ -9,7 +9,7 @@ import { MISERY_MARKS, type MiseryMarkLabel } from "./miseryTrackUtils";
 type MiseryMarkProps = {
   roman: MiseryMarkLabel;
   index: number;
-  count: number;
+  count: number | null;
   ariaLabel: string;
   interactive?: boolean;
   compact?: boolean;
@@ -29,8 +29,8 @@ export default function MiseryMark({
   onSelect,
   onKeyDown,
 }: MiseryMarkProps) {
-  const struck = index < count;
-  const next = interactive && index === count;
+  const struck = count !== null && index < count;
+  const next = count !== null && interactive && index === count;
   const content = (
     <>
       <span>{roman}</span>

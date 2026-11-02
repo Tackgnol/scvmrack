@@ -4,7 +4,7 @@ import { mock, test } from 'node:test';
 import { Prisma } from '@prisma/client';
 import type { Roller } from '@tackgnol/rpg-tools-roller';
 import { randomSectionSeeds, seededRollerFor, type RollerFor } from '../../src/lib/draft-seeds.js';
-import { ABILITY_STATS } from '../../src/lib/ability-modifiers.js';
+import { ABILITY_STATS, statToModifier } from '../../src/lib/ability-modifiers.js';
 import type { ClassSpec, StatDice } from '../../src/lib/generate-character.js';
 
 type RollExpectation = {
@@ -684,7 +684,7 @@ test('stats roll from the class dice spec, dropping the lowest die when set', as
     'stats:3d6',
   ]);
   assert.equal(data.strength, 3 + 1, 'three kept dice of 1 plus the modifier');
-  assert.equal(data.agility, 1 - 3);
+  assert.equal(data.agility, 1);
 });
 
 test('omens roll the class omen die', async () => {
@@ -940,3 +940,44 @@ test('a quick Classless roll boosts exactly two abilities and grants no class ab
   // Each four-die set is 1,2,3,6: dropping high gives 6, dropping low gives 11.
   assert.deepEqual(ABILITY_STATS.map(stat => created[stat]).sort((a, b) => a - b), [6, 6, 11, 11]);
 });
+
+test('forging a saved Custom Class persists its catalog item and pet grants (RPG-358)', async () => {
+  const next = baseFixture();
+  next.classes[0] = { ...next.classes[0], id: 42, source: 'user', randomAbilityCount: 0 };
+  next.abilities = [{ classId: 42, key: 'abilities.cc-42-1', isRandom: false, position: 1, grantItemKey: 'equipment.lockpicks', grantPetKey: 'pets.hawk' }];
+  next.pets = [{ key: 'pets.hawk', tags: ['pet', 'companion'] }];
+  resetFixture(next);
+  await generateCharacter(42, seededRollerFor(randomSectionSeeds())('stats'));
+  const created = fixture.createdCharacters[0];
+  assert.equal(created.classId, 42);
+  const keys = (created.equipment as Array<{ key: string }>).map(item => item.key);
+  assert.ok(keys.includes('equipment.lockpicks'));
+  assert.ok(keys.includes('pets.hawk'));
+});
+
+for (const { count, total, modifier, expected, expectedModifier } of [
+  { count: 2, total: 2, modifier: -6, expected: 1, expectedModifier: -3 },
+  { count: 6, total: 72, modifier: 6, expected: 21, expectedModifier: 6 },
+]) {
+  test(`previewing and forging bounds a raw Strength of ${total + modifier} to ${expected}`, async () => {
+    const next = baseFixture();
+    next.classes[0] = { ...next.classes[0], source: 'user', statDice: { ...bookStatDice(), strength: { count, faces: 12, modifier, dropLowest: false } } };
+    resetFixture(next);
+    const makeRoller = (): Roller => {
+      let first = true;
+      return { roll: async () => {
+        const result = first ? total : 1;
+        first = false;
+        return { total: result };
+      } } as unknown as Roller;
+    };
+    const roller = makeRoller();
+    const preview = await buildCharacterData(1, () => roller);
+    assert.equal(preview.strength, expected);
+    assert.equal(fixture.createdCharacters.length, 0);
+    await generateCharacter(1, makeRoller());
+    const saved = fixture.createdCharacters[0];
+    assert.equal(saved.strength, expected);
+    assert.equal(statToModifier(Number(saved.strength)), expectedModifier);
+  });
+}

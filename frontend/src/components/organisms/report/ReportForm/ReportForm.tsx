@@ -1,10 +1,15 @@
+import { ReportClassReference } from '@/components/molecules/report/ReportClassReference/ReportClassReference';
 import { classKeys, getClassDetail } from "@/api/classes";
 import { REPORT_REASONS, type ReportReason } from "@/api/reports";
 import { getApiLocale } from "@/hooks/utils";
 import { APPEAL_ADDRESS } from "@/legal/contact";
 import { CardAction } from "@/pages/gmPages.styles";
 import { partyColors } from "@/theme/partyTokens";
-import { getUserFacingApiErrorMessage } from "@/utils/errorUtils";
+import {
+  getUserFacingApiErrorMessage,
+  isApiNotFound,
+  isApiForbidden,
+} from "@/utils/errorUtils";
 import { localizedText } from "@/utils/localizedText";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -61,8 +66,14 @@ export function ReportForm({
     enabled: referencedId !== null,
     retry: false,
   });
-  const className =
-    knownClass.data && localizedText(knownClass.data.draft.name, locale);
+  const className = knownClass.data ? localizedText(knownClass.data.draft.name, locale) : undefined;
+  const unreportable =
+    knownClass.data?.reportable === false ||
+    isApiNotFound(knownClass.error) ||
+    isApiForbidden(knownClass.error);
+  const reportable = knownClass.data?.reportable === true;
+  const malformedReference =
+    Boolean(values.classReference?.trim()) && referencedId === null;
   const anonymousAllowed = values.reason === ANONYMOUS_REASON;
   const fieldLabels: Record<keyof ReportFormValues, string> = {
     classReference: t("report.classId", "Class reference"),
@@ -84,7 +95,7 @@ export function ReportForm({
 
   const submit = handleSubmit((form) => {
     const classId = parseClassReference(form.classReference);
-    if (classId === null) {
+    if (classId === null || !reportable) {
       return;
     }
     onSubmit({
@@ -108,6 +119,26 @@ export function ReportForm({
       }}
     >
       <Stack spacing={2}>
+        {unreportable && (
+          <Alert severity="error">
+            {t(
+              "report.unreportable",
+              "This class is unavailable for public reporting. Choose a public class.",
+            )}
+          </Alert>
+        )}
+        {knownClass.error && !unreportable && (
+          <Alert severity="error">
+            {getUserFacingApiErrorMessage(
+              knownClass.error,
+              t,
+              t(
+                "report.lookupFailed",
+                "Could not check this class. Try again.",
+              ),
+            )}
+          </Alert>
+        )}
         <Controller
           name="website"
           control={control}
@@ -131,49 +162,20 @@ export function ReportForm({
             )}
           </Alert>
         )}
-        {editingClass || !className ? (
-          <Controller
-            name="classReference"
-            control={control}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                label={t("report.classId", "Class reference")}
-                helperText={
-                  className
-                    ? t("report.reportingClass", "Reporting: {{name}}", {
-                        name: className,
-                      })
-                    : t(
-                        "report.classIdHint",
-                        "The number or link of the class page, such as /classes/12.",
-                      )
-                }
-                required
-              />
-            )}
-          />
-        ) : (
-          <Stack
-            direction="row"
-            spacing={2}
-            alignItems="center"
-            useFlexGap
-            flexWrap="wrap"
-          >
-            <Typography sx={{ fontWeight: 700 }}>
-              {t("report.reportingClass", "Reporting: {{name}}", {
-                name: className,
-              })}
-            </Typography>
-            <CardAction
-              className="secondary"
-              onClick={() => setEditingClass(true)}
-            >
-              {t("report.otherClass", "Report a different class")}
-            </CardAction>
-          </Stack>
-        )}
+        <Controller
+          name="classReference"
+          control={control}
+          render={({ field: { ref, ...field } }) => (
+            <ReportClassReference
+              {...field}
+              inputRef={ref}
+              reportedClassName={className}
+              editing={editingClass}
+              malformed={malformedReference}
+              onEdit={() => setEditingClass(true)}
+            />
+          )}
+        />
         <Controller
           name="reason"
           control={control}
@@ -280,7 +282,12 @@ export function ReportForm({
         <CardAction
           onClick={() => void submit()}
           aria-describedby={missing.length > 0 ? "report-missing" : undefined}
-          disabled={pending || missing.length > 0}
+          disabled={
+            pending ||
+            missing.length > 0 ||
+            !reportable ||
+            knownClass.isFetching
+          }
         >
           {pending
             ? t("report.sending", "Sending...")

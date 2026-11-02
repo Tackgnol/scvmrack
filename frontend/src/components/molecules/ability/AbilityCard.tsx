@@ -1,9 +1,10 @@
-import { Paper, Typography } from '@mui/material';
-import { customStyles } from '@/theme/morkBorgTheme';
-import AbilityModifierValue from '@components/atoms/AbilityModifierValue';
-import AbilityValueControl from '@components/molecules/ability/AbilityValueControl';
-import { type AbilityCardProps } from '@components/abilities/types';
-import { useAbilityCard } from '@/hooks/useAbilityCard';
+import LegacyAbilityScoreConfirm from "./LegacyAbilityScoreConfirm/LegacyAbilityScoreConfirm";
+import { Paper, Typography } from "@mui/material";
+import { customStyles } from "@/theme/morkBorgTheme";
+import AbilityModifierValue from "@components/atoms/AbilityModifierValue";
+import AbilityValueControl from "@components/molecules/ability/AbilityValueControl";
+import { type AbilityCardProps } from "@components/abilities/types";
+import { useAbilityCard } from "@/hooks/useAbilityCard";
 
 export default function AbilityCard({ ability, rotate = 0 }: AbilityCardProps) {
   const {
@@ -12,6 +13,9 @@ export default function AbilityCard({ ability, rotate = 0 }: AbilityCardProps) {
     description,
     modifier,
     characterKey,
+    pendingValue,
+    confirmAbilityChange,
+    cancelAbilityChange,
     adjustAbility,
     setAbilityFromInput,
     decreaseAriaLabel,
@@ -37,6 +41,16 @@ export default function AbilityCard({ ability, rotate = 0 }: AbilityCardProps) {
         decreaseAriaLabel={decreaseAriaLabel}
         increaseAriaLabel={increaseAriaLabel}
       />
+
+      {pendingValue !== null && (
+        <LegacyAbilityScoreConfirm
+          label={label}
+          fromScore={value}
+          toScore={pendingValue}
+          onCancel={cancelAbilityChange}
+          onConfirm={confirmAbilityChange}
+        />
+      )}
 
       <AbilityModifierValue
         modifier={modifier}

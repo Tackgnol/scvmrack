@@ -22,6 +22,6 @@ export function getAdjacentMiseryIndex(
     : null;
 }
 
-export function getSelectedMiseryCount(count: number, index: number): number {
+export function getSelectedMiseryCount(count: number | null, index: number): number {
   return count === index + 1 ? index : index + 1;
 }

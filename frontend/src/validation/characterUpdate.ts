@@ -1,4 +1,6 @@
+import { ABILITY_SCORE_LIMITS } from '@/utils/stats';
 import { z } from 'zod';
+import { INVENTORY_LIMITS } from '@/inventory/limits';
 import { clamp } from "@/utils/clamp";
 import { type CharacterUpdateRequest, type SimpleField } from '@/hooks/models';
 
@@ -44,10 +46,10 @@ const simpleNumberLimits: Partial<
   maxHp: { min: 1, max: 1000 },
   omens: { min: 0, max: 100 },
   silver: { min: 0, max: 1000000 },
-  strength: { min: 1, max: 30 },
-  agility: { min: 1, max: 30 },
-  presence: { min: 1, max: 30 },
-  toughness: { min: 1, max: 30 },
+  strength: ABILITY_SCORE_LIMITS,
+  agility: ABILITY_SCORE_LIMITS,
+  presence: ABILITY_SCORE_LIMITS,
+  toughness: ABILITY_SCORE_LIMITS,
   miseryCount: { min: 0, max: 7 },
 };
 
@@ -300,6 +302,8 @@ const abilitySchema = z.object({
   comment: limitedString(1000).optional(),
 });
 
+const abilityScoreSchema = boundedInteger(ABILITY_SCORE_LIMITS.min, ABILITY_SCORE_LIMITS.max, 10).optional();
+
 export const characterUpdateSchema = z.object({
   expectedUpdatedAt: z.string().datetime().optional(),
   saveId: z.string().regex(/^[A-Za-z0-9-]{1,64}$/).optional(),
@@ -309,10 +313,10 @@ export const characterUpdateSchema = z.object({
   omens: boundedInteger(0, 100, 0).optional(),
   maxOmens: boundedInteger(0, 100, 0).optional(),
   silver: boundedInteger(0, 1000000, 0).optional(),
-  strength: boundedInteger(1, 30, 10).optional(),
-  agility: boundedInteger(1, 30, 10).optional(),
-  presence: boundedInteger(1, 30, 10).optional(),
-  toughness: boundedInteger(1, 30, 10).optional(),
+  strength: abilityScoreSchema,
+  agility: abilityScoreSchema,
+  presence: abilityScoreSchema,
+  toughness: abilityScoreSchema,
   trait1: limitedString(35).optional(),
   trait2: limitedString(35).optional(),
   habit: limitedString(200).optional(),
@@ -322,8 +326,8 @@ export const characterUpdateSchema = z.object({
   notes: limitedString(10000).optional(),
   miseryCount: boundedInteger(0, 7, 0).optional(),
   abilities: limitedObjectArray(abilitySchema, 20).optional(),
-  equipment: limitedObjectArray(equipmentItemSchema, 50).optional(),
-  storage: limitedObjectArray(equipmentItemSchema, 100).optional(),
+  equipment: z.array(equipmentItemSchema).max(INVENTORY_LIMITS.equipment).optional(),
+  storage: z.array(equipmentItemSchema).max(INVENTORY_LIMITS.storage).optional(),
   equippedWeapons: limitedObjectArray(weaponSchema, 10).optional(),
   equippedArmor: armorSchema.nullable().optional(),
   modifiers: limitedObjectArray(modifierSchema, 30).optional(),
