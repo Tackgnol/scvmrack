@@ -12,3 +12,12 @@ it.each([true, false])('rejects malformed sheet references without session boots
   expect(result.current.error).toBeNull();
   expect(useAuth).toHaveBeenLastCalledWith({ bootstrapAnonymous: false });
 });
+
+
+it('identifies a sessionless sheet request as requiring sign-in rather than an expired session', () => {
+  vi.mocked(useAuth).mockReturnValue({ isLoading: false, isSessionless: true, error: null } as never);
+  const { result } = renderHook(() => useCharacterSession({ pathname: '/character/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', characterId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', isJustLoggedOut: false }));
+  expect(result.current.canReadCharacter).toBe(false);
+  expect(result.current.error).toMatchObject({ code: 'CHARACTER_SESSION_REQUIRED' });
+  expect(useAuth).toHaveBeenLastCalledWith({ bootstrapAnonymous: false });
+});

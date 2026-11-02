@@ -1,6 +1,7 @@
 import { render } from 'vitest-browser-react';
 import { expect, describe, it, vi } from 'vitest';
 import { page, userEvent } from 'vitest/browser';
+import i18n, { loadLanguage } from '@/i18n';
 import AbilityValueControl from '@/components/molecules/ability/AbilityValueControl';
 import BrowserTestProvider from '../../BrowserTestProvider';
 
@@ -21,7 +22,23 @@ describe('AbilityValueControl Browser', () => {
     const input = page.getByRole('textbox', { name: 'Strength' });
     await userEvent.fill(input, '99');
     await expect.element(input).toHaveValue('21');
+    await expect.element(page.getByText('Scores are limited to 1–21.')).toBeVisible();
     await expect.poll(() => onInputChange).toHaveBeenCalledWith('21');
+  });
+
+  it('explains the score range in Polish and associates it with the input', async () => {
+    await loadLanguage('pl');
+    await i18n.changeLanguage('pl');
+    try {
+      await render(<BrowserTestProvider><AbilityValueControl {...defaultProps} value={21} /></BrowserTestProvider>);
+      const input = page.getByRole('textbox', { name: 'Strength' });
+      await userEvent.fill(input, '25');
+      await expect.element(input).toHaveValue('21');
+      await expect.element(page.getByText('Wartości są ograniczone do 1–21.')).toBeVisible();
+      await expect.element(input).toHaveAccessibleDescription('Wartości są ograniczone do 1–21.');
+    } finally {
+      await i18n.changeLanguage('en');
+    }
   });
 
   it('renders value and label', async () => {

@@ -24,13 +24,13 @@ export default function GmMiseryControl({
     miseryCounts.every((count) => count === firstCount)
       ? firstCount
       : null;
-  const miseryCount = selectedCount ?? sharedCount;
+  const miseryCount = selectedCount ?? (memberCount === 0 ? 0 : sharedCount);
   const mutation = useSetPartyMiseries(partyId);
 
   return (
     <GmMiseryControlRoot data-testid="gm-misery-control">
       <MiseryControl
-        count={miseryCount ?? 0}
+        count={miseryCount}
         onChange={setSelectedCount}
         headingLevel="h2"
         description={
@@ -51,10 +51,12 @@ export default function GmMiseryControl({
           >
             {mutation.isPending
               ? t("party.miseryControlPending")
-              : t("party.miseryControlApply", {
-                  count: miseryCount ?? 0,
-                  total: MISERY_MARKS.length,
-                })}
+              : miseryCount === null
+                ? t("party.miseryControlChoose", "Choose a Misery count")
+                : t("party.miseryControlApply", {
+                    count: miseryCount,
+                    total: MISERY_MARKS.length,
+                  })}
           </GmMiseryControlAction>
         }
       />

@@ -260,7 +260,9 @@ describe("PartyPage", () => {
     await renderPage();
 
     const control = page.getByTestId("gm-misery-control");
-    await expect.element(control.getByRole("button", { name: /for all scvms/i })).toBeDisabled();
+    await expect.element(control.getByText('Mixed counts', { exact: true })).toBeVisible();
+    await expect.element(control.getByText('0 / 7', { exact: true })).not.toBeInTheDocument();
+    await expect.element(control.getByRole("button", { name: 'Choose a Misery count' })).toBeDisabled();
     await expect.element(control.getByText(/different Misery counts/i)).toBeVisible();
     await userEvent.click(control.getByRole("button", { name: /misery iii$/i }));
     await userEvent.click(control.getByRole("button", { name: /set 3 \/ 7 for all scvms/i }));
@@ -306,6 +308,22 @@ describe("PartyPage", () => {
       page.getByRole("button", { name: /invite guild members/i }),
     );
     await expect.element(page.getByText(/coming soon/i)).toBeVisible();
+  });
+
+  it('explains a name that is too long and saves it after correction', async () => {
+    const mutateAsync = vi.fn().mockResolvedValue({ name: 'a'.repeat(100) });
+    mockedRename.mockReturnValue({ mutateAsync, isPending: false, error: null } as never);
+    await renderPage();
+    await userEvent.click(page.getByRole('button', { name: /rename/i }));
+    const input = page.getByRole('textbox', { name: /warband name/i });
+    await userEvent.fill(input, 'a'.repeat(101));
+    await userEvent.keyboard('{Enter}');
+    await expect.element(input).toHaveValue('a'.repeat(101));
+    await expect.element(page.getByText('Keep it to 100 characters or fewer.')).toBeVisible();
+    expect(mutateAsync).not.toHaveBeenCalled();
+    await userEvent.fill(input, 'a'.repeat(100));
+    await userEvent.keyboard('{Enter}');
+    await expect.poll(() => mutateAsync).toHaveBeenCalledWith('a'.repeat(100));
   });
 
   it("renames the warband inline", async () => {

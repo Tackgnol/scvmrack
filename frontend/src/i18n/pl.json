@@ -528,6 +528,7 @@
     "removeModifier": "Usuń modyfikator"
   },
   "attributes": {
+    "scoreLimits": "Wartości są ograniczone do {{min}}–{{max}}.",
     "agility": "Zwinność",
     "presence": "Opanowanie",
     "strength": "Siła",
@@ -703,6 +704,7 @@
     "placeholderAlt2": "Bazgroły z otchłani."
   },
   "miseries": {
+    "mixed": "Różne liczby Nieszczęść",
     "title": "Latopis Nechrubelski",
     "headerLabel": "Męki",
     "headerAria": "Męki: {{count}} z 7. Przejdź do toru Męk",
@@ -932,6 +934,9 @@
     "gm": "MG"
   },
   "characters": {
+    "backToStart": "Wróć na start",
+    "sessionRequiredTitle": "Zaloguj się, aby otworzyć tego scvma",
+    "sessionRequiredDescription": "W tej przeglądarce nie ma aktywnej sesji. Wróć na start i zaloguj się, aby otworzyć tego scvma.",
     "backToRoster": "Wróć do moich Szumowin",
     "title": "Twoje Postacie",
     "loginRequired": "Musisz być zalogowany, aby zobaczyć swoje postacie.",
@@ -1827,6 +1832,7 @@
     "loadFailed": "Nie udało się wczytać Twoich klas."
   },
   "report": {
+    "invalidClassReference": "Wpisz numer klasy lub link, np. /classes/12.",
     "unreportable": "Ta klasa nie jest dostępna do publicznego zgłoszenia. Wybierz klasę publiczną.",
     "lookupFailed": "Nie udało się sprawdzić klasy. Spróbuj ponownie.",
     "thisClass": "Zgłoś tę klasę",
@@ -1920,6 +1926,7 @@
     "loadFailed": "Nie możesz wczytać zgłoszeń moderacyjnych."
   },
   "party": {
+    "miseryControlChoose": "Wybierz liczbę Nieszczęść",
     "pill": "Drużyna",
     "looks": "Wygląd",
     "kit": "Sprzęt",

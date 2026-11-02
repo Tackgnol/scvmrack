@@ -101,6 +101,7 @@ Feature: Reliable class and character workflows
       | reference |
       | private   |
       | unknown   |
+      | malformed |
 
   @RPG-374
   Scenario: Pool reporting is offered for another author's public class
@@ -121,6 +122,7 @@ Feature: Reliable class and character workflows
     Given I am editing my scvm's Strength
     When I enter a score above 21
     Then the input immediately shows 21
+    And a message in my selected language explains the score limit
     And its modifier and saved value agree
     And a reload still shows 21
 
@@ -130,6 +132,7 @@ Feature: Reliable class and character workflows
     When I create and then rename a party with a 100-character name
     Then both names save successfully
     And both forms and API writes reject names longer than 100 characters
+    And each form explains the name limit without silently shortening my input
 
   @RPG-370
   Scenario Outline: Moderation controls stay hidden from non-admin visitors
@@ -142,3 +145,16 @@ Feature: Reliable class and character workflows
       | visitor   |
       | signed out |
       | signed in  |
+
+  @RPG-365
+  Scenario Outline: Guests can leave an unavailable character link without a false expiry message
+    Given I am a <visitor>
+    When I open an unavailable character's UUID link
+    Then I can return to Start from the recovery screen
+    And a visitor without a session is told to sign in instead of being told their session expired
+    And taking the recovery link does not create or delete a scvm
+
+    Examples:
+      | visitor                   |
+      | guest with a session      |
+      | visitor without a session |

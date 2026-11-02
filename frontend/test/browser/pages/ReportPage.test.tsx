@@ -44,6 +44,28 @@ describe("ReportPage", () => {
     vi.mocked(submitPublicReport).mockResolvedValue({ id: "550e8400-e29b-41d4-a716-446655440000" });
   });
 
+  it('identifies the selected public class and lets the reporter choose another', async () => {
+    search.value = { classId: '7' };
+    vi.mocked(getClassDetail).mockResolvedValue({ id: 7, version: 1, playingCount: 0, status: 'active', takenDownAt: null, takedownReason: null, draft: { ...blankDraft(), name: { en: 'Bog Witch', pl: '' } }, attribution: '', reportable: true });
+    await renderPage();
+    await expect.element(page.getByText('Reporting: Bog Witch')).toBeVisible();
+    await userEvent.click(page.getByRole('button', { name: 'Report a different class' }));
+    const input = page.getByRole('textbox', { name: 'Class reference' });
+    await expect.element(input).toHaveValue('7');
+    await userEvent.fill(input, 'not-a-class');
+    await expect.element(page.getByText('Enter a class number or a link such as /classes/12.')).toBeVisible();
+    expect(submitPublicReport).not.toHaveBeenCalled();
+  });
+
+  it('explains a malformed class reference without a doomed request', async () => {
+    search.value = { classId: 'not-a-class' };
+    await renderPage();
+    await expect.element(page.getByText('Enter a class number or a link such as /classes/12.')).toBeVisible();
+    await expect.element(page.getByRole('button', { name: 'Submit report' })).toBeDisabled();
+    expect(getClassDetail).not.toHaveBeenCalled();
+    expect(submitPublicReport).not.toHaveBeenCalled();
+  });
+
   it.each(['private', 'unknown'])('blocks a %s class before report submission', async kind => {
     search.value = { classId: '7' };
     if (kind === 'private') {

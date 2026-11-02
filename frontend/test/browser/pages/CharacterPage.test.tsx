@@ -3,6 +3,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { page, userEvent } from 'vitest/browser';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import BrowserTestProvider from '../BrowserTestProvider';
+import { appHistory } from '@/router/history';
+import { toApiClientError } from '@/utils/errorUtils';
 import { CharacterPage } from '@/pages/CharacterPage';
 import { useCharacter } from '@/CharacterContext/CharacterContext';
 import type { ReactNode } from 'react';
@@ -179,6 +181,24 @@ describe('CharacterPage', () => {
     errorFeedbackMocks.showUnexpectedError.mockReturnValue(true);
     errorFeedbackMocks.canReportUnexpectedError = true;
     localStorage.removeItem('scvmrack-skip-kill-confirm-v1');
+  });
+
+  it.each(['guest', 'sessionless'])('offers Start recovery for a %s without creating another scvm', async visitor => {
+    const push = vi.spyOn(appHistory, 'push').mockResolvedValue({ type: 'SUCCESS' });
+    try {
+      await renderCharacterPage({ isAuthenticated: false, character: undefined, characterId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', error: toApiClientError({ status: visitor === 'guest' ? 404 : 401, code: visitor === 'sessionless' ? 'CHARACTER_SESSION_REQUIRED' : undefined, message: 'Unavailable' }) as never });
+      if (visitor === 'sessionless') {
+        await expect.element(page.getByRole('dialog', { name: 'Sign in to open this Scvm' })).toBeVisible();
+        await expect.element(page.getByText(/session expired/i)).not.toBeInTheDocument();
+      }
+      await userEvent.click(page.getByRole('button', { name: 'Back to Start' }));
+      await expect.poll(() => push).toHaveBeenCalledWith('/');
+      expect(generateNew).not.toHaveBeenCalled();
+      expect(killAndReplace).not.toHaveBeenCalled();
+      expect(recoverInvalidCharacter).not.toHaveBeenCalled();
+    } finally {
+      push.mockRestore();
+    }
   });
 
   it('shows an ordinary not-found page for a malformed character ID', async () => {

@@ -33,5 +33,6 @@ Feature: Party management
     And the party's scvms have different Misery counts
     When I open the party management page
     Then I must choose a Misery count before applying it to everyone
+    And the control shows mixed counts instead of a party count of zero
     When I choose three of seven Miseries and apply it
     Then every scvm has three of seven Miseries after a reload

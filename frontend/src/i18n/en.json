@@ -531,6 +531,7 @@
     "removeModifier": "Remove modifier"
   },
   "attributes": {
+    "scoreLimits": "Scores are limited to {{min}}–{{max}}.",
     "agility": "Agility",
     "presence": "Presence",
     "strength": "Strength",
@@ -706,6 +707,7 @@
     "placeholderAlt2": "Scrawls from the abyss."
   },
   "miseries": {
+    "mixed": "Mixed counts",
     "title": "The Calendar of Nechrubel",
     "headerLabel": "Miseries",
     "headerAria": "Miseries: {{count}} of 7. Jump to the misery track",
@@ -933,6 +935,9 @@
     "gm": "GM"
   },
   "characters": {
+    "backToStart": "Back to Start",
+    "sessionRequiredTitle": "Sign in to open this Scvm",
+    "sessionRequiredDescription": "No active session was found in this browser. Return to Start and sign in to open this Scvm.",
     "backToRoster": "Back to my Scvms",
     "title": "Your Characters",
     "loginRequired": "You need to be logged in to view your characters.",
@@ -1796,6 +1801,7 @@
     "loadFailed": "Your classes failed to load."
   },
   "report": {
+    "invalidClassReference": "Enter a class number or a link such as /classes/12.",
     "unreportable": "This class is unavailable for public reporting. Choose a public class.",
     "lookupFailed": "Could not check this class. Try again.",
     "thisClass": "Report this class",
@@ -1889,6 +1895,7 @@
     "loadFailed": "You cannot load moderation reports."
   },
   "party": {
+    "miseryControlChoose": "Choose a Misery count",
     "pill": "Party",
     "looks": "Looks",
     "kit": "Kit",

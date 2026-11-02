@@ -1,5 +1,7 @@
 # Frontend — Feature Summary
 
+- Character links opened without a session explain how to sign in and offer Start recovery. Ability score limits, overlong party names, and malformed class references have visible translated guidance. Mixed party Miseries remain unselected until the GM chooses a count. (RPG-356, RPG-365, RPG-366, RPG-368, RPG-369)
+
 - Custom Class saves and discarded drafts navigate to durable destinations. Required ability fields are marked, and class details identify their authored language and omit empty sections. (RPG-361, RPG-362, RPG-371, RPG-372, RPG-373)
 - Party member sheets disable editing, and the header party view follows the scvm currently open. Classless roster entries have their own translated label. (RPG-360, RPG-363, RPG-367)
 - Privacy settings are reachable from every page footer. Malformed character links show the normal not-found page; missing sheets offer the roster and do not show save status or Print. (RPG-364, RPG-365)

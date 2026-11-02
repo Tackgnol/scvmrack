@@ -22,7 +22,7 @@ export function useCharacterSession({
   const validReference = !characterId || isCharacterId(characterId);
   const canReadCharacter = validReference && !auth.isLoading && !auth.isSessionless;
   const error = auth.error ?? (validReference && characterId && auth.isSessionless
-    ? toApiClientError({ status: 401, message: 'A session is required to open this character' })
+    ? toApiClientError({ status: 401, code: 'CHARACTER_SESSION_REQUIRED', message: 'A session is required to open this character' })
     : null);
 
   return { ...auth, error, privacyAcknowledged, canAutoCreate, canReadCharacter };

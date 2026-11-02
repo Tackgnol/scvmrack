@@ -1,7 +1,9 @@
 import { ABILITY_SCORE_LIMITS } from '@/utils/stats';
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
-import { Box, IconButton, TextField } from '@mui/material';
+import { useId } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Box, IconButton, TextField, Typography } from '@mui/material';
 import { customStyles } from '@/theme/morkBorgTheme';
 import { useIntegerFieldBuffer } from '@/hooks/useIntegerFieldBuffer';
 
@@ -24,37 +26,57 @@ export default function AbilityValueControl({
   decreaseAriaLabel,
   increaseAriaLabel,
 }: AbilityValueControlProps) {
-  const input = useIntegerFieldBuffer(value, onInputChange, ABILITY_SCORE_LIMITS);
+  const { t } = useTranslation();
+  const limitHelpId = useId();
+  const input = useIntegerFieldBuffer(
+    value,
+    onInputChange,
+    ABILITY_SCORE_LIMITS,
+  );
 
   return (
-    <Box sx={customStyles.abilityCardTwo.controls}>
-      <IconButton
-        onClick={onDecrease}
-        sx={customStyles.abilityAdjustButton}
-        aria-label={decreaseAriaLabel}
-      >
-        <RemoveIcon fontSize="small" />
-      </IconButton>
+    <Box>
+      <Box sx={customStyles.abilityCardTwo.controls}>
+        <IconButton
+          onClick={onDecrease}
+          sx={customStyles.abilityAdjustButton}
+          aria-label={decreaseAriaLabel}
+        >
+          <RemoveIcon fontSize="small" />
+        </IconButton>
 
-      <TextField
-        type="text"
-        inputMode="numeric"
-        value={input.value}
-        onChange={input.onChange}
-        onBlur={input.onBlur}
-        onKeyDown={input.onKeyDown}
-        sx={customStyles.abilityValueInput}
-        size="small"
-        inputProps={{ 'aria-label': label }}
-      />
+        <TextField
+          type="text"
+          inputMode="numeric"
+          value={input.value}
+          onChange={input.onChange}
+          onBlur={input.onBlur}
+          onKeyDown={input.onKeyDown}
+          sx={customStyles.abilityValueInput}
+          size="small"
+          inputProps={{ 'aria-label': label, 'aria-describedby': limitHelpId }}
+        />
 
-      <IconButton
-        onClick={onIncrease}
-        sx={customStyles.abilityAdjustButton}
-        aria-label={increaseAriaLabel}
+        <IconButton
+          onClick={onIncrease}
+          sx={customStyles.abilityAdjustButton}
+          aria-label={increaseAriaLabel}
+        >
+          <AddIcon fontSize="small" />
+        </IconButton>
+      </Box>
+      <Typography
+        id={limitHelpId}
+        component="p"
+        variant="caption"
+        sx={{ textAlign: 'center' }}
       >
-        <AddIcon fontSize="small" />
-      </IconButton>
+        {t(
+          'attributes.scoreLimits',
+          'Scores are limited to {{min}}–{{max}}.',
+          ABILITY_SCORE_LIMITS,
+        )}
+      </Typography>
     </Box>
   );
 }
