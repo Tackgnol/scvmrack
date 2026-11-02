@@ -128,6 +128,7 @@ export function AbilityEditor({
       <LocalizedField
         id={fieldId(namePath)}
         label={t("creator.abilities.name", "Name")}
+        required
         value={ability.name[language]}
         language={language}
         showMissing={showMissing(namePath)}
@@ -148,6 +149,7 @@ export function AbilityEditor({
       <LocalizedField
         id={fieldId(textPath)}
         label={t("creator.abilities.text", "Rules text")}
+        required
         value={ability.text[language]}
         language={language}
         multiline

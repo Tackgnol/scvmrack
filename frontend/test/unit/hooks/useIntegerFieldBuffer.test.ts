@@ -6,6 +6,16 @@ import type { ChangeEvent, KeyboardEvent } from 'react';
 const change = (value: string) =>
   ({ target: { value } }) as ChangeEvent<HTMLInputElement>;
 
+test('bounded scores clamp the editing buffer as well as the committed value', () => {
+  const onCommit = vi.fn();
+  const { result } = renderHook(() => useIntegerFieldBuffer(21, onCommit, { min: 1, max: 21 }));
+  act(() => result.current.onChange(change('99')));
+  expect(result.current.value).toBe('21');
+  expect(onCommit).toHaveBeenCalledWith('21');
+  act(() => result.current.onChange(change('')));
+  expect(result.current.value).toBe('');
+});
+
 test('displays the committed value when there is no in-progress edit', () => {
   const { result } = renderHook(() => useIntegerFieldBuffer(7, vi.fn()));
   expect(result.current.value).toBe('7');
@@ -79,14 +89,29 @@ test('leading zeroes stay as typed until blur, then normalize via the committed 
 
 test('Enter blurs the input to trigger the same normalization boundary', () => {
   const { result } = renderHook(() => useIntegerFieldBuffer(5, vi.fn()));
-  const blur = vi.fn();
+  const input = document.createElement('input');
+  const blur = vi.spyOn(input, 'blur');
+  const preventDefault = vi.fn();
 
   act(() =>
     result.current.onKeyDown({
       key: 'Enter',
-      currentTarget: { blur },
+      target: input,
+      currentTarget: document.createElement('div'),
+      preventDefault,
     } as unknown as KeyboardEvent<HTMLInputElement>),
   );
 
   expect(blur).toHaveBeenCalledOnce();
+  expect(preventDefault).toHaveBeenCalledOnce();
+});
+
+test('legacy edits wait for blur and restore the committed display while confirmation is pending', () => {
+  const onCommit = vi.fn();
+  const { result } = renderHook(() => useIntegerFieldBuffer(25, onCommit, { min: 1, max: 21 }, undefined, true));
+  act(() => result.current.onChange(change('15')));
+  expect(onCommit).not.toHaveBeenCalled();
+  act(() => result.current.onBlur());
+  expect(onCommit).toHaveBeenCalledExactlyOnceWith('15');
+  expect(result.current.value).toBe('25');
 });

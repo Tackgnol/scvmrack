@@ -31,7 +31,7 @@ async function openManagement(initialPath = '/gm/classes') {
   const router = createRouter({ routeTree: root.addChildren(routes), history: createMemoryHistory({ initialEntries: [initialPath] }) });
   const client = new QueryClient({ defaultOptions: { queries: { retry: false, staleTime: 300_000 }, mutations: { retry: false } } });
   await render(<QueryClientProvider client={client}><BrowserTestProvider><RouterProvider router={router} /></BrowserTestProvider></QueryClientProvider>);
-  return router;
+  return { router, client };
 }
 
 beforeEach(() => {
@@ -69,12 +69,12 @@ it('edits the latest saved version after returning to My classes (RPG-324)', asy
     vi.mocked(listMyClasses).mockResolvedValue([{ ...summary, id: 17, name: 'Ash Navigator II' }]);
     return { ...earlier, id: 17, version: 2, draft: input.draft, savedRefs: {} };
   });
-  await openManagement();
+  const { router } = await openManagement();
   await userEvent.click(page.getByRole('link', { name: 'Edit Ash Navigator', exact: true }));
   await userEvent.fill(page.getByRole('textbox', { name: 'Class name', exact: true }), 'Ash Navigator II');
   await userEvent.click(page.getByRole('button', { name: /Test roll & save/ }).first());
   await userEvent.click(page.getByRole('button', { name: 'Save class', exact: true }));
-  await expect.element(page.getByRole('button', { name: 'Saved', exact: true })).toBeVisible();
+  await expect.poll(() => router.state.location.pathname).toBe('/gm/classes/17');
   await userEvent.click(page.getByRole('link', { name: 'My classes', exact: true }));
   await expect.element(page.getByRole('link', { name: 'Edit Ash Navigator II', exact: true })).toHaveAttribute('href', '/gm/classes/17');
   await userEvent.click(page.getByRole('link', { name: 'Edit Ash Navigator II', exact: true }));
@@ -211,4 +211,38 @@ it.each(['before', 'after'] as const)('refreshes after consumed-draft deletion w
   finishDelete();
   await expect.poll(() => vi.mocked(listClassDrafts).mock.calls.length).toBeGreaterThan(reads);
   await expect.element(page.getByRole('link', { name: 'Resume', exact: true })).not.toBeInTheDocument();
+});
+
+
+it('navigates to the saved class on first save and reads it again on reload (RPG-361)', async () => {
+  const draft = { ...blankDraft(), name: { en: 'Saved Navigator', pl: '' }, description: { en: 'The ash road.', pl: '' }, origins: [{ en: 'A burnt chapel', pl: '' }] };
+  const saved: SavedClass = { id: 19, version: 1, status: 'active', playingCount: 0, takenDownAt: null, takedownReason: null, draft };
+  vi.mocked(saveClass).mockResolvedValue({ ...saved, savedRefs: {} });
+  vi.mocked(getClass).mockResolvedValue(saved);
+  const { router, client } = await openManagement('/gm/classes/new');
+  await userEvent.fill(page.getByRole('textbox', { name: 'Class name', exact: true }), 'Saved Navigator');
+  await userEvent.fill(page.getByRole('textbox', { name: 'Description', exact: true }), 'The ash road.');
+  await userEvent.click(page.getByRole('button', { name: /Origins/ }).first());
+  await userEvent.click(page.getByRole('button', { name: 'Add origin', exact: true }));
+  await userEvent.fill(page.getByRole('textbox', { name: 'Origin 1', exact: true }), 'A burnt chapel');
+  await userEvent.click(page.getByRole('button', { name: /Test roll & save/ }).first());
+  await userEvent.click(page.getByRole('button', { name: 'Save class', exact: true }));
+  await expect.poll(() => router.state.location.pathname).toBe('/gm/classes/19');
+  await expect.element(page.getByRole('textbox', { name: 'Class name', exact: true })).toHaveValue('Saved Navigator');
+  await router.navigate({ to: '/gm/classes' });
+  client.clear();
+  await router.navigate({ to: '/gm/classes/$classId', params: { classId: '19' } });
+  await expect.element(page.getByRole('textbox', { name: 'Class name', exact: true })).toHaveValue('Saved Navigator');
+  expect(getClass).toHaveBeenCalledWith(19);
+});
+
+it('leaves a discarded draft URL for My classes (RPG-362)', async () => {
+  vi.mocked(getClassDraft).mockResolvedValue({ id: 14, classId: null, draft: blankDraft(), revision: 1, updatedAt: '2026-10-23T12:00:00Z', expiresAt: '2027-01-21T12:00:00Z' });
+  vi.mocked(deleteClassDraft).mockResolvedValue(undefined);
+  const { router } = await openManagement('/gm/classes/draft/14');
+  await userEvent.click(page.getByRole('button', { name: 'Discard', exact: true }));
+  await userEvent.click(page.getByRole('alertdialog').getByRole('button', { name: 'Discard', exact: true }));
+  await expect.poll(() => router.state.location.pathname).toBe('/gm/classes');
+  await expect.element(page.getByRole('heading', { name: 'My classes', exact: true })).toBeVisible();
+  await expect.poll(() => deleteClassDraft).toHaveBeenCalledWith(14);
 });

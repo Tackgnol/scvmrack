@@ -1,5 +1,4 @@
 import { Box, Button, Typography } from '@mui/material';
-import { requestOpenPrivacyDrawer } from '@/privacy/privacyDrawerBus';
 import { customStyles } from '@theme/morkBorgTheme.ts';
 import { Trans, useTranslation } from 'react-i18next';
 
@@ -7,10 +6,6 @@ interface FooterProps {
   onGenerateNew?: () => void;
   onKillScvm?: () => void;
 }
-
-const handleOpenPrivacy = () => {
-  requestOpenPrivacyDrawer();
-};
 
 export default function Footer({
   onGenerateNew,
@@ -67,26 +62,6 @@ export default function Footer({
                 sx={{
                   color: 'rgba(10, 10, 10, 0.5)',
                   textDecoration: 'underline',
-                  '&:hover': {
-                    color: 'rgba(10, 10, 10, 0.8)',
-                  },
-                }}
-              />
-            ),
-            privacyLink: (
-              <Box
-                component="button"
-                type="button"
-                onClick={handleOpenPrivacy}
-                sx={{
-                  ml: 0.5,
-                  p: 0,
-                  border: 0,
-                  bgcolor: 'transparent',
-                  color: 'rgba(10, 10, 10, 0.5)',
-                  textDecoration: 'underline',
-                  cursor: 'pointer',
-                  font: 'inherit',
                   '&:hover': {
                     color: 'rgba(10, 10, 10, 0.8)',
                   },

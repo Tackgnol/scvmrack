@@ -11,6 +11,7 @@ import { StyledEquipmentCard } from './EquippedBar.styled';
 
 interface EquippedQuickCardProps {
   type: string;
+  readOnly?: boolean;
   name: string;
   detail?: string;
   description?: string;
@@ -25,6 +26,7 @@ interface EquippedQuickCardProps {
 
 function EquippedQuickCard({
   type,
+  readOnly = false,
   name,
   detail,
   description,
@@ -36,7 +38,9 @@ function EquippedQuickCard({
   onAmmoUse,
   ref,
 }: EquippedQuickCardProps) {
-    const hasClick = Boolean(onClick);
+    const changeEquipment = readOnly ? undefined : onClick;
+    const consumeAmmo = readOnly ? undefined : onAmmoUse;
+    const hasClick = Boolean(changeEquipment);
     const resolvedActionLabel = actionLabel ?? 'Change';
     const [infoOpen, setInfoOpen] = useState(false);
     // Desktop (real mouse) shows the description on hover; touch keeps the
@@ -44,19 +48,19 @@ function EquippedQuickCard({
     const prefersHover = useMediaQuery('(hover: hover) and (pointer: fine)');
 
     const handleKeyDown = (event: KeyboardEvent<HTMLElement>) => {
-      if (!onClick) {
+      if (!changeEquipment) {
         return;
       }
       if (event.key === 'Enter' || event.key === ' ') {
         event.preventDefault();
-        onClick(event as unknown as MouseEvent<HTMLElement>);
+        changeEquipment(event as unknown as MouseEvent<HTMLElement>);
       }
     };
 
     return (
       <StyledEquipmentCard
         ref={ref}
-        onClick={onClick}
+        onClick={changeEquipment}
         onKeyDown={handleKeyDown}
         hasClick={hasClick}
         data-testid={dataTestId}
@@ -132,19 +136,19 @@ function EquippedQuickCard({
         {ammoCount !== null && ammoCount !== undefined && (
           <Box
             component="span"
-            role="button"
-            tabIndex={0}
+            role={readOnly ? undefined : 'button'}
+            tabIndex={readOnly ? undefined : 0}
             data-testid={dataTestId ? `${dataTestId}-ammo` : undefined}
-            aria-label={`Ammo: ${ammoCount}. Click to use.`}
+            aria-label={readOnly ? `Ammo: ${ammoCount}` : `Ammo: ${ammoCount}. Click to use.`}
             onClick={(e: MouseEvent<HTMLElement>) => {
               e.stopPropagation();
-              onAmmoUse?.();
+              consumeAmmo?.();
             }}
             onKeyDown={(e: KeyboardEvent<HTMLElement>) => {
               if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
                 e.stopPropagation();
-                onAmmoUse?.();
+                consumeAmmo?.();
               }
             }}
             sx={{

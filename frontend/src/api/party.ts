@@ -9,6 +9,7 @@ export type PartyMemberSummary = {
   classId: number | null;
   currentHp: number;
   maxHp: number;
+  miseryCount: number;
   joinedAt: string | null;
   owned?: boolean;
   olderRules: { version: number; latestVersion: number } | null;

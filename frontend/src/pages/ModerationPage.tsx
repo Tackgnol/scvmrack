@@ -16,7 +16,8 @@ import { ModerationLogPanel } from "@/components/organisms/ModerationLogPanel/Mo
 import { ModerationDecisionDialog } from "@/components/organisms/moderation/ModerationDecisionDialog/ModerationDecisionDialog";
 import type { PendingDecision } from "@/components/organisms/moderation/ModerationDecisionDialog/ModerationDecisionDialog.models";
 import { ModerationReportItem } from "@/components/organisms/moderation/ModerationReportItem/ModerationReportItem";
-import { getUserFacingApiErrorMessage } from "@/utils/errorUtils";
+import { isApiUnauthorized, isApiForbidden, isApiNotFound, getUserFacingApiErrorMessage } from "@/utils/errorUtils";
+import { NotFoundPage } from "@/pages/NotFoundPage";
 import { Alert, Box, Button, Stack, Typography } from "@mui/material";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, type RegisteredRouter } from "@tanstack/react-router";
@@ -40,6 +41,7 @@ export function ModerationPage() {
   const reports = useQuery({
     queryKey: moderationKeys.reports,
     queryFn: listOpenModerationReports,
+    retry: false,
   });
   const decide = useMutation({
     mutationFn: ({ action, id, reason, ground }: { action: Decision; id: string; reason: string; ground: ModerationGround }) =>
@@ -59,6 +61,17 @@ export function ModerationPage() {
     }
     decide.mutate({ action, id, reason, ground });
   };
+
+  if (isApiUnauthorized(reports.error) || isApiForbidden(reports.error) || isApiNotFound(reports.error)) {
+    return <NotFoundPage seoNoIndex />;
+  }
+  if (!reports.data) {
+    return reports.error ? (
+      <Alert severity="error" action={<Button onClick={() => void reports.refetch()}>{t('actions.retry', 'Retry')}</Button>}>
+        {getUserFacingApiErrorMessage(reports.error, t, t('moderation.loadFailed', 'You cannot load moderation reports.'))}
+      </Alert>
+    ) : <Typography role="status">{t('actions.loading', 'Loading...')}</Typography>;
+  }
 
   return (
     <Box sx={{ maxWidth: 960, mx: "auto", py: { xs: 3, sm: 6 }, px: 2 }}>

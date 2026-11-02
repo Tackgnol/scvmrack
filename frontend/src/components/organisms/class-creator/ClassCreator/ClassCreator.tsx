@@ -51,17 +51,20 @@ export function ClassCreator({
   initialDraft,
   initialDraftRecord = null,
   versionInfo,
+  onSaved,
+  onDiscarded,
 }: ClassCreatorProps) {
   const { t } = useTranslation();
   const { showError } = useSnackbar();
   const queryClient = useQueryClient();
-  const creator = useClassCreator(classId, initialDraft, initialDraftRecord);
+  const creator = useClassCreator(classId, initialDraft, initialDraftRecord, onSaved);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
   const discard = useMutation({
     mutationFn: creator.draftAutosave.discard,
     onSuccess: () => {
       setConfirmDiscard(false);
       void queryClient.invalidateQueries({ queryKey: classKeys.drafts() });
+      onDiscarded?.();
     },
     onError: () => showError(t("creator.draftDiscardFailed", "The draft couldn't be discarded. Try again.")),
   });

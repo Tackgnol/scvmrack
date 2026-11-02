@@ -14,7 +14,7 @@ import type { SavedClassCreatorProps } from "./SavedClassCreator.models";
  * class can't be edited, and unsaved changes from an earlier visit wait for the GM to
  * resume or discard them.
  */
-export function SavedClassCreator({ classId }: SavedClassCreatorProps) {
+export function SavedClassCreator({ classId, onSaved }: SavedClassCreatorProps) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [choice, setChoice] = useState<"ask" | "resume" | "saved">("ask");
@@ -113,6 +113,7 @@ export function SavedClassCreator({ classId }: SavedClassCreatorProps) {
     <ClassCreator
       key={`${savedClass.id}:${resumed?.id ?? "saved"}`}
       classId={savedClass.id}
+      onSaved={onSaved}
       initialDraft={savedClass.draft}
       initialDraftRecord={resumed}
       versionInfo={{ version: savedClass.version, playingCount: savedClass.playingCount }}

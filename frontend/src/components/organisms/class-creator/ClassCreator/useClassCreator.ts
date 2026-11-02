@@ -22,7 +22,7 @@ import {
   getUserFacingApiErrorMessage,
 } from "@/utils/errorUtils";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDraftAutosave } from "./useDraftAutosave";
 
@@ -44,8 +44,15 @@ export function useClassCreator(
   classId: number | null,
   initialDraft: ClassDraft,
   initialDraftRecord: StoredClassDraft | null = null,
+  onSaved?: (id: number) => void,
 ) {
   const { t, i18n } = useTranslation();
+  // A save may finish after navigation; update its cache without taking the GM back to the editor.
+  const mounted = useRef(false);
+  useEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; };
+  }, []);
   const restoredDraft = initialDraftRecord?.draft ?? initialDraft;
   const draftRef = useRef(restoredDraft);
   const historyRef = useRef<{ undo: HistoryEntry[]; redo: HistoryEntry[] }>({
@@ -171,6 +178,7 @@ export function useClassCreator(
     mutationFn: (input: { draft: ClassDraft; revision: number; draftId?: number }) =>
       saveClass({ id: savedId, draft: input.draft, draftId: input.draftId }),
     onSuccess: (result, input) => {
+      const noNewerEdits = sameDraft(draftRef.current, input.draft);
       setSavedId(result.id);
       setSavedRevision(input.revision);
       setDraft((current) => withSavedKeys(current, result.draft, result.savedRefs));
@@ -180,6 +188,10 @@ export function useClassCreator(
       historyRef.current = { undo: [], redo: [] };
       publishHistory();
       autosave.complete(input.draftId);
+      // Keep edits made during the request mounted until their own save finishes.
+      if (noNewerEdits && mounted.current) {
+        onSaved?.(result.id);
+      }
     },
     onError: (error) =>
       setBlocked(

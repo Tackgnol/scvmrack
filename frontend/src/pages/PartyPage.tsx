@@ -1,3 +1,4 @@
+import { PARTY_NAME_MAX_LENGTH, partyNameSchema } from '@/validation/partyName';
 import {
   usePartyDetail,
   useKickPartyMember,
@@ -393,8 +394,13 @@ export function PartyPage() {
     setDraftName("");
   };
 
+  const checkedName = partyNameSchema.safeParse(draftName);
+  const renameNameInvalid = !checkedName.success;
   const submitRename = async () => {
-    const next = draftName.trim();
+    if (!checkedName.success) {
+      return;
+    }
+    const next = checkedName.data;
     if (!next || next === party?.name) {
       cancelRename();
       return;
@@ -456,7 +462,8 @@ export function PartyPage() {
                 <NameInput
                   ref={nameInputRef}
                   value={draftName}
-                  maxLength={60}
+                  aria-invalid={renameNameInvalid}
+                  aria-describedby={renameNameInvalid ? 'party-name-error' : undefined}
                   aria-label={t("party.renameLabel", "Warband name")}
                   disabled={renameMutation.isPending}
                   onChange={(event) => setDraftName(event.target.value)}
@@ -478,6 +485,11 @@ export function PartyPage() {
                     {t("party.rename", "Rename")}
                   </RenameButton>
                 </TitleRow>
+              )}
+              {renaming && renameNameInvalid && (
+                <Alert id="party-name-error" severity="error" sx={{ borderRadius: 0, mt: 1 }}>
+                  {t('gm.partyNameMaxLength', 'Keep it to {{max}} characters or fewer.', { max: PARTY_NAME_MAX_LENGTH })}
+                </Alert>
               )}
               {renameMutation.error && (
                 <Alert severity="error" sx={{ borderRadius: 0, mt: 1 }}>
@@ -568,8 +580,10 @@ export function PartyPage() {
 
             <Reveal step={2}>
               <GmMiseryControl
+                key={party.id}
                 partyId={party.id}
                 memberCount={party.memberCount}
+                miseryCounts={party.members.map(member => member.miseryCount)}
               />
             </Reveal>
 

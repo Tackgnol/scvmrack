@@ -3,7 +3,6 @@ import { expect, describe, it, vi, beforeEach } from 'vitest';
 import { page, userEvent } from 'vitest/browser';
 import Footer from '@/components/molecules/Footer';
 import BrowserTestProvider from '../BrowserTestProvider';
-import * as privacyBus from '@/privacy/privacyDrawerBus';
 
 vi.mock('@/privacy/privacyDrawerBus', () => ({
   requestOpenPrivacyDrawer: vi.fn(),
@@ -70,20 +69,9 @@ describe('Footer Component', () => {
       .not.toBeInTheDocument();
   });
 
-  it('opens privacy drawer when legal notice link is clicked', async () => {
-    const mockOnGenerateNew = vi.fn();
-    await render(
-      <BrowserTestProvider>
-        <Footer onGenerateNew={mockOnGenerateNew} />
-      </BrowserTestProvider>,
-    );
-
-    const privacyBtn = page.getByRole('button', { name: /privacy settings/i });
-    await userEvent.click(privacyBtn);
-
-    await expect
-      .poll(() => privacyBus.requestOpenPrivacyDrawer)
-      .toHaveBeenCalledOnce();
+  it('leaves privacy settings to the shared app footer', async () => {
+    await render(<BrowserTestProvider><Footer /></BrowserTestProvider>);
+    await expect.element(page.getByRole('button', { name: /privacy settings/i })).not.toBeInTheDocument();
   });
 
   it('links the legal notice to the rpgtools suite', async () => {

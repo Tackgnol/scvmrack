@@ -1,3 +1,4 @@
+import type { EquippedBarProps } from './EquippedBar.models';
 import { Box } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { customStyles } from '@/theme/morkBorgTheme';
@@ -6,7 +7,7 @@ import EquipmentSelectionMenu from '@components/molecules/equipped/EquipmentSele
 import { formatDice } from '@components/equipped/formatDice';
 import { useEquippedBar } from '@/hooks/useEquippedBar';
 
-export default function EquippedBar() {
+export default function EquippedBar({ readOnly = false }: EquippedBarProps = {}) {
   const { t } = useTranslation();
   const {
     weaponAnchor,
@@ -41,6 +42,7 @@ export default function EquippedBar() {
   return (
     <Box sx={customStyles.equippedBar.container}>
       <EquippedQuickCard
+        readOnly={readOnly}
         ref={weaponSlotRef}
         type={t('equipment.weapon')}
         name={mainWeapon?.name ?? t('equipment.unarmed')}
@@ -56,6 +58,7 @@ export default function EquippedBar() {
 
       {offhandWeapon && (
         <EquippedQuickCard
+          readOnly={readOnly}
           type={t('equipment.offHand')}
           name={offhandWeapon.name ?? t('equipment.none')}
           detail={offhandWeapon.dice ? formatDice(offhandWeapon.dice) : ''}
@@ -70,6 +73,7 @@ export default function EquippedBar() {
       )}
 
       <EquippedQuickCard
+        readOnly={readOnly}
         ref={armorSlotRef}
         type={t('equipment.armorLabel')}
         name={equippedArmor?.name ?? t('equipment.unarmored')}

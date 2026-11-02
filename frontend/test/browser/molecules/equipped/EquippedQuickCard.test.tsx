@@ -12,6 +12,17 @@ describe('EquippedQuickCard Browser', () => {
     noneName: 'None',
   };
 
+  it('keeps a party reader from changing equipment or spending ammo', async () => {
+    const onClick = vi.fn();
+    const onAmmoUse = vi.fn();
+    await render(<BrowserTestProvider><EquippedQuickCard {...defaultProps} readOnly onClick={onClick} onAmmoUse={onAmmoUse} ammoCount={10} dataTestId="reader-weapon" /></BrowserTestProvider>);
+    await userEvent.click(page.getByText('Broadsword'));
+    await userEvent.click(page.getByTestId('reader-weapon-ammo'));
+    expect(onClick).not.toHaveBeenCalled();
+    expect(onAmmoUse).not.toHaveBeenCalled();
+    await expect.element(page.getByText('Change', { exact: true })).not.toBeInTheDocument();
+  });
+
   it('renders correctly when equipped', async () => {
     await render(
       <BrowserTestProvider>

@@ -13,6 +13,7 @@ export function SignInContract() {
       <div data-testid="comparison-code">{signInProgress?.code}</div>
       <button
         onClick={() => {
+          setError(null);
           void signIn().catch((cause) => setError(String(cause)));
         }}
       >

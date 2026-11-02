@@ -531,6 +531,10 @@
     "removeModifier": "Remove modifier"
   },
   "attributes": {
+    "legacyScoreTitle": "Reduce ability score?",
+    "confirmScoreChange": "Change to {{score}}",
+    "legacyScoreWarning": "Change {{stat}} from {{from}} to {{to}}? Scores are now limited to {{min}}–{{max}}. Your current score stays unchanged unless you confirm.",
+    "scoreLimits": "Scores are limited to {{min}}–{{max}}.",
     "agility": "Agility",
     "presence": "Presence",
     "strength": "Strength",
@@ -548,6 +552,7 @@
     "weapon": "Weapon",
     "armorLabel": "Armor",
     "onHand": "On Hand",
+    "inventoryLimit": "{{container}} is limited to {{limit}} items.",
     "storedItems": "Stored Items",
     "readyItemPlaceholder": "Ready item...",
     "itemDescriptionPlaceholder": "Item description...",
@@ -705,6 +710,7 @@
     "placeholderAlt2": "Scrawls from the abyss."
   },
   "miseries": {
+    "mixed": "Mixed counts",
     "title": "The Calendar of Nechrubel",
     "headerLabel": "Miseries",
     "headerAria": "Miseries: {{count}} of 7. Jump to the misery track",
@@ -714,7 +720,7 @@
   },
   "footer": {
     "worldEnding": "The World Is Ending",
-    "legalNotice": "MÖRK BORG is copyright Ockult Örtmästare Games and Stockholm Kartell. Scvmrack is an independent production by Adam Kościelniak, built as part of the <rpgtoolsLink>rpgtools.co</rpgtoolsLink> suite, and is not affiliated with Ockult Örtmästare Games or Stockholm Kartell. It is published under the MÖRK BORG Third Party License. <privacyLink>Review your privacy settings</privacyLink>",
+    "legalNotice": "MÖRK BORG is copyright Ockult Örtmästare Games and Stockholm Kartell. Scvmrack is an independent production by Adam Kościelniak, built as part of the <rpgtoolsLink>rpgtools.co</rpgtoolsLink> suite, and is not affiliated with Ockult Örtmästare Games or Stockholm Kartell. It is published under the MÖRK BORG Third Party License.",
     "translationCredit": "Official Polish translation provided by Nerd Sirens",
     "terms": "Terms"
   },
@@ -932,6 +938,10 @@
     "gm": "GM"
   },
   "characters": {
+    "backToStart": "Back to Start",
+    "sessionRequiredTitle": "Sign in to open this Scvm",
+    "sessionRequiredDescription": "No active session was found in this browser. Return to Start and sign in to open this Scvm.",
+    "backToRoster": "Back to my Scvms",
     "title": "Your Characters",
     "loginRequired": "You need to be logged in to view your characters.",
     "noCharacters": "No characters yet. Create your first scvm!",
@@ -1023,6 +1033,7 @@
     "morkBorgCredit": "MÖRK BORG is copyright Ockult Örtmästare Games and Stockholm Kartell. This is an independent fan project."
   },
   "privacy": {
+    "reviewSettings": "Review your privacy settings",
     "title": "BLOOD OATH",
     "subtitle": "Data, Tracking, and Storage Notice",
     "sections": {
@@ -1793,6 +1804,9 @@
     "loadFailed": "Your classes failed to load."
   },
   "report": {
+    "invalidClassReference": "Enter a class number or a link such as /classes/12.",
+    "unreportable": "This class is unavailable for public reporting. Choose a public class.",
+    "lookupFailed": "Could not check this class. Try again.",
     "thisClass": "Report this class",
     "otherClass": "Report a different class",
     "link": "Report a class",
@@ -1884,6 +1898,7 @@
     "loadFailed": "You cannot load moderation reports."
   },
   "party": {
+    "miseryControlChoose": "Choose a Misery count",
     "pill": "Party",
     "looks": "Looks",
     "kit": "Kit",
@@ -1908,6 +1923,7 @@
     "rename": "Rename",
     "noMembers": "No scvms have joined this party yet.",
     "miseryControlHelp": "Set the same seal for every scvm. Open sheets update live.",
+    "miseryControlMixed": "Members have different Misery counts. Choose a count before applying it to everyone.",
     "miseryControlApply": "Set {{count}} / {{total}} for all scvms",
     "miseryControlPending": "Setting Miseries...",
     "miseryControlSuccess": "Every scvm now carries {{count}} / {{total}} Miseries.",

@@ -22,6 +22,7 @@ import prisma from './prisma.js';
 import { Prisma } from '@prisma/client';
 import type { Roller } from '@tackgnol/rpg-tools-roller';
 import { sanitizeString } from '../utils.js';
+import { ABILITY_SCORE_LIMITS } from './character-limits.js';
 import { statToModifier } from './ability-modifiers.js';
 import { abilityGrantedItems, type AbilityGrants } from './class-grants.js';
 import { byClassOrder } from './ability-order.js';
@@ -105,16 +106,17 @@ async function rollDie(faces: number, roller: Roller): Promise<number> {
 
 /** Rolls one stat as its class defines it: `count`d`faces` + `modifier`, optionally dropping the lowest die. */
 async function rollStat(spec: StatDice, roller: Roller): Promise<number> {
+  let total: number;
   if (!spec.dropLowest) {
-    const roll = await roller.roll(`${spec.count}d${spec.faces}`);
-    return roll.total + spec.modifier;
+    total = (await roller.roll(`${spec.count}d${spec.faces}`)).total;
+  } else {
+    const dice: number[] = [];
+    for (let i = 0; i < spec.count; i++) {
+      dice.push(await rollDie(spec.faces, roller));
+    }
+    total = dice.reduce((sum, die) => sum + die, 0) - Math.min(...dice);
   }
-  const dice: number[] = [];
-  for (let i = 0; i < spec.count; i++) {
-    dice.push(await rollDie(spec.faces, roller));
-  }
-  const total = dice.reduce((sum, die) => sum + die, 0) - Math.min(...dice);
-  return total + spec.modifier;
+  return Math.max(ABILITY_SCORE_LIMITS.min, Math.min(ABILITY_SCORE_LIMITS.max, total + spec.modifier));
 }
 
 async function rollClasslessStatOptions(

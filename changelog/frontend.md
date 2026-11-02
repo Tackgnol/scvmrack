@@ -1,5 +1,18 @@
 # Frontend — Feature Summary
 
+- Editing a legacy ability score above 21 asks before reducing it. Cancel keeps the old value; confirmation saves the proposed score. Typed legacy edits finish on Enter or blur before the warning opens. (RPG-368)
+
+- Character links opened without a session explain how to sign in and offer Start recovery. Ability score limits, overlong party names, and malformed class references have visible translated guidance. Mixed party Miseries remain unselected until the GM chooses a count. (RPG-356, RPG-365, RPG-366, RPG-368, RPG-369)
+
+- Custom Class saves and discarded drafts navigate to durable destinations. Required ability fields are marked, and class details identify their authored language and omit empty sections. (RPG-361, RPG-362, RPG-371, RPG-372, RPG-373)
+- Party member sheets disable editing, and the header party view follows the scvm currently open. Classless roster entries have their own translated label. (RPG-360, RPG-363, RPG-367)
+- Privacy settings are reachable from every page footer. Malformed character links show the normal not-found page; missing sheets offer the roster and do not show save status or Print. (RPG-364, RPG-365)
+- Ability score inputs immediately display the bounded value and show translated limit feedback only when an edit is clamped. Custom Class score ranges reflect the same 1–21 bounds. Warband rename accepts the same 100 characters as creation. (RPG-368, RPG-369)
+- Report forms check class reportability before submission, authors do not see Report on their own pool rows, and visitors without moderation access see the normal not-found page. (RPG-366, RPG-370, RPG-374)
+
+- GM Misery controls start from the members' saved count after reload. Mixed counts require a deliberate choice before Apply. (RPG-356)
+- Inventory quantity controls respect the remaining On Hand and Storage capacity. Over-cap additions and transfers show a message and preserve existing items instead of silently trimming them. (RPG-357)
+
 - The app should no longer cancel Owlbear sign-in when browser isolation loses contact with an open approval window. The extension keeps waiting for consent and offers an explicit Cancel action. (RPG-337)
 - The app should no longer report cancelled sign-in when an approved account transfer has already started. Cancel is available until transfer begins; completion still verifies the receiving account. (RPG-337)
 - The app should no longer cover the GM sign-in recovery action when the compact Owlbear panel shows an error or comparison code. Recovery and the room tabs share one vertical layout. (RPG-338)
