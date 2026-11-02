@@ -4,7 +4,7 @@ import { mock, test } from 'node:test';
 import { Prisma } from '@prisma/client';
 import type { Roller } from '@tackgnol/rpg-tools-roller';
 import { randomSectionSeeds, seededRollerFor, type RollerFor } from '../../src/lib/draft-seeds.js';
-import { ABILITY_STATS } from '../../src/lib/ability-modifiers.js';
+import { ABILITY_STATS, statToModifier } from '../../src/lib/ability-modifiers.js';
 import type { ClassSpec, StatDice } from '../../src/lib/generate-character.js';
 
 type RollExpectation = {
@@ -955,7 +955,10 @@ test('forging a saved Custom Class persists its catalog item and pet grants (RPG
   assert.ok(keys.includes('pets.hawk'));
 });
 
-for (const [count, total, modifier, expected, expectedModifier] of [[2, 2, -6, 1, -3], [6, 72, 6, 21, 6]] as const) {
+for (const { count, total, modifier, expected, expectedModifier } of [
+  { count: 2, total: 2, modifier: -6, expected: 1, expectedModifier: -3 },
+  { count: 6, total: 72, modifier: 6, expected: 21, expectedModifier: 6 },
+]) {
   test(`previewing and forging bounds a raw Strength of ${total + modifier} to ${expected}`, async () => {
     const next = baseFixture();
     next.classes[0] = { ...next.classes[0], source: 'user', statDice: { ...bookStatDice(), strength: { count, faces: 12, modifier, dropLowest: false } } };
@@ -975,7 +978,6 @@ for (const [count, total, modifier, expected, expectedModifier] of [[2, 2, -6, 1
     await generateCharacter(1, makeRoller());
     const saved = fixture.createdCharacters[0];
     assert.equal(saved.strength, expected);
-    const { statToModifier } = await import('../../src/lib/ability-modifiers.js');
     assert.equal(statToModifier(Number(saved.strength)), expectedModifier);
   });
 }

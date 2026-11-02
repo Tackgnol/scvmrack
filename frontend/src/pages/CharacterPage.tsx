@@ -139,16 +139,16 @@ export function CharacterPage() {
         !isAccessDenied &&
         (!characterId || !isUnexpectedLoadError || !canReportUnexpectedError);
 
-    const loadIssue: CharacterLoadIssue | null =
-        hasLoadError && getApiErrorCode(error) === 'CHARACTER_SESSION_REQUIRED'
-        ? 'session-required'
-        : isNotFound
-            ? 'not-found'
-        : isAccessDenied
-            ? 'access-denied'
-            : hasKnownLoadIssue
-                ? 'load-error'
-                : null;
+    let loadIssue: CharacterLoadIssue | null = null;
+    if (hasLoadError && getApiErrorCode(error) === 'CHARACTER_SESSION_REQUIRED') {
+        loadIssue = 'session-required';
+    } else if (isNotFound) {
+        loadIssue = 'not-found';
+    } else if (isAccessDenied) {
+        loadIssue = 'access-denied';
+    } else if (hasKnownLoadIssue) {
+        loadIssue = 'load-error';
+    }
 
     // First-run / loading: no character yet and no terminal load error. This is
     // true while the storage notice is still unacknowledged (generation is gated)

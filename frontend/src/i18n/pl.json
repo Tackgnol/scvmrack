@@ -528,6 +528,9 @@
     "removeModifier": "Usuń modyfikator"
   },
   "attributes": {
+    "legacyScoreTitle": "Obniżyć wartość cechy?",
+    "confirmScoreChange": "Zmień na {{score}}",
+    "legacyScoreWarning": "{{stat}}: zmienić wartość z {{from}} na {{to}}? Wartości są teraz ograniczone do {{min}}–{{max}}. Obecna wartość nie zmieni się bez potwierdzenia.",
     "scoreLimits": "Wartości są ograniczone do {{min}}–{{max}}.",
     "agility": "Zwinność",
     "presence": "Opanowanie",

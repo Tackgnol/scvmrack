@@ -1,5 +1,9 @@
 export const ABILITY_SCORE_LIMITS = { min: 1, max: 21 } as const;
 
+export function clampAbilityScore(score: number): number {
+  return Math.max(ABILITY_SCORE_LIMITS.min, Math.min(ABILITY_SCORE_LIMITS.max, score));
+}
+
 export const ABILITY_STATS = [
   "strength",
   "agility",

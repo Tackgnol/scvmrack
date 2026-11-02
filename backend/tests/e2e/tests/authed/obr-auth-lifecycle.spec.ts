@@ -206,7 +206,7 @@ test('a receiving tab asks before replacing a different first-party account', as
   await receiving.close();
 });
 
-test('popup completion confirms the receiving identity and closing an unapproved popup keeps the guest', async ({
+test('popup sign-in waits after closure, supports cancellation and confirms a retry', async ({
   page,
   browser,
   testAuthUser,
@@ -245,7 +245,10 @@ test('popup completion confirms the receiving identity and closing an unapproved
       cancelled.getByRole('heading', { name: 'Approve Owlbear sign-in' })
     ).toBeVisible();
     await cancelled.close();
-    await expect(page.getByRole('alert')).toContainText('popup-closed');
+    await expect(page.getByRole('button', { name: 'Cancel sign-in', exact: true })).toBeVisible();
+    await expect(page.getByRole('alert')).toHaveCount(0);
+    await page.getByRole('button', { name: 'Cancel sign-in', exact: true }).click();
+    await expect(page.getByRole('alert')).toContainText('handoff-cancelled');
     await expect(page.getByTestId('receiving-user')).toHaveText(guestId);
     opening = page.waitForEvent('popup');
     await page

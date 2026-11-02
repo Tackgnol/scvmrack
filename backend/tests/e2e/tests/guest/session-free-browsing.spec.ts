@@ -70,6 +70,7 @@ async function publicApi(page: Page, initialSession: unknown = null) {
         attribution: 'Test author',
         reportable: true,
         draft: {
+          languages: ['en', 'pl'],
           name: { en: 'Public Test Class', pl: 'Publiczna klasa' },
           description: {
             en: 'Available without a session',
@@ -152,7 +153,7 @@ test('public navigation and storage acknowledgement never create a guest owner',
     '/character/create',
   ]) {
     await page.goto(path);
-    await expect(page.getByRole('main')).toBeVisible();
+    await expect(page.getByRole('main'), `${path} renders its main content`).toBeVisible();
     if (path === '/classes/1') {
       await expect(
         page.getByRole('heading', { name: 'Public Test Class' })

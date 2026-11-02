@@ -171,3 +171,22 @@ Feature: Reliable class and character workflows
       | rawScore | boundedScore |
       | -4       | 1            |
       | 78       | 21           |
+
+  @RPG-368
+  Scenario Outline: Editing a legacy score requires confirmation before reducing it
+    Given my saved Strength is 25
+    When I <edit>
+    Then a warning explains that Strength will change from 25 to <score>
+    And my saved Strength remains 25
+    When I cancel the change
+    Then Strength still shows 25
+    When I repeat the edit and confirm the change
+    Then Strength and its saved value are <score>
+    And a reload still shows <score>
+
+    Examples:
+      | edit                | score |
+      | increase Strength   | 21    |
+      | decrease Strength   | 21    |
+      | enter Strength 25   | 21    |
+      | enter Strength 15   | 15    |

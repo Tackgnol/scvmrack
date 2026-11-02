@@ -1,5 +1,7 @@
 # Frontend — Feature Summary
 
+- Editing a legacy ability score above 21 asks before reducing it. Cancel keeps the old value; confirmation saves the proposed score. Typed legacy edits finish on Enter or blur before the warning opens. (RPG-368)
+
 - Character links opened without a session explain how to sign in and offer Start recovery. Ability score limits, overlong party names, and malformed class references have visible translated guidance. Mixed party Miseries remain unselected until the GM chooses a count. (RPG-356, RPG-365, RPG-366, RPG-368, RPG-369)
 
 - Custom Class saves and discarded drafts navigate to durable destinations. Required ability fields are marked, and class details identify their authored language and omit empty sections. (RPG-361, RPG-362, RPG-371, RPG-372, RPG-373)

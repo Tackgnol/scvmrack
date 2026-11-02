@@ -20,10 +20,13 @@ describe('AbilityValueControl Browser', () => {
     const onInputChange = vi.fn();
     await render(<BrowserTestProvider><AbilityValueControl {...defaultProps} value={21} onInputChange={onInputChange} /></BrowserTestProvider>);
     const input = page.getByRole('textbox', { name: 'Strength' });
+    await expect.element(page.getByRole('status')).toBeEmptyDOMElement();
+    const liveRegion = page.getByRole('status').element();
     await expect.element(page.getByText('Scores are limited to 1–21.')).not.toBeInTheDocument();
     await userEvent.fill(input, '99');
     await expect.element(input).toHaveValue('21');
     await expect.element(page.getByText('Scores are limited to 1–21.')).toBeVisible();
+    expect(page.getByRole('status').element()).toBe(liveRegion);
     await expect.poll(() => onInputChange).toHaveBeenCalledWith('21');
   });
 

@@ -531,6 +531,9 @@
     "removeModifier": "Remove modifier"
   },
   "attributes": {
+    "legacyScoreTitle": "Reduce ability score?",
+    "confirmScoreChange": "Change to {{score}}",
+    "legacyScoreWarning": "Change {{stat}} from {{from}} to {{to}}? Scores are now limited to {{min}}–{{max}}. Your current score stays unchanged unless you confirm.",
     "scoreLimits": "Scores are limited to {{min}}–{{max}}.",
     "agility": "Agility",
     "presence": "Presence",

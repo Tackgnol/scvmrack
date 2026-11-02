@@ -1,4 +1,4 @@
-import { ABILITY_SCORE_LIMITS } from "@/utils/stats";
+import { ABILITY_SCORE_LIMITS, clampAbilityScore } from "@/utils/stats";
 import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
 import { useId, useState } from "react";
@@ -21,21 +21,27 @@ export default function AbilityValueControl({
   const { t } = useTranslation();
   const limitHelpId = useId();
   const [showLimit, setShowLimit] = useState(false);
+  const isLegacyScore = value > ABILITY_SCORE_LIMITS.max;
   const input = useIntegerFieldBuffer(
     value,
     onInputChange,
     ABILITY_SCORE_LIMITS,
     () => setShowLimit(true),
+    isLegacyScore,
   );
+
+  const adjust = (delta: number, onAdjust: () => boolean | void) => {
+    const applied = onAdjust();
+    setShowLimit(
+      applied !== false && clampAbilityScore(value + delta) !== value + delta,
+    );
+  };
 
   return (
     <Box>
       <Box sx={customStyles.abilityCardTwo.controls}>
         <IconButton
-          onClick={() => {
-            setShowLimit(value <= ABILITY_SCORE_LIMITS.min);
-            onDecrease();
-          }}
+          onClick={() => adjust(-1, onDecrease)}
           sx={customStyles.abilityAdjustButton}
           aria-label={decreaseAriaLabel}
         >
@@ -50,7 +56,12 @@ export default function AbilityValueControl({
             setShowLimit(false);
             input.onChange(event);
           }}
-          onBlur={input.onBlur}
+          onBlur={() => {
+            if (isLegacyScore) {
+              setShowLimit(false);
+            }
+            input.onBlur();
+          }}
           onKeyDown={input.onKeyDown}
           sx={customStyles.abilityValueInput}
           size="small"
@@ -61,31 +72,28 @@ export default function AbilityValueControl({
         />
 
         <IconButton
-          onClick={() => {
-            setShowLimit(value >= ABILITY_SCORE_LIMITS.max);
-            onIncrease();
-          }}
+          onClick={() => adjust(1, onIncrease)}
           sx={customStyles.abilityAdjustButton}
           aria-label={increaseAriaLabel}
         >
           <AddIcon fontSize="small" />
         </IconButton>
       </Box>
-      {showLimit && (
-        <Typography
-          role="status"
-          id={limitHelpId}
-          component="p"
-          variant="caption"
-          sx={{ textAlign: "center" }}
-        >
-          {t(
-            "attributes.scoreLimits",
-            "Scores are limited to {{min}}–{{max}}.",
-            ABILITY_SCORE_LIMITS,
-          )}
-        </Typography>
-      )}
+      <Typography
+        role="status"
+        id={limitHelpId}
+        component="p"
+        variant="caption"
+        sx={{ textAlign: "center" }}
+      >
+        {showLimit
+          ? t(
+              "attributes.scoreLimits",
+              "Scores are limited to {{min}}–{{max}}.",
+              ABILITY_SCORE_LIMITS,
+            )
+          : null}
+      </Typography>
     </Box>
   );
 }
