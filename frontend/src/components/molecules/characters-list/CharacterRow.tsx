@@ -1,3 +1,4 @@
+import { getCharacterClassLabel } from './characterLabels.utils';
 import { type CharacterListItem } from '@/hooks/models.ts';
 import { AnimatedNumber } from '@components/index';
 import { morkBorgColors } from '@/theme/morkBorgTheme';
@@ -128,10 +129,7 @@ export function CharacterRow({
   const { t, i18n } = useTranslation();
   const id = character.id || null;
   const name = (character.name || '').trim() || t('characters.unnamed', 'Unnamed Scvm');
-  const className =
-    (character.className || '').trim() || (character.classId === null
-      ? t('create.classlessLabel', 'Classless')
-      : t('characters.unknownClass', 'Unknown'));
+  const className = getCharacterClassLabel(character, t);
 
   return (
     <Box

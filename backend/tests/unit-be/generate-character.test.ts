@@ -940,3 +940,18 @@ test('a quick Classless roll boosts exactly two abilities and grants no class ab
   // Each four-die set is 1,2,3,6: dropping high gives 6, dropping low gives 11.
   assert.deepEqual(ABILITY_STATS.map(stat => created[stat]).sort((a, b) => a - b), [6, 6, 11, 11]);
 });
+
+
+test('forging a saved Custom Class persists its catalog item and pet grants (RPG-358)', async () => {
+  const next = baseFixture();
+  next.classes[0] = { ...next.classes[0], id: 42, source: 'user', randomAbilityCount: 0 };
+  next.abilities = [{ classId: 42, key: 'abilities.cc-42-1', isRandom: false, position: 1, grantItemKey: 'equipment.lockpicks', grantPetKey: 'pets.hawk' }];
+  next.pets = [{ key: 'pets.hawk', tags: ['pet', 'companion'] }];
+  resetFixture(next);
+  await generateCharacter(42, seededRollerFor(randomSectionSeeds())('stats'));
+  const created = fixture.createdCharacters[0];
+  assert.equal(created.classId, 42);
+  const keys = (created.equipment as Array<{ key: string }>).map(item => item.key);
+  assert.ok(keys.includes('equipment.lockpicks'));
+  assert.ok(keys.includes('pets.hawk'));
+});

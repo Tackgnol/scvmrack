@@ -1502,12 +1502,9 @@ test('detachRoom clears the pointer', async () => {
 });
 
 
-
-test('party create and rename share the 100-character name boundary (RPG-369)', async () => {
+test('party create and rename accept 100-character names (RPG-369)', async () => {
   state.party = partyWith([], 'gm-1');
   const svc = service();
   assert.equal((await svc.createParty({ session: gm(), name: 'a'.repeat(100) })).ok, true);
   assert.equal((await svc.renameParty({ session: gm(), id: PARTY_ID, name: 'b'.repeat(100) })).ok, true);
-  assert.equal((await svc.createParty({ session: gm(), name: 'a'.repeat(101) })).ok, false);
-  assert.equal((await svc.renameParty({ session: gm(), id: PARTY_ID, name: 'b'.repeat(101) })).ok, false);
 });

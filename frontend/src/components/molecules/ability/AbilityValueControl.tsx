@@ -1,3 +1,4 @@
+import { ABILITY_SCORE_LIMITS } from '@/utils/stats';
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
 import { Box, IconButton, TextField } from '@mui/material';
@@ -23,7 +24,7 @@ export default function AbilityValueControl({
   decreaseAriaLabel,
   increaseAriaLabel,
 }: AbilityValueControlProps) {
-  const input = useIntegerFieldBuffer(value, onInputChange, { min: 1, max: 21 });
+  const input = useIntegerFieldBuffer(value, onInputChange, ABILITY_SCORE_LIMITS);
 
   return (
     <Box sx={customStyles.abilityCardTwo.controls}>

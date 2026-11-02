@@ -747,7 +747,6 @@ test('an allowlisted moderator can preview the exact reported class version', as
   }
 });
 
-
 test('catalog item and pet grants save while missing keys and wrong slots stay rejected (RPG-358)', async () => {
   sharedItems = [{ key: 'equipment.rope', itemType: 'equipment' }, { key: 'pets.hawk', itemType: 'pet' }];
   const draft: ClassDraft = { ...ready(), abilities: [{ random: false, name: { en: 'Companion', pl: '' }, text: { en: 'Travel prepared.', pl: '' }, modifiers: [], grantItem: 'equipment.rope', grantPet: 'pets.hawk', table: null }] };
@@ -758,7 +757,6 @@ test('catalog item and pet grants save while missing keys and wrong slots stay r
   draft.abilities[0].grantPet = 'pets.unavailable';
   assert.equal((await service.create({ session: GM, draft })).ok, false);
 });
-
 
 test('an author reads their archived class details while unrelated readers are refused (RPG-359)', async () => {
   repo.detail = { id: 7, lineageId: 'l', ownerUserId: 'gm-1', ownerName: 'GM', visibility: 'private', version: 1, status: 'archived', takenDownAt: null, isLatest: true, playingCount: 1, draft: ready() };

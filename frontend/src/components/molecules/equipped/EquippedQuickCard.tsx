@@ -38,7 +38,9 @@ function EquippedQuickCard({
   onAmmoUse,
   ref,
 }: EquippedQuickCardProps) {
-    const hasClick = !readOnly && Boolean(onClick);
+    const changeEquipment = readOnly ? undefined : onClick;
+    const consumeAmmo = readOnly ? undefined : onAmmoUse;
+    const hasClick = Boolean(changeEquipment);
     const resolvedActionLabel = actionLabel ?? 'Change';
     const [infoOpen, setInfoOpen] = useState(false);
     // Desktop (real mouse) shows the description on hover; touch keeps the
@@ -46,19 +48,19 @@ function EquippedQuickCard({
     const prefersHover = useMediaQuery('(hover: hover) and (pointer: fine)');
 
     const handleKeyDown = (event: KeyboardEvent<HTMLElement>) => {
-      if (!onClick || readOnly) {
+      if (!changeEquipment) {
         return;
       }
       if (event.key === 'Enter' || event.key === ' ') {
         event.preventDefault();
-        onClick(event as unknown as MouseEvent<HTMLElement>);
+        changeEquipment(event as unknown as MouseEvent<HTMLElement>);
       }
     };
 
     return (
       <StyledEquipmentCard
         ref={ref}
-        onClick={readOnly ? undefined : onClick}
+        onClick={changeEquipment}
         onKeyDown={handleKeyDown}
         hasClick={hasClick}
         data-testid={dataTestId}
@@ -140,17 +142,13 @@ function EquippedQuickCard({
             aria-label={readOnly ? `Ammo: ${ammoCount}` : `Ammo: ${ammoCount}. Click to use.`}
             onClick={(e: MouseEvent<HTMLElement>) => {
               e.stopPropagation();
-              if (!readOnly) {
-                onAmmoUse?.();
-              }
+              consumeAmmo?.();
             }}
             onKeyDown={(e: KeyboardEvent<HTMLElement>) => {
               if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
                 e.stopPropagation();
-                if (!readOnly) {
-                  onAmmoUse?.();
-                }
+                consumeAmmo?.();
               }
             }}
             sx={{

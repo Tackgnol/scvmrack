@@ -1,3 +1,5 @@
+export const ABILITY_SCORE_LIMITS = { min: 1, max: 21 } as const;
+
 export const ABILITY_STATS = [
   "strength",
   "agility",
@@ -67,5 +69,5 @@ export function modifierToCanonicalScore(modifier: number): number {
   if (modifier === 5) {
     return 20;
   }
-  return 21;
+  return ABILITY_SCORE_LIMITS.max;
 }

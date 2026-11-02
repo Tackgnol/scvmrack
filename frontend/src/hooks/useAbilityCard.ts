@@ -1,5 +1,5 @@
 import { useCharacter } from '@/CharacterContext/CharacterContext';
-import { statToModifier } from '@/utils/stats';
+import { ABILITY_SCORE_LIMITS, statToModifier } from '@/utils/stats';
 import { useTranslation } from 'react-i18next';
 import { type AbilityName } from '@components/abilities/types';
 
@@ -14,7 +14,7 @@ export function useAbilityCard(ability: AbilityName) {
   const characterKey = character?.id ?? 'unknown';
 
   const setAbilityValue = (nextValue: number) => {
-    const clamped = Math.max(1, Math.min(21, nextValue));
+    const clamped = Math.max(ABILITY_SCORE_LIMITS.min, Math.min(ABILITY_SCORE_LIMITS.max, nextValue));
     updateField(ability, clamped);
   };
 

@@ -1,3 +1,4 @@
+import { PARTY_NAME_MAX_LENGTH } from '@/validation/partyName';
 import {
   usePartyDetail,
   useKickPartyMember,
@@ -395,7 +396,7 @@ export function PartyPage() {
 
   const submitRename = async () => {
     const next = draftName.trim();
-    if (draftName.length > 100) {
+    if (draftName.length > PARTY_NAME_MAX_LENGTH) {
       return;
     }
     if (!next || next === party?.name) {
@@ -459,7 +460,7 @@ export function PartyPage() {
                 <NameInput
                   ref={nameInputRef}
                   value={draftName}
-                  maxLength={100}
+                  maxLength={PARTY_NAME_MAX_LENGTH}
                   aria-label={t("party.renameLabel", "Warband name")}
                   disabled={renameMutation.isPending}
                   onChange={(event) => setDraftName(event.target.value)}

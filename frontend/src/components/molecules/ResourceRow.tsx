@@ -1,3 +1,4 @@
+import type { ResourceRowProps } from './ResourceRow.models';
 import { useCharacter } from '@/CharacterContext/CharacterContext.tsx';
 import {
   Box,
@@ -28,8 +29,8 @@ const numberPulse = keyframes`
   100% { transform: scale(1); }
 `;
 
-export default function ResourcesRow() {
-  const { character, updateField, updateArmorField, killAndReplace, isReadOnly } = useCharacter();
+export default function ResourcesRow({ readOnly = false }: ResourceRowProps = {}) {
+  const { character, updateField, updateArmorField, killAndReplace } = useCharacter();
   const { t } = useTranslation();
   const [omensModalOpen, setOmensModalOpen] = useState(false);
   const prefersReducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
@@ -44,7 +45,7 @@ export default function ResourcesRow() {
   const characterKey = character?.id ?? 'unknown';
   const { hpPulse, deathModalOpen, setDeathModalOpen } = useHpDeathWatch(
     currentHp,
-    isReadOnly ? null : character?.id ?? null,
+    readOnly ? null : character?.id ?? null,
     prefersReducedMotion,
   );
   const silverInput = useIntegerFieldBuffer(character?.silver ?? 0, (digits) =>

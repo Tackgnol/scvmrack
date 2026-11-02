@@ -30,7 +30,6 @@ describe('ResourceRow Component', () => {
                 equippedArmor: { currentTier: 1, maxTier: 3 },
                 ...charOverrides,
             },
-            isReadOnly: readOnly,
             updateField: mockUpdateField,
             updateArmorField: mockUpdateArmorField,
             killAndReplace: mockKillAndReplace,
@@ -38,7 +37,7 @@ describe('ResourceRow Component', () => {
 
         return render(
             <BrowserTestProvider>
-                <ResourceRow />
+                <ResourceRow readOnly={readOnly} />
             </BrowserTestProvider>
         );
     };
@@ -138,7 +137,6 @@ describe('ResourceRow Component', () => {
                 silver: 50,
                 equippedArmor: { currentTier: 1, maxTier: 3 },
             },
-            isReadOnly: false,
             updateField: mockUpdateField,
             updateArmorField: mockUpdateArmorField,
             killAndReplace: mockKillAndReplace,
@@ -171,7 +169,6 @@ describe('ResourceRow Component', () => {
                 silver: 50,
                 equippedArmor: { currentTier: 1, maxTier: 3 },
             },
-            isReadOnly: false,
             updateField: mockUpdateField,
             updateArmorField: mockUpdateArmorField,
             killAndReplace: mockKillAndReplace,
@@ -199,7 +196,6 @@ describe('ResourceRow Component', () => {
                 silver: 50,
                 equippedArmor: { currentTier: 1, maxTier: 3 }
             },
-            isReadOnly: false,
             updateField: mockUpdateField,
             updateArmorField: mockUpdateArmorField,
             killAndReplace: mockKillAndReplace,
@@ -283,7 +279,6 @@ describe('ResourceRow Component', () => {
                 silver: 7,
                 equippedArmor: { currentTier: 1, maxTier: 3 },
             },
-            isReadOnly: false,
             updateField: mockUpdateField,
             updateArmorField: mockUpdateArmorField,
             killAndReplace: mockKillAndReplace,

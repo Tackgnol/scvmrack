@@ -1,3 +1,4 @@
+import type { EquippedBarProps } from './EquippedBar.models';
 import { Box } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { customStyles } from '@/theme/morkBorgTheme';
@@ -6,7 +7,7 @@ import EquipmentSelectionMenu from '@components/molecules/equipped/EquipmentSele
 import { formatDice } from '@components/equipped/formatDice';
 import { useEquippedBar } from '@/hooks/useEquippedBar';
 
-export default function EquippedBar({ readOnly = false }: { readOnly?: boolean } = {}) {
+export default function EquippedBar({ readOnly = false }: EquippedBarProps = {}) {
   const { t } = useTranslation();
   const {
     weaponAnchor,

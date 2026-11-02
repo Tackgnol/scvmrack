@@ -128,19 +128,19 @@ export function CharacterSheet({
             component="fieldset"
             disabled={readOnly}
             className="print-sheet"
-            style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}
-            sx={
+            sx={[
+                { border: 0, padding: 0, margin: 0, minWidth: 0 },
                 animateImpact
                     ? {
                         transformOrigin: '50% 10%',
                         animation: `${sheetImpactAnimation} 520ms cubic-bezier(0.16, 1, 0.3, 1)`,
                     }
-                    : undefined
-            }
+                    : {},
+            ]}
         >
             <Box>
                 <SummaryBar />
-                <ResourceRow />
+                <ResourceRow readOnly={readOnly} />
                 <EquippedBar readOnly={readOnly} />
             </Box>
             <Box>

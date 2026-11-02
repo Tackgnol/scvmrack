@@ -1,4 +1,5 @@
 import { Box, CircularProgress, Paper, Typography } from '@mui/material';
+import type { CharacterDescriptorsProps } from './CharacterDescriptors.models';
 import { useTranslation } from 'react-i18next';
 import { customStyles } from '@/theme/morkBorgTheme';
 import { useCharacterDescriptors } from '@/hooks/useCharacterDescriptors';
@@ -6,7 +7,7 @@ import ClassAbilitiesSection from '@components/molecules/character-descriptors/C
 import TraitsSection from '@components/molecules/character-descriptors/TraitsSection';
 import OriginSection from '@components/molecules/character-descriptors/OriginSection';
 
-export const CharacterDescriptors = ({ readOnly = false }: { readOnly?: boolean } = {}) => {
+export const CharacterDescriptors = ({ readOnly = false }: CharacterDescriptorsProps = {}) => {
   const { t } = useTranslation();
   const {
     character,

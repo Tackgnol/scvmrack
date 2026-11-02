@@ -1,3 +1,4 @@
+import { getCharacterClassLabel } from './characterLabels.utils';
 import { type CharacterListItem } from '@/hooks/models.ts';
 import { morkBorgColors } from '@/theme/morkBorgTheme';
 import MorkBorgModal, { ModalButton } from '@components/molecules/modal/MorkBorgModal';
@@ -96,10 +97,7 @@ export function DeleteCharacterModal({
   const { t } = useTranslation();
   const characterName =
     (character?.name || '').trim() || t('characters.unnamed', 'Unnamed Scvm');
-  const className =
-    (character?.className || '').trim() || (character?.classId === null
-      ? t('create.classlessLabel', 'Classless')
-      : t('characters.unknownClass', 'Unknown'));
+  const className = getCharacterClassLabel(character, t);
   const hpLabel =
     character?.currentHp != null || character?.maxHp != null
       ? `${character.currentHp ?? '-'}/${character.maxHp ?? '-'}`

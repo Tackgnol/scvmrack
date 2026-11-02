@@ -16,7 +16,7 @@ import { ModerationLogPanel } from "@/components/organisms/ModerationLogPanel/Mo
 import { ModerationDecisionDialog } from "@/components/organisms/moderation/ModerationDecisionDialog/ModerationDecisionDialog";
 import type { PendingDecision } from "@/components/organisms/moderation/ModerationDecisionDialog/ModerationDecisionDialog.models";
 import { ModerationReportItem } from "@/components/organisms/moderation/ModerationReportItem/ModerationReportItem";
-import { getApiErrorStatus, getUserFacingApiErrorMessage } from "@/utils/errorUtils";
+import { isApiUnauthorized, isApiForbidden, isApiNotFound, getUserFacingApiErrorMessage } from "@/utils/errorUtils";
 import { NotFoundPage } from "@/pages/NotFoundPage";
 import { Alert, Box, Button, Stack, Typography } from "@mui/material";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -62,7 +62,7 @@ export function ModerationPage() {
     decide.mutate({ action, id, reason, ground });
   };
 
-  if ([401, 403, 404].includes(getApiErrorStatus(reports.error) ?? 0)) {
+  if (isApiUnauthorized(reports.error) || isApiForbidden(reports.error) || isApiNotFound(reports.error)) {
     return <NotFoundPage seoNoIndex />;
   }
   if (!reports.data) {

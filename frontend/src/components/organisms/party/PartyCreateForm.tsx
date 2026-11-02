@@ -5,10 +5,10 @@ import { Controller, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 
-const PARTY_NAME_MAX_LENGTH = 100;
+import { PARTY_NAME_MAX_LENGTH, partyNameSchema } from '@/validation/partyName';
 
 const partyFormSchema = z.object({
-  name: z.string().trim().max(PARTY_NAME_MAX_LENGTH),
+  name: partyNameSchema,
 });
 
 type PartyFormValues = z.infer<typeof partyFormSchema>;

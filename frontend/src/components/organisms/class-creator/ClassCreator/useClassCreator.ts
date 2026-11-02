@@ -47,6 +47,7 @@ export function useClassCreator(
   onSaved?: (id: number) => void,
 ) {
   const { t, i18n } = useTranslation();
+  // A save may finish after navigation; update its cache without taking the GM back to the editor.
   const mounted = useRef(false);
   useEffect(() => {
     mounted.current = true;
