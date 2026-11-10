@@ -10,6 +10,7 @@ import {
   EventStreamContentType,
   fetchEventSource,
 } from "@microsoft/fetch-event-source";
+import { markCharacterStale } from "@/api/characterCache";
 import { partyKeys } from "@/api/party";
 import { obrKeys } from "@/api/obrKeys";
 import { embeddedSessionHeaders } from "@/utils/embed";
@@ -49,8 +50,6 @@ type UsePartyStreamOptions = {
 export const partyRosterQueryKey = partyKeys.roster;
 
 export const partyDetailQueryKey = partyKeys.detail;
-
-export const partyMemberDetailQueryKey = partyKeys.character;
 
 export function partyStreamUrl(partyId: string): string {
   const baseUrl = import.meta.env.VITE_BACKEND_URL || "";
@@ -153,9 +152,7 @@ export function usePartyStream(
     };
 
     const invalidateMember = (characterId: string) => {
-      void queryClient.invalidateQueries({
-        queryKey: partyMemberDetailQueryKey(characterId),
-      });
+      markCharacterStale(queryClient, characterId);
     };
 
     const handleCharacterUpdated = (data: string) => {

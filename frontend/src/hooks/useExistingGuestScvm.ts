@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
+import { ownedCharactersKey } from '@/api/characterCache';
 import {
-  charactersListQueryKey,
   fetchCharacterList,
   type CharacterListEntry,
 } from '@/hooks/charactersListQuery';
@@ -11,12 +11,12 @@ import {
  * session; this is purely the heads-up copy). Authenticated accounts keep their
  * full roster, so callers pass `enabled = isGuest` and get `null` otherwise.
  *
- * Shares `charactersListQueryKey` with the first-run bootstrap so the list call
+ * Shares `ownedCharactersKey` with the first-run bootstrap so the list call
  * is deduped/cached rather than re-fetched.
  */
 export function useExistingGuestScvm(enabled: boolean): CharacterListEntry | null {
   const { data } = useQuery({
-    queryKey: charactersListQueryKey,
+    queryKey: ownedCharactersKey,
     queryFn: ({ signal }) => fetchCharacterList(signal),
     enabled,
     staleTime: 1000 * 30,

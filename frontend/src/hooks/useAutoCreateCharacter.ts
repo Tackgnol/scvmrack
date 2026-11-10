@@ -1,9 +1,7 @@
 import { useEffect, useState, type MutableRefObject } from 'react';
 import type { QueryClient } from '@tanstack/react-query';
-import {
-  charactersListQueryKey,
-  fetchCharacterList,
-} from '@/hooks/charactersListQuery';
+import { ownedCharactersKey } from '@/api/characterCache';
+import { fetchCharacterList } from '@/hooks/charactersListQuery';
 import {
   getUserFacingApiErrorMessage,
   isUnexpectedApiError,
@@ -97,7 +95,7 @@ export function useAutoCreateCharacter({
       // the deliberate raw-fetch auth-middleware bypass.
       try {
         const chars = await queryClient.fetchQuery({
-          queryKey: charactersListQueryKey,
+          queryKey: ownedCharactersKey,
           queryFn: () => fetchCharacterList(controller.signal),
         });
         if (!cancelled && chars.length > 0) {

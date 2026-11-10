@@ -8,9 +8,15 @@ import { useCharacterEditor } from '@/hooks/useCharacterEditor.ts';
 import { hasCurrentSearchParam } from '@/router/navigation';
 import { appHistory } from '@/router/history';
 import { replacePartyMember } from '@/api/party';
+import {
+  characterDetailKey,
+  characterRosterKey,
+  ownedCharactersKey,
+} from '@/api/characterCache';
 
-const { privacyState, queryClientMocks } = vi.hoisted(() => ({
+const { privacyState, i18nState, queryClientMocks } = vi.hoisted(() => ({
   privacyState: { acknowledged: true },
+  i18nState: { language: 'en' },
   queryClientMocks: {
     fetchQuery: vi.fn(({ queryFn }: { queryFn: () => unknown }) => queryFn()),
     invalidateQueries: vi.fn().mockResolvedValue(undefined),
@@ -54,7 +60,7 @@ vi.mock('@/api/party', () => ({
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
-    i18n: { changeLanguage: vi.fn(), language: 'en' },
+    i18n: { changeLanguage: vi.fn(), language: i18nState.language },
     t: (k: string) => k,
   }),
 }));
@@ -66,6 +72,8 @@ vi.mock('../../../src/SnackbarContext/SnackbarProvider.tsx', () => ({
 vi.mock('@/router/history', () => ({
   appHistory: {
     subscribe: vi.fn(() => vi.fn()),
+    push: vi.fn(),
+    flush: vi.fn(),
     location: { pathname: '/character', search: '', hash: '' },
   },
 }));
@@ -95,6 +103,7 @@ beforeEach(() => {
     redirect: '/party/party-1/character/char-2',
   });
   privacyState.acknowledged = true;
+  i18nState.language = 'en';
   (hasCurrentSearchParam as any).mockReturnValue(false);
   appHistory.location.pathname = '/character';
   appHistory.location.search = '';
@@ -118,7 +127,6 @@ test('useCurrentCharacter aggregates repository, editor and auth state', () => {
     isLoading: false,
     error: null,
     updateCharacter: {},
-    getCharacterKey: vi.fn(),
     createCharacter: { mutate: vi.fn() },
   };
   (useCharacterRepository as any).mockReturnValue(repo);
@@ -155,7 +163,6 @@ test('useCurrentCharacter recovers from an invalid character without deleting it
     isLoading: false,
     error: { statusCode: 404, code: 'CHARACTER_NOT_FOUND' },
     updateCharacter: {},
-    getCharacterKey: vi.fn(),
     createCharacter: { mutate: vi.fn() },
     deleteCharacter: { mutate: vi.fn() },
   });
@@ -169,12 +176,43 @@ test('useCurrentCharacter recovers from an invalid character without deleting it
 
   expect(setCharacterId).toHaveBeenCalledWith(null);
   expect(queryClientMocks.removeQueries).toHaveBeenCalledWith({
-    queryKey: [
-      'get',
-      '/api/characters/{id}',
-      { params: { path: { id: 'missing-char' }, query: { locale: 'en' } } },
-    ],
+    queryKey: characterDetailKey('missing-char', 'en'),
   });
+});
+
+test('useCurrentCharacter adopts a created character under the sheet locale and marks both lists stale', () => {
+  i18nState.language = 'en-US';
+  (useCharacterId as any).mockReturnValue({
+    characterId: null,
+    lastCharacterId: null,
+    setCharacterId: vi.fn(),
+  });
+  (useCharacterRepository as any).mockReturnValue({
+    character: undefined,
+    isLoading: false,
+    error: null,
+    updateCharacter: {},
+    createCharacter: { mutate: vi.fn() },
+    deleteCharacter: { mutate: vi.fn() },
+  });
+  (useCharacterEditor as any).mockReturnValue({ flush: vi.fn() });
+  appHistory.location.pathname = '/create';
+  const created = { id: 'new-char', name: 'Fresh' };
+
+  const { result } = renderHook(() => useCurrentCharacter());
+  act(() => result.current.adoptCreatedCharacter(created));
+
+  expect(queryClientMocks.setQueryData).toHaveBeenCalledWith(
+    characterDetailKey('new-char', 'en'),
+    created
+  );
+  expect(queryClientMocks.invalidateQueries).toHaveBeenCalledWith(
+    expect.objectContaining({ queryKey: ownedCharactersKey })
+  );
+  expect(queryClientMocks.invalidateQueries).toHaveBeenCalledWith(
+    expect.objectContaining({ queryKey: characterRosterKey() })
+  );
+  expect(appHistory.push).toHaveBeenCalledWith('/character/new-char');
 });
 
 test('useCurrentCharacter handles generateNew', () => {
@@ -231,7 +269,6 @@ test('useCurrentCharacter clears validation issues when active character changes
     isLoading: false,
     error: null,
     updateCharacter: {},
-    getCharacterKey: vi.fn(),
     createCharacter: { mutate: vi.fn(), data: null },
   };
   (useCharacterRepository as any).mockReturnValue(repo);
@@ -321,7 +358,6 @@ test('useCurrentCharacter refreshes party membership before selecting a replacem
     isLoading: false,
     error: null,
     updateCharacter: {},
-    getCharacterKey: vi.fn(),
     deleteCharacter: { mutate: deleteMutate },
     createCharacter: { mutate: createMutate, data: null },
   };

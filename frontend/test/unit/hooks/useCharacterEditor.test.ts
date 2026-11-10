@@ -1,8 +1,9 @@
 import { act, renderHook } from '@testing-library/react';
 import { beforeEach, expect, test, vi } from 'vitest';
 import { useCharacterEditor } from '../../../src/hooks/useCharacterEditor.ts';
-import { useQueryClient } from '@tanstack/react-query';
+import { QueryClient, QueryObserver, useQueryClient } from '@tanstack/react-query';
 import { trackCharacterEdited } from '@/analytics/characterAnalytics';
+import { characterDetailKey, readCharacter, writeCharacter } from '@/api/characterCache';
 
 const snackbarMocks = vi.hoisted(() => ({
   showError: vi.fn(),
@@ -11,7 +12,8 @@ const errorFeedbackMocks = vi.hoisted(() => ({
   showUnexpectedError: vi.fn(() => true),
 }));
 
-vi.mock('@tanstack/react-query', () => ({
+vi.mock('@tanstack/react-query', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@tanstack/react-query')>()),
   useQueryClient: vi.fn(),
 }));
 
@@ -80,6 +82,31 @@ function makeQueryClient(initial?: Store) {
   };
 }
 
+/** A real cache holding the given characters, each under its own id in the default locale. */
+function makeCache(...characters: Array<Record<string, unknown> & { id: string }>) {
+  const queryClient = new QueryClient();
+  for (const character of characters) {
+    writeCharacter(queryClient, character.id, undefined, character);
+  }
+  vi.mocked(useQueryClient).mockReturnValue(queryClient);
+  return {
+    queryClient,
+    cached: (id: string, language?: string) => readCharacter(queryClient, id, language) as any,
+    isStale: (id: string, language?: string) =>
+      queryClient.getQueryState(characterDetailKey(id, language))?.isInvalidated,
+    /** Mounts a reader of that copy, as an open sheet does, and returns the spy counting its refetches. */
+    watchRefetches: (id: string, language?: string) => {
+      const refetch = vi.fn(async () => readCharacter(queryClient, id, language) ?? null);
+      new QueryObserver(queryClient, {
+        queryKey: characterDetailKey(id, language),
+        queryFn: refetch,
+        staleTime: Infinity,
+      }).subscribe(() => {});
+      return refetch;
+    },
+  };
+}
+
 const noopMutation = () => ({ mutate: vi.fn(), isPending: false }) as any;
 
 test.each(['add', 'move', 'unequip-weapon', 'unequip-armor'] as const)('rejects an inventory %s at capacity without changing either container', (operation) => {
@@ -90,7 +117,7 @@ test.each(['add', 'move', 'unequip-weapon', 'unequip-armor'] as const)('rejects 
   const queryClient = makeQueryClient({ id: 'char-1', equipment, storage, equippedWeapons, equippedArmor });
   vi.mocked(useQueryClient).mockReturnValue(queryClient as unknown as ReturnType<typeof useQueryClient>);
   const mutation = noopMutation();
-  const { result } = renderHook(() => useCharacterEditor('char-1', mutation, id => [id]));
+  const { result } = renderHook(() => useCharacterEditor('char-1', mutation));
   act(() => {
     if (operation === 'add') {
       result.current.addEquipmentItem({ key: 'equipment.hammer', name: 'Hammer' });
@@ -113,7 +140,7 @@ test.each([['equipment', 50], ['storage', 100]] as const)('fills the last %s slo
   const queryClient = makeQueryClient({ id: 'char-1', [location]: items });
   vi.mocked(useQueryClient).mockReturnValue(queryClient as unknown as ReturnType<typeof useQueryClient>);
   const mutation = noopMutation();
-  const { result } = renderHook(() => useCharacterEditor('char-1', mutation, id => [id]));
+  const { result } = renderHook(() => useCharacterEditor('char-1', mutation));
   act(() => {
     const add = location === 'equipment' ? result.current.addEquipmentItem : result.current.addStorageItem;
     add({ key: 'equipment.last', name: 'Last item' });
@@ -127,20 +154,13 @@ test.each([['equipment', 50], ['storage', 100]] as const)('fills the last %s slo
 });
 
 test('keeps an expired save with its own character while another character is edited', () => {
-  const characters: Record<string, any> = {
-    a: { id: 'a', currentHp: 5, silver: 10 },
-    b: { id: 'b', currentHp: 9, silver: 20 },
-  };
-  (useQueryClient as any).mockReturnValue({
-    getQueryData: ([id]: string[]) => characters[id],
-    setQueryData: ([id]: string[], value: any) => {
-      characters[id] = typeof value === 'function' ? value(characters[id]) : value;
-    },
-    invalidateQueries: vi.fn(),
-  });
+  const { cached } = makeCache(
+    { id: 'a', currentHp: 5, silver: 10 },
+    { id: 'b', currentHp: 9, silver: 20 },
+  );
   const mutation = noopMutation();
   const { result, rerender } = renderHook(({ id }) =>
-    useCharacterEditor(id, mutation, (characterId) => [characterId]),
+    useCharacterEditor(id, mutation),
   { initialProps: { id: 'a' } });
   act(() => result.current.updateField('currentHp', 4));
   act(() => result.current.flush());
@@ -151,7 +171,7 @@ test('keeps an expired save with its own character while another character is ed
   });
   rerender({ id: 'b' });
   expect(result.current.saveFailed).toBe(false);
-  expect(result.current.getVisibleCharacter(characters.b)).toMatchObject({ id: 'b', currentHp: 9 });
+  expect(result.current.getVisibleCharacter(cached('b'))).toMatchObject({ id: 'b', currentHp: 9 });
   act(() => result.current.updateField('silver', 21));
   act(() => result.current.flush());
   expect(mutation.mutate.mock.calls[1][0]).toMatchObject({
@@ -159,12 +179,12 @@ test('keeps an expired save with its own character while another character is ed
   });
   expect(mutation.mutate.mock.calls[1][0].body).not.toHaveProperty('currentHp');
   act(() => {
-    mutation.mutate.mock.calls[1][1].onSuccess({ ...characters.b, silver: 21 });
+    mutation.mutate.mock.calls[1][1].onSuccess({ ...cached('b'), silver: 21 });
     mutation.mutate.mock.calls[1][1].onSettled();
   });
   rerender({ id: 'a' });
   expect(result.current.saveFailed).toBe(true);
-  expect(result.current.getVisibleCharacter(characters.a)?.currentHp).toBe(4);
+  expect(result.current.getVisibleCharacter(cached('a'))?.currentHp).toBe(4);
   act(() => result.current.retrySave());
   expect(mutation.mutate.mock.calls[2][0]).toEqual(failedRequest);
 });
@@ -175,7 +195,7 @@ test('sends the loaded version with a collection edit', () => {
   (useQueryClient as any).mockReturnValue(queryClient);
   const mutation = noopMutation();
   const { result } = renderHook(() =>
-    useCharacterEditor('char-1', mutation, (id) => ['char', id])
+    useCharacterEditor('char-1', mutation)
   );
   act(() => result.current.addEquipmentItem({ key: 'hammer', name: 'Hammer' }));
   act(() => result.current.flush());
@@ -187,7 +207,7 @@ test('keeps later edits queued after a 401 without retrying until explicit recov
   (useQueryClient as any).mockReturnValue(queryClient);
   const mutation = noopMutation();
   const { result, unmount } = renderHook(() =>
-    useCharacterEditor('char-1', mutation, (id) => [id])
+    useCharacterEditor('char-1', mutation)
   );
   act(() => result.current.updateField('currentHp', 4));
   act(() => result.current.flush());
@@ -218,17 +238,10 @@ test('keeps later edits queued after a 401 without retrying until explicit recov
 });
 
 test.each(['success', 'expired'] as const)('a late %s for the previous scvm cannot alter the active scvm', (outcome) => {
-  const characters: Record<string, any> = { a: { id: 'a', currentHp: 5 }, b: { id: 'b', silver: 20 } };
-  (useQueryClient as any).mockReturnValue({
-    getQueryData: ([id]: string[]) => characters[id],
-    setQueryData: ([id]: string[], value: any) => {
-      characters[id] = typeof value === 'function' ? value(characters[id]) : value;
-    },
-    invalidateQueries: vi.fn(),
-  });
+  const { cached } = makeCache({ id: 'a', currentHp: 5 }, { id: 'b', silver: 20 });
   const mutation = noopMutation();
   const { result, rerender } = renderHook(({ id }) =>
-    useCharacterEditor(id, mutation, (characterId) => [characterId]),
+    useCharacterEditor(id, mutation),
   { initialProps: { id: 'a' } });
   act(() => result.current.updateField('currentHp', 4));
   act(() => result.current.flush());
@@ -248,18 +261,17 @@ test.each(['success', 'expired'] as const)('a late %s for the previous scvm cann
     callbacks.onSettled();
   });
   expect(result.current.saveFailed).toBe(false);
-  expect(result.current.getVisibleCharacter(characters.b)).toMatchObject({ id: 'b', silver: 21 });
+  expect(result.current.getVisibleCharacter(cached('b'))).toMatchObject({ id: 'b', silver: 21 });
   act(() => result.current.flush());
   expect(mutation.mutate.mock.calls[1][0]).toMatchObject({ params: { path: { id: 'b' } }, body: { silver: 21 } });
   expect(mutation.mutate.mock.calls[1][0].body).not.toHaveProperty('currentHp');
 });
 
 test('a conflict discards stale queued edits and refreshes the authoritative character', () => {
-  const queryClient = makeQueryClient({ id: 'char-1', equipment: [] });
-  (useQueryClient as any).mockReturnValue(queryClient);
+  const { isStale } = makeCache({ id: 'char-1', equipment: [] });
   const mutation = noopMutation();
   const { result } = renderHook(() =>
-    useCharacterEditor('char-1', mutation, (id) => ['char', id])
+    useCharacterEditor('char-1', mutation)
   );
   act(() => result.current.addEquipmentItem({ key: 'rope' }));
   act(() => result.current.flush());
@@ -269,7 +281,7 @@ test('a conflict discards stale queued edits and refreshes the authoritative cha
     callbacks.onError({ status: 409 }, {}, {});
     callbacks.onSettled();
   });
-  expect(queryClient.invalidateQueries).toHaveBeenCalledWith({ queryKey: ['char', 'char-1'], exact: true });
+  expect(isStale('char-1')).toBe(true);
   expect(snackbarMocks.showError).toHaveBeenCalledWith(expect.stringContaining('another tab'));
   expect(result.current.isSaving).toBe(false);
   expect(result.current.getVisibleCharacter({ id: 'char-1', equipment: [{ key: 'hammer' }] })?.equipment).toEqual([{ key: 'hammer' }]);
@@ -284,7 +296,7 @@ test('REGRESSION: an edit after a newer server copy lands in the cache builds on
   (useQueryClient as any).mockReturnValue(queryClient);
   const mutation = noopMutation();
   const { result } = renderHook(() =>
-    useCharacterEditor('char-1', mutation, (id) => ['char', id])
+    useCharacterEditor('char-1', mutation)
   );
   act(() => result.current.updateField('currentHp', 4));
   act(() => result.current.flush());
@@ -294,7 +306,7 @@ test('REGRESSION: an edit after a newer server copy lands in the cache builds on
   });
   // Getting Better writes its result straight into the cache.
   const improved = { id: 'char-1', updatedAt: '2026-10-15T09:00:02.000Z', currentHp: 9, equipment: [rope] };
-  queryClient.setQueryData(['char', 'char-1'], improved);
+  queryClient.setQueryData(characterDetailKey('char-1'), improved);
 
   act(() => result.current.addEquipmentItem(hammer as any));
   act(() => result.current.flush());
@@ -311,10 +323,10 @@ test('REGRESSION: a queued positional edit is not replayed onto a reordered newe
   (useQueryClient as any).mockReturnValue(queryClient);
   const mutation = noopMutation();
   const { result } = renderHook(() =>
-    useCharacterEditor('char-1', mutation, (id) => ['char', id])
+    useCharacterEditor('char-1', mutation)
   );
   act(() => result.current.removeEquipmentItem(1));
-  queryClient.setQueryData(['char', 'char-1'], { id: 'char-1', updatedAt: '2026-10-15T09:00:05.000Z', equipment: [hammer, rope] });
+  queryClient.setQueryData(characterDetailKey('char-1'), { id: 'char-1', updatedAt: '2026-10-15T09:00:05.000Z', equipment: [hammer, rope] });
   act(() => result.current.addEquipmentItem({ key: 'torch', name: 'Torch' } as any));
   act(() => result.current.flush());
 
@@ -328,12 +340,12 @@ test('REGRESSION: a newer server copy that lands mid-flight is kept over the old
   (useQueryClient as any).mockReturnValue(queryClient);
   const mutation = noopMutation();
   const { result } = renderHook(() =>
-    useCharacterEditor('char-1', mutation, (id) => ['char', id])
+    useCharacterEditor('char-1', mutation)
   );
   act(() => result.current.updateField('currentHp', 4));
   act(() => result.current.flush());
   const improved = { id: 'char-1', updatedAt: '2026-10-15T09:00:02.000Z', currentHp: 9, equipment: [rope] };
-  queryClient.setQueryData(['char', 'char-1'], improved);
+  queryClient.setQueryData(characterDetailKey('char-1'), improved);
   act(() => {
     mutation.mutate.mock.calls[0][1].onSuccess({ id: 'char-1', updatedAt: '2026-10-15T09:00:01.000Z', currentHp: 4, equipment: [] });
     mutation.mutate.mock.calls[0][1].onSettled();
@@ -352,7 +364,7 @@ test('REGRESSION: a save whose response was lost is resent unchanged, and later 
   (useQueryClient as any).mockReturnValue(queryClient);
   const mutation = noopMutation();
   const { result } = renderHook(() =>
-    useCharacterEditor('char-1', mutation, (id) => ['char', id])
+    useCharacterEditor('char-1', mutation)
   );
   act(() => result.current.addEquipmentItem(hammer as any));
   act(() => result.current.flush());
@@ -384,23 +396,17 @@ beforeEach(() => {
 });
 
 test('queues patches and applies them optimistically to the cache', () => {
-  const queryClient = makeQueryClient();
-  (useQueryClient as any).mockReturnValue(queryClient);
+  const { cached } = makeCache({ id: 'char-1', name: 'Old' });
 
   const { result } = renderHook(() =>
-    useCharacterEditor('char-1', noopMutation(), (id) => ['char', id])
+    useCharacterEditor('char-1', noopMutation())
   );
 
   act(() => {
     result.current.updateField('name', 'New Name');
   });
 
-  expect(queryClient.setQueryData).toHaveBeenCalledWith(
-    ['char', 'char-1'],
-    expect.any(Function)
-  );
-  const updater = (queryClient.setQueryData as any).mock.calls[0][1];
-  expect(updater({ name: 'Old' })).toEqual({ name: 'New Name' });
+  expect(cached('char-1')).toEqual({ id: 'char-1', name: 'New Name' });
 });
 
 test('warns on reload while an edit is queued or saving, then stops after it is saved', () => {
@@ -408,7 +414,7 @@ test('warns on reload while an edit is queued or saving, then stops after it is 
   (useQueryClient as any).mockReturnValue(queryClient);
   const mutation = noopMutation();
   const { result } = renderHook(() =>
-    useCharacterEditor('char-1', mutation, (id) => ['char', id])
+    useCharacterEditor('char-1', mutation)
   );
   const attemptsToLeave = () => {
     const event = new Event('beforeunload', { cancelable: true });
@@ -434,7 +440,7 @@ test('flushes the queued patch to the server', () => {
   const mutation = noopMutation();
 
   const { result } = renderHook(() =>
-    useCharacterEditor('char-1', mutation, (id) => ['char', id])
+    useCharacterEditor('char-1', mutation)
   );
 
   act(() => result.current.updateField('name', 'New Name'));
@@ -452,7 +458,7 @@ test('rejects invalid simple fields and keeps them out of the save queue', () =>
   const mutation = noopMutation();
 
   const { result } = renderHook(() =>
-    useCharacterEditor('char-1', mutation, (id) => ['char', id], 'en')
+    useCharacterEditor('char-1', mutation, 'en')
   );
 
   act(() => result.current.updateField('silver', 1000001));
@@ -484,7 +490,7 @@ test('serializes flushes and builds each from the latest optimistic state', () =
   const mutation = noopMutation();
 
   const { result } = renderHook(() =>
-    useCharacterEditor('char-1', mutation, (id) => ['char', id])
+    useCharacterEditor('char-1', mutation)
   );
 
   act(() => result.current.addEquipmentItem(sword as any));
@@ -520,7 +526,7 @@ test('REGRESSION: does not lose an edit queued while a save is in flight', () =>
   const mutation = noopMutation();
 
   const { result } = renderHook(() =>
-    useCharacterEditor('char-1', mutation, (id) => ['char', id])
+    useCharacterEditor('char-1', mutation)
   );
 
   // Edit #1 and start the flush.
@@ -570,7 +576,6 @@ test('REGRESSION: language switches before flush keep queued equipment visible a
       useCharacterEditor(
         'char-1',
         mutation,
-        (id, activeLocale) => ['char', id, activeLocale],
         locale
       ),
     { initialProps: { locale: 'en' } }
@@ -614,7 +619,6 @@ test('REGRESSION: stale localized refetches do not hide a newer saved character'
     useCharacterEditor(
       'char-1',
       mutation,
-      (id, locale) => ['char', id, locale],
       'en'
     )
   );
@@ -650,7 +654,7 @@ test('REGRESSION: auto-retries a transient 5xx instead of dropping the edit', ()
   const mutation = noopMutation();
 
   const { result } = renderHook(() =>
-    useCharacterEditor('char-1', mutation, (id) => ['char', id])
+    useCharacterEditor('char-1', mutation)
   );
 
   act(() => result.current.updateField('name', 'A'));
@@ -678,7 +682,7 @@ test('reports repeated 5xx saves after the retry tolerance and keeps a manual re
   const mutation = noopMutation();
 
   const { result } = renderHook(() =>
-    useCharacterEditor('char-1', mutation, (id) => [id])
+    useCharacterEditor('char-1', mutation)
   );
 
   act(() => result.current.updateField('currentHp', 10));
@@ -736,7 +740,7 @@ test('a deleted character discards all queued edits and stale visible snapshots'
   (useQueryClient as any).mockReturnValue(queryClient);
   const mutation = noopMutation();
   const { result } = renderHook(() =>
-    useCharacterEditor('char-1', mutation, (id) => ['char', id])
+    useCharacterEditor('char-1', mutation)
   );
   act(() => result.current.updateField('name', 'Saved before deletion'));
   act(() => result.current.flush());
@@ -768,7 +772,7 @@ test('rolls back and drops the batch on a terminal client (4xx) error', () => {
   const mutation = noopMutation();
 
   const { result } = renderHook(() =>
-    useCharacterEditor('char-1', mutation, (id) => ['char', id])
+    useCharacterEditor('char-1', mutation)
   );
 
   act(() => result.current.updateField('name', 'A'));
@@ -789,15 +793,15 @@ test('rolls back and drops the batch on a terminal client (4xx) error', () => {
 });
 
 test('writes the server response into the cache on success (no extra refetch)', () => {
-  const queryClient = makeQueryClient({ id: 'char-1', equipment: [] });
-  (useQueryClient as any).mockReturnValue(queryClient);
+  const { queryClient, cached, watchRefetches } = makeCache();
+  writeCharacter(queryClient, 'char-1', 'pl', { id: 'char-1', equipment: [] });
+  const refetchSavedCopy = watchRefetches('char-1', 'pl');
   const mutation = noopMutation();
 
   const { result } = renderHook(() =>
     useCharacterEditor(
       'char-1',
       mutation,
-      (id, locale) => ['char', id, locale],
       'pl'
     )
   );
@@ -817,31 +821,19 @@ test('writes the server response into the cache on success (no extra refetch)', 
     'pl'
   );
   // Cache now holds the hydrated server copy; we do NOT invalidate/refetch it.
-  expect(queryClient.current()).toEqual(serverCopy);
-  expect(queryClient.invalidateQueries).not.toHaveBeenCalledWith(
-    expect.objectContaining({ queryKey: ['char', 'char-1', 'pl'] })
-  );
+  expect(cached('char-1', 'pl')).toEqual(serverCopy);
+  expect(refetchSavedCopy).not.toHaveBeenCalled();
 });
 
 test('REGRESSION: after a save in one language, switching language shows that language', () => {
-  const stores: Record<string, any> = {
-    '["char","char-1","en"]': { id: 'char-1', updatedAt: '2026-10-16T09:00:00.000Z', silver: 0, trait1: 'egocentric' },
-    '["char","char-1","pl"]': { id: 'char-1', updatedAt: '2026-10-16T09:00:00.000Z', silver: 0, trait1: 'egocentryczny' },
-  };
-  const queryClient = {
-    getQueryData: vi.fn((key: unknown) => stores[JSON.stringify(key)]),
-    setQueryData: vi.fn((key: unknown, updater: unknown) => {
-      const id = JSON.stringify(key);
-      stores[id] = typeof updater === 'function' ? (updater as any)(stores[id]) : updater;
-    }),
-    invalidateQueries: vi.fn(),
-    cancelQueries: vi.fn(),
-  };
-  (useQueryClient as any).mockReturnValue(queryClient);
+  const { queryClient, cached, isStale, watchRefetches } = makeCache();
+  writeCharacter(queryClient, 'char-1', 'en', { id: 'char-1', updatedAt: '2026-10-16T09:00:00.000Z', silver: 0, trait1: 'egocentric' });
+  writeCharacter(queryClient, 'char-1', 'pl', { id: 'char-1', updatedAt: '2026-10-16T09:00:00.000Z', silver: 0, trait1: 'egocentryczny' });
+  const refetchSavedCopy = watchRefetches('char-1', 'pl');
   const mutation = noopMutation();
   const { result, rerender } = renderHook(
     ({ locale }) =>
-      useCharacterEditor('char-1', mutation, (id, activeLocale) => ['char', id, activeLocale], locale),
+      useCharacterEditor('char-1', mutation, locale),
     { initialProps: { locale: 'pl' } }
   );
 
@@ -856,13 +848,14 @@ test('REGRESSION: after a save in one language, switching language shows that la
     });
     mutation.mutate.mock.calls[0][1].onSettled();
   });
-  expect(queryClient.invalidateQueries).toHaveBeenCalledWith({ queryKey: ['char', 'char-1', 'en'], exact: true });
+  expect(isStale('char-1', 'en')).toBe(true);
+  expect(refetchSavedCopy).not.toHaveBeenCalled();
 
   rerender({ locale: 'en' });
-  expect(result.current.getVisibleCharacter(stores['["char","char-1","en"]'])?.trait1).toBe('egocentric');
+  expect(result.current.getVisibleCharacter(cached('char-1', 'en'))?.trait1).toBe('egocentric');
 
   act(() => result.current.updateField('silver', 6));
-  expect(result.current.getVisibleCharacter(stores['["char","char-1","en"]'])).toMatchObject({
+  expect(result.current.getVisibleCharacter(cached('char-1', 'en'))).toMatchObject({
     silver: 6,
     trait1: 'egocentric',
   });
@@ -874,7 +867,7 @@ test('surfaces rate limits without a retry action and keeps the edit queued', ()
   const mutation = noopMutation();
 
   const { result } = renderHook(() =>
-    useCharacterEditor('char-1', mutation, (id) => [id])
+    useCharacterEditor('char-1', mutation)
   );
 
   act(() => result.current.updateField('name', 'A'));
@@ -896,7 +889,7 @@ test('REGRESSION: flushes a pending edit on unmount instead of dropping it', () 
   const mutation = noopMutation();
 
   const { result, unmount } = renderHook(() =>
-    useCharacterEditor('char-1', mutation, (id) => ['char', id])
+    useCharacterEditor('char-1', mutation)
   );
 
   // Queue an edit but never call flush() explicitly (debounce is deferred).
@@ -922,7 +915,7 @@ test('supports equipment, storage, and modifier operations end to end', () => {
   const mutation = noopMutation();
 
   const { result } = renderHook(() =>
-    useCharacterEditor('char-1', mutation, (id) => [id])
+    useCharacterEditor('char-1', mutation)
   );
 
   act(() => {

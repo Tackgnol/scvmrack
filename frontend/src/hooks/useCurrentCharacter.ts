@@ -11,8 +11,8 @@ import {
   LOGGED_OUT_QUERY_PARAM,
   SESSION_EXPIRED_QUERY_PARAM,
 } from '@/router/navigation';
-import { getApiLocale, getCharacterKey } from '@/hooks/utils.ts';
-import { characterKeys } from '@/api';
+import { getApiLocale } from '@/hooks/utils.ts';
+import { dropCharacter, seedCreatedCharacter } from '@/api/characterCache';
 import type { CharacterResponse } from '@/hooks/models';
 import { useSnackbar } from '@/SnackbarContext/SnackbarProvider.tsx';
 import { useErrorFeedback } from '@/components/molecules/feedback/ErrorFeedbackProvider';
@@ -113,7 +113,6 @@ export function useCurrentCharacter() {
   const editor = useCharacterEditor(
     characterId,
     repo.updateCharacter,
-    repo.getCharacterKey,
     trimmedLocale,
     validationIssueHandlers,
     { readOnly: isReadOnly }
@@ -191,8 +190,7 @@ export function useCurrentCharacter() {
       // create intent, then navigate. push+flush (not setCharacterId) avoids the
       // mid-confirm in-provider state update that can trip the route error
       // boundary during the create->sheet transition.
-      queryClient.setQueryData(getCharacterKey(character.id, locale), character);
-      queryClient.invalidateQueries({ queryKey: characterKeys.list() });
+      seedCreatedCharacter(queryClient, character.id, locale, character);
       setJustCreated(character.id);
       void appHistory.push(`/character/${character.id}`);
       appHistory.flush();
@@ -209,9 +207,7 @@ export function useCurrentCharacter() {
     }
 
     await setCharacterId(null);
-    queryClient.removeQueries({
-      queryKey: getCharacterKey(invalidCharacterId, trimmedLocale),
-    });
+    dropCharacter(queryClient, invalidCharacterId, trimmedLocale);
   }, [characterId, queryClient, setCharacterId, trimmedLocale]);
 
   // ---- Handle logout side effects ----

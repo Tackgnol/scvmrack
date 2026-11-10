@@ -1,6 +1,7 @@
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, expect, test, vi } from "vitest";
-import { useQueryClient } from "@tanstack/react-query";
+import { QueryClient, useQueryClient } from "@tanstack/react-query";
+import { characterDetailKey, writeCharacter } from "@/api/characterCache";
 import {
   quarantineTabSession,
   confirmTabSession,
@@ -8,7 +9,6 @@ import {
 } from "@/utils/tabSession";
 import {
   partyDetailQueryKey,
-  partyMemberDetailQueryKey,
   partyRosterQueryKey,
   usePartyStream,
 } from "../../../src/hooks/usePartyStream.ts";
@@ -52,10 +52,21 @@ const emit = (event: string, data: unknown) =>
     data: typeof data === "string" ? data : JSON.stringify(data),
   });
 
-const createQueryClientMock = () => ({
-  invalidateQueries: vi.fn(),
-  cancelQueries: vi.fn().mockResolvedValue(undefined),
-});
+/** A real cache holding both locale copies of char-1, with invalidations recorded. */
+const createQueryClientMock = () => {
+  const queryClient = new QueryClient();
+  writeCharacter(queryClient, "char-1", "en", { id: "char-1" });
+  writeCharacter(queryClient, "char-1", "pl", { id: "char-1" });
+  vi.spyOn(queryClient, "invalidateQueries");
+  return queryClient;
+};
+
+const staleMemberLocales = (queryClient: QueryClient) =>
+  ["en", "pl"].filter(
+    (locale) =>
+      queryClient.getQueryState(characterDetailKey("char-1", locale))
+        ?.isInvalidated,
+  );
 
 beforeEach(() => {
   confirmTabSession();
@@ -183,9 +194,7 @@ test("character.updated invalidates that member and stores changed fields", () =
     "currentHp",
     "name",
   ]);
-  expect(queryClient.invalidateQueries).toHaveBeenCalledWith({
-    queryKey: partyMemberDetailQueryKey("char-1"),
-  });
+  expect(staleMemberLocales(queryClient)).toEqual(["en", "pl"]);
 });
 
 test("membership events invalidate roster and changed member detail", () => {
@@ -207,9 +216,7 @@ test("membership events invalidate roster and changed member detail", () => {
   expect(queryClient.invalidateQueries).toHaveBeenCalledWith({
     queryKey: partyDetailQueryKey("party-1"),
   });
-  expect(queryClient.invalidateQueries).toHaveBeenCalledWith({
-    queryKey: partyMemberDetailQueryKey("char-1"),
-  });
+  expect(staleMemberLocales(queryClient)).toEqual(["en", "pl"]);
 });
 
 test("presence snapshot and presence events update connection state", () => {
@@ -242,9 +249,7 @@ test("presence snapshot and presence events update connection state", () => {
     "char-1": false,
     "char-2": false,
   });
-  expect(queryClient.invalidateQueries).not.toHaveBeenCalledWith({
-    queryKey: partyMemberDetailQueryKey("char-1"),
-  });
+  expect(staleMemberLocales(queryClient)).toEqual([]);
 });
 
 test("presence state clears when the stream is disabled", () => {
@@ -299,9 +304,7 @@ test("malformed events are ignored without throwing", () => {
   }).not.toThrow();
 
   expect(result.current.changedFieldsByCharacter).toEqual({});
-  expect(queryClient.invalidateQueries).not.toHaveBeenCalledWith({
-    queryKey: partyMemberDetailQueryKey("char-1"),
-  });
+  expect(staleMemberLocales(queryClient)).toEqual([]);
 });
 
 test("fatal open response stops without retrying", async () => {

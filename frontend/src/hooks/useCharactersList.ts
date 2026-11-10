@@ -1,7 +1,8 @@
 import { $api } from '@/api';
+import { dropCharacter } from '@/api/characterCache';
 import { useCharacter } from '@/CharacterContext/CharacterContext';
 import { type CharacterListItem } from '@/hooks/models.ts';
-import { getApiLocale, getCharacterKey } from '@/hooks/utils.ts';
+import { getApiLocale } from '@/hooks/utils.ts';
 import { useAuth } from '@/hooks/useAuth';
 import { useErrorFeedback } from '@/components/molecules/feedback/ErrorFeedbackProvider';
 import { appHistory } from '@/router/history';
@@ -133,7 +134,7 @@ export function useCharactersList() {
       return;
     }
 
-    queryClient.removeQueries({ queryKey: getCharacterKey(character.id, i18n.language) });
+    dropCharacter(queryClient, character.id, i18n.language);
 
     if (character.id === characterId) {
       await setCharacterId(null);

@@ -1,6 +1,13 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
+import { QueryClient } from '@tanstack/react-query';
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 
+import {
+  characterDetailKey,
+  characterRosterKey,
+  ownedCharactersKey,
+  readCharacter,
+} from '@/api/characterCache';
 import type { ImprovementDraft, ImprovementPreview } from '@/api/characterImprovementTypes';
 import { useGettingBetterPreview } from '@/hooks/useGettingBetterPreview';
 
@@ -15,26 +22,13 @@ const snackbarMocks = vi.hoisted(() => ({
   showSuccess: vi.fn(),
 }));
 
-const queryClientMock = vi.hoisted(() => ({
-  setQueryData: vi.fn(),
-  invalidateQueries: vi.fn(),
-}));
+const cache = vi.hoisted(() => ({ queryClient: undefined as unknown as QueryClient }));
+const apiListKey = [...characterRosterKey(), { params: { query: { locale: 'pl' } } }];
 
 vi.mock('@/api/characterImprovement', () => ({
   getOrCreateImprovementPreview: apiMocks.getOrCreateImprovementPreview,
   rerollImprovementSection: apiMocks.rerollImprovementSection,
   applyImprovement: apiMocks.applyImprovement,
-}));
-
-vi.mock('@/api', () => ({
-  characterKeys: {
-    list: () => ['characters'],
-  },
-}));
-
-vi.mock('@/hooks/utils', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@/hooks/utils')>()),
-  getCharacterKey: (id: string, locale?: string) => ['character', id, locale],
 }));
 
 vi.mock('@/SnackbarContext/SnackbarProvider', () => ({
@@ -54,8 +48,9 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 
-vi.mock('@tanstack/react-query', () => ({
-  useQueryClient: () => queryClientMock,
+vi.mock('@tanstack/react-query', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@tanstack/react-query')>()),
+  useQueryClient: () => cache.queryClient,
   useMutation: (options: {
     mutationFn: (variables?: unknown) => Promise<unknown>;
     onSuccess?: (value: unknown, variables?: unknown) => void;
@@ -141,6 +136,9 @@ function preview(overrides: Partial<ImprovementPreview> = {}): ImprovementPrevie
 describe('useGettingBetterPreview', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    cache.queryClient = new QueryClient();
+    cache.queryClient.setQueryData(ownedCharactersKey, []);
+    cache.queryClient.setQueryData(apiListKey, []);
     apiMocks.getOrCreateImprovementPreview.mockResolvedValue(preview());
     apiMocks.rerollImprovementSection.mockResolvedValue(preview());
     apiMocks.applyImprovement.mockResolvedValue({ id: 'char-1', name: 'Ash' });
@@ -313,13 +311,12 @@ describe('useGettingBetterPreview', () => {
       locale: 'pl',
     });
     await waitFor(() => expect(result.current.isOpen).toBe(false));
-    expect(queryClientMock.setQueryData).toHaveBeenCalledWith(
-      ['character', 'char-1', 'pl'],
-      { id: 'char-1', name: 'Ash' }
-    );
-    expect(queryClientMock.invalidateQueries).toHaveBeenCalledWith({
-      queryKey: ['characters'],
-    });
+    const isStale = (key: readonly unknown[]) =>
+      cache.queryClient.getQueryState(key)?.isInvalidated;
+    expect(readCharacter(cache.queryClient, 'char-1', 'pl')).toEqual({ id: 'char-1', name: 'Ash' });
+    expect(isStale(characterDetailKey('char-1', 'pl'))).toBe(false);
+    expect(isStale(ownedCharactersKey)).toBe(true);
+    expect(isStale(apiListKey)).toBe(true);
     expect(snackbarMocks.showSuccess).toHaveBeenCalledWith('Getting better applied');
   });
 

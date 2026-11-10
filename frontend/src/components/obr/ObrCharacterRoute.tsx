@@ -26,7 +26,8 @@ import {
 } from "@/obr/obrApiClient";
 import { useObrSession } from "@/obr/useObrSession";
 import { openClassDetails } from "@/obr/openClassDetails";
-import { getApiLocale, getCharacterKey } from "@/hooks/utils";
+import { writeCharacter } from "@/api/characterCache";
+import { getApiLocale } from "@/hooks/utils";
 import { getApiErrorCode } from "@/utils/errorUtils";
 import { Button } from "@mui/material";
 import OBR from "@owlbear-rodeo/sdk";
@@ -165,8 +166,10 @@ function ObrPlayerCharacterRoute() {
 
             if (claimedCharacterId) {
               selectedCharacterId = claimedCharacterId;
-              queryClient.setQueryData(
-                getCharacterKey(claimedCharacterId, locale),
+              writeCharacter(
+                queryClient,
+                claimedCharacterId,
+                locale,
                 claimedCharacter,
               );
             }

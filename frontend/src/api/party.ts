@@ -1,4 +1,5 @@
 import { client } from "@/api";
+import { characterRosterKey } from "@/api/characterCache";
 import { unwrapApiResult, type UntypedApiClient } from "@/api/clientResult";
 
 export type PartyRole = "gm" | "member";
@@ -81,13 +82,7 @@ export const partyKeys = {
       "/api/parties/invite/{token}",
       { params: { path: { token } } },
     ] as const,
-  roster: () => ["get", "/api/characters"] as const,
-  character: (characterId: string) =>
-    [
-      "get",
-      "/api/characters/{id}",
-      { params: { path: { id: characterId } } },
-    ] as const,
+  roster: characterRosterKey,
 };
 
 export async function getPartyLimits(): Promise<PartyLimits> {

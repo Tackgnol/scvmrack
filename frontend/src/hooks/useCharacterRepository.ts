@@ -1,8 +1,17 @@
-import { $api, authKeys, characterKeys, client } from "@/api";
+import { $api, authKeys, client } from "@/api";
+import {
+    cancelCharacterFetches,
+    characterDetailKey,
+    dropCharacter,
+    markCharacterListsStale,
+    markCharacterStale,
+    readCharacter,
+    seedCreatedCharacter,
+} from "@/api/characterCache";
 import { ensureAnonymousSession, type AuthSession } from '@/auth';
 
 import { CharacterResponse } from "@/hooks/models.ts";
-import { getApiLocale, getCharacterKey } from "@/hooks/utils.ts";
+import { getApiLocale } from "@/hooks/utils.ts";
 import { isRetryableApiError, toApiClientError } from '@/utils/errorUtils';
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -27,7 +36,7 @@ export function useCharacterRepository(
         },
         {
             enabled: queryEnabled && !!characterId,
-            // The query key bakes in `locale` (see getCharacterKey), so switching
+            // The query key bakes in `locale` (see characterDetailKey), so switching
             // locale looks like a brand-new query. Without this, `.data` reverts
             // to undefined for the refetch, blanking the sheet and racing
             // useCharacterEditor's pending patch queue (RPG-56/RPG-64).
@@ -73,13 +82,7 @@ export function useCharacterRepository(
             if (!character?.id) {
                 return;
             }
-            queryClient.setQueryData(
-                getCharacterKey(character.id, locale),
-                character
-            );
-            queryClient.invalidateQueries({
-                queryKey: characterKeys.list()
-            });
+            seedCreatedCharacter(queryClient, character.id, locale, character);
         }
     });
 
@@ -87,21 +90,19 @@ export function useCharacterRepository(
     // The character-detail cache is reconciled by useCharacterEditor straight
     // from the PATCH response (which is fully hydrated), so we deliberately do
     // NOT refetch it on every save — that refetch used to race the optimistic
-    // queue and drop edits. We only keep the character LIST (names/HP) fresh.
-    // Note: keys use `trimmedLocale` so they match the query/editor cache key
-    // even when the i18n locale carries a region (e.g. `en-US`).
+    // queue and drop edits. We only keep the character LISTS (names/HP) fresh.
     const updateCharacter = $api.useMutation('patch', '/api/characters/{id}', {
         onMutate: async (vars) => {
-            const key = getCharacterKey(vars.params.path.id, trimmedLocale);
-            await queryClient.cancelQueries({ queryKey: key });
+            const id = vars.params.path.id;
+            await cancelCharacterFetches(queryClient, id, locale);
 
-            const previous = queryClient.getQueryData<CharacterResponse>(key);
-            return { previousCharacter: previous, queryKey: [...key] };
+            return {
+                previousCharacter: readCharacter(queryClient, id, locale),
+                queryKey: [...characterDetailKey(id, locale)],
+            };
         },
         onSettled: () => {
-            queryClient.invalidateQueries({
-                queryKey: characterKeys.list()
-            });
+            markCharacterListsStale(queryClient, 'on-next-read');
         }
     });
 
@@ -109,8 +110,8 @@ export function useCharacterRepository(
     const deleteCharacter = $api.useMutation('delete', '/api/characters/{id}', {
         onSuccess: (_data, vars) => {
             const id = (vars as any).params.path.id;
-            queryClient.removeQueries({ queryKey: getCharacterKey(id, locale) });
-            queryClient.invalidateQueries({ queryKey: characterKeys.list() });
+            dropCharacter(queryClient, id, locale);
+            markCharacterListsStale(queryClient);
         },
     });
 
@@ -119,9 +120,7 @@ export function useCharacterRepository(
         if (!characterId) {
             return;
         }
-        queryClient.invalidateQueries({
-            queryKey: getCharacterKey(characterId, locale)
-        });
+        markCharacterStale(queryClient, characterId, { locale });
     };
 
     return {
@@ -133,6 +132,5 @@ export function useCharacterRepository(
         updateCharacter,
         deleteCharacter,
         refetchCharacter,
-        getCharacterKey
     };
 }

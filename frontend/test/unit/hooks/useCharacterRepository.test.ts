@@ -1,7 +1,14 @@
 import { renderHook } from '@testing-library/react';
 import { beforeEach, expect, test, vi } from 'vitest';
 import { useCharacterRepository } from '../../../src/hooks/useCharacterRepository.ts';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { QueryClient, useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  characterDetailKey,
+  characterRosterKey,
+  ownedCharactersKey,
+  readCharacter,
+  writeCharacter,
+} from '@/api/characterCache';
 
 // Mock the API client
 const apiMocks = vi.hoisted(() => ({
@@ -17,9 +24,6 @@ vi.mock('@/api', () => ({
   authKeys: { session: () => ['auth', 'session'] },
   $api: apiMocks,
   client: clientMocks,
-  characterKeys: {
-    list: () => ['characters', 'list'],
-  },
 }));
 
 vi.mock('@/auth', () => ({
@@ -38,6 +42,32 @@ vi.mock('@tanstack/react-query', async () => {
 beforeEach(() => {
   vi.clearAllMocks();
 });
+
+const apiListKey = [...characterRosterKey(), { params: { query: { locale: 'en' } } }];
+
+/** A real cache holding both character lists, returned by the mocked `useQueryClient`. */
+function realCache() {
+  const queryClient = new QueryClient();
+  queryClient.setQueryData(ownedCharactersKey, []);
+  queryClient.setQueryData(apiListKey, []);
+  (useQueryClient as any).mockReturnValue(queryClient);
+  return {
+    queryClient,
+    isStale: (key: readonly unknown[]) => queryClient.getQueryState(key)?.isInvalidated,
+  };
+}
+
+/** The options the hook passed to `$api.useMutation` for one method of `/api/characters/{id}`. */
+function captureMutationOptions(method: 'patch' | 'delete') {
+  const captured: { options?: any } = {};
+  apiMocks.useMutation.mockImplementation((calledMethod: string, _path: string, options: any) => {
+    if (calledMethod === method) {
+      captured.options = options;
+    }
+    return { mutate: vi.fn() };
+  });
+  return captured;
+}
 
 test('useCharacterRepository returns character data and loading state', () => {
   const queryClient = {
@@ -106,12 +136,7 @@ test('REGRESSION: keeps the previous locale data visible while a locale switch r
 });
 
 test('useCharacterRepository creates a character and refreshes the cached list', async () => {
-    const queryClient = {
-        setQueryData: vi.fn(),
-        getQueryData: vi.fn(),
-        invalidateQueries: vi.fn(),
-    };
-    (useQueryClient as any).mockReturnValue(queryClient);
+    const { queryClient, isStale } = realCache();
 
     (useMutation as any).mockImplementation(({ mutationFn, onSuccess }: any) => {
         return {
@@ -128,7 +153,7 @@ test('useCharacterRepository creates a character and refreshes the cached list',
 
     clientMocks.POST.mockResolvedValue({ data: { id: 'new-char' }, error: null });
 
-    const { result } = renderHook(() => useCharacterRepository(null, 'en'));
+    const { result } = renderHook(() => useCharacterRepository(null, 'en-US'));
 
     await expect(
         result.current.createCharacter.mutateAsync({
@@ -142,10 +167,9 @@ test('useCharacterRepository creates a character and refreshes the cached list',
         params: { query: { locale: 'en' } },
         signal: undefined,
     });
-    expect(queryClient.setQueryData).toHaveBeenCalled();
-    expect(queryClient.invalidateQueries).toHaveBeenCalledWith({
-        queryKey: ['characters', 'list']
-    });
+    expect(readCharacter(queryClient, 'new-char', 'en')).toEqual({ id: 'new-char' });
+    expect(isStale(ownedCharactersKey)).toBe(true);
+    expect(isStale(apiListKey)).toBe(true);
 });
 
 test('useCharacterRepository surfaces createCharacter API failures', async () => {
@@ -205,36 +229,55 @@ test('useCharacterRepository reports createCharacter aborts as AbortError', asyn
 });
 
 test('useCharacterRepository handles deleteCharacter onSuccess', () => {
-    const queryClient = {
-        removeQueries: vi.fn(),
-        invalidateQueries: vi.fn(),
-    };
-    (useQueryClient as any).mockReturnValue(queryClient);
+    const { queryClient, isStale } = realCache();
+    writeCharacter(queryClient, 'char-1', 'pl', { id: 'char-1' });
+    const deletion = captureMutationOptions('delete');
 
-    let onSuccess: any;
-    apiMocks.useMutation.mockImplementation((method: string, path: string, options: any) => {
-        if (path === '/api/characters/{id}' && method === 'delete') {
-            onSuccess = options.onSuccess;
-            return { mutate: vi.fn() };
-        }
-        return {};
-    });
+    renderHook(() => useCharacterRepository('char-1', 'pl-PL'));
 
-    renderHook(() => useCharacterRepository('char-1'));
+    deletion.options.onSuccess({}, { params: { path: { id: 'char-1' } } });
+    expect(readCharacter(queryClient, 'char-1', 'pl')).toBeUndefined();
+    expect(isStale(ownedCharactersKey)).toBe(true);
+    expect(isStale(apiListKey)).toBe(true);
+});
 
-    onSuccess({}, { params: { path: { id: 'char-1' } } });
-    expect(queryClient.removeQueries).toHaveBeenCalled();
-    expect(queryClient.invalidateQueries).toHaveBeenCalledWith({ queryKey: ['characters', 'list'] });
+test('useCharacterRepository snapshots the cached character before a save', async () => {
+    const { queryClient } = realCache();
+    const cached = { id: 'char-1', name: 'Before' };
+    writeCharacter(queryClient, 'char-1', 'en', cached);
+    const update = captureMutationOptions('patch');
+
+    renderHook(() => useCharacterRepository('char-1', 'en-US'));
+
+    await expect(
+        update.options.onMutate({ params: { path: { id: 'char-1' } } })
+    ).resolves.toMatchObject({ previousCharacter: cached });
+});
+
+test('REGRESSION: a settled save marks the lists stale but never the saved character', () => {
+    const { queryClient, isStale } = realCache();
+    writeCharacter(queryClient, 'char-1', 'en', { id: 'char-1' });
+    writeCharacter(queryClient, 'char-1', 'pl', { id: 'char-1' });
+    const update = captureMutationOptions('patch');
+
+    renderHook(() => useCharacterRepository('char-1', 'en'));
+
+    update.options.onSettled();
+    expect(isStale(ownedCharactersKey)).toBe(true);
+    expect(isStale(apiListKey)).toBe(true);
+    expect(isStale(characterDetailKey('char-1', 'en'))).toBe(false);
+    expect(isStale(characterDetailKey('char-1', 'pl'))).toBe(false);
 });
 
 test('useCharacterRepository handles refetchCharacter', () => {
-    const queryClient = {
-        invalidateQueries: vi.fn(),
-    };
-    (useQueryClient as any).mockReturnValue(queryClient);
+    const { queryClient, isStale } = realCache();
+    writeCharacter(queryClient, 'char-1', 'en', { id: 'char-1' });
+    writeCharacter(queryClient, 'char-1', 'pl', { id: 'char-1' });
 
-    const { result } = renderHook(() => useCharacterRepository('char-1'));
+    const { result } = renderHook(() => useCharacterRepository('char-1', 'en-US'));
 
     result.current.refetchCharacter();
-    expect(queryClient.invalidateQueries).toHaveBeenCalled();
+    expect(isStale(characterDetailKey('char-1', 'en'))).toBe(true);
+    expect(isStale(characterDetailKey('char-1', 'pl'))).toBe(false);
+    expect(isStale(apiListKey)).toBe(false);
 });

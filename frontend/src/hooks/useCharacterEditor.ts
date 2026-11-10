@@ -2,6 +2,11 @@ import { appHistory } from '@/router/history';
 import { INVENTORY_LIMITS, getInventoryLimitMessage } from '@/inventory/limits';
 import { trackCharacterEdited } from '@/analytics/characterAnalytics';
 import { $api } from '@/api';
+import {
+  markCharacterStale,
+  readCharacter,
+  writeCharacter,
+} from '@/api/characterCache';
 import { applyOptimisticPatch } from '@/hooks/applyOptimisticPatch.ts';
 import {
   CharacterResponse,
@@ -12,7 +17,7 @@ import {
   SimpleField,
 } from '@/hooks/models.ts';
 import { buildRequestFromPatches } from '@/hooks/patchToRequest.ts';
-import { API_LOCALES, getApiLocale } from '@/hooks/utils.ts';
+import { getApiLocale } from '@/hooks/utils.ts';
 import { createRandomId } from '@/utils/randomId';
 import {
   getSimpleFieldLimitMessage,
@@ -55,7 +60,6 @@ const createEditorState = (locale?: string) => ({
 export function useCharacterEditor(
   characterId: string | null,
   updateCharacter: ReturnType<typeof $api.useMutation>,
-  getCharacterKey: (id: string, locale?: string) => readonly unknown[],
   locale?: string,
   validationIssues?: ValidationIssueHandlers,
   options: { readOnly?: boolean } = {}
@@ -116,13 +120,8 @@ export function useCharacterEditor(
     flushRef.current();
   };
 
-  const getActiveKey = () =>
-    characterId ? getCharacterKey(characterId, locale) : undefined;
-
-  const getActiveCachedCharacter = () => {
-    const key = getActiveKey();
-    return key ? queryClient.getQueryData<CharacterResponse>(key) : undefined;
-  };
+  const getActiveCachedCharacter = () =>
+    characterId ? readCharacter(queryClient, characterId, locale) : undefined;
 
   const getLatestOptimisticCharacter = () =>
     getState().optimisticCharacter ?? getActiveCachedCharacter();
@@ -173,7 +172,6 @@ export function useCharacterEditor(
       return;
     }
 
-    const key = getActiveKey();
     const currentCharacter = getLatestOptimisticCharacter();
     if (!currentCharacter) {
       return;
@@ -210,13 +208,11 @@ export function useCharacterEditor(
           // Write it to cache, then re-apply patches that arrived mid-flight so
           // their optimistic state survives.
           const server = serverCharacter as CharacterResponse | undefined;
-          const cached = key ? queryClient.getQueryData<CharacterResponse>(key) : undefined;
+          const cached = readCharacter(queryClient, characterId, locale);
           state.locale = locale;
           // Other locales still hold the pre-save character: mark them stale. This only refetches one
           // that is on screen, i.e. the language was switched while this save was in flight.
-          API_LOCALES.filter((other) => other !== locale).forEach((other) => {
-            void queryClient.invalidateQueries({ queryKey: getCharacterKey(characterId, other), exact: true });
-          });
+          markCharacterStale(queryClient, characterId, { exceptLocale: locale });
           if (server && state.pending.length === 0 && isNewerThan(cached, server)) {
             // A newer server copy (e.g. Getting Better) landed mid-flight; it already includes this save.
             state.lastSavedCharacter = server;
@@ -229,9 +225,7 @@ export function useCharacterEditor(
             );
             state.lastSavedCharacter = server;
             state.optimisticCharacter = optimistic;
-            if (key) {
-              queryClient.setQueryData<CharacterResponse>(key, optimistic);
-            }
+            writeCharacter(queryClient, characterId, locale, optimistic);
           }
         },
         onError: (error: any, _vars: unknown, context: any) => {
@@ -269,9 +263,7 @@ export function useCharacterEditor(
               return;
             }
             // Index-based edits cannot be replayed safely on a different inventory.
-            if (key) {
-              void queryClient.invalidateQueries({ queryKey: key, exact: true });
-            }
+            markCharacterStale(queryClient, characterId, { locale });
             showError(t('character.saveConflict', 'This character changed in another tab. Your latest edits were not saved. Reload before editing again.'));
             return;
           }
@@ -324,9 +316,7 @@ export function useCharacterEditor(
             );
             state.optimisticCharacter = optimistic;
             state.locale = locale;
-            if (key) {
-              queryClient.setQueryData(key, optimistic);
-            }
+            writeCharacter(queryClient, characterId, locale, optimistic);
           }
           showError(
             getUserFacingApiErrorMessage(
@@ -423,15 +413,8 @@ export function useCharacterEditor(
     state.optimisticCharacter = optimistic;
     state.locale = locale;
 
-    const key = getActiveKey();
-    if (!key) {
-      return;
-    }
-
-    queryClient.setQueryData(
-      key,
-      (old: CharacterResponse | undefined) =>
-        old ? applyOptimisticPatch(old, patch) : optimistic
+    writeCharacter(queryClient, characterId, locale, (old) =>
+      old ? applyOptimisticPatch(old, patch) : optimistic
     );
   };
 
