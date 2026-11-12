@@ -1,10 +1,21 @@
 import { act, renderHook } from '@testing-library/react';
-import { beforeEach, expect, test, vi } from 'vitest';
-import { useCharacterEditor } from '../../../src/hooks/useCharacterEditor.ts';
-import { QueryClient, QueryObserver, useQueryClient } from '@tanstack/react-query';
+import { createElement, type ReactNode } from 'react';
+import { afterEach, beforeEach, expect, test, vi } from 'vitest';
+import { QueryClient, QueryClientProvider, QueryObserver } from '@tanstack/react-query';
+import { useCharacterEditor } from '@/hooks/useCharacterEditor';
 import { trackCharacterEdited } from '@/analytics/characterAnalytics';
-import { characterDetailKey, readCharacter, writeCharacter } from '@/api/characterCache';
+import {
+  characterDetailKey,
+  characterRosterKey,
+  ownedCharactersKey,
+  readCharacter,
+  writeCharacter,
+} from '@/api/characterCache';
+import type { CharacterResponse, CharacterUpdateRequest } from '@/hooks/models';
 
+const http = vi.hoisted(() => ({
+  fetch: vi.fn<(request: Request) => Promise<Response>>(),
+}));
 const snackbarMocks = vi.hoisted(() => ({
   showError: vi.fn(),
 }));
@@ -12,39 +23,25 @@ const errorFeedbackMocks = vi.hoisted(() => ({
   showUnexpectedError: vi.fn(() => true),
 }));
 
-vi.mock('@tanstack/react-query', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@tanstack/react-query')>()),
-  useQueryClient: vi.fn(),
-}));
+// The app's HTTP client with only its transport replaced: the same openapi-fetch and
+// openapi-react-query stack, without the auth and CSRF middleware, over a scripted fetch.
+vi.mock('@/api', async () => {
+  const { default: createClient } = await import('openapi-fetch');
+  const { default: createQueryClient } = await import('openapi-react-query');
+  const client = createClient({
+    baseUrl: 'http://api.test',
+    fetch: (request: Request) => http.fetch(request),
+  });
+  return { $api: createQueryClient(client) };
+});
 
-vi.mock('../../../src/SnackbarContext/SnackbarProvider.tsx', () => ({
+vi.mock('@/SnackbarContext/SnackbarProvider.tsx', () => ({
   useSnackbar: () => ({ showError: snackbarMocks.showError }),
 }));
 
 vi.mock('@/components/molecules/feedback/ErrorFeedbackProvider', () => ({
   useErrorFeedback: () => errorFeedbackMocks,
 }));
-
-// Stable, per-instance debounce stub: the debounced call is deferred (no-op) so
-// queuing a patch does NOT auto-flush; `.flush()` runs the latest callback. The
-// stable identity matters so the unmount-flush effect runs once (on unmount),
-// not on every render.
-vi.mock('use-debounce', async () => {
-  const { useRef } = await import('react');
-  return {
-    useDebouncedCallback: (fn: (...args: any[]) => any) => {
-      const ref = useRef<any>(null);
-      if (!ref.current) {
-        const handle: any = () => {};
-        handle.cancel = () => {};
-        handle.flush = () => handle._fn?.();
-        ref.current = handle;
-      }
-      ref.current._fn = fn;
-      return ref.current;
-    },
-  };
-});
 
 vi.mock('@/analytics/characterAnalytics', () => ({
   trackCharacterEdited: vi.fn(),
@@ -66,37 +63,45 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 
-type Store = Record<string, unknown> | undefined;
+/** How long the editor waits after the last edit before it saves. */
+const SAVE_DELAY = 1000;
 
-function makeQueryClient(initial?: Store) {
-  let store: Store = initial;
-  return {
-    getQueryData: vi.fn(() => store),
-    setQueryData: vi.fn((_key: unknown, updater: unknown) => {
-      store = typeof updater === 'function' ? (updater as any)(store) : (updater as Store);
-      return store;
-    }),
-    invalidateQueries: vi.fn(),
-    cancelQueries: vi.fn(),
-    current: () => store,
-  };
-}
+type TestCharacter = Record<string, unknown> & { id: string };
+type SaveRequest = { id: string; locale: string | null; body: CharacterUpdateRequest };
+type SheetProps = { id: string; locale: string; readOnly?: boolean };
 
-/** A real cache holding the given characters, each under its own id in the default locale. */
-function makeCache(...characters: Array<Record<string, unknown> & { id: string }>) {
+const asCharacter = (character: TestCharacter) => character as CharacterResponse;
+
+/** Lets time pass: the save delay runs out, requests leave, answers are handled. */
+const wait = (ms: number) =>
+  act(async () => {
+    await vi.advanceTimersByTimeAsync(ms);
+  });
+
+/** Runs an interaction and lets what it starts at once (a request leaving) happen, without passing time. */
+const perform = (interaction: () => void) =>
+  act(async () => {
+    interaction();
+    await vi.advanceTimersByTimeAsync(0);
+  });
+
+/** A real cache holding the given characters, each under its own id in English. */
+function makeCache(...characters: TestCharacter[]) {
   const queryClient = new QueryClient();
   for (const character of characters) {
-    writeCharacter(queryClient, character.id, undefined, character);
+    writeCharacter(queryClient, character.id, 'en', asCharacter(character));
   }
-  vi.mocked(useQueryClient).mockReturnValue(queryClient);
   return {
     queryClient,
-    cached: (id: string, language?: string) => readCharacter(queryClient, id, language) as any,
-    isStale: (id: string, language?: string) =>
-      queryClient.getQueryState(characterDetailKey(id, language))?.isInvalidated,
-    /** Mounts a reader of that copy, as an open sheet does, and returns the spy counting its refetches. */
-    watchRefetches: (id: string, language?: string) => {
-      const refetch = vi.fn(async () => readCharacter(queryClient, id, language) ?? null);
+    cached: (id: string, language = 'en') => readCharacter(queryClient, id, language),
+    isStale: (key: readonly unknown[]) => queryClient.getQueryState(key)?.isInvalidated,
+    /** Mounts a reader of that copy, as an open sheet does; its refetches are answered by `serve`. */
+    watchRefetches: (
+      id: string,
+      language = 'en',
+      serve: () => TestCharacter | undefined = () => undefined
+    ) => {
+      const refetch = vi.fn(async () => serve() ?? readCharacter(queryClient, id, language) ?? null);
       new QueryObserver(queryClient, {
         queryKey: characterDetailKey(id, language),
         queryFn: refetch,
@@ -107,503 +112,487 @@ function makeCache(...characters: Array<Record<string, unknown> & { id: string }
   };
 }
 
-const noopMutation = () => ({ mutate: vi.fn(), isPending: false }) as any;
-
-test.each(['add', 'move', 'unequip-weapon', 'unequip-armor'] as const)('rejects an inventory %s at capacity without changing either container', (operation) => {
-  const equipment = Array.from({ length: 50 }, (_, i) => ({ key: `equipment.${i}`, name: `Item ${i}` }));
-  const storage = [{ key: 'equipment.rope', name: 'Rope' }];
-  const equippedWeapons = [{ key: 'weapons.sword', name: 'Sword' }];
-  const equippedArmor = { key: 'armor.leather', name: 'Leather' };
-  const queryClient = makeQueryClient({ id: 'char-1', equipment, storage, equippedWeapons, equippedArmor });
-  vi.mocked(useQueryClient).mockReturnValue(queryClient as unknown as ReturnType<typeof useQueryClient>);
-  const mutation = noopMutation();
-  const { result } = renderHook(() => useCharacterEditor('char-1', mutation));
-  act(() => {
-    if (operation === 'add') {
-      result.current.addEquipmentItem({ key: 'equipment.hammer', name: 'Hammer' });
-    } else if (operation === 'move') {
-      result.current.moveToEquipment(0);
-    } else if (operation === 'unequip-weapon') {
-      result.current.unequipWeapon(0);
-    } else {
-      result.current.unequipArmor();
+/** The scripted backend: records every save and leaves it in flight until the test answers it. */
+function fakeServer() {
+  const requests: SaveRequest[] = [];
+  const inFlight: Array<{ resolve: (response: Response) => void; reject: (error: unknown) => void }> = [];
+  http.fetch.mockImplementation(async (request) => {
+    const url = new URL(request.url);
+    const body = (await request.json()) as CharacterUpdateRequest;
+    requests.push({
+      id: url.pathname.split('/').pop() ?? '',
+      locale: url.searchParams.get('locale'),
+      body,
+    });
+    return new Promise<Response>((resolve, reject) => {
+      inFlight.push({ resolve, reject });
+    });
+  });
+  const answer = async (deliver: (save: (typeof inFlight)[number]) => void) => {
+    const save = inFlight.shift();
+    if (!save) {
+      throw new Error('No save is in flight');
     }
-    result.current.flush();
-  });
-  expect(queryClient.current()).toMatchObject({ equipment, storage, equippedWeapons, equippedArmor });
-  expect(mutation.mutate).not.toHaveBeenCalled();
-  expect(snackbarMocks.showError).toHaveBeenCalled();
-});
+    await act(async () => {
+      deliver(save);
+      await vi.advanceTimersByTimeAsync(0);
+    });
+  };
+  return {
+    requests,
+    /** Answers the oldest save in flight with the character as the server stored it. */
+    saves: (character: TestCharacter) => answer((save) => save.resolve(Response.json(character))),
+    /** Answers the oldest save in flight with an API error. */
+    rejects: (statusCode: number, payload: Record<string, unknown> = {}) =>
+      answer((save) => save.resolve(Response.json({ statusCode, ...payload }, { status: statusCode }))),
+    /** Loses the oldest save in flight: the request left, no response arrives. */
+    dropsConnection: () => answer((save) => save.reject(new TypeError('Failed to fetch'))),
+  };
+}
 
-test.each([['equipment', 50], ['storage', 100]] as const)('fills the last %s slot and rejects the next addition in the same edit burst', (location, limit) => {
-  const items = Array.from({ length: limit - 1 }, (_, i) => ({ key: `equipment.${i}`, name: `Item ${i}` }));
-  const queryClient = makeQueryClient({ id: 'char-1', [location]: items });
-  vi.mocked(useQueryClient).mockReturnValue(queryClient as unknown as ReturnType<typeof useQueryClient>);
-  const mutation = noopMutation();
-  const { result } = renderHook(() => useCharacterEditor('char-1', mutation));
-  act(() => {
-    const add = location === 'equipment' ? result.current.addEquipmentItem : result.current.addStorageItem;
-    add({ key: 'equipment.last', name: 'Last item' });
-    add({ key: 'equipment.overflow', name: 'Overflow item' });
-    result.current.flush();
-  });
-  const body = mutation.mutate.mock.calls[0][0].body;
-  expect(body[location]).toHaveLength(limit);
-  expect(body[location].at(-1)).toMatchObject({ key: 'equipment.last' });
-  expect(snackbarMocks.showError).toHaveBeenCalled();
-});
-
-test('keeps an expired save with its own character while another character is edited', () => {
-  const { cached } = makeCache(
-    { id: 'a', currentHp: 5, silver: 10 },
-    { id: 'b', currentHp: 9, silver: 20 },
-  );
-  const mutation = noopMutation();
-  const { result, rerender } = renderHook(({ id }) =>
-    useCharacterEditor(id, mutation),
-  { initialProps: { id: 'a' } });
-  act(() => result.current.updateField('currentHp', 4));
-  act(() => result.current.flush());
-  const failedRequest = mutation.mutate.mock.calls[0][0];
-  act(() => {
-    mutation.mutate.mock.calls[0][1].onError({ status: 401 }, {}, {});
-    mutation.mutate.mock.calls[0][1].onSettled();
-  });
-  rerender({ id: 'b' });
-  expect(result.current.saveFailed).toBe(false);
-  expect(result.current.getVisibleCharacter(cached('b'))).toMatchObject({ id: 'b', currentHp: 9 });
-  act(() => result.current.updateField('silver', 21));
-  act(() => result.current.flush());
-  expect(mutation.mutate.mock.calls[1][0]).toMatchObject({
-    params: { path: { id: 'b' } }, body: { silver: 21 },
-  });
-  expect(mutation.mutate.mock.calls[1][0].body).not.toHaveProperty('currentHp');
-  act(() => {
-    mutation.mutate.mock.calls[1][1].onSuccess({ ...cached('b'), silver: 21 });
-    mutation.mutate.mock.calls[1][1].onSettled();
-  });
-  rerender({ id: 'a' });
-  expect(result.current.saveFailed).toBe(true);
-  expect(result.current.getVisibleCharacter(cached('a'))?.currentHp).toBe(4);
-  act(() => result.current.retrySave());
-  expect(mutation.mutate.mock.calls[2][0]).toEqual(failedRequest);
-});
-
-test('sends the loaded version with a collection edit', () => {
-  const updatedAt = '2026-10-15T09:00:00.000Z';
-  const queryClient = makeQueryClient({ id: 'char-1', updatedAt, equipment: [] });
-  (useQueryClient as any).mockReturnValue(queryClient);
-  const mutation = noopMutation();
-  const { result } = renderHook(() =>
-    useCharacterEditor('char-1', mutation)
-  );
-  act(() => result.current.addEquipmentItem({ key: 'hammer', name: 'Hammer' }));
-  act(() => result.current.flush());
-  expect(mutation.mutate.mock.calls[0][0].body.expectedUpdatedAt).toBe(updatedAt);
-});
-
-test('keeps later edits queued after a 401 without retrying until explicit recovery', () => {
-  const queryClient = makeQueryClient({ id: 'char-1', currentHp: 5, silver: 10 });
-  (useQueryClient as any).mockReturnValue(queryClient);
-  const mutation = noopMutation();
-  const { result, unmount } = renderHook(() =>
-    useCharacterEditor('char-1', mutation)
-  );
-  act(() => result.current.updateField('currentHp', 4));
-  act(() => result.current.flush());
-  const failed = mutation.mutate.mock.calls[0][0];
-  act(() => {
-    mutation.mutate.mock.calls[0][1].onError({ status: 401 }, {}, {});
-    mutation.mutate.mock.calls[0][1].onSettled();
-    result.current.updateField('silver', 11);
-    result.current.flush();
-  });
-  expect(result.current.saveFailed).toBe(true);
-  expect(mutation.mutate).toHaveBeenCalledTimes(1);
-  expect(result.current.getVisibleCharacter(queryClient.current() as any)).toMatchObject({ currentHp: 4, silver: 11 });
-  act(() => result.current.retrySave());
-  expect(mutation.mutate.mock.calls[1][0]).toEqual(failed);
-  act(() => {
-    mutation.mutate.mock.calls[1][1].onSuccess({ id: 'char-1', currentHp: 4, silver: 10 });
-    mutation.mutate.mock.calls[1][1].onSettled();
-    result.current.flush();
-  });
-  expect(mutation.mutate.mock.calls[2][0].body).toMatchObject({ silver: 11 });
-  act(() => {
-    mutation.mutate.mock.calls[2][1].onError({ status: 401 }, {}, {});
-    mutation.mutate.mock.calls[2][1].onSettled();
-  });
-  unmount();
-  expect(mutation.mutate).toHaveBeenCalledTimes(3);
-});
-
-test.each(['success', 'expired'] as const)('a late %s for the previous scvm cannot alter the active scvm', (outcome) => {
-  const { cached } = makeCache({ id: 'a', currentHp: 5 }, { id: 'b', silver: 20 });
-  const mutation = noopMutation();
-  const { result, rerender } = renderHook(({ id }) =>
-    useCharacterEditor(id, mutation),
-  { initialProps: { id: 'a' } });
-  act(() => result.current.updateField('currentHp', 4));
-  act(() => result.current.flush());
-  mutation.isPending = true;
-  rerender({ id: 'b' });
-  act(() => result.current.updateField('silver', 21));
-  act(() => result.current.flush());
-  expect(mutation.mutate).toHaveBeenCalledTimes(1);
-  act(() => {
-    const callbacks = mutation.mutate.mock.calls[0][1];
-    if (outcome === 'success') {
-      callbacks.onSuccess({ id: 'a', currentHp: 4 });
-    } else {
-      callbacks.onError({ status: 401 }, {}, {});
+/** Mounts the editor for a character the way the sheet does, over the given cache. */
+function openSheet(queryClient: QueryClient, initial: Partial<SheetProps> & { id: string }) {
+  let props: SheetProps = { locale: 'en', ...initial };
+  const view = renderHook(
+    (current: SheetProps) =>
+      useCharacterEditor(current.id, current.locale, undefined, { readOnly: current.readOnly }),
+    {
+      initialProps: props,
+      wrapper: ({ children }: { children: ReactNode }) =>
+        createElement(QueryClientProvider, { client: queryClient }, children),
     }
-    mutation.isPending = false;
-    callbacks.onSettled();
-  });
-  expect(result.current.saveFailed).toBe(false);
-  expect(result.current.getVisibleCharacter(cached('b'))).toMatchObject({ id: 'b', silver: 21 });
-  act(() => result.current.flush());
-  expect(mutation.mutate.mock.calls[1][0]).toMatchObject({ params: { path: { id: 'b' } }, body: { silver: 21 } });
-  expect(mutation.mutate.mock.calls[1][0].body).not.toHaveProperty('currentHp');
-});
-
-test('a conflict discards stale queued edits and refreshes the authoritative character', () => {
-  const { isStale } = makeCache({ id: 'char-1', equipment: [] });
-  const mutation = noopMutation();
-  const { result } = renderHook(() =>
-    useCharacterEditor('char-1', mutation)
   );
-  act(() => result.current.addEquipmentItem({ key: 'rope' }));
-  act(() => result.current.flush());
-  act(() => result.current.addEquipmentItem({ key: 'sword' }));
-  const callbacks = mutation.mutate.mock.calls[0][1];
-  act(() => {
-    callbacks.onError({ status: 409 }, {}, {});
-    callbacks.onSettled();
-  });
-  expect(isStale('char-1')).toBe(true);
-  expect(snackbarMocks.showError).toHaveBeenCalledWith(expect.stringContaining('another tab'));
-  expect(result.current.isSaving).toBe(false);
-  expect(result.current.getVisibleCharacter({ id: 'char-1', equipment: [{ key: 'hammer' }] })?.equipment).toEqual([{ key: 'hammer' }]);
-  act(() => result.current.flush());
-  expect(mutation.mutate).toHaveBeenCalledTimes(1);
-});
-
-test('REGRESSION: an edit after a newer server copy lands in the cache builds on that copy', () => {
-  const rope = { key: 'rope', name: 'Rope' };
-  const hammer = { key: 'hammer', name: 'Hammer' };
-  const queryClient = makeQueryClient({ id: 'char-1', updatedAt: '2026-10-15T09:00:00.000Z', currentHp: 5, equipment: [] });
-  (useQueryClient as any).mockReturnValue(queryClient);
-  const mutation = noopMutation();
-  const { result } = renderHook(() =>
-    useCharacterEditor('char-1', mutation)
-  );
-  act(() => result.current.updateField('currentHp', 4));
-  act(() => result.current.flush());
-  act(() => {
-    mutation.mutate.mock.calls[0][1].onSuccess({ id: 'char-1', updatedAt: '2026-10-15T09:00:01.000Z', currentHp: 4, equipment: [] });
-    mutation.mutate.mock.calls[0][1].onSettled();
-  });
-  // Getting Better writes its result straight into the cache.
-  const improved = { id: 'char-1', updatedAt: '2026-10-15T09:00:02.000Z', currentHp: 9, equipment: [rope] };
-  queryClient.setQueryData(characterDetailKey('char-1'), improved);
-
-  act(() => result.current.addEquipmentItem(hammer as any));
-  act(() => result.current.flush());
-
-  const body = mutation.mutate.mock.calls[1][0].body;
-  expect(body.expectedUpdatedAt).toBe(improved.updatedAt);
-  expect(body.equipment).toEqual([rope, hammer]);
-});
-
-test('REGRESSION: a queued positional edit is not replayed onto a reordered newer copy', () => {
-  const rope = { key: 'rope', name: 'Rope' };
-  const hammer = { key: 'hammer', name: 'Hammer' };
-  const queryClient = makeQueryClient({ id: 'char-1', updatedAt: '2026-10-15T09:00:00.000Z', equipment: [rope, hammer] });
-  (useQueryClient as any).mockReturnValue(queryClient);
-  const mutation = noopMutation();
-  const { result } = renderHook(() =>
-    useCharacterEditor('char-1', mutation)
-  );
-  act(() => result.current.removeEquipmentItem(1));
-  queryClient.setQueryData(characterDetailKey('char-1'), { id: 'char-1', updatedAt: '2026-10-15T09:00:05.000Z', equipment: [hammer, rope] });
-  act(() => result.current.addEquipmentItem({ key: 'torch', name: 'Torch' } as any));
-  act(() => result.current.flush());
-
-  // The stale version goes out so the server answers 409 instead of deleting the wrong item.
-  expect(mutation.mutate.mock.calls[0][0].body.expectedUpdatedAt).toBe('2026-10-15T09:00:00.000Z');
-});
-
-test('REGRESSION: a newer server copy that lands mid-flight is kept over the older save response', () => {
-  const rope = { key: 'rope', name: 'Rope' };
-  const queryClient = makeQueryClient({ id: 'char-1', updatedAt: '2026-10-15T09:00:00.000Z', currentHp: 5, equipment: [] });
-  (useQueryClient as any).mockReturnValue(queryClient);
-  const mutation = noopMutation();
-  const { result } = renderHook(() =>
-    useCharacterEditor('char-1', mutation)
-  );
-  act(() => result.current.updateField('currentHp', 4));
-  act(() => result.current.flush());
-  const improved = { id: 'char-1', updatedAt: '2026-10-15T09:00:02.000Z', currentHp: 9, equipment: [rope] };
-  queryClient.setQueryData(characterDetailKey('char-1'), improved);
-  act(() => {
-    mutation.mutate.mock.calls[0][1].onSuccess({ id: 'char-1', updatedAt: '2026-10-15T09:00:01.000Z', currentHp: 4, equipment: [] });
-    mutation.mutate.mock.calls[0][1].onSettled();
-  });
-
-  expect(queryClient.current()).toEqual(improved);
-  act(() => result.current.addEquipmentItem({ key: 'hammer', name: 'Hammer' } as any));
-  act(() => result.current.flush());
-  expect(mutation.mutate.mock.calls[1][0].body.expectedUpdatedAt).toBe(improved.updatedAt);
-});
-
-test('REGRESSION: a save whose response was lost is resent unchanged, and later edits wait for the next save', () => {
-  const hammer = { key: 'hammer', name: 'Hammer' };
-  const torch = { key: 'torch', name: 'Torch' };
-  const queryClient = makeQueryClient({ id: 'char-1', updatedAt: '2026-10-16T09:00:00.000Z', equipment: [] });
-  (useQueryClient as any).mockReturnValue(queryClient);
-  const mutation = noopMutation();
-  const { result } = renderHook(() =>
-    useCharacterEditor('char-1', mutation)
-  );
-  act(() => result.current.addEquipmentItem(hammer as any));
-  act(() => result.current.flush());
-  act(() => {
-    mutation.mutate.mock.calls[0][1].onError(new TypeError('Failed to fetch'), {}, {});
-    mutation.mutate.mock.calls[0][1].onSettled();
-  });
-  act(() => result.current.addEquipmentItem(torch as any));
-  act(() => result.current.flush());
-
-  const first = mutation.mutate.mock.calls[0][0].body;
-  expect(mutation.mutate.mock.calls[1][0].body).toEqual(first);
-
-  // The server recognises the save id and reads the character back.
-  act(() => {
-    mutation.mutate.mock.calls[1][1].onSuccess({ id: 'char-1', updatedAt: '2026-10-16T09:00:01.000Z', equipment: [hammer] });
-    mutation.mutate.mock.calls[1][1].onSettled();
-  });
-  act(() => result.current.flush());
-  const next = mutation.mutate.mock.calls[2][0].body;
-  expect(next.equipment).toEqual([hammer, torch]);
-  expect(next.expectedUpdatedAt).toBe('2026-10-16T09:00:01.000Z');
-  expect(next.saveId).not.toBe(first.saveId);
-});
+  return {
+    get editor() {
+      return view.result.current;
+    },
+    /** The character on screen: the cached copy as the editor presents it. */
+    visible: () =>
+      view.result.current.getVisibleCharacter(readCharacter(queryClient, props.id, props.locale)),
+    switchTo: (next: Partial<SheetProps>) => {
+      props = { ...props, ...next };
+      view.rerender(props);
+    },
+    close: () => view.unmount(),
+  };
+}
 
 beforeEach(() => {
   vi.clearAllMocks();
   errorFeedbackMocks.showUnexpectedError.mockReturnValue(true);
+  vi.useFakeTimers();
 });
 
-test('queues patches and applies them optimistically to the cache', () => {
-  const { cached } = makeCache({ id: 'char-1', name: 'Old' });
+afterEach(() => {
+  vi.useRealTimers();
+});
 
-  const { result } = renderHook(() =>
-    useCharacterEditor('char-1', noopMutation())
-  );
+test.each(['add', 'move', 'unequip-weapon', 'unequip-armor'] as const)('rejects an inventory %s at capacity without changing either container', async (operation) => {
+  const equipment = Array.from({ length: 50 }, (_, i) => ({ key: `equipment.${i}`, name: `Item ${i}` }));
+  const storage = [{ key: 'equipment.rope', name: 'Rope' }];
+  const equippedWeapons = [{ key: 'weapons.sword', name: 'Sword' }];
+  const equippedArmor = { key: 'armor.leather', name: 'Leather' };
+  const { queryClient } = makeCache({ id: 'char-1', equipment, storage, equippedWeapons, equippedArmor });
+  const server = fakeServer();
+  const sheet = openSheet(queryClient, { id: 'char-1' });
 
   act(() => {
-    result.current.updateField('name', 'New Name');
+    if (operation === 'add') {
+      sheet.editor.addEquipmentItem({ key: 'equipment.hammer', name: 'Hammer' });
+    } else if (operation === 'move') {
+      sheet.editor.moveToEquipment(0);
+    } else if (operation === 'unequip-weapon') {
+      sheet.editor.unequipWeapon(0);
+    } else {
+      sheet.editor.unequipArmor();
+    }
   });
+  await wait(SAVE_DELAY);
 
-  expect(cached('char-1')).toEqual({ id: 'char-1', name: 'New Name' });
+  expect(sheet.visible()).toMatchObject({ equipment, storage, equippedWeapons, equippedArmor });
+  expect(server.requests).toHaveLength(0);
+  expect(sheet.editor.isSaving).toBe(false);
+  expect(snackbarMocks.showError).toHaveBeenCalled();
 });
 
-test('warns on reload while an edit is queued or saving, then stops after it is saved', () => {
-  const queryClient = makeQueryClient({ id: 'char-1', habit: 'Old habit' });
-  (useQueryClient as any).mockReturnValue(queryClient);
-  const mutation = noopMutation();
-  const { result } = renderHook(() =>
-    useCharacterEditor('char-1', mutation)
+test.each([['equipment', 50], ['storage', 100]] as const)('fills the last %s slot and rejects the next addition in the same edit burst', async (location, limit) => {
+  const items = Array.from({ length: limit - 1 }, (_, i) => ({ key: `equipment.${i}`, name: `Item ${i}` }));
+  const { queryClient } = makeCache({ id: 'char-1', [location]: items });
+  const server = fakeServer();
+  const sheet = openSheet(queryClient, { id: 'char-1' });
+
+  act(() => {
+    const add = location === 'equipment' ? sheet.editor.addEquipmentItem : sheet.editor.addStorageItem;
+    add({ key: 'equipment.last', name: 'Last item' });
+    add({ key: 'equipment.overflow', name: 'Overflow item' });
+  });
+  await wait(SAVE_DELAY);
+
+  expect(server.requests).toHaveLength(1);
+  const saved = server.requests[0].body[location] ?? [];
+  expect(saved).toHaveLength(limit);
+  expect(saved[limit - 1]).toMatchObject({ key: 'equipment.last' });
+  expect(sheet.visible()?.[location]).toHaveLength(limit);
+  expect(snackbarMocks.showError).toHaveBeenCalled();
+});
+
+test('keeps an expired save with its own character while another character is edited', async () => {
+  const { queryClient } = makeCache(
+    { id: 'a', currentHp: 5, silver: 10 },
+    { id: 'b', currentHp: 9, silver: 20 },
   );
+  const server = fakeServer();
+  const sheet = openSheet(queryClient, { id: 'a' });
+
+  act(() => sheet.editor.updateField('currentHp', 4));
+  await wait(SAVE_DELAY);
+  await server.rejects(401, { code: 'UNAUTHORIZED' });
+
+  sheet.switchTo({ id: 'b' });
+  expect(sheet.editor.saveFailed).toBe(false);
+  expect(sheet.visible()).toMatchObject({ id: 'b', currentHp: 9 });
+  act(() => sheet.editor.updateField('silver', 21));
+  await wait(SAVE_DELAY);
+  expect(server.requests[1]).toMatchObject({ id: 'b', body: { silver: 21 } });
+  expect(server.requests[1].body).not.toHaveProperty('currentHp');
+  await server.saves({ id: 'b', currentHp: 9, silver: 21 });
+
+  sheet.switchTo({ id: 'a' });
+  expect(sheet.editor.saveFailed).toBe(true);
+  expect(sheet.visible()?.currentHp).toBe(4);
+  await perform(() => sheet.editor.retrySave());
+  expect(server.requests).toHaveLength(3);
+  expect(server.requests[2]).toEqual(server.requests[0]);
+});
+
+test('sends the loaded version with a collection edit', async () => {
+  const updatedAt = '2026-10-15T09:00:00.000Z';
+  const { queryClient } = makeCache({ id: 'char-1', updatedAt, equipment: [] });
+  const server = fakeServer();
+  const sheet = openSheet(queryClient, { id: 'char-1' });
+
+  act(() => sheet.editor.addEquipmentItem({ key: 'hammer', name: 'Hammer' }));
+  await wait(SAVE_DELAY);
+
+  expect(server.requests[0].body.expectedUpdatedAt).toBe(updatedAt);
+});
+
+test('keeps later edits queued after a 401 without retrying until explicit recovery', async () => {
+  const { queryClient } = makeCache({ id: 'char-1', currentHp: 5, silver: 10 });
+  const server = fakeServer();
+  const sheet = openSheet(queryClient, { id: 'char-1' });
+
+  act(() => sheet.editor.updateField('currentHp', 4));
+  await wait(SAVE_DELAY);
+  await server.rejects(401, { code: 'UNAUTHORIZED' });
+  act(() => {
+    sheet.editor.updateField('silver', 11);
+    sheet.editor.flush();
+  });
+  await wait(5 * SAVE_DELAY);
+
+  expect(sheet.editor.saveFailed).toBe(true);
+  expect(sheet.editor.isSaving).toBe(false);
+  expect(server.requests).toHaveLength(1);
+  expect(sheet.visible()).toMatchObject({ currentHp: 4, silver: 11 });
+
+  await perform(() => sheet.editor.retrySave());
+  expect(server.requests).toHaveLength(2);
+  expect(server.requests[1]).toEqual(server.requests[0]);
+  await server.saves({ id: 'char-1', currentHp: 4, silver: 10 });
+  expect(sheet.editor.saveFailed).toBe(false);
+  expect(sheet.visible()).toMatchObject({ currentHp: 4, silver: 11 });
+
+  await wait(SAVE_DELAY);
+  expect(server.requests[2].body).toMatchObject({ silver: 11 });
+  expect(server.requests[2].body.saveId).not.toBe(server.requests[0].body.saveId);
+  await server.rejects(401, { code: 'UNAUTHORIZED' });
+  act(() => {
+    sheet.editor.updateField('silver', 12);
+    sheet.editor.flush();
+  });
+  sheet.close();
+  await wait(5 * SAVE_DELAY);
+  expect(server.requests).toHaveLength(3);
+});
+
+test.each(['success', 'expired'] as const)('a late %s for the previous scvm cannot alter the active scvm', async (outcome) => {
+  const { queryClient, cached } = makeCache({ id: 'a', currentHp: 5 }, { id: 'b', silver: 20 });
+  const server = fakeServer();
+  const sheet = openSheet(queryClient, { id: 'a' });
+
+  act(() => sheet.editor.updateField('currentHp', 4));
+  await wait(SAVE_DELAY);
+  sheet.switchTo({ id: 'b' });
+  act(() => sheet.editor.updateField('silver', 21));
+  await wait(SAVE_DELAY);
+  expect(server.requests).toHaveLength(1);
+
+  if (outcome === 'success') {
+    await server.saves({ id: 'a', currentHp: 4 });
+  } else {
+    await server.rejects(401, { code: 'UNAUTHORIZED' });
+  }
+
+  expect(sheet.editor.saveFailed).toBe(false);
+  expect(sheet.visible()).toMatchObject({ id: 'b', silver: 21 });
+  expect(cached('b')).toMatchObject({ id: 'b', silver: 21 });
+  await wait(SAVE_DELAY);
+  expect(server.requests).toHaveLength(2);
+  expect(server.requests[1]).toMatchObject({ id: 'b', body: { silver: 21 } });
+  expect(server.requests[1].body).not.toHaveProperty('currentHp');
+});
+
+test('a conflict discards stale queued edits and refreshes the authoritative character', async () => {
+  const authoritative = { id: 'char-1', updatedAt: '2026-10-15T09:00:09.000Z', equipment: [{ key: 'hammer' }] };
+  const { queryClient, watchRefetches } = makeCache({ id: 'char-1', updatedAt: '2026-10-15T09:00:00.000Z', equipment: [] });
+  const refetch = watchRefetches('char-1', 'en', () => authoritative);
+  const server = fakeServer();
+  const sheet = openSheet(queryClient, { id: 'char-1' });
+
+  act(() => sheet.editor.addEquipmentItem({ key: 'rope' }));
+  await wait(SAVE_DELAY);
+  act(() => sheet.editor.addEquipmentItem({ key: 'sword' }));
+  expect(sheet.visible()?.equipment).toEqual([{ key: 'rope' }, { key: 'sword' }]);
+  await server.rejects(409, { code: 'STALE_WRITE' });
+  await wait(0);
+
+  expect(refetch).toHaveBeenCalledTimes(1);
+  expect(snackbarMocks.showError).toHaveBeenCalledWith(expect.stringContaining('another tab'));
+  expect(sheet.editor.isSaving).toBe(false);
+  expect(sheet.visible()).toEqual(authoritative);
+
+  act(() => sheet.editor.flush());
+  await wait(5 * SAVE_DELAY);
+  expect(server.requests).toHaveLength(1);
+  expect(refetch).toHaveBeenCalledTimes(1);
+});
+
+test('REGRESSION: an edit after a newer server copy lands in the cache builds on that copy', async () => {
+  const rope = { key: 'rope', name: 'Rope' };
+  const hammer = { key: 'hammer', name: 'Hammer' };
+  const { queryClient } = makeCache({ id: 'char-1', updatedAt: '2026-10-15T09:00:00.000Z', currentHp: 5, equipment: [] });
+  const server = fakeServer();
+  const sheet = openSheet(queryClient, { id: 'char-1' });
+
+  act(() => sheet.editor.updateField('currentHp', 4));
+  await wait(SAVE_DELAY);
+  await server.saves({ id: 'char-1', updatedAt: '2026-10-15T09:00:01.000Z', currentHp: 4, equipment: [] });
+  // Getting Better writes its result straight into the cache.
+  const improved = { id: 'char-1', updatedAt: '2026-10-15T09:00:02.000Z', currentHp: 9, equipment: [rope] };
+  writeCharacter(queryClient, 'char-1', 'en', asCharacter(improved));
+
+  act(() => sheet.editor.addEquipmentItem(hammer));
+  await wait(SAVE_DELAY);
+
+  const body = server.requests[1].body;
+  expect(body.expectedUpdatedAt).toBe(improved.updatedAt);
+  expect(body.equipment).toEqual([rope, hammer]);
+  expect(sheet.visible()).toMatchObject({ currentHp: 9, equipment: [rope, hammer] });
+});
+
+test('REGRESSION: a queued positional edit is not replayed onto a reordered newer copy', async () => {
+  const rope = { key: 'rope', name: 'Rope' };
+  const hammer = { key: 'hammer', name: 'Hammer' };
+  const { queryClient } = makeCache({ id: 'char-1', updatedAt: '2026-10-15T09:00:00.000Z', equipment: [rope, hammer] });
+  const server = fakeServer();
+  const sheet = openSheet(queryClient, { id: 'char-1' });
+
+  act(() => sheet.editor.removeEquipmentItem(1));
+  writeCharacter(queryClient, 'char-1', 'en', asCharacter({ id: 'char-1', updatedAt: '2026-10-15T09:00:05.000Z', equipment: [hammer, rope] }));
+  act(() => sheet.editor.addEquipmentItem({ key: 'torch', name: 'Torch' }));
+  await wait(SAVE_DELAY);
+
+  // The stale version goes out so the server answers 409 instead of deleting the wrong item.
+  expect(server.requests[0].body.expectedUpdatedAt).toBe('2026-10-15T09:00:00.000Z');
+});
+
+test('REGRESSION: a newer server copy that lands mid-flight is kept over the older save response', async () => {
+  const rope = { key: 'rope', name: 'Rope' };
+  const { queryClient, cached } = makeCache({ id: 'char-1', updatedAt: '2026-10-15T09:00:00.000Z', currentHp: 5, equipment: [] });
+  const server = fakeServer();
+  const sheet = openSheet(queryClient, { id: 'char-1' });
+
+  act(() => sheet.editor.updateField('currentHp', 4));
+  await wait(SAVE_DELAY);
+  const improved = { id: 'char-1', updatedAt: '2026-10-15T09:00:02.000Z', currentHp: 9, equipment: [rope] };
+  writeCharacter(queryClient, 'char-1', 'en', asCharacter(improved));
+  await server.saves({ id: 'char-1', updatedAt: '2026-10-15T09:00:01.000Z', currentHp: 4, equipment: [] });
+
+  expect(cached('char-1')).toEqual(improved);
+  expect(sheet.visible()).toEqual(improved);
+  act(() => sheet.editor.addEquipmentItem({ key: 'hammer', name: 'Hammer' }));
+  await wait(SAVE_DELAY);
+  expect(server.requests[1].body.expectedUpdatedAt).toBe(improved.updatedAt);
+});
+
+test('REGRESSION: a save whose response was lost is resent unchanged, and later edits wait for the next save', async () => {
+  const hammer = { key: 'hammer', name: 'Hammer' };
+  const torch = { key: 'torch', name: 'Torch' };
+  const { queryClient } = makeCache({ id: 'char-1', updatedAt: '2026-10-16T09:00:00.000Z', equipment: [] });
+  const server = fakeServer();
+  const sheet = openSheet(queryClient, { id: 'char-1' });
+
+  act(() => sheet.editor.addEquipmentItem(hammer));
+  await wait(SAVE_DELAY);
+  await server.dropsConnection();
+  act(() => sheet.editor.addEquipmentItem(torch));
+  await wait(SAVE_DELAY);
+
+  const first = server.requests[0];
+  expect(server.requests).toHaveLength(2);
+  expect(server.requests[1]).toEqual(first);
+  expect(sheet.visible()?.equipment).toEqual([hammer, torch]);
+
+  // The server recognises the save id and reads the character back.
+  await server.saves({ id: 'char-1', updatedAt: '2026-10-16T09:00:01.000Z', equipment: [hammer] });
+  expect(sheet.visible()?.equipment).toEqual([hammer, torch]);
+  await wait(SAVE_DELAY);
+  const next = server.requests[2].body;
+  expect(next.equipment).toEqual([hammer, torch]);
+  expect(next.expectedUpdatedAt).toBe('2026-10-16T09:00:01.000Z');
+  expect(next.saveId).not.toBe(first.body.saveId);
+});
+
+test('queues patches and applies them optimistically to the cache', async () => {
+  const { queryClient, cached } = makeCache({ id: 'char-1', name: 'Old' });
+  const server = fakeServer();
+  const sheet = openSheet(queryClient, { id: 'char-1' });
+
+  act(() => sheet.editor.updateField('name', 'New Name'));
+
+  expect(cached('char-1')).toEqual({ id: 'char-1', name: 'New Name' });
+  expect(sheet.visible()).toEqual({ id: 'char-1', name: 'New Name' });
+  expect(sheet.editor.isSaving).toBe(true);
+  await wait(SAVE_DELAY - 1);
+  expect(server.requests).toHaveLength(0);
+});
+
+test('warns on reload while an edit is queued or saving, then stops after it is saved', async () => {
+  const { queryClient } = makeCache({ id: 'char-1', habit: 'Old habit' });
+  const server = fakeServer();
+  const sheet = openSheet(queryClient, { id: 'char-1' });
   const attemptsToLeave = () => {
     const event = new Event('beforeunload', { cancelable: true });
     window.dispatchEvent(event);
     return event.defaultPrevented;
   };
+
   expect(attemptsToLeave()).toBe(false);
-  act(() => result.current.updateField('habit', 'Pending habit'));
+  act(() => sheet.editor.updateField('habit', 'Pending habit'));
   expect(attemptsToLeave()).toBe(true);
-  act(() => result.current.flush());
+  await wait(SAVE_DELAY);
+  expect(server.requests).toHaveLength(1);
   expect(attemptsToLeave()).toBe(true);
-  const callbacks = mutation.mutate.mock.calls[0][1];
-  act(() => {
-    callbacks.onSuccess({ id: 'char-1', habit: 'Pending habit' });
-    callbacks.onSettled();
-  });
+  await server.saves({ id: 'char-1', habit: 'Pending habit' });
   expect(attemptsToLeave()).toBe(false);
 });
 
-test('flushes the queued patch to the server', () => {
-  const queryClient = makeQueryClient({ id: 'char-1', name: 'Old' });
-  (useQueryClient as any).mockReturnValue(queryClient);
-  const mutation = noopMutation();
+test('flushes the queued patch to the server', async () => {
+  const { queryClient } = makeCache({ id: 'char-1', name: 'Old' });
+  const server = fakeServer();
+  const sheet = openSheet(queryClient, { id: 'char-1' });
 
-  const { result } = renderHook(() =>
-    useCharacterEditor('char-1', mutation)
-  );
+  act(() => sheet.editor.updateField('name', 'New Name'));
+  await perform(() => sheet.editor.flush());
 
-  act(() => result.current.updateField('name', 'New Name'));
-  act(() => result.current.flush());
-
-  expect(mutation.mutate).toHaveBeenCalledWith(
-    expect.objectContaining({ body: { name: 'New Name', saveId: expect.any(String) } }),
-    expect.any(Object)
-  );
+  expect(server.requests).toEqual([
+    { id: 'char-1', locale: 'en', body: { name: 'New Name', saveId: expect.any(String) } },
+  ]);
 });
 
-test('rejects invalid simple fields and keeps them out of the save queue', () => {
-  const queryClient = makeQueryClient({ id: 'char-1', silver: 10 });
-  (useQueryClient as any).mockReturnValue(queryClient);
-  const mutation = noopMutation();
+test('rejects invalid simple fields and keeps them out of the save queue', async () => {
+  const { queryClient, cached } = makeCache({ id: 'char-1', silver: 10 });
+  const server = fakeServer();
+  const sheet = openSheet(queryClient, { id: 'char-1' });
 
-  const { result } = renderHook(() =>
-    useCharacterEditor('char-1', mutation, 'en')
-  );
-
-  act(() => result.current.updateField('silver', 1000001));
+  act(() => sheet.editor.updateField('silver', 1000001));
 
   expect(snackbarMocks.showError).toHaveBeenCalledWith(
     'Silver must be between 0 and 1000000'
   );
-  expect(queryClient.setQueryData).not.toHaveBeenCalled();
+  expect(cached('char-1')).toEqual({ id: 'char-1', silver: 10 });
+  expect(sheet.editor.isSaving).toBe(false);
+  await perform(() => sheet.editor.flush());
+  await wait(SAVE_DELAY);
+  expect(server.requests).toHaveLength(0);
 
-  act(() => result.current.flush());
-  expect(mutation.mutate).not.toHaveBeenCalled();
-
-  act(() => result.current.updateField('silver', 20));
-  expect(queryClient.setQueryData).toHaveBeenCalled();
+  act(() => sheet.editor.updateField('silver', 20));
+  expect(cached('char-1')).toEqual({ id: 'char-1', silver: 20 });
+  await wait(SAVE_DELAY);
+  expect(server.requests.map((request) => request.body)).toEqual([
+    { silver: 20, saveId: expect.any(String) },
+  ]);
 });
 
-test('serializes flushes and builds each from the latest optimistic state', () => {
+test('serializes flushes and builds each from the latest optimistic state', async () => {
   const sword = { key: 'sword', name: 'Sword' };
   const torch = { key: 'torch', name: 'Torch' };
-  const queryClient = makeQueryClient({
-    id: 'char-1',
-    equipment: [],
-    storage: [],
-    equippedWeapons: [],
-    equippedArmor: null,
-    modifiers: [],
-  });
-  (useQueryClient as any).mockReturnValue(queryClient);
-  const mutation = noopMutation();
+  const loaded = { id: 'char-1', equipment: [], storage: [], equippedWeapons: [], equippedArmor: null, modifiers: [] };
+  const { queryClient } = makeCache(loaded);
+  const server = fakeServer();
+  const sheet = openSheet(queryClient, { id: 'char-1' });
 
-  const { result } = renderHook(() =>
-    useCharacterEditor('char-1', mutation)
-  );
+  act(() => sheet.editor.addEquipmentItem(sword));
+  await wait(SAVE_DELAY);
+  act(() => sheet.editor.addEquipmentItem(torch));
+  await perform(() => sheet.editor.flush());
+  await wait(SAVE_DELAY);
+  expect(server.requests).toHaveLength(1);
 
-  act(() => result.current.addEquipmentItem(sword as any));
-  act(() => result.current.flush());
+  await server.saves({ ...loaded, equipment: [sword] });
+  await wait(SAVE_DELAY);
 
-  // Settle the first save with the server's authoritative copy.
-  const cb1 = (mutation.mutate as any).mock.calls[0][1];
-  act(() => {
-    cb1.onSuccess({ ...(queryClient.current() as object), equipment: [sword] });
-    cb1.onSettled();
-  });
-
-  act(() => result.current.addEquipmentItem(torch as any));
-  act(() => result.current.flush());
-
-  expect(mutation.mutate).toHaveBeenNthCalledWith(
-    1,
-    expect.objectContaining({ body: expect.objectContaining({ equipment: [sword] }) }),
-    expect.any(Object)
-  );
-  expect(mutation.mutate).toHaveBeenNthCalledWith(
-    2,
-    expect.objectContaining({
-      body: expect.objectContaining({ equipment: [sword, torch] }),
-    }),
-    expect.any(Object)
-  );
+  expect(server.requests).toHaveLength(2);
+  expect(server.requests[0].body).toMatchObject({ equipment: [sword] });
+  expect(server.requests[1].body).toMatchObject({ equipment: [sword, torch] });
 });
 
-test('REGRESSION: does not lose an edit queued while a save is in flight', () => {
-  const queryClient = makeQueryClient({ id: 'char-1', name: 'A0', silver: 0 });
-  (useQueryClient as any).mockReturnValue(queryClient);
-  const mutation = noopMutation();
+test('REGRESSION: does not lose an edit queued while a save is in flight', async () => {
+  const { queryClient, cached } = makeCache({ id: 'char-1', name: 'A0', silver: 0 });
+  const server = fakeServer();
+  const sheet = openSheet(queryClient, { id: 'char-1' });
 
-  const { result } = renderHook(() =>
-    useCharacterEditor('char-1', mutation)
-  );
+  act(() => sheet.editor.updateField('name', 'A'));
+  await wait(SAVE_DELAY);
+  expect(server.requests).toHaveLength(1);
 
-  // Edit #1 and start the flush.
-  act(() => result.current.updateField('name', 'A'));
-  act(() => result.current.flush());
-  expect(mutation.mutate).toHaveBeenCalledTimes(1);
+  act(() => sheet.editor.updateField('silver', 20));
+  // The first save settles with a server copy that predates the second edit.
+  await server.saves({ id: 'char-1', name: 'A', silver: 0 });
 
-  // Edit #2 arrives while #1 is still in flight.
-  act(() => result.current.updateField('silver', 20));
+  expect(sheet.editor.isSaving).toBe(true);
+  expect(cached('char-1')).toEqual({ id: 'char-1', name: 'A', silver: 20 });
+  expect(sheet.visible()).toEqual({ id: 'char-1', name: 'A', silver: 20 });
 
-  // The first save settles with a server copy that predates edit #2.
-  const cb1 = (mutation.mutate as any).mock.calls[0][1];
-  act(() => {
-    cb1.onSuccess({ id: 'char-1', name: 'A', silver: 0 });
-    cb1.onSettled();
-  });
-
-  // Edit #2 must survive: still pending and preserved in the cache (NOT reverted
-  // to the server's silver:0), and flushable.
-  expect(result.current.isSaving).toBe(true);
-  expect((queryClient.current() as any).silver).toBe(20);
-
-  act(() => result.current.flush());
-  expect(mutation.mutate).toHaveBeenNthCalledWith(
-    2,
-    expect.objectContaining({ body: expect.objectContaining({ silver: 20 }) }),
-    expect.any(Object)
-  );
+  await wait(SAVE_DELAY);
+  expect(server.requests).toHaveLength(2);
+  expect(server.requests[1].body).toMatchObject({ silver: 20 });
+  await server.saves({ id: 'char-1', name: 'A', silver: 20 });
+  expect(sheet.editor.isSaving).toBe(false);
 });
 
-test('REGRESSION: language switches before flush keep queued equipment visible and saveable', () => {
+test('REGRESSION: language switches before flush keep queued equipment visible and saveable', async () => {
   const torch = { key: 'equipment.torch', name: 'Torch' };
-  const stalePolishCharacter = {
-    id: 'char-1',
-    equipment: [],
-    storage: [],
-    equippedWeapons: [],
-    equippedArmor: null,
-    modifiers: [],
-  };
-  const queryClient = makeQueryClient(stalePolishCharacter);
-  (useQueryClient as any).mockReturnValue(queryClient);
-  const mutation = noopMutation();
+  const loaded = { id: 'char-1', equipment: [], storage: [], equippedWeapons: [], equippedArmor: null, modifiers: [] };
+  const { queryClient } = makeCache(loaded);
+  writeCharacter(queryClient, 'char-1', 'pl', asCharacter(loaded));
+  const server = fakeServer();
+  const sheet = openSheet(queryClient, { id: 'char-1', locale: 'en' });
 
-  const { result, rerender } = renderHook(
-    ({ locale }) =>
-      useCharacterEditor(
-        'char-1',
-        mutation,
-        locale
-      ),
-    { initialProps: { locale: 'en' } }
-  );
+  act(() => sheet.editor.addEquipmentItem(torch));
+  sheet.switchTo({ locale: 'pl' });
 
-  act(() => result.current.addEquipmentItem(torch as any));
-  rerender({ locale: 'pl' });
+  expect(sheet.visible()?.equipment).toEqual([torch]);
 
-  expect(
-    result.current.getVisibleCharacter(stalePolishCharacter)?.equipment
-  ).toEqual([torch]);
-
-  act(() => result.current.flush());
-
-  expect(mutation.mutate).toHaveBeenCalledWith(
-    expect.objectContaining({
-      params: expect.objectContaining({
-        query: { locale: 'pl' },
-      }),
-      body: expect.objectContaining({ equipment: [torch] }),
-    }),
-    expect.any(Object)
-  );
+  await wait(SAVE_DELAY);
+  expect(server.requests).toHaveLength(1);
+  expect(server.requests[0]).toMatchObject({ locale: 'pl', body: { equipment: [torch] } });
 });
 
-test('REGRESSION: stale localized refetches do not hide a newer saved character', () => {
+test('REGRESSION: stale localized refetches do not hide a newer saved character', async () => {
   const torch = { key: 'equipment.torch', name: 'Torch' };
-  const queryClient = makeQueryClient({
+  const loaded = {
     id: 'char-1',
     equipment: [],
     storage: [],
@@ -611,98 +600,63 @@ test('REGRESSION: stale localized refetches do not hide a newer saved character'
     equippedArmor: null,
     modifiers: [],
     updatedAt: '2026-06-24T10:00:00.000Z',
-  });
-  (useQueryClient as any).mockReturnValue(queryClient);
-  const mutation = noopMutation();
-
-  const { result } = renderHook(() =>
-    useCharacterEditor(
-      'char-1',
-      mutation,
-      'en'
-    )
-  );
-
-  act(() => result.current.addEquipmentItem(torch as any));
-  act(() => result.current.flush());
-
-  const cb = (mutation.mutate as any).mock.calls[0][1];
-  const serverCopy = {
-    id: 'char-1',
-    equipment: [torch],
-    storage: [],
-    equippedWeapons: [],
-    equippedArmor: null,
-    modifiers: [],
-    updatedAt: '2026-06-24T10:00:05.000Z',
   };
+  const { queryClient } = makeCache(loaded);
+  const server = fakeServer();
+  const sheet = openSheet(queryClient, { id: 'char-1' });
 
-  act(() => cb.onSuccess(serverCopy));
+  act(() => sheet.editor.addEquipmentItem(torch));
+  await wait(SAVE_DELAY);
+  await server.saves({ ...loaded, equipment: [torch], updatedAt: '2026-06-24T10:00:05.000Z' });
+  // A refetch that started before the save answers after it, with the older copy.
+  writeCharacter(queryClient, 'char-1', 'en', asCharacter({ ...loaded, updatedAt: '2026-06-24T10:00:01.000Z' }));
 
-  expect(
-    result.current.getVisibleCharacter({
-      id: 'char-1',
-      equipment: [],
-      updatedAt: '2026-06-24T10:00:01.000Z',
-    } as any)?.equipment
-  ).toEqual([torch]);
+  expect(sheet.visible()?.equipment).toEqual([torch]);
 });
 
-test('REGRESSION: auto-retries a transient 5xx instead of dropping the edit', () => {
-  const queryClient = makeQueryClient({ id: 'char-1', name: 'A0' });
-  (useQueryClient as any).mockReturnValue(queryClient);
-  const mutation = noopMutation();
+test('REGRESSION: auto-retries a transient 5xx instead of dropping the edit', async () => {
+  const { queryClient } = makeCache({ id: 'char-1', name: 'A0' });
+  const server = fakeServer();
+  const sheet = openSheet(queryClient, { id: 'char-1' });
 
-  const { result } = renderHook(() =>
-    useCharacterEditor('char-1', mutation)
-  );
+  act(() => sheet.editor.updateField('name', 'A'));
+  await wait(SAVE_DELAY);
+  await server.rejects(500, { code: 'INTERNAL_ERROR' });
 
-  act(() => result.current.updateField('name', 'A'));
-  act(() => result.current.flush());
-
-  const cb1 = (mutation.mutate as any).mock.calls[0][1];
-  act(() => {
-    cb1.onError({ statusCode: 500 }, undefined, {});
-    cb1.onSettled();
-  });
-
-  // First failure: no toast, edit retained for retry.
   expect(snackbarMocks.showError).not.toHaveBeenCalled();
   expect(errorFeedbackMocks.showUnexpectedError).not.toHaveBeenCalled();
-  expect(result.current.isSaving).toBe(true);
+  expect(sheet.editor.isSaving).toBe(true);
+  expect(sheet.editor.saveFailed).toBe(false);
+  expect(sheet.visible()).toEqual({ id: 'char-1', name: 'A' });
 
-  // The retry re-sends the same edit.
-  act(() => result.current.flush());
-  expect(mutation.mutate).toHaveBeenCalledTimes(2);
+  await wait(SAVE_DELAY);
+  expect(server.requests).toHaveLength(2);
+  expect(server.requests[1]).toEqual(server.requests[0]);
+  await server.saves({ id: 'char-1', name: 'A' });
+  expect(sheet.editor.isSaving).toBe(false);
 });
 
-test('reports repeated 5xx saves after the retry tolerance and keeps a manual retry', () => {
-  const queryClient = makeQueryClient({ id: 'char-1' });
-  (useQueryClient as any).mockReturnValue(queryClient);
-  const mutation = noopMutation();
-
-  const { result } = renderHook(() =>
-    useCharacterEditor('char-1', mutation)
-  );
-
-  act(() => result.current.updateField('currentHp', 10));
-  act(() => result.current.flush());
-
-  const cb = (mutation.mutate as any).mock.calls[0][1];
+test('reports repeated 5xx saves after the retry tolerance and keeps a manual retry', async () => {
+  const { queryClient } = makeCache({ id: 'char-1' });
+  const server = fakeServer();
+  const sheet = openSheet(queryClient, { id: 'char-1' });
   const serverError = {
     statusCode: 500,
     code: 'INTERNAL_ERROR',
     message: 'Unexpected error occurred.',
   };
 
-  act(() => {
-    cb.onError(serverError, undefined, {});
-    cb.onError(serverError, undefined, {});
-  });
+  act(() => sheet.editor.updateField('currentHp', 10));
+  await wait(SAVE_DELAY);
+  await server.rejects(500, serverError);
+  await wait(SAVE_DELAY);
+  await server.rejects(500, serverError);
+  await wait(SAVE_DELAY);
+  expect(server.requests).toHaveLength(3);
   expect(errorFeedbackMocks.showUnexpectedError).not.toHaveBeenCalled();
   expect(snackbarMocks.showError).not.toHaveBeenCalled();
 
-  act(() => cb.onError(serverError, undefined, {}));
+  await server.rejects(500, serverError);
 
   expect(errorFeedbackMocks.showUnexpectedError).toHaveBeenCalledWith(
     serverError,
@@ -716,221 +670,282 @@ test('reports repeated 5xx saves after the retry tolerance and keeps a manual re
     'Unexpected error occurred.',
     expect.objectContaining({ label: 'Retry', onClick: expect.any(Function) })
   );
-  expect(result.current.isSaving).toBe(false);
-  expect(result.current.saveFailed).toBe(true);
+  expect(sheet.editor.isSaving).toBe(false);
+  expect(sheet.editor.saveFailed).toBe(true);
+  await wait(5 * SAVE_DELAY);
+  expect(server.requests).toHaveLength(3);
 
-  act(() => cb.onSettled());
-  act(() => result.current.retrySave());
-  expect(result.current.saveFailed).toBe(false);
-  expect(result.current.isSaving).toBe(true);
-  expect(mutation.mutate).toHaveBeenCalledTimes(2);
-  expect((mutation.mutate as any).mock.calls[1][0].body).toMatchObject({ currentHp: 10 });
+  await perform(() => sheet.editor.retrySave());
+  expect(sheet.editor.saveFailed).toBe(false);
+  expect(sheet.editor.isSaving).toBe(true);
+  expect(server.requests).toHaveLength(4);
+  expect(server.requests[3]).toEqual(server.requests[0]);
+  expect(server.requests[3].body).toMatchObject({ currentHp: 10 });
 
-  const retry = (mutation.mutate as any).mock.calls[1][1];
-  act(() => {
-    retry.onSuccess({ id: 'char-1', currentHp: 10 });
-    retry.onSettled();
-  });
-  expect(result.current.saveFailed).toBe(false);
-  expect(result.current.isSaving).toBe(false);
+  await server.saves({ id: 'char-1', currentHp: 10 });
+  expect(sheet.editor.saveFailed).toBe(false);
+  expect(sheet.editor.isSaving).toBe(false);
 });
 
-test('a deleted character discards all queued edits and stale visible snapshots', () => {
-  const queryClient = makeQueryClient({ id: 'char-1', name: 'Original' });
-  (useQueryClient as any).mockReturnValue(queryClient);
-  const mutation = noopMutation();
-  const { result } = renderHook(() =>
-    useCharacterEditor('char-1', mutation)
-  );
-  act(() => result.current.updateField('name', 'Saved before deletion'));
-  act(() => result.current.flush());
-  const saved = mutation.mutate.mock.calls[0][1];
-  act(() => {
-    saved.onSuccess({ id: 'char-1', name: 'Saved before deletion', updatedAt: '2026-10-15T10:00:00Z' });
-    saved.onSettled();
-  });
-  act(() => result.current.updateField('name', 'Rejected edit'));
-  act(() => result.current.flush());
-  act(() => result.current.updateField('currentHp', 1));
-  const failed = mutation.mutate.mock.calls[1][1];
-  act(() => {
-    failed.onError({ statusCode: 404, code: 'CHARACTER_NOT_FOUND' }, undefined, {});
-    failed.onSettled();
-  });
-  expect(result.current.isSaving).toBe(false);
-  expect(result.current.getVisibleCharacter(undefined)).toBeUndefined();
-  act(() => result.current.flush());
-  expect(mutation.mutate).toHaveBeenCalledTimes(2);
-  const surviving = { id: 'char-2', name: 'Survivor', updatedAt: '2026-10-14T10:00:00Z' };
-  expect(result.current.getVisibleCharacter(surviving)).toBe(surviving);
+test('a deleted character discards all queued edits and stale visible snapshots', async () => {
+  const { queryClient } = makeCache({ id: 'char-1', name: 'Original' });
+  const server = fakeServer();
+  const sheet = openSheet(queryClient, { id: 'char-1' });
+  const notFound = { statusCode: 404, code: 'CHARACTER_NOT_FOUND' };
+
+  act(() => sheet.editor.updateField('name', 'Saved before deletion'));
+  await wait(SAVE_DELAY);
+  await server.saves({ id: 'char-1', name: 'Saved before deletion', updatedAt: '2026-10-15T10:00:00Z' });
+  expect(sheet.editor.missingCharacterError).toBeNull();
+  act(() => sheet.editor.updateField('name', 'Rejected edit'));
+  await wait(SAVE_DELAY);
+  act(() => sheet.editor.updateField('currentHp', 1));
+  await server.rejects(404, notFound);
+
+  expect(sheet.editor.isSaving).toBe(false);
+  expect(sheet.editor.missingCharacterError).toEqual(notFound);
+  expect(sheet.editor.getVisibleCharacter(undefined)).toBeUndefined();
+  act(() => sheet.editor.flush());
+  await wait(5 * SAVE_DELAY);
+  expect(server.requests).toHaveLength(2);
+  expect(snackbarMocks.showError).not.toHaveBeenCalled();
+
+  const surviving = asCharacter({ id: 'char-2', name: 'Survivor', updatedAt: '2026-10-14T10:00:00Z' });
+  expect(sheet.editor.getVisibleCharacter(surviving)).toBe(surviving);
+  sheet.switchTo({ id: 'char-2' });
+  expect(sheet.editor.missingCharacterError).toBeNull();
 });
 
-test('rolls back and drops the batch on a terminal client (4xx) error', () => {
-  const previous = { id: 'char-1', name: 'A0' };
-  const queryClient = makeQueryClient({ id: 'char-1', name: 'A' });
-  (useQueryClient as any).mockReturnValue(queryClient);
-  const mutation = noopMutation();
+test('drops the batch on a terminal client (4xx) error without retrying it', async () => {
+  const { queryClient } = makeCache({ id: 'char-1', name: 'A0' });
+  const server = fakeServer();
+  const sheet = openSheet(queryClient, { id: 'char-1' });
 
-  const { result } = renderHook(() =>
-    useCharacterEditor('char-1', mutation)
-  );
+  act(() => sheet.editor.updateField('name', 'A'));
+  await wait(SAVE_DELAY);
+  await server.rejects(400, { message: 'Bad' });
 
-  act(() => result.current.updateField('name', 'A'));
-  act(() => result.current.flush());
-
-  const cb = (mutation.mutate as any).mock.calls[0][1];
-  act(() => {
-    cb.onError({ statusCode: 400, message: 'Bad' }, undefined, {
-      previousCharacter: previous,
-    });
-    cb.onSettled();
-  });
-
-  // Cache rolled back to the pre-edit snapshot, batch dropped (not saving).
-  expect((queryClient.current() as any).name).toBe('A0');
-  expect(result.current.isSaving).toBe(false);
-  expect(snackbarMocks.showError).toHaveBeenCalled();
+  expect(sheet.editor.isSaving).toBe(false);
+  expect(sheet.editor.saveFailed).toBe(false);
+  expect(snackbarMocks.showError).toHaveBeenCalledWith('Bad');
+  await wait(5 * SAVE_DELAY);
+  expect(server.requests).toHaveLength(1);
 });
 
-test('writes the server response into the cache on success (no extra refetch)', () => {
+test('a 4xx restores the copy the sheet held when the save was sent, with later edits on top', async () => {
+  const { queryClient, cached } = makeCache({ id: 'char-1', name: 'A0', silver: 0 });
+  const server = fakeServer();
+  const sheet = openSheet(queryClient, { id: 'char-1' });
+
+  act(() => sheet.editor.updateField('name', 'A'));
+  await wait(SAVE_DELAY);
+  act(() => sheet.editor.updateField('silver', 20));
+  writeCharacter(queryClient, 'char-1', 'en', asCharacter({ id: 'char-1', name: 'Written mid-flight', silver: 7 }));
+  await server.rejects(400, { message: 'Bad' });
+
+  // The pre-save snapshot is taken as the request leaves, after the edit was applied
+  // optimistically, so the rejected edit ('A') is part of it and stays on screen.
+  expect(cached('char-1')).toEqual({ id: 'char-1', name: 'A', silver: 20 });
+  expect(sheet.visible()).toEqual({ id: 'char-1', name: 'A', silver: 20 });
+  expect(sheet.editor.isSaving).toBe(true);
+
+  await wait(SAVE_DELAY);
+  expect(server.requests).toHaveLength(2);
+  expect(server.requests[1].body).toEqual({ silver: 20, saveId: expect.any(String) });
+});
+
+test('writes the server response into the cache on success (no extra refetch)', async () => {
   const { queryClient, cached, watchRefetches } = makeCache();
-  writeCharacter(queryClient, 'char-1', 'pl', { id: 'char-1', equipment: [] });
+  writeCharacter(queryClient, 'char-1', 'pl', asCharacter({ id: 'char-1', equipment: [] }));
   const refetchSavedCopy = watchRefetches('char-1', 'pl');
-  const mutation = noopMutation();
+  const server = fakeServer();
+  const sheet = openSheet(queryClient, { id: 'char-1', locale: 'pl' });
 
-  const { result } = renderHook(() =>
-    useCharacterEditor(
-      'char-1',
-      mutation,
-      'pl'
-    )
-  );
-
-  act(() => result.current.addEquipmentItem({ key: 'torch', name: 'Torch' } as any));
-  act(() => result.current.flush());
-
-  const cb = (mutation.mutate as any).mock.calls[0][1];
+  act(() => sheet.editor.addEquipmentItem({ key: 'torch', name: 'Torch' }));
+  await wait(SAVE_DELAY);
+  expect(server.requests[0].locale).toBe('pl');
   const serverCopy = {
     id: 'char-1',
     equipment: [{ key: 'torch', name: 'Torch', uses: [true, true] }],
   };
-  act(() => cb.onSuccess(serverCopy));
+  await server.saves(serverCopy);
+  await wait(5 * SAVE_DELAY);
 
   expect(trackCharacterEdited).toHaveBeenCalledWith(
     [expect.objectContaining({ kind: 'equipment-add' })],
     'pl'
   );
-  // Cache now holds the hydrated server copy; we do NOT invalidate/refetch it.
   expect(cached('char-1', 'pl')).toEqual(serverCopy);
+  expect(sheet.visible()).toEqual(serverCopy);
   expect(refetchSavedCopy).not.toHaveBeenCalled();
 });
 
-test('REGRESSION: after a save in one language, switching language shows that language', () => {
-  const { queryClient, cached, isStale, watchRefetches } = makeCache();
-  writeCharacter(queryClient, 'char-1', 'en', { id: 'char-1', updatedAt: '2026-10-16T09:00:00.000Z', silver: 0, trait1: 'egocentric' });
-  writeCharacter(queryClient, 'char-1', 'pl', { id: 'char-1', updatedAt: '2026-10-16T09:00:00.000Z', silver: 0, trait1: 'egocentryczny' });
-  const refetchSavedCopy = watchRefetches('char-1', 'pl');
-  const mutation = noopMutation();
-  const { result, rerender } = renderHook(
-    ({ locale }) =>
-      useCharacterEditor('char-1', mutation, locale),
-    { initialProps: { locale: 'pl' } }
-  );
+test.each(['saved', 'rejected', 'lost'] as const)('REGRESSION: a %s save marks the lists stale for their next read but never the saved character', async (outcome) => {
+  const { queryClient, isStale, watchRefetches } = makeCache({ id: 'char-1', silver: 0 });
+  writeCharacter(queryClient, 'char-1', 'pl', asCharacter({ id: 'char-1', silver: 0 }));
+  const apiListKey = [...characterRosterKey(), { params: { query: { locale: 'en' } } }];
+  queryClient.setQueryData(ownedCharactersKey, []);
+  queryClient.setQueryData(apiListKey, []);
+  const refetchList = vi.fn(async () => []);
+  new QueryObserver(queryClient, { queryKey: apiListKey, queryFn: refetchList, staleTime: Infinity }).subscribe(() => {});
+  const refetchSavedCopy = watchRefetches('char-1', 'en');
+  const server = fakeServer();
+  const sheet = openSheet(queryClient, { id: 'char-1' });
 
-  act(() => result.current.updateField('silver', 5));
-  act(() => result.current.flush());
-  act(() => {
-    mutation.mutate.mock.calls[0][1].onSuccess({
-      id: 'char-1',
-      updatedAt: '2026-10-16T09:00:01.000Z',
-      silver: 5,
-      trait1: 'egocentryczny',
-    });
-    mutation.mutate.mock.calls[0][1].onSettled();
+  act(() => sheet.editor.updateField('silver', 5));
+  await wait(SAVE_DELAY);
+  expect(isStale(ownedCharactersKey)).toBe(false);
+  if (outcome === 'saved') {
+    await server.saves({ id: 'char-1', silver: 5 });
+  } else if (outcome === 'rejected') {
+    await server.rejects(400, { message: 'Bad' });
+  } else {
+    await server.dropsConnection();
+  }
+
+  expect(isStale(ownedCharactersKey)).toBe(true);
+  expect(isStale(apiListKey)).toBe(true);
+  expect(refetchList).not.toHaveBeenCalled();
+  expect(isStale(characterDetailKey('char-1', 'en'))).toBe(false);
+  expect(refetchSavedCopy).not.toHaveBeenCalled();
+  expect(isStale(characterDetailKey('char-1', 'pl'))).toBe(outcome === 'saved');
+});
+
+test('a save cancels a fetch of the character that is in flight, so its late answer cannot overwrite the edit', async () => {
+  const { queryClient, cached } = makeCache({ id: 'char-1', silver: 0 });
+  const server = fakeServer();
+  const sheet = openSheet(queryClient, { id: 'char-1' });
+  let answerFetch: (character: CharacterResponse) => void = () => {};
+  void queryClient.fetchQuery({
+    queryKey: characterDetailKey('char-1', 'en'),
+    queryFn: () => new Promise<CharacterResponse>((resolve) => { answerFetch = resolve; }),
   });
-  expect(isStale('char-1', 'en')).toBe(true);
+  const fetchStatus = () => queryClient.getQueryState(characterDetailKey('char-1', 'en'))?.fetchStatus;
+
+  act(() => sheet.editor.updateField('silver', 5));
+  expect(fetchStatus()).toBe('fetching');
+  await wait(SAVE_DELAY);
+
+  expect(server.requests).toHaveLength(1);
+  expect(fetchStatus()).toBe('idle');
+  answerFetch(asCharacter({ id: 'char-1', silver: 0 }));
+  await wait(0);
+  expect(cached('char-1')).toEqual({ id: 'char-1', silver: 5 });
+  expect(sheet.visible()).toEqual({ id: 'char-1', silver: 5 });
+});
+
+test('REGRESSION: after a save in one language, switching language shows that language', async () => {
+  const { queryClient, isStale, watchRefetches } = makeCache({ id: 'char-1', updatedAt: '2026-10-16T09:00:00.000Z', silver: 0, trait1: 'egocentric' });
+  writeCharacter(queryClient, 'char-1', 'pl', asCharacter({ id: 'char-1', updatedAt: '2026-10-16T09:00:00.000Z', silver: 0, trait1: 'egocentryczny' }));
+  const refetchSavedCopy = watchRefetches('char-1', 'pl');
+  const server = fakeServer();
+  const sheet = openSheet(queryClient, { id: 'char-1', locale: 'pl' });
+
+  act(() => sheet.editor.updateField('silver', 5));
+  await wait(SAVE_DELAY);
+  await server.saves({
+    id: 'char-1',
+    updatedAt: '2026-10-16T09:00:01.000Z',
+    silver: 5,
+    trait1: 'egocentryczny',
+  });
+  expect(isStale(characterDetailKey('char-1', 'en'))).toBe(true);
   expect(refetchSavedCopy).not.toHaveBeenCalled();
 
-  rerender({ locale: 'en' });
-  expect(result.current.getVisibleCharacter(cached('char-1', 'en'))?.trait1).toBe('egocentric');
+  sheet.switchTo({ locale: 'en' });
+  expect(sheet.visible()?.trait1).toBe('egocentric');
 
-  act(() => result.current.updateField('silver', 6));
-  expect(result.current.getVisibleCharacter(cached('char-1', 'en'))).toMatchObject({
+  act(() => sheet.editor.updateField('silver', 6));
+  expect(sheet.visible()).toMatchObject({
     silver: 6,
     trait1: 'egocentric',
   });
 });
 
-test('surfaces rate limits without a retry action and keeps the edit queued', () => {
-  const queryClient = makeQueryClient({ id: 'char-1', name: 'A0' });
-  (useQueryClient as any).mockReturnValue(queryClient);
-  const mutation = noopMutation();
+test('surfaces rate limits without a retry action and keeps the edit queued', async () => {
+  const { queryClient } = makeCache({ id: 'char-1', name: 'A0', silver: 0 });
+  const server = fakeServer();
+  const sheet = openSheet(queryClient, { id: 'char-1' });
 
-  const { result } = renderHook(() =>
-    useCharacterEditor('char-1', mutation)
-  );
+  act(() => sheet.editor.updateField('name', 'A'));
+  await wait(SAVE_DELAY);
+  await server.rejects(429, { code: 'RATE_LIMITED' });
 
-  act(() => result.current.updateField('name', 'A'));
-  act(() => result.current.flush());
-
-  const cb = (mutation.mutate as any).mock.calls[0][1];
-  act(() => cb.onError({ status: 429 }, undefined, {}));
-
+  expect(snackbarMocks.showError).toHaveBeenCalledTimes(1);
   expect(snackbarMocks.showError).toHaveBeenCalledWith(
     'Too many requests. Please try again later.'
   );
-  // Edit is retained (not lost) so it can be resent later.
-  expect(result.current.isSaving).toBe(true);
+  expect(sheet.editor.isSaving).toBe(true);
+  expect(sheet.visible()).toMatchObject({ name: 'A' });
+  await wait(5 * SAVE_DELAY);
+  expect(server.requests).toHaveLength(1);
+
+  act(() => sheet.editor.updateField('silver', 3));
+  await wait(SAVE_DELAY);
+  expect(server.requests).toHaveLength(2);
+  expect(server.requests[1].body).toMatchObject({ name: 'A', silver: 3 });
 });
 
-test('REGRESSION: flushes a pending edit on unmount instead of dropping it', () => {
-  const queryClient = makeQueryClient({ id: 'char-1', name: 'A0' });
-  (useQueryClient as any).mockReturnValue(queryClient);
-  const mutation = noopMutation();
+test('REGRESSION: flushes a pending edit on unmount instead of dropping it', async () => {
+  const { queryClient } = makeCache({ id: 'char-1', name: 'A0' });
+  const server = fakeServer();
+  const sheet = openSheet(queryClient, { id: 'char-1' });
 
-  const { result, unmount } = renderHook(() =>
-    useCharacterEditor('char-1', mutation)
-  );
+  act(() => sheet.editor.updateField('name', 'A'));
+  await wait(SAVE_DELAY / 2);
+  expect(server.requests).toHaveLength(0);
 
-  // Queue an edit but never call flush() explicitly (debounce is deferred).
-  act(() => result.current.updateField('name', 'A'));
-  expect(mutation.mutate).not.toHaveBeenCalled();
+  sheet.close();
+  await wait(0);
 
-  unmount();
-
-  expect(mutation.mutate).toHaveBeenCalledWith(
-    expect.objectContaining({ body: { name: 'A', saveId: expect.any(String) } }),
-    expect.any(Object)
-  );
+  expect(server.requests.map((request) => request.body)).toEqual([
+    { name: 'A', saveId: expect.any(String) },
+  ]);
 });
 
-test('supports equipment, storage, and modifier operations end to end', () => {
-  const queryClient = makeQueryClient({
-    id: 'char-1',
-    equipment: [],
-    storage: [],
-    modifiers: [],
-  });
-  (useQueryClient as any).mockReturnValue(queryClient);
-  const mutation = noopMutation();
-
-  const { result } = renderHook(() =>
-    useCharacterEditor('char-1', mutation)
-  );
+test('supports equipment, storage, and modifier operations end to end', async () => {
+  const sword = { key: 'sword', name: 'Sword' };
+  const potion = { key: 'potion', name: 'Potion' };
+  const { queryClient } = makeCache({ id: 'char-1', equipment: [], storage: [], modifiers: [] });
+  const server = fakeServer();
+  const sheet = openSheet(queryClient, { id: 'char-1' });
 
   act(() => {
-    result.current.addEquipmentItem({ key: 'sword', name: 'Sword' } as any);
-    result.current.addStorageItem({ key: 'potion', name: 'Potion' } as any);
-    result.current.addModifier({
-      id: 'mod-1',
-      name: 'Bonus',
-      type: 'stat',
-      stat: 'strength',
-      value: 1,
-    } as any);
-    result.current.updateModifier('mod-1', { value: 2 });
+    sheet.editor.addEquipmentItem(sword);
+    sheet.editor.addStorageItem(potion);
+    sheet.editor.addModifier({ id: 'mod-1', name: 'Bonus', statistic: 'strength', value: 1 });
+    sheet.editor.updateModifier('mod-1', { value: 2 });
   });
+  await wait(SAVE_DELAY);
 
-  act(() => result.current.flush());
-  expect(mutation.mutate).toHaveBeenCalled();
+  expect(server.requests).toHaveLength(1);
+  expect(server.requests[0].body).toMatchObject({
+    equipment: [sword],
+    storage: [potion],
+    modifiers: [expect.objectContaining({ id: 'mod-1', name: 'Bonus', value: 2 })],
+  });
+  expect(sheet.visible()).toMatchObject({
+    equipment: [sword],
+    storage: [potion],
+    modifiers: [expect.objectContaining({ id: 'mod-1', value: 2 })],
+  });
+});
+
+test('a read-only sheet shows no edit and saves nothing', async () => {
+  const { queryClient, cached } = makeCache({ id: 'char-1', name: 'Shared', equipment: [] });
+  const server = fakeServer();
+  const sheet = openSheet(queryClient, { id: 'char-1', readOnly: true });
+
+  act(() => {
+    sheet.editor.updateField('name', 'Edited');
+    sheet.editor.addEquipmentItem({ key: 'rope', name: 'Rope' });
+    sheet.editor.flush();
+  });
+  await wait(SAVE_DELAY);
+  sheet.close();
+  await wait(SAVE_DELAY);
+
+  expect(cached('char-1')).toEqual({ id: 'char-1', name: 'Shared', equipment: [] });
+  expect(sheet.editor.isSaving).toBe(false);
+  expect(server.requests).toHaveLength(0);
 });

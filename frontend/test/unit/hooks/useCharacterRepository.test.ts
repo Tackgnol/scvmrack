@@ -57,11 +57,11 @@ function realCache() {
   };
 }
 
-/** The options the hook passed to `$api.useMutation` for one method of `/api/characters/{id}`. */
-function captureMutationOptions(method: 'patch' | 'delete') {
+/** The options the hook passed to `$api.useMutation` for deleting `/api/characters/{id}`. */
+function captureDeleteOptions() {
   const captured: { options?: any } = {};
-  apiMocks.useMutation.mockImplementation((calledMethod: string, _path: string, options: any) => {
-    if (calledMethod === method) {
+  apiMocks.useMutation.mockImplementation((method: string, _path: string, options: any) => {
+    if (method === 'delete') {
       captured.options = options;
     }
     return { mutate: vi.fn() };
@@ -231,7 +231,7 @@ test('useCharacterRepository reports createCharacter aborts as AbortError', asyn
 test('useCharacterRepository handles deleteCharacter onSuccess', () => {
     const { queryClient, isStale } = realCache();
     writeCharacter(queryClient, 'char-1', 'pl', { id: 'char-1' });
-    const deletion = captureMutationOptions('delete');
+    const deletion = captureDeleteOptions();
 
     renderHook(() => useCharacterRepository('char-1', 'pl-PL'));
 
@@ -241,32 +241,14 @@ test('useCharacterRepository handles deleteCharacter onSuccess', () => {
     expect(isStale(apiListKey)).toBe(true);
 });
 
-test('useCharacterRepository snapshots the cached character before a save', async () => {
-    const { queryClient } = realCache();
-    const cached = { id: 'char-1', name: 'Before' };
-    writeCharacter(queryClient, 'char-1', 'en', cached);
-    const update = captureMutationOptions('patch');
+test('useCharacterRepository leaves saving edits to the editor', () => {
+    realCache();
+    apiMocks.useMutation.mockReturnValue({ mutate: vi.fn() });
 
-    renderHook(() => useCharacterRepository('char-1', 'en-US'));
+    const { result } = renderHook(() => useCharacterRepository('char-1', 'en'));
 
-    await expect(
-        update.options.onMutate({ params: { path: { id: 'char-1' } } })
-    ).resolves.toMatchObject({ previousCharacter: cached });
-});
-
-test('REGRESSION: a settled save marks the lists stale but never the saved character', () => {
-    const { queryClient, isStale } = realCache();
-    writeCharacter(queryClient, 'char-1', 'en', { id: 'char-1' });
-    writeCharacter(queryClient, 'char-1', 'pl', { id: 'char-1' });
-    const update = captureMutationOptions('patch');
-
-    renderHook(() => useCharacterRepository('char-1', 'en'));
-
-    update.options.onSettled();
-    expect(isStale(ownedCharactersKey)).toBe(true);
-    expect(isStale(apiListKey)).toBe(true);
-    expect(isStale(characterDetailKey('char-1', 'en'))).toBe(false);
-    expect(isStale(characterDetailKey('char-1', 'pl'))).toBe(false);
+    expect(result.current).not.toHaveProperty('updateCharacter');
+    expect(apiMocks.useMutation.mock.calls.map(([method]) => method)).toEqual(['delete']);
 });
 
 test('useCharacterRepository handles refetchCharacter', () => {

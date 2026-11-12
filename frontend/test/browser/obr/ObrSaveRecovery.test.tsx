@@ -43,7 +43,7 @@ const expired = () => hasCurrentSearchParam('expired');
 
 function RecoverySheet() {
   const repo = useCharacterRepository(id, 'en', { enabled: false });
-  const editor = useCharacterEditor(id, repo.updateCharacter, 'en');
+  const editor = useCharacterEditor(id, 'en');
   const isSessionExpired = useSyncExternalStore(subscribe, expired);
   // Context fixture supplies unused sheet actions; auth, repository, editor,
   // request middleware and recovery controls all run together without mocks.

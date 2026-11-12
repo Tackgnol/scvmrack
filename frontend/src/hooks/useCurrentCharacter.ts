@@ -16,7 +16,7 @@ import { dropCharacter, seedCreatedCharacter } from '@/api/characterCache';
 import type { CharacterResponse } from '@/hooks/models';
 import { useSnackbar } from '@/SnackbarContext/SnackbarProvider.tsx';
 import { useErrorFeedback } from '@/components/molecules/feedback/ErrorFeedbackProvider';
-import { getUserFacingApiErrorMessage, isApiNotFound } from '@/utils/errorUtils';
+import { getUserFacingApiErrorMessage } from '@/utils/errorUtils';
 
 import { useCallback, useEffect, useRef, useSyncExternalStore } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -110,18 +110,12 @@ export function useCurrentCharacter() {
     enabled: !isSessionExpired && canReadCharacter,
   });
   const isReadOnly = repo.character?.viewerAccess === 'party';
-  const editor = useCharacterEditor(
+  const { missingCharacterError, ...editor } = useCharacterEditor(
     characterId,
-    repo.updateCharacter,
     trimmedLocale,
     validationIssueHandlers,
     { readOnly: isReadOnly }
   );
-  const missingCharacterError =
-    isApiNotFound(repo.updateCharacter?.error) &&
-    repo.updateCharacter.variables?.params?.path?.id === characterId
-      ? repo.updateCharacter.error
-      : null;
   const visibleCharacter = missingCharacterError
     ? undefined
     : editor.getVisibleCharacter?.(repo.character) ?? repo.character;

@@ -126,7 +126,6 @@ test('useCurrentCharacter aggregates repository, editor and auth state', () => {
     character: { id: 'char-1', name: 'Test' },
     isLoading: false,
     error: null,
-    updateCharacter: {},
     createCharacter: { mutate: vi.fn() },
   };
   (useCharacterRepository as any).mockReturnValue(repo);
@@ -144,6 +143,73 @@ test('useCurrentCharacter aggregates repository, editor and auth state', () => {
   expect(result.current.character?.name).toBe('Test');
   expect(result.current.isAuthenticated).toBe(true);
   expect(result.current.updateField).toBe(editor.updateField);
+  expect(useCharacterEditor).toHaveBeenCalledWith(
+    'char-1',
+    'en',
+    expect.objectContaining({ setValidationIssue: expect.any(Function) }),
+    { readOnly: false }
+  );
+});
+
+test('useCurrentCharacter opens a character shared through a party as read-only in the editor', () => {
+  (useCharacterId as any).mockReturnValue({
+    characterId: 'char-1',
+    lastCharacterId: null,
+    setCharacterId: vi.fn(),
+  });
+  (useAuth as any).mockReturnValue({
+    isAuthenticated: true,
+    isGuest: false,
+    isLoading: false,
+  });
+  (useCharacterRepository as any).mockReturnValue({
+    character: { id: 'char-1', name: 'Shared', viewerAccess: 'party' },
+    isLoading: false,
+    error: null,
+    createCharacter: { mutate: vi.fn() },
+  });
+  (useCharacterEditor as any).mockReturnValue({ flush: vi.fn() });
+
+  const { result } = renderHook(() => useCurrentCharacter());
+
+  expect(result.current.isReadOnly).toBe(true);
+  expect(useCharacterEditor).toHaveBeenCalledWith(
+    'char-1',
+    'en',
+    expect.any(Object),
+    { readOnly: true }
+  );
+});
+
+test('useCurrentCharacter reports a character whose save answered 404 as missing', () => {
+  (useCharacterId as any).mockReturnValue({
+    characterId: 'char-1',
+    lastCharacterId: null,
+    setCharacterId: vi.fn(),
+  });
+  (useAuth as any).mockReturnValue({
+    isAuthenticated: true,
+    isGuest: false,
+    isLoading: false,
+  });
+  (useCharacterRepository as any).mockReturnValue({
+    character: { id: 'char-1', name: 'Deleted elsewhere' },
+    isLoading: false,
+    error: null,
+    createCharacter: { mutate: vi.fn() },
+  });
+  const notFound = { statusCode: 404, code: 'CHARACTER_NOT_FOUND' };
+  (useCharacterEditor as any).mockReturnValue({
+    flush: vi.fn(),
+    getVisibleCharacter: (character: unknown) => character,
+    missingCharacterError: notFound,
+  });
+
+  const { result } = renderHook(() => useCurrentCharacter());
+
+  expect(result.current.character).toBeUndefined();
+  expect(result.current.error).toBe(notFound);
+  expect(result.current).not.toHaveProperty('missingCharacterError');
 });
 
 test('useCurrentCharacter recovers from an invalid character without deleting it', async () => {
@@ -162,7 +228,6 @@ test('useCurrentCharacter recovers from an invalid character without deleting it
     character: undefined,
     isLoading: false,
     error: { statusCode: 404, code: 'CHARACTER_NOT_FOUND' },
-    updateCharacter: {},
     createCharacter: { mutate: vi.fn() },
     deleteCharacter: { mutate: vi.fn() },
   });
@@ -191,7 +256,6 @@ test('useCurrentCharacter adopts a created character under the sheet locale and 
     character: undefined,
     isLoading: false,
     error: null,
-    updateCharacter: {},
     createCharacter: { mutate: vi.fn() },
     deleteCharacter: { mutate: vi.fn() },
   });
@@ -268,7 +332,6 @@ test('useCurrentCharacter clears validation issues when active character changes
     character: { id: activeCharacterId, name: 'Test' },
     isLoading: false,
     error: null,
-    updateCharacter: {},
     createCharacter: { mutate: vi.fn(), data: null },
   };
   (useCharacterRepository as any).mockReturnValue(repo);
@@ -357,7 +420,6 @@ test('useCurrentCharacter refreshes party membership before selecting a replacem
     character: { id: 'char-1', name: 'Old scvm', partyId: 'party-1' },
     isLoading: false,
     error: null,
-    updateCharacter: {},
     deleteCharacter: { mutate: deleteMutate },
     createCharacter: { mutate: createMutate, data: null },
   };

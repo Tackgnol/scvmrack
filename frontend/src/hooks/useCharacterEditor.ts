@@ -1,8 +1,10 @@
 import { appHistory } from '@/router/history';
 import { INVENTORY_LIMITS, getInventoryLimitMessage } from '@/inventory/limits';
 import { trackCharacterEdited } from '@/analytics/characterAnalytics';
-import { $api } from '@/api';
+import { $api, type paths } from '@/api';
 import {
+  cancelCharacterFetches,
+  markCharacterListsStale,
   markCharacterStale,
   readCharacter,
   writeCharacter,
@@ -32,6 +34,7 @@ import { useDebouncedCallback } from 'use-debounce';
 import {
   getApiErrorStatus,
   getUserFacingApiErrorMessage,
+  isApiNotFound,
   isApiRateLimited,
   isUnexpectedApiError,
 } from '@/utils/errorUtils';
@@ -40,6 +43,10 @@ type ValidationIssueHandlers = {
   setValidationIssue?: (id: string, message: string) => void;
   clearValidationIssue?: (id: string) => void;
 };
+
+type SaveRequestBody = NonNullable<
+  paths['/api/characters/{id}']['patch']['requestBody']
+>['content']['application/json'];
 
 const getSimpleFieldValidationId = (field: SimpleField) => `field:${field}`;
 
@@ -54,12 +61,17 @@ const createEditorState = (locale?: string) => ({
   flushing: false,
   halted: false,
   unconfirmedSave: null as { batch: OptimisticPatch[]; body: CharacterUpdateRequest } | null,
+  preSaveSnapshot: undefined as CharacterResponse | undefined,
   navigationWaiters: [] as Array<(blocked: boolean) => void>,
 });
 
+/**
+ * Edits a character: each mutator shows its change at once and queues it, and the queue is
+ * saved in order, one PATCH at a time. The whole save lives here (request, retries, rollback,
+ * cache reconciliation); for it the hook calls out to nothing but the API client.
+ */
 export function useCharacterEditor(
   characterId: string | null,
-  updateCharacter: ReturnType<typeof $api.useMutation>,
   locale?: string,
   validationIssues?: ValidationIssueHandlers,
   options: { readOnly?: boolean } = {}
@@ -83,6 +95,29 @@ export function useCharacterEditor(
     return entry;
   }, [characterId, locale]);
   const activeCharacterIdRef = useRef(characterId);
+
+  // The saved copy is reconciled from the PATCH response and never refetched: a refetch
+  // races the queue and drops edits. A save only leaves the character lists stale.
+  const updateCharacter = $api.useMutation('patch', '/api/characters/{id}', {
+    onMutate: async (request) => {
+      const id = request.params.path.id;
+      await cancelCharacterFetches(queryClient, id, locale);
+      const saving = statesRef.current.get(id);
+      if (saving) {
+        // Read after the queued edits reached the cache, so the snapshot includes the batch being saved.
+        saving.preSaveSnapshot = readCharacter(queryClient, id, locale);
+      }
+    },
+    onSettled: () => {
+      markCharacterListsStale(queryClient, 'on-next-read');
+    },
+  });
+  const missingCharacterError =
+    isApiNotFound(updateCharacter.error) &&
+    updateCharacter.variables?.params.path.id === characterId
+      ? updateCharacter.error
+      : null;
+
   const [snapshots, setSnapshots] = useState(new Map<string | null, { pendingCount: number; saveFailed: boolean }>());
   const snapshot = snapshots.get(characterId);
   const refresh = () => {
@@ -182,6 +217,7 @@ export function useCharacterEditor(
       ? unconfirmed.body
       : { ...buildRequestFromPatches(batch, currentCharacter), saveId: createRandomId() };
     state.flushing = true;
+    state.preSaveSnapshot = undefined;
 
     updateCharacter.mutate(
       {
@@ -190,10 +226,11 @@ export function useCharacterEditor(
         // without it the backend defaults to 'en' and recalculated modifiers
         // reverted to English on the Polish view.
         params: { path: { id: characterId }, query: { locale: getApiLocale(locale) } },
-        body: body as any,
+        // The request model allows an empty weapon slot (null); the generated schema does not declare it.
+        body: body as SaveRequestBody,
       },
       {
-        onSuccess: (serverCharacter: unknown) => {
+        onSuccess: (serverCharacter) => {
           state.unconfirmedSave = null;
           setSaveFailed(false);
           state.retryCount = 0;
@@ -228,7 +265,7 @@ export function useCharacterEditor(
             writeCharacter(queryClient, characterId, locale, optimistic);
           }
         },
-        onError: (error: any, _vars: unknown, context: any) => {
+        onError: (error) => {
           if (isApiRateLimited(error)) {
             // Keep the batch queued (don't lose the edit) but stop hammering the
             // limiter — the next edit or unmount will flush it again.
@@ -307,12 +344,12 @@ export function useCharacterEditor(
           state.retryCount = 0;
           state.halted = true;
           setPending((prev) => prev.slice(batch.length));
-          if (context?.previousCharacter) {
+          if (state.preSaveSnapshot) {
             const remaining = state.pending;
             const optimistic = remaining.reduce(
               (acc: CharacterResponse, patch) =>
                 applyOptimisticPatch(acc, patch),
-              context.previousCharacter as CharacterResponse
+              state.preSaveSnapshot
             );
             state.optimisticCharacter = optimistic;
             state.locale = locale;
@@ -588,7 +625,6 @@ export function useCharacterEditor(
   };
 
   return {
-    queuePatch,
     flush,
 
     toggleScrollUse,
@@ -634,6 +670,8 @@ export function useCharacterEditor(
     isSaving: !snapshot?.saveFailed && ((snapshot?.pendingCount ?? 0) > 0 || updateCharacter.isPending),
     saveFailed: snapshot?.saveFailed ?? false,
     retrySave,
+    /** The 404 the latest save of this character was answered with, or null. */
+    missingCharacterError,
 
     getVisibleCharacter: (character: CharacterResponse | undefined) => {
       const state = getState();

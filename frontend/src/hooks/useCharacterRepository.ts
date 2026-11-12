@@ -1,11 +1,8 @@
 import { $api, authKeys, client } from "@/api";
 import {
-    cancelCharacterFetches,
-    characterDetailKey,
     dropCharacter,
     markCharacterListsStale,
     markCharacterStale,
-    readCharacter,
     seedCreatedCharacter,
 } from "@/api/characterCache";
 import { ensureAnonymousSession, type AuthSession } from '@/auth';
@@ -86,26 +83,6 @@ export function useCharacterRepository(
         }
     });
 
-    // ---- Update Character ----
-    // The character-detail cache is reconciled by useCharacterEditor straight
-    // from the PATCH response (which is fully hydrated), so we deliberately do
-    // NOT refetch it on every save — that refetch used to race the optimistic
-    // queue and drop edits. We only keep the character LISTS (names/HP) fresh.
-    const updateCharacter = $api.useMutation('patch', '/api/characters/{id}', {
-        onMutate: async (vars) => {
-            const id = vars.params.path.id;
-            await cancelCharacterFetches(queryClient, id, locale);
-
-            return {
-                previousCharacter: readCharacter(queryClient, id, locale),
-                queryKey: [...characterDetailKey(id, locale)],
-            };
-        },
-        onSettled: () => {
-            markCharacterListsStale(queryClient, 'on-next-read');
-        }
-    });
-
     // ---- Delete Character ----
     const deleteCharacter = $api.useMutation('delete', '/api/characters/{id}', {
         onSuccess: (_data, vars) => {
@@ -129,7 +106,6 @@ export function useCharacterRepository(
         error: characterQuery.error,
 
         createCharacter,
-        updateCharacter,
         deleteCharacter,
         refetchCharacter,
     };
