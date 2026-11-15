@@ -7,6 +7,7 @@ import {
   unauthorized,
 } from '../errors.js';
 import { getCharacterFull } from '../lib/get-character-full.js';
+import type { CharacterSheet } from '../schemas/character.js';
 import {
   buildAppliedImprovement,
   GettingBetterRuleError,
@@ -216,7 +217,7 @@ export function createCharacterImprovementService(
       draft: ImprovementDraft;
       session: AppSession;
       rawLocale: unknown;
-    }): Promise<ServiceResult<unknown>> {
+    }): Promise<ServiceResult<CharacterSheet>> {
       if (!isValidUUID(input.id) || !isValidUUID(input.improvementId)) {
         return fail(badRequest('INVALID_CHARACTER_ID', 'Invalid character ID'));
       }

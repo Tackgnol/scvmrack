@@ -16,6 +16,7 @@ import { type SupportedLocale } from '../config/locales.js';
 import { randomSectionSeeds, seededRollerFor } from '../lib/draft-seeds.js';
 import { rollCharacter } from '../lib/generate-character.js';
 import { hydrateCharacterRow } from '../lib/get-character-full.js';
+import type { DraftPreview } from '../schemas/draft.js';
 import { apiError, badRequest, conflict, notFound, unauthorized } from '../errors.js';
 import {
   customClassRepository,
@@ -587,7 +588,7 @@ export function createCustomClassService(log: ServiceLogger) {
       draft: ClassDraft;
       language: SupportedLocale;
       locale: string;
-    }): Promise<ServiceResult<Record<string, unknown>>> {
+    }): Promise<ServiceResult<DraftPreview>> {
       if (!gmUserId(input.session)) {
         return fail(unauthorized());
       }

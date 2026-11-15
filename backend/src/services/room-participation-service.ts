@@ -70,7 +70,7 @@ export function createRoomParticipationService(
         );
         return ok(
           fulls
-            .filter((full): full is Record<string, unknown> => full !== null)
+            .filter((full) => full !== null)
             .map(toCharacterCard)
         );
       } catch (error) {

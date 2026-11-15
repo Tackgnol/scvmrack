@@ -1,4 +1,4 @@
-import { Prisma } from '@prisma/client';
+import type { Prisma } from '@prisma/client';
 import { Roller, OSRandomEngine } from '@tackgnol/rpg-tools-roller';
 import {
   characterRepository,
@@ -10,6 +10,7 @@ import { createPartyMembership, ownerCannotJoin } from './party-membership.js';
 import { classChoiceError, pickPoolClass } from './character-class-choice.js';
 import { resolvePartyClassPool } from './party-class-pool-service.js';
 import { getCharacterFull } from '../lib/get-character-full.js';
+import type { CharacterSheet } from '../schemas/character.js';
 import { hydrateInventoryUses } from './inventory-uses.js';
 import {
   hasObrPlayerCharacterAccess,
@@ -207,7 +208,7 @@ export function createCharacterService(
       draft?: CharacterDraft | null;
       replace?: boolean;
       locale: string;
-    }): Promise<ServiceResult<Record<string, unknown>>> {
+    }): Promise<ServiceResult<CharacterSheet>> {
       const userId = sessionUserId(input.session);
       if (!userId) {
         return fail(unauthorized());
@@ -356,7 +357,7 @@ export function createCharacterService(
       session: AppSession;
       locale: string;
       obrAccess?: ObrCharacterAccessContext | null;
-    }): Promise<ServiceResult<Record<string, unknown>>> {
+    }): Promise<ServiceResult<CharacterSheet>> {
       if (!isValidUUID(input.id)) {
         return fail(badRequest('INVALID_CHARACTER_ID', 'Invalid character ID'));
       }
@@ -399,7 +400,7 @@ export function createCharacterService(
       body: Record<string, unknown>;
       rawLocale: unknown;
       obrAccess?: ObrCharacterAccessContext | null;
-    }): Promise<ServiceResult<Record<string, unknown>>> {
+    }): Promise<ServiceResult<CharacterSheet>> {
       if (!isValidUUID(input.id)) {
         return fail(badRequest('INVALID_CHARACTER_ID', 'Invalid character ID'));
       }
@@ -455,36 +456,30 @@ export function createCharacterService(
           }
         }
 
-        await characterRepository.update(input.id, updates as Prisma.CharacterUpdateInput, {
+        const outcome = await characterRepository.update(input.id, updates as Prisma.CharacterUpdateInput, {
           expectedUpdatedAt:
             typeof input.body.expectedUpdatedAt === 'string'
               ? new Date(input.body.expectedUpdatedAt)
               : undefined,
           saveId: typeof input.body.saveId === 'string' ? input.body.saveId : undefined,
         });
+        if (outcome === 'missing') {
+          return fail(notFound('CHARACTER_NOT_FOUND', 'Character not found'));
+        }
+        if (outcome === 'stale') {
+          return fail(conflict('CHARACTER_CHANGED', 'Character changed in another tab. Reload before editing again.'));
+        }
 
         const character = await getCharacterFull(input.id, locale);
         if (!character) {
           return fail(notFound('CHARACTER_NOT_FOUND', 'Character not found'));
         }
-        await publishCharacterUpdates(partyBus, [input.id], changedFields, log);
+        // A replayed save is a retry of one that already landed (its response was lost) and was announced then.
+        if (outcome === 'saved') {
+          await publishCharacterUpdates(partyBus, [input.id], changedFields, log);
+        }
         return ok(character);
       } catch (err) {
-        if (
-          err instanceof Prisma.PrismaClientKnownRequestError &&
-          err.code === 'P2025'
-        ) {
-          const stored = input.body.expectedUpdatedAt ? await characterRepository.getLastSaveId(input.id) : null;
-          if (!stored) {
-            return fail(notFound('CHARACTER_NOT_FOUND', 'Character not found'));
-          }
-          // A retry of a save that already landed (its response was lost) reads back instead of conflicting.
-          if (input.body.saveId && stored.lastSaveId === input.body.saveId) {
-            const character = await getCharacterFull(input.id, locale);
-            return character ? ok(character) : fail(notFound('CHARACTER_NOT_FOUND', 'Character not found'));
-          }
-          return fail(conflict('CHARACTER_CHANGED', 'Character changed in another tab. Reload before editing again.'));
-        }
         return fail(
           unexpected(log, err,'CHARACTER_UPDATE_FAILED', 'Failed to update character')
         );

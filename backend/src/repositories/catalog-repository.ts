@@ -1,5 +1,6 @@
 import prisma from '../lib/prisma.js';
 import type { ClassSource, ClassVisibility } from '../lib/class-model.js';
+import type { SupportedLocale } from '../config/locales.js';
 
 export type PetCatalogRow = {
   key: string;
@@ -41,7 +42,8 @@ export type ClassCatalogRow = {
   appendix: string | null;
   nameKey: string | null;
   descriptionKey: string | null;
-  languages: string[];
+  /** Never empty and only supported locales: the `classes_languages_check` constraint holds it to that. */
+  languages: SupportedLocale[];
   source: ClassSource;
   visibility: ClassVisibility;
   creditWork: string | null;

@@ -6,6 +6,8 @@
 // narrowed to name + description (no keys/modifiers/secret fields) because this
 // data is meant to be visible at the table.
 
+import type { CharacterSheet } from '../schemas/character.js';
+
 export interface CharacterCard {
   id: string | null;
   name: string;
@@ -32,7 +34,7 @@ export interface CharacterCard {
   // Carried inventory, narrowed to table-visible name + description. Aggregation
   // (x2 etc.) is the renderer's job, mirroring the full-sheet warband path.
   equipment: Array<{ name: string; description: string }>;
-  computedModifiers: unknown[];
+  computedModifiers: CharacterSheet['computedModifiers'];
   bodyDescription: string | null;
   habit: string | null;
   origin: string | null;
@@ -40,61 +42,80 @@ export interface CharacterCard {
   trait2: string | null;
 }
 
-export function toCharacterCard(full: Record<string, unknown>): CharacterCard {
-  const weapons = Array.isArray(full.equippedWeapons) ? full.equippedWeapons : [];
-  const armor = (full.equippedArmor ?? {}) as Record<string, unknown>;
-  const equipment = Array.isArray(full.equipment) ? full.equipment : [];
+/** The sheet fields a card is projected from. */
+export type CardSource = Pick<
+  CharacterSheet,
+  | 'id'
+  | 'name'
+  | 'className'
+  | 'currentHp'
+  | 'maxHp'
+  | 'strength'
+  | 'agility'
+  | 'presence'
+  | 'toughness'
+  | 'drToDodge'
+  | 'drToMelee'
+  | 'drToRanged'
+  | 'omens'
+  | 'maxOmens'
+  | 'silver'
+  | 'equippedWeapons'
+  | 'equippedArmor'
+  | 'equipment'
+  | 'computedModifiers'
+  | 'bodyDescription'
+  | 'habit'
+  | 'origin'
+  | 'trait1'
+  | 'trait2'
+>;
+
+/** Projects a hydrated sheet onto its table-visible card. */
+export function toCharacterCard(full: CardSource): CharacterCard {
   return {
-    id: (full.id as string | null) ?? null,
-    name: (full.name as string) ?? '',
-    className: (full.className as string | null) ?? null,
-    currentHp: (full.currentHp as number) ?? 0,
-    maxHp: (full.maxHp as number) ?? 0,
-    strength: (full.strength as number) ?? 0,
-    agility: (full.agility as number) ?? 0,
-    presence: (full.presence as number) ?? 0,
-    toughness: (full.toughness as number) ?? 0,
-    drToDodge: (full.drToDodge as number) ?? 0,
-    drToMelee: (full.drToMelee as number) ?? 0,
-    drToRanged: (full.drToRanged as number) ?? 0,
-    omens: (full.omens as number) ?? 0,
-    maxOmens: (full.maxOmens as number) ?? 0,
-    silver: (full.silver as number) ?? 0,
-    equippedWeapons: (weapons as unknown[]).map((raw) => {
-      const w = (raw ?? {}) as Record<string, unknown>;
-      return {
-        name: (w.name as string | null) ?? null,
-        dice: Array.isArray(w.dice) ? (w.dice as number[]) : [],
-      };
-    }),
-    equippedArmor: compactArmor(armor),
-    equipment: (equipment as unknown[])
-      .map((raw) => {
-        const item = (raw ?? {}) as Record<string, unknown>;
-        return {
-          name: (item.name as string | null) ?? '',
-          description: (item.description as string | null) ?? '',
-        };
-      })
+    id: full.id,
+    name: full.name,
+    className: full.className,
+    currentHp: full.currentHp,
+    maxHp: full.maxHp,
+    strength: full.strength,
+    agility: full.agility,
+    presence: full.presence,
+    toughness: full.toughness,
+    drToDodge: full.drToDodge,
+    drToMelee: full.drToMelee,
+    drToRanged: full.drToRanged,
+    omens: full.omens,
+    maxOmens: full.maxOmens,
+    silver: full.silver,
+    equippedWeapons: full.equippedWeapons.map((weapon) => ({
+      name: weapon.name ?? null,
+      dice: weapon.dice ?? [],
+    })),
+    equippedArmor: compactArmor(full.equippedArmor ?? {}),
+    equipment: full.equipment
+      .map((item) => ({
+        name: item.name ?? '',
+        description: item.description ?? '',
+      }))
       .filter((item) => item.name),
-    computedModifiers: Array.isArray(full.computedModifiers) ? full.computedModifiers : [],
-    bodyDescription: (full.bodyDescription as string | null) ?? null,
-    habit: (full.habit as string | null) ?? null,
-    origin: (full.origin as string | null) ?? null,
-    trait1: (full.trait1 as string | null) ?? null,
-    trait2: (full.trait2 as string | null) ?? null,
+    computedModifiers: full.computedModifiers,
+    bodyDescription: full.bodyDescription,
+    habit: full.habit,
+    origin: full.origin,
+    trait1: full.trait1,
+    trait2: full.trait2,
   };
 }
 
-function compactArmor(armor: Record<string, unknown>): CharacterCard['equippedArmor'] {
+function compactArmor(armor: NonNullable<CharacterSheet['equippedArmor']>): CharacterCard['equippedArmor'] {
   const compact: CharacterCard['equippedArmor'] = {
-    name: (armor.name as string | null) ?? null,
+    name: armor.name ?? null,
   };
 
   if (Array.isArray(armor.dice)) {
-    compact.dice = (armor.dice as unknown[]).filter(
-      (die): die is number => typeof die === 'number' && Number.isFinite(die),
-    );
+    compact.dice = armor.dice.filter((die) => Number.isFinite(die));
   }
 
   if (typeof armor.currentTier === 'number' && Number.isFinite(armor.currentTier)) {

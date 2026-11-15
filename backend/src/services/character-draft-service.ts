@@ -1,6 +1,7 @@
 import { OSRandomEngine, Roller } from '@tackgnol/rpg-tools-roller';
 import { translatedClassTexts } from '../lib/class-translations.js';
 import { hydrateCharacterRow } from '../lib/get-character-full.js';
+import type { DraftPreview } from '../schemas/draft.js';
 import {
   type AbilityStat,
   type CharacterDraft,
@@ -29,7 +30,7 @@ import { sanitizeString } from '../utils.js';
 
 export type DraftResult = {
   draft: CharacterDraft;
-  preview: Record<string, unknown>;
+  preview: DraftPreview;
   classlessStatOptions?: ClasslessStatOption[];
 };
 

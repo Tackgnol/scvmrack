@@ -1,6 +1,5 @@
 import assert from 'node:assert/strict';
 import { beforeEach, mock, test } from 'node:test';
-import { Prisma } from '@prisma/client';
 import { randomSectionSeeds } from '../../src/lib/draft-seeds.js';
 
 const VALID_ID = '11111111-1111-4111-8111-111111111111';
@@ -37,7 +36,8 @@ const state = {
   giveUpCalls: [] as Array<{ partyId: string; characterId: string; reason: string }>,
   giveUpResult: true,
   updateError: null as unknown,
-  lastSaveId: null as string | null,
+  updateOutcome: 'saved' as 'saved' | 'missing' | 'stale' | 'replayed',
+  updateGuards: [] as Array<{ expectedUpdatedAt?: Date; saveId?: string } | undefined>,
   generateError: null as unknown,
   fullError: null as unknown,
   countError: null as unknown,
@@ -98,7 +98,8 @@ function resetState(): void {
   state.giveUpCalls = [];
   state.giveUpResult = true;
   state.updateError = null;
-  state.lastSaveId = null;
+  state.updateOutcome = 'saved';
+  state.updateGuards = [];
   state.generateError = null;
   state.fullError = null;
   state.countError = null;
@@ -120,7 +121,6 @@ mock.module('../../src/repositories/character-repository.js', {
   namedExports: {
     characterRepository: {
       getOwnerId: async () => state.ownerRow,
-      getLastSaveId: async () => (state.ownerRow ? { lastSaveId: state.lastSaveId } : null),
       getPartyAccessContext: async () => {
         if (state.accessRow !== null) {
           return state.accessRow;
@@ -143,12 +143,13 @@ mock.module('../../src/repositories/character-repository.js', {
         }
         return characterIds.map(characterId => ({ characterId, partyIds: state.partyIdRow?.partyId ? [state.partyIdRow.partyId] : [] }));
       },
-      update: async (id: string, data: unknown) => {
+      update: async (id: string, data: unknown, guard?: { expectedUpdatedAt?: Date; saveId?: string }) => {
         state.updateCalls.push({ id, data });
+        state.updateGuards.push(guard);
         if (state.updateError) {
           throw state.updateError;
         }
-        return {};
+        return state.updateOutcome;
       },
       deleteById: async () => {
         if (state.deleteError) {
@@ -935,12 +936,10 @@ test('update does not publish when the character is not in a party', async () =>
   assert.deepEqual(publishedEvents, []);
 });
 
-test('update maps a Prisma P2025 to a 404 not-found', async () => {
-  state.updateError = new Prisma.PrismaClientKnownRequestError('not found', {
-    code: 'P2025',
-    clientVersion: '6.19.3',
-  });
-  const r = await service().update({
+test('a save the repository finds no character for is a 404 not-found', async () => {
+  state.updateOutcome = 'missing';
+  state.partyIdRow = { partyId: PARTY_ID };
+  const r = await serviceWithBus().update({
     id: VALID_ID,
     session: session('user-1'),
     body: { name: 'Hero' },
@@ -948,12 +947,33 @@ test('update maps a Prisma P2025 to a 404 not-found', async () => {
   });
   assert.equal((r as any).error.statusCode, 404);
   assert.equal((r as any).error.code, 'CHARACTER_NOT_FOUND');
+  assert.equal((r as any).error.message, 'Character not found');
+  assert.deepEqual(publishedEvents, []);
 });
 
-test('a guarded update that fails the version check is a 409 conflict', async () => {
-  state.updateError = new Prisma.PrismaClientKnownRequestError('stale', { code: 'P2025', clientVersion: '6.19.3' });
-  state.lastSaveId = 'another-save';
+test('a guarded save passes its version and save id to the repository', async () => {
   const r = await service().update({
+    id: VALID_ID,
+    session: session('user-1'),
+    body: { name: 'Hero', expectedUpdatedAt: '2026-10-16T09:00:00.000Z', saveId: 'this-save' },
+    rawLocale: 'en',
+  });
+  assert.equal(r.ok, true);
+  assert.deepEqual(state.updateCalls, [{ id: VALID_ID, data: { name: 'Hero' } }]);
+  assert.deepEqual(state.updateGuards, [
+    { expectedUpdatedAt: new Date('2026-10-16T09:00:00.000Z'), saveId: 'this-save' },
+  ]);
+});
+
+test('an unguarded save passes no version or save id', async () => {
+  await service().update({ id: VALID_ID, session: session('user-1'), body: { name: 'Hero' }, rawLocale: 'en' });
+  assert.deepEqual(state.updateGuards, [{ expectedUpdatedAt: undefined, saveId: undefined }]);
+});
+
+test('a stale save is a 409 conflict and is not announced', async () => {
+  state.updateOutcome = 'stale';
+  state.partyIdRow = { partyId: PARTY_ID };
+  const r = await serviceWithBus().update({
     id: VALID_ID,
     session: session('user-1'),
     body: { equipment: [], expectedUpdatedAt: '2026-10-16T09:00:00.000Z', saveId: 'this-save' },
@@ -961,12 +981,14 @@ test('a guarded update that fails the version check is a 409 conflict', async ()
   });
   assert.equal((r as any).error.statusCode, 409);
   assert.equal((r as any).error.code, 'CHARACTER_CHANGED');
+  assert.equal((r as any).error.message, 'Character changed in another tab. Reload before editing again.');
+  assert.deepEqual(publishedEvents, []);
 });
 
 test('retrying a save that already landed returns the character instead of a conflict', async () => {
-  state.updateError = new Prisma.PrismaClientKnownRequestError('stale', { code: 'P2025', clientVersion: '6.19.3' });
-  state.lastSaveId = 'this-save';
-  const r = await service().update({
+  state.updateOutcome = 'replayed';
+  state.partyIdRow = { partyId: PARTY_ID };
+  const r = await serviceWithBus().update({
     id: VALID_ID,
     session: session('user-1'),
     body: { equipment: [], expectedUpdatedAt: '2026-10-16T09:00:00.000Z', saveId: 'this-save' },
@@ -974,6 +996,21 @@ test('retrying a save that already landed returns the character instead of a con
   });
   assert.equal(r.ok, true);
   assert.deepEqual((r as any).value, state.fullResult);
+  // The first, landed attempt announced the change; the replay does not announce it twice.
+  assert.deepEqual(publishedEvents, []);
+});
+
+test('a replayed save whose character is gone on re-read is a 404 not-found', async () => {
+  state.updateOutcome = 'replayed';
+  state.fullResult = null;
+  const r = await service().update({
+    id: VALID_ID,
+    session: session('user-1'),
+    body: { equipment: [], expectedUpdatedAt: '2026-10-16T09:00:00.000Z', saveId: 'this-save' },
+    rawLocale: 'en',
+  });
+  assert.equal((r as any).error.statusCode, 404);
+  assert.equal((r as any).error.code, 'CHARACTER_NOT_FOUND');
 });
 
 // ---- list ----
@@ -1096,7 +1133,7 @@ test('getById maps an unexpected failure to 5xx CHARACTER_FETCH_FAILED', async (
   assert.equal((r as any).error.code, 'CHARACTER_FETCH_FAILED');
 });
 
-test('update maps a non-P2025 failure to 5xx CHARACTER_UPDATE_FAILED', async () => {
+test('update maps a failing repository write to 5xx CHARACTER_UPDATE_FAILED', async () => {
   state.updateError = new Error('boom');
   const r = await service().update({
     id: VALID_ID,

@@ -33,12 +33,13 @@ import {
 import { createCharacterService } from '../../services/character-service.js';
 import { limitMax } from '../../lib/rate-limits.js';
 
+// A date-time is sent from a Date (list rows) or an ISO string (hydrated sheets); both serialize the same.
 type CharacterTypeProvider = JsonSchemaToTsProvider<{
     SerializerSchemaOptions: {
         deserialize: [
             {
                 pattern: { type: 'string'; format: 'date-time' };
-                output: Date;
+                output: Date | string;
             },
         ];
     };

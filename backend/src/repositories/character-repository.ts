@@ -40,6 +40,17 @@ export type CharacterPartyAccessRow = {
 
 export type CharacterUpdateAudience = { characterId: string; partyIds: string[] };
 
+/**
+ * What a character update did: `saved` wrote it; `missing` found no character with the id; `stale`
+ * wrote nothing because the character changed since `expectedUpdatedAt`; `replayed` wrote nothing
+ * because this `saveId` is the save that already landed.
+ */
+export type CharacterSaveOutcome = 'saved' | 'missing' | 'stale' | 'replayed';
+
+function isRecordNotFound(err: unknown): boolean {
+  return err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025';
+}
+
 /** The insertable row for a rolled scvm, owned by `userId` when given; a classless roll's stat options are not stored. */
 export function characterCreateInput(
   data: CharacterData,
@@ -189,27 +200,47 @@ export const characterRepository = {
     return rows.map((row) => row.id);
   },
 
-  update(
+  /**
+   * Writes a character update. With `expectedUpdatedAt` it writes only while the character is still at
+   * that version; with `saveId` it records the id, so a retry of a save that landed reads as `replayed`.
+   */
+  async update(
     id: string,
     data: Prisma.CharacterUpdateInput,
     guard?: { expectedUpdatedAt?: Date; saveId?: string }
-  ): Promise<unknown> {
+  ): Promise<CharacterSaveOutcome> {
     const { expectedUpdatedAt, saveId } = guard ?? {};
     if (saveId) {
       data = { ...data, lastSaveId: saveId };
     }
-    if (!expectedUpdatedAt) {
-      return prisma.character.update({ where: { id }, data });
+    try {
+      if (!expectedUpdatedAt) {
+        await prisma.character.update({ where: { id }, data });
+      } else {
+        const nextMillisecond = new Date(expectedUpdatedAt.getTime() + 1);
+        await prisma.character.update({
+          // SQL-era timestamps have microseconds; API dates serialize milliseconds.
+          where: { id, updatedAt: { gte: expectedUpdatedAt, lt: nextMillisecond } },
+          data: {
+            ...data,
+            updatedAt: new Date(Math.max(Date.now(), nextMillisecond.getTime())),
+          },
+        });
+      }
+      return 'saved';
+    } catch (err) {
+      if (!isRecordNotFound(err)) {
+        throw err;
+      }
     }
-    const nextMillisecond = new Date(expectedUpdatedAt.getTime() + 1);
-    return prisma.character.update({
-      // SQL-era timestamps have microseconds; API dates serialize milliseconds.
-      where: { id, updatedAt: { gte: expectedUpdatedAt, lt: nextMillisecond } },
-      data: {
-        ...data,
-        updatedAt: new Date(Math.max(Date.now(), nextMillisecond.getTime())),
-      },
-    });
+    if (!expectedUpdatedAt) {
+      return 'missing';
+    }
+    const stored = await characterRepository.getLastSaveId(id);
+    if (!stored) {
+      return 'missing';
+    }
+    return saveId && stored.lastSaveId === saveId ? 'replayed' : 'stale';
   },
 
   deleteById(id: string): Promise<{ count: number }> {
