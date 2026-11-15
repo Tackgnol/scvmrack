@@ -1,9 +1,11 @@
 /**
- * TypeScript port of the generate_character PL/pgSQL function (Phase 5).
- * Replaces the raw SQL call in the character creation route.
+ * TypeScript port of the generate_character PL/pgSQL function.
  *
- * All randomness goes through the supplied Roller instance so that tests can
- * use a seeded ChaCha20Engine for deterministic results.
+ * A pure computation over plain inputs: the class spec, the catalog and
+ * random tables (`RollTables`, loaded up front by `rollInputsRepository`) and
+ * the roller(s). It does no I/O. All randomness goes through the supplied
+ * Roller instances so that tests can use a seeded ChaCha20Engine for
+ * deterministic results.
  *
  * SQL function mapping:
  *   pick_random_name            → pickRandomName
@@ -16,28 +18,23 @@
  *   auto_equip_character_items  → autoEquipItems
  *   build_character_ability_bundle → buildAbilityBundle
  *   pick_character_personality  → pickPersonality
- *   hydrate_inventory_uses      → hydrateInventoryUses (from lib/inventory)
+ *   hydrate_inventory_uses      → fillInventoryUses (from lib/inventory)
  */
-import prisma from './prisma.js';
-import { Prisma } from '@prisma/client';
 import type { Roller } from '@tackgnol/rpg-tools-roller';
-import { sanitizeString } from '../utils.js';
 import { ABILITY_SCORE_LIMITS } from './character-limits.js';
 import { statToModifier } from './ability-modifiers.js';
 import { abilityGrantedItems, type AbilityGrants } from './class-grants.js';
 import { byClassOrder } from './ability-order.js';
 import { CLASSLESS_DEFAULTS } from './classless-defaults.js';
-import { hydrateInventoryUses } from './inventory.js';
+import { fillInventoryUses } from './inventory.js';
 import type {
   AbilityStat,
-  CharacterDraft,
   ClasslessStatOption,
   RollerFor,
 } from './draft-seeds.js';
 import {
   ABILITY_STATS,
   normalizeDropLowestAbilities,
-  seededRollerFor,
 } from './draft-seeds.js';
 
 // ── Internal types ─────────────────────────────────────────────────────────────
@@ -65,7 +62,7 @@ interface EquipBundle {
   equippedArmor: { key: string } | null;
 }
 
-/** Everything prisma.character.create needs except userId. */
+/** A rolled scvm: everything its stored row needs except userId, plus a classless roll's stat options. */
 export interface CharacterData {
   name: string;
   classId: number | null;
@@ -91,7 +88,7 @@ export interface CharacterData {
   classlessStatOptions?: ClasslessStatOption[];
 }
 
-type BuildCharacterOptions = {
+export type BuildCharacterOptions = {
   dropLowestAbilities?: AbilityStat[];
 };
 
@@ -172,10 +169,9 @@ async function shuffle<T>(arr: T[], roller: Roller): Promise<T[]> {
   return result;
 }
 
-// ── Catalog maps (pre-loaded per call) ────────────────────────────────────────
+// ── Roll inputs (loaded before any die is rolled) ────────────────────────────
 
-interface WeaponRow {
-  id: number;
+export interface WeaponRow {
   key: string;
   tags: string[];
   roll: number | null;
@@ -183,45 +179,66 @@ interface WeaponRow {
   defaultAmount: number | null;
 }
 
-interface ArmorRow {
-  id: number;
+export interface ArmorRow {
   key: string;
   tags: string[];
   maxTier: number | null;
-  classId?: number | null;
+  classId: number | null;
 }
 
-interface EquipRow {
-  id: number;
+export interface EquipmentRow {
   key: string;
   tags: string[];
-  classId?: number | null;
+  defaultAmount: number | null;
+  classId: number | null;
 }
 
-interface PetRow {
+export interface PetRow {
   key: string;
   tags: string[];
+  hp: number;
 }
+
+/** The whole item catalog plus the name and personality tables, as one roll draws from them. */
+export type RollTables = {
+  names: string[];
+  /** In id order: of two weapons sharing a roll value, the lowest id is the one rolled. */
+  weapons: WeaponRow[];
+  armors: ArmorRow[];
+  equipment: EquipmentRow[];
+  pets: PetRow[];
+  habits: string[];
+  tales: string[];
+  bodyDescriptions: string[];
+  traits: string[];
+};
+
+/**
+ * Everything one roll needs. `spec === null` rolls a classless scvm; `classId`
+ * is only recorded on the result (a test roll from a draft passes null with a spec).
+ */
+export type RollInputs = {
+  classId: number | null;
+  spec: ClassSpec | null;
+  tables: RollTables;
+};
+
+// ── Catalog maps (built per roll from the tables) ─────────────────────────────
 
 interface CatalogCache {
   weaponMap: Map<string, WeaponRow>;
   weaponsByRoll: Map<number, WeaponRow>;
   armorMap: Map<string, ArmorRow>;
   armorsByMaxTier: Map<number, ArmorRow[]>;
-  equipMap: Map<string, EquipRow>;
+  equipMap: Map<string, EquipmentRow>;
   petMap: Map<string, PetRow>;
 }
 
-function buildCatalogCache(
-  weapons: WeaponRow[],
-  armors: ArmorRow[],
-  equips: EquipRow[],
-  pets: PetRow[],
-): CatalogCache {
+function buildCatalogCache({ weapons, armors, equipment: equips, pets }: RollTables): CatalogCache {
   const weaponMap = new Map(weapons.map(w => [w.key, w]));
   const weaponsByRoll = new Map<number, WeaponRow>();
-  // `weapons` is queried with a stable `orderBy: { id: 'asc' }`, so when two
-  // weapons share a roll value the lowest-id one wins deterministically.
+  // `weapons` comes in id order, so when two weapons share a roll value the
+  // lowest-id one wins deterministically.
   for (const w of weapons) {
     if (w.roll !== null && !weaponsByRoll.has(w.roll)) {
       weaponsByRoll.set(w.roll, w);
@@ -280,7 +297,7 @@ async function rollStartingItemTableOne(
   presence: number,
   roller: Roller,
   catalog: CatalogCache,
-  equips: EquipRow[],
+  equips: EquipmentRow[],
 ): Promise<PoolItem[]> {
   const roll = await rollDie(12, roller);
   const mod = statToModifier(presence);
@@ -342,7 +359,7 @@ async function rollStartingItemTableOne(
 async function rollStartingItemTableTwo(
   roller: Roller,
   catalog: CatalogCache,
-  equips: EquipRow[],
+  equips: EquipmentRow[],
 ): Promise<PoolItem[]> {
   const roll = await rollDie(12, roller);
 
@@ -449,7 +466,7 @@ async function buildItemPool(
   presence: number,
   roller: Roller,
   catalog: CatalogCache,
-  equips: EquipRow[],
+  equips: EquipmentRow[],
   grantedItems: PoolItem[],
 ): Promise<PoolItem[]> {
   const carry = await rollStartingCarryItem(roller, catalog);
@@ -555,117 +572,17 @@ async function buildAbilityBundle(
 }
 // ── pick_character_personality ────────────────────────────────────────────────
 
-async function pickPersonality(roller: Roller) {
-  const [habits, tales, bodies, traits] = await Promise.all([
-    prisma.habit.findMany({ select: { key: true } }),
-    prisma.tale.findMany({ select: { key: true } }),
-    prisma.bodyDescription.findMany({ select: { key: true } }),
-    prisma.trait.findMany({ select: { key: true } }),
-  ]);
+async function pickPersonality(tables: RollTables, roller: Roller) {
+  const { habits, tales, bodyDescriptions: bodies, traits } = tables;
 
   const habit = await pickRandom(habits, roller);
   const tale  = await pickRandom(tales,  roller);
   const body  = await pickRandom(bodies, roller);
   const trait1 = await pickRandom(traits, roller);
-  const remaining = traits.filter(t => t.key !== trait1?.key);
+  const remaining = traits.filter(t => t !== trait1);
   const trait2 = await pickRandom(remaining, roller);
 
-  return {
-    habit:           habit?.key  ?? null,
-    tale:            tale?.key   ?? null,
-    bodyDescription: body?.key   ?? null,
-    trait1:          trait1?.key ?? null,
-    trait2:          trait2?.key ?? null,
-  };
-}
-
-// ── Main export ───────────────────────────────────────────────────────────────
-
-/**
- * Generate a new character and insert it into the database.
- * Returns the new character's UUID.
- *
- * Uses the supplied Roller for all random decisions so tests can inject a
- * seeded engine for deterministic results.
- */
-export async function generateCharacter(
-  classId: number,
-  roller: Roller,
-  userId?: string,
-): Promise<string> {
-  const character = await prisma.character.create({
-    data: await randomCharacterCreateData(classId, roller, userId),
-    select: { id: true },
-  });
-  return character.id;
-}
-
-/** Builds one random scvm row without persisting it, for an atomic party join. */
-export async function randomCharacterCreateData(
-  classId: number | null,
-  roller: Roller,
-  userId?: string,
-): Promise<Prisma.CharacterUncheckedCreateInput> {
-  const dropLowestAbilities = classId === null
-    ? (await shuffle([...ABILITY_STATS], roller)).slice(0, 2)
-    : [];
-  const data = await buildCharacterData(classId, () => roller, { dropLowestAbilities });
-  const { classlessStatOptions: _classlessStatOptions, ...persistedData } = data;
-  return {
-    ...(userId ? { userId } : {}),
-    ...persistedData,
-    abilities: persistedData.abilities as object[],
-    equipment: persistedData.equipment as object[],
-    equippedWeapons: persistedData.equippedWeapons as object[],
-    equippedArmor: (persistedData.equippedArmor as object | null) ?? Prisma.DbNull,
-  };
-}
-
-/** The row a confirmed draft rebuilds to, ready to insert (alone or as a party member). */
-export async function characterCreateDataFromDraft(
-  draft: CharacterDraft,
-  userId: string,
-): Promise<Prisma.CharacterUncheckedCreateInput> {
-  const classId = draft.classless ? null : draft.classId;
-  const data = await buildCharacterData(
-    classId,
-    seededRollerFor(draft.seeds),
-    { dropLowestAbilities: draft.dropLowestAbilities },
-  );
-  const { classlessStatOptions: _classlessStatOptions, ...persistedData } = data;
-  const nameOverride = sanitizeString(draft.name, 255);
-  if (nameOverride.length > 0) {
-    persistedData.name = nameOverride;
-  }
-
-  return {
-    userId,
-    ...persistedData,
-    abilities: persistedData.abilities as object[],
-    equipment: persistedData.equipment as object[],
-    equippedWeapons: persistedData.equippedWeapons as object[],
-    equippedArmor: (persistedData.equippedArmor as object | null) ?? Prisma.DbNull,
-  };
-}
-
-/**
- * Build a full character payload without persisting it.
- *
- * `classId === null` produces a classless scvm (book defaults, no class
- * abilities, no origin). All randomness goes through `rollerFor(section)`;
- * pass `() => roller` for legacy single-roller behavior or
- * `seededRollerFor(seeds)` for deterministic per-section drafts.
- *
- * SECTION ORDER IS A DETERMINISM CONTRACT — do not reorder the section
- * blocks below; reordering changes what existing seeds reproduce.
- */
-export async function buildCharacterData(
-  classId: number | null,
-  rollerFor: RollerFor,
-  options: BuildCharacterOptions = {},
-): Promise<CharacterData> {
-  const spec = classId !== null ? await loadClassSpec(classId) : null;
-  return buildCharacterDataFromSpec(classId, spec, rollerFor, options);
+  return { habit, tale, bodyDescription: body, trait1, trait2 };
 }
 
 /** A class as the generator rolls it, from the database or from a creator draft. */
@@ -693,46 +610,23 @@ export type ClassSpec = {
   randomAbilityCount: number;
 };
 
-async function loadClassSpec(classId: number): Promise<ClassSpec> {
-  const [cls, origins, abilities] = await Promise.all([
-    prisma.class.findUniqueOrThrow({ where: { id: classId } }),
-    prisma.origin.findMany({ where: { classId }, select: { key: true } }),
-    prisma.ability.findMany({ where: { classId }, orderBy: [{ position: 'asc' }, { id: 'asc' }] }),
-  ]);
-  return {
-    hpDie: cls.hpDie ?? CLASSLESS_DEFAULTS.hpDie,
-    omenDie: cls.omenDie,
-    weaponDie: cls.weaponDie ?? CLASSLESS_DEFAULTS.weaponDie,
-    armorDie: cls.armorDie ?? CLASSLESS_DEFAULTS.armorDie,
-    silverDice: cls.silverDice,
-    silverModifier: cls.silverModifier ?? CLASSLESS_DEFAULTS.silverModifier,
-    statDice: cls.statDice as Record<AbilityStat, StatDice>,
-    originKeys: origins.map((o) => o.key),
-    abilities,
-    randomAbilityCount: cls.randomAbilityCount ?? 0,
-  };
-}
+// ── Main export ───────────────────────────────────────────────────────────────
 
 /**
- * The generator proper. `spec === null` rolls a classless scvm; `classId` is
- * only recorded on the result (a test roll from a draft passes null with a spec).
+ * The generator proper: rolls one scvm from `inputs`. All randomness goes
+ * through `rollerFor(section)`; pass `() => roller` for single-roller behavior
+ * or `seededRollerFor(seeds)` for deterministic per-section drafts.
+ *
+ * SECTION ORDER IS A DETERMINISM CONTRACT — do not reorder the section
+ * blocks below; reordering changes what existing seeds reproduce.
  */
-export async function buildCharacterDataFromSpec(
-  classId: number | null,
-  cls: ClassSpec | null,
+export async function rollCharacter(
+  inputs: RollInputs,
   rollerFor: RollerFor,
   options: BuildCharacterOptions = {},
 ): Promise<CharacterData> {
-  // Pre-load all catalog data in parallel.
-  const [names, weapons, armors, equips, pets] = await Promise.all([
-    prisma.name.findMany({ select: { name: true } }),
-    prisma.weapon.findMany({ orderBy: { id: 'asc' } }),
-    prisma.armor.findMany(),
-    prisma.equipment.findMany(),
-    prisma.pet.findMany({ select: { key: true, tags: true } }),
-  ]);
-
-  const catalog = buildCatalogCache(weapons, armors, equips, pets);
+  const { classId, spec: cls, tables } = inputs;
+  const catalog = buildCatalogCache(tables);
 
   const hpDie = cls?.hpDie ?? CLASSLESS_DEFAULTS.hpDie;
   const silverDice = cls?.silverDice ?? CLASSLESS_DEFAULTS.silverDice;
@@ -782,7 +676,7 @@ export async function buildCharacterDataFromSpec(
   silver *= silverModifier;
 
   // ── Section: name ────────────────────────────────────────────────────────
-  const name = (await pickRandom(names, rollerFor('name')))?.name ?? 'Unknown';
+  const name = (await pickRandom(tables.names, rollerFor('name'))) ?? 'Unknown';
 
   // ── Section: origin (classless has none; empty list rolls nothing) ──────
   const origin = (await pickRandom(cls?.originKeys ?? [], rollerFor('origin'))) ?? null;
@@ -800,19 +694,20 @@ export async function buildCharacterDataFromSpec(
     presence,
     gearRoller,
     catalog,
-    equips.filter(e => !e.classId),
+    tables.equipment.filter(e => !e.classId),
     grantedItems,
   );
   const bundle = autoEquipItems(pool, catalog);
-  const hydratedEquipment = await hydrateInventoryUses(
+  const hydratedEquipment = await fillInventoryUses(
     bundle.equipment,
+    tables,
     presence,
     true,
     gearRoller,
-  ) as unknown[];
+  );
 
   // ── Section: personality ─────────────────────────────────────────────────
-  const personality = await pickPersonality(rollerFor('personality'));
+  const personality = await pickPersonality(tables, rollerFor('personality'));
 
   return {
     name,
@@ -838,4 +733,18 @@ export async function buildCharacterDataFromSpec(
     equippedArmor: bundle.equippedArmor,
     ...(classlessStatOptions ? { classlessStatOptions } : {}),
   };
+}
+
+/**
+ * A quick roll: every section rolls on the one `roller`. A classless scvm
+ * first rolls which two abilities take the 4d6 drop-lowest result.
+ */
+export async function rollQuickCharacter(
+  inputs: RollInputs,
+  roller: Roller,
+): Promise<CharacterData> {
+  const dropLowestAbilities = inputs.classId === null
+    ? (await shuffle([...ABILITY_STATS], roller)).slice(0, 2)
+    : [];
+  return rollCharacter(inputs, () => roller, { dropLowestAbilities });
 }

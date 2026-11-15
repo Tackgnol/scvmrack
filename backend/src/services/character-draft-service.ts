@@ -1,6 +1,5 @@
 import { OSRandomEngine, Roller } from '@tackgnol/rpg-tools-roller';
 import { translatedClassTexts } from '../lib/class-translations.js';
-import { buildCharacterData } from '../lib/generate-character.js';
 import { hydrateCharacterRow } from '../lib/get-character-full.js';
 import {
   type AbilityStat,
@@ -15,6 +14,7 @@ import {
 } from '../lib/draft-seeds.js';
 import { characterRepository } from '../repositories/character-repository.js';
 import { unauthorized } from '../errors.js';
+import { rollCharacterData } from './character-generation.js';
 import { classChoiceError, pickPoolClass } from './character-class-choice.js';
 import { resolvePartyClassPool } from './party-class-pool-service.js';
 import {
@@ -56,7 +56,7 @@ export function createCharacterDraftService(log: ServiceLogger) {
     locale: string,
   ): Promise<DraftResult> {
     const classId = draft.classless ? null : draft.classId;
-    const data = await buildCharacterData(
+    const data = await rollCharacterData(
       classId,
       seededRollerFor(draft.seeds),
       { dropLowestAbilities: draft.dropLowestAbilities },

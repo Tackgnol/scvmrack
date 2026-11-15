@@ -1,6 +1,7 @@
 import prisma from '../lib/prisma.js';
 import { advisoryLock } from './advisory-lock.js';
 import { Prisma } from '@prisma/client';
+import type { CharacterData } from '../lib/generate-character.js';
 
 /**
  * Character data-access layer. The ONLY place that talks to Prisma for character
@@ -33,6 +34,22 @@ export type CharacterPartyAccessRow = {
 };
 
 export type CharacterUpdateAudience = { characterId: string; partyIds: string[] };
+
+/** The insertable row for a rolled scvm, owned by `userId` when given; a classless roll's stat options are not stored. */
+export function characterCreateInput(
+  data: CharacterData,
+  userId?: string
+): Prisma.CharacterUncheckedCreateInput {
+  const { classlessStatOptions: _classlessStatOptions, ...persistedData } = data;
+  return {
+    ...(userId ? { userId } : {}),
+    ...persistedData,
+    abilities: persistedData.abilities as object[],
+    equipment: persistedData.equipment as object[],
+    equippedWeapons: persistedData.equippedWeapons as object[],
+    equippedArmor: (persistedData.equippedArmor as object | null) ?? Prisma.DbNull,
+  };
+}
 
 /** Character writes bound to one transaction, so a service can combine them atomically. */
 function characterTxOps(tx: Prisma.TransactionClient) {
@@ -151,6 +168,16 @@ export const characterRepository = {
     }
     return [...audiences].map(([characterId, partyIds]) => ({ characterId, partyIds: [...partyIds] }));
   },
+
+  /** Inserts one character outside any transaction and returns its id. */
+  async create(data: Prisma.CharacterUncheckedCreateInput): Promise<string> {
+    const character = await prisma.character.create({
+      data,
+      select: { id: true },
+    });
+    return character.id;
+  },
+
   /** Owner lookup for ownership checks. `null` when the row does not exist. */
   getOwnerId(id: string): Promise<{ userId: string | null } | null> {
     return prisma.character.findUnique({

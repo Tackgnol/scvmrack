@@ -218,7 +218,7 @@ mock.module('../../src/services/party-class-pool-service.js', {
   },
 });
 
-mock.module('../../src/lib/generate-character.js', {
+mock.module('../../src/services/character-generation.js', {
   namedExports: {
     randomCharacterCreateData: async (classId: number, _roller: unknown, userId?: string) => ({ fromRandom: classId, userId }),
     characterCreateDataFromDraft: async (draft: unknown, userId: string) => ({ fromDraft: draft, userId }),
@@ -236,7 +236,7 @@ mock.module('../../src/lib/get-character-full.js', {
   },
 });
 
-mock.module('../../src/lib/inventory.js', {
+mock.module('../../src/services/inventory-uses.js', {
   namedExports: {
     hydrateInventoryUses: async (items: unknown[]) => {
       state.hydrateCalls++;

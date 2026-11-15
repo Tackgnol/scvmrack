@@ -42,9 +42,9 @@ mock.module('../../src/lib/class-translations.js', {
       rows.map((row) => ({ name: row.name, description: row.description ?? row.blurb ?? null })),
   },
 });
-mock.module('../../src/lib/generate-character.js', {
+mock.module('../../src/services/character-generation.js', {
   namedExports: {
-    buildCharacterData: async (classId: number | null, rollerFor: unknown, options: unknown) => {
+    rollCharacterData: async (classId: number | null, rollerFor: unknown, options: unknown) => {
       buildCalls.push({ classId, rollerFor, options });
       if (buildError) {
         throw buildError;

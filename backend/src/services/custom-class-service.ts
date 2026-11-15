@@ -14,7 +14,7 @@ import {
 } from '../lib/class-draft.js';
 import { type SupportedLocale } from '../config/locales.js';
 import { randomSectionSeeds, seededRollerFor } from '../lib/draft-seeds.js';
-import { buildCharacterDataFromSpec } from '../lib/generate-character.js';
+import { rollCharacter } from '../lib/generate-character.js';
 import { hydrateCharacterRow } from '../lib/get-character-full.js';
 import { apiError, badRequest, conflict, notFound, unauthorized } from '../errors.js';
 import {
@@ -25,6 +25,7 @@ import {
 } from '../repositories/custom-class-repository.js';
 import { catalogRepository } from '../repositories/catalog-repository.js';
 import { creationBanRepository } from '../repositories/creation-ban-repository.js';
+import { rollInputsRepository } from '../repositories/roll-inputs-repository.js';
 import {
   fail,
   ok,
@@ -595,9 +596,12 @@ export function createCustomClassService(log: ServiceLogger) {
         if (problems.length > 0) {
           return fail(draftInvalid(problems));
         }
-        const data = await buildCharacterDataFromSpec(
-          null,
-          classSpecFromDraft(input.draft, input.language),
+        const data = await rollCharacter(
+          {
+            classId: null,
+            spec: classSpecFromDraft(input.draft, input.language),
+            tables: await rollInputsRepository.loadTables(),
+          },
           seededRollerFor(randomSectionSeeds())
         );
         const { classlessStatOptions: _unused, ...row } = data;

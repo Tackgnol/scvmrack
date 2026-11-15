@@ -5,12 +5,12 @@ import {
   type CharacterPartyAccessRow,
   type CharacterSummaryRow,
 } from '../repositories/character-repository.js';
-import { characterCreateDataFromDraft, randomCharacterCreateData } from '../lib/generate-character.js';
+import { characterCreateDataFromDraft, randomCharacterCreateData } from './character-generation.js';
 import { lockPartySeat, partyFull } from '../lib/party-limits.js';
 import { classChoiceError, pickPoolClass } from './character-class-choice.js';
 import { resolvePartyClassPool } from './party-class-pool-service.js';
 import { getCharacterFull } from '../lib/get-character-full.js';
-import { hydrateInventoryUses } from '../lib/inventory.js';
+import { hydrateInventoryUses } from './inventory-uses.js';
 import {
   hasObrPlayerCharacterAccess,
   type ObrCharacterAccessContext,

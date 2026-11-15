@@ -199,9 +199,16 @@ mock.module('../../src/repositories/custom-class-repository.js', {
     },
   },
 });
+mock.module('../../src/repositories/roll-inputs-repository.js', {
+  namedExports: {
+    rollInputsRepository: {
+      loadTables: async () => ({ names: [], weapons: [], armors: [], equipment: [], pets: [], habits: [], tales: [], bodyDescriptions: [], traits: [] }),
+    },
+  },
+});
 mock.module('../../src/lib/generate-character.js', {
   namedExports: {
-    buildCharacterDataFromSpec: async (_classId: unknown, spec: unknown) => {
+    rollCharacter: async ({ spec }: { spec: unknown }) => {
       repo.specs.push(spec);
       return { name: 'Nameless', classlessStatOptions: [] };
     },
