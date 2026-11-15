@@ -20,6 +20,7 @@ import type {
   RoomRosterState,
 } from "./useObrRosterCards.models";
 import { useObrRoomId } from "./useObrRoomId";
+import { sdkOwlbear } from "./owlbear";
 import OBR from "@owlbear-rodeo/sdk";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -129,23 +130,17 @@ export function useObrRosterCards(): ObrRosterState {
       void retrySceneCleanup().catch(() => undefined);
     }
   }, [cleanupIds, retrySceneCleanup]);
-  useEffect(() => {
-    let unsubscribe: (() => void) | undefined;
-    let active = true;
-    OBR.onReady(() => {
-      if (active) {
-        unsubscribe = OBR.scene.onReadyChange((ready) => {
+  useEffect(
+    () =>
+      sdkOwlbear.whenReady(() =>
+        OBR.scene.onReadyChange((ready) => {
           if (ready) {
             void retrySceneCleanup().catch(() => undefined);
           }
-        });
-      }
-    });
-    return () => {
-      active = false;
-      unsubscribe?.();
-    };
-  }, [retrySceneCleanup]);
+        }),
+      ),
+    [retrySceneCleanup],
+  );
 
   async function removeFromRoster(characterId: string) {
     setRemoveRosterAction({ characterId, pending: true, error: null });

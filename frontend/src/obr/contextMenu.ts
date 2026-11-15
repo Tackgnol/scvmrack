@@ -10,6 +10,7 @@ import {
 } from "@tackgnol/rpgtools-owlbear";
 import { ENEMY_META_KEY, getContextEnemyId } from "./enemies";
 import { CHARACTER_META_KEY, EXTENSION_ID, scvmrackObrExtension } from "./extension";
+import { sdkOwlbear } from "./owlbear";
 
 export const VIEW_SCVM_CONTEXT_MENU_ID = `${EXTENSION_ID}/view-scvm`;
 export const SCVM_CARD_POPOVER_ID = `${EXTENSION_ID}/card`;
@@ -54,7 +55,7 @@ export function createScvmContextMenu(): ContextMenuItem {
 
       void OBR.popover.open({
         id: SCVM_CARD_POPOVER_ID,
-        url: getObrCardUrl(characterId, OBR.room.id, context.items[0]?.id),
+        url: getObrCardUrl(characterId, sdkOwlbear.roomId(), context.items[0]?.id),
         width: CARD_POPOVER_WIDTH,
         height: CARD_POPOVER_HEIGHT,
         ...getContextMenuPopoverAnchor(elementId),
@@ -105,7 +106,7 @@ async function openEnemyPopover(
     id: ENEMY_CARD_POPOVER_ID,
     url: getObrEnemyUrl(
       enemyId,
-      OBR.room.id,
+      sdkOwlbear.roomId(),
       context.items[0]?.id,
       playerCharacterId,
     ),

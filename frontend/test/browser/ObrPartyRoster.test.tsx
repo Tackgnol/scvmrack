@@ -17,29 +17,16 @@ import {
   type PartyDetail,
 } from "@/api/party";
 import i18n from "@/i18n";
+import { createMemoryOwlbear, type MemoryOwlbear } from "../obr/memoryOwlbear";
 
 const ROOM_ID = "room-test";
-const obrRoomMock = vi.hoisted(() => ({ roomId: "room-test" }));
+let owlbear: MemoryOwlbear = createMemoryOwlbear({ roomId: ROOM_ID });
 
 vi.mock("@/api/party", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/api/party")>()),
   listParties: vi.fn(),
   attachPartyRoom: vi.fn(),
   getParty: vi.fn(),
-}));
-
-vi.mock("@owlbear-rodeo/sdk", () => ({
-  default: {
-    room: {
-      get id() {
-        return obrRoomMock.roomId;
-      },
-    },
-    notification: {
-      show: vi.fn(() => Promise.resolve()),
-    },
-  },
-  buildLabel: vi.fn(),
 }));
 
 const sampleCard: ObrPartyRosterCard = {
@@ -89,7 +76,7 @@ describe("ObrPartyRoster", () => {
 
   it("renders the GM roster header and compact card rows", async () => {
     await render(
-      <BrowserTestProvider>
+      <BrowserTestProvider owlbear={owlbear}>
         <ObrPartyRoster cards={[sampleCard]} maxMembers={8} />
       </BrowserTestProvider>,
     );
@@ -107,7 +94,7 @@ describe("ObrPartyRoster", () => {
 
   it("expands computed modifiers from the Mods control", async () => {
     await render(
-      <BrowserTestProvider>
+      <BrowserTestProvider owlbear={owlbear}>
         <ObrPartyRoster cards={[sampleCard]} />
       </BrowserTestProvider>,
     );
@@ -127,7 +114,7 @@ describe("ObrPartyRoster", () => {
 
   it("renders an empty roster state while scene wiring is absent", async () => {
     await render(
-      <BrowserTestProvider>
+      <BrowserTestProvider owlbear={owlbear}>
         <ObrPartyRoster cards={[]} maxMembers={8} />
       </BrowserTestProvider>,
     );
@@ -144,7 +131,7 @@ describe("ObrPartyRoster", () => {
 
   it("shows a divider between adjacent scvm entries but not above the first (RPG-59)", async () => {
     await render(
-      <BrowserTestProvider>
+      <BrowserTestProvider owlbear={owlbear}>
         <ObrPartyRoster
           rows={[
             { id: cardId, characterId: cardId, card: sampleCard, players: [], tokens: [] },
@@ -174,7 +161,7 @@ describe("ObrPartyRoster", () => {
     const unbindToken = vi.fn(() => Promise.resolve());
 
     await render(
-      <BrowserTestProvider>
+      <BrowserTestProvider owlbear={owlbear}>
         <ObrPartyRoster
           rows={[
             {
@@ -252,7 +239,7 @@ describe("ObrPartyRoster", () => {
 
   it("keeps cleanup controls visible for stale backend bindings", async () => {
     await render(
-      <BrowserTestProvider>
+      <BrowserTestProvider owlbear={owlbear}>
         <ObrPartyRoster
           rows={[
             {
@@ -300,7 +287,7 @@ describe("ObrPartyRoster", () => {
     const onRemoveFromRoster = vi.fn(() => Promise.resolve());
 
     await render(
-      <BrowserTestProvider>
+      <BrowserTestProvider owlbear={owlbear}>
         <ObrPartyRoster
           rows={[
             {
@@ -326,7 +313,7 @@ describe("ObrPartyRoster", () => {
 
   it("surfaces a remove-from-roster failure via the roster error banner", async () => {
     await render(
-      <BrowserTestProvider>
+      <BrowserTestProvider owlbear={owlbear}>
         <ObrPartyRoster
           rows={[
             {
@@ -357,7 +344,7 @@ describe("ObrPartyRoster", () => {
     const onRefresh = vi.fn(() => Promise.resolve());
 
     await render(
-      <BrowserTestProvider>
+      <BrowserTestProvider owlbear={owlbear}>
         <ObrPartyRoster
           cards={[]}
           maxMembers={8}
@@ -376,7 +363,7 @@ describe("ObrPartyRoster", () => {
     const unassignPlayer = vi.fn(() => Promise.resolve());
 
     await render(
-      <BrowserTestProvider>
+      <BrowserTestProvider owlbear={owlbear}>
         <ObrPartyRoster
           rows={[
             {
@@ -424,7 +411,7 @@ describe("ObrPartyRoster", () => {
 describe("ObrRoomPromotion", () => {
   beforeEach(async () => {
     await i18n.changeLanguage("en");
-    obrRoomMock.roomId = ROOM_ID;
+    owlbear = createMemoryOwlbear({ roomId: ROOM_ID });
     vi.mocked(listParties).mockReset();
     vi.mocked(attachPartyRoom).mockReset();
     vi.mocked(getParty).mockReset();
@@ -445,7 +432,7 @@ describe("ObrRoomPromotion", () => {
     queryClient.setQueryData(partyKeys.obrRoom(ROOM_ID), memberRoomParty);
 
     await render(
-      <BrowserTestProvider>
+      <BrowserTestProvider owlbear={owlbear}>
         <QueryClientProvider client={queryClient}>
           <ObrRoomPromotion />
         </QueryClientProvider>
@@ -491,7 +478,7 @@ describe("ObrRoomPromotion", () => {
     const queryClient = new QueryClient();
 
     await render(
-      <BrowserTestProvider>
+      <BrowserTestProvider owlbear={owlbear}>
         <QueryClientProvider client={queryClient}>
           <ObrRoomPromotion />
         </QueryClientProvider>

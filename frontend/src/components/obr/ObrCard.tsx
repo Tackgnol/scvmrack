@@ -1,4 +1,3 @@
-import OBR from "@owlbear-rodeo/sdk";
 import { obrKeys } from "@/api/obrKeys";
 import {
   fetchObrCards,
@@ -12,8 +11,9 @@ import {
 } from "@/components/organisms/party/warbandMember";
 import { getApiLocale } from "@/hooks/utils";
 import { SCVM_CARD_POPOVER_ID } from "@/obr/contextMenu";
-import { unbindCharacterFromToken } from "@tackgnol/rpgtools-owlbear";
-import { scvmrackObrExtension } from "@/obr/extension";
+import { notifyQuietly, useOwlbear } from "@/obr/owlbear";
+import { unbindTokenInScene } from "@/obr/tokenSceneBinding";
+import type { ObrRole } from "@/obr/owlbear.models";
 import { useTranslation } from "react-i18next";
 import { useEffect, useState } from "react";
 import { CardShell, StatusButton, StatusFrame } from "./ObrCard.styles";
@@ -43,7 +43,8 @@ export function ObrCardRoute({
   tokenId = getObrCardTokenId(),
 }: ObrCardRouteProps) {
   const { i18n, t } = useTranslation();
-  const [role, setRole] = useState<"GM" | "PLAYER" | null>(null);
+  const owlbear = useOwlbear();
+  const [role, setRole] = useState<ObrRole | null>(null);
   const locale = getApiLocale(i18n.language);
   const id = characterId?.trim() ?? "";
   const room = roomId?.trim() ?? "";
@@ -74,8 +75,8 @@ export function ObrCardRoute({
       };
     }
 
-    void OBR.player
-      .getRole()
+    void owlbear
+      .role()
       .then((nextRole) => {
         if (active) {
           setRole(nextRole);
@@ -90,7 +91,7 @@ export function ObrCardRoute({
     return () => {
       active = false;
     };
-  }, [token]);
+  }, [owlbear, token]);
 
   async function handleUnbind() {
     if (!token) {
@@ -98,13 +99,18 @@ export function ObrCardRoute({
     }
 
     try {
-      await unbindCharacterFromToken(scvmrackObrExtension, OBR, token);
+      await unbindTokenInScene(token);
       await Promise.all([
-        showNotification(t("obr.card.unboundToken", "Token unbound"), "SUCCESS"),
-        OBR.popover.close(SCVM_CARD_POPOVER_ID),
+        notifyQuietly(
+          owlbear,
+          t("obr.card.unboundToken", "Token unbound"),
+          "SUCCESS",
+        ),
+        owlbear.closePopover(SCVM_CARD_POPOVER_ID),
       ]);
     } catch {
-      await showNotification(
+      await notifyQuietly(
+        owlbear,
         t("obr.card.unbindFailed", "Could not unbind token"),
         "ERROR",
       );
@@ -220,15 +226,4 @@ function getObrCardRoomId(search = window.location.search): string | null {
 function getObrCardTokenId(search = window.location.search): string | null {
   const token = new URLSearchParams(search).get("token")?.trim();
   return token ? token : null;
-}
-
-async function showNotification(
-  message: string,
-  variant: "SUCCESS" | "ERROR",
-): Promise<void> {
-  try {
-    await OBR.notification.show(message, variant);
-  } catch {
-    // The scene mutation is authoritative; notification delivery is best-effort.
-  }
 }

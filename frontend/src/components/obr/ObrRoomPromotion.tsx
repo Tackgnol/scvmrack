@@ -1,6 +1,6 @@
-import OBR from "@owlbear-rodeo/sdk";
 import { useTranslation } from "react-i18next";
 import { useObrRoomParty, usePromoteObrRoom } from "@/hooks/usePartyRepository";
+import { notifyQuietly, useOwlbear } from "@/obr/owlbear";
 import { ObrRoomAttach } from "./ObrRoomAttach";
 import { ObrRoomPoolSummary } from "./ObrRoomPoolSummary/ObrRoomPoolSummary";
 import {
@@ -14,7 +14,8 @@ import {
 
 export function ObrRoomPromotion() {
   const { t } = useTranslation();
-  const roomId = OBR.room.id;
+  const owlbear = useOwlbear();
+  const roomId = owlbear.roomId();
   const promotedRoom = useObrRoomParty(roomId);
   const promoteRoom = usePromoteObrRoom();
   const party = promotedRoom.data ?? promoteRoom.data;
@@ -27,12 +28,14 @@ export function ObrRoomPromotion() {
     const inviteUrl = toAbsoluteInviteUrl(invitePath);
     try {
       await writeClipboardText(inviteUrl);
-      await showObrNotification(
+      await notifyQuietly(
+        owlbear,
         t("obr.roster.inviteCopied", "Invite link copied"),
         "SUCCESS",
       );
     } catch {
-      await showObrNotification(
+      await notifyQuietly(
+        owlbear,
         t("obr.roster.copyInviteFailed", "Could not copy invite link"),
         "ERROR",
       );
@@ -154,17 +157,5 @@ async function writeClipboardText(value: string): Promise<void> {
     }
   } finally {
     document.body.removeChild(textarea);
-  }
-}
-
-async function showObrNotification(
-  message: string,
-  variant: "SUCCESS" | "ERROR",
-): Promise<void> {
-  try {
-    await OBR.notification.show(message, variant);
-  } catch {
-    // Clipboard already did or did not work; notification failure should not
-    // turn the button into a broken control.
   }
 }

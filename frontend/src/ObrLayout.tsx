@@ -1,6 +1,6 @@
-import { openObrSessionTab } from "@/auth/obrAuthClient";
 import { useCharacter } from "@/CharacterContext/CharacterContext";
-import OBR from "@owlbear-rodeo/sdk";
+import { useOwlbear } from "@/obr/owlbear";
+import { useOpenInScvmrack } from "@/obr/useOpenInScvmrack";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { LanguageToggle } from "./components/molecules/header/LanguageToggle";
@@ -28,49 +28,40 @@ function maxDimension(available: number | undefined, floor: number): number {
 
 // Chrome for the Owlbear Rodeo extension panel. No app nav/header/footer — the
 // host (OBR) owns the window. The only chrome is a thin bar that lets the
-// player grow the panel in place (`OBR.action.setWidth`/`setHeight`) so the
+// player grow the panel in place (`setPanelWidth`/`setPanelHeight`) so the
 // same sheet gets room to edit, then shrink it back. Editing never leaves
 // this iframe, so the partitioned session is untouched.
 export function ObrLayout({ children }: { children: React.ReactNode }) {
   const { t } = useTranslation();
+  const owlbear = useOwlbear();
   const { characterId } = useCharacter();
+  const { isOpening, openInScvmrack } = useOpenInScvmrack();
   const [ready, setReady] = useState(false);
   const [size, setSize] = useState<PanelSize>("compact");
-  const [isOpening, setIsOpening] = useState(false);
   const expanded = size !== "compact";
 
-  useEffect(() => OBR.onReady(() => setReady(true)), []);
+  useEffect(() => owlbear.whenReady(() => setReady(true)), [owlbear]);
 
   function toggleExpand() {
     const next = expanded ? "compact" : "expanded";
     setSize(next);
-    OBR.action.setWidth(next === "expanded" ? EXPANDED_WIDTH : COMPACT_WIDTH);
+    owlbear.setPanelWidth(next === "expanded" ? EXPANDED_WIDTH : COMPACT_WIDTH);
   }
 
   function maximize() {
     setSize("max");
-    OBR.action.setWidth(maxDimension(window.screen.availWidth, EXPANDED_WIDTH));
-    OBR.action.setHeight(
+    owlbear.setPanelWidth(
+      maxDimension(window.screen.availWidth, EXPANDED_WIDTH),
+    );
+    owlbear.setPanelHeight(
       maxDimension(window.screen.availHeight, EXPANDED_HEIGHT_FLOOR),
     );
   }
 
-  async function openInScvmrack() {
-    if (!characterId) {
-      return;
+  function openActiveCharacter() {
+    if (characterId) {
+      void openInScvmrack(characterId);
     }
-    setIsOpening(true);
-    try {
-      await openObrSessionTab(
-        `/obr-open?character=${encodeURIComponent(characterId)}`,
-      );
-    } catch {
-      await OBR.notification.show(
-        t("obr.layout.openInScvmrackFailed", "Could not open in scvmrack"),
-        "ERROR",
-      );
-    }
-    setIsOpening(false);
   }
 
   return (
@@ -82,7 +73,7 @@ export function ObrLayout({ children }: { children: React.ReactNode }) {
           {characterId && (
             <ExpandButton
               type="button"
-              onClick={openInScvmrack}
+              onClick={openActiveCharacter}
               disabled={!ready || isOpening}
             >
               {isOpening

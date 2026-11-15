@@ -1,8 +1,6 @@
-import {
-  bindCharacterToTokens,
-  unbindCharacterFromToken,
-} from "@tackgnol/rpgtools-owlbear";
+import { bindCharacterToTokens } from "@tackgnol/rpgtools-owlbear";
 import { obrApiClient } from "./obrApiClient";
+import { unbindTokenInScene } from "./tokenSceneBinding";
 import { scvmrackObrExtension } from "./extension";
 import OBR from "@owlbear-rodeo/sdk";
 import { fetchRoomParticipation } from "@/api/roomParticipation";
@@ -88,7 +86,7 @@ export async function unbindRoomToken(
 ): Promise<void> {
   try {
     await obrApiClient.clearTokenCharacter({ roomId, tokenId });
-    await unbindCharacterFromToken(scvmrackObrExtension, OBR, tokenId);
+    await unbindTokenInScene(tokenId);
   } finally {
     await reconcileRoomTokens(roomId, [tokenId]);
   }

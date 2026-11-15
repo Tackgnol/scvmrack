@@ -1,11 +1,10 @@
-import OBR from "@owlbear-rodeo/sdk";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useObrRole } from "@/hooks/useObrRole";
+import { useOwlbear } from "@/obr/owlbear";
+import { restorePlayerCharacterId } from "@/obr/roomCharacterBinding";
 import { useObrEnemies } from "@/obr/useObrEnemies";
-import { restoreCurrentObrCharacterId } from "@tackgnol/rpgtools-owlbear";
-import { scvmrackObrExtension } from "@/obr/extension";
-import { obrRoomBindingsClient } from "@/obr/obrApiClient";
+import { useObrRoomId } from "@/obr/useObrRoomId";
 import { EmptyEnemies, EnemyShell } from "../ObrEnemies.styles";
 import { enemyErrorMessage } from "./enemyErrorMessage";
 import { EnemyEditorForm } from "./EnemyEditorForm";
@@ -23,7 +22,8 @@ export function ObrEnemyWindow({
 }) {
   const { t } = useTranslation();
   const role = useObrRole();
-  const [roomId, setRoomId] = useState(initialRoomId?.trim() ?? "");
+  const readyRoomId = useObrRoomId();
+  const roomId = initialRoomId?.trim() || readyRoomId;
   const [playerCharacterId, setPlayerCharacterId] = useState(
     initialCharacterId?.trim() || null,
   );
@@ -31,18 +31,6 @@ export function ObrEnemyWindow({
     hasAttemptedPlayerCharacterRestore,
     setHasAttemptedPlayerCharacterRestore,
   ] = useState(Boolean(initialCharacterId?.trim()));
-
-  useEffect(() => {
-    let active = true;
-    OBR.onReady(() => {
-      if (active && !roomId) {
-        setRoomId(OBR.room.id);
-      }
-    });
-    return () => {
-      active = false;
-    };
-  }, [roomId]);
 
   useEffect(() => {
     if (
@@ -54,11 +42,7 @@ export function ObrEnemyWindow({
     }
 
     let active = true;
-    void restoreCurrentObrCharacterId(
-      scvmrackObrExtension,
-      OBR,
-      obrRoomBindingsClient,
-    )
+    void restorePlayerCharacterId()
       .then((storedCharacterId) => {
         if (active && storedCharacterId) {
           setPlayerCharacterId(storedCharacterId);
@@ -124,6 +108,7 @@ function ObrEnemyGmWindow({
   roomId: string;
 }) {
   const { t } = useTranslation();
+  const owlbear = useOwlbear();
   const [actionError, setActionError] = useState<string | null>(null);
   const state = useObrEnemies({ mode: "gm", roomId });
   const enemy = state.enemies.find((item) => item.id === enemyId);
@@ -164,7 +149,7 @@ function ObrEnemyGmWindow({
           setActionError(null);
           try {
             await state.saveEnemy(toObrEnemy(values, enemy.id));
-            await OBR.notification.show(
+            await owlbear.notify(
               t("obr.enemies.saveSuccess", "Enemy saved"),
               "SUCCESS",
             );
