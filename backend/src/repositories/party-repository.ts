@@ -27,7 +27,7 @@ async function setPartyRoom(
 
 /**
  * Party data-access layer. The ONLY place that talks to Prisma for party
- * reads/writes (and the character membership columns they touch). Holds no
+ * reads/writes; seat changes live in `party-membership-repository.ts`. Holds no
  * business logic — all invariants live in `party-service.ts`.
  */
 
@@ -54,14 +54,6 @@ export type PartyMemberRow = {
 };
 
 export type PartyWithMembers = PartyRow & { members: PartyMemberRow[] };
-
-/** Minimal character shape the join/leave/kick flows reason about. */
-export type CharacterForJoinRow = {
-  id: string;
-  userId: string | null;
-  sessionId: string | null;
-  partyId: string | null;
-};
 
 /** Room-party reads and writes bound to one transaction, so a service can combine them atomically. */
 function roomOps(tx: Prisma.TransactionClient) {
@@ -254,33 +246,6 @@ export const partyRepository = {
           orderBy: { joinedAt: 'asc' },
           select: MEMBER_SELECT,
         },
-      },
-    });
-  },
-
-  getCharacterForJoin(
-    characterId: string
-  ): Promise<CharacterForJoinRow | null> {
-    return prisma.character.findUnique({
-      where: { id: characterId },
-      select: { id: true, userId: true, sessionId: true, partyId: true },
-    });
-  },
-
-  countMembers(partyId: string): Promise<number> {
-    return prisma.character.count({ where: { partyId } });
-  },
-
-  /** Set (or clear) a character's party binding; keeps `joinedAt` in step. */
-  async setCharacterParty(
-    characterId: string,
-    partyId: string | null
-  ): Promise<void> {
-    await prisma.character.update({
-      where: { id: characterId },
-      data: {
-        partyId,
-        joinedAt: partyId === null ? null : new Date(),
       },
     });
   },

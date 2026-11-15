@@ -86,6 +86,9 @@ export const conflict = (code: string, message: string) =>
 export const preconditionFailed = (message: string) =>
   apiError(412, 'PRECONDITION_FAILED', message);
 
+export const characterAccessDenied = () =>
+  apiError(403, 'CHARACTER_ACCESS_DENIED', "You don't have access to this scvm");
+
 export function toApiErrorPayload(
   error: ApiHttpError,
   requestId: string

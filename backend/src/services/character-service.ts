@@ -6,7 +6,7 @@ import {
   type CharacterSummaryRow,
 } from '../repositories/character-repository.js';
 import { characterCreateDataFromDraft, randomCharacterCreateData } from './character-generation.js';
-import { lockPartySeat, partyFull } from '../lib/party-limits.js';
+import { createPartyMembership, ownerCannotJoin } from './party-membership.js';
 import { classChoiceError, pickPoolClass } from './character-class-choice.js';
 import { resolvePartyClassPool } from './party-class-pool-service.js';
 import { getCharacterFull } from '../lib/get-character-full.js';
@@ -26,6 +26,7 @@ import {
   ApiHttpError,
   apiError,
   badRequest,
+  characterAccessDenied,
   conflict,
   notFound,
   unauthorized,
@@ -87,28 +88,22 @@ function resolveListLocale(rawLocale: unknown, acceptLanguage: unknown): 'en' | 
 }
 
 /**
- * Inserts the scvm as a party member, an Owlbear player's seat, or on its own. A guest replacing
- * their scvm loses the old one in the same transaction. Null when the party is already full.
+ * Inserts a scvm outside any party: bound to an Owlbear player's seat, or on its own. A guest
+ * replacing their scvm in a room loses the old one in the same transaction.
  */
 function insertCharacter(
   data: Prisma.CharacterUncheckedCreateInput,
   target: {
-    party: { id: string } | null;
     obrBinding?: { roomId: string; playerId: string };
     replaceUserId?: string;
   }
-): Promise<string | null> {
-  const { party, obrBinding, replaceUserId } = target;
+): Promise<string> {
+  const { obrBinding, replaceUserId } = target;
   return characterRepository.transaction(async (ops) => {
-    if (party && !(await lockPartySeat(ops, party.id, replaceUserId))) {
-      return null;
-    }
     if (replaceUserId) {
       await ops.deleteCharactersOf(replaceUserId);
     }
-    const characterId = await ops.createCharacter(
-      party ? { ...data, partyId: party.id, joinedAt: new Date() } : data
-    );
+    const characterId = await ops.createCharacter(data);
     if (obrBinding) {
       await ops.bindObrPlayer(obrBinding, characterId);
     }
@@ -127,6 +122,8 @@ export function createCharacterService(
   log: ServiceLogger,
   partyBus?: PartyEventBus
 ) {
+  const membership = createPartyMembership(partyBus);
+
   async function resolveReadAccess(
     id: string,
     session: AppSession,
@@ -169,14 +166,7 @@ export function createCharacterService(
       }
     }
 
-    return {
-      ok: false,
-      error: apiError(
-        403,
-        'CHARACTER_ACCESS_DENIED',
-        "You don't have access to this scvm"
-      ),
-    };
+    return { ok: false, error: characterAccessDenied() };
   }
 
   async function ensureOwnership(
@@ -202,11 +192,7 @@ export function createCharacterService(
       return null;
     }
 
-    return apiError(
-      403,
-      'CHARACTER_ACCESS_DENIED',
-      "You don't have access to this scvm"
-    );
+    return characterAccessDenied();
   }
 
   return {
@@ -240,10 +226,9 @@ export function createCharacterService(
         if (party && !input.draft && !obrBinding) {
           return fail(badRequest('DRAFT_REQUIRED', 'Forge a scvm to join a party'));
         }
-        if (party && party.ownerUserId === userId) {
-          return fail(
-            apiError(403, 'PARTY_OWNER_CANNOT_JOIN', 'A game master cannot join their own party')
-          );
+        const ownParty = party ? ownerCannotJoin(party, userId) : null;
+        if (ownParty) {
+          return fail(ownParty);
         }
 
         // One scvm per guest. An anonymous session may hold only a single
@@ -307,17 +292,23 @@ export function createCharacterService(
           }
           data = await randomCharacterCreateData(classId, roller, userId);
         }
-        const characterId = await insertCharacter(data, {
-          party,
-          obrBinding,
-          // Inside a party or room the guest's old scvm goes in the same transaction; alone, it is pruned below.
-          replaceUserId: isGuest && input.replace && (party || obrBinding) ? userId : undefined,
-        });
-        if (!characterId) {
-          return fail(partyFull());
-        }
+        // Inside a party or room the guest's old scvm goes in the same transaction; alone, it is pruned below.
+        const replaceUserId = isGuest && input.replace && (party || obrBinding) ? userId : undefined;
+        let characterId: string;
         if (party) {
-          partyBus?.publish(party.id, { type: 'character.joined', characterId });
+          const seated = await membership.takeSeat({
+            partyId: party.id,
+            userId,
+            create: data,
+            obrBinding,
+            replacingGuest: replaceUserId,
+          });
+          if (!seated.ok) {
+            return fail(seated.error);
+          }
+          characterId = seated.value;
+        } else {
+          characterId = await insertCharacter(data, { obrBinding, replaceUserId });
         }
         const character = await getCharacterFull(characterId, input.locale);
         if (!character) {
@@ -565,15 +556,15 @@ export function createCharacterService(
 
       try {
         const partyBinding = await characterRepository.getPartyId(input.id);
-        const result = await characterRepository.deleteById(input.id);
-        if (result.count === 0) {
+        const deleted = partyBinding?.partyId
+          ? await membership.giveUpSeat({
+              partyId: partyBinding.partyId,
+              characterId: input.id,
+              reason: 'deleted',
+            })
+          : (await characterRepository.deleteById(input.id)).count > 0;
+        if (!deleted) {
           return fail(notFound('CHARACTER_NOT_FOUND', 'Character not found'));
-        }
-        if (partyBinding?.partyId) {
-          partyBus?.publish(partyBinding.partyId, {
-            type: 'character.left',
-            characterId: input.id,
-          });
         }
         return ok(undefined);
       } catch (err) {

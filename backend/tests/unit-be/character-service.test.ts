@@ -33,6 +33,9 @@ const state = {
   scopeCalls: [] as Array<string | null | undefined>,
   inserts: [] as Insert[],
   partyFull: false,
+  seatCalls: [] as Array<Record<string, unknown>>,
+  giveUpCalls: [] as Array<{ partyId: string; characterId: string; reason: string }>,
+  giveUpResult: true,
   updateError: null as unknown,
   lastSaveId: null as string | null,
   generateError: null as unknown,
@@ -91,6 +94,9 @@ function resetState(): void {
   state.scopeCalls = [];
   state.inserts = [];
   state.partyFull = false;
+  state.seatCalls = [];
+  state.giveUpCalls = [];
+  state.giveUpResult = true;
   state.updateError = null;
   state.lastSaveId = null;
   state.generateError = null;
@@ -161,20 +167,14 @@ mock.module('../../src/repositories/character-repository.js', {
       transaction: async (work: (ops: unknown) => Promise<unknown>) => {
         const insert: Partial<Insert> = {};
         const result = await work({
-          lockParty: async () => {},
-          countPartyMembers: async () => (state.partyFull ? 10 : 0),
           deleteCharactersOf: async (userId: string) => {
             insert.replaceUserId = userId;
           },
-          createCharacter: async ({ partyId, joinedAt: _joinedAt, ...data }: Record<string, unknown>) => {
+          createCharacter: async (data: Record<string, unknown>) => {
             if (state.generateError) {
               throw state.generateError;
             }
             insert.data = data;
-            if (partyId) {
-              insert.partyId = partyId as string;
-              return 'member-id';
-            }
             return state.generatedId;
           },
           bindObrPlayer: async (obrBinding: { roomId: string; playerId: string }) => {
@@ -203,6 +203,48 @@ mock.module('../../src/repositories/character-repository.js', {
         return state.classNameMap;
       },
     },
+  },
+});
+
+// Seats are the membership module's job (party-membership.test.ts); this stub
+// records a forge into a party as an insert, the way the transaction fake does.
+mock.module('../../src/services/party-membership.js', {
+  namedExports: {
+    ownerCannotJoin: (party: { ownerUserId: string }, userId: string | null) =>
+      userId && party.ownerUserId === userId
+        ? { statusCode: 403, code: 'PARTY_OWNER_CANNOT_JOIN', message: 'A game master cannot join their own party' }
+        : null,
+    createPartyMembership: () => ({
+      takeSeat: async (input: {
+        partyId: string;
+        userId: string | null;
+        create: Record<string, unknown>;
+        obrBinding?: { roomId: string; playerId: string };
+        replacingGuest?: string;
+      }) => {
+        state.seatCalls.push(input);
+        if (state.generateError) {
+          throw state.generateError;
+        }
+        if (state.partyFull) {
+          return { ok: false, error: { statusCode: 409, code: 'PARTY_FULL', message: 'This party is full' } };
+        }
+        state.inserts.push({
+          partyId: input.partyId,
+          data: input.create,
+          ...(input.obrBinding ? { obrBinding: input.obrBinding } : {}),
+          ...(input.replacingGuest ? { replaceUserId: input.replacingGuest } : {}),
+        });
+        return { ok: true, value: 'member-id' };
+      },
+      giveUpSeat: async (input: { partyId: string; characterId: string; reason: string }) => {
+        state.giveUpCalls.push(input);
+        if (state.deleteError) {
+          throw state.deleteError;
+        }
+        return state.giveUpResult;
+      },
+    }),
   },
 });
 
@@ -408,9 +450,17 @@ test('generate with an invite creates the scvm inside its party in one step', as
     { partyId: 'party-1', data: { fromDraft: draft, userId: 'user-1' } },
   ]);
   assert.deepEqual(state.createFromDraftCalls, []);
-  assert.deepEqual(publishedEvents, [
-    { partyId: 'party-1', event: { type: 'character.joined', characterId: 'member-id' } },
+  assert.deepEqual(state.seatCalls, [
+    {
+      partyId: 'party-1',
+      userId: 'user-1',
+      create: { fromDraft: draft, userId: 'user-1' },
+      obrBinding: undefined,
+      replacingGuest: undefined,
+    },
   ]);
+  // The character.joined event comes from the membership module.
+  assert.deepEqual(publishedEvents, []);
 });
 
 
@@ -582,6 +632,21 @@ test('a GM cannot forge into their own party', async () => {
   assert.equal(result.ok, false);
   assert.equal((result as any).error.code, 'PARTY_OWNER_CANNOT_JOIN');
   assert.deepEqual(state.memberCalls, []);
+  assert.deepEqual(state.seatCalls, []);
+});
+
+test("the GM refusal comes before the forge's draft is checked", async () => {
+  state.scope = partyScope();
+
+  const result = await service().generate({
+    session: session('gm-1'),
+    inviteToken: 'invite-1',
+    draft: { classId: null, classless: true, dropLowestAbilities: [], seeds: randomSectionSeeds() },
+    locale: 'en',
+  });
+
+  assert.equal((result as any).error.statusCode, 403);
+  assert.equal((result as any).error.code, 'PARTY_OWNER_CANNOT_JOIN');
 });
 
 test('joining a party needs a forged draft, not a blind roll', async () => {
@@ -971,7 +1036,7 @@ test('remove succeeds for the owner', async () => {
   assert.equal(r.ok, true);
 });
 
-test('remove publishes character.left when the deleted character belonged to a party', async () => {
+test('remove of a party member deletes it through the membership module', async () => {
   state.partyIdRow = { partyId: PARTY_ID };
   const r = await serviceWithBus().remove({
     id: VALID_ID,
@@ -979,12 +1044,33 @@ test('remove publishes character.left when the deleted character belonged to a p
   });
 
   assert.equal(r.ok, true);
-  assert.deepEqual(publishedEvents, [
-    {
-      partyId: PARTY_ID,
-      event: { type: 'character.left', characterId: VALID_ID },
-    },
+  assert.deepEqual(state.giveUpCalls, [
+    { partyId: PARTY_ID, characterId: VALID_ID, reason: 'deleted' },
   ]);
+  // The character.left event comes from the membership module.
+  assert.deepEqual(publishedEvents, []);
+});
+
+test('remove of a party member that is already gone returns 404', async () => {
+  state.partyIdRow = { partyId: PARTY_ID };
+  state.giveUpResult = false;
+  const r = await service().remove({ id: VALID_ID, session: session('user-1') });
+  assert.equal((r as any).error.statusCode, 404);
+  assert.equal((r as any).error.code, 'CHARACTER_NOT_FOUND');
+});
+
+test('remove of a scvm outside any party deletes it directly', async () => {
+  const r = await service().remove({ id: VALID_ID, session: session('user-1') });
+  assert.equal(r.ok, true);
+  assert.deepEqual(state.giveUpCalls, []);
+});
+
+test('remove maps a failure deleting a party member to 5xx CHARACTER_DELETE_FAILED', async () => {
+  state.partyIdRow = { partyId: PARTY_ID };
+  state.deleteError = new Error('db down');
+  const r = await service().remove({ id: VALID_ID, session: session('user-1') });
+  assert.equal((r as any).error.statusCode, 500);
+  assert.equal((r as any).error.code, 'CHARACTER_DELETE_FAILED');
 });
 
 // ---- count ----

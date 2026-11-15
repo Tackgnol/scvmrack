@@ -59,14 +59,6 @@ const ops = {
     state.cleanup.push(item);
     state.writes.push('cleanup');
   },
-  removeMembership: async () => {
-    state.member = false;
-    state.writes.push('membership');
-  },
-  removeBindings: async () => {
-    state.bound = false;
-    state.writes.push('bindings');
-  },
   setToken: async () => {
     state.writes.push('token');
     return {
@@ -107,6 +99,29 @@ mock.module('../../src/repositories/room-participation-repository.js', {
     },
   },
 });
+// Giving up the seat (membership, bindings, the roster event) is the membership
+// module's job (party-membership.test.ts); here it is a stub over the same fake room.
+mock.module('../../src/services/party-membership.js', {
+  namedExports: {
+    createPartyMembership: () => ({
+      inRoom: async (
+        _roomId: string,
+        work: (room: typeof ops, seat: unknown) => Promise<unknown>
+      ) => {
+        if (state.error) {
+          throw state.error;
+        }
+        return work(ops, {
+          giveUp: async (_characterId: string, reason: string) => {
+            state.member = false;
+            state.bound = false;
+            state.writes.push(`give up seat (${reason})`);
+          },
+        });
+      },
+    }),
+  },
+});
 mock.module('../../src/lib/get-character-full.js', {
   namedExports: { getCharacterFull: async () => null },
 });
@@ -138,7 +153,7 @@ beforeEach(() => {
   state.error = null;
 });
 
-test('removing a member clears both bindings and records captured generation cleanup', async () => {
+test('removing a member records the receipt and captured generation cleanup, then gives up the seat as a kick', async () => {
   const result = await service().remove(removal);
   assert.ok(result.ok);
   assert.deepEqual(result.value.memberIds, []);
@@ -147,11 +162,41 @@ test('removing a member clears both bindings and records captured generation cle
   assert.deepEqual(state.writes, [
     'receipt',
     'cleanup',
-    'membership',
-    'bindings',
+    'give up seat (kicked)',
   ]);
   assert.equal(state.cleanup[0].generation, 'old-generation');
-  assert.deepEqual(state.events, [{ type: 'character.kicked', characterId }]);
+  // The roster event comes from the membership module.
+  assert.deepEqual(state.events, []);
+});
+
+test('a self-leave through room removal gives up the seat as a leave', async () => {
+  const result = await service().remove({ ...removal, reason: 'left' });
+  assert.ok(result.ok);
+  assert.deepEqual(state.writes, ['receipt', 'cleanup', 'give up seat (left)']);
+});
+
+test('a scvm only bound in the room is still removed from it', async () => {
+  state.member = false;
+  const result = await service().remove(removal);
+  assert.ok(result.ok);
+  assert.deepEqual(state.writes, ['receipt', 'cleanup', 'give up seat (kicked)']);
+});
+
+test('a scvm neither seated nor bound is not in the room', async () => {
+  state.member = false;
+  state.bound = false;
+  const result = await service().remove(removal);
+  assert.ok(!result.ok);
+  assert.equal(result.error.code, 'ROOM_PARTICIPATION_NOT_FOUND');
+  assert.deepEqual(state.writes, []);
+});
+
+test('a party-side removal is refused when the room no longer holds that party', async () => {
+  const result = await service().remove({ ...removal, expectedPartyId: 'another-party' });
+  assert.ok(!result.ok);
+  assert.equal(result.error.statusCode, 409);
+  assert.equal(result.error.code, 'ROOM_PARTY_CHANGED');
+  assert.deepEqual(state.writes, []);
 });
 
 test('a stored receipt makes a retry preserve a deliberate rejoin without another event', async () => {
@@ -208,11 +253,12 @@ test('an old GM assignment cannot be rebound after its member has left', async (
   assert.deepEqual(state.writes, []);
 });
 
-test('a repository failure becomes a logged server error without publishing an event', async () => {
+test('a repository failure becomes a logged server error without giving up a seat', async () => {
   state.error = new Error('database unavailable');
   const result = await service().remove(removal);
   assert.ok(!result.ok);
   assert.equal(result.error.statusCode, 500);
+  assert.equal(result.error.code, 'ROOM_REMOVAL_FAILED');
   assert.equal(state.logs.length, 1);
-  assert.deepEqual(state.events, []);
+  assert.deepEqual(state.writes, []);
 });

@@ -1,10 +1,51 @@
 import assert from 'node:assert/strict';
 import { beforeEach, mock, test } from 'node:test';
 
-// Room removal is covered through the real API/database contract suite. These
-// tests exercise party policy independently of its room-service dependency.
+// Room removal is covered through the real API/database contract suite and its
+// own service test. These tests check that party policy hands it the right command.
+const roomRemovals: Array<Record<string, unknown>> = [];
 mock.module('../../src/services/room-participation-service.js', {
-  namedExports: { createRoomParticipationService: () => ({ remove: async () => ({ ok: true, value: {} }) }) },
+  namedExports: {
+    createRoomParticipationService: () => ({
+      remove: async (input: Record<string, unknown>) => {
+        roomRemovals.push(input);
+        return { ok: true, value: {} };
+      },
+    }),
+  },
+});
+
+// Seat changes are the membership module's job (party-membership.test.ts); here
+// it is a stub that records what the service asked for.
+type TakeSeatCall = { partyId: string; userId: string | null; characterId: string; replacing?: string };
+type GiveUpSeatCall = { partyId: string; characterId: string; reason: string };
+const seats = {
+  taken: [] as TakeSeatCall[],
+  givenUp: [] as GiveUpSeatCall[],
+  refusal: null as { statusCode: number; code: string; message: string } | null,
+  throws: null as unknown,
+};
+mock.module('../../src/services/party-membership.js', {
+  namedExports: {
+    PARTY_MAX_MEMBERS: 10,
+    ownerCannotJoin: (party: { ownerUserId: string }, userId: string | null) =>
+      userId && party.ownerUserId === userId
+        ? { statusCode: 403, code: 'PARTY_OWNER_CANNOT_JOIN', message: 'A game master cannot join their own party' }
+        : null,
+    createPartyMembership: () => ({
+      takeSeat: async (input: TakeSeatCall) => {
+        if (seats.throws) {
+          throw seats.throws;
+        }
+        seats.taken.push(input);
+        return seats.refusal ? { ok: false, error: seats.refusal } : { ok: true, value: input.characterId };
+      },
+      giveUpSeat: async (input: GiveUpSeatCall) => {
+        seats.givenUp.push(input);
+        return true;
+      },
+    }),
+  },
 });
 
 const PARTY_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
@@ -50,7 +91,6 @@ const state = {
   charForJoin: null as CharForJoin,
   charForJoinById: new Map<string, NonNullable<CharForJoin>>(),
   ownerList: [] as Array<PartyRow & { memberCount: number }>,
-  joinThrows: null as unknown,
   createThrows: null as unknown,
   getByObrThrows: null as unknown,
   // call captures
@@ -66,9 +106,6 @@ const state = {
     obrRoomId?: string | null;
     poolLineageIds: string[];
   }>,
-  setCalls: [] as Array<{ characterId: string; partyId: string | null }>,
-  joinCalls: [] as Array<{ characterId: string; partyId: string }>,
-  memberCount: 0,
   roomMoves: [] as Array<{ id: string; roomId: string }>,
   rotateCalls: [] as Array<{ id: string; token: string }>,
   deleteCalls: [] as string[],
@@ -96,14 +133,15 @@ function resetState(): void {
   state.charForJoin = null;
   state.charForJoinById = new Map();
   state.ownerList = [];
-  state.joinThrows = null;
   state.createThrows = null;
   state.getByObrThrows = null;
   state.ensureSystemUserCalls = [];
   state.createCalls = [];
-  state.setCalls = [];
-  state.joinCalls = [];
-  state.memberCount = 0;
+  seats.taken = [];
+  seats.givenUp = [];
+  seats.refusal = null;
+  seats.throws = null;
+  roomRemovals.length = 0;
   state.roomMoves = [];
   state.rotateCalls = [];
   state.deleteCalls = [];
@@ -164,15 +202,6 @@ mock.module('../../src/repositories/party-repository.js', {
         return state.partyByObrRoomId;
       },
       getPartyByInviteToken: async () => state.partyByToken,
-      getCharacterForJoin: async (id: string) =>
-        state.charForJoinById.get(id) ?? state.charForJoin,
-      countMembers: async () => state.party?.members.length ?? 0,
-      setCharacterParty: async (
-        characterId: string,
-        partyId: string | null
-      ) => {
-        state.setCalls.push({ characterId, partyId });
-      },
       rotateInviteToken: async (id: string, token: string) => {
         state.rotateCalls.push({ id, token });
       },
@@ -227,17 +256,8 @@ mock.module('../../src/repositories/character-repository.js', {
         }
         return characterIds.map(characterId => ({ characterId, partyIds: [PARTY_ID] }));
       },
-      transaction: async (work: (ops: unknown) => Promise<unknown>) =>
-        work({
-          lockParty: async () => {},
-          countPartyMembers: async () => state.memberCount,
-          joinParty: async (characterId: string, partyId: string) => {
-            if (state.joinThrows) {
-              throw state.joinThrows;
-            }
-            state.joinCalls.push({ characterId, partyId });
-          },
-        }),
+      getMembership: async (id: string) =>
+        state.charForJoinById.get(id) ?? state.charForJoin,
     },
   },
 });
@@ -659,29 +679,35 @@ test('getInvite empty token → 410', async () => {
 });
 
 // ───────────────────────── join ─────────────────────────
+const invite = (owner = 'gm-1'): PartyRow => ({
+  id: PARTY_ID,
+  name: 'W',
+  ownerUserId: owner,
+  inviteToken: 'tok',
+  createdAt: new Date(),
+  updatedAt: new Date(),
+});
+const scvm = (overrides: Partial<NonNullable<CharForJoin>> = {}) => ({
+  id: CHAR_ID,
+  userId: 'player-1',
+  sessionId: null,
+  partyId: null,
+  ...overrides,
+});
+const join = (session: ReturnType<typeof account> = account('player-1'), token = 'tok') =>
+  service().joinParty({ session, token, characterId: CHAR_ID });
+
 test('join invalid/rotated token → 410', async () => {
   state.partyByToken = null;
-  state.charForJoin = {
-    id: CHAR_ID,
-    userId: 'player-1',
-    sessionId: null,
-    partyId: null,
-  };
-  const r = await service().joinParty({
-    session: account('player-1'),
-    token: 'dead',
-    characterId: CHAR_ID,
-  });
+  state.charForJoin = scvm();
+  const r = await join(account('player-1'), 'dead');
   assert.equal((r as any).error.statusCode, 410);
   assert.equal((r as any).error.code, 'PARTY_INVITE_INVALID');
+  assert.deepEqual(seats.taken, []);
 });
 
 test('join empty token → 410', async () => {
-  const r = await service().joinParty({
-    session: account('player-1'),
-    token: '',
-    characterId: CHAR_ID,
-  });
+  const r = await join(account('player-1'), '');
   assert.equal((r as any).error.statusCode, 410);
 });
 
@@ -694,88 +720,38 @@ test('join invalid character UUID → 400', async () => {
   assert.equal((r as any).error.code, 'INVALID_CHARACTER_ID');
 });
 
-test('join non-owner of character → 403', async () => {
-  state.partyByToken = {
-    id: PARTY_ID,
-    name: 'W',
-    ownerUserId: 'gm-1',
-    inviteToken: 'tok',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  };
-  state.charForJoin = {
-    id: CHAR_ID,
-    userId: 'someone-else',
-    sessionId: null,
-    partyId: null,
-  };
-  const r = await service().joinParty({
-    session: account('player-1'),
-    token: 'tok',
-    characterId: CHAR_ID,
-  });
+test('join non-owner of character → 403 before any seat is asked for', async () => {
+  state.partyByToken = invite();
+  state.charForJoin = scvm({ userId: 'someone-else' });
+  const r = await join();
   assert.equal((r as any).error.statusCode, 403);
   assert.equal((r as any).error.code, 'CHARACTER_ACCESS_DENIED');
+  assert.equal((r as any).error.message, "You don't have access to this scvm");
+  assert.deepEqual(seats.taken, []);
 });
 
 test('join character not found → 404', async () => {
-  state.partyByToken = {
-    id: PARTY_ID,
-    name: 'W',
-    ownerUserId: 'gm-1',
-    inviteToken: 'tok',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  };
+  state.partyByToken = invite();
   state.charForJoin = null;
-  const r = await service().joinParty({
-    session: account('player-1'),
-    token: 'tok',
-    characterId: CHAR_ID,
-  });
+  const r = await join();
   assert.equal((r as any).error.statusCode, 404);
+  assert.deepEqual(seats.taken, []);
 });
 
-test('join by the GM of THIS party → 403 (GM does not play)', async () => {
-  state.partyByToken = {
-    id: PARTY_ID,
-    name: 'W',
-    ownerUserId: 'gm-1',
-    inviteToken: 'tok',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  };
-  state.charForJoin = {
-    id: CHAR_ID,
-    userId: 'gm-1',
-    sessionId: null,
-    partyId: null,
-  };
-  const r = await service().joinParty({
-    session: gm('gm-1'),
-    token: 'tok',
-    characterId: CHAR_ID,
-  });
+test('join by the GM of THIS party → 403 (GM does not play), checked before membership state', async () => {
+  state.partyByToken = invite('gm-1');
+  // Even a GM scvm already seated in the party gets the GM refusal, as it always has.
+  state.charForJoin = scvm({ userId: 'gm-1', partyId: PARTY_ID });
+  const r = await join(gm('gm-1'));
   assert.equal((r as any).error.statusCode, 403);
   assert.equal((r as any).error.code, 'PARTY_OWNER_CANNOT_JOIN');
+  assert.deepEqual(seats.taken, []);
 });
 
-test('join when already in THIS party → idempotent ok (no write)', async () => {
-  state.partyByToken = {
-    id: PARTY_ID,
-    name: 'W',
-    ownerUserId: 'gm-1',
-    inviteToken: 'tok',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  };
-  state.charForJoin = {
-    id: CHAR_ID,
-    userId: 'player-1',
-    sessionId: null,
-    partyId: PARTY_ID,
-  };
-  const r = await service().joinParty({
+test('join when already in THIS party → idempotent ok without asking for a seat or publishing', async () => {
+  state.partyByToken = invite();
+  state.charForJoin = scvm({ partyId: PARTY_ID });
+  const r = await serviceWithBus().joinParty({
     session: account('player-1'),
     token: 'tok',
     characterId: CHAR_ID,
@@ -786,132 +762,45 @@ test('join when already in THIS party → idempotent ok (no write)', async () =>
     (r as any).value.redirect,
     `/party/${PARTY_ID}/character/${CHAR_ID}`
   );
-  assert.equal(state.joinCalls.length, 0);
+  assert.deepEqual(seats.taken, []);
+  assert.deepEqual(publishedEvents, []);
 });
 
 test('join when in ANOTHER party → 409', async () => {
-  state.partyByToken = {
-    id: PARTY_ID,
-    name: 'W',
-    ownerUserId: 'gm-1',
-    inviteToken: 'tok',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  };
-  state.charForJoin = {
-    id: CHAR_ID,
-    userId: 'player-1',
-    sessionId: null,
-    partyId: OTHER_PARTY_ID,
-  };
-  const r = await service().joinParty({
-    session: account('player-1'),
-    token: 'tok',
-    characterId: CHAR_ID,
-  });
+  state.partyByToken = invite();
+  state.charForJoin = scvm({ partyId: OTHER_PARTY_ID });
+  const r = await join();
   assert.equal((r as any).error.statusCode, 409);
   assert.equal((r as any).error.code, 'CHARACTER_IN_ANOTHER_PARTY');
+  assert.deepEqual(seats.taken, []);
 });
 
-test('join when cap is full (tx sentinel) → 409', async () => {
-  state.partyByToken = {
-    id: PARTY_ID,
-    name: 'W',
-    ownerUserId: 'gm-1',
-    inviteToken: 'tok',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  };
-  state.charForJoin = {
-    id: CHAR_ID,
-    userId: 'player-1',
-    sessionId: null,
-    partyId: null,
-  };
-  state.memberCount = 10;
-  const r = await service().joinParty({
-    session: account('player-1'),
-    token: 'tok',
-    characterId: CHAR_ID,
-  });
+test("join relays the membership module's refusal (a full party → 409 PARTY_FULL)", async () => {
+  state.partyByToken = invite();
+  state.charForJoin = scvm();
+  seats.refusal = { statusCode: 409, code: 'PARTY_FULL', message: 'This party is full' };
+  const r = await join();
   assert.equal((r as any).error.statusCode, 409);
   assert.equal((r as any).error.code, 'PARTY_FULL');
 });
 
-test('join happy path binds via the transaction and returns redirect', async () => {
-  state.partyByToken = {
-    id: PARTY_ID,
-    name: 'W',
-    ownerUserId: 'gm-1',
-    inviteToken: 'tok',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  };
-  state.charForJoin = {
-    id: CHAR_ID,
-    userId: 'player-1',
-    sessionId: null,
-    partyId: null,
-  };
-  const r = await service().joinParty({
-    session: account('player-1'),
-    token: 'tok',
-    characterId: CHAR_ID,
-  });
+test('join asks the membership module for a seat as the caller and returns the redirect', async () => {
+  state.partyByToken = invite();
+  state.charForJoin = scvm();
+  const r = await join();
   assert.equal(r.ok, true);
-  assert.equal(state.joinCalls.length, 1);
-  assert.equal(state.joinCalls[0].characterId, CHAR_ID);
-  assert.equal(state.joinCalls[0].partyId, PARTY_ID);
+  assert.deepEqual(seats.taken, [
+    { partyId: PARTY_ID, userId: 'player-1', characterId: CHAR_ID },
+  ]);
   assert.equal(
     (r as any).value.redirect,
     `/party/${PARTY_ID}/character/${CHAR_ID}`
   );
 });
 
-test('join happy path publishes a character.joined event', async () => {
-  state.partyByToken = {
-    id: PARTY_ID,
-    name: 'W',
-    ownerUserId: 'gm-1',
-    inviteToken: 'tok',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  };
-  state.charForJoin = {
-    id: CHAR_ID,
-    userId: 'player-1',
-    sessionId: null,
-    partyId: null,
-  };
-  const r = await serviceWithBus().joinParty({
-    session: account('player-1'),
-    token: 'tok',
-    characterId: CHAR_ID,
-  });
-  assert.equal(r.ok, true);
-  assert.deepEqual(publishedEvents, [
-    {
-      partyId: PARTY_ID,
-      event: { type: 'character.joined', characterId: CHAR_ID },
-    },
-  ]);
-});
-
-test('join idempotent path does not publish a roster event', async () => {
-  state.partyByToken = {
-    id: PARTY_ID,
-    name: 'W',
-    ownerUserId: 'gm-1',
-    inviteToken: 'tok',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  };
-  state.charForJoin = {
-    id: CHAR_ID,
-    userId: 'player-1',
-    sessionId: null,
-    partyId: PARTY_ID,
-  };
+test('join leaves the character.joined event to the membership module', async () => {
+  state.partyByToken = invite();
+  state.charForJoin = scvm();
   const r = await serviceWithBus().joinParty({
     session: account('player-1'),
     token: 'tok',
@@ -922,297 +811,236 @@ test('join idempotent path does not publish a roster event', async () => {
 });
 
 test('join works for an anonymous owner matched by sessionId', async () => {
-  state.partyByToken = {
-    id: PARTY_ID,
-    name: 'W',
-    ownerUserId: 'gm-1',
-    inviteToken: 'tok',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  };
-  state.charForJoin = {
-    id: CHAR_ID,
-    userId: 'anon-user',
-    sessionId: 'sess-anon',
-    partyId: null,
-  };
+  state.partyByToken = invite();
+  state.charForJoin = scvm({ userId: 'anon-user', sessionId: 'sess-anon' });
   const r = await service().joinParty({
     session: guest('sess-anon', 'anon-user'),
     token: 'tok',
     characterId: CHAR_ID,
   });
   assert.equal(r.ok, true);
-  assert.equal(state.joinCalls.length, 1);
+  assert.deepEqual(seats.taken, [
+    { partyId: PARTY_ID, userId: 'anon-user', characterId: CHAR_ID },
+  ]);
 });
 
 test('join surfaces an unexpected failure as 5xx', async () => {
-  state.partyByToken = {
-    id: PARTY_ID,
-    name: 'W',
-    ownerUserId: 'gm-1',
-    inviteToken: 'tok',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  };
-  state.charForJoin = {
-    id: CHAR_ID,
-    userId: 'player-1',
-    sessionId: null,
-    partyId: null,
-  };
-  state.joinThrows = new Error('boom');
-  const r = await service().joinParty({
-    session: account('player-1'),
-    token: 'tok',
-    characterId: CHAR_ID,
-  });
+  state.partyByToken = invite();
+  state.charForJoin = scvm();
+  seats.throws = new Error('boom');
+  const r = await join();
   assert.equal((r as any).error.statusCode, 500);
   assert.equal((r as any).error.code, 'PARTY_JOIN_FAILED');
 });
 
 // ───────────────────────── replace member ─────────────────────────
-test('replaceMember binds the new owned character to the old character party', async () => {
-  const replacementId = '22222222-2222-4222-8222-222222222222';
-  state.charForJoinById.set(CHAR_ID, {
-    id: CHAR_ID,
-    userId: 'player-1',
-    sessionId: null,
-    partyId: PARTY_ID,
-  });
-  state.charForJoinById.set(replacementId, {
-    id: replacementId,
-    userId: 'player-1',
-    sessionId: null,
-    partyId: null,
-  });
-
-  const r = await serviceWithBus().replaceMember({
-    session: account('player-1'),
+const REPLACEMENT_ID = '22222222-2222-4222-8222-222222222222';
+const replace = (session: ReturnType<typeof account> = account('player-1')) =>
+  serviceWithBus().replaceMember({
+    session,
     id: PARTY_ID,
     oldCharacterId: CHAR_ID,
-    newCharacterId: replacementId,
+    newCharacterId: REPLACEMENT_ID,
   });
+function replacing(
+  old: Partial<NonNullable<CharForJoin>> = {},
+  replacement: Partial<NonNullable<CharForJoin>> = {}
+): void {
+  state.charForJoinById.set(CHAR_ID, scvm({ partyId: PARTY_ID, ...old }));
+  state.charForJoinById.set(REPLACEMENT_ID, scvm({ id: REPLACEMENT_ID, ...replacement }));
+}
+
+test("replaceMember seats the new owned character in the old one's place and returns the redirect", async () => {
+  replacing();
+
+  const r = await replace();
 
   assert.equal(r.ok, true);
-  assert.deepEqual(state.setCalls[0], {
-    characterId: replacementId,
-    partyId: PARTY_ID,
-  });
-  assert.equal(
-    (r as any).value.redirect,
-    `/party/${PARTY_ID}/character/${replacementId}`
-  );
-  assert.deepEqual(publishedEvents, [
+  assert.deepEqual(seats.taken, [
     {
       partyId: PARTY_ID,
-      event: { type: 'character.joined', characterId: replacementId },
+      userId: 'player-1',
+      characterId: REPLACEMENT_ID,
+      replacing: CHAR_ID,
     },
   ]);
+  assert.equal(
+    (r as any).value.redirect,
+    `/party/${PARTY_ID}/character/${REPLACEMENT_ID}`
+  );
+  // The roster event comes from the membership module.
+  assert.deepEqual(publishedEvents, []);
 });
 
 test('replaceMember rejects a replacement not owned by the caller', async () => {
-  const replacementId = '22222222-2222-4222-8222-222222222222';
-  state.charForJoinById.set(CHAR_ID, {
-    id: CHAR_ID,
-    userId: 'player-1',
-    sessionId: null,
-    partyId: PARTY_ID,
-  });
-  state.charForJoinById.set(replacementId, {
-    id: replacementId,
-    userId: 'someone-else',
-    sessionId: null,
-    partyId: null,
-  });
+  replacing({}, { userId: 'someone-else' });
 
-  const r = await service().replaceMember({
-    session: account('player-1'),
-    id: PARTY_ID,
-    oldCharacterId: CHAR_ID,
-    newCharacterId: replacementId,
-  });
+  const r = await replace();
 
   assert.equal((r as any).error.statusCode, 403);
-  assert.equal(state.setCalls.length, 0);
+  assert.equal((r as any).error.code, 'CHARACTER_ACCESS_DENIED');
+  assert.deepEqual(seats.taken, []);
 });
 
 test('replaceMember rejects when the old character is not in the party', async () => {
-  const replacementId = '22222222-2222-4222-8222-222222222222';
-  state.charForJoinById.set(CHAR_ID, {
-    id: CHAR_ID,
-    userId: 'player-1',
-    sessionId: null,
-    partyId: OTHER_PARTY_ID,
-  });
-  state.charForJoinById.set(replacementId, {
-    id: replacementId,
-    userId: 'player-1',
-    sessionId: null,
-    partyId: null,
-  });
+  replacing({ partyId: OTHER_PARTY_ID });
 
-  const r = await service().replaceMember({
-    session: account('player-1'),
-    id: PARTY_ID,
-    oldCharacterId: CHAR_ID,
-    newCharacterId: replacementId,
-  });
+  const r = await replace();
 
   assert.equal((r as any).error.statusCode, 404);
   assert.equal((r as any).error.code, 'PARTY_MEMBERSHIP_NOT_FOUND');
+  assert.deepEqual(seats.taken, []);
+});
+
+test('replaceMember rejects a replacement already in another party', async () => {
+  replacing({}, { partyId: OTHER_PARTY_ID });
+
+  const r = await replace();
+
+  assert.equal((r as any).error.statusCode, 409);
+  assert.equal((r as any).error.code, 'CHARACTER_IN_ANOTHER_PARTY');
+  assert.deepEqual(seats.taken, []);
+});
+
+test('replaceMember with the replacement already seated succeeds without another seat', async () => {
+  replacing({}, { partyId: PARTY_ID });
+
+  const r = await replace();
+
+  assert.equal(r.ok, true);
+  assert.deepEqual(seats.taken, []);
+});
+
+test("replaceMember relays the membership module's refusal for the party's GM", async () => {
+  replacing({ userId: 'gm-1' }, { userId: 'gm-1' });
+  seats.refusal = {
+    statusCode: 403,
+    code: 'PARTY_OWNER_CANNOT_JOIN',
+    message: 'A game master cannot join their own party',
+  };
+
+  const r = await replace(gm('gm-1'));
+
+  assert.equal((r as any).error.statusCode, 403);
+  assert.equal((r as any).error.code, 'PARTY_OWNER_CANNOT_JOIN');
+  assert.equal(seats.taken[0]?.userId, 'gm-1');
+});
+
+test('replaceMember maps an unexpected failure to 5xx', async () => {
+  replacing();
+  seats.throws = new Error('boom');
+
+  const r = await replace();
+
+  assert.equal((r as any).error.statusCode, 500);
+  assert.equal((r as any).error.code, 'PARTY_REPLACEMENT_FAILED');
 });
 
 // ───────────────────────── leave ─────────────────────────
-test('leave unbinds when the caller owns the char and it is in this party', async () => {
-  state.charForJoin = {
-    id: CHAR_ID,
-    userId: 'player-1',
-    sessionId: null,
-    partyId: PARTY_ID,
-  };
-  const r = await service().leaveParty({
+const leave = () =>
+  serviceWithBus().leaveParty({
     session: account('player-1'),
     id: PARTY_ID,
     characterId: CHAR_ID,
   });
+
+test('leave gives up the seat through the membership module when the caller owns the char', async () => {
+  state.charForJoin = scvm({ partyId: PARTY_ID });
+  const r = await leave();
   assert.equal(r.ok, true);
-  assert.deepEqual(state.setCalls[0], { characterId: CHAR_ID, partyId: null });
+  assert.deepEqual(seats.givenUp, [
+    { partyId: PARTY_ID, characterId: CHAR_ID, reason: 'left' },
+  ]);
+  assert.deepEqual(roomRemovals, []);
+  // The character.left event comes from the membership module.
+  assert.deepEqual(publishedEvents, []);
 });
 
-test('leave publishes a character.left event after unbind', async () => {
-  state.charForJoin = {
-    id: CHAR_ID,
-    userId: 'player-1',
-    sessionId: null,
-    partyId: PARTY_ID,
-  };
-  const r = await serviceWithBus().leaveParty({
-    session: account('player-1'),
-    id: PARTY_ID,
-    characterId: CHAR_ID,
-  });
+test('leave from a room party goes through room removal with a fresh operation id', async () => {
+  state.party = { ...partyWith([{ id: CHAR_ID, userId: 'player-1' }]), obrRoomId: OBR_ROOM_ID };
+  state.charForJoin = scvm({ partyId: PARTY_ID });
+  const r = await leave();
+  await leave();
   assert.equal(r.ok, true);
-  assert.deepEqual(publishedEvents, [
+  assert.deepEqual(seats.givenUp, []);
+  assert.equal(roomRemovals.length, 2);
+  assert.deepEqual(
+    { ...roomRemovals[0], operationId: undefined, session: undefined },
     {
-      partyId: PARTY_ID,
-      event: { type: 'character.left', characterId: CHAR_ID },
-    },
-  ]);
+      roomId: OBR_ROOM_ID,
+      characterId: CHAR_ID,
+      operationId: undefined,
+      session: undefined,
+      expectedPartyId: PARTY_ID,
+      reason: 'left',
+    }
+  );
+  assert.match(String(roomRemovals[0].operationId), /^[0-9a-f-]{36}$/);
+  assert.notEqual(roomRemovals[0].operationId, roomRemovals[1].operationId);
 });
 
 test('leave by a non-owner → 403', async () => {
-  state.charForJoin = {
-    id: CHAR_ID,
-    userId: 'someone-else',
-    sessionId: null,
-    partyId: PARTY_ID,
-  };
-  const r = await service().leaveParty({
-    session: account('player-1'),
-    id: PARTY_ID,
-    characterId: CHAR_ID,
-  });
+  state.charForJoin = scvm({ userId: 'someone-else', partyId: PARTY_ID });
+  const r = await leave();
   assert.equal((r as any).error.statusCode, 403);
-  assert.equal(state.setCalls.length, 0);
+  assert.equal((r as any).error.code, 'CHARACTER_ACCESS_DENIED');
+  assert.deepEqual(seats.givenUp, []);
 });
 
 test('leave when the char is not in this party → 404', async () => {
-  state.charForJoin = {
-    id: CHAR_ID,
-    userId: 'player-1',
-    sessionId: null,
-    partyId: OTHER_PARTY_ID,
-  };
-  const r = await service().leaveParty({
-    session: account('player-1'),
-    id: PARTY_ID,
-    characterId: CHAR_ID,
-  });
+  state.charForJoin = scvm({ partyId: OTHER_PARTY_ID });
+  const r = await leave();
   assert.equal((r as any).error.statusCode, 404);
+  assert.deepEqual(seats.givenUp, []);
 });
 
 test('leave for a missing character → 404', async () => {
   state.charForJoin = null;
-  const r = await service().leaveParty({
-    session: account('player-1'),
-    id: PARTY_ID,
-    characterId: CHAR_ID,
-  });
+  const r = await leave();
   assert.equal((r as any).error.statusCode, 404);
 });
 
 // ───────────────────────── kick ─────────────────────────
-test('kick by the owner unbinds the member', async () => {
+const kick = (session: ReturnType<typeof account> = gm('gm-1')) =>
+  serviceWithBus().kick({ session, id: PARTY_ID, characterId: CHAR_ID });
+
+test('kick by the owner gives up the member seat through the membership module', async () => {
   state.party = partyWith([{ id: CHAR_ID, userId: 'player-1' }], 'gm-1');
-  state.charForJoin = {
-    id: CHAR_ID,
-    userId: 'player-1',
-    sessionId: null,
-    partyId: PARTY_ID,
-  };
-  const r = await service().kick({
-    session: gm('gm-1'),
-    id: PARTY_ID,
-    characterId: CHAR_ID,
-  });
+  state.charForJoin = scvm({ partyId: PARTY_ID });
+  const r = await kick();
   assert.equal(r.ok, true);
-  assert.deepEqual(state.setCalls[0], { characterId: CHAR_ID, partyId: null });
+  assert.deepEqual(seats.givenUp, [
+    { partyId: PARTY_ID, characterId: CHAR_ID, reason: 'kicked' },
+  ]);
+  // The character.kicked event comes from the membership module.
+  assert.deepEqual(publishedEvents, []);
 });
 
-test('kick publishes a character.kicked event after unbind', async () => {
-  state.party = partyWith([{ id: CHAR_ID, userId: 'player-1' }], 'gm-1');
-  state.charForJoin = {
-    id: CHAR_ID,
-    userId: 'player-1',
-    sessionId: null,
-    partyId: PARTY_ID,
-  };
-  const r = await serviceWithBus().kick({
-    session: gm('gm-1'),
-    id: PARTY_ID,
-    characterId: CHAR_ID,
-  });
+test('kick in a room party goes through room removal as a kick', async () => {
+  state.party = { ...partyWith([{ id: CHAR_ID, userId: 'player-1' }], 'gm-1'), obrRoomId: OBR_ROOM_ID };
+  state.charForJoin = scvm({ partyId: PARTY_ID });
+  const r = await kick();
   assert.equal(r.ok, true);
-  assert.deepEqual(publishedEvents, [
-    {
-      partyId: PARTY_ID,
-      event: { type: 'character.kicked', characterId: CHAR_ID },
-    },
-  ]);
+  assert.deepEqual(seats.givenUp, []);
+  assert.equal(roomRemovals[0]?.reason, 'kicked');
+  assert.equal(roomRemovals[0]?.expectedPartyId, PARTY_ID);
 });
 
 test('kick by a non-owner → 404 (no leak)', async () => {
   state.party = partyWith([{ id: CHAR_ID, userId: 'player-1' }], 'gm-1');
-  state.charForJoin = {
-    id: CHAR_ID,
-    userId: 'player-1',
-    sessionId: null,
-    partyId: PARTY_ID,
-  };
-  const r = await service().kick({
-    session: account('not-the-gm'),
-    id: PARTY_ID,
-    characterId: CHAR_ID,
-  });
+  state.charForJoin = scvm({ partyId: PARTY_ID });
+  const r = await kick(account('not-the-gm'));
   assert.equal((r as any).error.statusCode, 404);
-  assert.equal(state.setCalls.length, 0);
+  assert.deepEqual(seats.givenUp, []);
 });
 
 test('kick a character not in this party → 404', async () => {
   state.party = partyWith([], 'gm-1');
-  state.charForJoin = {
-    id: CHAR_ID,
-    userId: 'player-1',
-    sessionId: null,
-    partyId: OTHER_PARTY_ID,
-  };
-  const r = await service().kick({
-    session: gm('gm-1'),
-    id: PARTY_ID,
-    characterId: CHAR_ID,
-  });
+  state.charForJoin = scvm({ partyId: OTHER_PARTY_ID });
+  const r = await kick();
   assert.equal((r as any).error.statusCode, 404);
   assert.equal((r as any).error.code, 'PARTY_MEMBERSHIP_NOT_FOUND');
+  assert.deepEqual(seats.givenUp, []);
 });
 
 // ───────────────────────── regenerate-link ─────────────────────────

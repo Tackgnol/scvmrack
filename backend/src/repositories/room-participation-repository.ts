@@ -1,9 +1,11 @@
 import type { Prisma } from '@prisma/client';
 import prisma from '../lib/prisma.js';
 import { advisoryLock } from './advisory-lock.js';
+import { CHARACTER_MEMBERSHIP_SELECT } from './character-tx.js';
 import { randomUUID } from 'node:crypto';
 
-function roomOps(tx: Prisma.TransactionClient, roomId: string) {
+/** Room participation reads and writes for `roomId`, bound to one transaction. */
+export function roomParticipationOps(tx: Prisma.TransactionClient, roomId: string) {
   return {
     getParty: () =>
       tx.party.findUnique({
@@ -17,7 +19,7 @@ function roomOps(tx: Prisma.TransactionClient, roomId: string) {
     getCharacter: (id: string) =>
       tx.character.findUnique({
         where: { id },
-        select: { id: true, userId: true, sessionId: true, partyId: true },
+        select: CHARACTER_MEMBERSHIP_SELECT,
       }),
     getBindings: async () => {
       const players = await tx.obrPlayerCharacterBinding.findMany({
@@ -47,19 +49,6 @@ function roomOps(tx: Prisma.TransactionClient, roomId: string) {
       characterId: string;
       actorId: string;
     }) => tx.obrRemoval.create({ data: { roomId, ...data } }),
-    removeMembership: (characterId: string, partyId: string) =>
-      tx.character.updateMany({
-        where: { id: characterId, partyId },
-        data: { partyId: null, joinedAt: null },
-      }),
-    removeBindings: async (characterId: string) => {
-      await tx.obrPlayerCharacterBinding.deleteMany({
-        where: { obrRoomId: roomId, characterId },
-      });
-      await tx.obrTokenCharacterBinding.deleteMany({
-        where: { obrRoomId: roomId, characterId },
-      });
-    },
     addCleanup: (data: {
       operationId: string;
       characterId: string;
@@ -134,7 +123,7 @@ function roomOps(tx: Prisma.TransactionClient, roomId: string) {
   };
 }
 
-export type RoomParticipationOps = ReturnType<typeof roomOps>;
+export type RoomParticipationOps = ReturnType<typeof roomParticipationOps>;
 
 export const roomParticipationRepository = {
   transaction<T>(
@@ -143,7 +132,7 @@ export const roomParticipationRepository = {
   ): Promise<T> {
     return prisma.$transaction(async (tx) => {
       await advisoryLock(tx, 'room', roomId);
-      return run(roomOps(tx, roomId));
+      return run(roomParticipationOps(tx, roomId));
     });
   },
 };

@@ -1,7 +1,12 @@
 import prisma from '../lib/prisma.js';
-import { advisoryLock } from './advisory-lock.js';
 import { Prisma } from '@prisma/client';
 import type { CharacterData } from '../lib/generate-character.js';
+import {
+  CHARACTER_MEMBERSHIP_SELECT,
+  characterTxOps,
+  type CharacterMembershipRow,
+  type CharacterTxOps,
+} from './character-tx.js';
 
 /**
  * Character data-access layer. The ONLY place that talks to Prisma for character
@@ -51,89 +56,6 @@ export function characterCreateInput(
   };
 }
 
-/** Character writes bound to one transaction, so a service can combine them atomically. */
-function characterTxOps(tx: Prisma.TransactionClient) {
-  return {
-    /** Serializes work on one party (joins against its member cap) until the transaction ends. */
-    lockParty(partyId: string): Promise<void> {
-      return advisoryLock(tx, 'party', partyId);
-    },
-
-    /** How many scvm are in the party, not counting `excludingUserId`'s. */
-    countPartyMembers(
-      partyId: string,
-      excludingUserId?: string
-    ): Promise<number> {
-      return tx.character.count({
-        where: {
-          partyId,
-          // NOT alone would also skip owner-less scvm (user_id NULL), which still hold a seat.
-          ...(excludingUserId
-            ? { OR: [{ userId: null }, { NOT: { userId: excludingUserId } }] }
-            : {}),
-        },
-      });
-    },
-
-    async deleteCharactersOf(userId: string): Promise<void> {
-      await tx.character.deleteMany({ where: { userId } });
-    },
-
-    async createCharacter(
-      data: Prisma.CharacterUncheckedCreateInput
-    ): Promise<string> {
-      const character = await tx.character.create({
-        data,
-        select: { id: true },
-      });
-      return character.id;
-    },
-
-    async joinParty(characterId: string, partyId: string): Promise<void> {
-      const party = await tx.party.findUnique({
-        where: { id: partyId },
-        select: { obrRoomId: true },
-      });
-      if (party?.obrRoomId) {
-        await advisoryLock(tx, 'room', party.obrRoomId);
-      }
-      await tx.character.update({
-        where: { id: characterId },
-        data: { partyId, joinedAt: new Date() },
-      });
-    },
-
-    /** Binds the Owlbear player's seat in the room to the character. */
-    async bindObrPlayer(
-      binding: { roomId: string; playerId: string },
-      characterId: string
-    ): Promise<void> {
-      await advisoryLock(tx, 'room', binding.roomId);
-      await tx.obrRoomBinding.upsert({
-        where: { obrRoomId: binding.roomId },
-        create: { obrRoomId: binding.roomId },
-        update: { updatedAt: new Date() },
-      });
-      await tx.obrPlayerCharacterBinding.upsert({
-        where: {
-          obrRoomId_obrPlayerId: {
-            obrRoomId: binding.roomId,
-            obrPlayerId: binding.playerId,
-          },
-        },
-        create: {
-          obrRoomId: binding.roomId,
-          obrPlayerId: binding.playerId,
-          characterId,
-          assignedByPlayerId: binding.playerId,
-        },
-        update: { characterId, assignedByPlayerId: binding.playerId },
-      });
-    },
-  };
-}
-
-export type CharacterTxOps = ReturnType<typeof characterTxOps>;
 
 export const characterRepository = {
   /** Parties that can observe this scvm through membership or a live room binding. */
@@ -198,6 +120,13 @@ export const characterRepository = {
     return prisma.character.findUnique({
       where: { id },
       select: { presence: true },
+    });
+  },
+
+  getMembership(id: string): Promise<CharacterMembershipRow | null> {
+    return prisma.character.findUnique({
+      where: { id },
+      select: CHARACTER_MEMBERSHIP_SELECT,
     });
   },
 
