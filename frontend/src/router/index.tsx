@@ -1,4 +1,4 @@
-import { createRouter, createRootRoute, createRoute, lazyRouteComponent, redirect } from '@tanstack/react-router';
+import { createRouter, createRootRoute, createRoute, lazyRouteComponent, redirect, stringifySearchWith } from '@tanstack/react-router';
 import { appHistory } from '@/router/history';
 import { RootLayout } from '@/router/layout';
 import { CharacterCreatePage } from '@/pages/CharacterCreatePage';
@@ -236,6 +236,8 @@ const routeTree = rootRoute.addChildren([
 export const router = createRouter({
     routeTree,
     history: appHistory,
+    // The default serializer JSON-quotes numeric-looking strings (classId="96"); every search param here is a plain string or number.
+    stringifySearch: stringifySearchWith(JSON.stringify),
     // Preload each route's lazy chunk on hover/touch intent so the component is
     // ready by click time. Without this, navigating to an unvisited route leaves
     // the content area blank while the chunk downloads, which reads as a flash.

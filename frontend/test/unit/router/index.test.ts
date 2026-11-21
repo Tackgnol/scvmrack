@@ -71,4 +71,11 @@ describe('router/index — route registration', () => {
 
     expect(matches[matches.length - 1]?.routeId).toBe('/character/new');
   });
+
+  it('writes a numeric class id into the report link without JSON quotes', async () => {
+    const { router } = await import('@/router/index');
+
+    expect(router.options.stringifySearch?.({ classId: '96' })).toBe('?classId=96');
+    expect(router.options.stringifySearch?.({ classId: 96 })).toBe('?classId=96');
+  });
 });
