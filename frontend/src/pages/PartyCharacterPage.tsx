@@ -5,7 +5,7 @@ import { CharacterPage } from '@/pages/CharacterPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 import { getUserFacingApiErrorMessage, isApiNotFound } from '@/utils/errorUtils';
 import { Alert, Box, Button, styled } from '@mui/material';
-import { useSyncExternalStore } from 'react';
+import { useEffect, useSyncExternalStore } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const subscribeToHistory = (onStoreChange: () => void): (() => void) =>
@@ -43,18 +43,30 @@ export function PartyCharacterPage() {
   const params = getPartyCharacterParams(pathname);
   const partyQuery = usePartyDetail(params?.partyId);
 
+  const member = partyQuery.data?.members.find(
+    (candidate) => candidate.characterId === params?.characterId
+  );
+  // A scvm the GM kicked keeps its sheet at the plain URL; this party-scoped URL no longer applies.
+  const leftParty =
+    Boolean(params) &&
+    !partyQuery.isLoading &&
+    (partyQuery.error ? isApiNotFound(partyQuery.error) : !member && !partyQuery.isFetching);
+  const plainSheetPath = params ? `/character/${encodeURIComponent(params.characterId)}` : null;
+  useEffect(() => {
+    if (leftParty && plainSheetPath) {
+      void appHistory.replace(plainSheetPath);
+    }
+  }, [leftParty, plainSheetPath]);
+
   if (!params) {
     return <NotFoundPage seoNoIndex />;
   }
 
-  if (partyQuery.isLoading) {
+  if (partyQuery.isLoading || leftParty) {
     return <CharacterSheetSkeleton />;
   }
 
   if (partyQuery.error) {
-    if (isApiNotFound(partyQuery.error)) {
-      return <NotFoundPage seoNoIndex />;
-    }
 
     return (
       <ErrorWrap>
@@ -73,14 +85,8 @@ export function PartyCharacterPage() {
     );
   }
 
-  const member = partyQuery.data?.members.find(
-    (candidate) => candidate.characterId === params.characterId
-  );
   if (!member) {
-    if (partyQuery.isFetching) {
-      return <CharacterSheetSkeleton />;
-    }
-    return <NotFoundPage seoNoIndex />;
+    return <CharacterSheetSkeleton />;
   }
 
   return <CharacterPage />;
