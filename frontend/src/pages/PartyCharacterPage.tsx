@@ -56,17 +56,19 @@ export function PartyCharacterPage() {
     Boolean(params) &&
     (partyQuery.error ? isApiNotFound(partyQuery.error) : partyQuery.isSuccess && !member);
   const characterId = params?.characterId ?? null;
+  const partyId = params?.partyId ?? null;
   useEffect(() => {
     if (!leftParty || !characterId) {
       return;
     }
     // The plain sheet sends a scvm with a partyId back to its party: clear the cached one so the two URLs cannot bounce.
+    // Only the party this URL names: a scvm that has since joined another party keeps that membership.
     writeCharacter(queryClient, characterId, i18n.language, (cached) =>
-      cached ? { ...cached, partyId: null } : cached
+      cached && cached.partyId === partyId ? { ...cached, partyId: null } : cached
     );
     // Queued sheet edits must not hold this redirect: it stays on the same character.
     void appHistory.replace(buildCharacterPath(characterId), undefined, { ignoreBlocker: true });
-  }, [leftParty, characterId, queryClient, i18n.language]);
+  }, [leftParty, characterId, partyId, queryClient, i18n.language]);
 
   if (!params) {
     return <NotFoundPage seoNoIndex />;

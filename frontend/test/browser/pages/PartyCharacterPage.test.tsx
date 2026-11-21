@@ -56,6 +56,15 @@ describe('PartyCharacterPage after the scvm leaves the party', () => {
     expect(queryClient.getQueryData(characterDetailKey('c1', 'en'))).toBeTruthy();
   });
 
+  it('keeps the current membership when the old party URL of a scvm that moved to another party is opened', async () => {
+    const queryClient = new QueryClient();
+    writeCharacter(queryClient, 'c1', 'en', { id: 'c1', partyId: 'party-b' } as CharacterResponse);
+    state.query = { ...state.query, error: { status: 404 } };
+    await renderPage(queryClient);
+    await expect.poll(() => appHistory.location.pathname).toBe('/character/c1');
+    expect(readCharacter(queryClient, 'c1', 'en')?.partyId).toBe('party-b');
+  });
+
   it('keeps the party URL while the roster has not loaded', async () => {
     state.query = { ...state.query, isLoading: false, isSuccess: false, isFetching: false };
     await renderPage(new QueryClient());

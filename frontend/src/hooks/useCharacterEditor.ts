@@ -675,13 +675,19 @@ export function useCharacterEditor(
 
     getVisibleCharacter: (character: CharacterResponse | undefined) => {
       const state = getState();
+      // Party membership is server-owned and never patched: show the confirmed value, not a stale optimistic copy.
+      const withConfirmedMembership = (visible: CharacterResponse | undefined) =>
+        visible && character && visible.partyId !== character.partyId
+          ? { ...visible, partyId: character.partyId }
+          : visible;
+
       if (state.pending.length > 0) {
-        return state.optimisticCharacter ?? character;
+        return withConfirmedMembership(state.optimisticCharacter ?? character);
       }
 
       const lastSaved = state.locale === locale ? state.lastSavedCharacter : undefined;
       if (isNewerThan(lastSaved, character)) {
-        return lastSaved;
+        return withConfirmedMembership(lastSaved);
       }
 
       return character ?? lastSaved;
