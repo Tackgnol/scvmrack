@@ -65,13 +65,19 @@ const replaceCurrentWithSearchParams = async (
 const navigateToHomeWithFlag = async (
     pathname: string,
     queryParam: string,
-    preserveCurrentSearchParams = false
+    preserveCurrentSearchParams = false,
+    ignoreBlocker = false
 ): Promise<void> => {
     const searchParams = preserveCurrentSearchParams
         ? getCurrentSearchParams()
         : new URLSearchParams();
     searchParams.set(queryParam, 'true');
-    await appHistory.replace(buildPath(pathname, searchParams, ''));
+    const nextPath = buildPath(pathname, searchParams, '');
+    if (ignoreBlocker) {
+        await appHistory.replace(nextPath, undefined, { ignoreBlocker: true });
+    } else {
+        await appHistory.replace(nextPath);
+    }
 };
 
 export const hasCurrentSearchParam = (queryParam: string): boolean => {
@@ -203,7 +209,9 @@ export const clearCurrentSearchParam = async (queryParam: string): Promise<void>
 export const navigateToLoggedOut = async (): Promise<void> => {
     // The public landing page: the sheet route would wait forever for a character the
     // logged-out flag stops it from creating.
-    await navigateToHomeWithFlag('/', LOGGED_OUT_QUERY_PARAM);
+    // Sign-out already happened and queued edits cannot be saved without a session: the
+    // sheet's save blocker must not hold the user on a page that has just turned into a 404.
+    await navigateToHomeWithFlag('/', LOGGED_OUT_QUERY_PARAM, false, true);
 };
 
 export const navigateToSessionExpired = async (): Promise<void> => {

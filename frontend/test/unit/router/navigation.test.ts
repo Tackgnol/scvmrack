@@ -156,7 +156,9 @@ describe('navigation router utils', () => {
         it('should navigate to the public landing page with logged-out flag', async () => {
             await navigateToLoggedOut();
             expect(appHistory.replace).toHaveBeenCalledWith(
-                `/?${LOGGED_OUT_QUERY_PARAM}=true`
+                `/?${LOGGED_OUT_QUERY_PARAM}=true`,
+                undefined,
+                { ignoreBlocker: true }
             );
         });
     });
