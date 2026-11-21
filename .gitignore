@@ -87,7 +87,7 @@ coverage-backend*/
 backend/coverage*/
 backend/tests/e2e/playwright-report
 backend/tests/e2e/test-results
-backend/tests/e2e/.auth
+backend/tests/e2e/**/.auth/
 backend/tests/integration-be/test-results
 e2e-report/
 test-results/
