@@ -17,7 +17,7 @@ const isCharacterPath = (pathname: string): boolean => {
     return pathname === HOME_PATH || pathname.startsWith(`${HOME_PATH}/`);
 };
 
-const buildCharacterPath = (characterId: string | null): string => {
+export const buildCharacterPath = (characterId: string | null): string => {
     return characterId ? `${HOME_PATH}/${encodeURIComponent(characterId)}` : NEW_CHARACTER_PATH;
 };
 
