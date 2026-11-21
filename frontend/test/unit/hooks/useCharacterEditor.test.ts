@@ -716,6 +716,21 @@ test('a deleted character discards all queued edits and stale visible snapshots'
   expect(sheet.editor.missingCharacterError).toBeNull();
 });
 
+test('shows the confirmed party membership, not the optimistic copy, while edits are queued', () => {
+  const { queryClient } = makeCache({ id: 'char-1', name: 'A0', partyId: 'party-old' });
+  const sheet = openSheet(queryClient, { id: 'char-1' });
+
+  act(() => sheet.editor.updateField('name', 'A1'));
+  expect(sheet.visible()?.partyId).toBe('party-old');
+
+  queryClient.setQueryData(
+    ['get', '/api/characters/{id}', { params: { path: { id: 'char-1' }, query: { locale: 'en' } } }],
+    asCharacter({ id: 'char-1', name: 'A0', partyId: null, updatedAt: '2026-10-15T10:00:00Z' }),
+  );
+  expect(sheet.visible()?.name).toBe('A1');
+  expect(sheet.visible()?.partyId).toBeNull();
+});
+
 test('drops the batch on a terminal client (4xx) error without retrying it', async () => {
   const { queryClient } = makeCache({ id: 'char-1', name: 'A0' });
   const server = fakeServer();
