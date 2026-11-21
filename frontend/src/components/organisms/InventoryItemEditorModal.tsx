@@ -143,10 +143,12 @@ export default function InventoryItemEditorModal({
           item={item}
         />
 
+        {/* Reads show a catalog item's translated name, so a stored rename would be silently discarded. */}
         <TextField
           fullWidth
           label={t('equipment.itemName')}
           value={editor.editName}
+          disabled={item.source !== 'custom'}
           error={Boolean(nameErrorMessage)}
           onChange={(event) => editor.setEditName(event.target.value)}
           sx={modalInputStyles}

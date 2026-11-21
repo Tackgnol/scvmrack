@@ -46,3 +46,32 @@ it.each([49, 50])('keeps the quantity editor within the remaining On Hand capaci
   }
   await expect.poll(() => onClose).toHaveBeenCalled();
 });
+
+it.each([
+  { label: 'a catalog item', item: { key: 'equipment.rope', name: 'Rope', description: '', comments: '' }, editable: false },
+  { label: 'a forged item', item: { key: 'custom.misc.qa', source: 'custom', name: 'QA Widget', description: '', comments: '' }, editable: true },
+])('lets the Name field be edited only for custom items ($label)', async ({ item, editable }) => {
+  state.equipment = [item];
+  await render(
+    <BrowserTestProvider>
+      <InventoryItemEditorModal
+        open
+        aggregated={{ item, indices: [0], quantity: 1 }}
+        location="equipment"
+        onClose={vi.fn()}
+        onUpdate={vi.fn()}
+        onDelete={vi.fn()}
+        onMove={vi.fn()}
+        onAdjustQuantity={vi.fn()}
+      />
+    </BrowserTestProvider>,
+  );
+  const name = page.getByRole('textbox', { name: 'Item name' });
+  await expect.element(name).toBeVisible();
+  if (editable) {
+    await expect.element(name).toBeEnabled();
+  } else {
+    await expect.element(name).toBeDisabled();
+  }
+});
+
