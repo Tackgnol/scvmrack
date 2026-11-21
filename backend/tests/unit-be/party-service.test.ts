@@ -107,6 +107,7 @@ const state = {
     poolLineageIds: string[];
   }>,
   roomMoves: [] as Array<{ id: string; roomId: string }>,
+  roomLocks: [] as Array<{ partyIds: string[]; roomId: string }>,
   rotateCalls: [] as Array<{ id: string; token: string }>,
   deleteCalls: [] as string[],
   renameCalls: [] as Array<{ id: string; name: string }>,
@@ -143,6 +144,7 @@ function resetState(): void {
   seats.throws = null;
   roomRemovals.length = 0;
   state.roomMoves = [];
+  state.roomLocks = [];
   state.rotateCalls = [];
   state.deleteCalls = [];
   state.renameCalls = [];
@@ -221,8 +223,12 @@ mock.module('../../src/repositories/party-repository.js', {
       setPartyObrRoom: async (id: string, obrRoomId: string | null) => {
         state.setObrRoomCalls.push({ id, obrRoomId });
       },
-      roomTransaction: async (work: (ops: unknown) => Promise<unknown>) =>
-        work({
+      roomTransaction: async (
+        locks: { partyIds: string[]; roomId: string },
+        work: (ops: unknown) => Promise<unknown>
+      ) => {
+        state.roomLocks.push(locks);
+        return work({
           findRoomParty: async () =>
             state.partyByObrRoomId && {
               id: state.partyByObrRoomId.id,
@@ -235,7 +241,8 @@ mock.module('../../src/repositories/party-repository.js', {
           setPartyRoom: async (id: string, roomId: string) => {
             state.roomMoves.push({ id, roomId });
           },
-        }),
+        });
+      },
     },
   },
 });
@@ -1276,6 +1283,11 @@ test('attachRoom replaces an empty system room party with the GM warband', async
   });
 
   assert.equal(r.ok, true);
+  assert.deepEqual(
+    state.roomLocks,
+    [{ partyIds: [OTHER_PARTY_ID, PARTY_ID], roomId: 'system-room' }],
+    'the replacement runs under the seat locks of both parties and the room'
+  );
   assert.deepEqual(state.deleteCalls, [OTHER_PARTY_ID]);
   assert.deepEqual(state.roomMoves, [{ id: PARTY_ID, roomId: 'system-room' }]);
   assert.deepEqual(state.setObrRoomCalls, []);

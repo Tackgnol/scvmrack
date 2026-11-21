@@ -1,5 +1,5 @@
 import type { Prisma } from '@prisma/client';
-import { apiError, type ApiHttpError } from '../errors.js';
+import { apiError, notFound, type ApiHttpError } from '../errors.js';
 import { positiveIntFromEnv } from '../lib/env-int.js';
 import type { PartyEvent, PartyEventBus } from '../plugins/party-bus.js';
 import {
@@ -89,9 +89,12 @@ export function createPartyMembership(bus?: PartyEventBus) {
       const seated = await partyMembershipRepository.inParty(
         input.partyId,
         async (party, ops): Promise<ServiceResult<string>> => {
-          // A party deleted since the caller read it has no row; the write below
-          // then fails its foreign key.
-          const refusal = party ? ownerCannotJoin(party, input.userId) : null;
+          // An empty system room party can be replaced by an attach between the
+          // caller's read and this lock.
+          if (!party) {
+            return fail(notFound('PARTY_NOT_FOUND', 'Party not found'));
+          }
+          const refusal = ownerCannotJoin(party, input.userId);
           if (refusal) {
             return fail(refusal);
           }

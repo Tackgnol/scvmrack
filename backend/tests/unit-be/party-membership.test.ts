@@ -268,6 +268,22 @@ test('a scvm forged into a full party is not created', async () => {
   assert.deepEqual(events, []);
 });
 
+test('a scvm forged into a party that is gone by the time it is locked is refused, not created', async () => {
+  world.parties.delete(PARTY);
+  const before = world.scvm.size;
+
+  const result = await membership().takeSeat({
+    partyId: PARTY,
+    userId: 'player',
+    create: { userId: 'player' } as never,
+  });
+
+  assert.equal(!result.ok && result.error.statusCode, 404);
+  assert.equal(!result.ok && result.error.code, 'PARTY_NOT_FOUND');
+  assert.equal(world.scvm.size, before);
+  assert.deepEqual(events, []);
+});
+
 test('the GM rule is the same refusal everywhere', () => {
   assert.equal(ownerCannotJoin({ ownerUserId: GM }, 'player'), null);
   assert.equal(ownerCannotJoin({ ownerUserId: GM }, null), null);

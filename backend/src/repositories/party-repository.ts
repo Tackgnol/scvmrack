@@ -257,9 +257,37 @@ export const partyRepository = {
     });
   },
 
-  /** Runs `work` in one transaction with the room-party operations bound to it. */
-  roomTransaction<T>(work: (ops: RoomOps) => Promise<T>): Promise<T> {
-    return prisma.$transaction((tx) => work(roomOps(tx)));
+  /**
+   * Runs `work` in one transaction holding the seat locks of `partyIds` and then
+   * of `roomId` plus every room those parties point at, in the order seat changes
+   * use (parties before rooms, each set sorted), so it cannot deadlock with a seat
+   * change in any of them.
+   */
+  roomTransaction<T>(
+    locks: { partyIds: string[]; roomId: string },
+    work: (ops: RoomOps) => Promise<T>
+  ): Promise<T> {
+    return prisma.$transaction(async (tx) => {
+      const partyIds = [...new Set(locks.partyIds)].sort();
+      for (const id of partyIds) {
+        await advisoryLock(tx, 'party', id);
+      }
+      const pointed = await tx.party.findMany({
+        where: { id: { in: partyIds } },
+        select: { obrRoomId: true },
+      });
+      const rooms = [
+        ...new Set(
+          [locks.roomId, ...pointed.map((party) => party.obrRoomId)].filter(
+            (room): room is string => Boolean(room)
+          )
+        ),
+      ].sort();
+      for (const room of rooms) {
+        await advisoryLock(tx, 'room', room);
+      }
+      return work(roomOps(tx));
+    });
   },
 
   /** Transfer party ownership (used when a signed-in GM claims a system-owned room party). */

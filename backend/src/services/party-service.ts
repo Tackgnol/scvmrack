@@ -390,8 +390,10 @@ export function createPartyService(
         if (existing && existing.id !== input.id) {
           if (existing.ownerUserId === OBR_ROOM_SYSTEM_OWNER_ID) {
             if (existing.members.length === 0) {
-              // Re-checked under the transaction: the room's party may have changed since it was read.
+              // Re-checked under the seat locks of both parties and the room, so a scvm
+              // forged into the system party meanwhile keeps it, and neither side deadlocks.
               const replaced = await partyRepository.roomTransaction(
+                { partyIds: [existing.id, input.id], roomId: obrRoomId },
                 async (ops) => {
                   const roomParty = await ops.findRoomParty(obrRoomId);
                   if (

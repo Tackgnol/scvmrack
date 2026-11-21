@@ -254,6 +254,56 @@ test('leaving and kicking without a room give up the seat', async () => {
   assert.equal(((await again.json()) as { code: string }).code, 'PARTY_MEMBERSHIP_NOT_FOUND');
 });
 
+async function roomPartyOf(roomId: string): Promise<{ id: string; ownerUserId: string } | null> {
+  return withDatabase(async (db) => {
+    const result = await db.query(
+      'SELECT id, owner_user_id AS "ownerUserId" FROM parties WHERE obr_room_id = $1',
+      [roomId]
+    );
+    return (result.rows[0] as { id: string; ownerUserId: string } | undefined) ?? null;
+  });
+}
+
+test('attaching a room while a scvm is forged into its empty system party never deadlocks', async () => {
+  const gm = await actor(true);
+  const rooms = Array.from({ length: 6 }, () => `seats-race-${randomUUID()}`);
+
+  const outcomes = await Promise.all(
+    rooms.map(async (roomId) => {
+      // A guest opening the room creates its empty system-owned party.
+      await call('/api/parties/promote', await actor(), 'POST', { obrRoomId: roomId });
+      const system = await roomPartyOf(roomId);
+      assert.equal(system?.ownerUserId, 'system:obr-room');
+      const warband = await call<Party>('/api/parties', gm, 'POST', { name: 'Race warband' }, 201);
+      const forger = await actor();
+
+      const [attach, forge] = await Promise.all([
+        send(`/api/parties/${warband.id}/attach-room`, gm, 'POST', { obrRoomId: roomId }),
+        send(`/api/characters/new?obrRoom=${roomId}&obrPlayer=racer`, forger, 'POST', {}),
+      ]);
+      return {
+        roomId,
+        warband,
+        attach: { status: attach.status, body: await attach.text() },
+        forge: { status: forge.status, body: await forge.text() },
+      };
+    })
+  );
+
+  for (const { roomId, warband, attach, forge } of outcomes) {
+    assert.ok([200, 409].includes(attach.status), `attach ${roomId}: ${attach.status} ${attach.body}`);
+    assert.ok([201, 404].includes(forge.status), `forge ${roomId}: ${forge.status} ${forge.body}`);
+    const roomParty = await roomPartyOf(roomId);
+    if (attach.status === 200) {
+      assert.equal(roomParty?.id, warband.id, 'an attach that succeeded owns the room');
+    }
+    if (forge.status === 201) {
+      const scvm = JSON.parse(forge.body) as Scvm;
+      assert.equal(await partyIdOf(scvm.id), roomParty?.id, 'a forged scvm sits in the party the room points at');
+    }
+  }
+});
+
 test("leaving a room party clears the scvm's player and token bindings in the room", async () => {
   const gm = await actor(true);
   const roomId = `seats-${randomUUID()}`;
