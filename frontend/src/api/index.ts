@@ -32,15 +32,6 @@ export const authKeys = {
 
 
 // ============================================
-// Character Query Keys
-// ============================================
-export const characterKeys = {
-    all: ["characters"] as const,
-    list: () => [...characterKeys.all, "list"] as const,
-    detail: (id: string, locale?: string) => [...characterKeys.all, id, locale] as const,
-};
-
-// ============================================
 // Redirect Control
 // ============================================
 let isRedirecting = false;

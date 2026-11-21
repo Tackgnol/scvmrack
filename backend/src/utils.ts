@@ -1,13 +1,6 @@
 import validator from 'validator';
 import { isSupportedLocale, type SupportedLocale } from './config/locales.js';
-import { ABILITY_SCORE_LIMITS, MISERY_MAX, MISERY_MIN } from './lib/character-limits.js';
-
-/**
- * Convert a camelCase string to snake_case
- */
-export function camelToSnake(key: string): string {
-  return key.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`);
-}
+import { CHARACTER_INTEGER_BOUNDS, CHARACTER_TEXT_BOUNDS } from './lib/character-limits.js';
 
 /**
  * Convert a snake_case string to camelCase
@@ -117,35 +110,8 @@ export function isNamedItem(item: unknown): boolean {
 export function sanitizeCharacterUpdate(
   updates: Record<string, unknown>
 ): Record<string, unknown> {
-  // Server-side backstop limits. These must never exceed the DB column size:
-  // `name` and `origin` are VarChar(255); the rest are text columns. The
-  // stricter, user-facing limits live in the frontend
-  // (`frontend/src/validation/characterUpdate.ts`); unifying both into one
-  // shared module is tracked with the Repository/Service refactor.
-  const stringFields: Record<string, number> = {
-    name: 255,
-    habit: 1000,
-    tale: 1000,
-    trait1: 255,
-    trait2: 255,
-    bodyDescription: 1000,
-    origin: 255, // VarChar(255) column — must not exceed 255 or the insert throws
-    notes: 10000,
-  };
-
-  // Integer fields with min/max bounds
-  const integerFields: Record<string, { min: number; max: number }> = {
-    currentHp: { min: -100, max: 1000 },
-    maxHp: { min: 1, max: 1000 },
-    omens: { min: 0, max: 100 },
-    maxOmens: { min: 0, max: 100 },
-    silver: { min: 0, max: 1000000 },
-    strength: ABILITY_SCORE_LIMITS,
-    agility: ABILITY_SCORE_LIMITS,
-    presence: ABILITY_SCORE_LIMITS,
-    toughness: ABILITY_SCORE_LIMITS,
-    miseryCount: { min: MISERY_MIN, max: MISERY_MAX },
-  };
+  const stringFields: Record<string, { storedLength: number }> = CHARACTER_TEXT_BOUNDS;
+  const integerFields: Record<string, { min: number; max: number }> = CHARACTER_INTEGER_BOUNDS;
 
   // JSONB fields
   const jsonbFields = [
@@ -166,7 +132,7 @@ export function sanitizeCharacterUpdate(
     }
 
     if (key in stringFields && typeof value === 'string') {
-      sanitized[key] = sanitizeString(value, stringFields[key]);
+      sanitized[key] = sanitizeString(value, stringFields[key].storedLength);
     } else if (key in integerFields && typeof value === 'number') {
       const bounds = integerFields[key];
       if (Number.isFinite(value)) {
@@ -200,21 +166,6 @@ export function isValidUUID(id: string): boolean {
  */
 export function isValidLocale(locale: unknown): locale is SupportedLocale {
   return isSupportedLocale(locale);
-}
-
-/**
- * Convert a sanitized camelCase patch to snake_case keys for the DB update_character function.
- * JSONB content (arrays/objects) is also converted so stored data stays in snake_case.
- */
-export function toDbPatch(patch: Record<string, unknown>): Record<string, unknown> {
-  return Object.fromEntries(
-    Object.entries(patch).map(([k, v]) => [
-      camelToSnake(k),
-      (Array.isArray(v) || (v !== null && typeof v === 'object'))
-        ? transformKeys(v, camelToSnake)
-        : v,
-    ])
-  );
 }
 
 /**

@@ -2,7 +2,8 @@ import fp from 'fastify-plugin';
 import type { FastifyInstance } from 'fastify';
 import prisma from '../lib/prisma.js';
 import { apiError, badRequest, sendApiError } from '../errors.js';
-import { generateCharacter } from '../lib/generate-character.js';
+import { characterRepository } from '../repositories/character-repository.js';
+import { randomCharacterCreateData } from '../services/character-generation.js';
 import { pickPoolClass } from '../services/character-class-choice.js';
 import { resolvePartyClassPool } from '../services/party-class-pool-service.js';
 import { Roller, OSRandomEngine } from '@tackgnol/rpg-tools-roller';
@@ -96,7 +97,7 @@ export default fp(async function testRoutesPlugin(fastify: FastifyInstance) {
       if (!classId.ok) {
         throw new Error('No Book Class to roll');
       }
-      characterId = await generateCharacter(classId.value, roller);
+      characterId = await characterRepository.create(await randomCharacterCreateData(classId.value, roller));
     } catch {
       return sendApiError(
         reply,

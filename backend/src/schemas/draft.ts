@@ -1,5 +1,5 @@
 import { ABILITY_STATS, DRAFT_SECTIONS } from '../lib/draft-seeds.js';
-import { CharacterSchema, NullableIdSchema } from './character.js';
+import { CharacterSchema, NullableIdSchema, type SheetOf } from './character.js';
 
 const SeedSchema = { type: 'string', pattern: '^[0-9a-f]{64}$' } as const;
 const AbilityStatSchema = {
@@ -71,6 +71,9 @@ export const DraftPreviewSchema = {
     id: { type: ['string', 'null'], format: 'uuid' },
   },
 } as const;
+
+/** A hydrated sheet that was never saved, so it has no id yet: a draft or test-roll preview. */
+export type DraftPreview = SheetOf<typeof DraftPreviewSchema>;
 
 const ClasslessStatOptionSchema = {
   type: 'object',

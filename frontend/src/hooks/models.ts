@@ -224,11 +224,6 @@ export type OptimisticPatch =
     | { kind: 'ammo-use'; equipmentIndex: number }
 
 
-export type UpdateMutationContext = {
-    previousCharacter: CharacterResponse | undefined;
-    queryKey: any[];
-};
-
 /** Base modifier shape for DR computation - use primitives for flexibility */
 export type BaseModifier = {
     value?: number;

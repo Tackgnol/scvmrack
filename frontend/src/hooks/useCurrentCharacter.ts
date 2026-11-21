@@ -11,12 +11,12 @@ import {
   LOGGED_OUT_QUERY_PARAM,
   SESSION_EXPIRED_QUERY_PARAM,
 } from '@/router/navigation';
-import { getApiLocale, getCharacterKey } from '@/hooks/utils.ts';
-import { characterKeys } from '@/api';
+import { getApiLocale } from '@/hooks/utils.ts';
+import { dropCharacter, seedCreatedCharacter } from '@/api/characterCache';
 import type { CharacterResponse } from '@/hooks/models';
 import { useSnackbar } from '@/SnackbarContext/SnackbarProvider.tsx';
 import { useErrorFeedback } from '@/components/molecules/feedback/ErrorFeedbackProvider';
-import { getUserFacingApiErrorMessage, isApiNotFound } from '@/utils/errorUtils';
+import { getUserFacingApiErrorMessage } from '@/utils/errorUtils';
 
 import { useCallback, useEffect, useRef, useSyncExternalStore } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -110,19 +110,12 @@ export function useCurrentCharacter() {
     enabled: !isSessionExpired && canReadCharacter,
   });
   const isReadOnly = repo.character?.viewerAccess === 'party';
-  const editor = useCharacterEditor(
+  const { missingCharacterError, ...editor } = useCharacterEditor(
     characterId,
-    repo.updateCharacter,
-    repo.getCharacterKey,
     trimmedLocale,
     validationIssueHandlers,
     { readOnly: isReadOnly }
   );
-  const missingCharacterError =
-    isApiNotFound(repo.updateCharacter?.error) &&
-    repo.updateCharacter.variables?.params?.path?.id === characterId
-      ? repo.updateCharacter.error
-      : null;
   const visibleCharacter = missingCharacterError
     ? undefined
     : editor.getVisibleCharacter?.(repo.character) ?? repo.character;
@@ -191,8 +184,7 @@ export function useCurrentCharacter() {
       // create intent, then navigate. push+flush (not setCharacterId) avoids the
       // mid-confirm in-provider state update that can trip the route error
       // boundary during the create->sheet transition.
-      queryClient.setQueryData(getCharacterKey(character.id, locale), character);
-      queryClient.invalidateQueries({ queryKey: characterKeys.list() });
+      seedCreatedCharacter(queryClient, character.id, locale, character);
       setJustCreated(character.id);
       void appHistory.push(`/character/${character.id}`);
       appHistory.flush();
@@ -209,9 +201,7 @@ export function useCurrentCharacter() {
     }
 
     await setCharacterId(null);
-    queryClient.removeQueries({
-      queryKey: getCharacterKey(invalidCharacterId, trimmedLocale),
-    });
+    dropCharacter(queryClient, invalidCharacterId, trimmedLocale);
   }, [characterId, queryClient, setCharacterId, trimmedLocale]);
 
   // ---- Handle logout side effects ----

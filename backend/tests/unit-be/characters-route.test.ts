@@ -212,7 +212,7 @@ mock.module('../../src/lib/prisma.js', {
   defaultExport: prismaMock,
 });
 
-mock.module('../../src/lib/generate-character.js', {
+mock.module('../../src/services/character-generation.js', {
   namedExports: {
     characterCreateDataFromDraft: async (draft: unknown, userId: string) => ({ fromDraft: draft, userId }),
     randomCharacterCreateData: async (classId: number, roller: unknown, userId?: string) => ({ fromRandom: classId, roller, userId }),
@@ -352,7 +352,7 @@ test('POST /new generates, binds, and returns a session-owned character', async 
   assert.equal(generateCalls.length, 1);
   assert.equal(generateCalls[0].classId, 2);
   assert.equal(typeof (generateCalls[0].roller as { roll?: unknown }).roll, 'function');
-  // Ownership is now bound atomically inside generateCharacter (no orphan
+  // Ownership is bound atomically when the row is inserted (no orphan
   // window), so there must be NO separate character.update bind call.
   assert.equal(generateCalls[0].userId, 'user-1');
   assert.deepEqual(createFromDraftCalls, []);

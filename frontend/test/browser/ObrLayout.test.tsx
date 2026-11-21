@@ -4,34 +4,14 @@ import { render } from "vitest-browser-react";
 import { page, userEvent } from "vitest/browser";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import BrowserTestProvider from "./BrowserTestProvider";
+import { createMemoryOwlbear, type MemoryOwlbear } from "../obr/memoryOwlbear";
 
-const obrMock = vi.hoisted(() => ({
-  onReady: vi.fn((callback: () => void) => {
-    callback();
-  }),
-  setWidth: vi.fn(),
-  setHeight: vi.fn(),
-  showNotification: vi.fn<() => Promise<void>>(() => Promise.resolve()),
-}));
 const characterMock = vi.hoisted(() => ({ characterId: null as string | null,
 }));
 const authClientMock = vi.hoisted(() => ({
   open: vi.fn<(destination: string) => Promise<void>>(async () => {}),
 }));
 const windowOpenMock = vi.hoisted(() => vi.fn());
-
-vi.mock("@owlbear-rodeo/sdk", () => ({
-  default: {
-    onReady: obrMock.onReady,
-    action: {
-      setWidth: obrMock.setWidth,
-      setHeight: obrMock.setHeight,
-    },
-    notification: {
-      show: obrMock.showNotification,
-    },
-  },
-}));
 
 vi.mock("@/CharacterContext/CharacterContext", () => ({
   useCharacter: () => characterMock,
@@ -43,13 +23,15 @@ vi.mock("@/auth/obrAuthClient", () => ({
 
 vi.stubGlobal("open", windowOpenMock);
 
+let owlbear: MemoryOwlbear;
+
 describe("ObrLayout", () => {
   it.each(['en', 'pl'])("keeps all active-sheet actions inside a 420px panel in %s", async (locale) => {
     await page.viewport(420, 600);
     characterMock.characterId = 'compact-scvm';
     await i18n.changeLanguage(locale);
     await render(
-      <BrowserTestProvider>
+      <BrowserTestProvider owlbear={owlbear}>
         <div data-testid="compact-panel" style={{ width: 420 }}>
           <ObrLayout><div>Active sheet</div></ObrLayout>
         </div>
@@ -79,6 +61,7 @@ describe("ObrLayout", () => {
 
   beforeEach(async () => {
     vi.clearAllMocks();
+    owlbear = createMemoryOwlbear();
     characterMock.characterId = null;
     authClientMock.open.mockResolvedValue(undefined);
     windowOpenMock.mockReturnValue({} as Window);
@@ -93,7 +76,7 @@ describe("ObrLayout", () => {
 
   it("lets Owlbear users switch the iframe language", async () => {
     await render(
-      <BrowserTestProvider>
+      <BrowserTestProvider owlbear={owlbear}>
         <ObrLayout>
           <div>Panel body</div>
         </ObrLayout>
@@ -115,7 +98,7 @@ describe("ObrLayout", () => {
 
   it("keeps the Owlbear chrome fixed while the panel body scrolls", async () => {
     await render(
-      <BrowserTestProvider>
+      <BrowserTestProvider owlbear={owlbear}>
         <ObrLayout>
           <div style={{ height: 1600 }}>Panel body</div>
         </ObrLayout>
@@ -137,7 +120,7 @@ describe("ObrLayout", () => {
     vi.spyOn(window.screen, "availHeight", "get").mockReturnValue(1080);
 
     await render(
-      <BrowserTestProvider>
+      <BrowserTestProvider owlbear={owlbear}>
         <ObrLayout>
           <div>Panel body</div>
         </ObrLayout>
@@ -146,8 +129,8 @@ describe("ObrLayout", () => {
 
     await userEvent.click(page.getByRole("button", { name: "⛶ Max" }));
 
-    expect(obrMock.setWidth).toHaveBeenCalledWith(1920);
-    expect(obrMock.setHeight).toHaveBeenCalledWith(1080);
+    expect(owlbear.panelWidths).toContain(1920);
+    expect(owlbear.panelHeights).toContain(1080);
 
     await expect
       .element(page.getByRole("button", { name: "⊠ Collapse" }))
@@ -155,7 +138,7 @@ describe("ObrLayout", () => {
 
     await userEvent.click(page.getByRole("button", { name: "⊠ Collapse" }));
 
-    expect(obrMock.setWidth).toHaveBeenLastCalledWith(420);
+    expect(owlbear.panelWidths[owlbear.panelWidths.length - 1]).toBe(420);
     await expect
       .element(page.getByRole("button", { name: "⤢ Expand" }))
       .toBeVisible();
@@ -163,7 +146,7 @@ describe("ObrLayout", () => {
 
   it("hides the open-in-scvmrack action without an active character", async () => {
     await render(
-      <BrowserTestProvider>
+      <BrowserTestProvider owlbear={owlbear}>
         <ObrLayout>
           <div>Panel body</div>
         </ObrLayout>
@@ -179,7 +162,7 @@ describe("ObrLayout", () => {
     characterMock.characterId = "character-1";
 
     await render(
-      <BrowserTestProvider>
+      <BrowserTestProvider owlbear={owlbear}>
         <ObrLayout>
           <div>Panel body</div>
         </ObrLayout>
@@ -200,7 +183,7 @@ describe("ObrLayout", () => {
     authClientMock.open.mockRejectedValueOnce(new Error("popup-blocked"));
 
     await render(
-      <BrowserTestProvider>
+      <BrowserTestProvider owlbear={owlbear}>
         <ObrLayout>
           <div>Panel body</div>
         </ObrLayout>
@@ -212,7 +195,7 @@ describe("ObrLayout", () => {
     );
 
     await expect
-      .poll(() => obrMock.showNotification)
-      .toHaveBeenCalledWith("Could not open in scvmrack", "ERROR");
+      .poll(() => owlbear.notifications)
+      .toContainEqual({ message: "Could not open in scvmrack", variant: "ERROR" });
   });
 });

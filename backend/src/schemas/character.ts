@@ -1,7 +1,13 @@
 // Stricter schema definitions with validation limits
 // Use these in your route schemas
 
-import { ABILITY_SCORE_LIMITS, MISERY_MAX, MISERY_MIN } from '../lib/character-limits.js';
+import type { FromSchema, JSONSchema } from 'json-schema-to-ts';
+import {
+  CHARACTER_INTEGER_BOUNDS,
+  CHARACTER_TEXT_BOUNDS,
+  type CharacterIntegerField,
+  type CharacterTextField,
+} from '../lib/character-limits.js';
 
 export const CharacterIdParamsSchema = {
   type: 'object',
@@ -275,34 +281,41 @@ const ComputedModifierSchemaDefs = {
 const ModifierSchema = ModifierSchemaDefs;
 const ComputedModifierSchema = ComputedModifierSchemaDefs;
 
+/** A character update's text field, bounded by {@link CHARACTER_TEXT_BOUNDS}. */
+function textField<F extends CharacterTextField>(field: F) {
+  return { type: 'string', maxLength: CHARACTER_TEXT_BOUNDS[field].maxLength } as const;
+}
+
+/** A character update's integer field, bounded by {@link CHARACTER_INTEGER_BOUNDS}. */
+function integerField<F extends CharacterIntegerField>(field: F) {
+  const { min, max } = CHARACTER_INTEGER_BOUNDS[field];
+  return { type: 'integer', minimum: min, maximum: max } as const;
+}
+
 export const UpdateBodySchema = {
   type: 'object',
   additionalProperties: false, // Fastify's default Ajv strips unknown fields
   properties: {
     expectedUpdatedAt: { type: 'string', format: 'date-time' },
     saveId: { type: 'string', pattern: '^[A-Za-z0-9-]{1,64}$' },
-    name: { type: 'string', maxLength: 255 },
-    currentHp: { type: 'integer', minimum: -100, maximum: 1000 },
-    maxHp: { type: 'integer', minimum: 1, maximum: 1000 },
-    omens: { type: 'integer', minimum: 0, maximum: 100 },
-    maxOmens: { type: 'integer', minimum: 0, maximum: 100 },
-    silver: { type: 'integer', minimum: 0, maximum: 1000000 },
-    strength: { type: 'integer', minimum: ABILITY_SCORE_LIMITS.min, maximum: ABILITY_SCORE_LIMITS.max },
-    agility: { type: 'integer', minimum: ABILITY_SCORE_LIMITS.min, maximum: ABILITY_SCORE_LIMITS.max },
-    presence: { type: 'integer', minimum: ABILITY_SCORE_LIMITS.min, maximum: ABILITY_SCORE_LIMITS.max },
-    toughness: { type: 'integer', minimum: ABILITY_SCORE_LIMITS.min, maximum: ABILITY_SCORE_LIMITS.max },
-    trait1: { type: 'string', maxLength: 255 },
-    trait2: { type: 'string', maxLength: 255 },
-    habit: { type: 'string', maxLength: 1000 },
-    tale: { type: 'string', maxLength: 1000 },
-    bodyDescription: { type: 'string', maxLength: 1000 },
-    origin: { type: 'string', maxLength: 1000 },
-    notes: { type: 'string', maxLength: 10000 },
-    miseryCount: {
-      type: 'integer',
-      minimum: MISERY_MIN,
-      maximum: MISERY_MAX,
-    },
+    name: textField('name'),
+    currentHp: integerField('currentHp'),
+    maxHp: integerField('maxHp'),
+    omens: integerField('omens'),
+    maxOmens: integerField('maxOmens'),
+    silver: integerField('silver'),
+    strength: integerField('strength'),
+    agility: integerField('agility'),
+    presence: integerField('presence'),
+    toughness: integerField('toughness'),
+    trait1: textField('trait1'),
+    trait2: textField('trait2'),
+    habit: textField('habit'),
+    tale: textField('tale'),
+    bodyDescription: textField('bodyDescription'),
+    origin: textField('origin'),
+    notes: textField('notes'),
+    miseryCount: integerField('miseryCount'),
     abilities: {
       type: 'array',
       items: AbilitySchema,
@@ -384,6 +397,38 @@ export const CharacterSchema = {
     updatedAt: { type: 'string', format: 'date-time' },
   },
 } as const;
+
+/**
+ * What a character response schema describes, with every key present except `viewerAccess`, which
+ * only the reads that check access add. Type-level only: the response schemas keep every key optional.
+ */
+type ResponseSheetOf<S extends { properties: object }> = S & {
+  additionalProperties: false;
+  required: readonly Exclude<keyof S['properties'], 'viewerAccess'>[];
+} extends infer Sheet extends JSONSchema
+  ? FromSchema<Sheet>
+  : never;
+
+type ResponseSheet = ResponseSheetOf<typeof CharacterSchema>;
+
+/**
+ * An ability on a hydrated sheet. A rolled table ability also carries `tableResult`, its rolled row;
+ * the response schema's ability does not list it, so it is never sent.
+ */
+export type SheetAbility = ResponseSheet['abilities'][number] & {
+  tableResult?: { roll: number; text: string; itemKey: string | null };
+};
+
+/**
+ * A hydrated sheet as response schema `S` describes it, derived from the schema so the two can't drift.
+ * Only `abilities` is wider, by the unsent `tableResult`.
+ */
+export type SheetOf<S extends { properties: object }> = Omit<ResponseSheetOf<S>, 'abilities'> & {
+  abilities: SheetAbility[];
+};
+
+/** The full character sheet `getCharacterFull` returns, as {@link CharacterSchema} describes it. */
+export type CharacterSheet = SheetOf<typeof CharacterSchema>;
 
 export const ErrorSchema = {
   type: 'object',

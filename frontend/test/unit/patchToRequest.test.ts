@@ -8,25 +8,6 @@ test('patchToRequest handles simple patches', () => {
   expect(patchToRequest({ kind: 'simple', field: 'currentHp', value: 10 })).toEqual({ currentHp: 10 });
 });
 
-test('patchToRequest handles armor field patches', () => {
-  expect(patchToRequest({ kind: 'armor', field: 'name', value: 'Mail' })).toEqual({
-    equippedArmor: { name: 'Mail' }
-  });
-});
-
-test('patchToRequest handles weapon field patches', () => {
-  expect(patchToRequest({ kind: 'weapon', index: 0, field: 'name', value: 'Sword' })).toEqual({
-    equippedWeapons: [{ index: 0, field: 'name', value: 'Sword' }]
-  });
-});
-
-test('patchToRequest handles equipment patches', () => {
-    const item = { key: 'torch', name: 'Torch' };
-    expect(patchToRequest({ kind: 'equipment-item', index: 0, item })).toEqual({ equipment: [item] });
-    expect(patchToRequest({ kind: 'equipment-add', item })).toEqual({ equipment: [item] });
-    expect(patchToRequest({ kind: 'equipment-remove', index: 0 })).toEqual({ equipment: undefined });
-});
-
 test('patchToRequest handles abilities patches', () => {
     const abilities = [{ key: 'str', name: 'Str', description: 'Desc', comment: 'Comm' }];
     expect(patchToRequest({ kind: 'abilities', abilities })).toEqual({
@@ -207,10 +188,6 @@ test('buildRequestFromPatches handles weapon equipment/unequipment', () => {
         equipment: [],
         equippedWeapons: [{ key: 'w', name: 'W' }],
     });
-});
-
-test('patchToRequest throws for unhandled patch kind', () => {
-    expect(() => patchToRequest({ kind: 'unknown' } as any)).toThrow('Unhandled patch kind');
 });
 
 test('buildRequestFromPatches handles armor-related patches', () => {

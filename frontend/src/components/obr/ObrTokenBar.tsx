@@ -1,6 +1,4 @@
-import OBR from "@owlbear-rodeo/sdk";
-import { getSelectedTokenBindingState } from "@tackgnol/rpgtools-owlbear";
-import { scvmrackObrExtension } from "@/obr/extension";
+import { notifyQuietly, useOwlbear } from "@/obr/owlbear";
 import { bindRoomSelectedTokens } from "@/obr/roomTokenMetadata";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -12,6 +10,7 @@ import {
 } from "./ObrTokenBar.styles";
 import {
   EMPTY_SELECTION_STATE,
+  readSelectedTokenBindingState,
   useObrTokenBindingState,
 } from "@/obr/useObrTokenBindingState";
 
@@ -25,12 +24,13 @@ export function ObrTokenBar({
   characterName: string;
 }) {
   const { t } = useTranslation();
+  const owlbear = useOwlbear();
   const [busy, setBusy] = useState(false);
   const { selection, setSelection } = useObrTokenBindingState();
 
   async function handleBind() {
     if (!selection.hasSelection) {
-      await OBR.notification.show(
+      await owlbear.notify(
         t("obr.player.selectTokenFirst", "Select a token on the map first"),
         "WARNING",
       );
@@ -40,8 +40,8 @@ export function ObrTokenBar({
     setBusy(true);
     try {
       const result = await bindRoomSelectedTokens({
-        roomId: OBR.room.id,
-        playerId: await OBR.player.getId(),
+        roomId: owlbear.roomId(),
+        playerId: await owlbear.playerId(),
         characterId,
         characterName,
       });
@@ -50,7 +50,7 @@ export function ObrTokenBar({
         const boundLabel = selection.hasBoundToken
           ? t("obr.player.reboundNotification", "Re-bound")
           : t("obr.player.boundNotification", "Bound");
-        await OBR.notification.show(
+        await owlbear.notify(
           count === 1
             ? t("obr.player.bindSuccessOne", "{{action}} {{name}} to 1 token", {
                 action: boundLabel,
@@ -63,25 +63,20 @@ export function ObrTokenBar({
               ),
           "SUCCESS",
         );
-        setSelection(
-          await getSelectedTokenBindingState(scvmrackObrExtension, OBR),
-        );
+        setSelection(await readSelectedTokenBindingState());
       } else {
         setSelection(EMPTY_SELECTION_STATE);
-        await OBR.notification.show(
+        await owlbear.notify(
           t("obr.player.selectTokenFirst", "Select a token on the map first"),
           "WARNING",
         );
       }
     } catch {
-      try {
-        await OBR.notification.show(
-          t("obr.player.bindFailed", "Could not bind. Open a scene first."),
-          "ERROR",
-        );
-      } catch {
-        // Keep the control usable even if Owlbear drops a notification.
-      }
+      await notifyQuietly(
+        owlbear,
+        t("obr.player.bindFailed", "Could not bind. Open a scene first."),
+        "ERROR",
+      );
     }
     setBusy(false);
   }

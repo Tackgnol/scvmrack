@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import {
     authKeys,
-    characterKeys,
     csrfMiddleware,
     authMiddleware,
     obrCharacterAccessMiddleware,
@@ -47,13 +46,6 @@ describe("API Index", () => {
             expect(authKeys.all).toEqual(["auth"]);
             expect(authKeys.session()).toEqual(["auth", "session"]);
             expect(authKeys.me()).toEqual(["auth", "me"]);
-        });
-
-        it("should have correct characterKeys", () => {
-            expect(characterKeys.all).toEqual(["characters"]);
-            expect(characterKeys.list()).toEqual(["characters", "list"]);
-            expect(characterKeys.detail("123")).toEqual(["characters", "123", undefined]);
-            expect(characterKeys.detail("123", "en")).toEqual(["characters", "123", "en"]);
         });
     });
 

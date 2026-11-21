@@ -1,6 +1,7 @@
 import { notFound, unauthorized } from '../errors.js';
 import { roomParticipationRepository } from '../repositories/room-participation-repository.js';
 import { getCharacterFull } from '../lib/get-character-full.js';
+import type { CharacterSheet } from '../schemas/character.js';
 import { characterRepository } from '../repositories/character-repository.js';
 import {
   fail,
@@ -18,7 +19,7 @@ type ClaimAssignedCharacterInput = {
   locale: string;
 };
 
-type ClaimedCharacter = Record<string, unknown> & {
+type ClaimedCharacter = CharacterSheet & {
   viewerAccess: 'owner';
 };
 

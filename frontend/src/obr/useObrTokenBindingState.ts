@@ -6,65 +6,59 @@ import {
   type SelectionBindingState,
 } from "@tackgnol/rpgtools-owlbear";
 import { scvmrackObrExtension } from "@/obr/extension";
+import { sdkOwlbear } from "./owlbear";
 
 export { EMPTY_SELECTION_STATE } from "@tackgnol/rpgtools-owlbear";
+
+/** Reads whether the selected tokens (or `selectedIds`) exist and carry a scvm binding. */
+export function readSelectedTokenBindingState(selectedIds?: string[]) {
+  return getSelectedTokenBindingState(scvmrackObrExtension, OBR, selectedIds);
+}
 
 export function useObrTokenBindingState() {
   const [selection, setSelection] = useState<SelectionBindingState>(
     EMPTY_SELECTION_STATE,
   );
 
-  useEffect(() => {
-    let active = true;
-    let unsubscribePlayer: (() => void) | null = null;
-    let unsubscribeItems: (() => void) | null = null;
-    let unsubscribeSceneReady: (() => void) | null = null;
+  useEffect(
+    () =>
+      sdkOwlbear.whenReady((isActive) => {
+        const refreshSelection = async (selectedIds?: string[]) => {
+          try {
+            const next = await readSelectedTokenBindingState(selectedIds);
+            if (isActive()) {
+              setSelection(next);
+            }
+          } catch {
+            if (isActive()) {
+              setSelection(EMPTY_SELECTION_STATE);
+            }
+          }
+        };
 
-    const refreshSelection = async (selectedIds?: string[]) => {
-      try {
-        const next = await getSelectedTokenBindingState(
-          scvmrackObrExtension,
-          OBR,
-          selectedIds,
-        );
-        if (active) {
-          setSelection(next);
-        }
-      } catch {
-        if (active) {
-          setSelection(EMPTY_SELECTION_STATE);
-        }
-      }
-    };
-
-    OBR.onReady(() => {
-      if (!active) {
-        return;
-      }
-
-      void refreshSelection();
-      unsubscribePlayer = OBR.player.onChange((player) => {
-        void refreshSelection(player.selection ?? []);
-      });
-      unsubscribeItems = OBR.scene.items.onChange(() => {
         void refreshSelection();
-      });
-      unsubscribeSceneReady = OBR.scene.onReadyChange((ready) => {
-        if (!ready) {
-          setSelection(EMPTY_SELECTION_STATE);
-          return;
-        }
-        void refreshSelection();
-      });
-    });
+        const unsubscribePlayer = OBR.player.onChange((player) => {
+          void refreshSelection(player.selection ?? []);
+        });
+        const unsubscribeItems = OBR.scene.items.onChange(() => {
+          void refreshSelection();
+        });
+        const unsubscribeSceneReady = OBR.scene.onReadyChange((ready) => {
+          if (!ready) {
+            setSelection(EMPTY_SELECTION_STATE);
+            return;
+          }
+          void refreshSelection();
+        });
 
-    return () => {
-      active = false;
-      unsubscribePlayer?.();
-      unsubscribeItems?.();
-      unsubscribeSceneReady?.();
-    };
-  }, []);
+        return () => {
+          unsubscribePlayer?.();
+          unsubscribeItems?.();
+          unsubscribeSceneReady?.();
+        };
+      }),
+    [],
+  );
 
   return { selection, setSelection };
 }

@@ -23,11 +23,17 @@ import { statToModifier } from './ability-modifiers.js';
 import { findTranslationsWithAuthoredFallback } from './class-translations.js';
 import { classAttribution } from './class-attribution.js';
 import { isCustomClassKey, isReportable } from './class-model.js';
+import type { CharacterSheet, SheetAbility } from '../schemas/character.js';
+import type { DraftPreview } from '../schemas/draft.js';
 
 // ── Internal types ─────────────────────────────────────────────────────────────
 
 type Item = Record<string, unknown>;
 type TranslationMap = Map<string, string>;
+type SheetItem = CharacterSheet['equipment'][number];
+type SheetWeapon = CharacterSheet['equippedWeapons'][number];
+type SheetArmor = NonNullable<CharacterSheet['equippedArmor']>;
+type Statistic = NonNullable<CharacterSheet['computedModifiers'][number]['statistic']>;
 
 interface WeaponCatalog {
   key: string;
@@ -64,7 +70,7 @@ interface PetCatalog {
 interface ComputedModifier {
   value: number;
   source: string;
-  statistic: string;
+  statistic: Statistic;
   exclude?: string[];
   origin: 'armor' | 'weapon' | 'pet' | 'system';
   originKey: string;
@@ -98,6 +104,15 @@ function asItem(json: unknown): Item | null {
     return null;
   }
   return normalizeItemKeys(json as Record<string, unknown>);
+}
+
+/**
+ * The statistic a stored or catalog modifier names, typed as the response schema states it.
+ * Known gap: a modifier stored without one hydrates as '', which the schema's enum does not list;
+ * the serializer sends it unchanged. Remove once the schema or the stored data agree.
+ */
+function modifierStatistic(statistic: unknown): Statistic {
+  return (typeof statistic === 'string' ? statistic : '') as Statistic;
 }
 
 function translate(translations: TranslationMap, key: string | null | undefined): string | null {
@@ -158,7 +173,7 @@ function resolveInventoryItem(
   equipMap: Map<string, EquipCatalog>,
   petMap: Map<string, PetCatalog>,
   translations: TranslationMap,
-): Record<string, unknown> {
+): SheetItem {
   const key = typeof item.key === 'string' && item.key ? item.key : null;
   const weapon = key ? weaponMap.get(key) ?? null : null;
   const armor  = key ? armorMap.get(key)  ?? null : null;
@@ -224,7 +239,7 @@ function resolveInventoryItem(
   // Armor tier: added when catalog match OR stored tags include 'armor'
   const isArmorItem = armor !== null || storedTags.includes('armor');
 
-  const result: Record<string, unknown> = {
+  const result: SheetItem = {
     ...(key !== null && { key }),
     ...(name !== null && { name }),
     description,
@@ -258,7 +273,7 @@ function resolveEquippedWeapon(
   item: Item,
   weaponMap: Map<string, WeaponCatalog>,
   translations: TranslationMap,
-): Record<string, unknown> {
+): SheetWeapon {
   const key = typeof item.key === 'string' && item.key ? item.key : null;
   const weapon = key ? weaponMap.get(key) ?? null : null;
 
@@ -307,7 +322,7 @@ function resolveEquippedArmor(
   item: Item,
   armorMap: Map<string, ArmorCatalog>,
   translations: TranslationMap,
-): Record<string, unknown> {
+): SheetArmor {
   const key = typeof item.key === 'string' && item.key ? item.key : null;
   const armor = key ? armorMap.get(key) ?? null : null;
 
@@ -359,17 +374,18 @@ function resolveAbilities(
   abilities: Item[],
   translations: TranslationMap,
   tables: AbilityTable[],
-): Record<string, unknown>[] {
+): SheetAbility[] {
   const tableByKey = new Map(tables.map(table => [table.abilityKey, table]));
   return abilities.map(ab => {
     const key = typeof ab.key === 'string' ? ab.key : null;
     if (!key) {
-      return { ...ab };
+      // A keyless ability is passed through as stored, where the request schema's ability shape held it.
+      return { ...ab } as SheetAbility;
     }
 
     const name = translate(translations, key) ?? key;
     const description = translate(translations, `${key}.description`) ?? '';
-    const result: Record<string, unknown> = { key, name, description };
+    const result: SheetAbility = { key, name, description };
     if (typeof ab.comment === 'string') {
       result.comment = ab.comment;
     }
@@ -492,7 +508,7 @@ function buildMod(
   return {
     value: typeof mod.value === 'number' ? mod.value : 0,
     source: typeof mod.source === 'string' ? mod.source : '',
-    statistic: typeof mod.statistic === 'string' ? mod.statistic : '',
+    statistic: modifierStatistic(mod.statistic),
     ...(exclude !== undefined && { exclude }),
     origin,
     originKey,
@@ -603,7 +619,7 @@ async function resolveComputedModifiers(
         const modifier: ComputedModifier = {
           value: cam.value,
           source: label,
-          statistic: cam.statistic,
+          statistic: modifierStatistic(cam.statistic),
           exclude: Array.isArray(cam.exclude) ? (cam.exclude as string[]) : [],
           origin: 'system',
           originKey: `class_ability.${cam.abilityKey}`,
@@ -691,7 +707,7 @@ async function resolveComputedModifiers(
 
 function calculateDR(
   ability: number,
-  allModifiers: Array<Record<string, unknown>>,
+  allModifiers: Array<{ statistic?: string; exclude?: string[]; value?: number }>,
   statistic: string,
   excludedContexts: string[],
 ): number {
@@ -700,7 +716,7 @@ function calculateDR(
       if (m.statistic !== statistic) {
         return false;
       }
-      const excl = m.exclude as string[] | undefined;
+      const excl = m.exclude;
       // Include modifier only when none of its exclude entries appear in excludedContexts
       return !(Array.isArray(excl) && excl.some(ctx => excludedContexts.includes(ctx)));
     })
@@ -726,9 +742,9 @@ export interface CharacterRowLike {
   toughness: number;
   maxHp: number;
   currentHp: number;
-  omens: number;
-  maxOmens: number;
-  silver: number;
+  omens: number | null;
+  maxOmens: number | null;
+  silver: number | null;
   habit: string | null;
   tale: string | null;
   bodyDescription: string | null;
@@ -756,13 +772,13 @@ export interface CharacterRowLike {
 export async function getCharacterFull(
   id: string,
   locale: string,
-): Promise<Record<string, unknown> | null> {
+): Promise<CharacterSheet | null> {
   // 1. Fetch character row
   const row = await characterRepository.findFullRow(id);
   if (!row) {
     return null;
   }
-  return hydrateCharacterRow(row as unknown as CharacterRowLike, locale);
+  return hydrateCharacterRow(row, locale);
 }
 
 /**
@@ -771,9 +787,17 @@ export async function getCharacterFull(
  * catalog/translation tables. Used for both real reads and draft previews.
  */
 export async function hydrateCharacterRow(
+  row: CharacterRowLike & { id: string },
+  locale: string,
+): Promise<CharacterSheet>;
+export async function hydrateCharacterRow(
   row: CharacterRowLike,
   locale: string,
-): Promise<Record<string, unknown>> {
+): Promise<DraftPreview>;
+export async function hydrateCharacterRow(
+  row: CharacterRowLike,
+  locale: string,
+): Promise<DraftPreview> {
   // 2. Normalize stored JSONB (handles both SQL snake_case and PATCH camelCase)
   const equipment      = asItems(row.equipment).filter(isNamedItem);
   const storage        = asItems(row.storage).filter(isNamedItem);
@@ -781,7 +805,7 @@ export async function hydrateCharacterRow(
   const equippedArmor  = asItem(row.equippedArmor);
   const abilities      = asItems(row.abilities);
   const modifiers      = Array.isArray(row.modifiers)
-    ? (row.modifiers as Record<string, unknown>[])
+    ? (row.modifiers as CharacterSheet['modifiers'])
     : [];
 
   // 3. Collect all item keys for bulk catalog lookups
@@ -906,10 +930,7 @@ export async function hydrateCharacterRow(
   );
 
   // 9. DR calculations (raw modifiers + computed modifiers, mirroring SQL)
-  const allMods: Record<string, unknown>[] = [
-    ...modifiers,
-    ...(computedModifiers as unknown as Record<string, unknown>[]),
-  ];
+  const allMods = [...modifiers, ...computedModifiers];
   const drToDodge  = calculateDR(row.agility,   allMods, 'agility',   ['defence']);
   const drToMelee  = calculateDR(row.strength,   allMods, 'strength',  ['melee']);
   const drToRanged = calculateDR(row.presence,   allMods, 'presence',  ['ranged']);

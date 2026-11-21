@@ -15,6 +15,7 @@ import type { PartyEventBus } from '../plugins/party-bus.js';
 import { getCharacterFull } from '../lib/get-character-full.js';
 import { toCharacterCard } from '../lib/character-card.js';
 import { isValidUUID } from '../utils.js';
+import { createPartyMembership } from './party-membership.js';
 
 async function readRoomParticipation(
   ops: RoomParticipationOps,
@@ -69,7 +70,7 @@ export function createRoomParticipationService(
         );
         return ok(
           fulls
-            .filter((full): full is Record<string, unknown> => full !== null)
+            .filter((full) => full !== null)
             .map(toCharacterCard)
         );
       } catch (error) {
@@ -191,12 +192,12 @@ export function createRoomParticipationService(
       operationId: string;
       session: AppSession;
       expectedPartyId?: string;
-      eventType?: 'character.left' | 'character.kicked';
+      reason?: 'left' | 'kicked';
     }) {
       try {
-        const result = await roomParticipationRepository.transaction(
+        return await createPartyMembership(bus).inRoom(
           input.roomId,
-          async (ops) => {
+          async (ops, seat) => {
             const actorId = sessionUserId(input.session);
             if (!actorId) {
               return fail(forbidden());
@@ -215,10 +216,7 @@ export function createRoomParticipationService(
                   )
                 );
               }
-              return ok({
-                snapshot: await readRoomParticipation(ops, input.session),
-                changed: false,
-              });
+              return ok(await readRoomParticipation(ops, input.session));
             }
             const party = await ops.getParty();
             const character = await ops.getCharacter(input.characterId);
@@ -277,26 +275,10 @@ export function createRoomParticipationService(
                 generation: token.generation,
               });
             }
-            if (member && party) {
-              await ops.removeMembership(input.characterId, party.id);
-            }
-            await ops.removeBindings(input.characterId);
-            return ok({
-              snapshot: await readRoomParticipation(ops, input.session),
-              changed: true,
-            });
+            await seat.giveUp(input.characterId, input.reason ?? 'kicked');
+            return ok(await readRoomParticipation(ops, input.session));
           }
         );
-        if (!result.ok) {
-          return result;
-        }
-        if (result.value.changed && result.value.snapshot.partyId) {
-          bus?.publish(result.value.snapshot.partyId, {
-            type: input.eventType ?? 'character.kicked',
-            characterId: input.characterId,
-          });
-        }
-        return ok(result.value.snapshot);
       } catch (error) {
         return fail(
           unexpected(

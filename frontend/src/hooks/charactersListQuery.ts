@@ -5,11 +5,6 @@ import { embeddedSessionHeaders } from '@/utils/embed';
 
 export type CharacterListEntry = CharacterListItem & { id: string };
 
-// Shared React Query key for the "does this session already own characters?" list.
-// Both the sheet bootstrap (useCurrentCharacter) and the landing pregen read it, so
-// routing through one key lets React Query dedupe concurrent calls and cache the result.
-export const charactersListQueryKey = ['characters', 'list'] as const;
-
 // Raw fetch (not the generated $api client) is deliberate: it must NOT trip the
 // auth-middleware redirect on 401 — the bootstrap flows handle an empty/forbidden
 // list themselves. On a non-2xx response this throws an ApiClientError (carrying the

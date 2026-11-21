@@ -1,7 +1,5 @@
-import { openObrSessionTab } from "@/auth/obrAuthClient";
-import OBR from "@owlbear-rodeo/sdk";
+import { useOpenInScvmrack } from "@/obr/useOpenInScvmrack";
 import { Button } from "@mui/material";
-import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 // Open a receiving tab with an opener-bound, one-use session transfer.
@@ -11,28 +9,13 @@ export function ObrOpenInScvmrackButton({
   characterId: string;
 }) {
   const { t } = useTranslation();
-  const [isOpening, setIsOpening] = useState(false);
-
-  async function handleClick() {
-    setIsOpening(true);
-    try {
-      await openObrSessionTab(
-        `/obr-open?character=${encodeURIComponent(characterId)}`,
-      );
-    } catch {
-      await OBR.notification.show(
-        t("obr.player.openInScvmrackFailed", "Could not open in scvmrack"),
-        "ERROR",
-      );
-    }
-    setIsOpening(false);
-  }
+  const { isOpening, openInScvmrack } = useOpenInScvmrack();
 
   return (
     <Button
       fullWidth
       variant="outlined"
-      onClick={handleClick}
+      onClick={() => void openInScvmrack(characterId)}
       disabled={isOpening}
     >
       {isOpening

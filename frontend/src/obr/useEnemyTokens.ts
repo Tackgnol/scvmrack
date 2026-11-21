@@ -1,6 +1,7 @@
 import OBR, { type Item } from "@owlbear-rodeo/sdk";
 import { useEffect, useRef, useState } from "react";
 import { ENEMY_META_KEY } from "@/obr/enemies";
+import { sdkOwlbear } from "./owlbear";
 
 const EMPTY_TOKENS: ReadonlyMap<string, string[]> = new Map();
 
@@ -20,79 +21,74 @@ export function useEnemyTokens(
   const onTokenCopiedRef = useRef(onTokenCopied);
   onTokenCopiedRef.current = onTokenCopied;
 
-  useEffect(() => {
-    let active = true;
-    let knownItemIds: Set<string> | null = null;
-    let unsubscribeItems: (() => void) | null = null;
-    let unsubscribeSceneReady: (() => void) | null = null;
+  useEffect(
+    () =>
+      sdkOwlbear.whenReady((isActive) => {
+        let knownItemIds: Set<string> | null = null;
 
-    const handleItems = (items: Item[]) => {
-      if (!active) {
-        return;
-      }
+        const handleItems = (items: Item[]) => {
+          if (!isActive()) {
+            return;
+          }
 
-      const next = new Map<string, string[]>();
-      const freshTagged: Array<{ enemyId: string; itemId: string }> = [];
-      for (const item of items) {
-        const enemyId = item.metadata[ENEMY_META_KEY];
-        if (typeof enemyId !== "string" || !enemyId) {
-          continue;
-        }
-        next.set(enemyId, [...(next.get(enemyId) ?? []), item.id]);
-        if (knownItemIds && !knownItemIds.has(item.id)) {
-          freshTagged.push({ enemyId, itemId: item.id });
-        }
-      }
+          const next = new Map<string, string[]>();
+          const freshTagged: Array<{ enemyId: string; itemId: string }> = [];
+          for (const item of items) {
+            const enemyId = item.metadata[ENEMY_META_KEY];
+            if (typeof enemyId !== "string" || !enemyId) {
+              continue;
+            }
+            next.set(enemyId, [...(next.get(enemyId) ?? []), item.id]);
+            if (knownItemIds && !knownItemIds.has(item.id)) {
+              freshTagged.push({ enemyId, itemId: item.id });
+            }
+          }
 
-      knownItemIds = new Set(items.map((item) => item.id));
-      setTokensByEnemy(next);
+          knownItemIds = new Set(items.map((item) => item.id));
+          setTokensByEnemy(next);
 
-      for (const fresh of freshTagged) {
-        // Only treat it as a copy when another token still holds the same
-        // binding; a lone reappearing token (undo, cut/paste) keeps its enemy.
-        if ((next.get(fresh.enemyId)?.length ?? 0) > 1) {
-          onTokenCopiedRef.current(fresh.enemyId, fresh.itemId);
-        }
-      }
-    };
+          for (const fresh of freshTagged) {
+            // Only treat it as a copy when another token still holds the same
+            // binding; a lone reappearing token (undo, cut/paste) keeps its enemy.
+            if ((next.get(fresh.enemyId)?.length ?? 0) > 1) {
+              onTokenCopiedRef.current(fresh.enemyId, fresh.itemId);
+            }
+          }
+        };
 
-    const seed = async () => {
-      try {
-        if (!(await OBR.scene.isReady()) || knownItemIds !== null) {
-          return;
-        }
-        const items = await OBR.scene.items.getItems();
-        // An onChange may have seeded the baseline while we awaited.
-        if (knownItemIds === null) {
-          handleItems(items);
-        }
-      } catch {
-        // Scene unavailable; the onChange subscription seeds the baseline.
-      }
-    };
+        const seed = async () => {
+          try {
+            if (!(await OBR.scene.isReady()) || knownItemIds !== null) {
+              return;
+            }
+            const items = await OBR.scene.items.getItems();
+            // An onChange may have seeded the baseline while we awaited.
+            if (knownItemIds === null) {
+              handleItems(items);
+            }
+          } catch {
+            // Scene unavailable; the onChange subscription seeds the baseline.
+          }
+        };
 
-    OBR.onReady(() => {
-      if (!active) {
-        return;
-      }
-      void seed();
-      unsubscribeItems = OBR.scene.items.onChange(handleItems);
-      unsubscribeSceneReady = OBR.scene.onReadyChange((ready) => {
-        knownItemIds = null;
-        if (!ready) {
-          setTokensByEnemy(EMPTY_TOKENS);
-          return;
-        }
         void seed();
-      });
-    });
+        const unsubscribeItems = OBR.scene.items.onChange(handleItems);
+        const unsubscribeSceneReady = OBR.scene.onReadyChange((ready) => {
+          knownItemIds = null;
+          if (!ready) {
+            setTokensByEnemy(EMPTY_TOKENS);
+            return;
+          }
+          void seed();
+        });
 
-    return () => {
-      active = false;
-      unsubscribeItems?.();
-      unsubscribeSceneReady?.();
-    };
-  }, []);
+        return () => {
+          unsubscribeItems?.();
+          unsubscribeSceneReady?.();
+        };
+      }),
+    [],
+  );
 
   return tokensByEnemy;
 }

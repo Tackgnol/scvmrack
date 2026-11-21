@@ -1,5 +1,4 @@
 import { ObrSignInCode } from "@/components/molecules/ObrSignInCode/ObrSignInCode";
-import type { ObrRoomActor } from "./ObrCharacterRoute.models";
 import { openObrSessionTab } from "@/auth/obrAuthClient";
 import { useCharacter } from "@/CharacterContext/CharacterContext";
 import { CharacterSheet } from "@/components/organisms/CharacterSheet";
@@ -11,25 +10,22 @@ import { ObrGmView } from "./ObrGmView";
 import { ObrUnavailableState } from "./ObrUnavailableState";
 import { ObrRollPicker } from "./ObrRollPicker/ObrRollPicker";
 import { useObrRole } from "@/hooks/useObrRole";
+import { claimAssignedObrCharacter } from "@/obr/obrApiClient";
+import { useOwlbear } from "@/obr/owlbear";
 import {
-  broadcastCharacterCardChanged,
-  getCurrentObrRoomActor,
-  isObrRosterBroadcast,
-  persistCurrentObrCharacterId,
-  restoreCurrentObrCharacterId,
-  rosterChannel,
-} from "@tackgnol/rpgtools-owlbear";
-import { scvmrackObrExtension } from "@/obr/extension";
-import {
-  claimAssignedObrCharacter,
-  obrRoomBindingsClient,
-} from "@/obr/obrApiClient";
+  announceCharacterCardChanged,
+  currentRoomActor,
+  onRosterChanged,
+  rememberPlayerCharacterId,
+  restorePlayerCharacterId,
+  type ObrRoomActor,
+} from "@/obr/roomCharacterBinding";
 import { useObrSession } from "@/obr/useObrSession";
 import { openClassDetails } from "@/obr/openClassDetails";
-import { getApiLocale, getCharacterKey } from "@/hooks/utils";
+import { writeCharacter } from "@/api/characterCache";
+import { getApiLocale } from "@/hooks/utils";
 import { getApiErrorCode } from "@/utils/errorUtils";
 import { Button } from "@mui/material";
-import OBR from "@owlbear-rodeo/sdk";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -50,8 +46,9 @@ import {
 export function ObrCharacterRoute() {
   const role = useObrRole();
   const { t } = useTranslation();
+  const owlbear = useOwlbear();
 
-  if (OBR.isAvailable === false || !hasObrReference()) {
+  if (owlbear.isAvailable === false || !hasObrReference()) {
     return <ObrUnavailableState />;
   }
 
@@ -78,6 +75,7 @@ function hasObrReference(): boolean {
 
 function ObrPlayerCharacterRoute() {
   const { i18n, t } = useTranslation();
+  const owlbear = useOwlbear();
   const { character, setCharacterId, generateNew } = useCharacter();
   const { isLoading, isAuthenticated, signIn, cancelSignIn, signInProgress } =
     useObrSession();
@@ -106,21 +104,19 @@ function ObrPlayerCharacterRoute() {
     setRollPickerOpen(true);
   };
 
-  useEffect(() => {
-    let active = true;
-    OBR.onReady(() => {
-      void getCurrentObrRoomActor(OBR)
-        .then((actor) => {
-          if (active) {
-            setRoomActor(actor);
-          }
-        })
-        .catch(() => undefined);
-    });
-    return () => {
-      active = false;
-    };
-  }, []);
+  useEffect(
+    () =>
+      owlbear.whenReady((isActive) => {
+        void currentRoomActor()
+          .then((actor) => {
+            if (isActive()) {
+              setRoomActor(actor);
+            }
+          })
+          .catch(() => undefined);
+      }),
+    [owlbear],
+  );
 
   useEffect(() => {
     setCharacterIdRef.current = setCharacterId;
@@ -145,17 +141,13 @@ function ObrPlayerCharacterRoute() {
       setIsRestoringCharacter(true);
 
       try {
-        const storedCharacterId = await restoreCurrentObrCharacterId(
-          scvmrackObrExtension,
-          OBR,
-          obrRoomBindingsClient,
-        );
+        const storedCharacterId = await restorePlayerCharacterId();
 
         if (storedCharacterId) {
           let selectedCharacterId = storedCharacterId;
 
           try {
-            const actor = await getCurrentObrRoomActor(OBR);
+            const actor = await currentRoomActor();
             const claimedCharacter = await claimAssignedObrCharacter({
               roomId: actor.roomId,
               playerId: actor.playerId,
@@ -165,8 +157,10 @@ function ObrPlayerCharacterRoute() {
 
             if (claimedCharacterId) {
               selectedCharacterId = claimedCharacterId;
-              queryClient.setQueryData(
-                getCharacterKey(claimedCharacterId, locale),
+              writeCharacter(
+                queryClient,
+                claimedCharacterId,
+                locale,
                 claimedCharacter,
               );
             }
@@ -210,38 +204,20 @@ function ObrPlayerCharacterRoute() {
     window.addEventListener("focus", refreshBinding);
     return () => window.removeEventListener("focus", refreshBinding);
   }, []);
-  useEffect(() => {
-    let active = true;
-    let unsubscribeBroadcast: (() => void) | null = null;
-
-    OBR.onReady(() => {
-      if (!active) {
-        return;
-      }
-
-      unsubscribeBroadcast = OBR.broadcast.onMessage(
-        rosterChannel(scvmrackObrExtension),
-        (event) => {
-          const message = isObrRosterBroadcast(event.data) ? event.data : null;
-          if (message?.kind !== "roster") {
-            return;
-          }
-
+  useEffect(
+    () =>
+      owlbear.whenReady((isActive) =>
+        onRosterChanged(owlbear, () => {
           restoreCheckedRef.current = false;
           queueMicrotask(() => {
-            if (active) {
+            if (isActive()) {
               void restoreAssignedCharacterRef.current(true);
             }
           });
-        },
-      );
-    });
-
-    return () => {
-      active = false;
-      unsubscribeBroadcast?.();
-    };
-  }, []);
+        }),
+      ),
+    [owlbear],
+  );
 
   useEffect(() => {
     if (characterId) {
@@ -268,7 +244,7 @@ function ObrPlayerCharacterRoute() {
       return;
     }
 
-    void broadcastCharacterCardChanged(scvmrackObrExtension, OBR, characterId);
+    void announceCharacterCardChanged(characterId);
   }, [character?.id, character?.updatedAt]);
 
   if (!character && (isLoading || isRestoringCharacter)) {
@@ -283,7 +259,7 @@ function ObrPlayerCharacterRoute() {
     setRollPickerOpen(false);
     setRollError(null);
     try {
-      const actor = await getCurrentObrRoomActor(OBR);
+      const actor = await currentRoomActor();
       generateNew(classId, {
         replace: !isAuthenticated,
         obrRoomId: actor.roomId,
@@ -373,7 +349,7 @@ function ObrPlayerCharacterRoute() {
               event.preventDefault();
               if (character.classId) {
                 void openClassDetails(character.classId).catch(() => {
-                  void OBR.notification.show(
+                  void owlbear.notify(
                     t("obr.player.openInScvmrackFailed"),
                     "ERROR",
                   );
@@ -395,12 +371,7 @@ function ObrPlayerCharacterRoute() {
                 locale={locale}
                 onPick={(id) => {
                   void (async () => {
-                    await persistCurrentObrCharacterId(
-                      scvmrackObrExtension,
-                      OBR,
-                      obrRoomBindingsClient,
-                      id,
-                    );
+                    await rememberPlayerCharacterId(id);
                     await setCharacterId(id);
                   })().catch(() =>
                     setRollError(
@@ -448,7 +419,7 @@ function ObrPlayerCharacterRoute() {
       )}
       <ObrRollPicker
         open={rollPickerOpen}
-        roomId={OBR.room.id}
+        roomId={owlbear.roomId()}
         locale={locale}
         onClose={() => setRollPickerOpen(false)}
         onChoose={(classId, classless) =>

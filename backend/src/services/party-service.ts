@@ -10,6 +10,7 @@ import {
   ApiHttpError,
   apiError,
   badRequest,
+  characterAccessDenied,
   notFound,
   unauthorized,
 } from '../errors.js';
@@ -31,9 +32,9 @@ import {
 export type { AppSession } from './session.js';
 import {
   PARTY_MAX_MEMBERS,
-  lockPartySeat,
-  partyFull,
-} from '../lib/party-limits.js';
+  createPartyMembership,
+  ownerCannotJoin,
+} from './party-membership.js';
 import { characterRepository } from '../repositories/character-repository.js';
 import { defaultPoolLineageIds } from './party-class-pool-service.js';
 import { createRoomParticipationService } from './room-participation-service.js';
@@ -163,15 +164,15 @@ async function readView(
  * Party business logic. Returns a stable {@link ServiceResult}: known failures
  * (auth, ownership, validation, not-found, conflict, gone) are returned as
  * `ApiHttpError` values; unexpected failures are mapped to a 5xx after logging.
- *
- * The mutating methods (join/leave/kick/regenerate/disband) are structured so a
- * later phase can drop a `partyBus.publish(...)` call in at the marked points
- * with no rework.
+ * Join, replace, leave and kick check access here and change the seat through
+ * the party membership module, which publishes their roster events.
  */
 export function createPartyService(
   log: ServiceLogger,
   partyBus?: PartyEventBus
 ) {
+  const membership = createPartyMembership(partyBus);
+
   /**
    * Resolve a party the caller must own. Returns an `ApiHttpError` for any
    * failure (invalid id, no session, not found, not owner) or `null` when the
@@ -198,7 +199,7 @@ export function createPartyService(
 
   async function removePartyMember(
     input: { session: AppSession; id: string; characterId: string },
-    eventType: 'character.left' | 'character.kicked'
+    reason: 'left' | 'kicked'
   ): Promise<ServiceResult<void>> {
     const party = await partyRepository.getPartyById(input.id);
     if (party?.obrRoomId) {
@@ -209,15 +210,15 @@ export function createPartyService(
           characterId: input.characterId,
           operationId: crypto.randomUUID(),
           expectedPartyId: input.id,
-          eventType,
+          reason,
         }
       );
       return result.ok ? ok(undefined) : result;
     }
-    await partyRepository.setCharacterParty(input.characterId, null);
-    partyBus?.publish(input.id, {
-      type: eventType,
+    await membership.giveUpSeat({
+      partyId: input.id,
       characterId: input.characterId,
+      reason,
     });
     return ok(undefined);
   }
@@ -389,8 +390,10 @@ export function createPartyService(
         if (existing && existing.id !== input.id) {
           if (existing.ownerUserId === OBR_ROOM_SYSTEM_OWNER_ID) {
             if (existing.members.length === 0) {
-              // Re-checked under the transaction: the room's party may have changed since it was read.
+              // Re-checked under the seat locks of both parties and the room, so a scvm
+              // forged into the system party meanwhile keeps it, and neither side deadlocks.
               const replaced = await partyRepository.roomTransaction(
+                { partyIds: [existing.id, input.id], roomId: obrRoomId },
                 async (ops) => {
                   const roomParty = await ops.findRoomParty(obrRoomId);
                   if (
@@ -732,7 +735,7 @@ export function createPartyService(
           );
         }
 
-        const character = await partyRepository.getCharacterForJoin(
+        const character = await characterRepository.getMembership(
           input.characterId
         );
         if (!character) {
@@ -740,24 +743,12 @@ export function createPartyService(
         }
         // Must own the character being bound.
         if (!ownsCharacter(input.session, character)) {
-          return fail(
-            apiError(
-              403,
-              'CHARACTER_ACCESS_DENIED',
-              "You don't have access to this scvm"
-            )
-          );
+          return fail(characterAccessDenied());
         }
-        // The GM does not play in their own party (v1).
         const userId = sessionUserId(input.session);
-        if (userId && party.ownerUserId === userId) {
-          return fail(
-            apiError(
-              403,
-              'PARTY_OWNER_CANNOT_JOIN',
-              'A game master cannot join their own party'
-            )
-          );
+        const ownParty = ownerCannotJoin(party, userId);
+        if (ownParty) {
+          return fail(ownParty);
         }
         // Already in THIS party → idempotent success.
         if (character.partyId === party.id) {
@@ -777,21 +768,14 @@ export function createPartyService(
           );
         }
 
-        // The cap is checked under the party lock so concurrent joins can't overflow it.
-        const joined = await characterRepository.transaction(async (ops) => {
-          if (!(await lockPartySeat(ops, party.id))) {
-            return false;
-          }
-          await ops.joinParty(character.id, party.id);
-          return true;
-        });
-        if (!joined) {
-          return fail(partyFull());
-        }
-        partyBus?.publish(party.id, {
-          type: 'character.joined',
+        const seated = await membership.takeSeat({
+          partyId: party.id,
+          userId,
           characterId: character.id,
         });
+        if (!seated.ok) {
+          return fail(seated.error);
+        }
 
         return ok({
           partyId: party.id,
@@ -830,8 +814,8 @@ export function createPartyService(
 
       try {
         const [oldCharacter, newCharacter] = await Promise.all([
-          partyRepository.getCharacterForJoin(input.oldCharacterId),
-          partyRepository.getCharacterForJoin(input.newCharacterId),
+          characterRepository.getMembership(input.oldCharacterId),
+          characterRepository.getMembership(input.newCharacterId),
         ]);
 
         if (!oldCharacter || !newCharacter) {
@@ -841,13 +825,7 @@ export function createPartyService(
           !ownsCharacter(input.session, oldCharacter) ||
           !ownsCharacter(input.session, newCharacter)
         ) {
-          return fail(
-            apiError(
-              403,
-              'CHARACTER_ACCESS_DENIED',
-              "You don't have access to this scvm"
-            )
-          );
+          return fail(characterAccessDenied());
         }
         if (oldCharacter.partyId !== input.id) {
           return fail(
@@ -865,11 +843,15 @@ export function createPartyService(
         }
 
         if (newCharacter.partyId !== input.id) {
-          await partyRepository.setCharacterParty(newCharacter.id, input.id);
-          partyBus?.publish(input.id, {
-            type: 'character.joined',
+          const seated = await membership.takeSeat({
+            partyId: input.id,
+            userId: sessionUserId(input.session),
             characterId: newCharacter.id,
+            replacing: oldCharacter.id,
           });
+          if (!seated.ok) {
+            return fail(seated.error);
+          }
         }
 
         return ok({
@@ -901,20 +883,14 @@ export function createPartyService(
       }
 
       try {
-        const character = await partyRepository.getCharacterForJoin(
+        const character = await characterRepository.getMembership(
           input.characterId
         );
         if (!character) {
           return fail(notFound('CHARACTER_NOT_FOUND', 'Character not found'));
         }
         if (!ownsCharacter(input.session, character)) {
-          return fail(
-            apiError(
-              403,
-              'CHARACTER_ACCESS_DENIED',
-              "You don't have access to this scvm"
-            )
-          );
+          return fail(characterAccessDenied());
         }
         // The character must actually be in this party to leave it.
         if (character.partyId !== input.id) {
@@ -923,7 +899,7 @@ export function createPartyService(
           );
         }
 
-        return await removePartyMember(input, 'character.left');
+        return await removePartyMember(input, 'left');
       } catch (err) {
         return fail(
           unexpected(log, err, 'PARTY_LEAVE_FAILED', 'Failed to leave party')
@@ -946,7 +922,7 @@ export function createPartyService(
       }
 
       try {
-        const character = await partyRepository.getCharacterForJoin(
+        const character = await characterRepository.getMembership(
           input.characterId
         );
         // The member must be in this party to be kicked.
@@ -956,7 +932,7 @@ export function createPartyService(
           );
         }
 
-        return await removePartyMember(input, 'character.kicked');
+        return await removePartyMember(input, 'kicked');
       } catch (err) {
         return fail(
           unexpected(log, err, 'PARTY_KICK_FAILED', 'Failed to remove member')

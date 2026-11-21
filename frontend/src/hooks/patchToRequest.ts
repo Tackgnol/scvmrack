@@ -2,42 +2,15 @@ import {CharacterResponse, CharacterUpdateRequest, OptimisticPatch} from "@/hook
 import { sanitizeCharacterUpdateRequest } from '@/validation/characterUpdate';
 
 /**
- * Convert a patch to a request body.
- * For move operations, we need the current character state to compute the new arrays.
+ * The request fields a patch sets by itself. Every other patch kind sends whole
+ * collections taken from the character, which buildRequestFromPatches adds.
  */
 export function patchToRequest(
-    patch: OptimisticPatch,
+    patch: Extract<OptimisticPatch, { kind: 'simple' | 'abilities' }>,
 ): Partial<CharacterUpdateRequest> {
     switch (patch.kind) {
         case 'simple':
             return {[patch.field]: patch.value};
-
-
-        case 'armor':
-            return {
-                equippedArmor: {
-                    [patch.field]: patch.value
-                } as NonNullable<CharacterUpdateRequest['equippedArmor']>
-            };
-
-        case 'weapon':
-            return {
-                equippedWeapons: [{
-                    index: patch.index,
-                    field: patch.field,
-                    value: patch.value
-                }] as unknown as CharacterUpdateRequest['equippedWeapons']
-            };
-
-        case 'equipment-item':
-        case 'equipment-add':
-        case 'equipment-remove':
-        case 'equipment-move':
-            return {
-                equipment: patch.kind === 'equipment-item' || patch.kind === 'equipment-add'
-                    ? [patch.kind === 'equipment-item' ? patch.item : patch.item]
-                    : undefined
-            };
 
         case 'abilities':
             return {
@@ -48,24 +21,6 @@ export function patchToRequest(
                     comment: a.comment
                 }))
             };
-
-        // Storage operations - send full arrays for move operations
-        case 'storage-item':
-        case 'storage-add':
-        case 'storage-remove':
-        case 'move-to-storage':
-        case 'move-to-equipment':
-        case 'swap-equipment-storage':
-        case 'toggle-scroll-use': {
-            // Move operations need both arrays - handled by flush with current state
-            return {};
-        }
-
-        case 'ammo-use':
-            return {};
-
-        default:
-            throw new Error('Unhandled patch kind');
     }
 }
 

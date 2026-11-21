@@ -1,7 +1,7 @@
 import { Prisma } from '@prisma/client';
 import { Roller, OSRandomEngine } from '@tackgnol/rpg-tools-roller';
 import { abilityGrantedItems } from '../lib/class-grants.js';
-import { hydrateInventoryUses } from '../lib/inventory.js';
+import { hydrateInventoryUses } from './inventory-uses.js';
 import {
   ABILITY_STATS,
   buildAppliedImprovement,

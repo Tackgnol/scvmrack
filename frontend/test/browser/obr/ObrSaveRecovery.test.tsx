@@ -10,7 +10,7 @@ import { useCharacterRepository } from '@/hooks/useCharacterRepository';
 import { useCharacterEditor } from '@/hooks/useCharacterEditor';
 import type { useCurrentCharacter } from '@/hooks/useCurrentCharacter';
 import type { Character, CharacterUpdateRequest } from '@/hooks/models';
-import { getCharacterKey } from '@/hooks/utils';
+import { writeCharacter } from '@/api/characterCache';
 import { appHistory } from '@/router/history';
 import { hasCurrentSearchParam } from '@/router/navigation';
 import { authKeys, resetRedirectControl } from '@/api';
@@ -43,7 +43,7 @@ const expired = () => hasCurrentSearchParam('expired');
 
 function RecoverySheet() {
   const repo = useCharacterRepository(id, 'en', { enabled: false });
-  const editor = useCharacterEditor(id, repo.updateCharacter, getCharacterKey, 'en');
+  const editor = useCharacterEditor(id, 'en');
   const isSessionExpired = useSyncExternalStore(subscribe, expired);
   // Context fixture supplies unused sheet actions; auth, repository, editor,
   // request middleware and recovery controls all run together without mocks.
@@ -63,7 +63,7 @@ it('keeps a rejected edit visible, offers recovery, and resends the same save af
   localStorage.clear();
   appHistory.replace(`/obr.html?obrref=qa-room&character=${id}`);
   const client = new QueryClient({ defaultOptions: { queries: { retry: false, staleTime: Infinity } } });
-  client.setQueryData(getCharacterKey(id, 'en'), saved);
+  writeCharacter(client, id, 'en', saved);
   client.setQueryData(authKeys.session(), guest);
   vi.mocked(fetchSession).mockResolvedValue({ ...guest, user: { ...guest.user, isAnonymous: false } });
   let authenticated = false;

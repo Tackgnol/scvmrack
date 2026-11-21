@@ -5,11 +5,11 @@ import EditIcon from "@mui/icons-material/Edit";
 import GpsFixedIcon from "@mui/icons-material/GpsFixed";
 import LinkIcon from "@mui/icons-material/Link";
 import RemoveIcon from "@mui/icons-material/Remove";
-import OBR from "@owlbear-rodeo/sdk";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { rebindTokenToEnemy, type ObrEnemy } from "@/obr/enemies";
 import { cloneEnemy } from "@/obr/enemyClone";
+import { useOwlbear } from "@/obr/owlbear";
 import { useEnemyTokens } from "@/obr/useEnemyTokens";
 import { type ObrEnemiesGmState } from "@/obr/useObrEnemies";
 import {
@@ -43,6 +43,7 @@ export function ObrEnemyManager({
   bindEnemy: (enemy: ObrEnemy) => Promise<number>;
 }) {
   const { t } = useTranslation();
+  const owlbear = useOwlbear();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingEnemy, setEditingEnemy] = useState<ObrEnemy | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -97,7 +98,7 @@ export function ObrEnemyManager({
   async function handleSelectTokens(enemy: ObrEnemy) {
     const tokenIds = tokensByEnemy.get(enemy.id) ?? [];
     if (tokenIds.length > 0) {
-      await OBR.player.select(tokenIds, true);
+      await owlbear.selectTokens(tokenIds);
     }
   }
 
@@ -157,14 +158,14 @@ export function ObrEnemyManager({
     try {
       const count = await bindEnemy(enemy);
       if (count === 0) {
-        await OBR.notification.show(
+        await owlbear.notify(
           t("obr.enemies.selectTokenFirst", "Select a token on the map first"),
           "WARNING",
         );
         return;
       }
 
-      await OBR.notification.show(
+      await owlbear.notify(
         count === 1
           ? t("obr.enemies.bindSuccessOne", "Bound {{name}} to 1 token", {
               name: enemy.name,
@@ -186,7 +187,7 @@ export function ObrEnemyManager({
         t,
       );
       setActionError(message);
-      await OBR.notification.show(message, "ERROR");
+      await owlbear.notify(message, "ERROR");
     }
   }
 

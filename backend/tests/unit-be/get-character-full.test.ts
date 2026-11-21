@@ -297,7 +297,8 @@ mock.module('../../src/repositories/catalog-repository.js', {
   namedExports: { catalogRepository: catalogRepositoryMock },
 });
 
-const { getCharacterFull } = await import('../../src/lib/get-character-full.js');
+const { getCharacterFull, hydrateCharacterRow } = await import('../../src/lib/get-character-full.js');
+const { CharacterSchema } = await import('../../src/schemas/character.js');
 
 test('getCharacterFull returns null for a missing character', async () => {
   resetFixture();
@@ -327,7 +328,7 @@ test('getCharacterFull resolves catalog data, translations, modifiers, and deriv
   assert.equal(result.createdAt, '2026-03-01T10:00:00.000Z');
   assert.equal(result.updatedAt, '2026-03-02T11:00:00.000Z');
 
-  const equipment = result.equipment as Array<Record<string, unknown>>;
+  const equipment = result.equipment;
   assert.deepEqual(equipment[0], {
     key: 'equipment.rope',
     name: 'Lina',
@@ -509,7 +510,7 @@ test('getCharacterFull localizes computed modifier source labels', async () => {
   const result = await getCharacterFull('character-1', 'pl');
 
   assert.ok(result);
-  const computedModifiers = result.computedModifiers as Array<Record<string, unknown>>;
+  const computedModifiers = result.computedModifiers;
   assert.equal(computedModifiers[0].source, 'Ciezka kolczuga');
   assert.equal(computedModifiers[0].originName, 'Kolczuga');
   assert.equal(computedModifiers[1].source, 'Wycelowany luk');
@@ -534,10 +535,10 @@ test("getCharacterFull falls back to a class's authored language when the reader
   assert.ok(result);
   assert.equal(result.className, 'Klowy dezerter');
   assert.equal(result.origin, 'Z rowu');
-  const [ability] = result.abilities as Array<Record<string, unknown>>;
+  const [ability] = result.abilities;
   assert.equal(ability.name, 'Zdolnosc po polsku', 'reader locale wins when it has a row');
   assert.equal(ability.description, 'Zawsze dziala');
-  const pet = (result.equipment as Array<Record<string, unknown>>).find((i) => i.key === 'pets.hawk');
+  const pet = result.equipment.find((i) => i.key === 'pets.hawk');
   assert.equal(pet?.name, 'Jastrzab PL');
 });
 
@@ -598,4 +599,214 @@ test("getCharacterFull attaches an ability's reference table with translated row
     ],
   });
   assert.equal('table' in loose, false);
+});
+
+test('a hydrated sheet carries every response-schema key but viewerAccess, in schema order', async () => {
+  resetFixture();
+
+  const result = await getCharacterFull('character-1', 'en');
+
+  assert.ok(result);
+  assert.deepEqual(
+    Object.keys(result),
+    Object.keys(CharacterSchema.properties).filter((key) => key !== 'viewerAccess'),
+  );
+});
+
+test('getCharacterFull pins the sheet fields of a representative row', async () => {
+  resetFixture();
+
+  const result = await getCharacterFull('character-1', 'en');
+
+  assert.ok(result);
+  const { abilities, equipment, storage, equippedWeapons, equippedArmor, computedModifiers, ...fields } = result;
+  assert.deepEqual(fields, {
+    id: 'character-1',
+    name: 'Ash',
+    classId: 1,
+    className: 'Klowy dezerter',
+    classDescription: 'Opis klasy',
+    classAttribution: null,
+    classAuthoredLanguage: null,
+    classContentRemoved: false,
+    classReportable: true,
+    classCustom: false,
+    origin: 'Z rowu',
+    strength: 9,
+    agility: 10,
+    presence: 13,
+    toughness: 7,
+    maxHp: 5,
+    currentHp: 4,
+    omens: 2,
+    maxOmens: 3,
+    silver: 60,
+    habit: 'Zaciska zeby',
+    tale: 'Widzial koniec',
+    bodyDescription: 'Blady',
+    trait1: 'Ponury',
+    trait2: 'Glodny',
+    notes: 'still breathing',
+    miseryCount: 3,
+    modifiers: [
+      { value: 1, statistic: 'strength', exclude: ['melee'], source: 'Manual grip' },
+      { value: -1, statistic: 'presence', exclude: [], source: 'Distracted' },
+    ],
+    encumbrance: 9,
+    maxEncumbrance: 8,
+    drToDodge: 15,
+    drToMelee: 8,
+    drToRanged: 11,
+    partyId: null,
+    joinedAt: null,
+    createdAt: '2026-03-01T10:00:00.000Z',
+    updatedAt: '2026-03-02T11:00:00.000Z',
+  });
+  assert.equal(abilities.length, 2);
+  assert.equal(storage.length, 1);
+  assert.equal(equippedWeapons.length, 2);
+  assert.ok(equippedArmor);
+  assert.equal(computedModifiers.length, 6);
+  assert.deepEqual(equipment.slice(3), [
+    {
+      key: 'equipment.backpack',
+      name: 'Plecak',
+      description: 'Trzyma graty',
+      value: 6,
+      tags: ['carry'],
+      dice: [],
+      uses: [],
+      modifiers: [],
+    },
+    {
+      key: 'equipment.arrows',
+      name: 'Strzaly',
+      description: 'Krzywe pociski',
+      value: 1,
+      tags: ['ammo'],
+      dice: [],
+      uses: [],
+      ammoType: 'Arrow',
+      amount: 2,
+      modifiers: [],
+    },
+    ...['one', 'two', 'three', 'four'].map((n) => ({
+      key: `custom.bundle.${n}`,
+      name: `Bundle ${n}`,
+      description: '',
+      tags: [],
+      dice: [],
+      uses: [],
+      modifiers: [],
+    })),
+  ]);
+});
+
+test('an unsaved row with nothing stored hydrates to an empty preview with defaults', async () => {
+  resetFixture();
+  const at = new Date('2026-03-01T10:00:00.000Z');
+
+  const preview = await hydrateCharacterRow(
+    {
+      id: null, name: 'Bare', classId: null, origin: null,
+      strength: 10, agility: 10, presence: 10, toughness: 10, maxHp: 1, currentHp: 1,
+      omens: null, maxOmens: null, silver: null,
+      habit: null, tale: null, bodyDescription: null, trait1: null, trait2: null, notes: null, miseryCount: null,
+      abilities: null, equipment: null, equippedWeapons: null, equippedArmor: null,
+      createdAt: at, updatedAt: at,
+    },
+    'en',
+  );
+
+  assert.deepEqual(preview, {
+    id: null,
+    name: 'Bare',
+    classId: null,
+    className: null,
+    classDescription: null,
+    classAttribution: null,
+    classAuthoredLanguage: null,
+    classContentRemoved: false,
+    classReportable: false,
+    classCustom: false,
+    origin: null,
+    strength: 10,
+    agility: 10,
+    presence: 10,
+    toughness: 10,
+    maxHp: 1,
+    currentHp: 1,
+    omens: 0,
+    maxOmens: 0,
+    silver: 0,
+    habit: null,
+    tale: null,
+    bodyDescription: null,
+    trait1: null,
+    trait2: null,
+    notes: '',
+    miseryCount: 0,
+    abilities: [],
+    equipment: [],
+    storage: [],
+    equippedWeapons: [],
+    equippedArmor: { description: '', dice: [], maxTier: 0, currentTier: 0, tags: [], modifiers: [] },
+    modifiers: [],
+    computedModifiers: [],
+    encumbrance: 0,
+    maxEncumbrance: 8,
+    drToDodge: 12,
+    drToMelee: 12,
+    drToRanged: 12,
+    partyId: null,
+    joinedAt: null,
+    createdAt: '2026-03-01T10:00:00.000Z',
+    updatedAt: '2026-03-01T10:00:00.000Z',
+  });
+});
+
+test('a party member hydrates its party and an ISO join date', async () => {
+  const next = baseFixture();
+  next.characters[0] = {
+    ...next.characters[0],
+    partyId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+    joinedAt: new Date('2026-03-03T12:00:00.000Z'),
+  };
+  resetFixture(next);
+
+  const result = await getCharacterFull('character-1', 'en');
+
+  assert.ok(result);
+  assert.equal(result.partyId, 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
+  assert.equal(result.joinedAt, '2026-03-03T12:00:00.000Z');
+});
+
+test('a class written in one other language names it as the authored language', async () => {
+  const next = baseFixture();
+  next.classes = [{ ...next.classes[0], languages: ['en'] }];
+  resetFixture(next);
+
+  assert.equal((await getCharacterFull('character-1', 'pl'))?.classAuthoredLanguage, 'en');
+  assert.equal((await getCharacterFull('character-1', 'en'))?.classAuthoredLanguage, null);
+});
+
+test('a stored weapon modifier without a statistic hydrates with an empty one', async () => {
+  const next = baseFixture();
+  next.characters[0] = {
+    ...next.characters[0],
+    equippedWeapons: [{ key: 'custom.club', name: 'Club', modifiers: [{ value: 1, source: 'Heft' }] }],
+  };
+  resetFixture(next);
+
+  const result = await getCharacterFull('character-1', 'en');
+
+  assert.ok(result);
+  assert.deepEqual(result.computedModifiers.find((m) => m.originKey === 'custom.club'), {
+    value: 1,
+    source: 'Heft',
+    statistic: '',
+    origin: 'weapon',
+    originKey: 'custom.club',
+    originName: 'Club',
+  });
 });

@@ -8,9 +8,9 @@ import type {
   ImprovementPreview,
   ImprovementRerollSection,
 } from "@/api/characterImprovementTypes";
-import { characterKeys } from "@/api";
+import { markCharacterListsStale, writeCharacter } from "@/api/characterCache";
 import type { CharacterResponse } from "@/hooks/models";
-import { getApiLocale, getCharacterKey } from "@/hooks/utils";
+import { getApiLocale } from "@/hooks/utils";
 import { useSnackbar } from "@/SnackbarContext/SnackbarProvider";
 import { getApiErrorStatus, getUserFacingApiErrorMessage } from "@/utils/errorUtils";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -151,8 +151,8 @@ export function useGettingBetterPreview(input: {
     },
     onSuccess: (character: CharacterResponse) => {
       if (character?.id) {
-        queryClient.setQueryData(getCharacterKey(character.id, apiLocale), character);
-        queryClient.invalidateQueries({ queryKey: characterKeys.list() });
+        writeCharacter(queryClient, character.id, apiLocale, character);
+        markCharacterListsStale(queryClient);
       }
       setPreview(null);
       setWorkingDraft(null);

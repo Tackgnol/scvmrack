@@ -27,7 +27,7 @@ async function setPartyRoom(
 
 /**
  * Party data-access layer. The ONLY place that talks to Prisma for party
- * reads/writes (and the character membership columns they touch). Holds no
+ * reads/writes; seat changes live in `party-membership-repository.ts`. Holds no
  * business logic — all invariants live in `party-service.ts`.
  */
 
@@ -54,14 +54,6 @@ export type PartyMemberRow = {
 };
 
 export type PartyWithMembers = PartyRow & { members: PartyMemberRow[] };
-
-/** Minimal character shape the join/leave/kick flows reason about. */
-export type CharacterForJoinRow = {
-  id: string;
-  userId: string | null;
-  sessionId: string | null;
-  partyId: string | null;
-};
 
 /** Room-party reads and writes bound to one transaction, so a service can combine them atomically. */
 function roomOps(tx: Prisma.TransactionClient) {
@@ -258,33 +250,6 @@ export const partyRepository = {
     });
   },
 
-  getCharacterForJoin(
-    characterId: string
-  ): Promise<CharacterForJoinRow | null> {
-    return prisma.character.findUnique({
-      where: { id: characterId },
-      select: { id: true, userId: true, sessionId: true, partyId: true },
-    });
-  },
-
-  countMembers(partyId: string): Promise<number> {
-    return prisma.character.count({ where: { partyId } });
-  },
-
-  /** Set (or clear) a character's party binding; keeps `joinedAt` in step. */
-  async setCharacterParty(
-    characterId: string,
-    partyId: string | null
-  ): Promise<void> {
-    await prisma.character.update({
-      where: { id: characterId },
-      data: {
-        partyId,
-        joinedAt: partyId === null ? null : new Date(),
-      },
-    });
-  },
-
   async rotateInviteToken(id: string, token: string): Promise<void> {
     await prisma.party.update({
       where: { id },
@@ -292,9 +257,37 @@ export const partyRepository = {
     });
   },
 
-  /** Runs `work` in one transaction with the room-party operations bound to it. */
-  roomTransaction<T>(work: (ops: RoomOps) => Promise<T>): Promise<T> {
-    return prisma.$transaction((tx) => work(roomOps(tx)));
+  /**
+   * Runs `work` in one transaction holding the seat locks of `partyIds` and then
+   * of `roomId` plus every room those parties point at, in the order seat changes
+   * use (parties before rooms, each set sorted), so it cannot deadlock with a seat
+   * change in any of them.
+   */
+  roomTransaction<T>(
+    locks: { partyIds: string[]; roomId: string },
+    work: (ops: RoomOps) => Promise<T>
+  ): Promise<T> {
+    return prisma.$transaction(async (tx) => {
+      const partyIds = [...new Set(locks.partyIds)].sort();
+      for (const id of partyIds) {
+        await advisoryLock(tx, 'party', id);
+      }
+      const pointed = await tx.party.findMany({
+        where: { id: { in: partyIds } },
+        select: { obrRoomId: true },
+      });
+      const rooms = [
+        ...new Set(
+          [locks.roomId, ...pointed.map((party) => party.obrRoomId)].filter(
+            (room): room is string => Boolean(room)
+          )
+        ),
+      ].sort();
+      for (const room of rooms) {
+        await advisoryLock(tx, 'room', room);
+      }
+      return work(roomOps(tx));
+    });
   },
 
   /** Transfer party ownership (used when a signed-in GM claims a system-owned room party). */

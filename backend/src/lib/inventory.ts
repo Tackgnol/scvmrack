@@ -1,40 +1,45 @@
 /**
- * Inventory hydration — shared between the PATCH route (write time) and
- * the TypeScript character generator (Phase 5).
+ * Inventory uses hydration, shared between the PATCH route (write time) and
+ * the TypeScript character generator. Works on catalog rows already loaded,
+ * so the generator can call it mid-roll without I/O.
  *
  * Mirrors the PL/pgSQL hydrate_inventory_uses + resolve_item_default_uses
  * functions from inventory_management.sql.
  */
-import { catalogRepository } from '../repositories/catalog-repository.js';
 import { statToModifier } from './ability-modifiers.js';
 import type { Roller } from '@tackgnol/rpg-tools-roller';
 
 type InventoryItem = Record<string, unknown>;
 
-/**
- * Walk an inventory array and fill in a default `uses` array for items that
- * don't already have one.  Items with a non-empty `uses` array are left alone.
- */
-export async function hydrateInventoryUses(
-  items: unknown[],
-  presence: number,
-  scrollDefault: boolean,
-  roller: Roller,
-): Promise<unknown[]> {
+/** The catalog rows that decide an item's default uses. */
+export type UsesCatalog = {
+  pets: ReadonlyArray<{ key: string; hp: number }>;
+  equipment: ReadonlyArray<{ key: string; tags: string[]; defaultAmount: number | null }>;
+};
+
+/** The distinct item keys of an inventory array: what its {@link UsesCatalog} must cover. */
+export function inventoryKeys(items: unknown[]): string[] {
   const keys = items
     .filter((item): item is InventoryItem => item !== null && typeof item === 'object')
     .map((item) => item['key'])
     .filter((key): key is string => typeof key === 'string' && key.length > 0);
 
-  const uniqueKeys = [...new Set(keys)];
+  return [...new Set(keys)];
+}
 
-  const [petRows, equipmentRows] = await Promise.all([
-    catalogRepository.findPetsByKeys(uniqueKeys),
-    catalogRepository.findEquipmentByKeys(uniqueKeys),
-  ]);
-
-  const petMap = new Map(petRows.map((p) => [p.key, p]));
-  const equipMap = new Map(equipmentRows.map((e) => [e.key, e]));
+/**
+ * Walk an inventory array and fill in a default `uses` array for items that
+ * don't already have one, from `catalog`. Items with a non-empty `uses` array are left alone.
+ */
+export async function fillInventoryUses(
+  items: unknown[],
+  catalog: UsesCatalog,
+  presence: number,
+  scrollDefault: boolean,
+  roller: Roller,
+): Promise<unknown[]> {
+  const petMap = new Map(catalog.pets.map((p) => [p.key, p]));
+  const equipMap = new Map(catalog.equipment.map((e) => [e.key, e]));
 
   return Promise.all(
     items.map(async (item) => {
