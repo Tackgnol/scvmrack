@@ -6,6 +6,7 @@ import BrowserTestProvider from "./BrowserTestProvider";
 import { ObrCharacterRoute } from "@/components/obr/ObrCharacterRoute";
 import { CHARACTER_META_KEY, PLAYER_CHARACTER_META_KEY } from "@/obr/extension";
 import i18n, { loadLanguage } from "@/i18n";
+import { fetchRoomParticipation } from "@/api/roomParticipation";
 
 type Role = "GM" | "PLAYER";
 type TestCharacter = {
@@ -68,7 +69,7 @@ vi.mock("@/api/roomParticipation", () => ({
   acknowledgeSceneCleanup: vi.fn(),
   removeRoomCharacter: vi.fn(),
   participationKey: (roomId: string) => ["obr", "participation", roomId],
-  fetchRoomParticipation: async () => {
+  fetchRoomParticipation: vi.fn(async () => {
     const party = routeMocks.useObrRoomParty.getMockImplementation()?.()?.data;
     return {
       partyId: party?.id ?? null,
@@ -79,7 +80,7 @@ vi.mock("@/api/roomParticipation", () => ({
       ),
       ...obrApiMock.state.bindings,
     };
-  },
+  }),
 }));
 vi.mock("@/hooks/usePartyStream", () => ({ usePartyStream: () => ({}) }));
 
@@ -861,6 +862,51 @@ describe("ObrCharacterRoute", () => {
     await expect
       .poll(() => routeMocks.setCharacterId)
       .toHaveBeenCalledWith("f15c7ec3-dad2-4f65-8b69-0f1f642c7d29");
+  });
+
+  it("drops a scvm the GM removed from the room after a roster pulse", async () => {
+    routeMocks.role = "PLAYER";
+    const id = "f15c7ec3-dad2-4f65-8b69-0f1f642c7d29";
+    obrMock.state.playerMetadata = { [PLAYER_CHARACTER_META_KEY]: id };
+    obrApiMock.state.bindings = {
+      roomId: "room-test",
+      players: [{ playerId: "player-1", characterId: id }],
+      tokens: [],
+    };
+    mockCharacter({ id, name: "Karg" });
+    await renderRoute();
+    await expect.element(page.getByText("Player sheet")).toBeVisible();
+
+    obrApiMock.state.bindings = { roomId: "room-test", players: [], tokens: [] };
+    obrMock.state.broadcastCallbacks["co.rpgtools.scvmrack/roster"]?.({
+      data: { kind: "roster" },
+      connectionId: "remote",
+    });
+
+    await expect.poll(() => routeMocks.setCharacterId).toHaveBeenCalledWith(null);
+    expect(obrMock.state.playerMetadata[PLAYER_CHARACTER_META_KEY]).toBeUndefined();
+  });
+
+  it("keeps a scvm that is still in the room after a roster pulse", async () => {
+    routeMocks.role = "PLAYER";
+    const id = "f15c7ec3-dad2-4f65-8b69-0f1f642c7d29";
+    obrApiMock.state.bindings = {
+      roomId: "room-test",
+      players: [{ playerId: "player-1", characterId: id }],
+      tokens: [],
+    };
+    mockCharacter({ id, name: "Karg" });
+    await renderRoute();
+    await expect.element(page.getByText("Player sheet")).toBeVisible();
+
+    obrMock.state.broadcastCallbacks["co.rpgtools.scvmrack/roster"]?.({
+      data: { kind: "roster" },
+      connectionId: "remote",
+    });
+
+    await expect.poll(() => fetchRoomParticipation).toHaveBeenCalledWith("room-test");
+    await expect.poll(() => obrMock.setPlayerMetadata).not.toHaveBeenCalled();
+    expect(routeMocks.setCharacterId).not.toHaveBeenCalledWith(null);
   });
 
   it("does not recreate a removed room binding just by reopening an owned sheet", async () => {

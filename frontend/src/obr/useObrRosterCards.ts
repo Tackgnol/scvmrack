@@ -62,10 +62,13 @@ export function useObrRosterCards(): ObrRosterState {
   const client = useMemo(
     () => ({
       ...obrApiClient,
+      // SDK binding refetches follow roster changes; the 5-min cached snapshot predates them.
       fetchRoomBindings: async (id: string) => {
-        const { players, tokens } = await queryClient.fetchQuery(
-          participationOptions(id),
-        );
+        await queryClient.cancelQueries({ queryKey: participationKey(id) });
+        const { players, tokens } = await queryClient.fetchQuery({
+          ...participationOptions(id),
+          staleTime: 0,
+        });
         return { roomId: id, players, tokens };
       },
     }),
@@ -153,6 +156,7 @@ export function useObrRosterCards(): ObrRosterState {
         characterId,
         operationId,
       );
+      await queryClient.cancelQueries({ queryKey: participationKey(roomId) });
       queryClient.setQueryData(participationKey(roomId), result);
       operations.current.delete(characterId);
       const complete = await finishSceneCleanup(roomId, result);

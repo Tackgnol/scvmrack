@@ -1,8 +1,10 @@
 import OBR from "@owlbear-rodeo/sdk";
+import { fetchRoomParticipation } from "@/api/roomParticipation";
 import {
   broadcastCharacterCardChanged,
   getCurrentObrRoomActor,
   isObrRosterBroadcast,
+  PLAYER_CHARACTER_META_KEY,
   persistCurrentObrCharacterId,
   restoreCurrentObrCharacterId,
   rosterChannel,
@@ -37,6 +39,24 @@ export function rememberPlayerCharacterId(characterId: string) {
     obrRoomBindingsClient,
     characterId,
   );
+}
+
+/** Forgets this player's scvm once the room no longer holds it; true when forgotten. */
+export async function forgetCharacterRemovedFromRoom(
+  characterId: string,
+): Promise<boolean> {
+  const actor = await currentRoomActor();
+  const room = await fetchRoomParticipation(actor.roomId);
+  const inRoom =
+    room.memberIds.includes(characterId) ||
+    [...room.players, ...room.tokens].some(
+      (binding) => binding.characterId === characterId,
+    );
+  if (inRoom) {
+    return false;
+  }
+  await OBR.player.setMetadata({ [PLAYER_CHARACTER_META_KEY]: undefined });
+  return true;
 }
 
 /** Tells the room a scvm's card changed so open cards refetch. */

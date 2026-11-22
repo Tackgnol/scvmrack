@@ -27,11 +27,16 @@ vi.mock("@owlbear-rodeo/sdk", () => ({
     scene: { onReadyChange: () => () => {} },
   },
 }));
+const core = vi.hoisted(() => ({
+  client: null as null | {
+    fetchRoomBindings: (roomId: string) => Promise<{ players: unknown[] }>;
+  },
+}));
 vi.mock("@tackgnol/rpgtools-owlbear/react-query", () => ({
-  useObrRosterCards: () => ({
-    action: { pending: false, error: null },
-    refresh: vi.fn(),
-  }),
+  useObrRosterCards: (input: { client: typeof core.client }) => {
+    core.client = input.client;
+    return { action: { pending: false, error: null }, refresh: vi.fn() };
+  },
   toRosterRows: vi.fn(),
 }));
 
@@ -50,7 +55,7 @@ beforeEach(() => {
 });
 function roster() {
   const client = new QueryClient({
-    defaultOptions: { queries: { retry: false } },
+    defaultOptions: { queries: { retry: false, staleTime: 5 * 60 * 1000 } },
   });
   const wrapper = ({ children }: { children: ReactNode }) => (
     <QueryClientProvider client={client}>{children}</QueryClientProvider>
@@ -122,4 +127,24 @@ it("keeps cleanup available when an external scene update fails after the server
   expect(result.current.removeRosterAction?.error).toBe("scene unavailable");
   expect(result.current.cleanupPending).toBe(true);
   expect(removeRoomCharacter).toHaveBeenCalledTimes(1);
+});
+
+it("reads current bindings when the SDK refetches after a roster change", async () => {
+  const { result } = roster();
+  await waitFor(() => expect(result.current.cleanupPending).toBe(false));
+  await waitFor(() => expect(fetchRoomParticipation).toHaveBeenCalled());
+  const assigned: RoomParticipation = {
+    ...empty,
+    players: [
+      {
+        playerId: "player",
+        connectionId: "connection",
+        characterId: "scvm",
+        assignedByPlayerId: "gm",
+      },
+    ],
+  };
+  vi.mocked(fetchRoomParticipation).mockResolvedValue(assigned);
+  const bindings = await core.client?.fetchRoomBindings("room");
+  expect(bindings?.players).toEqual(assigned.players);
 });

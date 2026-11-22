@@ -15,6 +15,7 @@ import { useOwlbear } from "@/obr/owlbear";
 import {
   announceCharacterCardChanged,
   currentRoomActor,
+  forgetCharacterRemovedFromRoom,
   onRosterChanged,
   rememberPlayerCharacterId,
   restorePlayerCharacterId,
@@ -94,6 +95,7 @@ function ObrPlayerCharacterRoute() {
     (force?: boolean) => Promise<void>
   >(async () => {});
   const setCharacterIdRef = useRef(setCharacterId);
+  const characterIdRef = useRef(characterId);
   const lastCardPulseRef = useRef<{
     characterId: string;
     updatedAt: string;
@@ -121,6 +123,10 @@ function ObrPlayerCharacterRoute() {
   useEffect(() => {
     setCharacterIdRef.current = setCharacterId;
   }, [setCharacterId]);
+
+  useEffect(() => {
+    characterIdRef.current = characterId;
+  }, [characterId]);
 
   useEffect(() => {
     restoreAssignedCharacterRef.current = async (force = false) => {
@@ -210,9 +216,25 @@ function ObrPlayerCharacterRoute() {
         onRosterChanged(owlbear, () => {
           restoreCheckedRef.current = false;
           queueMicrotask(() => {
-            if (isActive()) {
-              void restoreAssignedCharacterRef.current(true);
+            if (!isActive()) {
+              return;
             }
+            const shownId = characterIdRef.current;
+            if (!shownId) {
+              void restoreAssignedCharacterRef.current(true);
+              return;
+            }
+            void forgetCharacterRemovedFromRoom(shownId)
+              .then(async (forgotten) => {
+                if (
+                  forgotten &&
+                  isActive() &&
+                  characterIdRef.current === shownId
+                ) {
+                  await setCharacterIdRef.current(null);
+                }
+              })
+              .catch(() => undefined);
           });
         }),
       ),
