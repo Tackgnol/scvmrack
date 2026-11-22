@@ -49,16 +49,17 @@ const replaceCurrentWithSearchParams = async (
     const searchParams = getCurrentSearchParams();
     update(searchParams);
 
-    const nextPath = buildPath(
-        appHistory.location.pathname,
-        searchParams,
-        appHistory.location.hash
+    await replacePath(
+        buildPath(appHistory.location.pathname, searchParams, appHistory.location.hash),
+        ignoreBlocker
     );
+};
 
+const replacePath = async (path: string, ignoreBlocker: boolean): Promise<void> => {
     if (ignoreBlocker) {
-        await appHistory.replace(nextPath, undefined, { ignoreBlocker: true });
+        await appHistory.replace(path, undefined, { ignoreBlocker: true });
     } else {
-        await appHistory.replace(nextPath);
+        await appHistory.replace(path);
     }
 };
 
@@ -119,7 +120,10 @@ export const getCurrentPendingClaimCharacterId = (): string | null => {
     return getCurrentSearchParamValue(CLAIM_CHARACTER_QUERY_PARAM);
 };
 
-export const setCurrentCharacterIdParam = async (characterId: string | null): Promise<void> => {
+export const setCurrentCharacterIdParam = async (
+    characterId: string | null,
+    { ignoreBlocker = false }: { ignoreBlocker?: boolean } = {},
+): Promise<void> => {
     // The forge (`/character/create`) owns its own navigation and is not bound to
     // an existing character. Syncing the current/last character id here would
     // rewrite the URL to that character's sheet (isCharacterPath matches any
@@ -132,24 +136,24 @@ export const setCurrentCharacterIdParam = async (characterId: string | null): Pr
     if (partyMatch?.[1]) {
         const searchParams = getCurrentSearchParams();
         searchParams.delete(CHARACTER_ID_QUERY_PARAM);
-        await appHistory.replace(buildPath(
+        await replacePath(buildPath(
             characterId
                 ? buildPartyCharacterPath(decodeURIComponent(partyMatch[1]), characterId)
                 : NEW_CHARACTER_PATH,
             searchParams,
             appHistory.location.hash
-        ));
+        ), ignoreBlocker);
         return;
     }
 
     if (isCharacterPath(appHistory.location.pathname)) {
         const searchParams = getCurrentSearchParams();
         searchParams.delete(CHARACTER_ID_QUERY_PARAM);
-        await appHistory.replace(buildPath(
+        await replacePath(buildPath(
             buildCharacterPath(characterId),
             searchParams,
             appHistory.location.hash
-        ));
+        ), ignoreBlocker);
         return;
     }
 
@@ -159,7 +163,7 @@ export const setCurrentCharacterIdParam = async (characterId: string | null): Pr
         } else {
             searchParams.delete(CHARACTER_ID_QUERY_PARAM);
         }
-    });
+    }, ignoreBlocker);
 };
 
 export const setCurrentPendingClaimCharacterId = async (characterId: string | null): Promise<void> => {

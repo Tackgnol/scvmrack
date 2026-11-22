@@ -33,7 +33,7 @@ export function useCharacterId() {
         });
     }, []);
 
-    const setCharacterId = useCallback(async (id: string | null) => {
+    const setCharacterId = useCallback(async (id: string | null, options?: { ignoreBlocker?: boolean }) => {
         if (id === characterIdRef.current) {
             return;
         }
@@ -41,7 +41,7 @@ export function useCharacterId() {
         setInternalCharacterId(id);
         setLastCharacterId(id);
         writeRememberedCharacterId(id);
-        await setCurrentCharacterIdParam(id);
+        await setCurrentCharacterIdParam(id, options);
     }, []);
 
     return {

@@ -18,8 +18,10 @@ vi.mock("@/api/roomParticipation", async (original) => ({
   fetchRoomParticipation: vi.fn(),
   removeRoomCharacter: vi.fn(),
 }));
+const sendMessage = vi.hoisted(() => vi.fn(() => Promise.resolve()));
 vi.mock("@owlbear-rodeo/sdk", () => ({
   default: {
+    broadcast: { sendMessage },
     onReady: (callback: () => void) => {
       callback();
       return () => {};
@@ -147,4 +149,15 @@ it("reads current bindings when the SDK refetches after a roster change", async 
   vi.mocked(fetchRoomParticipation).mockResolvedValue(assigned);
   const bindings = await core.client?.fetchRoomBindings("room");
   expect(bindings?.players).toEqual(assigned.players);
+});
+
+it("tells players about a removal even when no scene cleanup is needed", async () => {
+  vi.mocked(removeRoomCharacter).mockResolvedValue(empty);
+  const { result } = roster();
+  await act(async () => result.current.removeFromRoster("scvm"));
+  expect(sendMessage).toHaveBeenCalledWith(
+    "co.rpgtools.scvmrack/roster",
+    { kind: "roster" },
+    { destination: "ALL" },
+  );
 });

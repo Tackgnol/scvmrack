@@ -1,5 +1,6 @@
 import OBR from "@owlbear-rodeo/sdk";
-import { fetchRoomParticipation } from "@/api/roomParticipation";
+import type { QueryClient } from "@tanstack/react-query";
+import { fetchCurrentRoomParticipation } from "@/api/roomParticipationQueries";
 import {
   broadcastCharacterCardChanged,
   getCurrentObrRoomActor,
@@ -41,22 +42,24 @@ export function rememberPlayerCharacterId(characterId: string) {
   );
 }
 
-/** Forgets this player's scvm once the room no longer holds it; true when forgotten. */
-export async function forgetCharacterRemovedFromRoom(
+/** Whether the current room still holds this scvm, as a party member or through a binding. */
+export async function isCharacterInCurrentRoom(
+  queryClient: QueryClient,
   characterId: string,
 ): Promise<boolean> {
   const actor = await currentRoomActor();
-  const room = await fetchRoomParticipation(actor.roomId);
-  const inRoom =
+  const room = await fetchCurrentRoomParticipation(queryClient, actor.roomId);
+  return (
     room.memberIds.includes(characterId) ||
     [...room.players, ...room.tokens].some(
       (binding) => binding.characterId === characterId,
-    );
-  if (inRoom) {
-    return false;
-  }
-  await OBR.player.setMetadata({ [PLAYER_CHARACTER_META_KEY]: undefined });
-  return true;
+    )
+  );
+}
+
+/** Drops this player's remembered scvm from their Owlbear metadata. */
+export function forgetPlayerCharacterId() {
+  return OBR.player.setMetadata({ [PLAYER_CHARACTER_META_KEY]: undefined });
 }
 
 /** Tells the room a scvm's card changed so open cards refetch. */

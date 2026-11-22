@@ -103,6 +103,12 @@ describe('navigation router utils', () => {
             expect(appHistory.replace).toHaveBeenCalledWith('/');
         });
 
+        it('should clear the character ID past the save blocker when asked', async () => {
+            appHistory.location.search = `?${CHARACTER_ID_QUERY_PARAM}=123`;
+            await setCurrentCharacterIdParam(null, { ignoreBlocker: true });
+            expect(appHistory.replace).toHaveBeenCalledWith('/', undefined, { ignoreBlocker: true });
+        });
+
         it('should replace sheet routes with the new-character bootstrap when cleared', async () => {
             appHistory.location.pathname = '/character/old-id';
             appHistory.location.search = `?${CHARACTER_ID_QUERY_PARAM}=old-id`;

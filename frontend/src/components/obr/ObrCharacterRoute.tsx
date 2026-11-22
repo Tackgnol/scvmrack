@@ -15,7 +15,8 @@ import { useOwlbear } from "@/obr/owlbear";
 import {
   announceCharacterCardChanged,
   currentRoomActor,
-  forgetCharacterRemovedFromRoom,
+  forgetPlayerCharacterId,
+  isCharacterInCurrentRoom,
   onRosterChanged,
   rememberPlayerCharacterId,
   restorePlayerCharacterId,
@@ -224,21 +225,26 @@ function ObrPlayerCharacterRoute() {
               void restoreAssignedCharacterRef.current(true);
               return;
             }
-            void forgetCharacterRemovedFromRoom(shownId)
-              .then(async (forgotten) => {
+            void isCharacterInCurrentRoom(queryClient, shownId)
+              .then(async (inRoom) => {
                 if (
-                  forgotten &&
-                  isActive() &&
-                  characterIdRef.current === shownId
+                  inRoom ||
+                  !isActive() ||
+                  characterIdRef.current !== shownId
                 ) {
-                  await setCharacterIdRef.current(null);
+                  return;
                 }
+                // The server confirmed the removal, so stale metadata must not restore the sheet.
+                restoreCheckedRef.current = true;
+                void forgetPlayerCharacterId().catch(() => undefined);
+                // Queued edits stay queued; they must not hold the removed id in the URL.
+                await setCharacterIdRef.current(null, { ignoreBlocker: true });
               })
               .catch(() => undefined);
           });
         }),
       ),
-    [owlbear],
+    [owlbear, queryClient],
   );
 
   useEffect(() => {

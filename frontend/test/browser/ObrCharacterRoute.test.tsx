@@ -883,8 +883,28 @@ describe("ObrCharacterRoute", () => {
       connectionId: "remote",
     });
 
-    await expect.poll(() => routeMocks.setCharacterId).toHaveBeenCalledWith(null);
+    await expect
+      .poll(() => routeMocks.setCharacterId)
+      .toHaveBeenCalledWith(null, { ignoreBlocker: true });
     expect(obrMock.state.playerMetadata[PLAYER_CHARACTER_META_KEY]).toBeUndefined();
+  });
+
+  it("drops a removed scvm even when clearing its Owlbear metadata fails", async () => {
+    routeMocks.role = "PLAYER";
+    const id = "f15c7ec3-dad2-4f65-8b69-0f1f642c7d29";
+    mockCharacter({ id, name: "Karg" });
+    obrMock.setPlayerMetadata.mockRejectedValueOnce(new Error("timed out"));
+    await renderRoute();
+    await expect.element(page.getByText("Player sheet")).toBeVisible();
+
+    obrMock.state.broadcastCallbacks["co.rpgtools.scvmrack/roster"]?.({
+      data: { kind: "roster" },
+      connectionId: "remote",
+    });
+
+    await expect
+      .poll(() => routeMocks.setCharacterId)
+      .toHaveBeenCalledWith(null, { ignoreBlocker: true });
   });
 
   it("keeps a scvm that is still in the room after a roster pulse", async () => {

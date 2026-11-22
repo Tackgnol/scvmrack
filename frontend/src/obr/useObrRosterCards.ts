@@ -8,9 +8,13 @@ import {
   participationKey,
   removeRoomCharacter,
 } from "@/api/roomParticipation";
+import {
+  fetchCurrentRoomParticipation,
+  roomParticipationOptions,
+} from "@/api/roomParticipationQueries";
 import { usePartyStream } from "@/hooks/usePartyStream";
 import { getApiLocale } from "@/hooks/utils";
-import { scvmrackObrExtension } from "./extension";
+import { broadcastRosterChanged, scvmrackObrExtension } from "./extension";
 import { obrApiClient } from "./obrApiClient";
 import { bindRoomSelectedTokens, unbindRoomToken } from "./roomTokenMetadata";
 import { finishSceneCleanup } from "./sceneCleanup";
@@ -33,19 +37,11 @@ export type {
 } from "@tackgnol/rpgtools-owlbear/react-query";
 export { toRosterRows } from "@tackgnol/rpgtools-owlbear/react-query";
 
-function participationOptions(roomId: string) {
-  return {
-    queryKey: participationKey(roomId),
-    queryFn: () => fetchRoomParticipation(roomId),
-    enabled: Boolean(roomId),
-  };
-}
-
 export function useObrRosterCards(): ObrRosterState {
   const queryClient = useQueryClient();
   const { t, i18n } = useTranslation();
   const roomId = useObrRoomId();
-  const participation = useQuery(participationOptions(roomId));
+  const participation = useQuery(roomParticipationOptions(roomId));
   usePartyStream(participation.data?.partyId ?? "", {
     enabled: participation.data?.canManage,
     onChanged: () => {
@@ -64,11 +60,10 @@ export function useObrRosterCards(): ObrRosterState {
       ...obrApiClient,
       // SDK binding refetches follow roster changes; the 5-min cached snapshot predates them.
       fetchRoomBindings: async (id: string) => {
-        await queryClient.cancelQueries({ queryKey: participationKey(id) });
-        const { players, tokens } = await queryClient.fetchQuery({
-          ...participationOptions(id),
-          staleTime: 0,
-        });
+        const { players, tokens } = await fetchCurrentRoomParticipation(
+          queryClient,
+          id,
+        );
         return { roomId: id, players, tokens };
       },
     }),
@@ -159,6 +154,10 @@ export function useObrRosterCards(): ObrRosterState {
       await queryClient.cancelQueries({ queryKey: participationKey(roomId) });
       queryClient.setQueryData(participationKey(roomId), result);
       operations.current.delete(characterId);
+      // Scene cleanup broadcasts only when it has tokens to clear; players must hear every removal.
+      await broadcastRosterChanged(scvmrackObrExtension, OBR).catch(
+        () => undefined,
+      );
       const complete = await finishSceneCleanup(roomId, result);
       setCleanupMessage(
         t(complete ? "obr.roster.removed" : "obr.roster.cleanupPending"),
