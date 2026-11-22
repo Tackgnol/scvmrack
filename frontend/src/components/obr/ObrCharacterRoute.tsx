@@ -15,6 +15,8 @@ import { useOwlbear } from "@/obr/owlbear";
 import {
   announceCharacterCardChanged,
   currentRoomActor,
+  forgetPlayerCharacterId,
+  isCharacterInCurrentRoom,
   onRosterChanged,
   rememberPlayerCharacterId,
   restorePlayerCharacterId,
@@ -94,6 +96,7 @@ function ObrPlayerCharacterRoute() {
     (force?: boolean) => Promise<void>
   >(async () => {});
   const setCharacterIdRef = useRef(setCharacterId);
+  const characterIdRef = useRef(characterId);
   const lastCardPulseRef = useRef<{
     characterId: string;
     updatedAt: string;
@@ -121,6 +124,10 @@ function ObrPlayerCharacterRoute() {
   useEffect(() => {
     setCharacterIdRef.current = setCharacterId;
   }, [setCharacterId]);
+
+  useEffect(() => {
+    characterIdRef.current = characterId;
+  }, [characterId]);
 
   useEffect(() => {
     restoreAssignedCharacterRef.current = async (force = false) => {
@@ -210,13 +217,34 @@ function ObrPlayerCharacterRoute() {
         onRosterChanged(owlbear, () => {
           restoreCheckedRef.current = false;
           queueMicrotask(() => {
-            if (isActive()) {
-              void restoreAssignedCharacterRef.current(true);
+            if (!isActive()) {
+              return;
             }
+            const shownId = characterIdRef.current;
+            if (!shownId) {
+              void restoreAssignedCharacterRef.current(true);
+              return;
+            }
+            void isCharacterInCurrentRoom(queryClient, shownId)
+              .then(async (inRoom) => {
+                if (
+                  inRoom ||
+                  !isActive() ||
+                  characterIdRef.current !== shownId
+                ) {
+                  return;
+                }
+                // The server confirmed the removal, so stale metadata must not restore the sheet.
+                restoreCheckedRef.current = true;
+                void forgetPlayerCharacterId().catch(() => undefined);
+                // Queued edits stay queued; they must not hold the removed id in the URL.
+                await setCharacterIdRef.current(null, { ignoreBlocker: true });
+              })
+              .catch(() => undefined);
           });
         }),
       ),
-    [owlbear],
+    [owlbear, queryClient],
   );
 
   useEffect(() => {

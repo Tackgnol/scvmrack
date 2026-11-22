@@ -74,7 +74,7 @@ test('setCharacterId updates state, localStorage and router param', async () => 
   expect(result.current.characterId).toBe('next-id');
   expect(result.current.lastCharacterId).toBe('next-id');
   expect(localStorage.getItem(LAST_CHARACTER_ID_STORAGE_KEY)).toBe('next-id');
-  expect(navigationMocks.setCurrentCharacterIdParam).toHaveBeenCalledWith('next-id');
+  expect(navigationMocks.setCurrentCharacterIdParam).toHaveBeenCalledWith('next-id', undefined);
 });
 
 test('setCharacterId is a no-op when the value does not change', async () => {
@@ -99,7 +99,7 @@ test('setCharacterId coalesces rapid writes before React rerenders', async () =>
   });
 
   expect(navigationMocks.setCurrentCharacterIdParam).toHaveBeenCalledTimes(1);
-  expect(navigationMocks.setCurrentCharacterIdParam).toHaveBeenCalledWith('next-id');
+  expect(navigationMocks.setCurrentCharacterIdParam).toHaveBeenCalledWith('next-id', undefined);
 });
 
 test('history subscription ignores duplicate character notifications', () => {

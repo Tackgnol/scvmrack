@@ -1,5 +1,6 @@
 import {
   broadcastCharacterCardChanged,
+  broadcastRosterChanged,
   createObrExtension,
   getCurrentObrRoomActor,
   isObrRosterBroadcast,
@@ -29,6 +30,7 @@ export const {
 
 export {
   broadcastCharacterCardChanged,
+  broadcastRosterChanged,
   getCurrentObrRoomActor,
   isObrRosterBroadcast,
   persistCurrentObrCharacterId,
