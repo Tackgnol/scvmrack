@@ -89,7 +89,7 @@ function clampInteger(
   return Math.min(max, Math.max(min, Math.round(n)));
 }
 
-export function toHealthPercent(
+function toHealthPercent(
   currentHealth: number,
   maxHealth: number
 ): number {
@@ -97,7 +97,7 @@ export function toHealthPercent(
   return clampPercent((clampInteger(currentHealth, 0, max) / max) * 100, 0);
 }
 
-export function resolveEnemyStatusBand(
+function resolveEnemyStatusBand(
   healthPercent: number,
   statuses: EnemyStatusBand[]
 ): EnemyStatusBand {

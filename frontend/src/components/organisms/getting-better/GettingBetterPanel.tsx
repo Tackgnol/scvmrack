@@ -123,5 +123,3 @@ export function GettingBetterPanel({ controller }: PanelProps) {
     </Box>
   );
 }
-
-export default GettingBetterPanel;

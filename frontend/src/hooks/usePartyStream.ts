@@ -51,7 +51,7 @@ export const partyRosterQueryKey = partyKeys.roster;
 
 export const partyDetailQueryKey = partyKeys.detail;
 
-export function partyStreamUrl(partyId: string): string {
+function partyStreamUrl(partyId: string): string {
   const baseUrl = import.meta.env.VITE_BACKEND_URL || "";
   return `${baseUrl}/api/parties/${partyId}/stream`;
 }

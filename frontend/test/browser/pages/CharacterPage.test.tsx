@@ -63,7 +63,7 @@ vi.mock('@/components/organisms/Abilities', () => ({
 }));
 
 vi.mock('@/components/organisms/StorageSection', () => ({
-  BackpackSection: () => <section>Backpack Section</section>,
+  StorageSection: () => <section>Backpack Section</section>,
 }));
 
 vi.mock('@/components/molecules/character-descriptors/CharacterDescriptors', () => ({

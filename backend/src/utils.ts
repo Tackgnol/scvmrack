@@ -18,7 +18,7 @@ const MAX_TRANSFORM_DEPTH = 8;
  * Recursively transform all object keys using the given function.
  * Arrays are traversed, primitives are left as-is. Bounded depth.
  */
-export function transformKeys(obj: unknown, keyFn: (key: string) => string, depth = 0): unknown {
+function transformKeys(obj: unknown, keyFn: (key: string) => string, depth = 0): unknown {
   if (depth >= MAX_TRANSFORM_DEPTH) {
     return obj;
   }

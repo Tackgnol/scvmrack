@@ -8,7 +8,7 @@ import type {
 import { blankClassItem } from './class-draft.js';
 
 /** The catalog table each Class Item type lives in, and its key prefix. */
-export const ITEM_TABLES = {
+const ITEM_TABLES = {
   weapon: { table: 'weapon', prefix: 'weapons.' },
   armor: { table: 'armor', prefix: 'armor.' },
   gear: { table: 'equipment', prefix: 'equipment.' },

@@ -8,7 +8,7 @@ import {
   RoomCardsQuerySchema,
   RoomBindingsResponseSchema,
 } from '../../schemas/obr.js';
-import { ErrorSchema } from '../../schemas/equipment.js';
+import { ErrorSchema } from '../../schemas/character.js';
 import { roomRouteConfig as config } from './config.js';
 
 const bindings: FastifyPluginAsync = async (fastify) => {

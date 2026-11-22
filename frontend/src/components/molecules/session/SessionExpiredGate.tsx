@@ -81,4 +81,3 @@ export function SessionExpiredGate() {
     );
 }
 
-export default SessionExpiredGate;

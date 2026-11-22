@@ -466,8 +466,7 @@ function ClasslessStatRow({
             display: { xs: 'none', sm: 'inline-flex' },
             alignItems: 'center',
             justifyContent: 'center',
-            bgcolor: selected ? morkBorgColors.black : locked ? morkBorgColors.darkGrey : morkBorgColors.yellow,
-            color: selected ? morkBorgColors.yellow : locked ? morkBorgColors.white : morkBorgColors.black,
+            ...scoreChipColors(selected, locked),
             border: `2px solid ${selected ? morkBorgColors.black : morkBorgColors.yellow}`,
             fontFamily: fonts.label,
             fontSize: '0.72rem',
@@ -700,4 +699,14 @@ export function DraftStatsSection({
       </Box>
     </DraftSection>
   );
+}
+
+function scoreChipColors(selected: boolean, locked: boolean): { bgcolor: string; color: string } {
+  if (selected) {
+    return { bgcolor: morkBorgColors.black, color: morkBorgColors.yellow };
+  }
+  if (locked) {
+    return { bgcolor: morkBorgColors.darkGrey, color: morkBorgColors.white };
+  }
+  return { bgcolor: morkBorgColors.yellow, color: morkBorgColors.black };
 }

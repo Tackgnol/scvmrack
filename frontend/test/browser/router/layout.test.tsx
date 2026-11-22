@@ -46,12 +46,6 @@ vi.mock('@/components/organisms/party/PartyHost', () => ({
   PartyHost: () => null,
 }));
 
-vi.mock('@/components/index', () => ({
-  Header: () => <div data-testid="mock-header">Header</div>,
-  NetworkActivityIndicator: () => <div data-testid="mock-network-indicator" />,
-  PrivacyNoticeDrawer: () => null,
-}));
-
 vi.mock('@/analytics/AnalyticsPageTracker', () => ({
   AnalyticsPageTracker: () => null,
 }));

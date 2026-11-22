@@ -42,18 +42,31 @@ export function ClassCreatorPage() {
   const needsCreationPermission = id === null && (draft === null || draftQuery.data?.classId === null);
   const canCreate = !needsCreationPermission || (creationBan.isSuccess && !creationBan.data.banned);
 
+  let title: string;
+  let path: string;
+  if (draft !== null) {
+    title = t("creator.titleResume", "Resume a class");
+    path = `/gm/classes/draft/${draft}`;
+  } else if (id === null) {
+    title = t("creator.titleNew", "Forge a class");
+    path = "/gm/classes/new";
+  } else {
+    title = t("creator.titleEdit", "Edit a class");
+    path = `/gm/classes/${id}`;
+  }
+
   return (
     <>
       <Seo
-        title={draft !== null ? t("creator.titleResume", "Resume a class") : id === null ? t("creator.titleNew", "Forge a class") : t("creator.titleEdit", "Edit a class")}
+        title={title}
         description="The class creator."
-        path={draft !== null ? `/gm/classes/draft/${draft}` : id === null ? "/gm/classes/new" : `/gm/classes/${id}`}
+        path={path}
         noIndex
       />
       <Page>
         <Stamp>{t("creator.stamp", "Game Master · Forge")}</Stamp>
         <Title component="h1">
-          {draft !== null ? t("creator.titleResume", "Resume a class") : id === null ? t("creator.titleNew", "Forge a class") : t("creator.titleEdit", "Edit a class")}
+          {title}
         </Title>
         {isLoading && (
           <CenterRow>

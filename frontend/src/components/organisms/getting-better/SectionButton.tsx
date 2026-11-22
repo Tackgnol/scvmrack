@@ -16,4 +16,3 @@ export function SectionButton({ label, onClick, disabled }: SectionButtonProps) 
   );
 }
 
-export default SectionButton;

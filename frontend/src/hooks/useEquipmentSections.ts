@@ -12,7 +12,7 @@ export function isPetItem(item: EquipmentItem): boolean {
   return tags.includes('pet') || key.startsWith('pet.') || key.startsWith('pets.');
 }
 
-export function isAmmoItem(item: EquipmentItem): boolean {
+function isAmmoItem(item: EquipmentItem): boolean {
   const tags = item.tags ?? [];
   // A weapon's ammoType names what it fires, not what it is.
   const isAmmoTyped = Boolean(item.ammoType) && !tags.includes('weapon');

@@ -83,7 +83,7 @@ export const notFound = (code: string, message: string) =>
 export const conflict = (code: string, message: string) =>
   apiError(409, code, message);
 
-export const preconditionFailed = (message: string) =>
+const preconditionFailed = (message: string) =>
   apiError(412, 'PRECONDITION_FAILED', message);
 
 export const characterAccessDenied = () =>

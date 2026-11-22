@@ -13,7 +13,7 @@ const DropLowestAbilitiesSchema = {
   maxItems: 2,
 } as const;
 
-export const SectionSeedsSchema = {
+const SectionSeedsSchema = {
   type: 'object',
   additionalProperties: false,
   required: [...DRAFT_SECTIONS],
@@ -22,7 +22,7 @@ export const SectionSeedsSchema = {
   ) as Record<(typeof DRAFT_SECTIONS)[number], typeof SeedSchema>,
 } as const;
 
-export const DraftSchema = {
+const DraftSchema = {
   type: 'object',
   additionalProperties: false,
   required: ['classId', 'classless', 'seeds'],

@@ -7,7 +7,7 @@ import type {
   PoolSearch,
 } from "./classPool.models";
 
-export const GROUP_ORDER: PoolGroup[] = ["book", "zine", "rack", "mine", "public"];
+const GROUP_ORDER: PoolGroup[] = ["book", "zine", "rack", "mine", "public"];
 
 /** The groups each filter shows; picking a filter also opens them. */
 export const FILTER_GROUPS: Record<Exclude<PoolFilter, "all">, PoolGroup[]> = {

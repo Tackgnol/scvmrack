@@ -16,7 +16,7 @@ import type { Owlbear, Unsubscribe } from "./owlbear.models";
 
 export type ObrRoomActor = Awaited<ReturnType<typeof getCurrentObrRoomActor>>;
 
-export const ROSTER_CHANNEL = rosterChannel(scvmrackObrExtension);
+const ROSTER_CHANNEL = rosterChannel(scvmrackObrExtension);
 
 /** The room and the Owlbear player acting in it. */
 export function currentRoomActor() {

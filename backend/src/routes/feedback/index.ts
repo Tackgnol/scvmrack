@@ -1,7 +1,7 @@
 import type { FastifyPluginAsync } from 'fastify';
 import type { JsonSchemaToTsProvider } from '@fastify/type-provider-json-schema-to-ts';
 import { FeedbackBodySchema, FeedbackResponseSchema } from '../../schemas/feedback.js';
-import { ErrorSchema } from '../../schemas/equipment.js';
+import { ErrorSchema } from '../../schemas/character.js';
 import { sendServiceError } from '../../errors.js';
 import { createFeedbackService } from '../../services/feedback-service.js';
 import { limitMax } from '../../lib/rate-limits.js';

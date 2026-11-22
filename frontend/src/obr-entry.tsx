@@ -26,10 +26,13 @@ const isEnemyView = isObrEnemyView();
 // GlitchTip can separate in-OBR errors from the main app. No-op when Sentry is
 // disabled (dev / no DSN).
 Sentry.setTag("surface", "obr");
-Sentry.setTag(
-  "obr_view",
-  isCardView ? "card" : isEnemyView ? "enemy" : "panel",
-);
+let obrView = "panel";
+if (isCardView) {
+  obrView = "card";
+} else if (isEnemyView) {
+  obrView = "enemy";
+}
+Sentry.setTag("obr_view", obrView);
 
 if (!isCardView && !isEnemyView) {
   registerScvmContextMenu();

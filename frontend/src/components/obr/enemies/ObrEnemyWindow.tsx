@@ -1,20 +1,16 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useObrRole } from "@/hooks/useObrRole";
-import { useOwlbear } from "@/obr/owlbear";
 import { restorePlayerCharacterId } from "@/obr/roomCharacterBinding";
-import { useObrEnemies } from "@/obr/useObrEnemies";
 import { useObrRoomId } from "@/obr/useObrRoomId";
-import { EmptyEnemies, EnemyShell } from "../ObrEnemies.styles";
-import { enemyErrorMessage } from "./enemyErrorMessage";
-import { EnemyEditorForm } from "./EnemyEditorForm";
-import { toObrEnemy } from "./enemyForm";
-import { EnemySummaryCard } from "./EnemySummaryCard";
+import { EnemyStatusScreen } from "./EnemyStatusScreen";
+import { ObrEnemyGmWindow } from "./ObrEnemyGmWindow";
+import { ObrEnemyPlayerWindow } from "./ObrEnemyPlayerWindow";
 
 export function ObrEnemyWindow({
-  enemyId = getObrEnemyId(),
-  roomId: initialRoomId = getObrEnemyRoomId(),
-  characterId: initialCharacterId = getObrEnemyCharacterId(),
+  enemyId = getSearchParam("id"),
+  roomId: initialRoomId = getSearchParam("room"),
+  characterId: initialCharacterId = getSearchParam("character"),
 }: {
   enemyId?: string | null;
   roomId?: string | null;
@@ -64,11 +60,9 @@ export function ObrEnemyWindow({
 
   if (!enemyId) {
     return (
-      <EnemyShell as="main">
-        <EmptyEnemies role="status">
-          {t("obr.enemies.missingId", "Missing enemy id")}
-        </EmptyEnemies>
-      </EnemyShell>
+      <EnemyStatusScreen
+        message={t("obr.enemies.missingId", "Missing enemy id")}
+      />
     );
   }
 
@@ -79,11 +73,7 @@ export function ObrEnemyWindow({
 
   if (!roomId || !role || isRestoringPlayerCharacter) {
     return (
-      <EnemyShell as="main">
-        <EmptyEnemies role="status">
-          {t("obr.enemies.loading", "Loading enemies")}
-        </EmptyEnemies>
-      </EnemyShell>
+      <EnemyStatusScreen message={t("obr.enemies.loading", "Loading enemies")} />
     );
   }
 
@@ -100,145 +90,9 @@ export function ObrEnemyWindow({
   );
 }
 
-function ObrEnemyGmWindow({
-  enemyId,
-  roomId,
-}: {
-  enemyId: string;
-  roomId: string;
-}) {
-  const { t } = useTranslation();
-  const owlbear = useOwlbear();
-  const [actionError, setActionError] = useState<string | null>(null);
-  const state = useObrEnemies({ mode: "gm", roomId });
-  const enemy = state.enemies.find((item) => item.id === enemyId);
-
-  if (!state.isReady) {
-    return (
-      <EnemyShell as="main">
-        <EmptyEnemies role="status">
-          {t("obr.enemies.loading", "Loading enemies")}
-        </EmptyEnemies>
-      </EnemyShell>
-    );
-  }
-
-  if (state.error || !enemy) {
-    return (
-      <EnemyShell as="main">
-        <EmptyEnemies role="status">
-          {state.error
-            ? enemyErrorMessage(
-                state.error,
-                t("obr.enemies.loadFailed", "Could not load enemies"),
-                t,
-              )
-            : t("obr.enemies.notFound", "Enemy not found")}
-        </EmptyEnemies>
-      </EnemyShell>
-    );
-  }
-
-  return (
-    <EnemyShell as="main">
-      <EnemyEditorForm
-        key={enemy.id}
-        enemy={enemy}
-        title={t("obr.enemies.editTitle", "Edit enemy")}
-        onSubmit={async (values) => {
-          setActionError(null);
-          try {
-            await state.saveEnemy(toObrEnemy(values, enemy.id));
-            await owlbear.notify(
-              t("obr.enemies.saveSuccess", "Enemy saved"),
-              "SUCCESS",
-            );
-          } catch (saveError) {
-            setActionError(
-              enemyErrorMessage(
-                saveError,
-                t("obr.enemies.saveFailed", "Could not save enemy"),
-                t,
-              ),
-            );
-          }
-        }}
-      />
-      {actionError && <EmptyEnemies role="alert">{actionError}</EmptyEnemies>}
-    </EnemyShell>
-  );
-}
-
-function ObrEnemyPlayerWindow({
-  enemyId,
-  roomId,
-  characterId,
-}: {
-  enemyId: string;
-  roomId: string;
-  characterId: string | null;
-}) {
-  const { t } = useTranslation();
-  const state = useObrEnemies({ mode: "player", roomId, characterId });
-  const enemy = state.enemies.find((item) => item.id === enemyId);
-
-  if (!characterId) {
-    return (
-      <EnemyShell as="main">
-        <EmptyEnemies role="status">
-          {t(
-            "obr.enemies.playerCharacterRequired",
-            "Load your scvm before viewing enemy cards.",
-          )}
-        </EmptyEnemies>
-      </EnemyShell>
-    );
-  }
-
-  if (!state.isReady) {
-    return (
-      <EnemyShell as="main">
-        <EmptyEnemies role="status">
-          {t("obr.enemies.loading", "Loading enemies")}
-        </EmptyEnemies>
-      </EnemyShell>
-    );
-  }
-
-  if (state.error || !enemy) {
-    return (
-      <EnemyShell as="main">
-        <EmptyEnemies role="status">
-          {state.error
-            ? enemyErrorMessage(
-                state.error,
-                t("obr.enemies.loadFailed", "Could not load enemies"),
-                t,
-              )
-            : t("obr.enemies.notFound", "Enemy not found")}
-        </EmptyEnemies>
-      </EnemyShell>
-    );
-  }
-
-  return (
-    <EnemyShell as="main">
-      <EnemySummaryCard enemy={enemy} />
-    </EnemyShell>
-  );
-}
-
-function getObrEnemyId(search = window.location.search): string | null {
-  const id = new URLSearchParams(search).get("id")?.trim();
-  return id ? id : null;
-}
-
-function getObrEnemyRoomId(search = window.location.search): string | null {
-  const room = new URLSearchParams(search).get("room")?.trim();
-  return room ? room : null;
-}
-
-function getObrEnemyCharacterId(search = window.location.search): string | null {
-  const character = new URLSearchParams(search).get("character")?.trim();
-  return character ? character : null;
+function getSearchParam(
+  name: string,
+  search = window.location.search,
+): string | null {
+  return new URLSearchParams(search).get(name)?.trim() || null;
 }

@@ -107,10 +107,6 @@ const loadGoogleAnalytics = async (): Promise<AnalyticsInstance | null> => {
     return analyticsInitPromise;
 };
 
-export const initGoogleAnalytics = (): void => {
-    void loadGoogleAnalytics();
-};
-
 const runWithGoogleAnalytics = (
     callback: (instance: AnalyticsInstance) => void,
     deferred = false

@@ -58,4 +58,3 @@ export function StorageSection({ showTitle = true }: { showTitle?: boolean } = {
   );
 }
 
-export const BackpackSection = StorageSection;

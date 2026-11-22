@@ -8,6 +8,8 @@ import {
   type CharacterIntegerField,
   type CharacterTextField,
 } from '../lib/character-limits.js';
+import { ABILITY_STATS } from '../lib/ability-modifiers.js';
+import { SUPPORTED_LOCALES } from '../config/locales.js';
 
 export const CharacterIdParamsSchema = {
   type: 'object',
@@ -25,14 +27,14 @@ export const LocaleQuerySchema = {
   properties: {
     locale: {
       type: 'string',
-      enum: ['en', 'pl'],
+      enum: SUPPORTED_LOCALES,
       default: 'en',
     },
   },
 } as const;
 
 /** Upper bound of a Postgres INTEGER id or counter. */
-export const MAX_DB_INT = 2147483647;
+const MAX_DB_INT = 2147483647;
 
 /** A positive Postgres INTEGER id. */
 export const IdSchema = { type: 'integer', minimum: 1, maximum: MAX_DB_INT } as const;
@@ -58,80 +60,7 @@ export const LocaleQueryNoDefaultSchema = {
   properties: {
     locale: {
       type: 'string',
-      enum: ['en', 'pl'],
-    },
-  },
-} as const;
-
-const EquipmentItemSchema = {
-  type: 'object',
-  additionalProperties: false,
-  properties: {
-    key: { type: 'string', maxLength: 100 },
-    name: { type: 'string', maxLength: 255 },
-    description: { type: 'string', maxLength: 1000 },
-    comments: { type: 'string', maxLength: 1000 },
-    source: { type: 'string', maxLength: 50 },
-    category: { type: 'string', maxLength: 50 },
-    value: { type: 'integer', minimum: 0, maximum: 1000000 },
-    uses: {
-      type: 'array',
-      items: { type: 'boolean' },
-      maxItems: 50,
-    },
-    dice: {
-      type: 'array',
-      items: { type: 'integer', minimum: 1, maximum: 20 },
-      maxItems: 5,
-    },
-    tags: {
-      type: 'array',
-      items: { type: 'string', maxLength: 50 },
-      maxItems: 10,
-    },
-    maxTier: { type: 'integer', minimum: 0, maximum: 4 },
-    currentTier: { type: 'integer', minimum: 0, maximum: 4 },
-    amount: { type: 'integer', minimum: 0, maximum: 999 },
-    ammoType: { type: 'string', maxLength: 50 },
-    useCountRule: {
-      type: 'object',
-      additionalProperties: false,
-      properties: {
-        mode: { type: 'string', enum: ['fixed', 'fixedPlusModifier'] },
-        base: { type: 'integer', minimum: 0, maximum: 50 },
-        statistic: {
-          type: 'string',
-          enum: ['agility', 'strength', 'presence', 'toughness'],
-        },
-      },
-    },
-    modifiers: {
-      type: 'array',
-      maxItems: 10,
-      items: {
-        type: 'object',
-        additionalProperties: false,
-        properties: {
-          id: { type: 'string', maxLength: 36 },
-          name: { type: 'string', maxLength: 255 },
-          value: { type: 'number', minimum: -20, maximum: 20 },
-          source: { type: 'string', maxLength: 255 },
-          statistic: {
-            type: 'string',
-            enum: ['agility', 'strength', 'presence', 'toughness'],
-          },
-          exclude: {
-            type: 'array',
-            items: { type: 'string', maxLength: 50 },
-            maxItems: 15,
-          },
-          scope: {
-            type: 'string',
-            enum: ['all', 'combat', 'defence', 'tests', 'melee', 'ranged', 'powers'],
-          },
-          comment: { type: 'string', maxLength: 500 },
-        },
-      },
+      enum: SUPPORTED_LOCALES,
     },
   },
 } as const;
@@ -176,61 +105,18 @@ const AbilityResponseSchema = {
   },
 } as const;
 
-const WeaponSchema = {
-  type: 'object',
-  additionalProperties: false,
-  properties: {
-    key: { type: 'string', maxLength: 100 },
-    name: { type: 'string', maxLength: 255 },
-    description: { type: 'string', maxLength: 1000 },
-    comments: { type: 'string', maxLength: 1000 },
-    source: { type: 'string', maxLength: 50 },
-    category: { type: 'string', maxLength: 50 },
-    value: { type: 'integer', minimum: 0, maximum: 1000000 },
-    dice: {
-      type: 'array',
-      items: { type: 'integer', minimum: 1, maximum: 20 },
-      maxItems: 5,
-    },
-    tags: {
-      type: 'array',
-      items: { type: 'string', maxLength: 50 },
-      maxItems: 10,
-    },
-    ammoType: { type: 'string', maxLength: 50 },
-    modifiers: EquipmentItemSchema.properties.modifiers,
-  },
+const StatisticSchema = { type: 'string', enum: ABILITY_STATS } as const;
+
+const TagsSchema = {
+  type: 'array',
+  items: { type: 'string', maxLength: 50 },
+  maxItems: 10,
 } as const;
 
-const ArmorSchema = {
-  type: 'object',
-  additionalProperties: false,
-  properties: {
-    key: { type: 'string', maxLength: 100 },
-    name: { type: 'string', maxLength: 255 },
-    description: { type: 'string', maxLength: 1000 },
-    comments: { type: 'string', maxLength: 1000 },
-    source: { type: 'string', maxLength: 50 },
-    category: { type: 'string', maxLength: 50 },
-    value: { type: 'integer', minimum: 0, maximum: 1000000 },
-    dice: {
-      type: 'array',
-      items: { type: 'integer', minimum: 1, maximum: 20 },
-      maxItems: 5,
-    },
-    maxTier: { type: 'integer', minimum: 0, maximum: 4 },
-    currentTier: { type: 'integer', minimum: 0, maximum: 4 },
-    tags: {
-      type: 'array',
-      items: { type: 'string', maxLength: 50 },
-      maxItems: 10,
-    },
-    modifiers: EquipmentItemSchema.properties.modifiers,
-  },
-} as const;
+const TierSchema = { type: 'integer', minimum: 0, maximum: 4 } as const;
 
-// Custom modifier schema (player-created)
-const ModifierSchemaDefs = {
+/** Custom (player-created) modifier. */
+const ModifierSchema = {
   type: 'object',
   additionalProperties: false,
   properties: {
@@ -238,10 +124,7 @@ const ModifierSchemaDefs = {
     name: { type: 'string', maxLength: 255 },
     value: { type: 'number', minimum: -20, maximum: 20 },
     source: { type: 'string', maxLength: 255 },
-    statistic: {
-      type: 'string',
-      enum: ['agility', 'strength', 'presence', 'toughness'],
-    },
+    statistic: StatisticSchema,
     exclude: {
       type: 'array',
       items: { type: 'string', maxLength: 50 },
@@ -255,31 +138,84 @@ const ModifierSchemaDefs = {
   },
 } as const;
 
-// Computed modifier schema (from equipped items)
-const ComputedModifierSchemaDefs = {
+/** Modifier computed from an equipped item. */
+const ComputedModifierSchema = {
   type: 'object',
   additionalProperties: false,
   properties: {
-    value: { type: 'number', minimum: -20, maximum: 20 },
-    source: { type: 'string', maxLength: 255 },
-    statistic: {
-      type: 'string',
-      enum: ['agility', 'strength', 'presence', 'toughness'],
-    },
-    exclude: {
-      type: 'array',
-      items: { type: 'string', maxLength: 50 },
-      maxItems: 15,
-    },
+    value: ModifierSchema.properties.value,
+    source: ModifierSchema.properties.source,
+    statistic: StatisticSchema,
+    exclude: ModifierSchema.properties.exclude,
     origin: { type: 'string', enum: ['armor', 'weapon', 'pet', 'system'] },
     originKey: { type: 'string', maxLength: 255 },
     originName: { type: 'string', maxLength: 255 },
   },
 } as const;
 
-// Aliases for backwards compatibility
-const ModifierSchema = ModifierSchemaDefs;
-const ComputedModifierSchema = ComputedModifierSchemaDefs;
+/** Fields every stored item (equipment, weapon, armor) shares. */
+const ItemBaseProperties = {
+  key: { type: 'string', maxLength: 100 },
+  name: { type: 'string', maxLength: 255 },
+  description: { type: 'string', maxLength: 1000 },
+  comments: { type: 'string', maxLength: 1000 },
+  source: { type: 'string', maxLength: 50 },
+  category: { type: 'string', maxLength: 50 },
+  value: { type: 'integer', minimum: 0, maximum: 1000000 },
+  dice: {
+    type: 'array',
+    items: { type: 'integer', minimum: 1, maximum: 20 },
+    maxItems: 5,
+  },
+  tags: TagsSchema,
+  modifiers: { type: 'array', maxItems: 10, items: ModifierSchema },
+} as const;
+
+const EquipmentItemSchema = {
+  type: 'object',
+  additionalProperties: false,
+  properties: {
+    ...ItemBaseProperties,
+    uses: {
+      type: 'array',
+      items: { type: 'boolean' },
+      maxItems: 50,
+    },
+    maxTier: TierSchema,
+    currentTier: TierSchema,
+    amount: { type: 'integer', minimum: 0, maximum: 999 },
+    ammoType: { type: 'string', maxLength: 50 },
+    useCountRule: {
+      type: 'object',
+      additionalProperties: false,
+      properties: {
+        mode: { type: 'string', enum: ['fixed', 'fixedPlusModifier'] },
+        base: { type: 'integer', minimum: 0, maximum: 50 },
+        statistic: StatisticSchema,
+      },
+    },
+  },
+} as const;
+
+const WeaponSchema = {
+  type: 'object',
+  additionalProperties: false,
+  properties: {
+    ...ItemBaseProperties,
+    ammoType: { type: 'string', maxLength: 50 },
+  },
+} as const;
+
+const ArmorSchema = {
+  type: 'object',
+  additionalProperties: false,
+  properties: {
+    ...ItemBaseProperties,
+    maxTier: TierSchema,
+    currentTier: TierSchema,
+  },
+} as const;
+
 
 /** A character update's text field, bounded by {@link CHARACTER_TEXT_BOUNDS}. */
 function textField<F extends CharacterTextField>(field: F) {

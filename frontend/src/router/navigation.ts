@@ -116,10 +116,6 @@ export const getCurrentCharacterIdParam = (): string | null => {
     return RESERVED_CHARACTER_PATH_SEGMENTS.has(candidate) ? null : candidate;
 };
 
-export const getCurrentPendingClaimCharacterId = (): string | null => {
-    return getCurrentSearchParamValue(CLAIM_CHARACTER_QUERY_PARAM);
-};
-
 export const setCurrentCharacterIdParam = async (
     characterId: string | null,
     { ignoreBlocker = false }: { ignoreBlocker?: boolean } = {},
@@ -164,16 +160,6 @@ export const setCurrentCharacterIdParam = async (
             searchParams.delete(CHARACTER_ID_QUERY_PARAM);
         }
     }, ignoreBlocker);
-};
-
-export const setCurrentPendingClaimCharacterId = async (characterId: string | null): Promise<void> => {
-    await replaceCurrentWithSearchParams((searchParams) => {
-        if (characterId) {
-            searchParams.set(CLAIM_CHARACTER_QUERY_PARAM, characterId);
-        } else {
-            searchParams.delete(CLAIM_CHARACTER_QUERY_PARAM);
-        }
-    });
 };
 
 export const buildHomeCallbackUrl = (

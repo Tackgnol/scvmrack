@@ -80,7 +80,7 @@ export const PromotionButton = styled("button")({
   },
 });
 
-export const PromotionNote = styled("span")({
+const PromotionNote = styled("span")({
   minWidth: 0,
   color: partyColors.black,
   fontFamily: partyFonts.label,
@@ -181,46 +181,6 @@ export const RosterBindingFallback = styled("div")({
   lineHeight: 1.15,
   textTransform: "uppercase",
   overflowWrap: "anywhere",
-});
-
-export const RosterBindingControls = styled("div")({
-  display: "grid",
-  gridTemplateColumns: "1fr",
-  gap: 8,
-  borderLeft: `4px solid ${partyColors.pink}`,
-  paddingLeft: 8,
-  "@media (min-width: 720px)": {
-    gridTemplateColumns: "minmax(0, 1fr) minmax(180px, auto)",
-    alignItems: "start",
-  },
-});
-
-export const RosterBindingMeta = styled("div")({
-  display: "flex",
-  alignItems: "center",
-  flexWrap: "wrap",
-  gap: 6,
-  minWidth: 0,
-});
-
-export const RosterBindingTag = styled("span")({
-  maxWidth: "100%",
-  minHeight: 24,
-  display: "inline-flex",
-  alignItems: "center",
-  border: `2px solid ${partyColors.black}`,
-  background: partyColors.yellow,
-  color: partyColors.black,
-  padding: "3px 6px",
-  fontFamily: partyFonts.label,
-  fontSize: "0.62rem",
-  fontWeight: 900,
-  letterSpacing: 0,
-  lineHeight: 1,
-  textTransform: "uppercase",
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-  whiteSpace: "nowrap",
 });
 
 export const RosterBindingActions = styled("div")({

@@ -164,6 +164,52 @@ function safeIntArray(val: unknown): number[] {
   return val.filter((d): d is number => typeof d === 'number' && Number.isInteger(d));
 }
 
+function itemKey(item: Item): string | null {
+  return typeof item.key === 'string' && item.key ? item.key : null;
+}
+
+function storedTags(item: Item): string[] {
+  return Array.isArray(item.tags) ? (item.tags as string[]) : [];
+}
+
+/** Translated name/description plus the stored identity fields every sheet item carries. */
+function baseItemFields(
+  item: Item,
+  key: string | null,
+  translations: TranslationMap,
+  resolvedValue: number | null,
+) {
+  const name =
+    (key ? translate(translations, key) : null) ??
+    (typeof item.name === 'string' ? item.name : null) ??
+    key;
+
+  const description =
+    (key ? translate(translations, `${key}.description`) : null) ??
+    (typeof item.description === 'string' ? item.description : null) ??
+    '';
+
+  return {
+    ...(key !== null && { key }),
+    ...(name !== null && { name }),
+    description,
+    ...(typeof item.comments === 'string' && { comments: item.comments }),
+    ...(typeof item.source === 'string' && { source: item.source }),
+    ...(typeof item.category === 'string' && { category: item.category }),
+    ...(resolvedValue !== null && { value: resolvedValue }),
+  };
+}
+
+/** Current tier falls back to the stored max tier, then the catalog's. */
+function armorTiers(item: Item, armor: ArmorCatalog | null): { maxTier: number; currentTier: number } {
+  const catalogMaxTier = armor?.maxTier ?? 0;
+  const storedMaxTier = safeInt(item.maxTier);
+  return {
+    maxTier: storedMaxTier ?? catalogMaxTier,
+    currentTier: safeInt(item.currentTier) ?? storedMaxTier ?? catalogMaxTier,
+  };
+}
+
 // ── Item resolution (mirrors resolve_character_inventory_items) ───────────────
 
 function resolveInventoryItem(
@@ -174,30 +220,19 @@ function resolveInventoryItem(
   petMap: Map<string, PetCatalog>,
   translations: TranslationMap,
 ): SheetItem {
-  const key = typeof item.key === 'string' && item.key ? item.key : null;
+  const key = itemKey(item);
   const weapon = key ? weaponMap.get(key) ?? null : null;
   const armor  = key ? armorMap.get(key)  ?? null : null;
   const equip  = key ? equipMap.get(key)  ?? null : null;
   const pet    = key ? petMap.get(key)    ?? null : null;
-
-  const name =
-    (key ? translate(translations, key) : null) ??
-    (typeof item.name === 'string' ? item.name : null) ??
-    key ??
-    null;
-
-  const description =
-    (key ? translate(translations, `${key}.description`) : null) ??
-    (typeof item.description === 'string' ? item.description : null) ??
-    '';
 
   // Value: stored numeric preferred; catalog fallback (pets excluded per SQL)
   const catalogValue = weapon?.value ?? armor?.value ?? equip?.value ?? null;
   const resolvedValue = safeInt(item.value) ?? catalogValue;
 
   // Tags: union of stored + all catalog tables (SQL UNION ALL + DISTINCT + sorted)
-  const storedTags = Array.isArray(item.tags) ? (item.tags as string[]) : [];
-  const resolvedTags = mergeUniqueStrings(storedTags, [
+  const tags = storedTags(item);
+  const resolvedTags = mergeUniqueStrings(tags, [
     ...(weapon?.tags ?? []),
     ...(armor?.tags ?? []),
     ...(equip?.tags ?? []),
@@ -237,16 +272,10 @@ function resolveInventoryItem(
   const modifiers = Array.isArray(item.modifiers) ? item.modifiers : [];
 
   // Armor tier: added when catalog match OR stored tags include 'armor'
-  const isArmorItem = armor !== null || storedTags.includes('armor');
+  const isArmorItem = armor !== null || tags.includes('armor');
 
-  const result: SheetItem = {
-    ...(key !== null && { key }),
-    ...(name !== null && { name }),
-    description,
-    ...(typeof item.comments === 'string' && { comments: item.comments }),
-    ...(typeof item.source === 'string' && { source: item.source }),
-    ...(typeof item.category === 'string' && { category: item.category }),
-    ...(resolvedValue !== null && { value: resolvedValue }),
+  return {
+    ...baseItemFields(item, key, translations, resolvedValue),
     tags: resolvedTags,
     dice: resolvedDice,
     uses,
@@ -254,17 +283,8 @@ function resolveInventoryItem(
     ...(amount !== null && { amount }),
     ...(useCountRule !== null && { useCountRule }),
     modifiers,
+    ...(isArmorItem && armorTiers(item, armor)),
   };
-
-  if (isArmorItem) {
-    const catalogMaxTier = armor?.maxTier ?? 0;
-    const storedMaxTier    = safeInt(item.maxTier);
-    const storedCurrentTier = safeInt(item.currentTier);
-    result.maxTier    = storedMaxTier    ?? catalogMaxTier;
-    result.currentTier = storedCurrentTier ?? storedMaxTier ?? catalogMaxTier;
-  }
-
-  return result;
 }
 
 // ── Equipped weapon resolution (mirrors resolve_character_equipped_weapons) ───
@@ -274,21 +294,10 @@ function resolveEquippedWeapon(
   weaponMap: Map<string, WeaponCatalog>,
   translations: TranslationMap,
 ): SheetWeapon {
-  const key = typeof item.key === 'string' && item.key ? item.key : null;
+  const key = itemKey(item);
   const weapon = key ? weaponMap.get(key) ?? null : null;
 
-  const name =
-    (key ? translate(translations, key) : null) ??
-    (typeof item.name === 'string' ? item.name : null) ??
-    key ?? null;
-
-  const description =
-    (key ? translate(translations, `${key}.description`) : null) ??
-    (typeof item.description === 'string' ? item.description : null) ??
-    '';
-
-  const storedTags = Array.isArray(item.tags) ? (item.tags as string[]) : [];
-  const resolvedTags = mergeUniqueStrings(storedTags, weapon?.tags ?? []);
+  const resolvedTags = mergeUniqueStrings(storedTags(item), weapon?.tags ?? []);
 
   const storedDice = safeIntArray(item.dice);
   const resolvedDice = mergeUniqueInts(storedDice, weapon?.dice ?? []);
@@ -302,13 +311,7 @@ function resolveEquippedWeapon(
   const modifiers = Array.isArray(item.modifiers) ? item.modifiers : [];
 
   return {
-    ...(key !== null && { key }),
-    ...(name !== null && { name }),
-    description,
-    ...(typeof item.comments === 'string' && { comments: item.comments }),
-    ...(typeof item.source === 'string' && { source: item.source }),
-    ...(typeof item.category === 'string' && { category: item.category }),
-    ...(resolvedValue !== null && { value: resolvedValue }),
+    ...baseItemFields(item, key, translations, resolvedValue),
     dice: resolvedDice,
     tags: resolvedTags,
     ...(ammoType !== null && { ammoType }),
@@ -323,46 +326,22 @@ function resolveEquippedArmor(
   armorMap: Map<string, ArmorCatalog>,
   translations: TranslationMap,
 ): SheetArmor {
-  const key = typeof item.key === 'string' && item.key ? item.key : null;
+  const key = itemKey(item);
   const armor = key ? armorMap.get(key) ?? null : null;
 
-  const name =
-    (key ? translate(translations, key) : null) ??
-    (typeof item.name === 'string' ? item.name : null) ??
-    key ?? null;
-
-  const description =
-    (key ? translate(translations, `${key}.description`) : null) ??
-    (typeof item.description === 'string' ? item.description : null) ??
-    '';
-
-  const storedTags = Array.isArray(item.tags) ? (item.tags as string[]) : [];
-  const resolvedTags = mergeUniqueStrings(storedTags, armor?.tags ?? []);
+  const resolvedTags = mergeUniqueStrings(storedTags(item), armor?.tags ?? []);
 
   const storedDice = safeIntArray(item.dice);
   const resolvedDice = mergeUniqueInts(storedDice, armor?.dice ?? []);
 
   const resolvedValue = safeInt(item.value) ?? armor?.value ?? null;
 
-  const catalogMaxTier    = armor?.maxTier ?? 0;
-  const storedMaxTier     = safeInt(item.maxTier);
-  const storedCurrentTier = safeInt(item.currentTier);
-  const resolvedMaxTier    = storedMaxTier ?? catalogMaxTier;
-  const resolvedCurrentTier = storedCurrentTier ?? storedMaxTier ?? catalogMaxTier;
-
   const modifiers = Array.isArray(item.modifiers) ? item.modifiers : [];
 
   return {
-    ...(key !== null && { key }),
-    ...(name !== null && { name }),
-    description,
-    ...(typeof item.comments === 'string' && { comments: item.comments }),
-    ...(typeof item.source === 'string' && { source: item.source }),
-    ...(typeof item.category === 'string' && { category: item.category }),
-    ...(resolvedValue !== null && { value: resolvedValue }),
+    ...baseItemFields(item, key, translations, resolvedValue),
     dice: resolvedDice,
-    maxTier:    resolvedMaxTier,
-    currentTier: resolvedCurrentTier,
+    ...armorTiers(item, armor),
     tags: resolvedTags,
     modifiers,
   };

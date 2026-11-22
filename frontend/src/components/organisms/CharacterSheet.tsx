@@ -1,6 +1,6 @@
 import { useCharacter } from '@/CharacterContext/CharacterContext';
 import { Abilities } from '@/components/organisms/Abilities';
-import { BackpackSection } from '@/components/organisms/StorageSection';
+import { StorageSection } from '@/components/organisms/StorageSection';
 import { CharacterDescriptors } from '@/components/molecules/character-descriptors/CharacterDescriptors';
 import { CharacterNameAndClass } from '@/components/molecules/character/CharacterNameAndClass';
 import MiseryTrack from '@/components/molecules/character/MiseryTrack';
@@ -17,7 +17,7 @@ import {
     SummaryBar,
 } from '@/components';
 import { SectionAccordion } from '@/components/molecules/character/SectionAccordion';
-import GettingBetterPanel from '@/components/organisms/getting-better/GettingBetterPanel';
+import { GettingBetterPanel } from '@/components/organisms/getting-better/GettingBetterPanel';
 import {
     isConsumableUseItem,
     isPetItem,
@@ -207,7 +207,7 @@ export function CharacterSheet({
                         title={t('equipment.storedItems')}
                         defaultExpanded={defaultExpanded}
                     >
-                        <BackpackSection showTitle={false} />
+                        <StorageSection showTitle={false} />
                     </SectionAccordion>
                 )}
 

@@ -320,7 +320,14 @@ export interface paths {
                     headers: {
                         [name: string]: unknown;
                     };
-                    content?: never;
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            status: "ok";
+                            /** Format: date-time */
+                            timestamp: string;
+                        };
+                    };
                 };
             };
         };
@@ -1626,9 +1633,21 @@ export interface paths {
                                 source?: string;
                                 category?: string;
                                 value?: number;
-                                uses?: boolean[];
                                 dice?: number[];
                                 tags?: string[];
+                                modifiers?: {
+                                    id?: string;
+                                    name?: string;
+                                    value?: number;
+                                    source?: string;
+                                    /** @enum {string} */
+                                    statistic?: "strength" | "agility" | "presence" | "toughness";
+                                    exclude?: string[];
+                                    /** @enum {string} */
+                                    scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
+                                    comment?: string;
+                                }[];
+                                uses?: boolean[];
                                 maxTier?: number;
                                 currentTier?: number;
                                 amount?: number;
@@ -1638,20 +1657,8 @@ export interface paths {
                                     mode?: "fixed" | "fixedPlusModifier";
                                     base?: number;
                                     /** @enum {string} */
-                                    statistic?: "agility" | "strength" | "presence" | "toughness";
+                                    statistic?: "strength" | "agility" | "presence" | "toughness";
                                 };
-                                modifiers?: {
-                                    id?: string;
-                                    name?: string;
-                                    value?: number;
-                                    source?: string;
-                                    /** @enum {string} */
-                                    statistic?: "agility" | "strength" | "presence" | "toughness";
-                                    exclude?: string[];
-                                    /** @enum {string} */
-                                    scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
-                                    comment?: string;
-                                }[];
                             }[];
                             storage?: {
                                 key?: string;
@@ -1661,9 +1668,21 @@ export interface paths {
                                 source?: string;
                                 category?: string;
                                 value?: number;
-                                uses?: boolean[];
                                 dice?: number[];
                                 tags?: string[];
+                                modifiers?: {
+                                    id?: string;
+                                    name?: string;
+                                    value?: number;
+                                    source?: string;
+                                    /** @enum {string} */
+                                    statistic?: "strength" | "agility" | "presence" | "toughness";
+                                    exclude?: string[];
+                                    /** @enum {string} */
+                                    scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
+                                    comment?: string;
+                                }[];
+                                uses?: boolean[];
                                 maxTier?: number;
                                 currentTier?: number;
                                 amount?: number;
@@ -1673,20 +1692,8 @@ export interface paths {
                                     mode?: "fixed" | "fixedPlusModifier";
                                     base?: number;
                                     /** @enum {string} */
-                                    statistic?: "agility" | "strength" | "presence" | "toughness";
+                                    statistic?: "strength" | "agility" | "presence" | "toughness";
                                 };
-                                modifiers?: {
-                                    id?: string;
-                                    name?: string;
-                                    value?: number;
-                                    source?: string;
-                                    /** @enum {string} */
-                                    statistic?: "agility" | "strength" | "presence" | "toughness";
-                                    exclude?: string[];
-                                    /** @enum {string} */
-                                    scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
-                                    comment?: string;
-                                }[];
                             }[];
                             equippedWeapons?: {
                                 key?: string;
@@ -1698,19 +1705,19 @@ export interface paths {
                                 value?: number;
                                 dice?: number[];
                                 tags?: string[];
-                                ammoType?: string;
                                 modifiers?: {
                                     id?: string;
                                     name?: string;
                                     value?: number;
                                     source?: string;
                                     /** @enum {string} */
-                                    statistic?: "agility" | "strength" | "presence" | "toughness";
+                                    statistic?: "strength" | "agility" | "presence" | "toughness";
                                     exclude?: string[];
                                     /** @enum {string} */
                                     scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
                                     comment?: string;
                                 }[];
+                                ammoType?: string;
                             }[];
                             equippedArmor?: {
                                 key?: string;
@@ -1721,8 +1728,6 @@ export interface paths {
                                 category?: string;
                                 value?: number;
                                 dice?: number[];
-                                maxTier?: number;
-                                currentTier?: number;
                                 tags?: string[];
                                 modifiers?: {
                                     id?: string;
@@ -1730,12 +1735,14 @@ export interface paths {
                                     value?: number;
                                     source?: string;
                                     /** @enum {string} */
-                                    statistic?: "agility" | "strength" | "presence" | "toughness";
+                                    statistic?: "strength" | "agility" | "presence" | "toughness";
                                     exclude?: string[];
                                     /** @enum {string} */
                                     scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
                                     comment?: string;
                                 }[];
+                                maxTier?: number;
+                                currentTier?: number;
                             } | null;
                             modifiers?: {
                                 id?: string;
@@ -1743,7 +1750,7 @@ export interface paths {
                                 value?: number;
                                 source?: string;
                                 /** @enum {string} */
-                                statistic?: "agility" | "strength" | "presence" | "toughness";
+                                statistic?: "strength" | "agility" | "presence" | "toughness";
                                 exclude?: string[];
                                 /** @enum {string} */
                                 scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
@@ -1753,7 +1760,7 @@ export interface paths {
                                 value?: number;
                                 source?: string;
                                 /** @enum {string} */
-                                statistic?: "agility" | "strength" | "presence" | "toughness";
+                                statistic?: "strength" | "agility" | "presence" | "toughness";
                                 exclude?: string[];
                                 /** @enum {string} */
                                 origin?: "armor" | "weapon" | "pet" | "system";
@@ -2045,9 +2052,21 @@ export interface paths {
                                     source?: string;
                                     category?: string;
                                     value?: number;
-                                    uses?: boolean[];
                                     dice?: number[];
                                     tags?: string[];
+                                    modifiers?: {
+                                        id?: string;
+                                        name?: string;
+                                        value?: number;
+                                        source?: string;
+                                        /** @enum {string} */
+                                        statistic?: "strength" | "agility" | "presence" | "toughness";
+                                        exclude?: string[];
+                                        /** @enum {string} */
+                                        scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
+                                        comment?: string;
+                                    }[];
+                                    uses?: boolean[];
                                     maxTier?: number;
                                     currentTier?: number;
                                     amount?: number;
@@ -2057,20 +2076,8 @@ export interface paths {
                                         mode?: "fixed" | "fixedPlusModifier";
                                         base?: number;
                                         /** @enum {string} */
-                                        statistic?: "agility" | "strength" | "presence" | "toughness";
+                                        statistic?: "strength" | "agility" | "presence" | "toughness";
                                     };
-                                    modifiers?: {
-                                        id?: string;
-                                        name?: string;
-                                        value?: number;
-                                        source?: string;
-                                        /** @enum {string} */
-                                        statistic?: "agility" | "strength" | "presence" | "toughness";
-                                        exclude?: string[];
-                                        /** @enum {string} */
-                                        scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
-                                        comment?: string;
-                                    }[];
                                 }[];
                                 storage?: {
                                     key?: string;
@@ -2080,9 +2087,21 @@ export interface paths {
                                     source?: string;
                                     category?: string;
                                     value?: number;
-                                    uses?: boolean[];
                                     dice?: number[];
                                     tags?: string[];
+                                    modifiers?: {
+                                        id?: string;
+                                        name?: string;
+                                        value?: number;
+                                        source?: string;
+                                        /** @enum {string} */
+                                        statistic?: "strength" | "agility" | "presence" | "toughness";
+                                        exclude?: string[];
+                                        /** @enum {string} */
+                                        scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
+                                        comment?: string;
+                                    }[];
+                                    uses?: boolean[];
                                     maxTier?: number;
                                     currentTier?: number;
                                     amount?: number;
@@ -2092,20 +2111,8 @@ export interface paths {
                                         mode?: "fixed" | "fixedPlusModifier";
                                         base?: number;
                                         /** @enum {string} */
-                                        statistic?: "agility" | "strength" | "presence" | "toughness";
+                                        statistic?: "strength" | "agility" | "presence" | "toughness";
                                     };
-                                    modifiers?: {
-                                        id?: string;
-                                        name?: string;
-                                        value?: number;
-                                        source?: string;
-                                        /** @enum {string} */
-                                        statistic?: "agility" | "strength" | "presence" | "toughness";
-                                        exclude?: string[];
-                                        /** @enum {string} */
-                                        scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
-                                        comment?: string;
-                                    }[];
                                 }[];
                                 equippedWeapons?: {
                                     key?: string;
@@ -2117,19 +2124,19 @@ export interface paths {
                                     value?: number;
                                     dice?: number[];
                                     tags?: string[];
-                                    ammoType?: string;
                                     modifiers?: {
                                         id?: string;
                                         name?: string;
                                         value?: number;
                                         source?: string;
                                         /** @enum {string} */
-                                        statistic?: "agility" | "strength" | "presence" | "toughness";
+                                        statistic?: "strength" | "agility" | "presence" | "toughness";
                                         exclude?: string[];
                                         /** @enum {string} */
                                         scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
                                         comment?: string;
                                     }[];
+                                    ammoType?: string;
                                 }[];
                                 equippedArmor?: {
                                     key?: string;
@@ -2140,8 +2147,6 @@ export interface paths {
                                     category?: string;
                                     value?: number;
                                     dice?: number[];
-                                    maxTier?: number;
-                                    currentTier?: number;
                                     tags?: string[];
                                     modifiers?: {
                                         id?: string;
@@ -2149,12 +2154,14 @@ export interface paths {
                                         value?: number;
                                         source?: string;
                                         /** @enum {string} */
-                                        statistic?: "agility" | "strength" | "presence" | "toughness";
+                                        statistic?: "strength" | "agility" | "presence" | "toughness";
                                         exclude?: string[];
                                         /** @enum {string} */
                                         scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
                                         comment?: string;
                                     }[];
+                                    maxTier?: number;
+                                    currentTier?: number;
                                 } | null;
                                 modifiers?: {
                                     id?: string;
@@ -2162,7 +2169,7 @@ export interface paths {
                                     value?: number;
                                     source?: string;
                                     /** @enum {string} */
-                                    statistic?: "agility" | "strength" | "presence" | "toughness";
+                                    statistic?: "strength" | "agility" | "presence" | "toughness";
                                     exclude?: string[];
                                     /** @enum {string} */
                                     scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
@@ -2172,7 +2179,7 @@ export interface paths {
                                     value?: number;
                                     source?: string;
                                     /** @enum {string} */
-                                    statistic?: "agility" | "strength" | "presence" | "toughness";
+                                    statistic?: "strength" | "agility" | "presence" | "toughness";
                                     exclude?: string[];
                                     /** @enum {string} */
                                     origin?: "armor" | "weapon" | "pet" | "system";
@@ -2477,9 +2484,21 @@ export interface paths {
                                     source?: string;
                                     category?: string;
                                     value?: number;
-                                    uses?: boolean[];
                                     dice?: number[];
                                     tags?: string[];
+                                    modifiers?: {
+                                        id?: string;
+                                        name?: string;
+                                        value?: number;
+                                        source?: string;
+                                        /** @enum {string} */
+                                        statistic?: "strength" | "agility" | "presence" | "toughness";
+                                        exclude?: string[];
+                                        /** @enum {string} */
+                                        scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
+                                        comment?: string;
+                                    }[];
+                                    uses?: boolean[];
                                     maxTier?: number;
                                     currentTier?: number;
                                     amount?: number;
@@ -2489,20 +2508,8 @@ export interface paths {
                                         mode?: "fixed" | "fixedPlusModifier";
                                         base?: number;
                                         /** @enum {string} */
-                                        statistic?: "agility" | "strength" | "presence" | "toughness";
+                                        statistic?: "strength" | "agility" | "presence" | "toughness";
                                     };
-                                    modifiers?: {
-                                        id?: string;
-                                        name?: string;
-                                        value?: number;
-                                        source?: string;
-                                        /** @enum {string} */
-                                        statistic?: "agility" | "strength" | "presence" | "toughness";
-                                        exclude?: string[];
-                                        /** @enum {string} */
-                                        scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
-                                        comment?: string;
-                                    }[];
                                 }[];
                                 storage?: {
                                     key?: string;
@@ -2512,9 +2519,21 @@ export interface paths {
                                     source?: string;
                                     category?: string;
                                     value?: number;
-                                    uses?: boolean[];
                                     dice?: number[];
                                     tags?: string[];
+                                    modifiers?: {
+                                        id?: string;
+                                        name?: string;
+                                        value?: number;
+                                        source?: string;
+                                        /** @enum {string} */
+                                        statistic?: "strength" | "agility" | "presence" | "toughness";
+                                        exclude?: string[];
+                                        /** @enum {string} */
+                                        scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
+                                        comment?: string;
+                                    }[];
+                                    uses?: boolean[];
                                     maxTier?: number;
                                     currentTier?: number;
                                     amount?: number;
@@ -2524,20 +2543,8 @@ export interface paths {
                                         mode?: "fixed" | "fixedPlusModifier";
                                         base?: number;
                                         /** @enum {string} */
-                                        statistic?: "agility" | "strength" | "presence" | "toughness";
+                                        statistic?: "strength" | "agility" | "presence" | "toughness";
                                     };
-                                    modifiers?: {
-                                        id?: string;
-                                        name?: string;
-                                        value?: number;
-                                        source?: string;
-                                        /** @enum {string} */
-                                        statistic?: "agility" | "strength" | "presence" | "toughness";
-                                        exclude?: string[];
-                                        /** @enum {string} */
-                                        scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
-                                        comment?: string;
-                                    }[];
                                 }[];
                                 equippedWeapons?: {
                                     key?: string;
@@ -2549,19 +2556,19 @@ export interface paths {
                                     value?: number;
                                     dice?: number[];
                                     tags?: string[];
-                                    ammoType?: string;
                                     modifiers?: {
                                         id?: string;
                                         name?: string;
                                         value?: number;
                                         source?: string;
                                         /** @enum {string} */
-                                        statistic?: "agility" | "strength" | "presence" | "toughness";
+                                        statistic?: "strength" | "agility" | "presence" | "toughness";
                                         exclude?: string[];
                                         /** @enum {string} */
                                         scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
                                         comment?: string;
                                     }[];
+                                    ammoType?: string;
                                 }[];
                                 equippedArmor?: {
                                     key?: string;
@@ -2572,8 +2579,6 @@ export interface paths {
                                     category?: string;
                                     value?: number;
                                     dice?: number[];
-                                    maxTier?: number;
-                                    currentTier?: number;
                                     tags?: string[];
                                     modifiers?: {
                                         id?: string;
@@ -2581,12 +2586,14 @@ export interface paths {
                                         value?: number;
                                         source?: string;
                                         /** @enum {string} */
-                                        statistic?: "agility" | "strength" | "presence" | "toughness";
+                                        statistic?: "strength" | "agility" | "presence" | "toughness";
                                         exclude?: string[];
                                         /** @enum {string} */
                                         scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
                                         comment?: string;
                                     }[];
+                                    maxTier?: number;
+                                    currentTier?: number;
                                 } | null;
                                 modifiers?: {
                                     id?: string;
@@ -2594,7 +2601,7 @@ export interface paths {
                                     value?: number;
                                     source?: string;
                                     /** @enum {string} */
-                                    statistic?: "agility" | "strength" | "presence" | "toughness";
+                                    statistic?: "strength" | "agility" | "presence" | "toughness";
                                     exclude?: string[];
                                     /** @enum {string} */
                                     scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
@@ -2604,7 +2611,7 @@ export interface paths {
                                     value?: number;
                                     source?: string;
                                     /** @enum {string} */
-                                    statistic?: "agility" | "strength" | "presence" | "toughness";
+                                    statistic?: "strength" | "agility" | "presence" | "toughness";
                                     exclude?: string[];
                                     /** @enum {string} */
                                     origin?: "armor" | "weapon" | "pet" | "system";
@@ -3032,9 +3039,21 @@ export interface paths {
                                 source?: string;
                                 category?: string;
                                 value?: number;
-                                uses?: boolean[];
                                 dice?: number[];
                                 tags?: string[];
+                                modifiers?: {
+                                    id?: string;
+                                    name?: string;
+                                    value?: number;
+                                    source?: string;
+                                    /** @enum {string} */
+                                    statistic?: "strength" | "agility" | "presence" | "toughness";
+                                    exclude?: string[];
+                                    /** @enum {string} */
+                                    scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
+                                    comment?: string;
+                                }[];
+                                uses?: boolean[];
                                 maxTier?: number;
                                 currentTier?: number;
                                 amount?: number;
@@ -3044,20 +3063,8 @@ export interface paths {
                                     mode?: "fixed" | "fixedPlusModifier";
                                     base?: number;
                                     /** @enum {string} */
-                                    statistic?: "agility" | "strength" | "presence" | "toughness";
+                                    statistic?: "strength" | "agility" | "presence" | "toughness";
                                 };
-                                modifiers?: {
-                                    id?: string;
-                                    name?: string;
-                                    value?: number;
-                                    source?: string;
-                                    /** @enum {string} */
-                                    statistic?: "agility" | "strength" | "presence" | "toughness";
-                                    exclude?: string[];
-                                    /** @enum {string} */
-                                    scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
-                                    comment?: string;
-                                }[];
                             }[];
                             storage?: {
                                 key?: string;
@@ -3067,9 +3074,21 @@ export interface paths {
                                 source?: string;
                                 category?: string;
                                 value?: number;
-                                uses?: boolean[];
                                 dice?: number[];
                                 tags?: string[];
+                                modifiers?: {
+                                    id?: string;
+                                    name?: string;
+                                    value?: number;
+                                    source?: string;
+                                    /** @enum {string} */
+                                    statistic?: "strength" | "agility" | "presence" | "toughness";
+                                    exclude?: string[];
+                                    /** @enum {string} */
+                                    scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
+                                    comment?: string;
+                                }[];
+                                uses?: boolean[];
                                 maxTier?: number;
                                 currentTier?: number;
                                 amount?: number;
@@ -3079,20 +3098,8 @@ export interface paths {
                                     mode?: "fixed" | "fixedPlusModifier";
                                     base?: number;
                                     /** @enum {string} */
-                                    statistic?: "agility" | "strength" | "presence" | "toughness";
+                                    statistic?: "strength" | "agility" | "presence" | "toughness";
                                 };
-                                modifiers?: {
-                                    id?: string;
-                                    name?: string;
-                                    value?: number;
-                                    source?: string;
-                                    /** @enum {string} */
-                                    statistic?: "agility" | "strength" | "presence" | "toughness";
-                                    exclude?: string[];
-                                    /** @enum {string} */
-                                    scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
-                                    comment?: string;
-                                }[];
                             }[];
                             equippedWeapons?: {
                                 key?: string;
@@ -3104,19 +3111,19 @@ export interface paths {
                                 value?: number;
                                 dice?: number[];
                                 tags?: string[];
-                                ammoType?: string;
                                 modifiers?: {
                                     id?: string;
                                     name?: string;
                                     value?: number;
                                     source?: string;
                                     /** @enum {string} */
-                                    statistic?: "agility" | "strength" | "presence" | "toughness";
+                                    statistic?: "strength" | "agility" | "presence" | "toughness";
                                     exclude?: string[];
                                     /** @enum {string} */
                                     scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
                                     comment?: string;
                                 }[];
+                                ammoType?: string;
                             }[];
                             equippedArmor?: {
                                 key?: string;
@@ -3127,8 +3134,6 @@ export interface paths {
                                 category?: string;
                                 value?: number;
                                 dice?: number[];
-                                maxTier?: number;
-                                currentTier?: number;
                                 tags?: string[];
                                 modifiers?: {
                                     id?: string;
@@ -3136,12 +3141,14 @@ export interface paths {
                                     value?: number;
                                     source?: string;
                                     /** @enum {string} */
-                                    statistic?: "agility" | "strength" | "presence" | "toughness";
+                                    statistic?: "strength" | "agility" | "presence" | "toughness";
                                     exclude?: string[];
                                     /** @enum {string} */
                                     scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
                                     comment?: string;
                                 }[];
+                                maxTier?: number;
+                                currentTier?: number;
                             } | null;
                             modifiers?: {
                                 id?: string;
@@ -3149,7 +3156,7 @@ export interface paths {
                                 value?: number;
                                 source?: string;
                                 /** @enum {string} */
-                                statistic?: "agility" | "strength" | "presence" | "toughness";
+                                statistic?: "strength" | "agility" | "presence" | "toughness";
                                 exclude?: string[];
                                 /** @enum {string} */
                                 scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
@@ -3159,7 +3166,7 @@ export interface paths {
                                 value?: number;
                                 source?: string;
                                 /** @enum {string} */
-                                statistic?: "agility" | "strength" | "presence" | "toughness";
+                                statistic?: "strength" | "agility" | "presence" | "toughness";
                                 exclude?: string[];
                                 /** @enum {string} */
                                 origin?: "armor" | "weapon" | "pet" | "system";
@@ -3461,9 +3468,21 @@ export interface paths {
                             source?: string;
                             category?: string;
                             value?: number;
-                            uses?: boolean[];
                             dice?: number[];
                             tags?: string[];
+                            modifiers?: {
+                                id?: string;
+                                name?: string;
+                                value?: number;
+                                source?: string;
+                                /** @enum {string} */
+                                statistic?: "strength" | "agility" | "presence" | "toughness";
+                                exclude?: string[];
+                                /** @enum {string} */
+                                scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
+                                comment?: string;
+                            }[];
+                            uses?: boolean[];
                             maxTier?: number;
                             currentTier?: number;
                             amount?: number;
@@ -3473,20 +3492,8 @@ export interface paths {
                                 mode?: "fixed" | "fixedPlusModifier";
                                 base?: number;
                                 /** @enum {string} */
-                                statistic?: "agility" | "strength" | "presence" | "toughness";
+                                statistic?: "strength" | "agility" | "presence" | "toughness";
                             };
-                            modifiers?: {
-                                id?: string;
-                                name?: string;
-                                value?: number;
-                                source?: string;
-                                /** @enum {string} */
-                                statistic?: "agility" | "strength" | "presence" | "toughness";
-                                exclude?: string[];
-                                /** @enum {string} */
-                                scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
-                                comment?: string;
-                            }[];
                         }[];
                         storage?: {
                             key?: string;
@@ -3496,9 +3503,21 @@ export interface paths {
                             source?: string;
                             category?: string;
                             value?: number;
-                            uses?: boolean[];
                             dice?: number[];
                             tags?: string[];
+                            modifiers?: {
+                                id?: string;
+                                name?: string;
+                                value?: number;
+                                source?: string;
+                                /** @enum {string} */
+                                statistic?: "strength" | "agility" | "presence" | "toughness";
+                                exclude?: string[];
+                                /** @enum {string} */
+                                scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
+                                comment?: string;
+                            }[];
+                            uses?: boolean[];
                             maxTier?: number;
                             currentTier?: number;
                             amount?: number;
@@ -3508,20 +3527,8 @@ export interface paths {
                                 mode?: "fixed" | "fixedPlusModifier";
                                 base?: number;
                                 /** @enum {string} */
-                                statistic?: "agility" | "strength" | "presence" | "toughness";
+                                statistic?: "strength" | "agility" | "presence" | "toughness";
                             };
-                            modifiers?: {
-                                id?: string;
-                                name?: string;
-                                value?: number;
-                                source?: string;
-                                /** @enum {string} */
-                                statistic?: "agility" | "strength" | "presence" | "toughness";
-                                exclude?: string[];
-                                /** @enum {string} */
-                                scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
-                                comment?: string;
-                            }[];
                         }[];
                         equippedWeapons?: {
                             key?: string;
@@ -3533,19 +3540,19 @@ export interface paths {
                             value?: number;
                             dice?: number[];
                             tags?: string[];
-                            ammoType?: string;
                             modifiers?: {
                                 id?: string;
                                 name?: string;
                                 value?: number;
                                 source?: string;
                                 /** @enum {string} */
-                                statistic?: "agility" | "strength" | "presence" | "toughness";
+                                statistic?: "strength" | "agility" | "presence" | "toughness";
                                 exclude?: string[];
                                 /** @enum {string} */
                                 scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
                                 comment?: string;
                             }[];
+                            ammoType?: string;
                         }[];
                         equippedArmor?: {
                             key?: string;
@@ -3556,8 +3563,6 @@ export interface paths {
                             category?: string;
                             value?: number;
                             dice?: number[];
-                            maxTier?: number;
-                            currentTier?: number;
                             tags?: string[];
                             modifiers?: {
                                 id?: string;
@@ -3565,12 +3570,14 @@ export interface paths {
                                 value?: number;
                                 source?: string;
                                 /** @enum {string} */
-                                statistic?: "agility" | "strength" | "presence" | "toughness";
+                                statistic?: "strength" | "agility" | "presence" | "toughness";
                                 exclude?: string[];
                                 /** @enum {string} */
                                 scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
                                 comment?: string;
                             }[];
+                            maxTier?: number;
+                            currentTier?: number;
                         } | null;
                         modifiers?: {
                             id?: string;
@@ -3578,7 +3585,7 @@ export interface paths {
                             value?: number;
                             source?: string;
                             /** @enum {string} */
-                            statistic?: "agility" | "strength" | "presence" | "toughness";
+                            statistic?: "strength" | "agility" | "presence" | "toughness";
                             exclude?: string[];
                             /** @enum {string} */
                             scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
@@ -3647,9 +3654,21 @@ export interface paths {
                                 source?: string;
                                 category?: string;
                                 value?: number;
-                                uses?: boolean[];
                                 dice?: number[];
                                 tags?: string[];
+                                modifiers?: {
+                                    id?: string;
+                                    name?: string;
+                                    value?: number;
+                                    source?: string;
+                                    /** @enum {string} */
+                                    statistic?: "strength" | "agility" | "presence" | "toughness";
+                                    exclude?: string[];
+                                    /** @enum {string} */
+                                    scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
+                                    comment?: string;
+                                }[];
+                                uses?: boolean[];
                                 maxTier?: number;
                                 currentTier?: number;
                                 amount?: number;
@@ -3659,20 +3678,8 @@ export interface paths {
                                     mode?: "fixed" | "fixedPlusModifier";
                                     base?: number;
                                     /** @enum {string} */
-                                    statistic?: "agility" | "strength" | "presence" | "toughness";
+                                    statistic?: "strength" | "agility" | "presence" | "toughness";
                                 };
-                                modifiers?: {
-                                    id?: string;
-                                    name?: string;
-                                    value?: number;
-                                    source?: string;
-                                    /** @enum {string} */
-                                    statistic?: "agility" | "strength" | "presence" | "toughness";
-                                    exclude?: string[];
-                                    /** @enum {string} */
-                                    scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
-                                    comment?: string;
-                                }[];
                             }[];
                             storage?: {
                                 key?: string;
@@ -3682,9 +3689,21 @@ export interface paths {
                                 source?: string;
                                 category?: string;
                                 value?: number;
-                                uses?: boolean[];
                                 dice?: number[];
                                 tags?: string[];
+                                modifiers?: {
+                                    id?: string;
+                                    name?: string;
+                                    value?: number;
+                                    source?: string;
+                                    /** @enum {string} */
+                                    statistic?: "strength" | "agility" | "presence" | "toughness";
+                                    exclude?: string[];
+                                    /** @enum {string} */
+                                    scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
+                                    comment?: string;
+                                }[];
+                                uses?: boolean[];
                                 maxTier?: number;
                                 currentTier?: number;
                                 amount?: number;
@@ -3694,20 +3713,8 @@ export interface paths {
                                     mode?: "fixed" | "fixedPlusModifier";
                                     base?: number;
                                     /** @enum {string} */
-                                    statistic?: "agility" | "strength" | "presence" | "toughness";
+                                    statistic?: "strength" | "agility" | "presence" | "toughness";
                                 };
-                                modifiers?: {
-                                    id?: string;
-                                    name?: string;
-                                    value?: number;
-                                    source?: string;
-                                    /** @enum {string} */
-                                    statistic?: "agility" | "strength" | "presence" | "toughness";
-                                    exclude?: string[];
-                                    /** @enum {string} */
-                                    scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
-                                    comment?: string;
-                                }[];
                             }[];
                             equippedWeapons?: {
                                 key?: string;
@@ -3719,19 +3726,19 @@ export interface paths {
                                 value?: number;
                                 dice?: number[];
                                 tags?: string[];
-                                ammoType?: string;
                                 modifiers?: {
                                     id?: string;
                                     name?: string;
                                     value?: number;
                                     source?: string;
                                     /** @enum {string} */
-                                    statistic?: "agility" | "strength" | "presence" | "toughness";
+                                    statistic?: "strength" | "agility" | "presence" | "toughness";
                                     exclude?: string[];
                                     /** @enum {string} */
                                     scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
                                     comment?: string;
                                 }[];
+                                ammoType?: string;
                             }[];
                             equippedArmor?: {
                                 key?: string;
@@ -3742,8 +3749,6 @@ export interface paths {
                                 category?: string;
                                 value?: number;
                                 dice?: number[];
-                                maxTier?: number;
-                                currentTier?: number;
                                 tags?: string[];
                                 modifiers?: {
                                     id?: string;
@@ -3751,12 +3756,14 @@ export interface paths {
                                     value?: number;
                                     source?: string;
                                     /** @enum {string} */
-                                    statistic?: "agility" | "strength" | "presence" | "toughness";
+                                    statistic?: "strength" | "agility" | "presence" | "toughness";
                                     exclude?: string[];
                                     /** @enum {string} */
                                     scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
                                     comment?: string;
                                 }[];
+                                maxTier?: number;
+                                currentTier?: number;
                             } | null;
                             modifiers?: {
                                 id?: string;
@@ -3764,7 +3771,7 @@ export interface paths {
                                 value?: number;
                                 source?: string;
                                 /** @enum {string} */
-                                statistic?: "agility" | "strength" | "presence" | "toughness";
+                                statistic?: "strength" | "agility" | "presence" | "toughness";
                                 exclude?: string[];
                                 /** @enum {string} */
                                 scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
@@ -3774,7 +3781,7 @@ export interface paths {
                                 value?: number;
                                 source?: string;
                                 /** @enum {string} */
-                                statistic?: "agility" | "strength" | "presence" | "toughness";
+                                statistic?: "strength" | "agility" | "presence" | "toughness";
                                 exclude?: string[];
                                 /** @enum {string} */
                                 origin?: "armor" | "weapon" | "pet" | "system";
@@ -4897,9 +4904,21 @@ export interface paths {
                                 source?: string;
                                 category?: string;
                                 value?: number;
-                                uses?: boolean[];
                                 dice?: number[];
                                 tags?: string[];
+                                modifiers?: {
+                                    id?: string;
+                                    name?: string;
+                                    value?: number;
+                                    source?: string;
+                                    /** @enum {string} */
+                                    statistic?: "strength" | "agility" | "presence" | "toughness";
+                                    exclude?: string[];
+                                    /** @enum {string} */
+                                    scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
+                                    comment?: string;
+                                }[];
+                                uses?: boolean[];
                                 maxTier?: number;
                                 currentTier?: number;
                                 amount?: number;
@@ -4909,20 +4928,8 @@ export interface paths {
                                     mode?: "fixed" | "fixedPlusModifier";
                                     base?: number;
                                     /** @enum {string} */
-                                    statistic?: "agility" | "strength" | "presence" | "toughness";
+                                    statistic?: "strength" | "agility" | "presence" | "toughness";
                                 };
-                                modifiers?: {
-                                    id?: string;
-                                    name?: string;
-                                    value?: number;
-                                    source?: string;
-                                    /** @enum {string} */
-                                    statistic?: "agility" | "strength" | "presence" | "toughness";
-                                    exclude?: string[];
-                                    /** @enum {string} */
-                                    scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
-                                    comment?: string;
-                                }[];
                             }[];
                             storage?: {
                                 key?: string;
@@ -4932,9 +4939,21 @@ export interface paths {
                                 source?: string;
                                 category?: string;
                                 value?: number;
-                                uses?: boolean[];
                                 dice?: number[];
                                 tags?: string[];
+                                modifiers?: {
+                                    id?: string;
+                                    name?: string;
+                                    value?: number;
+                                    source?: string;
+                                    /** @enum {string} */
+                                    statistic?: "strength" | "agility" | "presence" | "toughness";
+                                    exclude?: string[];
+                                    /** @enum {string} */
+                                    scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
+                                    comment?: string;
+                                }[];
+                                uses?: boolean[];
                                 maxTier?: number;
                                 currentTier?: number;
                                 amount?: number;
@@ -4944,20 +4963,8 @@ export interface paths {
                                     mode?: "fixed" | "fixedPlusModifier";
                                     base?: number;
                                     /** @enum {string} */
-                                    statistic?: "agility" | "strength" | "presence" | "toughness";
+                                    statistic?: "strength" | "agility" | "presence" | "toughness";
                                 };
-                                modifiers?: {
-                                    id?: string;
-                                    name?: string;
-                                    value?: number;
-                                    source?: string;
-                                    /** @enum {string} */
-                                    statistic?: "agility" | "strength" | "presence" | "toughness";
-                                    exclude?: string[];
-                                    /** @enum {string} */
-                                    scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
-                                    comment?: string;
-                                }[];
                             }[];
                             equippedWeapons?: {
                                 key?: string;
@@ -4969,19 +4976,19 @@ export interface paths {
                                 value?: number;
                                 dice?: number[];
                                 tags?: string[];
-                                ammoType?: string;
                                 modifiers?: {
                                     id?: string;
                                     name?: string;
                                     value?: number;
                                     source?: string;
                                     /** @enum {string} */
-                                    statistic?: "agility" | "strength" | "presence" | "toughness";
+                                    statistic?: "strength" | "agility" | "presence" | "toughness";
                                     exclude?: string[];
                                     /** @enum {string} */
                                     scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
                                     comment?: string;
                                 }[];
+                                ammoType?: string;
                             }[];
                             equippedArmor?: {
                                 key?: string;
@@ -4992,8 +4999,6 @@ export interface paths {
                                 category?: string;
                                 value?: number;
                                 dice?: number[];
-                                maxTier?: number;
-                                currentTier?: number;
                                 tags?: string[];
                                 modifiers?: {
                                     id?: string;
@@ -5001,12 +5006,14 @@ export interface paths {
                                     value?: number;
                                     source?: string;
                                     /** @enum {string} */
-                                    statistic?: "agility" | "strength" | "presence" | "toughness";
+                                    statistic?: "strength" | "agility" | "presence" | "toughness";
                                     exclude?: string[];
                                     /** @enum {string} */
                                     scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
                                     comment?: string;
                                 }[];
+                                maxTier?: number;
+                                currentTier?: number;
                             } | null;
                             modifiers?: {
                                 id?: string;
@@ -5014,7 +5021,7 @@ export interface paths {
                                 value?: number;
                                 source?: string;
                                 /** @enum {string} */
-                                statistic?: "agility" | "strength" | "presence" | "toughness";
+                                statistic?: "strength" | "agility" | "presence" | "toughness";
                                 exclude?: string[];
                                 /** @enum {string} */
                                 scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
@@ -5024,7 +5031,7 @@ export interface paths {
                                 value?: number;
                                 source?: string;
                                 /** @enum {string} */
-                                statistic?: "agility" | "strength" | "presence" | "toughness";
+                                statistic?: "strength" | "agility" | "presence" | "toughness";
                                 exclude?: string[];
                                 /** @enum {string} */
                                 origin?: "armor" | "weapon" | "pet" | "system";
@@ -5255,9 +5262,21 @@ export interface paths {
                                 source?: string;
                                 category?: string;
                                 value?: number;
-                                uses?: boolean[];
                                 dice?: number[];
                                 tags?: string[];
+                                modifiers?: {
+                                    id?: string;
+                                    name?: string;
+                                    value?: number;
+                                    source?: string;
+                                    /** @enum {string} */
+                                    statistic?: "strength" | "agility" | "presence" | "toughness";
+                                    exclude?: string[];
+                                    /** @enum {string} */
+                                    scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
+                                    comment?: string;
+                                }[];
+                                uses?: boolean[];
                                 maxTier?: number;
                                 currentTier?: number;
                                 amount?: number;
@@ -5267,20 +5286,8 @@ export interface paths {
                                     mode?: "fixed" | "fixedPlusModifier";
                                     base?: number;
                                     /** @enum {string} */
-                                    statistic?: "agility" | "strength" | "presence" | "toughness";
+                                    statistic?: "strength" | "agility" | "presence" | "toughness";
                                 };
-                                modifiers?: {
-                                    id?: string;
-                                    name?: string;
-                                    value?: number;
-                                    source?: string;
-                                    /** @enum {string} */
-                                    statistic?: "agility" | "strength" | "presence" | "toughness";
-                                    exclude?: string[];
-                                    /** @enum {string} */
-                                    scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
-                                    comment?: string;
-                                }[];
                             }[];
                             storage?: {
                                 key?: string;
@@ -5290,9 +5297,21 @@ export interface paths {
                                 source?: string;
                                 category?: string;
                                 value?: number;
-                                uses?: boolean[];
                                 dice?: number[];
                                 tags?: string[];
+                                modifiers?: {
+                                    id?: string;
+                                    name?: string;
+                                    value?: number;
+                                    source?: string;
+                                    /** @enum {string} */
+                                    statistic?: "strength" | "agility" | "presence" | "toughness";
+                                    exclude?: string[];
+                                    /** @enum {string} */
+                                    scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
+                                    comment?: string;
+                                }[];
+                                uses?: boolean[];
                                 maxTier?: number;
                                 currentTier?: number;
                                 amount?: number;
@@ -5302,20 +5321,8 @@ export interface paths {
                                     mode?: "fixed" | "fixedPlusModifier";
                                     base?: number;
                                     /** @enum {string} */
-                                    statistic?: "agility" | "strength" | "presence" | "toughness";
+                                    statistic?: "strength" | "agility" | "presence" | "toughness";
                                 };
-                                modifiers?: {
-                                    id?: string;
-                                    name?: string;
-                                    value?: number;
-                                    source?: string;
-                                    /** @enum {string} */
-                                    statistic?: "agility" | "strength" | "presence" | "toughness";
-                                    exclude?: string[];
-                                    /** @enum {string} */
-                                    scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
-                                    comment?: string;
-                                }[];
                             }[];
                             equippedWeapons?: {
                                 key?: string;
@@ -5327,19 +5334,19 @@ export interface paths {
                                 value?: number;
                                 dice?: number[];
                                 tags?: string[];
-                                ammoType?: string;
                                 modifiers?: {
                                     id?: string;
                                     name?: string;
                                     value?: number;
                                     source?: string;
                                     /** @enum {string} */
-                                    statistic?: "agility" | "strength" | "presence" | "toughness";
+                                    statistic?: "strength" | "agility" | "presence" | "toughness";
                                     exclude?: string[];
                                     /** @enum {string} */
                                     scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
                                     comment?: string;
                                 }[];
+                                ammoType?: string;
                             }[];
                             equippedArmor?: {
                                 key?: string;
@@ -5350,8 +5357,6 @@ export interface paths {
                                 category?: string;
                                 value?: number;
                                 dice?: number[];
-                                maxTier?: number;
-                                currentTier?: number;
                                 tags?: string[];
                                 modifiers?: {
                                     id?: string;
@@ -5359,12 +5364,14 @@ export interface paths {
                                     value?: number;
                                     source?: string;
                                     /** @enum {string} */
-                                    statistic?: "agility" | "strength" | "presence" | "toughness";
+                                    statistic?: "strength" | "agility" | "presence" | "toughness";
                                     exclude?: string[];
                                     /** @enum {string} */
                                     scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
                                     comment?: string;
                                 }[];
+                                maxTier?: number;
+                                currentTier?: number;
                             } | null;
                             modifiers?: {
                                 id?: string;
@@ -5372,7 +5379,7 @@ export interface paths {
                                 value?: number;
                                 source?: string;
                                 /** @enum {string} */
-                                statistic?: "agility" | "strength" | "presence" | "toughness";
+                                statistic?: "strength" | "agility" | "presence" | "toughness";
                                 exclude?: string[];
                                 /** @enum {string} */
                                 scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
@@ -5382,7 +5389,7 @@ export interface paths {
                                 value?: number;
                                 source?: string;
                                 /** @enum {string} */
-                                statistic?: "agility" | "strength" | "presence" | "toughness";
+                                statistic?: "strength" | "agility" | "presence" | "toughness";
                                 exclude?: string[];
                                 /** @enum {string} */
                                 origin?: "armor" | "weapon" | "pet" | "system";
@@ -8011,9 +8018,21 @@ export interface paths {
                                 source?: string;
                                 category?: string;
                                 value?: number;
-                                uses?: boolean[];
                                 dice?: number[];
                                 tags?: string[];
+                                modifiers?: {
+                                    id?: string;
+                                    name?: string;
+                                    value?: number;
+                                    source?: string;
+                                    /** @enum {string} */
+                                    statistic?: "strength" | "agility" | "presence" | "toughness";
+                                    exclude?: string[];
+                                    /** @enum {string} */
+                                    scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
+                                    comment?: string;
+                                }[];
+                                uses?: boolean[];
                                 maxTier?: number;
                                 currentTier?: number;
                                 amount?: number;
@@ -8023,20 +8042,8 @@ export interface paths {
                                     mode?: "fixed" | "fixedPlusModifier";
                                     base?: number;
                                     /** @enum {string} */
-                                    statistic?: "agility" | "strength" | "presence" | "toughness";
+                                    statistic?: "strength" | "agility" | "presence" | "toughness";
                                 };
-                                modifiers?: {
-                                    id?: string;
-                                    name?: string;
-                                    value?: number;
-                                    source?: string;
-                                    /** @enum {string} */
-                                    statistic?: "agility" | "strength" | "presence" | "toughness";
-                                    exclude?: string[];
-                                    /** @enum {string} */
-                                    scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
-                                    comment?: string;
-                                }[];
                             }[];
                             storage?: {
                                 key?: string;
@@ -8046,9 +8053,21 @@ export interface paths {
                                 source?: string;
                                 category?: string;
                                 value?: number;
-                                uses?: boolean[];
                                 dice?: number[];
                                 tags?: string[];
+                                modifiers?: {
+                                    id?: string;
+                                    name?: string;
+                                    value?: number;
+                                    source?: string;
+                                    /** @enum {string} */
+                                    statistic?: "strength" | "agility" | "presence" | "toughness";
+                                    exclude?: string[];
+                                    /** @enum {string} */
+                                    scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
+                                    comment?: string;
+                                }[];
+                                uses?: boolean[];
                                 maxTier?: number;
                                 currentTier?: number;
                                 amount?: number;
@@ -8058,20 +8077,8 @@ export interface paths {
                                     mode?: "fixed" | "fixedPlusModifier";
                                     base?: number;
                                     /** @enum {string} */
-                                    statistic?: "agility" | "strength" | "presence" | "toughness";
+                                    statistic?: "strength" | "agility" | "presence" | "toughness";
                                 };
-                                modifiers?: {
-                                    id?: string;
-                                    name?: string;
-                                    value?: number;
-                                    source?: string;
-                                    /** @enum {string} */
-                                    statistic?: "agility" | "strength" | "presence" | "toughness";
-                                    exclude?: string[];
-                                    /** @enum {string} */
-                                    scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
-                                    comment?: string;
-                                }[];
                             }[];
                             equippedWeapons?: {
                                 key?: string;
@@ -8083,19 +8090,19 @@ export interface paths {
                                 value?: number;
                                 dice?: number[];
                                 tags?: string[];
-                                ammoType?: string;
                                 modifiers?: {
                                     id?: string;
                                     name?: string;
                                     value?: number;
                                     source?: string;
                                     /** @enum {string} */
-                                    statistic?: "agility" | "strength" | "presence" | "toughness";
+                                    statistic?: "strength" | "agility" | "presence" | "toughness";
                                     exclude?: string[];
                                     /** @enum {string} */
                                     scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
                                     comment?: string;
                                 }[];
+                                ammoType?: string;
                             }[];
                             equippedArmor?: {
                                 key?: string;
@@ -8106,8 +8113,6 @@ export interface paths {
                                 category?: string;
                                 value?: number;
                                 dice?: number[];
-                                maxTier?: number;
-                                currentTier?: number;
                                 tags?: string[];
                                 modifiers?: {
                                     id?: string;
@@ -8115,12 +8120,14 @@ export interface paths {
                                     value?: number;
                                     source?: string;
                                     /** @enum {string} */
-                                    statistic?: "agility" | "strength" | "presence" | "toughness";
+                                    statistic?: "strength" | "agility" | "presence" | "toughness";
                                     exclude?: string[];
                                     /** @enum {string} */
                                     scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
                                     comment?: string;
                                 }[];
+                                maxTier?: number;
+                                currentTier?: number;
                             } | null;
                             modifiers?: {
                                 id?: string;
@@ -8128,7 +8135,7 @@ export interface paths {
                                 value?: number;
                                 source?: string;
                                 /** @enum {string} */
-                                statistic?: "agility" | "strength" | "presence" | "toughness";
+                                statistic?: "strength" | "agility" | "presence" | "toughness";
                                 exclude?: string[];
                                 /** @enum {string} */
                                 scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
@@ -8138,7 +8145,7 @@ export interface paths {
                                 value?: number;
                                 source?: string;
                                 /** @enum {string} */
-                                statistic?: "agility" | "strength" | "presence" | "toughness";
+                                statistic?: "strength" | "agility" | "presence" | "toughness";
                                 exclude?: string[];
                                 /** @enum {string} */
                                 origin?: "armor" | "weapon" | "pet" | "system";
@@ -10793,9 +10800,21 @@ export interface paths {
                                 source?: string;
                                 category?: string;
                                 value?: number;
-                                uses?: boolean[];
                                 dice?: number[];
                                 tags?: string[];
+                                modifiers?: {
+                                    id?: string;
+                                    name?: string;
+                                    value?: number;
+                                    source?: string;
+                                    /** @enum {string} */
+                                    statistic?: "strength" | "agility" | "presence" | "toughness";
+                                    exclude?: string[];
+                                    /** @enum {string} */
+                                    scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
+                                    comment?: string;
+                                }[];
+                                uses?: boolean[];
                                 maxTier?: number;
                                 currentTier?: number;
                                 amount?: number;
@@ -10805,20 +10824,8 @@ export interface paths {
                                     mode?: "fixed" | "fixedPlusModifier";
                                     base?: number;
                                     /** @enum {string} */
-                                    statistic?: "agility" | "strength" | "presence" | "toughness";
+                                    statistic?: "strength" | "agility" | "presence" | "toughness";
                                 };
-                                modifiers?: {
-                                    id?: string;
-                                    name?: string;
-                                    value?: number;
-                                    source?: string;
-                                    /** @enum {string} */
-                                    statistic?: "agility" | "strength" | "presence" | "toughness";
-                                    exclude?: string[];
-                                    /** @enum {string} */
-                                    scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
-                                    comment?: string;
-                                }[];
                             }[];
                             storage?: {
                                 key?: string;
@@ -10828,9 +10835,21 @@ export interface paths {
                                 source?: string;
                                 category?: string;
                                 value?: number;
-                                uses?: boolean[];
                                 dice?: number[];
                                 tags?: string[];
+                                modifiers?: {
+                                    id?: string;
+                                    name?: string;
+                                    value?: number;
+                                    source?: string;
+                                    /** @enum {string} */
+                                    statistic?: "strength" | "agility" | "presence" | "toughness";
+                                    exclude?: string[];
+                                    /** @enum {string} */
+                                    scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
+                                    comment?: string;
+                                }[];
+                                uses?: boolean[];
                                 maxTier?: number;
                                 currentTier?: number;
                                 amount?: number;
@@ -10840,20 +10859,8 @@ export interface paths {
                                     mode?: "fixed" | "fixedPlusModifier";
                                     base?: number;
                                     /** @enum {string} */
-                                    statistic?: "agility" | "strength" | "presence" | "toughness";
+                                    statistic?: "strength" | "agility" | "presence" | "toughness";
                                 };
-                                modifiers?: {
-                                    id?: string;
-                                    name?: string;
-                                    value?: number;
-                                    source?: string;
-                                    /** @enum {string} */
-                                    statistic?: "agility" | "strength" | "presence" | "toughness";
-                                    exclude?: string[];
-                                    /** @enum {string} */
-                                    scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
-                                    comment?: string;
-                                }[];
                             }[];
                             equippedWeapons?: {
                                 key?: string;
@@ -10865,19 +10872,19 @@ export interface paths {
                                 value?: number;
                                 dice?: number[];
                                 tags?: string[];
-                                ammoType?: string;
                                 modifiers?: {
                                     id?: string;
                                     name?: string;
                                     value?: number;
                                     source?: string;
                                     /** @enum {string} */
-                                    statistic?: "agility" | "strength" | "presence" | "toughness";
+                                    statistic?: "strength" | "agility" | "presence" | "toughness";
                                     exclude?: string[];
                                     /** @enum {string} */
                                     scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
                                     comment?: string;
                                 }[];
+                                ammoType?: string;
                             }[];
                             equippedArmor?: {
                                 key?: string;
@@ -10888,8 +10895,6 @@ export interface paths {
                                 category?: string;
                                 value?: number;
                                 dice?: number[];
-                                maxTier?: number;
-                                currentTier?: number;
                                 tags?: string[];
                                 modifiers?: {
                                     id?: string;
@@ -10897,12 +10902,14 @@ export interface paths {
                                     value?: number;
                                     source?: string;
                                     /** @enum {string} */
-                                    statistic?: "agility" | "strength" | "presence" | "toughness";
+                                    statistic?: "strength" | "agility" | "presence" | "toughness";
                                     exclude?: string[];
                                     /** @enum {string} */
                                     scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
                                     comment?: string;
                                 }[];
+                                maxTier?: number;
+                                currentTier?: number;
                             } | null;
                             modifiers?: {
                                 id?: string;
@@ -10910,7 +10917,7 @@ export interface paths {
                                 value?: number;
                                 source?: string;
                                 /** @enum {string} */
-                                statistic?: "agility" | "strength" | "presence" | "toughness";
+                                statistic?: "strength" | "agility" | "presence" | "toughness";
                                 exclude?: string[];
                                 /** @enum {string} */
                                 scope?: "all" | "combat" | "defence" | "tests" | "melee" | "ranged" | "powers";
@@ -10920,7 +10927,7 @@ export interface paths {
                                 value?: number;
                                 source?: string;
                                 /** @enum {string} */
-                                statistic?: "agility" | "strength" | "presence" | "toughness";
+                                statistic?: "strength" | "agility" | "presence" | "toughness";
                                 exclude?: string[];
                                 /** @enum {string} */
                                 origin?: "armor" | "weapon" | "pet" | "system";
@@ -11059,7 +11066,39 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
-                            [key: string]: unknown;
+                            id: string;
+                            partyId: string;
+                            name: string;
+                            type: string;
+                            habitat: string;
+                            description: string;
+                            playerDescription: string;
+                            currentHealth: number;
+                            healthPercent: number;
+                            maxHealth: number;
+                            morale: number;
+                            armorDie: string;
+                            armorDescription: string;
+                            attacks: {
+                                id: string;
+                                name: string;
+                                die?: string;
+                            }[];
+                            specials: {
+                                id: string;
+                                name: string;
+                                description?: string;
+                            }[];
+                            loot: {
+                                id: string;
+                                label: string;
+                                value?: string;
+                            }[];
+                            statuses: {
+                                id: string;
+                                percent: number;
+                                label: string;
+                            }[];
                         }[];
                     };
                 };
@@ -11180,7 +11219,39 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
-                            [key: string]: unknown;
+                            id: string;
+                            partyId: string;
+                            name: string;
+                            type: string;
+                            habitat: string;
+                            description: string;
+                            playerDescription: string;
+                            currentHealth: number;
+                            healthPercent: number;
+                            maxHealth: number;
+                            morale: number;
+                            armorDie: string;
+                            armorDescription: string;
+                            attacks: {
+                                id: string;
+                                name: string;
+                                die?: string;
+                            }[];
+                            specials: {
+                                id: string;
+                                name: string;
+                                description?: string;
+                            }[];
+                            loot: {
+                                id: string;
+                                label: string;
+                                value?: string;
+                            }[];
+                            statuses: {
+                                id: string;
+                                percent: number;
+                                label: string;
+                            }[];
                         };
                     };
                 };
@@ -11280,7 +11351,14 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
-                            [key: string]: unknown;
+                            id: string;
+                            name: string;
+                            type: string;
+                            habitat: string;
+                            playerDescription: string;
+                            healthPercent: number;
+                            statusId: string;
+                            statusLabel: string;
                         }[];
                     };
                 };
@@ -11503,7 +11581,39 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
-                            [key: string]: unknown;
+                            id: string;
+                            partyId: string;
+                            name: string;
+                            type: string;
+                            habitat: string;
+                            description: string;
+                            playerDescription: string;
+                            currentHealth: number;
+                            healthPercent: number;
+                            maxHealth: number;
+                            morale: number;
+                            armorDie: string;
+                            armorDescription: string;
+                            attacks: {
+                                id: string;
+                                name: string;
+                                die?: string;
+                            }[];
+                            specials: {
+                                id: string;
+                                name: string;
+                                description?: string;
+                            }[];
+                            loot: {
+                                id: string;
+                                label: string;
+                                value?: string;
+                            }[];
+                            statuses: {
+                                id: string;
+                                percent: number;
+                                label: string;
+                            }[];
                         };
                     };
                 };
@@ -11610,7 +11720,39 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
-                            [key: string]: unknown;
+                            id: string;
+                            partyId: string;
+                            name: string;
+                            type: string;
+                            habitat: string;
+                            description: string;
+                            playerDescription: string;
+                            currentHealth: number;
+                            healthPercent: number;
+                            maxHealth: number;
+                            morale: number;
+                            armorDie: string;
+                            armorDescription: string;
+                            attacks: {
+                                id: string;
+                                name: string;
+                                die?: string;
+                            }[];
+                            specials: {
+                                id: string;
+                                name: string;
+                                description?: string;
+                            }[];
+                            loot: {
+                                id: string;
+                                label: string;
+                                value?: string;
+                            }[];
+                            statuses: {
+                                id: string;
+                                percent: number;
+                                label: string;
+                            }[];
                         };
                     };
                 };

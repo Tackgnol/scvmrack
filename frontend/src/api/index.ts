@@ -90,10 +90,6 @@ export async function getCsrfToken(): Promise<string> {
     return csrfToken!;
 }
 
-export async function refreshCsrfToken(): Promise<string> {
-    return fetchCsrfToken();
-}
-
 function rememberRetryRequest(
     store: Map<string, Request>,
     id: string | undefined,

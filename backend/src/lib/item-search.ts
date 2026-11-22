@@ -1,7 +1,7 @@
 import MiniSearch, { type SearchResult } from 'minisearch';
 import { isSupportedLocale, resolveLocale, type SupportedLocale } from '../config/locales.js';
 
-export const SUPPORTED_ITEM_TYPES = ['weapon', 'armor', 'equipment', 'pet'] as const;
+const SUPPORTED_ITEM_TYPES = ['weapon', 'armor', 'equipment', 'pet'] as const;
 
 export type SupportedItemType = (typeof SUPPORTED_ITEM_TYPES)[number];
 

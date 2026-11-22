@@ -187,13 +187,6 @@ export async function regeneratePartyLink(
   );
 }
 
-export async function disbandParty(partyId: string): Promise<void> {
-  await unwrapApiResult<unknown>(
-    await partyClient.DELETE<unknown>(`/api/parties/${partyId}`),
-    "Failed to disband party",
-  );
-}
-
 export async function kickPartyMember(input: {
   partyId: string;
   characterId: string;

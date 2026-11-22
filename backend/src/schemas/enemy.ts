@@ -1,7 +1,5 @@
 // JSON schemas for the enemy routes. Same style as schemas/party.ts.
 
-export { ErrorSchema } from './character.js';
-
 export const RoomParamsSchema = {
   type: 'object',
   required: ['roomId'],
@@ -121,7 +119,45 @@ export const EnemyHealthBodySchema = {
 
 export const EnemyFullSchema = {
   type: 'object',
-  additionalProperties: true,
+  additionalProperties: false,
+  required: [
+    'id',
+    'partyId',
+    'name',
+    'type',
+    'habitat',
+    'description',
+    'playerDescription',
+    'currentHealth',
+    'healthPercent',
+    'maxHealth',
+    'morale',
+    'armorDie',
+    'armorDescription',
+    'attacks',
+    'specials',
+    'loot',
+    'statuses',
+  ],
+  properties: {
+    id: { type: 'string' },
+    partyId: { type: 'string' },
+    name: { type: 'string' },
+    type: { type: 'string' },
+    habitat: { type: 'string' },
+    description: { type: 'string' },
+    playerDescription: { type: 'string' },
+    currentHealth: { type: 'integer' },
+    healthPercent: { type: 'integer' },
+    maxHealth: { type: 'integer' },
+    morale: { type: 'integer' },
+    armorDie: { type: 'string' },
+    armorDescription: { type: 'string' },
+    attacks: attackItems,
+    specials: specialItems,
+    loot: lootItems,
+    statuses: statusItems,
+  },
 } as const;
 
 export const EnemyListSchema = {
@@ -129,10 +165,32 @@ export const EnemyListSchema = {
   items: EnemyFullSchema,
 } as const;
 
+export const EnemyCardSchema = {
+  type: 'object',
+  additionalProperties: false,
+  required: [
+    'id',
+    'name',
+    'type',
+    'habitat',
+    'playerDescription',
+    'healthPercent',
+    'statusId',
+    'statusLabel',
+  ],
+  properties: {
+    id: { type: 'string' },
+    name: { type: 'string' },
+    type: { type: 'string' },
+    habitat: { type: 'string' },
+    playerDescription: { type: 'string' },
+    healthPercent: { type: 'integer' },
+    statusId: { type: 'string' },
+    statusLabel: { type: 'string' },
+  },
+} as const;
+
 export const EnemyCardListSchema = {
   type: 'array',
-  items: {
-    type: 'object',
-    additionalProperties: true,
-  },
+  items: EnemyCardSchema,
 } as const;
