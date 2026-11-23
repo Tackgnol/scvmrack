@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useFieldArray, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { createEnemyStatusId, type ObrEnemy } from "@/obr/enemies";
+import { EnemyPairRowsSection } from "./EnemyPairRowsSection";
 import {
   createEmptyAttack,
   createEmptyLoot,
@@ -18,8 +19,6 @@ import {
 import {
   EnemyButton,
   EnemyDangerButton,
-  EnemyDynamicRow,
-  EnemyDynamicRows,
   EnemyFormActions,
   EnemyFormGrid,
   EnemyFormPanel,
@@ -61,33 +60,6 @@ export function EnemyEditorForm({
   } = useFieldArray({
     control,
     name: "statuses",
-    keyName: "fieldId",
-  });
-  const {
-    fields: attackFields,
-    append: appendAttack,
-    remove: removeAttack,
-  } = useFieldArray({
-    control,
-    name: "attacks",
-    keyName: "fieldId",
-  });
-  const {
-    fields: specialFields,
-    append: appendSpecial,
-    remove: removeSpecial,
-  } = useFieldArray({
-    control,
-    name: "specials",
-    keyName: "fieldId",
-  });
-  const {
-    fields: lootFields,
-    append: appendLoot,
-    remove: removeLoot,
-  } = useFieldArray({
-    control,
-    name: "loot",
     keyName: "fieldId",
   });
 
@@ -264,154 +236,47 @@ export function EnemyEditorForm({
         )}
       />
 
-      <EnemyStatusRows>
-        <EnemyTitle>{t("obr.enemies.attacksTitle", "Attacks")}</EnemyTitle>
-        <EnemyDynamicRows>
-          {attackFields.map((field, index) => (
-            <EnemyDynamicRow key={field.fieldId}>
-              <Controller
-                name={`attacks.${index}.name`}
-                control={control}
-                render={({ field: nameField }) => (
-                  <EnemyTextField
-                    {...nameField}
-                    label={t("obr.enemies.attackNameLabel", "Attack")}
-                    error={Boolean(errors.attacks?.[index]?.name)}
-                  />
-                )}
-              />
-              <Controller
-                name={`attacks.${index}.die`}
-                control={control}
-                render={({ field: dieField }) => (
-                  <EnemyTextField
-                    {...dieField}
-                    label={t("obr.enemies.attackDieLabel", "Die")}
-                    error={Boolean(errors.attacks?.[index]?.die)}
-                  />
-                )}
-              />
-              <EnemyDangerButton
-                type="button"
-                onClick={() => removeAttack(index)}
-                disabled={attackFields.length <= 1}
-                aria-label={t("obr.enemies.removeAttack", "Remove attack")}
-              >
-                <DeleteIcon fontSize="small" />
-              </EnemyDangerButton>
-            </EnemyDynamicRow>
-          ))}
-        </EnemyDynamicRows>
-        <EnemyButton
-          type="button"
-          onClick={() => appendAttack(createEmptyAttack())}
-          startIcon={<AddIcon />}
-        >
-          {t("obr.enemies.addAttack", "Add attack")}
-        </EnemyButton>
-      </EnemyStatusRows>
+      <EnemyPairRowsSection
+        control={control}
+        name="attacks"
+        fieldKeys={["name", "die"]}
+        fieldLabels={[
+          t("obr.enemies.attackNameLabel", "Attack"),
+          t("obr.enemies.attackDieLabel", "Die"),
+        ]}
+        title={t("obr.enemies.attacksTitle", "Attacks")}
+        addLabel={t("obr.enemies.addAttack", "Add attack")}
+        removeLabel={t("obr.enemies.removeAttack", "Remove attack")}
+        createEmpty={createEmptyAttack}
+      />
 
-      <EnemyStatusRows>
-        <EnemyTitle>
-          {t("obr.enemies.specialsTitle", "Special skills")}
-        </EnemyTitle>
-        <EnemyDynamicRows>
-          {specialFields.map((field, index) => (
-            <EnemyDynamicRow key={field.fieldId}>
-              <Controller
-                name={`specials.${index}.name`}
-                control={control}
-                render={({ field: nameField }) => (
-                  <EnemyTextField
-                    {...nameField}
-                    label={t("obr.enemies.specialNameLabel", "Skill")}
-                    error={Boolean(errors.specials?.[index]?.name)}
-                  />
-                )}
-              />
-              <Controller
-                name={`specials.${index}.description`}
-                control={control}
-                render={({ field: descriptionField }) => (
-                  <EnemyTextField
-                    {...descriptionField}
-                    label={t(
-                      "obr.enemies.specialDescriptionLabel",
-                      "Description",
-                    )}
-                    error={Boolean(errors.specials?.[index]?.description)}
-                  />
-                )}
-              />
-              <EnemyDangerButton
-                type="button"
-                onClick={() => removeSpecial(index)}
-                disabled={specialFields.length <= 1}
-                aria-label={t(
-                  "obr.enemies.removeSpecial",
-                  "Remove special skill",
-                )}
-              >
-                <DeleteIcon fontSize="small" />
-              </EnemyDangerButton>
-            </EnemyDynamicRow>
-          ))}
-        </EnemyDynamicRows>
-        <EnemyButton
-          type="button"
-          onClick={() => appendSpecial(createEmptySpecial())}
-          startIcon={<AddIcon />}
-        >
-          {t("obr.enemies.addSpecial", "Add special")}
-        </EnemyButton>
-      </EnemyStatusRows>
+      <EnemyPairRowsSection
+        control={control}
+        name="specials"
+        fieldKeys={["name", "description"]}
+        fieldLabels={[
+          t("obr.enemies.specialNameLabel", "Skill"),
+          t("obr.enemies.specialDescriptionLabel", "Description"),
+        ]}
+        title={t("obr.enemies.specialsTitle", "Special skills")}
+        addLabel={t("obr.enemies.addSpecial", "Add special")}
+        removeLabel={t("obr.enemies.removeSpecial", "Remove special skill")}
+        createEmpty={createEmptySpecial}
+      />
 
-      <EnemyStatusRows>
-        <EnemyTitle>{t("obr.enemies.lootTitle", "Loot")}</EnemyTitle>
-        <EnemyDynamicRows>
-          {lootFields.map((field, index) => (
-            <EnemyDynamicRow key={field.fieldId}>
-              <Controller
-                name={`loot.${index}.label`}
-                control={control}
-                render={({ field: labelField }) => (
-                  <EnemyTextField
-                    {...labelField}
-                    label={t("obr.enemies.lootLabelLabel", "Label")}
-                    error={Boolean(errors.loot?.[index]?.label)}
-                  />
-                )}
-              />
-              <Controller
-                name={`loot.${index}.value`}
-                control={control}
-                render={({ field: valueField }) => (
-                  <EnemyTextField
-                    {...valueField}
-                    label={t("obr.enemies.lootValueLabel", "Value")}
-                    error={Boolean(errors.loot?.[index]?.value)}
-                  />
-                )}
-              />
-              <EnemyDangerButton
-                type="button"
-                onClick={() => removeLoot(index)}
-                disabled={lootFields.length <= 1}
-                aria-label={t("obr.enemies.removeLoot", "Remove loot")}
-              >
-                <DeleteIcon fontSize="small" />
-              </EnemyDangerButton>
-            </EnemyDynamicRow>
-          ))}
-        </EnemyDynamicRows>
-        <EnemyButton
-          type="button"
-          onClick={() => appendLoot(createEmptyLoot())}
-          startIcon={<AddIcon />}
-        >
-          {t("obr.enemies.addLoot", "Add loot")}
-        </EnemyButton>
-      </EnemyStatusRows>
+      <EnemyPairRowsSection
+        control={control}
+        name="loot"
+        fieldKeys={["label", "value"]}
+        fieldLabels={[
+          t("obr.enemies.lootLabelLabel", "Label"),
+          t("obr.enemies.lootValueLabel", "Value"),
+        ]}
+        title={t("obr.enemies.lootTitle", "Loot")}
+        addLabel={t("obr.enemies.addLoot", "Add loot")}
+        removeLabel={t("obr.enemies.removeLoot", "Remove loot")}
+        createEmpty={createEmptyLoot}
+      />
 
       <EnemyStatusRows>
         <EnemyTitle>

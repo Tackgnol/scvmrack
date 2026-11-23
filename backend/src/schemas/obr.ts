@@ -1,3 +1,5 @@
+import { SUPPORTED_LOCALES } from '../config/locales.js';
+
 export const ObrPlayerParamsSchema = {
   type: 'object',
   required: ['roomId', 'playerId'],
@@ -37,7 +39,7 @@ export const RoomCardsQuerySchema = {
   type: 'object',
   properties: {
     ids: { type: 'string', maxLength: 2000 },
-    locale: { type: 'string', enum: ['en', 'pl'] },
+    locale: { type: 'string', enum: SUPPORTED_LOCALES },
   },
 } as const;
 

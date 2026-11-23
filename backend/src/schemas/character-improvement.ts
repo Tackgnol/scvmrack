@@ -233,7 +233,7 @@ const ClassAbilityDraftSchema = {
   ],
 };
 
-export const ImprovementDraftSchema = {
+const ImprovementDraftSchema = {
   type: 'object',
   additionalProperties: false,
   required: ['sequence', 'snapshot', 'hp', 'debris', 'abilities', 'classAbility'],
@@ -257,7 +257,7 @@ export const ImprovementDraftSchema = {
   },
 };
 
-export const ImprovementPreviewResponseSchema = {
+const ImprovementPreviewResponseSchema = {
   type: 'object',
   additionalProperties: false,
   required: [
@@ -292,7 +292,7 @@ export const ImprovementPreviewResponseSchema = {
   },
 };
 
-export const RerollSectionParamsSchema = {
+const RerollSectionParamsSchema = {
   type: 'object',
   required: ['id', 'improvementId', 'section'],
   properties: {
@@ -305,7 +305,7 @@ export const RerollSectionParamsSchema = {
   },
 };
 
-export const ApplyImprovementParamsSchema = {
+const ApplyImprovementParamsSchema = {
   type: 'object',
   required: ['id', 'improvementId'],
   properties: {
@@ -314,7 +314,7 @@ export const ApplyImprovementParamsSchema = {
   },
 };
 
-export const ApplyImprovementBodySchema = {
+const ApplyImprovementBodySchema = {
   type: 'object',
   additionalProperties: false,
   required: ['draft'],

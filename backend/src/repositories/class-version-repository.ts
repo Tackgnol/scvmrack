@@ -237,12 +237,12 @@ export async function writeLineageContent(tx: Tx, content: VersionContent): Prom
 }
 
 /** Serializes saves and moderation decisions on one lineage until the transaction ends. */
-export function lockLineage(tx: Tx, lineageId: string): Promise<void> {
+function lockLineage(tx: Tx, lineageId: string): Promise<void> {
   return advisoryLock(tx, 'lineage', lineageId);
 }
 
 /** Drops the lineage from party pools, except the pools of `keepOwnerUserId`'s parties. */
-export async function removeLineageFromPools(tx: Tx, lineageId: string, keepOwnerUserId?: string): Promise<void> {
+async function removeLineageFromPools(tx: Tx, lineageId: string, keepOwnerUserId?: string): Promise<void> {
   await tx.partyClassPool.deleteMany({
     where: {
       lineageId,

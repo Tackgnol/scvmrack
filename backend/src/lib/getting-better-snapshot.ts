@@ -5,7 +5,7 @@ import type {
   ImprovementCharacterSnapshotInput,
 } from './getting-better-types.js';
 
-export function hashImprovementSnapshot(
+function hashImprovementSnapshot(
   snapshot: ImprovementCharacterSnapshotInput
 ): string {
   return createHash('sha256').update(stableStringify(snapshot)).digest('hex');

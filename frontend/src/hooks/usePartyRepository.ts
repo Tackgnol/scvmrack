@@ -1,7 +1,6 @@
 import {
   attachPartyRoom,
   createParty,
-  disbandParty,
   getParty,
   getPartyInvite,
   getPartyLimits,
@@ -153,18 +152,6 @@ export function useKickPartyMember(partyId: string) {
     mutationFn: (characterId: string) => kickPartyMember({ partyId, characterId }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: partyKeys.detail(partyId) });
-      void queryClient.invalidateQueries({ queryKey: partyKeys.roster() });
-    },
-  });
-}
-
-export function useDisbandParty() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: disbandParty,
-    onSuccess: (_result, partyId) => {
-      queryClient.removeQueries({ queryKey: partyKeys.detail(partyId) });
-      void queryClient.invalidateQueries({ queryKey: partyKeys.list() });
       void queryClient.invalidateQueries({ queryKey: partyKeys.roster() });
     },
   });

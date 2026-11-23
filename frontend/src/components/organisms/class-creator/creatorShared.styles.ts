@@ -6,7 +6,7 @@ const { yellow, pink, black, white, grey, darkGrey, mutedText } = partyColors;
 export const Stack = styled("div")({ display: "flex", flexDirection: "column", gap: 12 });
 
 /** A card that lifts a tone off the black paper. */
-export const Card = styled("div")({
+const Card = styled("div")({
   background: grey,
   border: `2px solid ${darkGrey}`,
   padding: 12,

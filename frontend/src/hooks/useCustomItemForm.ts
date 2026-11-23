@@ -239,15 +239,11 @@ export function useCustomItemForm(
   const canSave =
     state.name.trim().length > 0 && !hasFieldErrors && !hasTextErrors;
 
-  const buildBundle = (): EquipmentItem[] => {
-    if (!canSave) {
-      return [];
-    }
-
-    return buildCustomItemBundle(
+  const bundleFor = (name: string): EquipmentItem[] =>
+    buildCustomItemBundle(
       {
         kind: state.kind,
-        name: state.name,
+        name,
         description: state.description,
         comments: state.comments,
         value: parseInteger(state.value, 0),
@@ -283,50 +279,13 @@ export function useCustomItemForm(
       },
       stats,
     );
-  };
 
-  // Preview is generated from a relaxed build: even when canSave is false
-  // (e.g. empty name), we still want to show the shape as the user picks a
-  // kind. We synthesize a placeholder name so the bundle returns something.
-  const previewItems: EquipmentItem[] = buildCustomItemBundle(
-    {
-      kind: state.kind,
-      name: state.name.trim() || ' ',
-      description: state.description,
-      comments: state.comments,
-      value: parseInteger(state.value, 0),
-      quantity: parseInteger(state.quantity, 1),
-      damageDie: parseInteger(state.damageDie, 4),
-      ammoType: state.ammoType,
-      ammoAmount: parseInteger(state.ammoAmount, 0),
-      armorPreset: state.armorPreset,
-      armorDie: parseInteger(
-        state.armorDie,
-        ARMOR_PRESETS[state.armorPreset].die,
-      ),
-      armorTier: parseInteger(
-        state.armorTier,
-        ARMOR_PRESETS[state.armorPreset].tier,
-      ),
-      useCountRule:
-        state.kind === 'consumable'
-          ? {
-              mode: state.consumeMode,
-              base: parseInteger(state.consumeBase, 1),
-              statistic: state.consumeStatistic,
-            }
-          : undefined,
-      modifier: showModifierPanel
-        ? {
-            enabled: state.modifierEnabled,
-            value: parseInteger(state.modifierValue, -1),
-            statistic: state.modifierStatistic,
-            scope: state.modifierScope,
-          }
-        : undefined,
-    },
-    stats,
-  );
+  const buildBundle = (): EquipmentItem[] =>
+    canSave ? bundleFor(state.name) : [];
+
+  // The preview also renders before the item is saveable (e.g. empty name),
+  // so it uses a placeholder name to keep the bundle non-empty.
+  const previewItems = bundleFor(state.name.trim() || ' ');
 
   return {
     state,

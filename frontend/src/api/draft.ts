@@ -3,7 +3,7 @@ import type { ApiResult } from "@/api/clientResult";
 import type { CharacterResponse } from "@/hooks/models";
 import { toApiClientError } from "@/utils/errorUtils";
 
-export const DRAFT_SECTIONS = [
+const DRAFT_SECTIONS = [
   "name",
   "stats",
   "omens",

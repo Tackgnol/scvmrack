@@ -12,13 +12,12 @@ export const enumValues =
   <const A extends readonly T[]>(values: A & ([T] extends [A[number]] ? unknown : never)): A =>
     values;
 
-export const CLASS_SOURCES = enumValues<ClassSource>()(['main_book', 'zine', 'the_rack', 'user']);
 export const CLASS_STATUSES = enumValues<ClassStatus>()(['draft', 'active', 'archived']);
 export const CLASS_VISIBILITIES = enumValues<ClassVisibility>()(['private', 'public']);
 export const GETTING_BETTER_RULES = enumValues<GettingBetterRule>()(['book', 'book_plus_ability', 'specialist']);
 
 /** Prefix of every translation key a Custom Class owns (`cc.<classId>.…`); Book keys never use it. */
-export const CUSTOM_CLASS_KEY_PREFIX = 'cc.';
+const CUSTOM_CLASS_KEY_PREFIX = 'cc.';
 
 /** The root every key of one Custom Class hangs off, e.g. `cc.12` for `cc.12.name`. */
 export function customClassKeyRoot(classId: number): string {
@@ -60,12 +59,12 @@ export function usableByWhere(viewerId: string) {
 }
 
 /** Whether a class version can be used at all: active and not taken down. */
-export function isAvailable(row: Pick<ClassVersionRef, 'status' | 'takenDownAt'>): boolean {
+function isAvailable(row: Pick<ClassVersionRef, 'status' | 'takenDownAt'>): boolean {
   return row.status === 'active' && row.takenDownAt === null;
 }
 
 /** Whether `viewerId` may use a class: built-in, public, or their own. */
-export function mayUse(
+function mayUse(
   row: Pick<ClassVersionRef, 'source' | 'visibility' | 'ownerUserId'>,
   viewerId: string | null
 ): boolean {

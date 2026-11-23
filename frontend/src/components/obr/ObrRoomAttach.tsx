@@ -5,8 +5,8 @@ import {
   PromotionButton,
   PromotionError,
   PromotionLinks,
-  RosterBindingSelect,
 } from "./ObrPartyRoster.styles";
+import { RosterBindingSelect } from "./RosterBinding.styles";
 
 // Portability D2: a GM whose room died picks a warband and re-points it here.
 export function ObrRoomAttach({ roomId }: { roomId: string }) {

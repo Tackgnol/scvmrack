@@ -80,7 +80,7 @@ export const PromotionButton = styled("button")({
   },
 });
 
-export const PromotionNote = styled("span")({
+const PromotionNote = styled("span")({
   minWidth: 0,
   color: partyColors.black,
   fontFamily: partyFonts.label,
@@ -183,46 +183,6 @@ export const RosterBindingFallback = styled("div")({
   overflowWrap: "anywhere",
 });
 
-export const RosterBindingControls = styled("div")({
-  display: "grid",
-  gridTemplateColumns: "1fr",
-  gap: 8,
-  borderLeft: `4px solid ${partyColors.pink}`,
-  paddingLeft: 8,
-  "@media (min-width: 720px)": {
-    gridTemplateColumns: "minmax(0, 1fr) minmax(180px, auto)",
-    alignItems: "start",
-  },
-});
-
-export const RosterBindingMeta = styled("div")({
-  display: "flex",
-  alignItems: "center",
-  flexWrap: "wrap",
-  gap: 6,
-  minWidth: 0,
-});
-
-export const RosterBindingTag = styled("span")({
-  maxWidth: "100%",
-  minHeight: 24,
-  display: "inline-flex",
-  alignItems: "center",
-  border: `2px solid ${partyColors.black}`,
-  background: partyColors.yellow,
-  color: partyColors.black,
-  padding: "3px 6px",
-  fontFamily: partyFonts.label,
-  fontSize: "0.62rem",
-  fontWeight: 900,
-  letterSpacing: 0,
-  lineHeight: 1,
-  textTransform: "uppercase",
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-  whiteSpace: "nowrap",
-});
-
 export const RosterBindingActions = styled("div")({
   display: "flex",
   justifyContent: "flex-end",
@@ -233,52 +193,6 @@ export const RosterBindingActions = styled("div")({
   "@media (max-width: 719px)": {
     justifyContent: "flex-start",
   },
-});
-
-export const RosterBindingButton = styled("button")({
-  minHeight: 28,
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  border: `2px solid ${partyColors.black}`,
-  background: partyColors.black,
-  color: partyColors.yellow,
-  cursor: "pointer",
-  fontFamily: partyFonts.label,
-  fontSize: "0.62rem",
-  fontWeight: 900,
-  letterSpacing: 0,
-  lineHeight: 1,
-  padding: "4px 7px",
-  textTransform: "uppercase",
-  whiteSpace: "nowrap",
-  "&:hover:not(:disabled)": {
-    background: partyColors.pink,
-    color: partyColors.black,
-  },
-  "&:disabled": {
-    cursor: "not-allowed",
-    opacity: 0.55,
-  },
-  "&:focus-visible": {
-    outline: `3px solid ${partyColors.pink}`,
-    outlineOffset: 2,
-  },
-});
-
-export const RosterBindingSelect = styled("select")({
-  minHeight: 28,
-  maxWidth: 180,
-  border: `2px solid ${partyColors.black}`,
-  background: partyColors.yellow,
-  color: partyColors.black,
-  fontFamily: partyFonts.label,
-  fontSize: "0.62rem",
-  fontWeight: 900,
-  letterSpacing: 0,
-  lineHeight: 1,
-  padding: "4px 6px",
-  textTransform: "uppercase",
 });
 
 export const RosterActionMessage = styled("div")({

@@ -23,7 +23,7 @@ export interface AuthSession {
 
 const apiBaseUrl = () => import.meta.env.VITE_BACKEND_URL || "";
 
-export class SessionReadError extends Error {
+class SessionReadError extends Error {
   constructor(public httpStatus: number) {
     super("Failed to fetch auth session");
   }
@@ -71,7 +71,7 @@ export async function fetchSession(): Promise<AuthSession | null> {
   return data?.user ? data : null;
 }
 
-export class AnonymousSignInError extends Error {
+class AnonymousSignInError extends Error {
   // Deliberately not `status`: errorUtils treats a `.status` below 500 as an
   // expected API error and would drop a genuine final failure from GlitchTip.
   httpStatus: number;

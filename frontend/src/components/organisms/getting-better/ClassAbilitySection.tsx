@@ -107,4 +107,3 @@ export function ClassAbilitySection({
   );
 }
 
-export default ClassAbilitySection;

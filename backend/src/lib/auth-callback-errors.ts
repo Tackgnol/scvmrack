@@ -1,7 +1,7 @@
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import * as Sentry from '@sentry/node';
 
-export const authCallbackPath = '/api/auth/oauth2/callback/logto';
+const authCallbackPath = '/api/auth/oauth2/callback/logto';
 const reportedRequests = new WeakSet<FastifyRequest>();
 
 /** Whether a raw request target is the Logto callback (never throws, unlike `new URL` on a malformed target). */

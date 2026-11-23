@@ -1,7 +1,7 @@
 import { render } from 'vitest-browser-react';
 import { describe, expect, it } from 'vitest';
 import { page } from 'vitest/browser';
-import DeadStamp from '@/components/organisms/stamp/DeadStamp';
+import { DeadStamp } from '@/components/organisms/stamp/DeadStamp';
 import BrowserTestProvider from '../../BrowserTestProvider';
 
 describe('DeadStamp Browser', () => {

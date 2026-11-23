@@ -1,6 +1,8 @@
 import type { FastifyPluginAsync } from 'fastify';
 import type { JsonSchemaToTsProvider } from '@fastify/type-provider-json-schema-to-ts';
-import { CatalogItemResponseSchema, ErrorSchema } from '../../schemas/equipment.js';
+import { ErrorSchema } from '../../schemas/character.js';
+import { CatalogItemResponseSchema } from '../../schemas/equipment.js';
+import { SUPPORTED_LOCALES } from '../../config/locales.js';
 import { sendServiceError } from '../../errors.js';
 import { createEquipmentService } from '../../services/equipment-service.js';
 import { limitMax } from '../../lib/rate-limits.js';
@@ -25,7 +27,7 @@ const equipment: FastifyPluginAsync = async (fastify) => {
           required: ['q'],
           properties: {
             q: { type: 'string', minLength: 1, maxLength: 100 },
-            locale: { type: 'string', default: 'en', enum: ['en', 'pl'] },
+            locale: { type: 'string', default: 'en', enum: SUPPORTED_LOCALES },
             limit: { type: 'integer', default: 20, minimum: 1, maximum: 100 },
           },
         },

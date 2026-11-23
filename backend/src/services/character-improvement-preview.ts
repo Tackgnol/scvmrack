@@ -145,7 +145,7 @@ export async function upgradeActiveDraft(
   return saved ?? { ...row, rolledDraft: upgraded };
 }
 
-export function buildSnapshot(
+function buildSnapshot(
   row: ImprovementCharacterRow
 ): ImprovementCharacterSnapshot {
   return buildImprovementSnapshot({

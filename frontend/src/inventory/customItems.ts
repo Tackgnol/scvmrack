@@ -66,7 +66,7 @@ const clampInteger = (value: number, min: number, max: number): number =>
     Math.min(max, Math.floor(Number.isFinite(value) ? value : min)),
   );
 
-export const buildCustomItemKey = (
+const buildCustomItemKey = (
   kind: CustomItemKind,
   id = createRandomId(),
 ): string => `custom.${kind}.${id}`;

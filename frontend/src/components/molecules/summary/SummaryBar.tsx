@@ -29,55 +29,32 @@ export default function SummaryBar() {
     280,
   );
 
+  const combatStats = [
+    { detail: 'dodge', label: t('stats.toDodge'), value: summaryMetrics.toDodge, reacting: dodgeReacting },
+    { detail: 'melee', label: t('stats.toHitMelee'), value: summaryMetrics.toHitMelee, reacting: meleeReacting },
+    { detail: 'ranged', label: t('stats.toHitRanged'), value: summaryMetrics.toHitRanged, reacting: rangedReacting },
+  ] as const;
+
   return (
     <Paper sx={customStyles.summaryBarPaper}>
-      <SummaryStatButton
-        label={t('stats.toDodge')}
-        isActive={summaryDetailState.activeDetail === 'dodge'}
-        reacting={dodgeReacting}
-        prefersReducedMotion={prefersReducedMotion}
-        onPinToggle={(element) => summaryDetailState.togglePinnedDetail('dodge', element)}
-      >
-        <Typography variant="h3" color="primary">
-          <AnimatedNumber
-            value={summaryMetrics.toDodge}
-            cacheKey={`${summaryMetrics.characterKey}:summary:dodge`}
-            durationMs={340}
-          />
-        </Typography>
-      </SummaryStatButton>
-
-      <SummaryStatButton
-        label={t('stats.toHitMelee')}
-        isActive={summaryDetailState.activeDetail === 'melee'}
-        reacting={meleeReacting}
-        prefersReducedMotion={prefersReducedMotion}
-        onPinToggle={(element) => summaryDetailState.togglePinnedDetail('melee', element)}
-      >
-        <Typography variant="h3" color="primary">
-          <AnimatedNumber
-            value={summaryMetrics.toHitMelee}
-            cacheKey={`${summaryMetrics.characterKey}:summary:melee`}
-            durationMs={340}
-          />
-        </Typography>
-      </SummaryStatButton>
-
-      <SummaryStatButton
-        label={t('stats.toHitRanged')}
-        isActive={summaryDetailState.activeDetail === 'ranged'}
-        reacting={rangedReacting}
-        prefersReducedMotion={prefersReducedMotion}
-        onPinToggle={(element) => summaryDetailState.togglePinnedDetail('ranged', element)}
-      >
-        <Typography variant="h3" color="primary">
-          <AnimatedNumber
-            value={summaryMetrics.toHitRanged}
-            cacheKey={`${summaryMetrics.characterKey}:summary:ranged`}
-            durationMs={340}
-          />
-        </Typography>
-      </SummaryStatButton>
+      {combatStats.map((stat) => (
+        <SummaryStatButton
+          key={stat.detail}
+          label={stat.label}
+          isActive={summaryDetailState.activeDetail === stat.detail}
+          reacting={stat.reacting}
+          prefersReducedMotion={prefersReducedMotion}
+          onPinToggle={(element) => summaryDetailState.togglePinnedDetail(stat.detail, element)}
+        >
+          <Typography variant="h3" color="primary">
+            <AnimatedNumber
+              value={stat.value}
+              cacheKey={`${summaryMetrics.characterKey}:summary:${stat.detail}`}
+              durationMs={340}
+            />
+          </Typography>
+        </SummaryStatButton>
+      ))}
 
       <SummaryStatButton
         label={t('stats.encumbrance')}

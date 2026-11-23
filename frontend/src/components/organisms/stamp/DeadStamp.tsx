@@ -55,5 +55,4 @@ export function DeadStamp({
   );
 }
 
-export default DeadStamp;
 

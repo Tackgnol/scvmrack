@@ -89,15 +89,18 @@ export function toEnemyFormValues(enemy: ObrEnemy): EnemyFormValues {
     armorDescription: enemy.armorDescription,
     attacks:
       enemy.attacks.length > 0
-        ? enemy.attacks.map((attack) => ({ ...attack }))
+        ? enemy.attacks.map((attack) => ({ ...attack, die: attack.die ?? "" }))
         : [createEmptyAttack()],
     specials:
       enemy.specials.length > 0
-        ? enemy.specials.map((special) => ({ ...special }))
+        ? enemy.specials.map((special) => ({
+            ...special,
+            description: special.description ?? "",
+          }))
         : [createEmptySpecial()],
     loot:
       enemy.loot.length > 0
-        ? enemy.loot.map((loot) => ({ ...loot }))
+        ? enemy.loot.map((loot) => ({ ...loot, value: loot.value ?? "" }))
         : [createEmptyLoot()],
     statuses: enemy.statuses.map((band) => ({ ...band })),
   };

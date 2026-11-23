@@ -3,6 +3,7 @@ import { publishCharacterUpdates } from './character-events.js';
 import {
   partyRepository,
   type PartyMemberRow,
+  type PartyRow,
   type PartyWithMembers,
 } from '../repositories/party-repository.js';
 import { isValidUUID } from '../utils.js';
@@ -48,6 +49,11 @@ function newInviteToken(): string {
 
 function invitePathFor(token: string): string {
   return `/join/${token}`;
+}
+
+function partyNameOrDefault(name: string | null | undefined): string {
+  const trimmed = typeof name === 'string' ? name.trim() : '';
+  return trimmed.length > 0 ? trimmed : 'Untitled Warband';
 }
 
 export type PartyMemberPayload = {
@@ -160,6 +166,30 @@ async function readView(
   };
 }
 
+/** Read view of a party that was just created and has no members yet. */
+function newPartyReadView(party: PartyRow): PartyReadViewPayload {
+  return {
+    id: party.id,
+    name: party.name,
+    role: 'member' as const,
+    memberCount: 0,
+    maxMembers: PARTY_MAX_MEMBERS,
+    members: [],
+    createdAt: party.createdAt,
+    updatedAt: party.updatedAt,
+  };
+}
+
+/** GM view of a party that was just created and has no members yet. */
+function newPartyManageView(party: PartyRow): PartyManageViewPayload {
+  return {
+    ...newPartyReadView(party),
+    role: 'gm' as const,
+    inviteToken: party.inviteToken,
+    invitePath: invitePathFor(party.inviteToken),
+  };
+}
+
 /**
  * Party business logic. Returns a stable {@link ServiceResult}: known failures
  * (auth, ownership, validation, not-found, conflict, gone) are returned as
@@ -235,10 +265,7 @@ export function createPartyService(
       }
       const ownerUserId = sessionUserId(input.session) as string;
 
-      const name =
-        typeof input.name === 'string' && input.name.trim().length > 0
-          ? input.name.trim()
-          : 'Untitled Warband';
+      const name = partyNameOrDefault(input.name);
 
       try {
         const party = await partyRepository.createParty({
@@ -247,18 +274,7 @@ export function createPartyService(
           inviteToken: newInviteToken(),
           poolLineageIds: await defaultPoolLineageIds(),
         });
-        return ok({
-          id: party.id,
-          name: party.name,
-          role: 'gm' as const,
-          inviteToken: party.inviteToken,
-          invitePath: invitePathFor(party.inviteToken),
-          memberCount: 0,
-          maxMembers: PARTY_MAX_MEMBERS,
-          members: [],
-          createdAt: party.createdAt,
-          updatedAt: party.updatedAt,
-        });
+        return ok(newPartyManageView(party));
       } catch (err) {
         return fail(
           unexpected(log, err, 'PARTY_CREATE_FAILED', 'Failed to create party')
@@ -282,10 +298,7 @@ export function createPartyService(
       const ownerUserId = isGm(input.session)
         ? (sessionUserId(input.session) as string)
         : OBR_ROOM_SYSTEM_OWNER_ID;
-      const name =
-        typeof input.name === 'string' && input.name.trim().length > 0
-          ? input.name.trim()
-          : 'Untitled Warband';
+      const name = partyNameOrDefault(input.name);
 
       try {
         const existing = await partyRepository.getPartyByObrRoomId(obrRoomId);
@@ -332,30 +345,10 @@ export function createPartyService(
         // first (not necessarily the GM) never sees the invite token. A
         // signed-in GM claims it via the `existing` branch above.
         if (ownerUserId === OBR_ROOM_SYSTEM_OWNER_ID) {
-          return ok({
-            id: party.id,
-            name: party.name,
-            role: 'member' as const,
-            memberCount: 0,
-            maxMembers: PARTY_MAX_MEMBERS,
-            members: [],
-            createdAt: party.createdAt,
-            updatedAt: party.updatedAt,
-          });
+          return ok(newPartyReadView(party));
         }
 
-        return ok({
-          id: party.id,
-          name: party.name,
-          role: 'gm' as const,
-          inviteToken: party.inviteToken,
-          invitePath: invitePathFor(party.inviteToken),
-          memberCount: 0,
-          maxMembers: PARTY_MAX_MEMBERS,
-          members: [],
-          createdAt: party.createdAt,
-          updatedAt: party.updatedAt,
-        });
+        return ok(newPartyManageView(party));
       } catch (err) {
         return fail(
           unexpected(
