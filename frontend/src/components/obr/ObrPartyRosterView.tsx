@@ -4,13 +4,13 @@ import type { ObrPartyRosterViewProps } from "./ObrPartyRoster.models";
 import { RosterBindingListItem } from "./RosterBindingListItem";
 import {
   RosterActionMessage,
-  RosterBindingButton,
   RosterEmpty,
   RosterHeader,
   RosterList,
   RosterShell,
   RosterTitle,
 } from "./ObrPartyRoster.styles";
+import { RosterBindingButton } from "./RosterBinding.styles";
 
 const NO_CONNECTED_PLAYERS: ObrConnectedPlayer[] = [];
 

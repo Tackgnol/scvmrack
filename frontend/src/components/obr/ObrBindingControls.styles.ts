@@ -51,8 +51,3 @@ export const StaleBadge = styled("strong")({
   letterSpacing: 0,
   lineHeight: 1,
 });
-
-export {
-  RosterBindingButton as BindingButton,
-  RosterBindingSelect as BindingSelect,
-} from "./ObrPartyRoster.styles";

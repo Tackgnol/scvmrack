@@ -6,10 +6,10 @@ import { shortId } from "./ObrPartyRoster.utils";
 import { ObrPartyRosterRow } from "./ObrPartyRosterRow";
 import {
   RosterBindingActions,
-  RosterBindingButton,
   RosterBindingFallback,
   RosterBindingItem,
 } from "./ObrPartyRoster.styles";
+import { RosterBindingButton } from "./RosterBinding.styles";
 
 export function RosterBindingListItem({
   row,

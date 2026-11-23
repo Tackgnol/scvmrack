@@ -4,13 +4,15 @@ import type {
   ObrPartyRosterBindingRow,
 } from "@/obr/useObrRosterCards";
 import {
-  BindingButton,
   BindingControlsShell,
   BindingLabel,
   BindingRow,
-  BindingSelect,
   StaleBadge,
 } from "./ObrBindingControls.styles";
+import {
+  RosterBindingButton,
+  RosterBindingSelect,
+} from "./RosterBinding.styles";
 
 type Props = {
   row: ObrPartyRosterBindingRow;
@@ -30,7 +32,9 @@ export function ObrBindingControls({
   onUnbindToken,
 }: Props) {
   const { t } = useTranslation();
-  const boundPlayerIds = new Set(row.players.map((binding) => binding.playerId));
+  const boundPlayerIds = new Set(
+    row.players.map((binding) => binding.playerId),
+  );
   const assignable = connectedPlayers.filter((p) => !boundPlayerIds.has(p.id));
 
   return (
@@ -47,13 +51,13 @@ export function ObrBindingControls({
               </StaleBadge>
             )}
           </BindingLabel>
-          <BindingButton
+          <RosterBindingButton
             type="button"
             disabled={pending}
             onClick={() => onUnassignPlayer(binding.playerId)}
           >
             {t("obr.gm.clearBinding", "Clear")}
-          </BindingButton>
+          </RosterBindingButton>
         </BindingRow>
       ))}
       {row.tokens.map((binding) => (
@@ -66,17 +70,17 @@ export function ObrBindingControls({
               </StaleBadge>
             )}
           </BindingLabel>
-          <BindingButton
+          <RosterBindingButton
             type="button"
             disabled={pending}
             onClick={() => onUnbindToken(binding.tokenId)}
           >
             {t("obr.gm.unbindToken", "Unbind")}
-          </BindingButton>
+          </RosterBindingButton>
         </BindingRow>
       ))}
       {assignable.length > 0 && (
-        <BindingSelect
+        <RosterBindingSelect
           aria-label={t("obr.gm.assignTo", "Assign to player")}
           disabled={pending}
           value=""
@@ -95,7 +99,7 @@ export function ObrBindingControls({
               {p.name ?? p.id}
             </option>
           ))}
-        </BindingSelect>
+        </RosterBindingSelect>
       )}
     </BindingControlsShell>
   );
@@ -106,7 +110,6 @@ function playerLabel(
   connectedPlayers: ObrConnectedPlayer[],
 ): string {
   return (
-    connectedPlayers.find((player) => player.id === playerId)?.name ??
-    playerId
+    connectedPlayers.find((player) => player.id === playerId)?.name ?? playerId
   );
 }

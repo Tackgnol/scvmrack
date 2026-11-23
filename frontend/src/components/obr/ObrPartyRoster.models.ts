@@ -3,14 +3,9 @@ import type {
   ObrConnectedPlayer,
   ObrPartyRosterBindingRow,
   ObrPartyRosterCard,
+  ObrRosterActionState,
   RemoveFromRosterState,
 } from "@/obr/useObrRosterCards";
-
-export type RosterActionState = {
-  pending: boolean;
-  message: string | null;
-  error: string | null;
-};
 
 /** GM actions a roster row can trigger; each one is optional. */
 export type RosterRowActions = {
@@ -33,7 +28,7 @@ export type ObrPartyRosterViewProps = RosterRowActions & {
   maxMembers: number;
   promotion?: ReactNode;
   connectedPlayers?: ObrConnectedPlayer[];
-  action?: RosterActionState | null;
+  action?: ObrRosterActionState | null;
   onRefresh?: () => Promise<void>;
   removeRosterAction?: RemoveFromRosterState;
 };

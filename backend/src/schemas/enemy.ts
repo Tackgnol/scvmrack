@@ -70,9 +70,8 @@ const lootItems = {
   },
 } as const;
 
-const statusItems = {
+const statusList = {
   type: 'array',
-  minItems: 1,
   maxItems: 8,
   items: {
     type: 'object',
@@ -85,6 +84,8 @@ const statusItems = {
     },
   },
 } as const;
+
+const statusItems = { ...statusList, minItems: 1 } as const;
 
 export const EnemyBodySchema = {
   type: 'object',
@@ -156,7 +157,7 @@ export const EnemyFullSchema = {
     attacks: attackItems,
     specials: specialItems,
     loot: lootItems,
-    statuses: statusItems,
+    statuses: statusList,
   },
 } as const;
 

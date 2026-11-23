@@ -8,14 +8,9 @@ import { EnemyEditorForm } from "./EnemyEditorForm";
 import { toObrEnemy } from "./enemyForm";
 import { enemyLoadStatus } from "./enemyLoadStatus";
 import { EnemyStatusScreen } from "./EnemyStatusScreen";
+import type { ObrEnemyGmWindowProps } from "./ObrEnemyGmWindow.models";
 
-export function ObrEnemyGmWindow({
-  enemyId,
-  roomId,
-}: {
-  enemyId: string;
-  roomId: string;
-}) {
+export function ObrEnemyGmWindow({ enemyId, roomId }: ObrEnemyGmWindowProps) {
   const { t } = useTranslation();
   const owlbear = useOwlbear();
   const [actionError, setActionError] = useState<string | null>(null);

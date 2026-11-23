@@ -4,16 +4,13 @@ import { EnemyShell } from "../ObrEnemies.styles";
 import { enemyLoadStatus } from "./enemyLoadStatus";
 import { EnemyStatusScreen } from "./EnemyStatusScreen";
 import { EnemySummaryCard } from "./EnemySummaryCard";
+import type { ObrEnemyPlayerWindowProps } from "./ObrEnemyPlayerWindow.models";
 
 export function ObrEnemyPlayerWindow({
   enemyId,
   roomId,
   characterId,
-}: {
-  enemyId: string;
-  roomId: string;
-  characterId: string | null;
-}) {
+}: ObrEnemyPlayerWindowProps) {
   const { t } = useTranslation();
   const state = useObrEnemies({ mode: "player", roomId, characterId });
   const enemy = state.enemies.find((item) => item.id === enemyId);
