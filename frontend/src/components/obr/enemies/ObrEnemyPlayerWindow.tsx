@@ -13,7 +13,6 @@ export function ObrEnemyPlayerWindow({
 }: ObrEnemyPlayerWindowProps) {
   const { t } = useTranslation();
   const state = useObrEnemies({ mode: "player", roomId, characterId });
-  const enemy = state.enemies.find((item) => item.id === enemyId);
 
   if (!characterId) {
     return (
@@ -26,14 +25,18 @@ export function ObrEnemyPlayerWindow({
     );
   }
 
-  const status = enemyLoadStatus(state, Boolean(enemy), t);
-  if (status !== null || !enemy) {
-    return <EnemyStatusScreen message={status ?? ""} />;
+  const load = enemyLoadStatus(
+    state,
+    state.enemies.find((item) => item.id === enemyId),
+    t,
+  );
+  if ("message" in load) {
+    return <EnemyStatusScreen message={load.message} />;
   }
 
   return (
     <EnemyShell as="main">
-      <EnemySummaryCard enemy={enemy} />
+      <EnemySummaryCard enemy={load.enemy} />
     </EnemyShell>
   );
 }

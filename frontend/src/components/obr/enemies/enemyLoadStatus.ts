@@ -2,24 +2,28 @@ import { enemyErrorMessage } from "./enemyErrorMessage";
 
 type Translate = (key: string, fallback: string) => string;
 
-/** Status message to show instead of an enemy, or null once the enemy is loaded. */
-export function enemyLoadStatus(
+export type EnemyLoad<E> = { enemy: E } | { message: string };
+
+/** The loaded enemy, or the status message to show in its place. */
+export function enemyLoadStatus<E>(
   state: { isReady: boolean; error: Error | null },
-  hasEnemy: boolean,
+  enemy: E | undefined,
   t: Translate,
-): string | null {
+): EnemyLoad<E> {
   if (!state.isReady) {
-    return t("obr.enemies.loading", "Loading enemies");
+    return { message: t("obr.enemies.loading", "Loading enemies") };
   }
   if (state.error) {
-    return enemyErrorMessage(
-      state.error,
-      t("obr.enemies.loadFailed", "Could not load enemies"),
-      t,
-    );
+    return {
+      message: enemyErrorMessage(
+        state.error,
+        t("obr.enemies.loadFailed", "Could not load enemies"),
+        t,
+      ),
+    };
   }
-  if (!hasEnemy) {
-    return t("obr.enemies.notFound", "Enemy not found");
+  if (!enemy) {
+    return { message: t("obr.enemies.notFound", "Enemy not found") };
   }
-  return null;
+  return { enemy };
 }

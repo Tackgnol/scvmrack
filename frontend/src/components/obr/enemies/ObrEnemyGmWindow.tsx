@@ -15,12 +15,16 @@ export function ObrEnemyGmWindow({ enemyId, roomId }: ObrEnemyGmWindowProps) {
   const owlbear = useOwlbear();
   const [actionError, setActionError] = useState<string | null>(null);
   const state = useObrEnemies({ mode: "gm", roomId });
-  const enemy = state.enemies.find((item) => item.id === enemyId);
-  const status = enemyLoadStatus(state, Boolean(enemy), t);
+  const load = enemyLoadStatus(
+    state,
+    state.enemies.find((item) => item.id === enemyId),
+    t,
+  );
 
-  if (status !== null || !enemy) {
-    return <EnemyStatusScreen message={status ?? ""} />;
+  if ("message" in load) {
+    return <EnemyStatusScreen message={load.message} />;
   }
+  const { enemy } = load;
 
   return (
     <EnemyShell as="main">

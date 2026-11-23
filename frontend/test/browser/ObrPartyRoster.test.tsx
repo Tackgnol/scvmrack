@@ -3,10 +3,8 @@ import { page, userEvent } from "vitest/browser";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import BrowserTestProvider from "./BrowserTestProvider";
-import {
-  ObrPartyRoster,
-  type ObrPartyRosterCard,
-} from "@/components/obr/ObrPartyRoster";
+import { ObrPartyRoster } from "@/components/obr/ObrPartyRoster";
+import type { ObrPartyRosterCard } from "@/obr/useObrRosterCards";
 import { ObrRoomPromotion } from "@/components/obr/ObrRoomPromotion";
 import {
   attachPartyRoom,

@@ -6,27 +6,24 @@ import { useObrRoomId } from "@/obr/useObrRoomId";
 import { EnemyStatusScreen } from "./EnemyStatusScreen";
 import { ObrEnemyGmWindow } from "./ObrEnemyGmWindow";
 import { ObrEnemyPlayerWindow } from "./ObrEnemyPlayerWindow";
+import type { ObrEnemyWindowProps } from "./ObrEnemyWindow.models";
+import { getSearchParam } from "./ObrEnemyWindow.utils";
 
 export function ObrEnemyWindow({
   enemyId = getSearchParam("id"),
   roomId: initialRoomId = getSearchParam("room"),
   characterId: initialCharacterId = getSearchParam("character"),
-}: {
-  enemyId?: string | null;
-  roomId?: string | null;
-  characterId?: string | null;
-}) {
+}: ObrEnemyWindowProps) {
   const { t } = useTranslation();
   const role = useObrRole();
   const readyRoomId = useObrRoomId();
-  const roomId = initialRoomId?.trim() || readyRoomId;
-  const [playerCharacterId, setPlayerCharacterId] = useState(
-    initialCharacterId?.trim() || null,
-  );
+  const roomId = initialRoomId || readyRoomId;
+  const [playerCharacterId, setPlayerCharacterId] =
+    useState(initialCharacterId);
   const [
     hasAttemptedPlayerCharacterRestore,
     setHasAttemptedPlayerCharacterRestore,
-  ] = useState(Boolean(initialCharacterId?.trim()));
+  ] = useState(Boolean(initialCharacterId));
 
   useEffect(() => {
     if (
@@ -73,7 +70,9 @@ export function ObrEnemyWindow({
 
   if (!roomId || !role || isRestoringPlayerCharacter) {
     return (
-      <EnemyStatusScreen message={t("obr.enemies.loading", "Loading enemies")} />
+      <EnemyStatusScreen
+        message={t("obr.enemies.loading", "Loading enemies")}
+      />
     );
   }
 
@@ -88,11 +87,4 @@ export function ObrEnemyWindow({
       characterId={playerCharacterId}
     />
   );
-}
-
-function getSearchParam(
-  name: string,
-  search = window.location.search,
-): string | null {
-  return new URLSearchParams(search).get(name)?.trim() || null;
 }

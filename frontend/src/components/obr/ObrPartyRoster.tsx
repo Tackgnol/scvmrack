@@ -23,5 +23,3 @@ export function ObrPartyRoster({
     />
   );
 }
-
-export type { ObrPartyRosterCard } from "@/obr/useObrRosterCards";

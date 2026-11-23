@@ -9,7 +9,7 @@ export const FALLBACK_MAX_MEMBERS = 10;
 export function cardToRosterRow(
   card: ObrPartyRosterCard,
 ): ObrPartyRosterBindingRow {
-  const id = typeof card.id === "string" && card.id.length > 0 ? card.id : "";
+  const id = card.id ?? "";
   return {
     id,
     characterId: id,
