@@ -21,6 +21,7 @@ import {
     getUserFacingApiErrorMessage,
     isApiForbidden,
     isApiNotFound,
+    isApiUnauthorized,
     isUnexpectedApiError,
 } from '@/utils/errorUtils';
 import { Box, Button, Stack } from '@mui/material';
@@ -580,7 +581,7 @@ export function PrintPage() {
             );
         }
 
-        if (error && !isApiNotFound(error)) {
+        if (error && !isApiNotFound(error) && !isApiUnauthorized(error)) {
             return getUserFacingApiErrorMessage(error, t, 'Failed to load character');
         }
 
