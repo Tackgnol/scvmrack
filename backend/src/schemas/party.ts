@@ -6,6 +6,8 @@ import type { FromSchema } from 'json-schema-to-ts';
 import { SUPPORTED_LOCALES } from '../config/locales.js';
 import { GETTING_BETTER_RULES } from '../lib/class-model.js';
 
+import { NO_NULL_BYTE_PATTERN } from './character.js';
+
 export { ErrorSchema } from './character.js';
 
 /** Where a pooled class comes from, in the order the GM's pool view lists them. */
@@ -23,7 +25,7 @@ export const InviteTokenParamsSchema = {
   type: 'object',
   required: ['token'],
   properties: {
-    token: { type: 'string', minLength: 1, maxLength: 256 },
+    token: { type: 'string', minLength: 1, maxLength: 256, pattern: NO_NULL_BYTE_PATTERN },
   },
 } as const;
 
@@ -95,7 +97,7 @@ export const JoinPartyBodySchema = {
   additionalProperties: false,
   required: ['token', 'characterId'],
   properties: {
-    token: { type: 'string', minLength: 1, maxLength: 256 },
+    token: { type: 'string', minLength: 1, maxLength: 256, pattern: NO_NULL_BYTE_PATTERN },
     characterId: { type: 'string', format: 'uuid' },
   },
 } as const;

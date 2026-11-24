@@ -40,12 +40,15 @@ const MAX_DB_INT = 2147483647;
 export const IdSchema = { type: 'integer', minimum: 1, maximum: MAX_DB_INT } as const;
 export const NullableIdSchema = { ...IdSchema, type: ['integer', 'null'] } as const;
 
+/** A null byte cannot be stored in Postgres text, so a token carrying one is refused up front (400) instead of failing in the query (500). */
+export const NO_NULL_BYTE_PATTERN = '^[^\\u0000]+$';
+
 /** Locale plus an optional party invite token: the party's Party Class Pool scopes the roll. */
 export const InviteLocaleQuerySchema = {
   type: 'object',
   properties: {
     ...LocaleQuerySchema.properties,
-    invite: { type: 'string', minLength: 1, maxLength: 200 },
+    invite: { type: 'string', minLength: 1, maxLength: 200, pattern: NO_NULL_BYTE_PATTERN },
     obrRoom: { type: 'string', minLength: 1, maxLength: 256 },
     obrPlayer: { type: 'string', minLength: 1, maxLength: 256 },
   },

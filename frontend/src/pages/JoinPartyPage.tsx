@@ -8,6 +8,7 @@ import {
 import { appHistory } from '@/router/history';
 import { Seo } from '@/seo/Seo';
 import { getUserFacingApiErrorMessage } from '@/utils/errorUtils';
+import { getJoinToken } from '@/utils/joinToken';
 import { partyColors, partyFonts } from '@/theme/partyTokens';
 import {
   Alert,
@@ -26,11 +27,6 @@ const subscribeToHistory = (onStoreChange: () => void): (() => void) =>
   appHistory.subscribe(() => onStoreChange());
 
 const getPathnameSnapshot = () => appHistory.location?.pathname ?? '/';
-
-function getJoinToken(pathname: string): string | null {
-  const match = pathname.match(/^\/join\/([^/]+)/);
-  return match?.[1] ? decodeURIComponent(match[1]) : null;
-}
 
 async function goToSheet(partyId: string, characterId: string) {
   await appHistory.push(`/party/${partyId}/character/${characterId}`);
