@@ -32,7 +32,19 @@ export function ClassPoolPanel({ partyId }: ClassPoolPanelProps) {
   );
   const view = query.data;
 
+  const onClassCount = view ? view.classes.filter((c) => c.enabled).length : 0;
   const save = (change: PoolSwitch) => {
+    const wouldEmpty =
+      !change.enabled &&
+      (change.kind === "classless"
+        ? onClassCount === 0
+        : onClassCount === 1 &&
+          !view?.classlessEnabled &&
+          Boolean(view?.classes.some((c) => c.lineageId === change.lineageId && c.enabled)));
+    if (wouldEmpty) {
+      setStatus(t("classPool.status.keepOne", "Keep at least one class or Classless on."));
+      return;
+    }
     setStatus("");
     mutation.mutate(change);
   };

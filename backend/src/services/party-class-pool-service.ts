@@ -76,6 +76,8 @@ function rollable(
   return { classIds: classIds.sort(ascending), acceptedClassIds: acceptedClassIds.sort(ascending) };
 }
 
+const poolMustKeepAClass = () => apiError(409, 'POOL_MUST_KEEP_A_CLASS', 'The pool must keep at least one class or Classless');
+
 /** The GM's Party Class Pool panel: viewing the pool and switching classes or classless scvm on and off. */
 export function createPartyClassPoolService(log: ServiceLogger) {
   /** The pool of a party the session owns, or why it can't be had. */
@@ -145,7 +147,7 @@ export function createPartyClassPoolService(log: ServiceLogger) {
       }
     },
 
-    /** Switches one class lineage; only a class the GM may offer can be switched on. */
+    /** Switches one class lineage; only a class the GM may offer can be switched on, and the pool always keeps one class or Classless. */
     setPoolClass(input: { session: AppSession; id: string; lineageId: string; enabled: boolean; locale: string }) {
       return changePool(input, async (pool) => {
         if (input.enabled) {
@@ -157,12 +159,18 @@ export function createPartyClassPoolService(log: ServiceLogger) {
             return classNotAvailable('This class cannot be added to the pool');
           }
         }
+        if (!input.enabled && pool.poolLineageIds.every((id) => id === input.lineageId) && !pool.classlessEnabled) {
+          return poolMustKeepAClass();
+        }
         await classPoolRepository.setLineage(input.id, input.lineageId, input.enabled);
       });
     },
 
     setPoolClassless(input: { session: AppSession; id: string; enabled: boolean; locale: string }) {
-      return changePool(input, async () => {
+      return changePool(input, async (pool) => {
+        if (!input.enabled && pool.poolLineageIds.length === 0) {
+          return poolMustKeepAClass();
+        }
         await classPoolRepository.setClassless(input.id, input.enabled);
       });
     },

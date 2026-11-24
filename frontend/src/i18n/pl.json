@@ -1352,6 +1352,7 @@
       "removed": "{{name}} usunięta z puli. Zapisano.",
       "classlessOn": "Bez klasy włączone. Zapisano.",
       "classlessOff": "Bez klasy wyłączone. Zapisano.",
+      "keepOne": "Zostaw włączoną przynajmniej jedną klasę lub bezklasowego.",
       "failed": "Ta zmiana się nie zapisała. Spróbuj ponownie."
     },
     "removed": {

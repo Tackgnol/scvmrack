@@ -328,3 +328,51 @@ test('setPoolClassless switches Classless and returns the fresh pool', async () 
     { partyId: PARTY_ID, enabled: false },
   ]);
 });
+
+test('setPoolClass refuses to switch off the last class when Classless is off', async () => {
+  resetPool();
+  state.view!.classlessEnabled = false;
+
+  const r = await service().setPoolClass({
+    session: gm('gm-1'),
+    id: PARTY_ID,
+    lineageId: 'lineage-1',
+    enabled: false,
+    locale: 'en',
+  });
+
+  assert.equal((r as any).error.statusCode, 409);
+  assert.equal((r as any).error.code, 'POOL_MUST_KEEP_A_CLASS');
+  assert.deepEqual(state.setLineageCalls, []);
+});
+
+test('setPoolClass may switch off the last class while Classless stays on', async () => {
+  resetPool();
+
+  const r = await service().setPoolClass({
+    session: gm('gm-1'),
+    id: PARTY_ID,
+    lineageId: 'lineage-1',
+    enabled: false,
+    locale: 'en',
+  });
+
+  assert.equal(r.ok, true);
+  assert.deepEqual(state.setLineageCalls, [{ partyId: PARTY_ID, lineageId: 'lineage-1', enabled: false }]);
+});
+
+test('setPoolClassless refuses to switch Classless off when no class is in the pool', async () => {
+  resetPool();
+  state.view!.poolLineageIds = [];
+
+  const r = await service().setPoolClassless({
+    session: gm('gm-1'),
+    id: PARTY_ID,
+    enabled: false,
+    locale: 'en',
+  });
+
+  assert.equal((r as any).error.statusCode, 409);
+  assert.equal((r as any).error.code, 'POOL_MUST_KEEP_A_CLASS');
+  assert.deepEqual(state.setClasslessCalls, []);
+});
