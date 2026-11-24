@@ -71,6 +71,19 @@ describe('CustomItemModal', () => {
     expect(onClose).toHaveBeenCalled();
   });
 
+  it('creates the item once when the Forge button is double clicked', async () => {
+    await renderModal();
+
+    await userEvent.fill(
+      page.getByRole('textbox', { name: /item name/i }),
+      'Bone Charm'
+    );
+    await userEvent.dblClick(page.getByRole('button', { name: /^forge$/i }));
+
+    await expect.poll(() => onCreate).toHaveBeenCalledTimes(1);
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
   it('switches between item-kind specific panels', async () => {
     await renderModal();
 
