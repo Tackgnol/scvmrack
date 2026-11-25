@@ -219,6 +219,36 @@ describe('ClassPoolPanel', () => {
       .toHaveTextContent('Nobody can roll a scvm with an empty pool.');
   });
 
+  it('refuses to switch off the last class while Classless is off', async () => {
+    const last = baseView();
+    last.classlessEnabled = false;
+    vi.mocked(getClassPool).mockResolvedValue(last);
+    renderPanel();
+
+    const deserter = page.getByRole('switch', { name: 'Fanged Deserter in the pool' });
+    await userEvent.click(deserter);
+
+    await expect
+      .element(page.getByRole('status').filter({ hasText: 'Keep at least one' }))
+      .toBeVisible();
+    expect(setPoolClass).not.toHaveBeenCalled();
+    await expect.element(deserter).toBeChecked();
+  });
+
+  it('refuses to switch Classless off when no class is in the pool', async () => {
+    const none = baseView();
+    none.classes = none.classes.map((c) => ({ ...c, enabled: false }));
+    vi.mocked(getClassPool).mockResolvedValue(none);
+    renderPanel();
+
+    await userEvent.click(page.getByRole('switch', { name: /Classless/ }));
+
+    await expect
+      .element(page.getByRole('status').filter({ hasText: 'Keep at least one' }))
+      .toBeVisible();
+    expect(setPoolClassless).not.toHaveBeenCalled();
+  });
+
   it('dismissing a removed notice takes the class out of the pool', async () => {
     const withRemoved = baseView();
     withRemoved.removed = [

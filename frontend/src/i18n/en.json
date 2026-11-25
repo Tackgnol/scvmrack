@@ -1341,6 +1341,7 @@
       "removed": "{{name}} removed from the pool. Saved.",
       "classlessOn": "Classless on. Saved.",
       "classlessOff": "Classless off. Saved.",
+      "keepOne": "Keep at least one class or Classless on.",
       "failed": "That change didn't save. Try again."
     },
     "removed": {
