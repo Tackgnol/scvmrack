@@ -5,7 +5,7 @@ import MorkBorgModal, { ModalButton } from '@components/molecules/modal/MorkBorg
 import { loginUrl } from '@/auth';
 import { useSessionExpiredFlag } from '@/hooks/useSessionExpiredFlag';
 import { getLastAuthKind } from '@/preferences/lastAuthKind';
-import { CHARACTER_ID_QUERY_PARAM, clearCurrentSearchParam, navigateToLoggedOut } from '@/router/navigation';
+import { buildSessionReturnPath, CHARACTER_ID_QUERY_PARAM, clearCurrentSearchParam, navigateToLoggedOut } from '@/router/navigation';
 
 /**
  * Recovers from an expired session. The auth middleware flips the `expired`
@@ -66,7 +66,7 @@ export function SessionExpiredGate() {
                     <ModalButton
                         variant="primary"
                         onClick={() => {
-                            window.location.href = loginUrl();
+                            window.location.href = loginUrl(buildSessionReturnPath());
                         }}
                     >
                         {t('errors.signInAgain', 'Sign in')}

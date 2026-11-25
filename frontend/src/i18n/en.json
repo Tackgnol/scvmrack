@@ -1746,6 +1746,7 @@
     "unsavedChanges": "Unsaved changes from {{date}}. Resume or discard?",
     "draftLimit": "Not saved as a draft: you already keep 3 unfinished new classes. Save this class or discard a draft.",
     "draftUnsaved": "Draft not saved. Your next edit tries again.",
+    "draftRestored": "Restored your unsaved changes.",
     "takedownReason": "Reason:"
   },
   "classes": {

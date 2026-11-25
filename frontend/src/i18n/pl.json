@@ -1773,6 +1773,7 @@
     "unsavedChanges": "Niezapisane zmiany z {{date}}. Wznowić czy odrzucić?",
     "draftLimit": "Nie zapisano szkicu: masz już 3 niedokończone nowe klasy. Zapisz tę klasę albo odrzuć któryś szkic.",
     "draftUnsaved": "Szkic nie został zapisany. Następna edycja spróbuje ponownie.",
+    "draftRestored": "Przywrócono niezapisane zmiany.",
     "takedownReason": "Uzasadnienie:"
   },
   "classes": {

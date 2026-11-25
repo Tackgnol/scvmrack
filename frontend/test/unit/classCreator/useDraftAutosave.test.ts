@@ -182,3 +182,38 @@ describe('useDraftAutosave completing a save', () => {
     expect(api.deleteClassDraft).toHaveBeenCalledWith(6);
   });
 });
+
+describe('useDraftAutosave keeps unsaved edits across a session expiry', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.clearAllMocks();
+    localStorage.clear();
+  });
+  afterEach(() => vi.useRealTimers());
+
+  const edited = { name: { en: 'Gutter Prophet, edited', pl: '' } } as unknown as ClassDraft;
+  const unauthorized = Object.assign(new Error('Your session expired'), { statusCode: 401, code: 'UNAUTHORIZED' });
+
+  it('keeps the refused edit in the browser and clears it once a save lands', async () => {
+    api.updateClassDraft.mockRejectedValueOnce(unauthorized);
+    const replaceDraft = vi.fn();
+    const { result, rerender } = renderHook(
+      ({ revision }) => useDraftAutosave({ classId: 7, draft: edited, revision, initialDraft: stored(1), replaceDraft }),
+      { wrapper, initialProps: { revision: 2 } },
+    );
+
+    await act(async () => { vi.advanceTimersByTime(1_000); });
+    expect(result.current.state).toBe('unsaved');
+    expect(JSON.parse(localStorage.getItem('scvmrack-class-draft-unsaved-v1:1') ?? 'null')).toEqual({
+      baseRevision: 1,
+      draft: edited,
+    });
+
+    api.updateClassDraft.mockResolvedValueOnce({ ...stored(1), draft: edited, revision: 2 });
+    rerender({ revision: 3 });
+    await act(async () => { vi.advanceTimersByTime(1_000); });
+
+    expect(result.current.state).toBe('saved');
+    expect(localStorage.getItem('scvmrack-class-draft-unsaved-v1:1')).toBeNull();
+  });
+});
