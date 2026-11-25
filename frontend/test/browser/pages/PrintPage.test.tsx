@@ -261,6 +261,21 @@ describe('PrintPage', () => {
     expect(document.body.textContent).not.toMatch(/scvm not found/i);
   });
 
+  it('says the scvm was not found instead of session expired for a visitor with no session', async () => {
+    await renderPrintPage({
+      character: undefined,
+      isLoading: false,
+      error: hookError({
+        statusCode: 401,
+        code: 'UNAUTHORIZED',
+        message: 'Your session expired. Sign in again.',
+      }),
+    });
+
+    await expect.element(page.getByText(/scvm not found/i)).toBeVisible();
+    expect(document.body.textContent).not.toMatch(/session expired/i);
+  });
+
   it('recovers from an invalid print target instead of navigating back to it', async () => {
     await renderPrintPage({
       character: undefined,
