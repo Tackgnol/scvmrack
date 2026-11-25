@@ -4,6 +4,7 @@ import type { CharacterResponse } from '@/hooks/models';
 import { appHistory } from '@/router/history';
 import { Seo } from '@/seo/Seo';
 import { getUserFacingApiErrorMessage } from '@/utils/errorUtils';
+import { getJoinToken } from '@/utils/joinToken';
 import { partyColors, partyFonts } from '@/theme/partyTokens';
 import { Alert, Box, Button, CircularProgress, styled } from '@mui/material';
 import { useEffect, useState, useSyncExternalStore } from 'react';
@@ -13,11 +14,6 @@ const subscribeToHistory = (onStoreChange: () => void): (() => void) =>
   appHistory.subscribe(() => onStoreChange());
 
 const getPathnameSnapshot = () => appHistory.location?.pathname ?? '/';
-
-function getForgeToken(pathname: string): string | null {
-  const match = pathname.match(/^\/join\/([^/]+)\/forge/);
-  return match?.[1] ? decodeURIComponent(match[1]) : null;
-}
 
 const Center = styled(Box)({
   display: 'flex',
@@ -60,7 +56,7 @@ export function JoinForgePage() {
     getPathnameSnapshot,
     getPathnameSnapshot,
   );
-  const token = getForgeToken(pathname);
+  const token = getJoinToken(pathname);
 
   const [sessionReady, setSessionReady] = useState(false);
   const [sessionError, setSessionError] = useState<string | null>(null);
