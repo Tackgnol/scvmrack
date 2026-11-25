@@ -38,8 +38,10 @@ test('a party offers built-in, public and its owner’s classes while they are a
   }
 });
 
-test('anyone may report a built-in class or a public Custom Class that is still up', () => {
-  assert.equal(isReportable(row({ source: 'main_book' })), true);
+test('anyone may report a zine or Rack class or a public Custom Class that is still up, but never a Book class', () => {
+  assert.equal(isReportable(row({ source: 'main_book' })), false);
+  assert.equal(isReportable(row({ source: 'zine' })), true);
+  assert.equal(isReportable(row({ source: 'the_rack' })), true);
   assert.equal(isReportable(row({ visibility: 'public' })), true);
   assert.equal(isReportable(row()), false);
   assert.equal(isReportable(row({ visibility: 'public', takenDownAt: takenDown })), false);
