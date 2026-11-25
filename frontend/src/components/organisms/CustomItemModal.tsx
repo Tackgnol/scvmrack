@@ -1,4 +1,4 @@
-import { type FormEvent, useId } from 'react';
+import { type FormEvent, useEffect, useId, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import AddIcon from '@mui/icons-material/Add';
 import { Box, Button } from '@mui/material';
@@ -35,6 +35,12 @@ export default function CustomItemModal({
 }: CustomItemModalProps) {
   const { t } = useTranslation();
   const formId = useId();
+  const submittedRef = useRef(false);
+  useEffect(() => {
+    if (open) {
+      submittedRef.current = false;
+    }
+  }, [open]);
   const {
     state,
     update,
@@ -65,13 +71,14 @@ export default function CustomItemModal({
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
-    if (!canSave) {
+    if (!canSave || submittedRef.current) {
       return;
     }
     const items = buildBundle();
     if (items.length === 0) {
       return;
     }
+    submittedRef.current = true;
     onCreate(items);
     onClose();
   };
