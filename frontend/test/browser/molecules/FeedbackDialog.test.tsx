@@ -12,9 +12,11 @@ type CapturedRequest = {
 
 let feedbackRequests: CapturedRequest[];
 let fetchSpy: ReturnType<typeof vi.spyOn>;
+let feedbackStatus = 200;
 
 beforeEach(() => {
   feedbackRequests = [];
+  feedbackStatus = 200;
 
   fetchSpy = vi
     .spyOn(globalThis, 'fetch')
@@ -34,7 +36,7 @@ beforeEach(() => {
           body: JSON.parse(String(init?.body ?? '{}')),
         });
         return new Response(JSON.stringify({ eventId: 'feedback-event-id' }), {
-          status: 200,
+          status: feedbackStatus,
           headers: { 'Content-Type': 'application/json' },
         });
       }
@@ -105,5 +107,29 @@ describe('FeedbackDialog', () => {
     expect((request.body.tags as Record<string, string>).feedback_source).toBe(
       'faq_bug_report'
     );
+  });
+
+  it('tells the user the report was not sent when the server fails and keeps the text', async () => {
+    feedbackStatus = 500;
+    const onClose = vi.fn();
+    render(
+      <I18nextProvider i18n={i18n}>
+        <FeedbackDialog open kind="feedback" onClose={onClose} />
+      </I18nextProvider>
+    );
+
+    const dialogs = await screen.findAllByRole('dialog');
+    const dialog = within(dialogs[dialogs.length - 1]);
+    const textbox = await dialog.findByTestId('feedback-message');
+    await userEvent.type(textbox, 'Something broke');
+    await userEvent.click(dialog.getByText(/send report/i));
+
+    expect(await dialog.findByRole('alert')).toHaveTextContent(/not sent/i);
+    expect(onClose).not.toHaveBeenCalled();
+    expect(dialog.getByTestId('feedback-message')).toHaveValue('Something broke');
+
+    feedbackStatus = 200;
+    await userEvent.click(dialog.getByText(/send report/i));
+    await expect.poll(() => onClose).toHaveBeenCalledTimes(1);
   });
 });

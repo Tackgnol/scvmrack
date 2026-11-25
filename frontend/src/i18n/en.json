@@ -898,6 +898,7 @@
     "errorDescription": "Tell us what you were doing. We will attach the technical error details in the background.",
     "prompt": "What were you doing?",
     "sendReport": "Send report",
+    "sendFailed": "Your report was not sent. Check your connection and try again.",
     "sending": "Sending...",
     "skip": "Skip",
     "sent": "Report sent."

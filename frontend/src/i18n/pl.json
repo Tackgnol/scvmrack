@@ -895,6 +895,7 @@
     "errorDescription": "Napisz, co robiłeś. Szczegóły techniczne błędu dołączymy w tle.",
     "prompt": "Co robiłeś?",
     "sendReport": "Wyślij raport",
+    "sendFailed": "Twoje zgłoszenie nie zostało wysłane. Sprawdź połączenie i spróbuj ponownie.",
     "sending": "Wysyłanie...",
     "skip": "Pomiń",
     "sent": "Raport wysłany."

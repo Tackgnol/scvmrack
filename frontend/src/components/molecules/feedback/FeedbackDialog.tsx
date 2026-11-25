@@ -10,7 +10,7 @@ import {
   getApiRequestId,
 } from '@/utils/errorUtils';
 import { customStyles } from '@/theme/morkBorgTheme';
-import { Box, Stack, TextField, Typography } from '@mui/material';
+import { Alert, Box, Stack, TextField, Typography } from '@mui/material';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -42,6 +42,7 @@ type FeedbackFormState = {
   error: unknown;
   message: string;
   isSending: boolean;
+  sendFailed: boolean;
 };
 
 function cleanedContext(context?: FeedbackContext): Record<string, unknown> {
@@ -85,6 +86,7 @@ export default function FeedbackDialog({
     error,
     message: '',
     isSending: false,
+    sendFailed: false,
   }));
 
   if (
@@ -98,10 +100,11 @@ export default function FeedbackDialog({
       error,
       message: open ? '' : formState.message,
       isSending: open ? false : formState.isSending,
+      sendFailed: open ? false : formState.sendFailed,
     });
   }
 
-  const { message, isSending } = formState;
+  const { message, isSending, sendFailed } = formState;
 
   const setMessage = (nextMessage: string) => {
     setFormState((previous) => ({
@@ -114,6 +117,15 @@ export default function FeedbackDialog({
     setFormState((previous) => ({
       ...previous,
       isSending: nextIsSending,
+      ...(nextIsSending ? { sendFailed: false } : {}),
+    }));
+  };
+
+  const setSendFailed = () => {
+    setFormState((previous) => ({
+      ...previous,
+      isSending: false,
+      sendFailed: true,
     }));
   };
 
@@ -173,7 +185,7 @@ export default function FeedbackDialog({
     } catch (submitError) {
       // Keep the dialog open so the user can retry; surface details for debugging.
       console.error('Failed to send feedback report', submitError);
-      setIsSending(false);
+      setSendFailed();
     }
   };
 
@@ -205,6 +217,14 @@ export default function FeedbackDialog({
         <Typography sx={customStyles.feedbackDialog.description}>
           {resolvedDescription}
         </Typography>
+        {sendFailed && (
+          <Alert severity="error" role="alert">
+            {t(
+              'feedback.sendFailed',
+              'Your report was not sent. Check your connection and try again.'
+            )}
+          </Alert>
+        )}
         <TextField
           label={promptLabel ?? t('feedback.prompt', 'What were you doing?')}
           value={message}
