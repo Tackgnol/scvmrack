@@ -101,8 +101,11 @@ export async function mayRead(
   return mayUse(row, viewer.userId) || viewer.pooledForViewer();
 }
 
-/** Whether anyone may report a class version: any Built-in Class, or a Public Custom Class still up. */
+/** Whether anyone may report a class version: a zine or Rack class, or a Public Custom Class still up. Never a Book Class. */
 export function isReportable(row: Pick<ClassVersionRef, 'source' | 'visibility' | 'takenDownAt'>): boolean {
+  if (row.source === 'main_book') {
+    return false;
+  }
   return row.source !== 'user' || (row.visibility === 'public' && row.takenDownAt === null);
 }
 
