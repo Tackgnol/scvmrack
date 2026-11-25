@@ -55,6 +55,7 @@ vi.mock('@/preferences/lastAuthKind', () => ({
 
 vi.mock('@/router/navigation', () => ({
   CHARACTER_ID_QUERY_PARAM: 'character',
+  buildSessionReturnPath: () => undefined,
   clearCurrentSearchParam: navMocks.clearCurrentSearchParam,
   navigateToLoggedOut: navMocks.navigateToLoggedOut,
 }));

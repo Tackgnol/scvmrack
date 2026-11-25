@@ -10,6 +10,7 @@ const HOME_PATH = '/character';
 const NEW_CHARACTER_PATH = '/character/new';
 const FORGE_PATH = '/character/create';
 const PRINT_PATH = '/print';
+const GM_PATH_PREFIX = '/gm/';
 const RESERVED_CHARACTER_PATH_SEGMENTS = new Set(['new', 'create']);
 const PARTY_CHARACTER_PATH_PATTERN = /^\/party\/([^/]+)\/character\/([^/]+)/;
 
@@ -204,15 +205,28 @@ export const navigateToLoggedOut = async (): Promise<void> => {
     await navigateToHomeWithFlag('/', LOGGED_OUT_QUERY_PARAM, false, true);
 };
 
+/** Where signing in again should return: the GM page the visitor was working on (no expired flag), otherwise the default. */
+export const buildSessionReturnPath = (): string | undefined => {
+    if (!appHistory.location.pathname.startsWith(GM_PATH_PREFIX)) {
+        return undefined;
+    }
+    const searchParams = getCurrentSearchParams();
+    searchParams.delete(SESSION_EXPIRED_QUERY_PARAM);
+    return buildPath(appHistory.location.pathname, searchParams, appHistory.location.hash);
+};
+
 export const navigateToSessionExpired = async (): Promise<void> => {
     const searchParams = getCurrentSearchParams();
     searchParams.set(SESSION_EXPIRED_QUERY_PARAM, 'true');
     // Expiry is a recovery signal, not user navigation. A pending save must
     // survive it rather than block the signal by trying to save again.
+    // The Owlbear panel and the GM pages (account-only, often holding unsaved work such as a class draft) stay where
+    // they are: the session-expired modal opens over them, and signing in returns to the same page.
     const inObr = appHistory.location.pathname === '/obr.html';
+    const stay = inObr || appHistory.location.pathname.startsWith(GM_PATH_PREFIX);
     await appHistory.replace(buildPath(
-        inObr ? appHistory.location.pathname : NEW_CHARACTER_PATH,
+        stay ? appHistory.location.pathname : NEW_CHARACTER_PATH,
         searchParams,
-        inObr ? appHistory.location.hash : '',
+        stay ? appHistory.location.hash : '',
     ), undefined, { ignoreBlocker: true });
 };

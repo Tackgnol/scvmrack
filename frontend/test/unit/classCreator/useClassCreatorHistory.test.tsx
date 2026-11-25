@@ -61,3 +61,28 @@ it('keeps quick edits to different controls as separate undo steps', () => {
   name.remove();
   other.remove();
 });
+
+it('restores an unsaved edit kept in the browser when the server draft has not changed', () => {
+  localStorage.clear();
+  const base = blankDraft();
+  const record = { id: 9, classId: null, draft: base, revision: 4, updatedAt: '2026-11-24T10:00:00.000Z' } as never;
+  const kept = rename('Typed before the session expired')(base);
+  localStorage.setItem('scvmrack-class-draft-unsaved-v1:9', JSON.stringify({ baseRevision: 4, draft: kept }));
+
+  const { result } = renderHook(() => useClassCreator(null, base, record), { wrapper });
+
+  expect(result.current.draft.name.en).toBe('Typed before the session expired');
+  expect(result.current.restoredUnsavedChanges).toBe(true);
+});
+
+it('ignores a kept edit when the server draft moved on', () => {
+  localStorage.clear();
+  const base = blankDraft();
+  const record = { id: 9, classId: null, draft: base, revision: 5, updatedAt: '2026-11-24T10:00:00.000Z' } as never;
+  localStorage.setItem('scvmrack-class-draft-unsaved-v1:9', JSON.stringify({ baseRevision: 4, draft: rename('Old')(base) }));
+
+  const { result } = renderHook(() => useClassCreator(null, base, record), { wrapper });
+
+  expect(result.current.draft.name.en).toBe('');
+  expect(result.current.restoredUnsavedChanges).toBe(false);
+});

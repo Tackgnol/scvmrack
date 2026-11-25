@@ -10,6 +10,7 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { getApiErrorCode, getApiErrorStatus } from "@/utils/errorUtils";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { clearDraftMirror, writeDraftMirror } from "./draftMirror.utils";
 
 export type DraftSaveState = "idle" | "saving" | "saved" | "offline" | "conflict" | "banned" | "limit" | "unsaved";
 
@@ -138,6 +139,18 @@ export function useDraftAutosave({ classId, draft, revision, initialDraft, repla
     return () => window.clearTimeout(timer);
   }, [draft, persist, revision]);
 
+  // While a save keeps failing (a refused or expired session, or offline) the last edit also lives in this browser, so it survives a sign-in.
+  useEffect(() => {
+    if (!record) {
+      return;
+    }
+    if (state === "unsaved" || state === "offline") {
+      writeDraftMirror(record.id, record.revision, draft);
+    } else if (state === "saved") {
+      clearDraftMirror(record.id);
+    }
+  }, [draft, record, state]);
+
   useEffect(() => {
     if (state !== "offline") {
       return;
@@ -186,6 +199,9 @@ export function useDraftAutosave({ classId, draft, revision, initialDraft, repla
         return toDelete ? deleteDraft(toDelete.id) : Promise.resolve();
       })
       .then(() => {
+        if (recordRef.current) {
+          clearDraftMirror(recordRef.current.id);
+        }
         recordRef.current = null;
         setRecord(null);
         setState("idle");
@@ -210,6 +226,9 @@ export function useDraftAutosave({ classId, draft, revision, initialDraft, repla
   const complete = useCallback((discardedId?: number) => {
     completedRevision.current = latest.current.revision;
     const leftover = recordRef.current;
+    if (leftover) {
+      clearDraftMirror(leftover.id);
+    }
     if (leftover && leftover.id !== discardedId) {
       void deleteDraft(leftover.id).catch(() => undefined);
     }

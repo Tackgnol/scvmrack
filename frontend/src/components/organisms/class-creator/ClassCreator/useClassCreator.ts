@@ -24,6 +24,7 @@ import {
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { readDraftMirror } from "./draftMirror.utils";
 import { useDraftAutosave } from "./useDraftAutosave";
 
 type HistoryEntry = { before: ClassDraft; after: ClassDraft; at: number; control: string | null };
@@ -53,7 +54,12 @@ export function useClassCreator(
     mounted.current = true;
     return () => { mounted.current = false; };
   }, []);
-  const restoredDraft = initialDraftRecord?.draft ?? initialDraft;
+  // An edit the server refused (an expired session) is kept in this browser; take it back while the server draft is unchanged.
+  const [keptEdit] = useState(() => {
+    const kept = initialDraftRecord ? readDraftMirror(initialDraftRecord.id, initialDraftRecord.revision) : null;
+    return kept && !sameDraft(kept, initialDraftRecord!.draft) ? kept : null;
+  });
+  const restoredDraft = keptEdit ?? initialDraftRecord?.draft ?? initialDraft;
   const draftRef = useRef(restoredDraft);
   const historyRef = useRef<{ undo: HistoryEntry[]; redo: HistoryEntry[] }>({
     undo: [],
@@ -71,7 +77,7 @@ export function useClassCreator(
     draftRef.current = nextDraft;
     setDraft(nextDraft);
   };
-  const [revision, setRevision] = useState(0);
+  const [revision, setRevision] = useState(keptEdit ? 1 : 0);
   const [savedId, setSavedId] = useState(classId);
   const autosave = useDraftAutosave({
     classId: savedId,
@@ -283,6 +289,8 @@ export function useClassCreator(
     setOpenItem,
     jump,
     draftAutosave: { ...autosave, discard },
+    /** The draft opened with an edit that was not saved before the session ended. */
+    restoredUnsavedChanges: keptEdit !== null,
     /** Steps by `delta` (−1 back, +1 next) when there is one that way. */
     move: (delta: number) => {
       const next = STEPS[STEPS.indexOf(step) + delta];

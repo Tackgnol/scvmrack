@@ -169,6 +169,8 @@ export function ClassCreator({
                   t("creator.draftLimit", "Not saved as a draft: you already keep 3 unfinished new classes. Save this class or discard a draft.")}
                 {creator.draftAutosave.state === "unsaved" &&
                   t("creator.draftUnsaved", "Draft not saved. Your next edit tries again.")}
+                {creator.restoredUnsavedChanges &&
+                  ` ${t("creator.draftRestored", "Restored your unsaved changes.")}`}
                 {creator.draftAutosave.record &&
                   creator.draftAutosave.state !== "conflict" && (
                     <DiscardDraft

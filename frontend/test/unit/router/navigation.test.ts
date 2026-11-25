@@ -12,6 +12,7 @@ import {
   LOGGED_OUT_QUERY_PARAM,
   navigateToLoggedOut,
   navigateToSessionExpired,
+  buildSessionReturnPath,
   SESSION_EXPIRED_QUERY_PARAM,
   setCurrentCharacterIdParam,
 } from '@/router/navigation.ts';
@@ -180,6 +181,15 @@ describe('navigation router utils', () => {
             );
         });
 
+        it('stays on a GM page so the modal opens over the work in progress', async () => {
+            appHistory.location.pathname = '/gm/classes/draft/12';
+            appHistory.location.search = '?step=abilities';
+            await navigateToSessionExpired();
+            expect(appHistory.replace).toHaveBeenCalledWith(
+                `/gm/classes/draft/12?step=abilities&${SESSION_EXPIRED_QUERY_PARAM}=true`, undefined, { ignoreBlocker: true }
+            );
+        });
+
         it('should navigate to home with expired flag', async () => {
             await navigateToSessionExpired();
             expect(appHistory.replace).toHaveBeenCalledWith(
@@ -193,6 +203,20 @@ describe('navigation router utils', () => {
             expect(appHistory.replace).toHaveBeenCalledWith(
                 `/character/new?${CHARACTER_ID_QUERY_PARAM}=char1&${SESSION_EXPIRED_QUERY_PARAM}=true`, undefined, { ignoreBlocker: true }
             );
+        });
+    });
+
+    describe('buildSessionReturnPath', () => {
+        it('returns the GM page the visitor was on, without the expired flag', () => {
+            appHistory.location.pathname = '/gm/classes/draft/12';
+            appHistory.location.search = `?step=abilities&${SESSION_EXPIRED_QUERY_PARAM}=true`;
+            appHistory.location.hash = '#abilities';
+            expect(buildSessionReturnPath()).toBe('/gm/classes/draft/12?step=abilities#abilities');
+        });
+
+        it('returns nothing outside the GM pages so signing in still lands on the home page', () => {
+            appHistory.location.pathname = '/character/new';
+            expect(buildSessionReturnPath()).toBeUndefined();
         });
     });
 });
