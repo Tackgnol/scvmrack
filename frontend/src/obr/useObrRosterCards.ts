@@ -195,7 +195,14 @@ export function useObrRosterCards(): ObrRosterState {
   return {
     ...roster,
     bindSelectedToken: (input) =>
-      updateTokenBinding(() => bindRoomSelectedTokens({ roomId, ...input })),
+      updateTokenBinding(async () => {
+        if (!(await OBR.player.getSelection())?.length) {
+          throw new Error(
+            t("obr.roster.selectTokenFirst", "Select a token on the map first"),
+          );
+        }
+        return bindRoomSelectedTokens({ roomId, ...input });
+      }),
     unbindToken: (tokenId) =>
       updateTokenBinding(() => unbindRoomToken(roomId, tokenId)),
     action: {

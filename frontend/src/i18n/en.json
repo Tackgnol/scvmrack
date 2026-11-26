@@ -117,6 +117,7 @@
       "assignTo": "Assign to player"
     },
     "roster": {
+      "selectTokenFirst": "Select a token on the map first",
       "removed": "Removed from room",
       "cleanupPending": "Removed; scene cleanup pending",
       "cleanupComplete": "Scene cleanup complete",
