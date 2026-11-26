@@ -12,7 +12,11 @@ vi.mock('@/analytics/googleAnalytics', () => ({
     setAnalyticsEnabled: vi.fn(),
 }));
 
+const router = vi.hoisted(() => ({ pathname: '/' }));
+
 vi.mock('@tanstack/react-router', () => ({
+    useRouterState: ({ select }: { select: (state: { location: { pathname: string } }) => unknown }) =>
+        select({ location: { pathname: router.pathname } }),
     Link: ({ children, to, ...props }: { children: ReactNode; to: string } & AnchorHTMLAttributes<HTMLAnchorElement>) => (
         <a href={to} {...props}>{children}</a>
     ),
@@ -34,6 +38,7 @@ describe('PrivacyNoticeDrawer Component', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        router.pathname = '/';
         mockSubscribeCallback = null;
 
         mockGetSettings = vi.mocked(PrivacySettingsModule.getPrivacySettings);
@@ -66,6 +71,24 @@ describe('PrivacyNoticeDrawer Component', () => {
         await expect.element(privacyLink).toBeVisible();
         await expect.element(privacyLink).toHaveAttribute('href', '/privacy');
     });
+
+    it.each(['/privacy', '/terms', '/legal'])(
+        'stays out of the way on %s until the notice is acknowledged (RPG-286)',
+        async (pathname) => {
+            router.pathname = pathname;
+            await render(
+                <BrowserTestProvider>
+                    <PrivacyNoticeDrawer />
+                    <main>
+                        <h1>Legal text</h1>
+                    </main>
+                </BrowserTestProvider>
+            );
+
+            await expect.element(page.getByRole('heading', { name: 'Legal text' })).toBeVisible();
+            await expect.element(page.getByTestId('privacy-drawer-save-button')).not.toBeInTheDocument();
+        }
+    );
 
     it('does not render on mount if already acknowledged', async () => {
         mockGetSettings.mockReturnValue({

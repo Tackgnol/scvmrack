@@ -1,4 +1,4 @@
-import { Link } from '@tanstack/react-router';
+import { Link, useRouterState } from '@tanstack/react-router';
 import { setAnalyticsEnabled } from '@/analytics/googleAnalytics';
 import {
     getPrivacySettings,
@@ -14,6 +14,8 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const PRIVACY_DRAWER_WIDTH = 390;
+// The first-use drawer is modal, so it must not cover the pages a visitor reads before acknowledging it.
+const LEGAL_PATHS = ['/privacy', '/terms', '/legal'];
 
 interface PrivacyNoticeDrawerProps {
     openOnMount?: boolean;
@@ -28,6 +30,7 @@ export function PrivacyNoticeDrawer({ openOnMount = false }: PrivacyNoticeDrawer
     const [open, setOpen] = useState<boolean>(() => openOnMount || !savedSettings.acknowledged);
 
     const isFirstNotice = !savedSettings.acknowledged;
+    const onLegalPage = useRouterState({ select: (state) => LEGAL_PATHS.includes(state.location.pathname) });
     const legalSections: string[] = [
         t('privacy.sections.storage'),
         t('privacy.sections.backend'),
@@ -70,7 +73,7 @@ export function PrivacyNoticeDrawer({ openOnMount = false }: PrivacyNoticeDrawer
     return (
         <Drawer
             anchor="right"
-            open={open}
+            open={open && !(isFirstNotice && onLegalPage)}
             onClose={closeDrawer}
             ModalProps={{
                 disableEscapeKeyDown: isFirstNotice,
