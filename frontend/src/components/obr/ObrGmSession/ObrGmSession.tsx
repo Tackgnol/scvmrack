@@ -5,8 +5,14 @@ import { useTranslation } from "react-i18next";
 import { useObrSession } from "@/obr/useObrSession";
 
 export function ObrGmSession() {
-  const { isLoading, isAuthenticated, signIn, cancelSignIn, signInProgress } =
-    useObrSession();
+  const {
+    isLoading,
+    isAuthenticated,
+    signIn,
+    signOut,
+    cancelSignIn,
+    signInProgress,
+  } = useObrSession();
   const { t } = useTranslation();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -28,8 +34,16 @@ export function ObrGmSession() {
     setBusy(false);
   }
 
-  if (isLoading || isAuthenticated) {
+  if (isLoading) {
     return null;
+  }
+
+  if (isAuthenticated) {
+    return (
+      <Button size="small" onClick={() => void signOut()}>
+        {t("obr.roster.signOut", "Sign out")}
+      </Button>
+    );
   }
 
   return (
