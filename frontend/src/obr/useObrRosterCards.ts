@@ -82,8 +82,17 @@ export function useObrRosterCards(): ObrRosterState {
     }
   }, [players, tokens, roomId, queryClient]);
 
+  // The SDK reports "Roster refreshed" unless this throws, so refetch failures must reject.
   const onRefresh = useCallback(async () => {
-    await queryClient.invalidateQueries({ queryKey: participationKey(roomId) });
+    const throwOnError = { throwOnError: true };
+    await queryClient.invalidateQueries(
+      { queryKey: participationKey(roomId) },
+      throwOnError,
+    );
+    await queryClient.invalidateQueries(
+      { queryKey: obrKeys.cards() },
+      throwOnError,
+    );
   }, [queryClient, roomId]);
 
   const roster = useObrRosterCardsCore({
