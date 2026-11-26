@@ -30,6 +30,7 @@ export type RoomRosterState = Omit<CoreRosterState, "rows" | "cards"> & {
 };
 
 export type ObrRosterState = RoomRosterState & {
+  canManage: boolean;
   removeFromRoster: (characterId: string) => Promise<void>;
   removeRosterAction: RemoveFromRosterState;
   cleanupMessage: string | null;

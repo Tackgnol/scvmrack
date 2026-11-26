@@ -203,6 +203,7 @@ export function useObrRosterCards(): ObrRosterState {
       pending: roster.action.pending || tokenSyncPending,
       error: tokenSyncError ?? roster.action.error,
     },
+    canManage: Boolean(participation.data?.canManage),
     removeFromRoster,
     removeRosterAction,
     cleanupMessage,
