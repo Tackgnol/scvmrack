@@ -9,10 +9,16 @@ import {
   type RoomParticipation,
 } from "@/api/roomParticipation";
 import { finishSceneCleanup } from "@/obr/sceneCleanup";
+import { bindRoomSelectedTokens } from "@/obr/roomTokenMetadata";
 
 vi.mock("@/obr/useObrRoomId", () => ({ useObrRoomId: () => "room" }));
 vi.mock("@/hooks/usePartyStream", () => ({ usePartyStream: vi.fn() }));
 vi.mock("@/obr/sceneCleanup", () => ({ finishSceneCleanup: vi.fn() }));
+vi.mock("@/obr/roomTokenMetadata", () => ({
+  bindRoomSelectedTokens: vi.fn(),
+  unbindRoomToken: vi.fn(),
+}));
+const getSelection = vi.hoisted(() => vi.fn());
 vi.mock("@/api/roomParticipation", async (original) => ({
   ...(await original<typeof import("@/api/roomParticipation")>()),
   fetchRoomParticipation: vi.fn(),
@@ -27,6 +33,7 @@ vi.mock("@owlbear-rodeo/sdk", () => ({
       return () => {};
     },
     scene: { onReadyChange: () => () => {} },
+    player: { getSelection },
   },
 }));
 const core = vi.hoisted(() => ({
@@ -37,7 +44,10 @@ const core = vi.hoisted(() => ({
 vi.mock("@tackgnol/rpgtools-owlbear/react-query", () => ({
   useObrRosterCards: (input: { client: typeof core.client }) => {
     core.client = input.client;
-    return { action: { pending: false, error: null }, refresh: vi.fn() };
+    return {
+      action: { pending: false, error: null },
+      refresh: vi.fn(),
+    };
   },
   toRosterRows: vi.fn(),
 }));
@@ -160,4 +170,18 @@ it("tells players about a removal even when no scene cleanup is needed", async (
     { kind: "roster" },
     { destination: "ALL" },
   );
+});
+
+it("tells the GM to select a token when Bind selected token has no selection (RPG-388)", async () => {
+  getSelection.mockResolvedValue([]);
+  const { result } = roster();
+  await act(async () =>
+    result.current.bindSelectedToken?.({
+      characterId: "scvm",
+      characterName: "Karg",
+      playerId: null,
+    }),
+  );
+  expect(result.current.action.error).toBe("Select a token on the map first");
+  expect(bindRoomSelectedTokens).not.toHaveBeenCalled();
 });

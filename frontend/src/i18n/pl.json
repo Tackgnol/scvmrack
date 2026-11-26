@@ -117,6 +117,7 @@
       "assignTo": "Przypisz graczowi"
     },
     "roster": {
+      "selectTokenFirst": "Najpierw wybierz token na mapie",
       "removed": "Usunięto z pokoju",
       "cleanupPending": "Usunięto; porządkowanie sceny oczekuje",
       "cleanupComplete": "Porządkowanie sceny zakończone",
