@@ -22,11 +22,15 @@ export function ObrPartyRosterContainer() {
         connectedPlayers={roster.connectedPlayers}
         action={roster.action}
         onRefresh={roster.refresh}
-        bindSelectedToken={roster.bindSelectedToken}
-        assignPlayer={roster.assignPlayer}
-        unassignPlayer={roster.unassignPlayer}
-        unbindToken={roster.unbindToken}
-        onRemoveFromRoster={roster.removeFromRoster}
+        bindSelectedToken={
+          roster.canManage ? roster.bindSelectedToken : undefined
+        }
+        assignPlayer={roster.canManage ? roster.assignPlayer : undefined}
+        unassignPlayer={roster.canManage ? roster.unassignPlayer : undefined}
+        unbindToken={roster.canManage ? roster.unbindToken : undefined}
+        onRemoveFromRoster={
+          roster.canManage ? roster.removeFromRoster : undefined
+        }
         removeRosterAction={roster.removeRosterAction}
         promotion={<ObrRoomPromotion />}
       />
