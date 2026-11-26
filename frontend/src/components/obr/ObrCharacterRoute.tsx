@@ -394,6 +394,8 @@ function ObrPlayerCharacterRoute() {
           <Panel>
             <BrandTitle>Scvmrack</BrandTitle>
 
+            <ObrSaveRecovery />
+
             {isAuthenticated ? (
               <ObrAuthedPicker
                 locale={locale}

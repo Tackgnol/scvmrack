@@ -343,9 +343,10 @@ vi.mock("@owlbear-rodeo/sdk", () => ({
   buildLabel: obrMock.buildLabel,
 }));
 
-function mockCharacter(character: TestCharacter | null) {
+function mockCharacter(character: TestCharacter | null, isSessionExpired = false) {
   routeMocks.useCharacter.mockReturnValue({
     character,
+    isSessionExpired,
     setCharacterId: routeMocks.setCharacterId,
     generateNew: routeMocks.generateNew,
   });
@@ -765,6 +766,20 @@ describe("ObrCharacterRoute", () => {
         expect.objectContaining({ obrRoomId: "room-test" }),
       );
     routeMocks.signIn.mockResolvedValue(undefined);
+  });
+
+  it("tells a player without a scvm to sign in again when the session expired (RPG-391)", async () => {
+    routeMocks.role = "PLAYER";
+    mockCharacter(null, true);
+
+    await renderRoute();
+
+    await expect
+      .element(page.getByText("Your session expired. Sign in again."))
+      .toBeVisible();
+    await expect
+      .element(page.getByRole("button", { name: "Sign in" }))
+      .toBeVisible();
   });
 
   it("explains when the room party is full", async () => {
