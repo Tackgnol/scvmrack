@@ -1,5 +1,9 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {
+  QueryClient,
+  QueryClientProvider,
+  QueryObserver,
+} from "@tanstack/react-query";
 import { beforeEach, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
 import { useObrRosterCards } from "@/obr/useObrRosterCards";
@@ -37,13 +41,18 @@ vi.mock("@owlbear-rodeo/sdk", () => ({
   },
 }));
 const core = vi.hoisted(() => ({
+  onRefresh: null as null | (() => Promise<void>),
   client: null as null | {
     fetchRoomBindings: (roomId: string) => Promise<{ players: unknown[] }>;
   },
 }));
 vi.mock("@tackgnol/rpgtools-owlbear/react-query", () => ({
-  useObrRosterCards: (input: { client: typeof core.client }) => {
+  useObrRosterCards: (input: {
+    client: typeof core.client;
+    onRefresh: () => Promise<void>;
+  }) => {
     core.client = input.client;
+    core.onRefresh = input.onRefresh;
     return {
       action: { pending: false, error: null },
       refresh: vi.fn(),
@@ -72,7 +81,7 @@ function roster() {
   const wrapper = ({ children }: { children: ReactNode }) => (
     <QueryClientProvider client={client}>{children}</QueryClientProvider>
   );
-  return renderHook(() => useObrRosterCards(), { wrapper });
+  return { ...renderHook(() => useObrRosterCards(), { wrapper }), client };
 }
 
 it("reuses the removal operation after a lost response and allocates a new one after success", async () => {
@@ -184,4 +193,16 @@ it("tells the GM to select a token when Bind selected token has no selection (RP
   );
   expect(result.current.action.error).toBe("Select a token on the map first");
   expect(bindRoomSelectedTokens).not.toHaveBeenCalled();
+});
+
+it("fails the refresh when the cards request fails instead of reporting success (RPG-386)", async () => {
+  const { client } = roster();
+  const observer = new QueryObserver(client, {
+    queryKey: ["obr", "cards", "room", ["scvm"], "en"],
+    queryFn: () => Promise.reject(new Error("cards unavailable")),
+    retry: false,
+  });
+  const unsubscribe = observer.subscribe(() => undefined);
+  await expect(core.onRefresh?.()).rejects.toThrow("cards unavailable");
+  unsubscribe();
 });
