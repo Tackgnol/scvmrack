@@ -65,9 +65,15 @@ export function useObrSession() {
     await queryClient.invalidateQueries({ queryKey: partyKeys.obrRooms() });
   }, [queryClient]);
 
+  const signOut = useCallback(
+    () => discardObrSession(queryClient),
+    [queryClient],
+  );
+
   return {
     ...auth,
     signIn,
+    signOut,
     cancelSignIn:
       signInProgress && signInProgress.state !== "redeeming"
         ? cancelSignIn
