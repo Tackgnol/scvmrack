@@ -176,6 +176,22 @@ test("does not reconnect when option callbacks are recreated by rerenders", asyn
   expect(calls).toHaveLength(1);
 });
 
+test("calls onReconnected when the stream reopens after a drop, not on the first open", async () => {
+  const onReconnected = vi.fn();
+  renderHook(() => usePartyStream("party-1", { onReconnected }));
+
+  await act(async () => {
+    await calls[0].options.onopen(okResponse);
+  });
+  expect(onReconnected).not.toHaveBeenCalled();
+
+  act(() => calls[0].options.onerror(new Error("network")));
+  await act(async () => {
+    await calls[0].options.onopen(okResponse);
+  });
+  expect(onReconnected).toHaveBeenCalledTimes(1);
+});
+
 test("character.updated invalidates that member and stores changed fields", () => {
   const queryClient = createQueryClientMock();
   (useQueryClient as any).mockReturnValue(queryClient);

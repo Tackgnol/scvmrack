@@ -2,6 +2,7 @@ import { render } from "vitest-browser-react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 import BrowserTestProvider from "../BrowserTestProvider";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { PartyPage } from "@/pages/PartyPage";
 import {
   usePartyDetail,
@@ -109,11 +110,13 @@ function detail(over: Record<string, unknown> = {}) {
   } as never);
 }
 
-const renderPage = () =>
+const renderPage = (queryClient = new QueryClient()) =>
   render(
-    <BrowserTestProvider>
-      <PartyPage />
-    </BrowserTestProvider>,
+    <QueryClientProvider client={queryClient}>
+      <BrowserTestProvider>
+        <PartyPage />
+      </BrowserTestProvider>
+    </QueryClientProvider>,
   );
 
 describe("PartyPage", () => {
@@ -162,6 +165,21 @@ describe("PartyPage", () => {
     await expect
       .element(page.getByRole("button", { name: /kick/i }))
       .toBeVisible();
+  });
+
+  it("refetches every member card when the stream reconnects", async () => {
+    const queryClient = new QueryClient();
+    const invalidate = vi.spyOn(queryClient, "invalidateQueries");
+    await renderPage(queryClient);
+    await expect.element(page.getByText("Vrax")).toBeVisible();
+
+    mockedStream.mock.lastCall?.[1]?.onReconnected?.();
+
+    await expect
+      .poll(() => invalidate)
+      .toHaveBeenCalledWith({
+        queryKey: ["get", "/api/characters/{id}", { params: { path: { id: "c1" } } }],
+      });
   });
 
   it("regenerates the invite link", async () => {

@@ -45,6 +45,8 @@ type UsePartyStreamOptions = {
   enabled?: boolean;
   onClosed?: () => void;
   onChanged?: () => void;
+  /** Called when the stream comes back after a drop, so a consumer can catch up on events it missed. */
+  onReconnected?: () => void;
 };
 
 export const partyRosterQueryKey = partyKeys.roster;
@@ -100,9 +102,10 @@ export function usePartyStream(
     () => false,
   );
   const queryClient = useQueryClient();
-  const { enabled = true, onClosed, onChanged } = options;
+  const { enabled = true, onClosed, onChanged, onReconnected } = options;
   const onClosedRef = useRef(onClosed);
   const onChangedRef = useRef(onChanged);
+  const onReconnectedRef = useRef(onReconnected);
   const [status, setStatus] = useState<PartyStreamStatus>("idle");
   const [changedFieldsByCharacter, setChangedFieldsByCharacter] =
     useState<ChangedFieldsByCharacter>({});
@@ -112,7 +115,8 @@ export function usePartyStream(
   useEffect(() => {
     onClosedRef.current = onClosed;
     onChangedRef.current = onChanged;
-  }, [onClosed, onChanged]);
+    onReconnectedRef.current = onReconnected;
+  }, [onClosed, onChanged, onReconnected]);
 
   const clearChangedFields = useCallback((characterId?: string) => {
     setChangedFieldsByCharacter((current) => {
@@ -138,6 +142,7 @@ export function usePartyStream(
     // `x-embedded-session` marker — native EventSource cannot send headers, which
     // breaks the cross-site itch.io embed. AbortController replaces source.close().
     const controller = new AbortController();
+    let hasOpened = false;
     setStatus("connecting");
 
     const invalidateRoster = () => {
@@ -234,6 +239,10 @@ export function usePartyStream(
         if (response.ok && contentType?.startsWith(EventStreamContentType)) {
           setStatus("open");
           invalidateRoster();
+          if (hasOpened) {
+            onReconnectedRef.current?.();
+          }
+          hasOpened = true;
           return;
         }
         throw new FatalStreamError(
