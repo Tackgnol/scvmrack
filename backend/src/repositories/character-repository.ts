@@ -43,12 +43,15 @@ export type CharacterUpdateAudience = { characterId: string; partyIds: string[] 
 /**
  * What a character update did: `saved` wrote it; `missing` found no character with the id; `stale`
  * wrote nothing because the character changed since `expectedUpdatedAt`; `replayed` wrote nothing
- * because this `saveId` is the save that already landed.
+ * because a save with this `saveId` already landed.
  */
 export type CharacterSaveOutcome = 'saved' | 'missing' | 'stale' | 'replayed';
 
-function isRecordNotFound(err: unknown): boolean {
-  return err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025';
+/** How long a save receipt is kept: far longer than any client retry of a lost response. */
+const RECEIPT_TTL_MS = 24 * 60 * 60 * 1000;
+
+function hasPrismaCode(err: unknown, code: string): boolean {
+  return err instanceof Prisma.PrismaClientKnownRequestError && err.code === code;
 }
 
 /** The insertable row for a rolled scvm, owned by `userId` when given; a classless roll's stat options are not stored. */
@@ -116,14 +119,6 @@ export const characterRepository = {
     return prisma.character.findUnique({
       where: { id },
       select: { userId: true },
-    });
-  },
-
-  /** The save id of the last guarded update, or null when the character is gone. */
-  getLastSaveId(id: string): Promise<{ lastSaveId: string | null } | null> {
-    return prisma.character.findUnique({
-      where: { id },
-      select: { lastSaveId: true },
     });
   },
 
@@ -202,7 +197,8 @@ export const characterRepository = {
 
   /**
    * Writes a character update. With `expectedUpdatedAt` it writes only while the character is still at
-   * that version; with `saveId` it records the id, so a retry of a save that landed reads as `replayed`.
+   * that version; with `saveId` it records a receipt in the same transaction, so a retry of a save that
+   * landed reads as `replayed` and writes nothing, even after newer saves.
    */
   async update(
     id: string,
@@ -210,15 +206,21 @@ export const characterRepository = {
     guard?: { expectedUpdatedAt?: Date; saveId?: string }
   ): Promise<CharacterSaveOutcome> {
     const { expectedUpdatedAt, saveId } = guard ?? {};
-    if (saveId) {
-      data = { ...data, lastSaveId: saveId };
-    }
     try {
-      if (!expectedUpdatedAt) {
-        await prisma.character.update({ where: { id }, data });
-      } else {
+      await prisma.$transaction(async (tx) => {
+        if (saveId) {
+          // Concurrent duplicates wait on this key; the loser sees the winner's receipt.
+          await tx.characterSaveReceipt.create({ data: { characterId: id, saveId } });
+          await tx.characterSaveReceipt.deleteMany({
+            where: { characterId: id, createdAt: { lt: new Date(Date.now() - RECEIPT_TTL_MS) } },
+          });
+        }
+        if (!expectedUpdatedAt) {
+          await tx.character.update({ where: { id }, data });
+          return;
+        }
         const nextMillisecond = new Date(expectedUpdatedAt.getTime() + 1);
-        await prisma.character.update({
+        await tx.character.update({
           // SQL-era timestamps have microseconds; API dates serialize milliseconds.
           where: { id, updatedAt: { gte: expectedUpdatedAt, lt: nextMillisecond } },
           data: {
@@ -226,21 +228,23 @@ export const characterRepository = {
             updatedAt: new Date(Math.max(Date.now(), nextMillisecond.getTime())),
           },
         });
-      }
+      });
       return 'saved';
     } catch (err) {
-      if (!isRecordNotFound(err)) {
+      if (hasPrismaCode(err, 'P2002')) {
+        return 'replayed';
+      }
+      if (hasPrismaCode(err, 'P2003')) {
+        return 'missing';
+      }
+      if (!hasPrismaCode(err, 'P2025')) {
         throw err;
       }
     }
     if (!expectedUpdatedAt) {
       return 'missing';
     }
-    const stored = await characterRepository.getLastSaveId(id);
-    if (!stored) {
-      return 'missing';
-    }
-    return saveId && stored.lastSaveId === saveId ? 'replayed' : 'stale';
+    return (await characterRepository.getOwnerId(id)) ? 'stale' : 'missing';
   },
 
   deleteById(id: string): Promise<{ count: number }> {

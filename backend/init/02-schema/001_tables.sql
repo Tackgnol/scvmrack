@@ -177,7 +177,6 @@ CREATE TABLE characters (
     storage JSONB DEFAULT '[]'::JSONB,
     notes TEXT DEFAULT '',
     misery_count INTEGER NOT NULL DEFAULT 0 CHECK (misery_count BETWEEN 0 AND 7),
-    last_save_id TEXT,
     session_id TEXT,
     user_id TEXT
 );
