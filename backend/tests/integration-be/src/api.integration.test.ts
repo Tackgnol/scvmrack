@@ -670,6 +670,24 @@ test('replaying a landed save with its save id reads back instead of conflicting
   await expectStatus(otherSave, 409);
 });
 
+test('retrying a landed save after another tab saved keeps the newer edit and the version', async () => {
+  const jar = await bootstrapAnonymousSession();
+  const id = await createCharacter(jar);
+  const path = `/api/characters/${id}`;
+  const headers = { 'x-csrf-token': await fetchCsrfToken(jar) };
+  const firstTab = { saveId: randomUUID(), currentHp: 0 };
+  await expectStatus(await request(path, { method: 'PATCH', jar, headers, json: firstTab }), 200);
+  const secondTab = await request(path, { method: 'PATCH', jar, headers, json: { saveId: randomUUID(), currentHp: 1 } });
+  await expectStatus(secondTab, 200);
+  const newer = await secondTab.json() as { currentHp: number; updatedAt: string };
+
+  const retry = await request(path, { method: 'PATCH', jar, headers, json: firstTab });
+  await expectStatus(retry, 200);
+  const replayed = await retry.json() as { currentHp: number; updatedAt: string };
+  assert.equal(replayed.currentHp, 1);
+  assert.equal(replayed.updatedAt, newer.updatedAt);
+});
+
 test('PATCH /api/characters/:id updates character fields and returns updated character', async () => {
   const jar = await bootstrapAnonymousSession();
   const id = await createCharacter(jar);

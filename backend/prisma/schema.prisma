@@ -222,7 +222,6 @@ model Character {
   storage         Json?    @default("[]")
   notes           String?  @default("")
   miseryCount     Int      @default(0) @map("misery_count")
-  lastSaveId      String?  @map("last_save_id")
   sessionId       String?  @map("session_id")
   userId          String?  @map("user_id")
   modifiers       Json     @default("[]") @map("modifiers")
@@ -233,6 +232,7 @@ model Character {
   obrPlayerCharacterBindings ObrPlayerCharacterBinding[]
   obrTokenCharacterBindings  ObrTokenCharacterBinding[]
   improvements    CharacterImprovement[]
+  saveReceipts    CharacterSaveReceipt[]
 
   @@index([classId], map: "idx_characters_class")
   @@index([createdAt], map: "idx_characters_created")
@@ -258,6 +258,18 @@ model CharacterImprovement {
   @@unique([characterId, sequence])
   @@index([characterId, appliedAt])
   @@map("character_improvements")
+}
+
+/// One landed character save, so a retry carrying the same save id is recognised and not written twice.
+model CharacterSaveReceipt {
+  characterId String   @map("character_id") @db.Uuid
+  saveId      String   @map("save_id") @db.VarChar(64)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  character Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+
+  @@id([characterId, saveId])
+  @@map("character_save_receipts")
 }
 
 model Enemy {
