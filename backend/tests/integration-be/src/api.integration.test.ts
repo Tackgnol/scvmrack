@@ -688,6 +688,34 @@ test('retrying a landed save after another tab saved keeps the newer edit and th
   assert.equal(replayed.updatedAt, newer.updatedAt);
 });
 
+test('a retry days after its save landed still keeps the newer edit', async () => {
+  const jar = await bootstrapAnonymousSession();
+  const id = await createCharacter(jar);
+  const path = `/api/characters/${id}`;
+  const headers = { 'x-csrf-token': await fetchCsrfToken(jar) };
+  const oldSave = { saveId: randomUUID(), currentHp: 0 };
+  await expectStatus(await request(path, { method: 'PATCH', jar, headers, json: oldSave }), 200);
+  const database = new Client({ connectionString: process.env.DATABASE_URL });
+  await database.connect();
+  try {
+    await database.query(
+      "UPDATE character_save_receipts SET created_at = now() - interval '30 days' WHERE character_id = $1",
+      [id]
+    );
+  } finally {
+    await database.end();
+  }
+  const newer = await request(path, { method: 'PATCH', jar, headers, json: { saveId: randomUUID(), currentHp: 1 } });
+  await expectStatus(newer, 200);
+  const newerBody = await newer.json() as { updatedAt: string };
+
+  const retry = await request(path, { method: 'PATCH', jar, headers, json: oldSave });
+  await expectStatus(retry, 200);
+  const replayed = await retry.json() as { currentHp: number; updatedAt: string };
+  assert.equal(replayed.currentHp, 1);
+  assert.equal(replayed.updatedAt, newerBody.updatedAt);
+});
+
 test('PATCH /api/characters/:id updates character fields and returns updated character', async () => {
   const jar = await bootstrapAnonymousSession();
   const id = await createCharacter(jar);

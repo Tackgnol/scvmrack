@@ -153,7 +153,7 @@ The frontend uses optimistic updates with debouncing:
 1. Changes are queued as patches in `useCharacterEditor`.
 2. UI updates immediately via `queryClient.setQueryData`.
 3. Changes flush after 1 second of inactivity; flushes are serialized (one PATCH in flight).
-4. The PATCH response (already hydrated) is written back into the cache and still-pending patches are re-applied on top; transient 5xx/network failures auto-retry, then surface a manual retry. Every retry resends the failed request unchanged, `saveId` included: if it already landed, the server recognises the id (a `character_save_receipts` row written in the save's transaction, kept 24 hours) and returns the character instead of a 409. Edits queued meanwhile go in the next save.
+4. The PATCH response (already hydrated) is written back into the cache and still-pending patches are re-applied on top; transient 5xx/network failures auto-retry, then surface a manual retry. Every retry resends the failed request unchanged, `saveId` included: if it already landed, the server recognises the id (a `character_save_receipts` row written in the save's transaction and kept until the character is deleted, so a Retry clicked days later is still recognised) and returns the character instead of a 409. Edits queued meanwhile go in the next save.
 5. The queue is flushed on unmount so a last edit isn't dropped.
 
 **Caution:** the cache is reconciled from the PATCH *response*. Do NOT re-add a per-PATCH `invalidateQueries`/refetch on the character detail query (in `useCharacterRepository` or the editor) — it races the optimistic queue and silently drops edits. The one exception is the 409 stale-write path, which clears and halts the queue before refetching, so there is nothing left to race.
