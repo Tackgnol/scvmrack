@@ -6,6 +6,8 @@ import {
   useRenameParty,
 } from "@/hooks/usePartyRepository";
 import { usePartyStream } from "@/hooks/usePartyStream";
+import { useQueryClient } from "@tanstack/react-query";
+import { markCharacterStale } from "@/api/characterCache";
 import { WarbandVitalStrip } from "@/components/organisms/party/WarbandVitalStrip";
 import GmMiseryControl from "@/components/molecules/party/GmMiseryControl";
 import { ClassPoolPanel } from "@/components/organisms/class-pool/ClassPoolPanel/ClassPoolPanel";
@@ -323,8 +325,15 @@ export function PartyPage() {
   const [draftName, setDraftName] = useState("");
   const nameInputRef = useRef<HTMLInputElement | null>(null);
   const party = partyQuery.data;
+  const queryClient = useQueryClient();
   const partyStream = usePartyStream(partyId, {
     enabled: Boolean(partyId && party),
+    // Member cards never go stale on their own, so edits made while the stream was down need a refetch.
+    onReconnected: () => {
+      party?.members.forEach((member) =>
+        markCharacterStale(queryClient, member.characterId),
+      );
+    },
   });
   const { changedFieldsByCharacter, clearChangedFields } = partyStream;
 
