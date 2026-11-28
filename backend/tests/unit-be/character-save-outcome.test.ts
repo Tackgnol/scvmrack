@@ -11,7 +11,6 @@ const state = {
   exists: true,
   updates: [] as Array<{ where: Record<string, unknown>; data: Record<string, unknown> }>,
   receipts: [] as Array<{ characterId: string; saveId: string }>,
-  prunes: [] as Array<Record<string, unknown>>,
   lookups: 0,
 };
 
@@ -21,7 +20,6 @@ beforeEach(() => {
   state.exists = true;
   state.updates = [];
   state.receipts = [];
-  state.prunes = [];
   state.lookups = 0;
 });
 
@@ -43,9 +41,8 @@ const tx = {
       state.receipts.push(data);
       return data;
     },
-    deleteMany: async ({ where }: { where: Record<string, unknown> }) => {
-      state.prunes.push(where);
-      return { count: 0 };
+    deleteMany: async () => {
+      throw new Error('save receipts must never be pruned');
     },
   },
 };
@@ -74,11 +71,10 @@ test('an unguarded save writes the patch and is saved, with no receipt', async (
   assert.deepEqual(state.receipts, []);
 });
 
-test('a save id records a receipt and prunes only that character\'s old receipts', async () => {
+test('a save id records a receipt and never prunes earlier ones', async () => {
   await characterRepository.update(ID, { name: 'Hero' }, { saveId: 'this-save' });
   assert.deepEqual(state.receipts, [{ characterId: ID, saveId: 'this-save' }]);
   assert.deepEqual(state.updates[0]?.data, { name: 'Hero' });
-  assert.equal(state.prunes[0]?.characterId, ID);
 });
 
 test('a guarded save writes only at the expected version and moves the version on', async () => {

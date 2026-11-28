@@ -47,9 +47,6 @@ export type CharacterUpdateAudience = { characterId: string; partyIds: string[] 
  */
 export type CharacterSaveOutcome = 'saved' | 'missing' | 'stale' | 'replayed';
 
-/** How long a save receipt is kept: far longer than any client retry of a lost response. */
-const RECEIPT_TTL_MS = 24 * 60 * 60 * 1000;
-
 function hasPrismaCode(err: unknown, code: string): boolean {
   return err instanceof Prisma.PrismaClientKnownRequestError && err.code === code;
 }
@@ -198,7 +195,7 @@ export const characterRepository = {
   /**
    * Writes a character update. With `expectedUpdatedAt` it writes only while the character is still at
    * that version; with `saveId` it records a receipt in the same transaction, so a retry of a save that
-   * landed reads as `replayed` and writes nothing, even after newer saves.
+   * landed reads as `replayed` and writes nothing, however late it arrives.
    */
   async update(
     id: string,
@@ -210,10 +207,8 @@ export const characterRepository = {
       await prisma.$transaction(async (tx) => {
         if (saveId) {
           // Concurrent duplicates wait on this key; the loser sees the winner's receipt.
+          // Receipts are never pruned: a manual Retry can come days later, and without its receipt it would overwrite newer saves.
           await tx.characterSaveReceipt.create({ data: { characterId: id, saveId } });
-          await tx.characterSaveReceipt.deleteMany({
-            where: { characterId: id, createdAt: { lt: new Date(Date.now() - RECEIPT_TTL_MS) } },
-          });
         }
         if (!expectedUpdatedAt) {
           await tx.character.update({ where: { id }, data });
